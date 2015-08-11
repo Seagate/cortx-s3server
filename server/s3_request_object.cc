@@ -42,6 +42,16 @@ bool S3RequestObject::has_query_param_key(std::string key) {
   return evhtp_kv_find(ev_req->uri->query, key.c_str()) != NULL;
 }
 
+bool S3RequestObject::has_raw_query_key(const char *key) {
+  if(ev_req->uri->query_raw == NULL || key == NULL)
+    return FALSE;
+
+  if( strcmp((const char *)ev_req->uri->query_raw, key)== 0)
+    return TRUE;
+  else
+    return FALSE;
+}
+
 // Operation params.
 void S3RequestObject::set_bucket_name(std::string& name) {
   bucket_name = name;
@@ -91,4 +101,12 @@ void S3RequestObject::send_response(int code, std::string body) {
 void S3RequestObject::respond_unsupported_api() {
   evbuffer_add_printf(ev_req->buffer_out, "Unsupported API endpoint.\n");
   evhtp_send_reply(ev_req, EVHTP_RES_NOTFOUND);
+}
+void S3RequestObject::respond_location_api() {
+  std::string response;
+  response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  response += "<LocationConstraint xmlns=\"http://s3\">";
+  response += "</LocationConstraint>";
+  evbuffer_add_printf(ev_req->buffer_out, response.c_str());
+  evhtp_send_reply(ev_req,EVHTP_RES_200);
 }

@@ -4,6 +4,7 @@
 void S3BucketAPIHandler::dispatch() {
   S3Action* action = NULL;
   switch(operation_code) {
+    printf("Action operation code = %d\n",operation_code);
     case S3OperationCode::list:
       action = new S3BucketListingAction(request);
       break;

@@ -38,6 +38,9 @@ void S3URI::setup_operation_code() {
   } else if (request->has_query_param_key("location")) {
     operation_code = S3OperationCode::location;
   }
+ else if (request->has_raw_query_key("location")) {
+    operation_code = S3OperationCode::location;
+  }
   // Other operations - todo
 }
 

@@ -56,6 +56,7 @@ public:
   size_t get_content_length();
 
   bool has_query_param_key(std::string key);
+  bool has_raw_query_key(const char *key);
 
   // xxx Remove this soon
   struct evbuffer* buffer_in() {
@@ -82,7 +83,7 @@ public:
 
   void send_response(int code, std::string body = "");
   void respond_unsupported_api();
-
+  void respond_location_api();
 };
 
 #endif

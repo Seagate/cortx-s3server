@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "s3_clovis_context.h"
 
@@ -16,6 +17,7 @@ int create_basic_op_ctx(struct s3_clovis_op_context *ctx, size_t op_count) {
 
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
   size_t i;
+  printf("Calling free_basic_op_ctx ctx->op_count = %d\n",ctx->op_count);
   for (i = 0; i < ctx->op_count; i++) {
     m0_clovis_op_fini(ctx->ops[i]);
     m0_clovis_op_free(ctx->ops[i]);

@@ -13,7 +13,7 @@
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_op_context clovis_op_context;
+  struct s3_clovis_op_context * clovis_op_context;
   bool has_clovis_op_context;
 
   // Read/Write Operation context.
@@ -28,14 +28,14 @@ public:
 
   ~S3ClovisWriterContext() {
     if (has_clovis_op_context) {
-      free_basic_op_ctx(&clovis_op_context);
+      free_basic_op_ctx(clovis_op_context);
     }
     if (has_clovis_rw_op_context) {
       free_basic_rw_op_ctx(&clovis_rw_op_context);
     }
   }
 
-  void set_clovis_op_ctx(struct s3_clovis_op_context ctx) {
+  void set_clovis_op_ctx(struct s3_clovis_op_context *ctx) {
     clovis_op_context = ctx;
     has_clovis_op_context = true;
   }
@@ -66,6 +66,7 @@ private:
 
   S3ClovisWriterOpState state;
 public:
+  //struct m0_uint128 id;
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req);
 
   S3ClovisWriterOpState get_state() {

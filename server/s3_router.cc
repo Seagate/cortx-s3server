@@ -58,7 +58,12 @@ printf("object name = %s\n", uri->get_object_name().c_str());
 printf("is_service_api\n");
   } else if (uri->is_bucket_api()) {
 printf("is_bucket_api\n");
-    // handler = std::make_shared<S3BucketAPIHandler> (request, uri->get_operation_code());
+    if(uri->get_operation_code() == S3OperationCode::location)
+    {
+      request->respond_location_api();
+      return;
+    }
+    //handler = std::make_shared<S3BucketAPIHandler> (request, uri->get_operation_code());
   } else if (uri->is_object_api()) {
     handler = std::make_shared<S3ObjectAPIHandler>(request, uri->get_operation_code());
 printf("is_object_api\n");
@@ -67,6 +72,7 @@ printf("is_object_api\n");
     request->respond_unsupported_api();
     return;
   }
+ 
   handler->manage_self(handler);
   handler->dispatch();  // Start processing the request
   return;

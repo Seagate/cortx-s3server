@@ -1,5 +1,6 @@
 
 #include "s3_common.h"
+#include<unistd.h>
 
 EXTERN_C_BLOCK_BEGIN
 #include "module/instance.h"
@@ -12,6 +13,7 @@ EXTERN_C_BLOCK_END
 #include "s3_clovis_writer.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_post_to_main_loop.h"
+#include "s3_crypt.h"
 
 extern struct m0_clovis_scope     clovis_uber_scope;
 
@@ -61,28 +63,31 @@ printf("S3ClovisWriter::create_object\n");
   this->handler_on_failed  = on_failed;
 
   int                  rc;
-  struct s3_clovis_op_context ctx;
+  struct s3_clovis_op_context *ctx;
+  ctx = (s3_clovis_op_context *)calloc(1,sizeof(s3_clovis_op_context));
 
-  create_basic_op_ctx(&ctx, 1);
+  create_basic_op_ctx(ctx, 1);
   S3ClovisWriterContext *context = new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::create_object_successful, this), std::bind( &S3ClovisWriter::create_object_failed, this));
 
   context->set_clovis_op_ctx(ctx);
 
-  ctx.cbs->ocb_arg = (void *)context;
-  ctx.cbs->ocb_executed = NULL;
-  ctx.cbs->ocb_stable = s3_clovis_op_stable;
-  ctx.cbs->ocb_failed = s3_clovis_op_failed;
+  ctx->cbs->ocb_arg = (void *)context;
+  ctx->cbs->ocb_executed = NULL;
+  ctx->cbs->ocb_stable = s3_clovis_op_stable;
+  ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
   // id = M0_CLOVIS_ID_APP;
   // id.u_lo = 7778;
   S3UriToMeroOID(request->get_object_name().c_str(), &id);
 
-  m0_clovis_obj_init(ctx.obj, &clovis_uber_scope, &id);
+  m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
 
-  m0_clovis_entity_create(&(ctx.obj->ob_entity), &(ctx.ops[0]));
+  m0_clovis_entity_create(&(ctx->obj->ob_entity), &(ctx->ops[0]));
 
-  m0_clovis_op_setup(ctx.ops[0], ctx.cbs, 0);
-  m0_clovis_op_launch(ctx.ops, 1);
+  m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
+  m0_clovis_op_launch(ctx->ops, 1);
+
+  //sleep(10);
 }
 
 void S3ClovisWriter::create_object_successful() {
@@ -102,9 +107,10 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   this->handler_on_failed  = on_failed;
 
   int                  rc = 0, i = 0;
-  struct s3_clovis_op_context ctx;
+  struct s3_clovis_op_context *ctx;
+  ctx = (s3_clovis_op_context *)calloc(1,sizeof(s3_clovis_op_context));
 
-  create_basic_op_ctx(&ctx, 1);
+  create_basic_op_ctx(ctx, 1);
 
   size_t clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
   size_t clovis_block_count = (request->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
@@ -117,10 +123,10 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   context->set_clovis_op_ctx(ctx);
   context->set_clovis_rw_op_ctx(rw_ctx);
 
-  ctx.cbs->ocb_arg = (void *)context;
-  ctx.cbs->ocb_executed = NULL;
-  ctx.cbs->ocb_stable = s3_clovis_op_stable;
-  ctx.cbs->ocb_failed = s3_clovis_op_failed;
+  ctx->cbs->ocb_arg = (void *)context;
+  ctx->cbs->ocb_executed = NULL;
+  ctx->cbs->ocb_stable = s3_clovis_op_stable;
+  ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
   // id = M0_CLOVIS_ID_APP;
   // id.u_lo = 7778;
@@ -131,14 +137,14 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   //   S3RequestObject::consume(ctx.data->ov_buf[i], block_size)
   set_up_clovis_data_buffers(rw_ctx);
 
-  m0_clovis_obj_init(ctx.obj, &clovis_uber_scope, &id);
+  m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
 
   /* Create the write request */
-  m0_clovis_obj_op(ctx.obj, M0_CLOVIS_OC_WRITE,
-       rw_ctx.ext, rw_ctx.data, rw_ctx.attr, 0, &ctx.ops[0]);
+  m0_clovis_obj_op(ctx->obj, M0_CLOVIS_OC_WRITE,
+       rw_ctx.ext, rw_ctx.data, rw_ctx.attr, 0, &ctx->ops[0]);
 
-  m0_clovis_op_setup(ctx.ops[0], ctx.cbs, 0);
-  m0_clovis_op_launch(ctx.ops, 1);
+  m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
+  m0_clovis_op_launch(ctx->ops, 1);
 }
 
 void S3ClovisWriter::write_content_successful() {
@@ -163,6 +169,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &
   int idx_within_extent = 0;
   int current_block_idx = 0;
   uint64_t last_index = 0;
+  MD5hash  md5crypt;
 
   size_t num_of_extents = evbuffer_peek(request->buffer_in(), request->get_content_length() /*-1*/, NULL, NULL, 0);
 
@@ -173,6 +180,16 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &
   /* do the actual peek at data */
   evbuffer_peek(request->buffer_in(), request->get_content_length(), NULL/*start of buffer*/, vec_in, num_of_extents);
 
+
+  /* Compute MD5 of what we got */
+  for (int i = 0; i < num_of_extents; i++) {
+    md5crypt.Update((const char *)vec_in[i].iov_base, vec_in[i].iov_len);
+  }
+  char * md5etag = md5crypt.Final();
+  std::string etagstr(md5etag);
+  std::string key_etag("etag");
+  request->set_out_header_value(key_etag,etagstr); 
+  
 
   for (int i = 0; i < num_of_extents; i++) {
     // printf("processing extent = %d of total %d\n", i, data_extents);

@@ -27,8 +27,10 @@ void S3ObjectAPIHandler::dispatch() {
           // action = std::make_shared<S3HeadObjectAction>(request);
           break;
         case S3HttpVerb::PUT:
-        printf("S3PutObjectAction\n");
           action = std::make_shared<S3PutObjectAction>(request);
+          break;
+        case S3HttpVerb::GET:
+          action = std::make_shared<S3GetObjectAction>(request);
           break;
         case S3HttpVerb::DELETE:
           // action = std::make_shared<S3DeleteObjectAction>(request);
