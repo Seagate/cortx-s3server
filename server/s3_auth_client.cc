@@ -62,12 +62,19 @@ std::string  url_encode(const char* src)
   return encoded_string;
 }
 
-static bool validate_auth_response(char *auth_response_body) {
+bool validate_auth_response(char *auth_response_body, S3AsyncOpContextBase *context, std::string& msg, std::string& error_code) {
+  bool authsuccess = true;
+  xmlNode *child_node;
+  xmlChar *key = NULL;
+  std::string account_details;
+  std::shared_ptr<S3RequestObject> request;
+
   if(auth_response_body == NULL) {
+    printf("XML response is NULL\n");
     return false;
   }
 
-  printf("Parsing xml request = %s\n", auth_response_body);
+  printf("Parsing auth xml response = %s\n", auth_response_body);
   xmlDocPtr document = xmlParseDoc((const xmlChar*)auth_response_body);
   if (document == NULL ) {
     printf("Auth response XML request body Invalid.\n");
@@ -81,46 +88,69 @@ static bool validate_auth_response(char *auth_response_body) {
     xmlFreeDoc(document);
     return false;
   }
-
   xmlNodePtr child = root_node->xmlChildrenNode;
-  xmlChar *key = NULL;
+  request = context->get_request();
   while (child != NULL) {
     if ((!xmlStrcmp(child->name, (const xmlChar *)"AuthenticateUserResult"))) {
-      key = xmlNodeGetContent(child);
+      authsuccess = true;
+      for(child_node = child->children; child_node != NULL; child_node = child_node->next) {
+        key = xmlNodeGetContent(child_node);
+        if((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
+          printf("UserId = %s\n",(char*)key);
+          account_details = (char*)key;
+          request->set_user_id(account_details);
+        } else if((!xmlStrcmp(child_node->name, (const xmlChar *)"UserName"))) {
+          printf("UserName = %s\n",(char*)key);
+          account_details = (char*)key;
+          request->set_user_name(account_details);
+        } else if((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountName"))) {
+          printf("AccountName = %s\n",(char*)key);
+          account_details = (char*)key;
+          request->set_account_name(account_details);
+        } else if((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountId"))) {
+          printf("AccountId =%s\n",(char*)key);
+          account_details = (char*)key;
+          request->set_account_id(account_details);
+        }
+        if(key != NULL) {
+          xmlFree(key);
+          key = NULL;
+        }
+      }
 
-      if (key == NULL) {
-        printf("Auth XML response is Invalid.\n");
-        xmlFree(key);
-        xmlFreeDoc(document);
-        return false;
-      }
-      printf("key = %s\n", (char*)key);
-      if((xmlStrcmp(key,(const xmlChar *)"True") == 0))
-      {
-        xmlFree(key);
-        xmlFreeDoc(document);
-        printf("XML True found\n");
-        return true;
-      }
-      else
-      {
-        xmlFree(key);
-        xmlFreeDoc(document);
-        printf("XML True not found \n");
-        return false;
-      }
-    } else {
-      child = child->next;
-    }
- }  // While
-   xmlFree(key);
+        //xmlFreeDoc(document);
+      } else if((!xmlStrcmp(child->name, (const xmlChar *)"Code"))) {
+          key = xmlNodeGetContent(child);
+          error_code = (char *)key;
+          if( key != NULL ) {
+            xmlFree(key);
+            key = NULL;
+          }
+          authsuccess = false;
+        } else if ((!xmlStrcmp(child->name, (const xmlChar *)"Message"))) {
+          key = xmlNodeGetContent(child);
+          msg = (char *)key;
+          if(key != NULL) {
+            xmlFree(key);
+            key = NULL;
+          }
+          authsuccess = false;
+        } 
+       child = child->next;
+     }
+   if(key != NULL)
+     xmlFree(key);
    xmlFreeDoc(document);
-   return false;
+   return authsuccess;
 }
 
 extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) {
+  std::string msg;
+  std::string error_code;
   printf("Called S3AuthClient auth_response callback\n");
   printf("req->status= %d\n", req->status);
+
+
 
   bool is_auth_successful = false;
   size_t buffer_len = evbuffer_get_length(buf) + 1;
@@ -131,13 +161,13 @@ extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) 
 
   S3AsyncOpContextBase *context = (S3AsyncOpContextBase*)arg;
 
-  is_auth_successful = validate_auth_response(auth_response_body);
+  is_auth_successful = validate_auth_response(auth_response_body, context, error_code, msg);
   if (is_auth_successful) {
     printf("Authentication successful\n");
     context->set_op_status(S3AsyncOpStatus::success, "Success.");
   } else {
     printf("Authentication unsuccessful\n");
-    context->set_op_status(S3AsyncOpStatus::failed, "Operation Failed.");
+    context->set_op_status(S3AsyncOpStatus::failed, msg);
   }
 
   if (context->get_op_status() == S3AsyncOpStatus::success) {
@@ -145,7 +175,7 @@ extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) 
   } else {
     context->on_failed_handler()();  // Invoke the handler.
   }
-
+  free(auth_response_body);
   return;
 }
 
@@ -234,6 +264,7 @@ void S3AuthClient::check_authentication(std::function<void(void)> on_success, st
   evhtp_request_t *ev_req = NULL;
   size_t out_len = 0;
   char sz_size[100] = {0};
+
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
