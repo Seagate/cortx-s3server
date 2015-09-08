@@ -37,7 +37,7 @@ void buf_to_hex(unsigned char *md5_digest, int in_len, char *md5_digest_chars, i
     memcpy(md5_digest_chars, "error computing md5",  out_len);
     return;
   }
-  for (i = 0; i < in_len; i++) 
+  for (i = 0; i < in_len; i++)
   {
     sprintf((char *)(&md5_digest_chars[i*2]), "%02x", (int)md5_digest[i]);
   }
@@ -379,7 +379,7 @@ int rm_from_my_store(evhtp_request_t *req)
     char in_store_path[1024];
     struct stat st;
     struct m0_uint128 object_id;
-    
+
     /* Use MurMur Hash to generate the OID */
     get_oid_using_hash(req->uri->path->full, &object_id);
 
@@ -391,7 +391,7 @@ int rm_from_my_store(evhtp_request_t *req)
         remove(in_store_path);
         evhtp_send_reply(req, EVHTP_RES_OK);
     }
-    else 
+    else
     {
         clovis_delete(object_id);
         evhtp_send_reply(req, EVHTP_RES_OK);
@@ -401,6 +401,7 @@ int rm_from_my_store(evhtp_request_t *req)
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
+    Router.dispatch(req);
     /* KD - read in headers */
     // evhtp_headers_for_each(req->headers_in, output_header, req->buffer_out);
 
@@ -508,7 +509,7 @@ main(int argc, char ** argv) {
 
     /* Google protobuf */
     GOOGLE_PROTOBUF_VERIFY_VERSION;
-    /* protobuf example 
+    /* protobuf example
     s3server::MeroObjectHeader obj_header, deserialized_obj;
     std::string streamed_data;
 
@@ -525,19 +526,17 @@ main(int argc, char ** argv) {
     evbase_t * evbase = event_base_new();
     evhtp_t  * htp    = evhtp_new(evbase, NULL);
 
+    // So we can support queries like s3.com/bucketname?location or ?acl
+    evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
+
     evhtp_set_gencb(htp, s3_handler, NULL);
     // evhtp_set_gencb(htp, s3_handler, (void*)"someargnotused");
 
     /* Initilise mero and Clovis */
-    // const char *clovis_local_addr = "10.0.2.15@tcp:12345:33:100";
-    // clovis_ha_addr = NULL;
-    // const char *clovis_confd_addr = "10.0.2.15@tcp:12345:33:100";
-    // const char *clovis_prof = "<0x7000000000000001:0>";
-
     rc = init_clovis(clovis_local_addr, clovis_confd_addr, clovis_prof);
     if (rc < 0) {
         printf("clovis_init failed!\n");
-        return rc;    
+        return rc;
     }
 
     /* KD - setup for reading data */
@@ -558,8 +557,7 @@ main(int argc, char ** argv) {
     event_base_free(evbase);
 
     /* Clean-up */
-    fini_clovis();  
+    fini_clovis();
 
     return 0;
 }
-
