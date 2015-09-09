@@ -1,3 +1,7 @@
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_BUCKET_METADATA_H__
+#define __MERO_FE_S3_SERVER_S3_BUCKET_METADATA_H__
 
 #include <functional>
 #include <string>
@@ -70,3 +74,5 @@ public:
 
   void from_json(std::string content);
 };
+
+#endif

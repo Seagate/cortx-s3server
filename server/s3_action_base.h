@@ -1,4 +1,11 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_ACTION_BASE_H__
+#define __MERO_FE_S3_SERVER_S3_ACTION_BASE_H__
+
+#include <memory>
+#include <functional>
 #include <vector>
 
 // Derived Action Objects will have steps (member functions)
@@ -9,7 +16,7 @@
 // done/abort etc depending on the result of the operation.
 class S3Action {
 protected:
-  S3RequestObject* request;
+  std::shared_ptr<S3RequestObject> request;
   // Any action specific state should be managed by derived classes.
 private:
   // Holds the member functions that will process the request.
@@ -17,9 +24,15 @@ private:
   std::vector<std::function<void()>> task_list;
   int task_iteration_index;
 
+  std::shared_ptr<S3Action> self_ref;
+
+  std::string error_message;
+
 public:
-  S3Action(S3RequestObject* req);
+  S3Action(std::shared_ptr<S3RequestObject> req);
   virtual ~S3Action();
+
+  void error_message(std::string& message);
 
 protected:
   void add_task(std::function<void()> task) {
@@ -27,6 +40,15 @@ protected:
   }
 
 public:
+  // Self destructing object.
+  void manage_self(std::shared_ptr<S3Action> ref) {
+      self_ref = ref;
+  }
+  // This *MUST* be the last thing on object. Called @ end of dispatch.
+  void i_am_done() {
+    self_ref.reset();
+  }
+
   // Register all the member functions required to complete the action.
   // This can register the function as
   // task_list.push_back(std::bind( &S3SomeDerivedAction::step1, this ));
@@ -45,4 +67,6 @@ public:
   // Common steps for all Actions like Authenticate.
   void check_authentication();
   void send_response_to_s3_client();
-}
+};
+
+#endif

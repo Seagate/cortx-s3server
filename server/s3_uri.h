@@ -1,69 +1,58 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_URI_H__
+#define __MERO_FE_S3_SERVER_S3_URI_H__
+
 #include <string>
+#include <memory>
 
-enum class S3OperationCode {
-  none,  // Operation on current object.
-  list,
+#include "s3_request_object.h"
+#include "s3_common.h"
 
-  // Common Operations
-  acl,
-
-  // Bucket Operations
-  location,
-  policy,
-  logging,
-  lifecycle,
-  cors,
-  notification,
-  replicaton,
-  tagging,
-  requestPayment,
-  versioning,
-  website,
-  listuploads,
-
-  // Object Operations
-  initupload,
-  partupload,
-  completeupload,
-  abortupload,
-  multidelete
-}
 
 class S3URI {
 
 protected:
-  std::string full_path;
+  std::shared_ptr<S3RequestObject> request;
 
-private:
+  S3OperationCode operation_code;
+
   std::string bucket_name;
   std::string object_name;
   bool is_service_api;
   bool is_bucket_api;
   bool is_object_api;
 
+private:
+  void setup_operation_code();
+
 public:
-  S3URI();
+  S3URI(std::shared_ptr<S3RequestObject> req);
 
   bool is_service_api();
   bool is_bucket_api();
   bool is_object_api();
 
-  virtual std::string get_bucket_name() = 0;
-  virtual std::string get_object_name() = 0;  // Object key
+  std::string& get_bucket_name();
+  std::string& get_object_name();  // Object key
 
-  virtual S3OperationCode get_operation_code() = 0;
+  S3OperationCode operation_code();
+
 };
 
 class S3PathStyleURI : public S3URI {
 public:
-  S3PathStyleURI(char* uri);
-  S3OperationCode get_operation_code();
+  S3PathStyleURI(std::shared_ptr<S3RequestObject> req);
 };
 
 class S3VirtualHostStyleURI : public S3URI {
+  std::string host_header;
 
+  // helper
+  void setup_bucket_name();
 public:
-  S3VirtualHostStyleURI(std::string host_header, std::string uri);
-  S3OperationCode get_operation_code();
+  S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req);
 };
+
+#endif

@@ -2,6 +2,7 @@
 #include <string>
 #include "s3_request_object.h"
 
+
 S3HttpVerb S3RequestObject::http_verb() {
   return ev_req->method;
 }
@@ -22,6 +23,14 @@ std::string S3RequestObject::get_host_header() {
 void S3RequestObject::set_out_header_value(std::string& key, std::string& value) {
   evhtp_headers_add_header(ev_req->headers_out,
          evhtp_header_new(key->c_str(), value->c_str(), 1, 1));
+}
+
+size_t S3RequestObject::get_content_length() {
+  return get_header_value('Content-Length');
+}
+
+bool S3RequestObject::has_query_param_key(std::string key) {
+  return evhtp_kv_find(ev_req->uri->query, key.c_str()) != NULL;
 }
 
 // Operation params.
@@ -63,6 +72,11 @@ void S3RequestObject::set_account_id(std::string& id) {
 
 std::string& S3RequestObject::get_account_id() {
   return account_id;
+}
+
+void S3RequestObject::send_response(int code, std::string body) {
+  // If body not empty, write to response body. TODO
+  evhtp_send_reply(ev_req, code);
 }
 
 void S3RequestObject::respond_unsupported_api() {

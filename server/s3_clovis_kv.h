@@ -1,4 +1,8 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_KV_H__
+#define __MERO_FE_S3_SERVER_S3_CLOVIS_KV_H__
 
 // Clovis simplified interface.
 
@@ -31,3 +35,5 @@ void s3_put_key_val(std::string& entity, std::string& key_name, std::string& val
 void s3_delete_key_val(std::string& entity, std::string& key_name, clovis_kv_rw_callback callback, void* context);
 
 void s3_next_key_val(std::string& entity, std::string& key_name, int count, clovis_kv_rw_callback callback, void* context);
+
+#endif

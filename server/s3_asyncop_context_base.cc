@@ -2,7 +2,7 @@
 
 #include "s3_asyncop_context_base.h"
 
-S3AsyncOpContextBase::S3AsyncOpContextBase(S3RequestObject *req, std::function<void(void)> handler) : request(req), handler(handler), status(S3AsyncOpStatus::unknown) {
+S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed) : request(req), on_success(success), on_failed(failed), status(S3AsyncOpStatus::unknown) {
 
 }
 
@@ -10,8 +10,12 @@ S3RequestObject* S3AsyncOpContextBase::get_request() {
   return request;
 }
 
-std::function<void(void)> S3AsyncOpContextBase::handler() {
-  return handler;
+std::function<void(void)> S3AsyncOpContextBase::on_success_handler() {
+  return on_success;
+}
+
+std::function<void(void)> S3AsyncOpContextBase::on_failed_handler() {
+  return on_failed;
 }
 
 S3AsyncOpStatus S3AsyncOpContextBase::get_op_status() {

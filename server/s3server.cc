@@ -16,6 +16,8 @@
 /* protobuf */
 #include "mero_object_header.pb.h"
 
+#include "s3_router.h"
+
 #define WEBSTORE "/home/seagate/webstore"
 
 /* Program options */
@@ -401,47 +403,7 @@ int rm_from_my_store(evhtp_request_t *req)
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
-    Router.dispatch(req);
-    /* KD - read in headers */
-    // evhtp_headers_for_each(req->headers_in, output_header, req->buffer_out);
-
-    /* KD - write my headers */
-    // evhtp_headers_add_header(req->headers_out,
-    //     evhtp_header_new("My-Out-Header", "Kaustubh", 0, 0));
-
-    /* Write -in- buffer len */
-    // evbuffer_add_printf(req->buffer_out, "%ld", evbuffer_get_length(req->buffer_in));
-    // evbuffer_add_printf(req->buffer_out, "uri.file = %s\n", req->uri->path->file);
-    // evbuffer_add_printf(req->buffer_out, "uri.path = %s\n", req->uri->path->path);
-    // evbuffer_add_printf(req->buffer_out, "uri.full = %s\n", req->uri->path->full);
-    // evbuffer_add_printf(req->buffer_out, "Content-Length = %ld\n", evbuffer_get_length(req->buffer_in));
-    // evhtp_send_reply(req, EVHTP_RES_OK);
-    // evbuffer_add_printf(req->buffer_out, "Simple read Data = \n");
-    // evbuffer_add_buffer(req->buffer_out, req->buffer_in);
-
-    if (req->method == htp_method_HEAD)
-    {
-        stat_from_my_store(req);
-    }
-    else if (req->method == htp_method_GET)
-    {
-        // stream_from_my_store(req);
-        stream_from_clovis(req);
-    }
-    else if (req->method == htp_method_PUT)
-    {
-        // stream_to_my_store(req);
-        stream_to_clovis(req);
-    }
-    else if (req->method == htp_method_DELETE)
-    {
-        rm_from_my_store(req);
-    }
-    else {
-        evbuffer_add_printf(req->buffer_out, "HTTP method not supported.\n");
-        evhtp_send_reply(req, EVHTP_RES_OK);
-    }
-    // evbuffer_add_printf(req->buffer_out, "%s", str);
+    Router::instance()->dispatch(req);
 }
 
 

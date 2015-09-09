@@ -1,20 +1,49 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_WRITER_H__
+#define __MERO_FE_S3_SERVER_S3_CLOVIS_WRITER_H__
+
+#include <memory>
+#include <functional>
+
 #include "s3_request_object.h"
 #include "s3_asyncop_context_base.h"
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
-  struct s3_clovis_op_context clovis_op_ctx;
-  S3ClovisWriter *clovis_writer;
+  // Basic Operation context.
+  struct s3_clovis_op_context clovis_op_context;
+  bool has_clovis_op_context;
+
+  // Read/Write Operation context.
+  struct s3_clovis_rw_op_context clovis_rw_op_context;
+  bool has_clovis_rw_op_context;
+
 public:
-  S3ClovisWriterContext(S3RequestObject *req, std::function<void(void)> handler, S3ClovisWriter *writer, struct s3_clovis_op_context op_ctx) : S3AsyncOpContextBase(req, handler), clovis_writer(writer), clovis_op_ctx(op_ctx) {}
-
-  S3ClovisWriter* clovis_writer() {
-    return clovis_writer;
+  S3ClovisWriterContext(std::make_shared<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+    has_clovis_op_context = false;
+    has_clovis_rw_op_context = false;
   }
 
-  struct s3_clovis_op_context* clovis_op_ctx() {
-    return &clovis_op_ctx;
+  ~S3ClovisWriterContext() {
+    if (has_clovis_op_context) {
+      free_basic_op_ctx(clovis_op_context);
+    }
+    if (has_clovis_rw_op_context) {
+      free_basic_rw_op_ctx(clovis_rw_op_context)
+    }
   }
+
+  void set_clovis_op_ctx(struct s3_clovis_op_context ctx) {
+    clovis_op_context = ctx;
+    has_clovis_op_context = true;
+  }
+
+  void set_clovis_rw_op_ctx(struct s3_clovis_rw_op_context ctx) {
+    clovis_rw_op_context = ctx;
+    has_clovis_rw_op_context = true;
+  }
+
 };
 
 enum class S3ClovisWriterOpState {
@@ -22,18 +51,38 @@ enum class S3ClovisWriterOpState {
   start,
   created,
   saved,
-}
+};
 
 class S3ClovisWriter {
-  S3RequestObject* request;
-  std::function<void()> handler;
+  std::shared_ptr<S3RequestObject> request;
+
+  // Used to report to caller
+  std::function<void()> handler_on_success;
+  std::function<void()> handler_on_failed;
+
   S3ClovisWriterOpState state;
 public:
-  S3ClovisWriter(S3RequestObject* req);
+  S3ClovisWriter(std::shared_ptr<S3RequestObject> req);
+
+  S3ClovisWriterOpState state() {
+    return state;
+  }
 
   void advance_state();
   void mark_failed();
 
+  // async create
+  void create_object(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void create_object_successful();
+  void create_object_failed();
+
   // Async save operation.
-  void save();
-}
+  void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void write_content_successful();
+  void write_content_failed();
+
+  // xxx remove this
+  void set_up_clovis_data_buffers(struct s3_clovis_op_context &ctx);
+};
+
+#endif

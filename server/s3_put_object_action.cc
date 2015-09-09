@@ -1,21 +1,24 @@
 
 #include "s3_put_bucket_action.h"
+#include "s3_error_codes.h"
 
-S3PutObjectAction::S3PutObjectAction(S3RequestObject* req) : S3Action(req) {
+S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
   setup_steps();
 }
 
 void S3PutObjectAction::setup_steps(){
-  // add_task(std::bind( &S3PutObjectAction::read_metadata, this ));
+  // add_task(std::bind( &S3PutObjectAction::check_metadata, this ));
   // add_task(std::bind( &S3PutObjectAction::write_metadata, this ));
+  add_task(std::bind( &S3PutObjectAction::create_object, this ));
   add_task(std::bind( &S3PutObjectAction::write_object, this ));
   add_task(std::bind( &S3PutObjectAction::send_response_to_s3_client, this ));
   // ...
 }
-
-void S3PutObjectAction::read_metadata() {
+/*
+void S3PutObjectAction::check_metadata() {
   // Trigger metadata read async operation with callback
-  metadata = new S3ObjectMetadata(request);
+  metadata = std::make_shared<S3ObjectMetadata> (request);
+
   metadata->async_load(std::bind( &S3PutObjectAction::next, this));
 }
 
@@ -29,19 +32,35 @@ void S3PutObjectAction::write_metadata() {
     metadata->async_save(std::bind( &S3PutObjectAction::next, this));
   }
 }
+*/
+void S3PutObjectAction::create_object() {
+  clovis_writer = std::make_shared<S3ClovisWriter>(request);
+  clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
+}
+
+void S3PutObjectAction::create_object_failed() {
+  // TODO - do anything more for failure?
+  send_response_to_s3_client();
+}
 
 void S3PutObjectAction::write_object() {
-  clovis_writer = new S3ClovisWriter(request);
-  clovis_writer->save(std::bind( &S3PutObjectAction::next, this));
+  clovis_writer->write_content(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::write_object_failed, this));
+}
+
+void S3PutObjectAction::write_object_failed() {
+  // TODO - do anything more for failure?
+  send_response_to_s3_client();
 }
 
 void S3PutObjectAction::send_response_to_s3_client() {
   // Trigger metadata read async operation with callback
-  if (clovis_writer->state() == S3IOOpStatus::saved) {
+  if (clovis_writer->state() == S3ClovisWriterOpState::saved) {
     // request->set_header_value(...)
-    // request->send_response(S3HttpSuccess200);
+    request->send_response(S3HttpSuccess200);
   } else {
     // request->set_header_value(...)
     request->send_response(S3HttpFailed400);
   }
+  done();
+  i_am_done();  // self delete
 }

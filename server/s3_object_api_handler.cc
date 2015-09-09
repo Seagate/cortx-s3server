@@ -1,45 +1,47 @@
 
 #include "s3_api_handler.h"
+#include "s3_put_object_action.h"
 
 void S3ObjectAPIHandler::dispatch() {
-  S3Action* action = NULL;
+  std::shared_ptr<S3Action> action;
   switch(operation_code) {
     case S3OperationCode::acl:
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
-          action = new S3GetObjectACLAction(request);
+          // action = std::make_shared<S3GetObjectACLAction>(request);
           break;
         case S3HttpVerb::PUT:
-          action = new S3PutObjectACLAction(request);
+          // action = std::make_shared<S3PutObjectACLAction>(request);
           break;
         default:
           // should never be here.
-          action = new S3UnknowAPIAction(request);
-          action.error_message("Unsupported HTTP operation on Object ACL.")
+          // action = std::make_shared<S3UnknowAPIAction>(request);
+          // action->error_message("Unsupported HTTP operation on Object ACL.")
       };
       break;
     case S3OperationCode::none:
       // Perform operation on Object.
       switch (request->http_verb()) {
         case S3HttpVerb::HEAD:
-          action = new S3HeadObjectAction(request);
+          // action = std::make_shared<S3HeadObjectAction>(request);
           break;
         case S3HttpVerb::PUT:
-          action = new S3PutObjectAction(request);
+          action = std::make_shared<S3PutObjectAction>(request);
           break;
         case S3HttpVerb::DELETE:
-          action = new S3DeleteObjectAction(request);
+          // action = std::make_shared<S3DeleteObjectAction>(request);
           break;
         case S3HttpVerb::POST:
-          action = new S3PostObjectAction(request);
+          // action = std::make_shared<S3PostObjectAction>(request);
           break;
         default:
           // should never be here.
-          action = new S3UnknowAPIAction(request);
-          action.error_message("Unsupported HTTP operation on Object.")
+          // action = std::make_shared<S3UnknowAPIAction>(request);
+          // action->error_message("Unsupported HTTP operation on Object.")
       };
       break;
   };  // switch operation_code
-  action.start()
+  action->manage_self(action);
+  action->start()
   i_am_done();
 }

@@ -1,62 +1,77 @@
 
 #include <memory>
+#include <string>
+#include <regex>
 
 #include "s3_router.h"
+#include "s3_api_handler.h"
+#include "s3_server_config.h"
 
-void S3Router::setup() {
-  default_endpoint = "s3.seagate.com";  // Default region endpoint (US)
-  // TODO - load region endpoints from config
-  std::string eps[] = {"s3-us.seagate.com", "s3-europe.seagate.com", "s3-asia.seagate.com"};
-  for( int i = 0; i < 3; i++) {
-    region_endpoints.insert(eps[i]);
+S3Router* S3Router::instance = NULL;
+
+S3Router::S3Router() {
+}
+
+S3Router* S3Router::instance() {
+  if(!instance){
+    instance = new S3Router();
   }
+  return instance;
 }
 
 bool S3Router::is_default_endpoint(std::string& endpoint) {
-  return default_endpoint == endpoint;
+  return S3Config::instance()->default_endpoint() == endpoint;
 }
 
 bool S3Router::is_exact_valid_endpoint(std::string& endpoint) {
-  return region_endpoints.find(endpoint) != region_endpoints.end();
+  return S3Config::instance()->region_endpoints().find(endpoint) != region_endpoints.end();
 }
 
 bool S3Router::is_subdomain_match(std::string& endpoint) {
   // todo check if given endpoint is subdomain or default or region.
+  if endpoint.find(S3Config::instance()->default_endpoint()) != std::string::npos) {
+    return true;
+  }
+  for (std::set<std::string>::iterator it = S3Config::instance()->region_endpoints().begin(); it! = S3Config::instance()->region_endpoints().end(); ++it) {
+    if (endpoint.find(*it) != std::string::npos) {
+      return true;
+    }
+  }
   return true;
 }
 
 void S3Router::dispatch(evhtp_request_t * req) {
-  S3RequestObject request(req);
+  std::shared_ptr<S3RequestObject> request = std::make_shared<S3RequestObject> (req);
 
   std::string bucket_name, object_name;
 
-  std::string host_header = request.get_host_header();
+  std::string host_header = request->get_host_header();
   std::unique_ptr<S3URI> uri;
   if ( host_header.empty() || is_exact_valid_endpoint(host_header)) {
     // Path style API
     // Bucket for the request will be the first slash-delimited component of the Request-URI
-    uri = std::unique_ptr<S3URI>(new S3PathStyleURI(request.c_get_full_path()));
+    uri = std::unique_ptr<S3URI>(new S3PathStyleURI(request));
   } else {
     // Virtual host style endpoint
-    uri = std::unique_ptr<S3URI>(new S3VirtualHostStyleURI(host_header, request.c_get_full_path()));
+    uri = std::unique_ptr<S3URI>(new S3VirtualHostStyleURI(request));
   }
-  request.set_bucket_name(uri->bucket_name());
-  request.set_object_name(uri->object_name());
+  request->set_bucket_name(uri->bucket_name());
+  request->set_object_name(uri->object_name());
 
   std::shared_ptr<S3APIHandler> handler;
   if (uri->is_service_api()) {
-    handler = std::make_shared<S3ServiceAPIHandler> (request, uri->operation_code());
+    // handler = std::make_shared<S3ServiceAPIHandler> (request, uri->operation_code());
   } else if (uri->is_bucket_api()) {
-    handler = std::make_shared<S3BucketAPIHandler> (request, uri->operation_code());
+    // handler = std::make_shared<S3BucketAPIHandler> (request, uri->operation_code());
   } else if (uri->is_object_api()) {
     handler = std::make_shared<S3ObjectAPIHandler>(request, uri->operation_code());
   } else {
     // Unsupported
-    request.respond_unsupported_api();
+    request->respond_unsupported_api();
     return;
   }
   handler->manage_self(handler);
-  handler->dispatch();  // Start processing the request.
+  handler->dispatch();  // Start processing the request
   return;
 }
 

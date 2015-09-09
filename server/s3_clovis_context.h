@@ -1,5 +1,14 @@
 
-#include "clovis.h"
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_CONTEXT_H__
+#define __MERO_FE_S3_SERVER_S3_CLOVIS_CONTEXT_H__
+
+#include "module/instance.h"
+#include "mero/init.h"
+
+#include "clovis/clovis.h"
+
 #include "s3_common.h"
 
 EXTERN_C_BLOCK_BEGIN
@@ -24,3 +33,5 @@ int create_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx, size_t clovis_bl
 void free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx);
 
 EXTERN_C_BLOCK_END
+
+#endif

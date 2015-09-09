@@ -1,5 +1,12 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_REQUEST_OBJECT_H__
+#define __MERO_FE_S3_SERVER_S3_REQUEST_OBJECT_H__
+
 #include <string>
+#include <memory>
+#include <set>
 
 /* libevhtp */
 #include <evhtp.h>
@@ -22,7 +29,19 @@ class S3RequestObject {
   std::string account_name;
   std::string account_id;  // Unique
 
+  std::shared_ptr<S3RequestObject> self_ref;
+
 public:
+
+  // Self destructing object.
+  void manage_self(std::shared_ptr<S3RequestObject> ref) {
+      self_ref = ref;
+  }
+  // This *MUST* be the last thing on object. Called @ end of dispatch.
+  void i_am_done() {
+    self_ref.reset();
+  }
+
   struct event_base* get_evbase() {
     this->ev_req->evbase;
   }
@@ -32,6 +51,14 @@ public:
 
   std::string get_header_value();
   std::string get_host_header();
+  size_t get_content_length();
+
+  bool has_query_param_key(std::string key);
+
+  // xxx Remove this soon
+  struct evbuffer* buffer_in() {
+    return ev_req->buffer_in;
+  }
 
   void set_out_header_value(std::string& key, std::string& value);
 
@@ -50,6 +77,10 @@ public:
   std::string& get_account_id();
 
   // Response Helpers
+
+  void send_response(int code, std::string body = "");
   void respond_unsupported_api();
 
 };
+
+#endif

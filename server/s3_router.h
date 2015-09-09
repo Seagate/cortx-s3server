@@ -1,26 +1,34 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_ROUTER_H__
+#define __MERO_FE_S3_SERVER_S3_ROUTER_H__
+
 #include <string>
 /* libevhtp */
 #include <evhtp.h>
 
+// Not thread-safe, but we are single threaded.
 class S3Router {
-  // TODO
+
 private:
-  std::string default_endpoint;
-  std::set<std::string> region_endpoints;
+  static S3Router* instance;
+  S3Router();
+
 private:
   // Some way to map URL pattern with handler.
-
   bool is_default_endpoint(std::string& endpoint);
   bool is_exact_valid_endpoint(std::string& endpoint);
   bool is_subdomain_match(std::string& endpoint);
 
 public:
-  void setup();
+  static S3Router* instance();
 
   // Dispatch to registered handlers.
   void dispatch(evhtp_request_t * req);
-}
+};
+
+#endif
 
 // S3 URL Patterns for various APIs.
 

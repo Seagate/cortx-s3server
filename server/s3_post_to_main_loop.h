@@ -1,18 +1,23 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
+#define __MERO_FE_S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
+
+/* libevhtp */
+#include <evhtp.h>
+
+#include "s3_request_object.h"
 
 extern "C" typedef void (*user_event_on_main_loop)(evutil_socket_t, short events, void *user_data);
 
 class S3PostToMainLoop {
   void* context;
-  S3RequestObject* request;
+  std::shared_ptr<S3RequestObject> request;
 public:
-  S3PostToMainLoop(S3RequestObject* req, void* ctx) : request(req), context(ctx) {}
+  S3PostToMainLoop(std::shared_ptr<S3RequestObject> req, void* ctx) : request(req), context(ctx) {}
 
-  void operator()(user_event_on_main_loop* callback) {
-    struct event *ev_user = NULL;
-    struct event_base* base = request->get_evbase();
+  void operator()(user_event_on_main_loop* callback);
+};
 
-    ev_user = event_new(base, -1, EV_WRITE|EV_READ, callback, context);
-    event_active(ev_user, EV_READ|EV_WRITE, 1);
-  }
-}
+#endif

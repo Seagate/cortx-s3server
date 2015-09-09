@@ -1,6 +1,13 @@
 
-#include "s3_object_acl.h"
+#pragma once
 
+#ifndef __MERO_FE_S3_SERVER_S3_OBJECT_METADATA_H__
+#define __MERO_FE_S3_SERVER_S3_OBJECT_METADATA_H__
+
+#include <map>
+#include <string>
+
+#include "s3_object_acl.h"
 
 class S3ObjectMetadata {
   // Holds system-defined metadata (creation date etc)
@@ -27,3 +34,5 @@ public:
 
   void from_json(std::string content);
 };
+
+#endif

@@ -1,7 +1,7 @@
 
 #include "s3_put_bucket_action.h"
 
-S3PutBucketAction::S3PutBucketAction(S3RequestObject* req) : S3Action(req) {
+S3PutBucketAction::S3PutBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
   setup_steps();
 }
 

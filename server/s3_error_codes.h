@@ -1,4 +1,10 @@
 
+#pragma once
+
+#ifndef __MERO_FE_S3_SERVER_S3_ERROR_CODES_H__
+#define __MERO_FE_S3_SERVER_S3_ERROR_CODES_H__
+
+
 #define S3HttpSuccess200         EVHTP_RES_OK
 #define S3HttpFailed400          EVHTP_RES_400
 #define S3HttpFailed500          EVHTP_RES_500
@@ -15,4 +21,6 @@ enum class S3Error {
   TooManyBuckets,  // 400
   PermanentRedirect,  // 301
   UserKeyMustBeSpecified,  // 400 The bucket POST must contain the specified field name. If it is specified, check the order of the fields.
-}
+};
+
+#endif
