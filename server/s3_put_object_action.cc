@@ -1,5 +1,5 @@
 
-#include "s3_put_bucket_action.h"
+#include "s3_put_object_action.h"
 #include "s3_error_codes.h"
 
 S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
@@ -25,7 +25,7 @@ void S3PutObjectAction::check_metadata() {
 void S3PutObjectAction::write_metadata() {
   // Trigger metadata write async operation with callback
   // XXX Check if last step was successful.
-  if (metadata->state() == S3ObjectMetadataState::present) {
+  if (metadata->get_state() == S3ObjectMetadataState::present) {
     // Report 409 bucket exists.
   } else {
     // xxx set attributes & save
@@ -54,7 +54,7 @@ void S3PutObjectAction::write_object_failed() {
 
 void S3PutObjectAction::send_response_to_s3_client() {
   // Trigger metadata read async operation with callback
-  if (clovis_writer->state() == S3ClovisWriterOpState::saved) {
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::saved) {
     // request->set_header_value(...)
     request->send_response(S3HttpSuccess200);
   } else {

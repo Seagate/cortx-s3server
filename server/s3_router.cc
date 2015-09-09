@@ -4,6 +4,7 @@
 #include <regex>
 
 #include "s3_router.h"
+#include "s3_uri.h"
 #include "s3_api_handler.h"
 #include "s3_server_config.h"
 
@@ -12,7 +13,7 @@ S3Router* S3Router::instance = NULL;
 S3Router::S3Router() {
 }
 
-S3Router* S3Router::instance() {
+S3Router* S3Router::get_instance() {
   if(!instance){
     instance = new S3Router();
   }
@@ -20,24 +21,24 @@ S3Router* S3Router::instance() {
 }
 
 bool S3Router::is_default_endpoint(std::string& endpoint) {
-  return S3Config::instance()->default_endpoint() == endpoint;
+  return S3Config::get_instance()->get_default_endpoint() == endpoint;
 }
 
 bool S3Router::is_exact_valid_endpoint(std::string& endpoint) {
-  return S3Config::instance()->region_endpoints().find(endpoint) != region_endpoints.end();
+  return S3Config::get_instance()->get_region_endpoints().find(endpoint) != S3Config::get_instance()->get_region_endpoints().end();
 }
 
 bool S3Router::is_subdomain_match(std::string& endpoint) {
   // todo check if given endpoint is subdomain or default or region.
-  if endpoint.find(S3Config::instance()->default_endpoint()) != std::string::npos) {
+  if (endpoint.find(S3Config::get_instance()->get_default_endpoint()) != std::string::npos) {
     return true;
   }
-  for (std::set<std::string>::iterator it = S3Config::instance()->region_endpoints().begin(); it! = S3Config::instance()->region_endpoints().end(); ++it) {
+  for (std::set<std::string>::iterator it = S3Config::get_instance()->get_region_endpoints().begin(); it != S3Config::get_instance()->get_region_endpoints().end(); ++it) {
     if (endpoint.find(*it) != std::string::npos) {
       return true;
     }
   }
-  return true;
+  return false;
 }
 
 void S3Router::dispatch(evhtp_request_t * req) {
@@ -55,16 +56,16 @@ void S3Router::dispatch(evhtp_request_t * req) {
     // Virtual host style endpoint
     uri = std::unique_ptr<S3URI>(new S3VirtualHostStyleURI(request));
   }
-  request->set_bucket_name(uri->bucket_name());
-  request->set_object_name(uri->object_name());
+  request->set_bucket_name(uri->get_bucket_name());
+  request->set_object_name(uri->get_object_name());
 
   std::shared_ptr<S3APIHandler> handler;
   if (uri->is_service_api()) {
-    // handler = std::make_shared<S3ServiceAPIHandler> (request, uri->operation_code());
+    // handler = std::make_shared<S3ServiceAPIHandler> (request, uri->get_operation_code());
   } else if (uri->is_bucket_api()) {
-    // handler = std::make_shared<S3BucketAPIHandler> (request, uri->operation_code());
+    // handler = std::make_shared<S3BucketAPIHandler> (request, uri->get_operation_code());
   } else if (uri->is_object_api()) {
-    handler = std::make_shared<S3ObjectAPIHandler>(request, uri->operation_code());
+    handler = std::make_shared<S3ObjectAPIHandler>(request, uri->get_operation_code());
   } else {
     // Unsupported
     request->respond_unsupported_api();

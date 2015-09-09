@@ -2,9 +2,10 @@
 #include <string>
 #include "s3_request_object.h"
 
+S3RequestObject::S3RequestObject(evhtp_request_t *req) : ev_req(req) {}
 
 S3HttpVerb S3RequestObject::http_verb() {
-  return ev_req->method;
+  return (S3HttpVerb)ev_req->method;
 }
 
 const char* S3RequestObject::c_get_full_path() {
@@ -17,16 +18,18 @@ std::string S3RequestObject::get_header_value(std::string& key) {
 }
 
 std::string S3RequestObject::get_host_header() {
-  return get_header_value('Host');
+  std::string host = "Host";
+  return get_header_value(host);
 }
 
 void S3RequestObject::set_out_header_value(std::string& key, std::string& value) {
   evhtp_headers_add_header(ev_req->headers_out,
-         evhtp_header_new(key->c_str(), value->c_str(), 1, 1));
+         evhtp_header_new(key.c_str(), value.c_str(), 1, 1));
 }
 
 size_t S3RequestObject::get_content_length() {
-  return get_header_value('Content-Length');
+  std::string content_length = "Content-Length";
+  return std::stoi(get_header_value(content_length));
 }
 
 bool S3RequestObject::has_query_param_key(std::string key) {
@@ -80,6 +83,6 @@ void S3RequestObject::send_response(int code, std::string body) {
 }
 
 void S3RequestObject::respond_unsupported_api() {
-  evbuffer_add_printf(ev_req->buffer_out, "Unsupported API endpoint.\n", rc);
+  evbuffer_add_printf(ev_req->buffer_out, "Unsupported API endpoint.\n");
   evhtp_send_reply(ev_req, EVHTP_RES_NOTFOUND);
 }

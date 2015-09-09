@@ -13,17 +13,17 @@ S3Config::S3Config() {
   }
 }
 
-S3Config* S3Config::instance() {
+S3Config* S3Config::get_instance() {
   if(!instance){
     instance = new S3Config();
   }
   return instance;
 }
 
-std::string& S3Config::default_endpoint() {
+std::string& S3Config::get_default_endpoint() {
     return default_endpoint;
 }
 
-std::set<std::string>& S3Config::region_endpoints() {
+std::set<std::string>& S3Config::get_region_endpoints() {
     return region_endpoints;
 }

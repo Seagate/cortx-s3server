@@ -20,9 +20,9 @@ protected:
 
   std::string bucket_name;
   std::string object_name;
-  bool is_service_api;
-  bool is_bucket_api;
-  bool is_object_api;
+  bool service_api;
+  bool bucket_api;
+  bool object_api;
 
 private:
   void setup_operation_code();
@@ -37,7 +37,7 @@ public:
   std::string& get_bucket_name();
   std::string& get_object_name();  // Object key
 
-  S3OperationCode operation_code();
+  S3OperationCode get_operation_code();
 
 };
 

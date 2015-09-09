@@ -22,7 +22,7 @@ private:
   bool is_subdomain_match(std::string& endpoint);
 
 public:
-  static S3Router* instance();
+  static S3Router* get_instance();
 
   // Dispatch to registered handlers.
   void dispatch(evhtp_request_t * req);

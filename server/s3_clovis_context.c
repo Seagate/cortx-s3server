@@ -1,27 +1,30 @@
 
+#include <stdlib.h>
 
 #include "s3_clovis_context.h"
 
 // To create a basic clovis operation
-void create_basic_op_ctx(struct s3_clovis_op_context *ctx, size_t op_count) {
+int create_basic_op_ctx(struct s3_clovis_op_context *ctx, size_t op_count) {
   ctx->ops = (struct m0_clovis_op **)calloc(op_count, sizeof(struct m0_clovis_op *));
 
   ctx->cbs = (struct m0_clovis_op_cbs *)calloc(op_count, sizeof(struct m0_clovis_op_cbs));
 
   ctx->obj = (struct m0_clovis_obj *)calloc(op_count, sizeof(struct m0_clovis_obj));
   ctx->op_count = op_count;
+  return 0;
 }
 
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
-  int i;
+  size_t i;
   for (i = 0; i < ctx->op_count; i++) {
     m0_clovis_op_fini(ctx->ops[i]);
     m0_clovis_op_free(ctx->ops[i]);
   }
   m0_clovis_entity_fini(&ctx->obj->ob_entity);
-  free(ctx->obs);
+  free(ctx->ops);
   free(ctx->cbs);
   free(ctx->obj);
+  return 0;
 }
 
 // To create a clovis RW operation
@@ -50,8 +53,9 @@ int create_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx, size_t clovis_bl
   return 0;
 }
 
-void free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx) {
+int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx) {
   free(ctx->ext);
   free(ctx->data);
   free(ctx->attr);
+  return 0;
 }

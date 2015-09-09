@@ -23,16 +23,18 @@ public:
   S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed);
   ~S3AsyncOpContextBase() {}
 
-  S3RequestObject* get_request();
+  std::shared_ptr<S3RequestObject> get_request();
 
   std::function<void(void)> on_success_handler();
   std::function<void(void)> on_failed_handler();
 
   S3AsyncOpStatus get_op_status();
 
-  void set_op_status(S3AsyncOpStatus opstatus, std::string& message);
+  void set_op_status(S3AsyncOpStatus opstatus, std::string message);
 
   std::string& get_error_message();
 
-  virtual void consume(char* chars, size_t length) = 0;
+  // virtual void consume(char* chars, size_t length) = 0;
 };
+
+#endif

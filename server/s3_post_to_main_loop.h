@@ -12,12 +12,12 @@
 extern "C" typedef void (*user_event_on_main_loop)(evutil_socket_t, short events, void *user_data);
 
 class S3PostToMainLoop {
-  void* context;
   std::shared_ptr<S3RequestObject> request;
+  void* context;
 public:
   S3PostToMainLoop(std::shared_ptr<S3RequestObject> req, void* ctx) : request(req), context(ctx) {}
 
-  void operator()(user_event_on_main_loop* callback);
+  void operator()(user_event_on_main_loop callback);
 };
 
 #endif

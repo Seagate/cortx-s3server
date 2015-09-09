@@ -19,7 +19,8 @@ private:
 
 public:
   S3APIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code) : request(req), operation_code(op_code) {}
-  virtual ~S3APIHandler();
+  virtual ~S3APIHandler() {}
+
   virtual void dispatch() = 0;
 
   // Self destructing object.
@@ -37,7 +38,7 @@ public:
   S3ServiceAPIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code) : S3APIHandler(req, op_code) {}
 
   virtual void dispatch();
-}
+};
 
 class S3BucketAPIHandler : public S3APIHandler {
 public:

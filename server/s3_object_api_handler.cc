@@ -44,6 +44,6 @@ void S3ObjectAPIHandler::dispatch() {
       break;
   };  // switch operation_code
   action->manage_self(action);
-  action->start()
+  action->start();
   i_am_done();
 }

@@ -8,6 +8,8 @@
 #include <functional>
 #include <vector>
 
+#include "s3_request_object.h"
+
 // Derived Action Objects will have steps (member functions)
 // required to complete the action.
 // All member functions should perform an async operation as
@@ -32,7 +34,7 @@ public:
   S3Action(std::shared_ptr<S3RequestObject> req);
   virtual ~S3Action();
 
-  void error_message(std::string& message);
+  void get_error_message(std::string& message);
 
 protected:
   void add_task(std::function<void()> task) {

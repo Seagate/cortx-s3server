@@ -5,7 +5,7 @@
 
 #include <memory>
 
-#include "s3_action.h"
+#include "s3_action_base.h"
 // #include "s3_object_metadata.h"
 #include "s3_clovis_writer.h"
 
@@ -24,6 +24,7 @@ public:
   void create_object_failed();
   void write_object();
   void write_object_failed();
+  void send_response_to_s3_client();
 };
 
 #endif

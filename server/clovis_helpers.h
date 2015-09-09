@@ -48,12 +48,12 @@ struct s3_metadata_object
 int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, const char *clovis_prof);
 void fini_clovis(void);
 
-int clovis_read(struct m0_uint128 object_id, int clovis_block_size,
-      int start_block_idx, int clovis_block_count, struct m0_bufvec *data);
+//int clovis_read(struct m0_uint128 object_id, int clovis_block_size,
+//      int start_block_idx, int clovis_block_count, struct m0_bufvec *data);
 
-int clovis_write(struct m0_uint128 object_id, int clovis_block_size, int clovis_block_count, int start_block_idx, int data_extents, struct evbuffer_iovec *vec_in, const char *streamed_metadata, int streamed_metadata_len, char **err_msg);
+//int clovis_write(struct m0_uint128 object_id, int clovis_block_size, int clovis_block_count, int start_block_idx, int data_extents, struct evbuffer_iovec *vec_in, const char *streamed_metadata, int streamed_metadata_len, char **err_msg);
 
-int clovis_delete(struct m0_uint128 object_id);
+//int clovis_delete(struct m0_uint128 object_id);
 
 EXTERN_C_BLOCK_END
 

@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "s3_request_object.h"
+#include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
@@ -20,17 +21,17 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   bool has_clovis_rw_op_context;
 
 public:
-  S3ClovisWriterContext(std::make_shared<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+  S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
     has_clovis_op_context = false;
     has_clovis_rw_op_context = false;
   }
 
   ~S3ClovisWriterContext() {
     if (has_clovis_op_context) {
-      free_basic_op_ctx(clovis_op_context);
+      free_basic_op_ctx(&clovis_op_context);
     }
     if (has_clovis_rw_op_context) {
-      free_basic_rw_op_ctx(clovis_rw_op_context)
+      free_basic_rw_op_ctx(&clovis_rw_op_context);
     }
   }
 
@@ -64,7 +65,7 @@ class S3ClovisWriter {
 public:
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req);
 
-  S3ClovisWriterOpState state() {
+  S3ClovisWriterOpState get_state() {
     return state;
   }
 
@@ -77,12 +78,12 @@ public:
   void create_object_failed();
 
   // Async save operation.
-  void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void write_content_successful();
   void write_content_failed();
 
   // xxx remove this
-  void set_up_clovis_data_buffers(struct s3_clovis_op_context &ctx);
+  void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &ctx);
 };
 
 #endif

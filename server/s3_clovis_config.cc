@@ -8,13 +8,13 @@ ClovisConfig::ClovisConfig() {
   clovis_block_size = 4096;
 }
 
-ClovisConfig* ClovisConfig::instance() {
+ClovisConfig* ClovisConfig::get_instance() {
   if(!instance){
     instance = new ClovisConfig();
   }
   return instance;
 }
 
-size_t ClovisConfig::clovis_block_size() {
+size_t ClovisConfig::get_clovis_block_size() {
     return clovis_block_size;
 }

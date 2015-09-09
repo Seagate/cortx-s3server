@@ -4,6 +4,8 @@
 #ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_CONFIG_H__
 #define __MERO_FE_S3_SERVER_S3_CLOVIS_CONFIG_H__
 
+#include <cstddef>
+
 // We should load this from config file.
 // Not thread-safe, but we are single threaded.
 class ClovisConfig {
@@ -16,10 +18,10 @@ private:
   size_t clovis_block_size;
 
 public:
-  static ClovisConfig* instance();
+  static ClovisConfig* get_instance();
 
   // Config items
-  size_t clovis_block_size();
+  size_t get_clovis_block_size();
 };
 
 #endif

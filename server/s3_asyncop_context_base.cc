@@ -6,7 +6,7 @@ S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req,
 
 }
 
-S3RequestObject* S3AsyncOpContextBase::get_request() {
+std::shared_ptr<S3RequestObject> S3AsyncOpContextBase::get_request() {
   return request;
 }
 
@@ -22,7 +22,7 @@ S3AsyncOpStatus S3AsyncOpContextBase::get_op_status() {
   return status;
 }
 
-void S3AsyncOpContextBase::set_op_status(S3AsyncOpStatus opstatus, std::string& message) {
+void S3AsyncOpContextBase::set_op_status(S3AsyncOpStatus opstatus, std::string message) {
   status = opstatus;
   error_message = message;
 }

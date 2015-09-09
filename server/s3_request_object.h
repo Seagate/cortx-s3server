@@ -32,6 +32,7 @@ class S3RequestObject {
   std::shared_ptr<S3RequestObject> self_ref;
 
 public:
+  S3RequestObject(evhtp_request_t *req);
 
   // Self destructing object.
   void manage_self(std::shared_ptr<S3RequestObject> ref) {
@@ -43,13 +44,13 @@ public:
   }
 
   struct event_base* get_evbase() {
-    this->ev_req->evbase;
+    return this->ev_req->htp->evbase;
   }
   S3HttpVerb http_verb();
 
   const char* c_get_full_path();
 
-  std::string get_header_value();
+  std::string get_header_value(std::string& key);
   std::string get_host_header();
   size_t get_content_length();
 
