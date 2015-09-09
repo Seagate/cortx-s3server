@@ -15,8 +15,9 @@ void S3ObjectAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          // action = std::make_shared<S3UnknowAPIAction>(request);
-          // action->error_message("Unsupported HTTP operation on Object ACL.")
+          request->respond_unsupported_api();
+          i_am_done();
+          return;
       };
       break;
     case S3OperationCode::none:
@@ -36,8 +37,9 @@ void S3ObjectAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          // action = std::make_shared<S3UnknowAPIAction>(request);
-          // action->error_message("Unsupported HTTP operation on Object.")
+          request->respond_unsupported_api();
+          i_am_done();
+          return;
       };
       break;
   };  // switch operation_code
