@@ -8,18 +8,6 @@
 #include "s3_api_handler.h"
 #include "s3_server_config.h"
 
-S3Router* S3Router::instance = NULL;
-
-S3Router::S3Router() {
-}
-
-S3Router* S3Router::get_instance() {
-  if(!instance){
-    instance = new S3Router();
-  }
-  return instance;
-}
-
 bool S3Router::is_default_endpoint(std::string& endpoint) {
   return S3Config::get_instance()->get_default_endpoint() == endpoint;
 }

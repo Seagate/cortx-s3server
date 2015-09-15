@@ -12,10 +12,6 @@
 class S3Router {
 
 private:
-  static S3Router* instance;
-  S3Router();
-
-private:
   // Some way to map URL pattern with handler.
   bool is_default_endpoint(std::string& endpoint);
   bool is_exact_valid_endpoint(std::string& endpoint);

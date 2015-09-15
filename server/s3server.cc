@@ -86,7 +86,8 @@ void get_oid_using_hash(const char* url, struct m0_uint128 *object_id)
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
-    S3Router::get_instance()->dispatch(req);
+  S3Router *router = (S3Router*)a;
+  router->dispatch(req);
 }
 
 
@@ -171,6 +172,8 @@ main(int argc, char ** argv) {
     evbase_t * evbase = event_base_new();
     evhtp_t  * htp    = evhtp_new(evbase, NULL);
 
+    S3Router *router = new S3Router();
+
     // So we can support queries like s3.com/bucketname?location or ?acl
     evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
 
@@ -203,6 +206,7 @@ main(int argc, char ** argv) {
 
     /* Clean-up */
     fini_clovis();
+    delete router;
 
     return 0;
 }
