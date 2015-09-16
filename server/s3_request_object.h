@@ -33,6 +33,7 @@ class S3RequestObject {
 
 public:
   S3RequestObject(evhtp_request_t *req);
+  ~S3RequestObject();
 
   // Self destructing object.
   void manage_self(std::shared_ptr<S3RequestObject> ref) {

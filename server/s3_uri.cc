@@ -4,7 +4,7 @@
 #include "s3_uri.h"
 #include "s3_server_config.h"
 
-S3URI::S3URI(std::shared_ptr<S3RequestObject> req) : request(req), operation_code(S3OperationCode::none) {
+S3URI::S3URI(std::shared_ptr<S3RequestObject> req) : request(req), operation_code(S3OperationCode::none), bucket_name(""), object_name(""), service_api(false), bucket_api(false), object_api(false) {
   setup_operation_code();
 }
 
@@ -43,6 +43,7 @@ void S3URI::setup_operation_code() {
 
 S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req) {
   std::string full_path(request->c_get_full_path());
+  printf("full_path = %s\n", full_path.c_str());
   // Regex is better, but lets live with raw parsing. regex = >gcc 4.9.0
   if (full_path.compare("/") == 0) {
     service_api = true;

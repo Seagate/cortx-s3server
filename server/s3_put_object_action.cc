@@ -34,25 +34,30 @@ void S3PutObjectAction::write_metadata() {
 }
 */
 void S3PutObjectAction::create_object() {
+  printf("Called S3PutObjectAction::create_object\n");
   clovis_writer = std::make_shared<S3ClovisWriter>(request);
   clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
 }
 
 void S3PutObjectAction::create_object_failed() {
   // TODO - do anything more for failure?
+  printf("Called S3PutObjectAction::create_object_failed\n");
   send_response_to_s3_client();
 }
 
 void S3PutObjectAction::write_object() {
+  printf("Called S3PutObjectAction::write_object\n");
   clovis_writer->write_content(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::write_object_failed, this));
 }
 
 void S3PutObjectAction::write_object_failed() {
   // TODO - do anything more for failure?
+  printf("Called S3PutObjectAction::write_object_failed\n");
   send_response_to_s3_client();
 }
 
 void S3PutObjectAction::send_response_to_s3_client() {
+  printf("Called S3PutObjectAction::send_response_to_s3_client\n");
   // Trigger metadata read async operation with callback
   if (clovis_writer->get_state() == S3ClovisWriterOpState::saved) {
     // request->set_header_value(...)

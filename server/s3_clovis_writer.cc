@@ -17,6 +17,7 @@ extern struct m0_clovis_scope     clovis_uber_scope;
 
 // This is run on main thread.
 extern "C" void object_cw_done_on_main_thread(evutil_socket_t, short events, void *user_data) {
+  printf("object_cw_done_on_main_thread\n");
   S3ClovisWriterContext *context = (S3ClovisWriterContext*) user_data;
   if (context->get_op_status() == S3AsyncOpStatus::success) {
     context->on_success_handler()();  // Invoke the handler.
@@ -28,12 +29,15 @@ extern "C" void object_cw_done_on_main_thread(evutil_socket_t, short events, voi
 
 // Clovis callbacks, run in clovis thread
 extern "C" void s3_clovis_op_stable(struct m0_clovis_op *op) {
+  printf("s3_clovis_op_stable\n");
+
   struct S3ClovisWriterContext *ctx = (struct S3ClovisWriterContext*)op->op_cbs->ocb_arg;
   ctx->set_op_status(S3AsyncOpStatus::success, "Success.");
   S3PostToMainLoop(ctx->get_request(), ctx)(object_cw_done_on_main_thread);
 }
 
 extern "C" void s3_clovis_op_failed(struct m0_clovis_op *op) {
+  printf("s3_clovis_op_failed\n");
   S3ClovisWriterContext *ctx = (struct S3ClovisWriterContext*)op->op_cbs->ocb_arg;
   ctx->set_op_status(S3AsyncOpStatus::failed, "Operation Failed.");
   S3PostToMainLoop(ctx->get_request(), ctx)(object_cw_done_on_main_thread);
@@ -52,6 +56,7 @@ void S3ClovisWriter::mark_failed() {
 }
 
 void S3ClovisWriter::create_object(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+printf("S3ClovisWriter::create_object\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
@@ -68,23 +73,26 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success, std::fu
   ctx.cbs->ocb_stable = s3_clovis_op_stable;
   ctx.cbs->ocb_failed = s3_clovis_op_failed;
 
-  struct m0_uint128 id;
+  // id = M0_CLOVIS_ID_APP;
+  // id.u_lo = 7778;
   S3UriToMeroOID(request->get_object_name().c_str(), &id);
 
   m0_clovis_obj_init(ctx.obj, &clovis_uber_scope, &id);
 
-  m0_clovis_entity_create(&ctx.obj->ob_entity, &ctx.ops[0]);
+  m0_clovis_entity_create(&(ctx.obj->ob_entity), &(ctx.ops[0]));
 
   m0_clovis_op_setup(ctx.ops[0], ctx.cbs, 0);
-  m0_clovis_op_launch(ctx.ops, ARRAY_SIZE(ctx.ops));
+  m0_clovis_op_launch(ctx.ops, 1);
 }
 
 void S3ClovisWriter::create_object_successful() {
+  printf("S3ClovisWriter::create_object_successful\n");
   state = S3ClovisWriterOpState::created;
   this->handler_on_success();
 }
 
 void S3ClovisWriter::create_object_failed() {
+  printf("S3ClovisWriter::create_object_failed\n");
   state = S3ClovisWriterOpState::failed;
   this->handler_on_failed();
 }
@@ -114,7 +122,8 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   ctx.cbs->ocb_stable = s3_clovis_op_stable;
   ctx.cbs->ocb_failed = s3_clovis_op_failed;
 
-  struct m0_uint128 id;
+  // id = M0_CLOVIS_ID_APP;
+  // id.u_lo = 7778;
   S3UriToMeroOID(request->get_object_name().c_str(), &id);
 
   // Remove this. Ideally we should do
@@ -129,7 +138,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
        rw_ctx.ext, rw_ctx.data, rw_ctx.attr, 0, &ctx.ops[0]);
 
   m0_clovis_op_setup(ctx.ops[0], ctx.cbs, 0);
-  m0_clovis_op_launch(ctx.ops, ARRAY_SIZE(ctx.ops));
+  m0_clovis_op_launch(ctx.ops, 1);
 }
 
 void S3ClovisWriter::write_content_successful() {

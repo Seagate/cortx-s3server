@@ -170,6 +170,11 @@ main(int argc, char ** argv) {
     return 0;*/
 
     evbase_t * evbase = event_base_new();
+    evthread_use_pthreads();
+    if (evthread_make_base_notifiable(evbase)<0) {
+      printf("Couldn't make base notifiable!");
+      return 1;
+    }
     evhtp_t  * htp    = evhtp_new(evbase, NULL);
 
     S3Router *router = new S3Router();

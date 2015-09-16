@@ -55,6 +55,9 @@ enum class S3ClovisWriterOpState {
 };
 
 class S3ClovisWriter {
+private:
+  struct m0_uint128 id;
+
   std::shared_ptr<S3RequestObject> request;
 
   // Used to report to caller

@@ -2,7 +2,13 @@
 #include <string>
 #include "s3_request_object.h"
 
-S3RequestObject::S3RequestObject(evhtp_request_t *req) : ev_req(req) {}
+S3RequestObject::S3RequestObject(evhtp_request_t *req) : ev_req(req) {
+  printf("S3RequestObject created.\n");
+}
+
+S3RequestObject::~S3RequestObject(){
+  printf("S3RequestObject deleted.\n");
+}
 
 S3HttpVerb S3RequestObject::http_verb() {
   return (S3HttpVerb)ev_req->method;
