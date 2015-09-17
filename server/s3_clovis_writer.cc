@@ -2,48 +2,13 @@
 #include "s3_common.h"
 #include<unistd.h>
 
-EXTERN_C_BLOCK_BEGIN
-#include "module/instance.h"
-#include "mero/init.h"
-
-#include "clovis/clovis.h"
-EXTERN_C_BLOCK_END
-
+#include "s3_clovis_rw_common.h"
 #include "s3_clovis_config.h"
 #include "s3_clovis_writer.h"
 #include "s3_uri_to_mero_oid.h"
-#include "s3_post_to_main_loop.h"
 #include "s3_md5_hash.h"
 
 extern struct m0_clovis_scope     clovis_uber_scope;
-
-// This is run on main thread.
-extern "C" void object_cw_done_on_main_thread(evutil_socket_t, short events, void *user_data) {
-  printf("object_cw_done_on_main_thread\n");
-  S3ClovisWriterContext *context = (S3ClovisWriterContext*) user_data;
-  if (context->get_op_status() == S3AsyncOpStatus::success) {
-    context->on_success_handler()();  // Invoke the handler.
-  } else {
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  delete context;
-}
-
-// Clovis callbacks, run in clovis thread
-extern "C" void s3_clovis_op_stable(struct m0_clovis_op *op) {
-  printf("s3_clovis_op_stable\n");
-
-  struct S3ClovisWriterContext *ctx = (struct S3ClovisWriterContext*)op->op_cbs->ocb_arg;
-  ctx->set_op_status(S3AsyncOpStatus::success, "Success.");
-  S3PostToMainLoop(ctx->get_request(), ctx)(object_cw_done_on_main_thread);
-}
-
-extern "C" void s3_clovis_op_failed(struct m0_clovis_op *op) {
-  printf("s3_clovis_op_failed\n");
-  S3ClovisWriterContext *ctx = (struct S3ClovisWriterContext*)op->op_cbs->ocb_arg;
-  ctx->set_op_status(S3AsyncOpStatus::failed, "Operation Failed.");
-  S3PostToMainLoop(ctx->get_request(), ctx)(object_cw_done_on_main_thread);
-}
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisWriterOpState::start) {
 

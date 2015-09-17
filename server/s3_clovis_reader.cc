@@ -2,48 +2,13 @@
 #include "s3_common.h"
 #include<unistd.h>
 
-EXTERN_C_BLOCK_BEGIN
-#include "module/instance.h"
-#include "mero/init.h"
-
-#include "clovis/clovis.h"
-EXTERN_C_BLOCK_END
-
+#include "s3_clovis_rw_common.h"
 #include "s3_clovis_config.h"
 #include "s3_clovis_reader.h"
 #include "s3_uri_to_mero_oid.h"
-#include "s3_post_to_main_loop.h"
 #include "s3_md5_hash.h"
 
 extern struct m0_clovis_scope     clovis_uber_scope;
-
-// This is run on main thread.
-extern "C" void object_read_done_on_main_thread(evutil_socket_t, short events, void *user_data) {
-  printf("object_read_done_on_main_thread\n");
-  S3ClovisReaderContext *context = (S3ClovisReaderContext*) user_data;
-  if (context->get_op_status() == S3AsyncOpStatus::success) {
-    context->on_success_handler()();  // Invoke the handler.
-  } else {
-    context->on_failed_handler()();  // Invoke the handler.
-  }
-  delete context;
-}
-
-// Clovis callbacks, run in clovis thread
-extern "C" void s3_clovis_read_op_stable(struct m0_clovis_op *op) {
-  printf("s3_clovis_read_op_stable\n");
-
-  struct S3ClovisReaderContext *ctx = (struct S3ClovisReaderContext*)op->op_cbs->ocb_arg;
-  ctx->set_op_status(S3AsyncOpStatus::success, "Success.");
-  S3PostToMainLoop(ctx->get_request(), ctx)(object_read_done_on_main_thread);
-}
-
-extern "C" void s3_clovis_read_op_failed(struct m0_clovis_op *op) {
-  printf("s3_clovis_read_op_failed\n");
-  S3ClovisReaderContext *ctx = (struct S3ClovisReaderContext*)op->op_cbs->ocb_arg;
-  ctx->set_op_status(S3AsyncOpStatus::failed, "Operation Failed.");
-  S3PostToMainLoop(ctx->get_request(), ctx)(object_read_done_on_main_thread);
-}
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisReaderOpState::start) {
   clovis_rw_op_context = NULL;
@@ -70,8 +35,8 @@ void S3ClovisReader::read_object(std::function<void(void)> on_success, std::func
 
   ctx->cbs->ocb_arg = (void *)context;
   ctx->cbs->ocb_executed = NULL;
-  ctx->cbs->ocb_stable = s3_clovis_read_op_stable;
-  ctx->cbs->ocb_failed = s3_clovis_read_op_failed;
+  ctx->cbs->ocb_stable = s3_clovis_op_stable;
+  ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
   // id = M0_CLOVIS_ID_APP;
   // id.u_lo = 7778;
