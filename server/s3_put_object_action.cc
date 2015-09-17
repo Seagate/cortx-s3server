@@ -7,7 +7,7 @@ S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3A
 }
 
 void S3PutObjectAction::setup_steps(){
-  // add_task(std::bind( &S3PutObjectAction::check_metadata, this ));
+  // add_task(std::bind( &S3PutObjectAction::fetch_metadata, this ));
   // add_task(std::bind( &S3PutObjectAction::write_metadata, this ));
   add_task(std::bind( &S3PutObjectAction::create_object, this ));
   add_task(std::bind( &S3PutObjectAction::write_object, this ));
@@ -15,7 +15,7 @@ void S3PutObjectAction::setup_steps(){
   // ...
 }
 /*
-void S3PutObjectAction::check_metadata() {
+void S3PutObjectAction::fetch_metadata() {
   // Trigger metadata read async operation with callback
   metadata = std::make_shared<S3ObjectMetadata> (request);
 
@@ -60,7 +60,9 @@ void S3PutObjectAction::send_response_to_s3_client() {
   printf("Called S3PutObjectAction::send_response_to_s3_client\n");
   // Trigger metadata read async operation with callback
   if (clovis_writer->get_state() == S3ClovisWriterOpState::saved) {
-    // request->set_header_value(...)
+    std::string etag_key("etag");
+    request->set_out_header_value(etag_key, clovis_writer->get_content_md5());
+
     request->send_response(S3HttpSuccess200);
   } else {
     // request->set_header_value(...)

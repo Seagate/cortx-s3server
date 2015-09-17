@@ -1,5 +1,6 @@
 
 #include "s3_api_handler.h"
+#include "s3_get_object_action.h"
 #include "s3_put_object_action.h"
 
 void S3ObjectAPIHandler::dispatch() {
@@ -30,7 +31,7 @@ void S3ObjectAPIHandler::dispatch() {
           action = std::make_shared<S3PutObjectAction>(request);
           break;
         case S3HttpVerb::GET:
-          // action = std::make_shared<S3GetObjectAction>(request);
+          action = std::make_shared<S3GetObjectAction>(request);
           break;
         case S3HttpVerb::DELETE:
           // action = std::make_shared<S3DeleteObjectAction>(request);

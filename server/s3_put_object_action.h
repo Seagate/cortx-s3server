@@ -18,7 +18,7 @@ public:
 
   void setup_steps();
 
-  void check_metadata();
+  void fetch_metadata();
   void write_metadata();
   void create_object();
   void create_object_failed();

@@ -73,6 +73,8 @@ private:
   std::function<void()> handler_on_failed;
 
   S3ClovisWriterOpState state;
+
+  std::string content_md5;
 public:
   //struct m0_uint128 id;
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req);
@@ -81,8 +83,9 @@ public:
     return state;
   }
 
-  void advance_state();
-  void mark_failed();
+  std::string get_content_md5() {
+    return content_md5;
+  }
 
   // async create
   void create_object(std::function<void(void)> on_success, std::function<void(void)> on_failed);

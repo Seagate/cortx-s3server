@@ -28,7 +28,7 @@ std::string S3RequestObject::get_host_header() {
   return get_header_value(host);
 }
 
-void S3RequestObject::set_out_header_value(std::string& key, std::string& value) {
+void S3RequestObject::set_out_header_value(std::string key, std::string value) {
   evhtp_headers_add_header(ev_req->headers_out,
          evhtp_header_new(key.c_str(), value.c_str(), 1, 1));
 }
@@ -89,6 +89,21 @@ void S3RequestObject::send_response(int code, std::string body) {
     evbuffer_add_printf(ev_req->buffer_out, body.c_str());
   }
   evhtp_send_reply(ev_req, code);
+}
+
+void S3RequestObject::send_reply_start(int code) {
+  evhtp_send_reply_start(ev_req, code);
+  reply_buffer = evbuffer_new();
+}
+
+void S3RequestObject::send_reply_body(char *data, int length) {
+  evbuffer_add(reply_buffer, data, length);
+  evhtp_send_reply_body(ev_req, reply_buffer);
+}
+
+void S3RequestObject::send_reply_end() {
+  evhtp_send_reply_end(ev_req);
+  evbuffer_free(reply_buffer);
 }
 
 void S3RequestObject::respond_unsupported_api() {

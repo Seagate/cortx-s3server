@@ -13,7 +13,7 @@ EXTERN_C_BLOCK_END
 #include "s3_clovis_writer.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_post_to_main_loop.h"
-#include "s3_crypt.h"
+#include "s3_md5_hash.h"
 
 extern struct m0_clovis_scope     clovis_uber_scope;
 
@@ -47,14 +47,6 @@ extern "C" void s3_clovis_op_failed(struct m0_clovis_op *op) {
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisWriterOpState::start) {
 
-}
-
-void S3ClovisWriter::advance_state() {
-  // state++;
-}
-
-void S3ClovisWriter::mark_failed() {
-  state = S3ClovisWriterOpState::failed;
 }
 
 void S3ClovisWriter::create_object(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
@@ -159,6 +151,8 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
   int current_block_idx = 0;
   uint64_t last_index = 0;
   MD5hash  md5crypt;
+  char *destination = NULL;
+  char *source = NULL;
 
   size_t num_of_extents = evbuffer_peek(request->buffer_in(), request->get_content_length() /*-1*/, NULL, NULL, 0);
 
@@ -168,17 +162,6 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
 
   /* do the actual peek at data */
   evbuffer_peek(request->buffer_in(), request->get_content_length(), NULL/*start of buffer*/, vec_in, num_of_extents);
-
-
-  /* Compute MD5 of what we got */
-  for (int i = 0; i < num_of_extents; i++) {
-    md5crypt.Update((const char *)vec_in[i].iov_base, vec_in[i].iov_len);
-  }
-  char * md5etag = md5crypt.Final();
-  std::string etagstr(md5etag);
-  std::string key_etag("etag");
-  request->set_out_header_value(key_etag,etagstr);
-
 
   for (size_t i = 0; i < num_of_extents; i++) {
     // printf("processing extent = %d of total %d\n", i, data_extents);
@@ -191,7 +174,12 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
         /* consume all */
         // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
         // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
-        memcpy(rw_ctx->data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
+        source = (char*)vec_in[i].iov_base + idx_within_extent;
+        destination = (char*) rw_ctx->data->ov_buf[current_block_idx] + idx_within_block;
+
+        memcpy(destination, source, pending_from_current_extent);
+        md5crypt.Update((const char *)source, pending_from_current_extent);
+
         idx_within_block = idx_within_extent = 0;
         data_to_consume = clovis_block_size;
         current_block_idx++;
@@ -200,7 +188,12 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
       {
         // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
         // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
-        memcpy(rw_ctx->data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
+        source = (char*)vec_in[i].iov_base + idx_within_extent;
+        destination = (char*)rw_ctx->data->ov_buf[current_block_idx] + idx_within_block;
+
+        memcpy(destination, source, pending_from_current_extent);
+        md5crypt.Update((const char *)source, pending_from_current_extent);
+
         idx_within_block = idx_within_block + pending_from_current_extent;
         idx_within_extent = 0;
         data_to_consume = data_to_consume - pending_from_current_extent;
@@ -209,7 +202,12 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
       {
         // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", data_to_consume, i, current_block_idx, idx_within_block);
         // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, data_to_consume);
-        memcpy(rw_ctx->data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, data_to_consume);
+        source = (char*)vec_in[i].iov_base + idx_within_extent;
+        destination = (char*)rw_ctx->data->ov_buf[current_block_idx] + idx_within_block;
+
+        memcpy(destination, source, data_to_consume);
+        md5crypt.Update((const char *)source, data_to_consume);
+
         idx_within_block = 0;
         idx_within_extent = idx_within_extent + data_to_consume;
         pending_from_current_extent = pending_from_current_extent - data_to_consume;
@@ -218,6 +216,11 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
       }
     }
   }
+
+  // Complete MD5 computation and remember
+  md5crypt.Finalize();
+  this->content_md5 = md5crypt.get_md5_string();
+
   free(vec_in);
 
   // Init clovis buffer attrs.

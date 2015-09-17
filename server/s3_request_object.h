@@ -62,7 +62,7 @@ public:
     return ev_req->buffer_in;
   }
 
-  void set_out_header_value(std::string& key, std::string& value);
+  void set_out_header_value(std::string key, std::string value);
 
   // Operation params.
   void set_bucket_name(std::string& name);
@@ -79,8 +79,14 @@ public:
   std::string& get_account_id();
 
   // Response Helpers
+private:
+  struct evbuffer* reply_buffer;
 
+public:
   void send_response(int code, std::string body = "");
+  void send_reply_start(int code);
+  void send_reply_body(char *data, int length);
+  void send_reply_end();
   void respond_unsupported_api();
 };
 
