@@ -24,7 +24,7 @@ private:
   // Holds the member functions that will process the request.
   // member function signature should be void fn();
   std::vector<std::function<void()>> task_list;
-  int task_iteration_index;
+  size_t task_iteration_index;
 
   std::shared_ptr<S3Action> self_ref;
 

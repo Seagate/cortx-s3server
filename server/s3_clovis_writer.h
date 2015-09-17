@@ -13,16 +13,20 @@
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_op_context * clovis_op_context;
+  struct s3_clovis_op_context* clovis_op_context;
   bool has_clovis_op_context;
 
   // Read/Write Operation context.
-  struct s3_clovis_rw_op_context clovis_rw_op_context;
+  struct s3_clovis_rw_op_context* clovis_rw_op_context;
   bool has_clovis_rw_op_context;
 
 public:
   S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
-    has_clovis_op_context = false;
+    // Create or write, we need op context
+    clovis_op_context = create_basic_op_ctx(1);
+    has_clovis_op_context = true;
+
+    clovis_rw_op_context = NULL;
     has_clovis_rw_op_context = false;
   }
 
@@ -31,18 +35,22 @@ public:
       free_basic_op_ctx(clovis_op_context);
     }
     if (has_clovis_rw_op_context) {
-      free_basic_rw_op_ctx(&clovis_rw_op_context);
+      free_basic_rw_op_ctx(clovis_rw_op_context);
     }
   }
 
-  void set_clovis_op_ctx(struct s3_clovis_op_context *ctx) {
-    clovis_op_context = ctx;
-    has_clovis_op_context = true;
+  struct s3_clovis_op_context* get_clovis_op_ctx() {
+    return clovis_op_context;
   }
 
-  void set_clovis_rw_op_ctx(struct s3_clovis_rw_op_context ctx) {
-    clovis_rw_op_context = ctx;
+  // Call this when you want to do write op.
+  void init_write_op_ctx(size_t clovis_block_count, size_t clovis_block_size) {
+    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_block_count, clovis_block_size);
     has_clovis_rw_op_context = true;
+  }
+
+  struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
+    return clovis_rw_op_context;
   }
 
 };
@@ -87,7 +95,7 @@ public:
   void write_content_failed();
 
   // xxx remove this
-  void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &ctx);
+  void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx);
 };
 
 #endif

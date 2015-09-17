@@ -62,14 +62,9 @@ printf("S3ClovisWriter::create_object\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  int                  rc;
-  struct s3_clovis_op_context *ctx;
-  ctx = (s3_clovis_op_context *)calloc(1,sizeof(s3_clovis_op_context));
-
-  create_basic_op_ctx(ctx, 1);
   S3ClovisWriterContext *context = new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::create_object_successful, this), std::bind( &S3ClovisWriter::create_object_failed, this));
 
-  context->set_clovis_op_ctx(ctx);
+  struct s3_clovis_op_context *ctx = context->get_clovis_op_ctx();
 
   ctx->cbs->ocb_arg = (void *)context;
   ctx->cbs->ocb_executed = NULL;
@@ -103,25 +98,19 @@ void S3ClovisWriter::create_object_failed() {
 }
 
 void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
-
-  int                  rc = 0, i = 0;
-  struct s3_clovis_op_context *ctx;
-  ctx = (s3_clovis_op_context *)calloc(1,sizeof(s3_clovis_op_context));
-
-  create_basic_op_ctx(ctx, 1);
 
   size_t clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
   size_t clovis_block_count = (request->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
 
-  struct s3_clovis_rw_op_context rw_ctx;
-  create_basic_rw_op_ctx(&rw_ctx, clovis_block_count, clovis_block_size);
-
   S3ClovisWriterContext *context = new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::write_content_successful, this), std::bind( &S3ClovisWriter::write_content_failed, this));
 
-  context->set_clovis_op_ctx(ctx);
-  context->set_clovis_rw_op_ctx(rw_ctx);
+  context->init_write_op_ctx(clovis_block_count, clovis_block_size);
+
+  struct s3_clovis_op_context *ctx = context->get_clovis_op_ctx();
+  struct s3_clovis_rw_op_context *rw_ctx = context->get_clovis_rw_op_ctx();
 
   ctx->cbs->ocb_arg = (void *)context;
   ctx->cbs->ocb_executed = NULL;
@@ -141,7 +130,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
 
   /* Create the write request */
   m0_clovis_obj_op(ctx->obj, M0_CLOVIS_OC_WRITE,
-       rw_ctx.ext, rw_ctx.data, rw_ctx.attr, 0, &ctx->ops[0]);
+       rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
 
   m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
   m0_clovis_op_launch(ctx->ops, 1);
@@ -157,7 +146,7 @@ void S3ClovisWriter::write_content_failed() {
   this->handler_on_failed();
 }
 
-void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &ctx) {
+void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx) {
   // Copy the data to clovis buffers.
   // xxx - move to S3RequestObject::consume(char* ptr, 4k);
   size_t clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
@@ -188,10 +177,10 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &
   char * md5etag = md5crypt.Final();
   std::string etagstr(md5etag);
   std::string key_etag("etag");
-  request->set_out_header_value(key_etag,etagstr); 
-  
+  request->set_out_header_value(key_etag,etagstr);
 
-  for (int i = 0; i < num_of_extents; i++) {
+
+  for (size_t i = 0; i < num_of_extents; i++) {
     // printf("processing extent = %d of total %d\n", i, data_extents);
     pending_from_current_extent = vec_in[i].iov_len;
     /* KD xxx - we need to avoid this copy */
@@ -202,7 +191,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &
         /* consume all */
         // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
         // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
-        memcpy(ctx.data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
+        memcpy(rw_ctx->data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
         idx_within_block = idx_within_extent = 0;
         data_to_consume = clovis_block_size;
         current_block_idx++;
@@ -211,7 +200,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &
       {
         // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
         // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
-        memcpy(ctx.data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
+        memcpy(rw_ctx->data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, pending_from_current_extent);
         idx_within_block = idx_within_block + pending_from_current_extent;
         idx_within_extent = 0;
         data_to_consume = data_to_consume - pending_from_current_extent;
@@ -220,7 +209,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &
       {
         // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", data_to_consume, i, current_block_idx, idx_within_block);
         // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, data_to_consume);
-        memcpy(ctx.data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, data_to_consume);
+        memcpy(rw_ctx->data->ov_buf[current_block_idx] + idx_within_block, vec_in[i].iov_base + idx_within_extent, data_to_consume);
         idx_within_block = 0;
         idx_within_extent = idx_within_extent + data_to_consume;
         pending_from_current_extent = pending_from_current_extent - data_to_consume;
@@ -232,14 +221,14 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context &
   free(vec_in);
 
   // Init clovis buffer attrs.
-  for(int i = 0; i < clovis_block_count; i++)
+  for(size_t i = 0; i < clovis_block_count; i++)
   {
-    ctx.ext->iv_index[i] = last_index;
-    ctx.ext->iv_vec.v_count[i] = /*vec_in[i].iov_len*/clovis_block_size;
+    rw_ctx->ext->iv_index[i] = last_index;
+    rw_ctx->ext->iv_vec.v_count[i] = /*vec_in[i].iov_len*/clovis_block_size;
     last_index += /*vec_in[i].iov_len*/clovis_block_size;
 
     /* we don't want any attributes */
-    ctx.attr->ov_vec.v_count[i] = 0;
+    rw_ctx->attr->ov_vec.v_count[i] = 0;
   }
 
 }

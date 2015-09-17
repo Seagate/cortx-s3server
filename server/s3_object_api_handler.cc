@@ -30,7 +30,7 @@ void S3ObjectAPIHandler::dispatch() {
           action = std::make_shared<S3PutObjectAction>(request);
           break;
         case S3HttpVerb::GET:
-          action = std::make_shared<S3GetObjectAction>(request);
+          // action = std::make_shared<S3GetObjectAction>(request);
           break;
         case S3HttpVerb::DELETE:
           // action = std::make_shared<S3DeleteObjectAction>(request);
@@ -45,6 +45,11 @@ void S3ObjectAPIHandler::dispatch() {
           return;
       };
       break;
+    default:
+      // should never be here.
+      request->respond_unsupported_api();
+      i_am_done();
+      return;
   };  // switch operation_code
   action->manage_self(action);
   action->start();

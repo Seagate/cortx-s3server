@@ -27,10 +27,10 @@ struct s3_clovis_rw_op_context {
   struct m0_bufvec        *attr;
 };
 
-int create_basic_op_ctx(struct s3_clovis_op_context *ctx, size_t op_count);
+struct s3_clovis_op_context* create_basic_op_ctx(size_t op_count);
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx);
 
-int create_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx, size_t clovis_block_count, size_t clovis_block_size);
+struct s3_clovis_rw_op_context* create_basic_rw_op_ctx(size_t clovis_block_count, size_t clovis_block_size);
 int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx);
 
 EXTERN_C_BLOCK_END

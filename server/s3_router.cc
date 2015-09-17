@@ -35,8 +35,8 @@ void S3Router::dispatch(evhtp_request_t * req) {
   std::string bucket_name, object_name;
 
   std::string host_header = request->get_host_header();
-printf("host_header = %s\n", host_header.c_str());
-printf("uri = %s\n", request->c_get_full_path());
+  printf("host_header = %s\n", host_header.c_str());
+  printf("uri = %s\n", request->c_get_full_path());
   std::unique_ptr<S3URI> uri;
   if ( host_header.empty() || is_exact_valid_endpoint(host_header) || !is_subdomain_match(host_header)) {
     // Path style API
@@ -50,29 +50,24 @@ printf("uri = %s\n", request->c_get_full_path());
   }
   request->set_bucket_name(uri->get_bucket_name());
   request->set_object_name(uri->get_object_name());
-printf("bucket name = %s\n", uri->get_bucket_name().c_str());
-printf("object name = %s\n", uri->get_object_name().c_str());
+  printf("bucket name = %s\n", uri->get_bucket_name().c_str());
+  printf("object name = %s\n", uri->get_object_name().c_str());
   std::shared_ptr<S3APIHandler> handler;
   if (uri->is_service_api()) {
     // handler = std::make_shared<S3ServiceAPIHandler> (request, uri->get_operation_code());
-printf("is_service_api\n");
+    printf("is_service_api\n");
   } else if (uri->is_bucket_api()) {
-printf("is_bucket_api\n");
-    if(uri->get_operation_code() == S3OperationCode::location)
-    {
-      request->respond_location_api();
-      return;
-    }
-    //handler = std::make_shared<S3BucketAPIHandler> (request, uri->get_operation_code());
+    printf("is_bucket_api\n");
+    handler = std::make_shared<S3BucketAPIHandler> (request, uri->get_operation_code());
   } else if (uri->is_object_api()) {
+    printf("is_object_api\n");
     handler = std::make_shared<S3ObjectAPIHandler>(request, uri->get_operation_code());
-printf("is_object_api\n");
   } else {
     // Unsupported
     request->respond_unsupported_api();
     return;
   }
- 
+
   handler->manage_self(handler);
   handler->dispatch();  // Start processing the request
   return;

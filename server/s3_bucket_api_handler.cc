@@ -1,49 +1,73 @@
 
 #include "s3_api_handler.h"
+#include "s3_get_bucket_location_action.h"
 
 void S3BucketAPIHandler::dispatch() {
-  S3Action* action = NULL;
+  std::shared_ptr<S3Action> action;
   switch(operation_code) {
-    printf("Action operation code = %d\n",operation_code);
+    printf("Action operation code = %d\n", operation_code);
+    case S3OperationCode::location:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          action = std::make_shared<S3GetBucketlocationAction>(request);
+          break;
+        case S3HttpVerb::PUT:
+          // action = std::make_shared<S3PutBucketlocationAction>(request);
+          break;
+        default:
+          // should never be here.
+          request->respond_unsupported_api();
+          i_am_done();
+          return;
+      };
+      break;
     case S3OperationCode::list:
-      action = new S3BucketListingAction(request);
+      // action = std::make_shared<S3BucketListingAction>(request);
       break;
     case S3OperationCode::acl:
       // ACL operations.
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
-          action = new S3GetBucketACLAction(request);
+          // action = std::make_shared<S3GetBucketACLAction>(request);
           break;
         case S3HttpVerb::PUT:
-          action = new S3PutBucketACLAction(request);
+          // action = std::make_shared<S3PutBucketACLAction>(request);
           break;
         default:
           // should never be here.
-          action = new S3UnknowAPIAction(request);
-          action.error_message("Unsupported HTTP operation on Bucket ACL.")
+          request->respond_unsupported_api();
+          i_am_done();
+          return;
       };
       break;
     case S3OperationCode::none:
       // Perform operation on Bucket.
       switch (request->http_verb()) {
         case S3HttpVerb::HEAD:
-          action = new S3HeadBucketAction(request);
+          // action = std::make_shared<S3HeadBucketAction>(request);
           break;
         case S3HttpVerb::PUT:
-          action = new S3PutBucketAction(request);
+          // action = std::make_shared<S3PutBucketAction>(request);
           break;
         case S3HttpVerb::DELETE:
-          action = new S3DeleteBucketAction(request);
+          // action = std::make_shared<S3DeleteBucketAction>(request);
           break;
         case S3HttpVerb::POST:
-          action = new S3PostBucketAction(request);
+          // action = std::make_shared<S3PostBucketAction>(request);
           break;
         default:
           // should never be here.
-          action = S3UnknowAPIAction(request);
-          action.error_message("Unsupported HTTP operation on Bucket.")
+          request->respond_unsupported_api();
+          i_am_done();
+          return;
       };
+    default:
+      // should never be here.
+      request->respond_unsupported_api();
+      i_am_done();
+      return;
   };  // switch operation_code
-  action.start()
+  action->manage_self(action);
+  action->start();
   i_am_done();
 }
