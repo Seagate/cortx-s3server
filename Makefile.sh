@@ -11,21 +11,21 @@ S3_SERVER_LDFLAGS="-rdynamic $LIBEVHTP_BUILD/libevhtp/libevhtp.a $LIBEVENT_DIST/
 
 S3SERVER_C_SRCS=' server/clovis_common.c '
 
-S3SERVER_CPP_SRCS='  server/s3_clovis_context.c server/murmur3_hash.cc  server/s3_router.cc server/s3server.cc server/s3_uri.cc server/s3_uri_to_mero_oid.cc server/s3_server_config.cc  server/s3_request_object.cc server/s3_put_object_action.cc server/s3_post_to_main_loop.cc server/s3_object_api_handler.cc server/s3_clovis_writer.cc  server/s3_clovis_config.cc server/s3_asyncop_context_base.cc server/s3_action_base.cc'
+S3SERVER_CPP_SRCS='  server/s3_clovis_context.c server/murmur3_hash.cc  server/s3_router.cc server/s3server.cc server/s3_uri.cc server/s3_uri_to_mero_oid.cc server/s3_server_config.cc  server/s3_request_object.cc server/s3_put_object_action.cc server/s3_post_to_main_loop.cc server/s3_object_api_handler.cc server/s3_clovis_writer.cc  server/s3_clovis_config.cc server/s3_asyncop_context_base.cc server/s3_action_base.cc server/s3_crypt.cc'
 
 rm -rf *.o
 
 # Before we build s3, get all dependencies built.
 S3_SRC_FOLDER=`pwd`
-cd gprotobuf/ && ./setup.sh && cd $S3_SRC_FOLDER
-cd libevent/ && ./setup.sh && cd $S3_SRC_FOLDER
-cd libevhtp/ && ./setup.sh && cd $S3_SRC_FOLDER
+#cd gprotobuf/ && ./setup.sh && cd $S3_SRC_FOLDER
+#cd libevent/ && ./setup.sh && cd $S3_SRC_FOLDER
+#cd libevhtp/ && ./setup.sh && cd $S3_SRC_FOLDER
 
-g++ $S3_SERVER_CFLAGS -c $S3SERVER_C_SRCS
+g++  $S3_SERVER_CFLAGS -c $S3SERVER_C_SRCS
 
-g++ -std=c++11 $S3_SERVER_CFLAGS -c $S3SERVER_CPP_SRCS
+g++  -std=c++11 $S3_SERVER_CFLAGS -c $S3SERVER_CPP_SRCS
 
-g++ -std=c++11 $S3_SERVER_CFLAGS  *.o -o s3server $S3_SERVER_LDFLAGS
+g++  -std=c++11 $S3_SERVER_CFLAGS  *.o -o s3server $S3_SERVER_LDFLAGS
 
 
 #make install things for testing
