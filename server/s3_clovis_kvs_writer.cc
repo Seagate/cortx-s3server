@@ -12,7 +12,11 @@ extern struct m0_clovis_scope     clovis_uber_scope;
 extern struct m0_clovis_container clovis_container;
 
 S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req) : request(req),state(S3ClovisKVSWriterOpState::start) {
+  printf("S3ClovisKVSWriter created\n");
+}
 
+S3ClovisKVSWriter::~S3ClovisKVSWriter() {
+  printf("S3ClovisKVSWriter deleted.\n");
 }
 
 void S3ClovisKVSWriter::create_index(std::string index_name, std::function<void(void)> on_success, std::function<void(void)> on_failed) {

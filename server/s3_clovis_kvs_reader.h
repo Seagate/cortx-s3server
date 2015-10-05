@@ -51,7 +51,7 @@ public:
     return clovis_op_context;
   }
 
-  void init_idx_create_op_ctx(int idx_count) {
+  void init_idx_read_op_ctx(int idx_count) {
     clovis_idx_op_context = create_basic_idx_op_ctx(idx_count);
     has_clovis_idx_op_context = true;
   }
@@ -83,18 +83,17 @@ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
-  /*
-  std::string keys;
-  std::string value;
-  std::string index_name;
-  */
-
 
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
   S3ClovisKVSReaderOpState state;
+
+  // Holds references to keys and values after the read so it can be consumed.
+  struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
+  std::string last_value;
+  size_t iteration_index;
 
 public:
   //struct m0_uint128 id;
@@ -111,7 +110,7 @@ public:
 
   // TODO
   std::string get_value() {
-    return "";
+    return last_value;
   }
 };
 

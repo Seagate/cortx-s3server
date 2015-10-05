@@ -51,7 +51,7 @@ void S3BucketMetadata::load_account_bucket() {
   state = S3BucketMetadataState::absent;
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->get_keyval(account_name, bucket_name, std::bind( &S3BucketMetadata::load_account_bucket_successful, this), std::bind( &S3BucketMetadata::load_account_bucket_failed, this));
+  clovis_kv_reader->get_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_account_bucket_successful, this), std::bind( &S3BucketMetadata::load_account_bucket_failed, this));
 }
 
 void S3BucketMetadata::load_account_bucket_successful() {
@@ -75,7 +75,7 @@ void S3BucketMetadata::load_user_bucket() {
   state = S3BucketMetadataState::absent;
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->get_keyval(account_name, bucket_name, std::bind( &S3BucketMetadata::load_user_bucket_successful, this), std::bind( &S3BucketMetadata::load_user_bucket_failed, this));
+  clovis_kv_reader->get_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_user_bucket_successful, this), std::bind( &S3BucketMetadata::load_user_bucket_failed, this));
 }
 
 void S3BucketMetadata::load_user_bucket_successful() {
@@ -98,7 +98,8 @@ void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<
   this->handler_on_failed  = on_failed;
 
   // TODO create only if it does not exists.
-  create_account_bucket_index();
+  // create_account_bucket_index();
+  create_account_user_bucket_index();
 }
 
 void S3BucketMetadata::create_account_bucket_index() {
@@ -107,7 +108,7 @@ void S3BucketMetadata::create_account_bucket_index() {
   state = S3BucketMetadataState::absent;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
-  clovis_kv_writer->create_index(account_name, std::bind( &S3BucketMetadata::create_account_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_bucket_index_failed, this));
+  clovis_kv_writer->create_index(get_account_index_name(), std::bind( &S3BucketMetadata::create_account_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_bucket_index_failed, this));
 }
 
 void S3BucketMetadata::create_account_bucket_index_successful() {
@@ -128,7 +129,7 @@ void S3BucketMetadata::create_account_user_bucket_index() {
   state = S3BucketMetadataState::absent;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
-  clovis_kv_writer->create_index(account_name + "\\" + user_name, std::bind( &S3BucketMetadata::create_account_user_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_user_bucket_index_failed, this));
+  clovis_kv_writer->create_index(get_account_user_index_name(), std::bind( &S3BucketMetadata::create_account_user_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_user_bucket_index_failed, this));
 }
 
 void S3BucketMetadata::create_account_user_bucket_index_successful() {
@@ -155,7 +156,7 @@ void S3BucketMetadata::save_account_bucket() {
   system_defined_attribute["Owner-Account-id"] = request->get_account_id();
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
-  clovis_kv_writer->put_keyval(account_name, bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_account_bucket_successful, this), std::bind( &S3BucketMetadata::save_account_bucket_failed, this));
+  clovis_kv_writer->put_keyval(get_account_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_account_bucket_successful, this), std::bind( &S3BucketMetadata::save_account_bucket_failed, this));
 }
 
 void S3BucketMetadata::save_account_bucket_successful() {
@@ -176,12 +177,11 @@ void S3BucketMetadata::save_user_bucket() {
   state = S3BucketMetadataState::absent;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
-  clovis_kv_writer->put_keyval(account_name + "\\" + user_name, bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_user_bucket_successful, this), std::bind( &S3BucketMetadata::save_user_bucket_failed, this));
+  clovis_kv_writer->put_keyval(get_account_user_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_user_bucket_successful, this), std::bind( &S3BucketMetadata::save_user_bucket_failed, this));
 }
 
 void S3BucketMetadata::save_user_bucket_successful() {
   printf("Called S3BucketMetadata::save_user_bucket_successful\n");
-  this->from_json(clovis_kv_reader->get_value());
   state = S3BucketMetadataState::saved;
   this->handler_on_success();
 }

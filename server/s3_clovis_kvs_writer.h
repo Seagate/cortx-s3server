@@ -84,12 +84,6 @@ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
-  /*
-  std::string keys;
-  std::string value;
-  std::string index_name;
-  */
-
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -100,6 +94,7 @@ private:
 public:
   //struct m0_uint128 id;
   S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req);
+  ~S3ClovisKVSWriter();
 
   S3ClovisKVSWriterOpState get_state() {
     return state;
