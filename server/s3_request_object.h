@@ -6,6 +6,7 @@
 
 #include <string>
 #include <memory>
+#include <map>
 #include <set>
 
 /* libevhtp */
@@ -19,6 +20,8 @@ enum class S3HttpVerb {
   POST = htp_method_POST
 };
 
+extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg);
+
 class S3RequestObject {
   evhtp_request_t *ev_req;
   std::string bucket_name;
@@ -29,20 +32,9 @@ class S3RequestObject {
   std::string account_name;
   std::string account_id;  // Unique
 
-  std::shared_ptr<S3RequestObject> self_ref;
-
 public:
   S3RequestObject(evhtp_request_t *req);
   ~S3RequestObject();
-
-  // Self destructing object.
-  void manage_self(std::shared_ptr<S3RequestObject> ref) {
-      self_ref = ref;
-  }
-  // This *MUST* be the last thing on object. Called @ end of dispatch.
-  void i_am_done() {
-    self_ref.reset();
-  }
 
   struct event_base* get_evbase() {
     return this->ev_req->htp->evbase;
@@ -51,9 +43,18 @@ public:
 
   const char* c_get_full_path();
 
-  std::string get_header_value(std::string& key);
+private:
+  std::map<std::string, std::string> in_headers_copy;
+  bool in_headers_copied;
+  std::string full_request_body;
+public:
+  std::map<std::string, std::string> get_in_headers_copy();
+  friend int consume_header(evhtp_kv_t * kvobj, void * arg);
+
+  std::string get_header_value(std::string key);
   std::string get_host_header();
   size_t get_content_length();
+  std::string& get_full_body_content_as_string();
 
   bool has_query_param_key(std::string key);
 
@@ -75,6 +76,8 @@ public:
   void set_user_id(std::string& id);
   std::string& get_user_id();
 
+  void set_account_name(std::string& name);
+  std::string& get_account_name();
   void set_account_id(std::string& id);
   std::string& get_account_id();
 

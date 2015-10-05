@@ -19,6 +19,7 @@
 class S3Action {
 protected:
   std::shared_ptr<S3RequestObject> request;
+  bool invalid_request;
   // Any action specific state should be managed by derived classes.
 private:
   // Holds the member functions that will process the request.
@@ -55,7 +56,7 @@ public:
   // This can register the function as
   // task_list.push_back(std::bind( &S3SomeDerivedAction::step1, this ));
   // Ensure you call this in Derived class constructor.
-  virtual void setup_steps() = 0;
+  virtual void setup_steps();
 
   // Common Actions.
   void start();

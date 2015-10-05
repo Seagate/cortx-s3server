@@ -1,11 +1,12 @@
 
 #include "s3_api_handler.h"
 #include "s3_get_bucket_location_action.h"
+#include "s3_put_bucket_action.h"
 
 void S3BucketAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
+  printf("Action operation code = %d\n", operation_code);
   switch(operation_code) {
-    printf("Action operation code = %d\n", operation_code);
     case S3OperationCode::location:
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
@@ -47,7 +48,7 @@ void S3BucketAPIHandler::dispatch() {
           // action = std::make_shared<S3HeadBucketAction>(request);
           break;
         case S3HttpVerb::PUT:
-          // action = std::make_shared<S3PutBucketAction>(request);
+          action = std::make_shared<S3PutBucketAction>(request);
           break;
         case S3HttpVerb::DELETE:
           // action = std::make_shared<S3DeleteBucketAction>(request);
@@ -61,6 +62,7 @@ void S3BucketAPIHandler::dispatch() {
           i_am_done();
           return;
       };
+      break;
     default:
       // should never be here.
       request->respond_unsupported_api();

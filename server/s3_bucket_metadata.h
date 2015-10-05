@@ -3,53 +3,47 @@
 #ifndef __MERO_FE_S3_SERVER_S3_BUCKET_METADATA_H__
 #define __MERO_FE_S3_SERVER_S3_BUCKET_METADATA_H__
 
-#include <functional>
 #include <string>
 #include <map>
+#include <memory>
+#include <functional>
 
+#include "s3_request_object.h"
 #include "s3_bucket_acl.h"
-#include "s3_asyncop_context_base.h"
-
-class S3BucketMetadata;
-
-enum class S3BucketMetadataOpType {
-  r,
-  w
-}
-
-class S3BucketMetadataRWContext : public S3AsyncOpContextBase {
-  S3BucketMetadata* metadata;
-  S3BucketMetadataOpType operation_type;
-public:
-  S3BucketMetadataRWContext(S3RequestObject *req, std::function<void(void)> handler, S3BucketMetadata *metadata, S3BucketMetadataOpType type) : S3AsyncOpContextBase(req, handler), metadata(metadata), operation_type(type) {}
-
-  S3BucketMetadata* get_metadata() {
-    return metadata;
-  }
-
-  S3BucketMetadataOpType operation_type() {
-    return operation_type;
-  }
-};
+#include "s3_clovis_kvs_reader.h"
+#include "s3_clovis_kvs_writer.h"
 
 enum class S3BucketMetadataState {
   empty,    // Initial state, no lookup done
   present,  // Metadata exists and was read successfully
   absent,   // Metadata not present in store.
-  saved     // Metadata saved to store.
-}
+  saved,    // Metadata saved to store.
+  failed
+};
 
 class S3BucketMetadata {
   // Holds mainly system-defined metadata (creation date etc)
   // Partially supported on need bases, some of these are placeholders
 private:
+  std::string account_name;
+  std::string user_name;
+
   // The name for a Bucket
   // http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
   std::string bucket_name;
 
-  std::map<std::string, std::string> system_defined;
+  std::map<std::string, std::string> system_defined_attribute;
+  std::map<std::string, std::string> user_defined_attribute;
 
   S3BucketACL bucket_ACL;
+
+  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+
+  // Used to report to caller
+  std::function<void()> handler_on_success;
+  std::function<void()> handler_on_failed;
 
   S3BucketMetadataState state;
 
@@ -61,11 +55,39 @@ private:
   // Any other validations we want to do on metadata
   void validate();
 public:
-  S3BucketMetadata(S3RequestObject *req);
+  S3BucketMetadata(std::shared_ptr<S3RequestObject> req);
 
-  void async_load(std::function<void(void)> handler);
+  // Load attributes
+  void add_system_attribute(std::string key, std::string val);
+  void add_user_defined_attribute(std::string key, std::string val);
 
-  S3BucketMetadataState state() {
+  void load(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void load_account_bucket();
+  void load_account_bucket_successful();
+  void load_account_bucket_failed();
+  // load_user_bucket is going to be efficient in terms of cassandra
+  // as there will be less data in user row
+  void load_user_bucket();
+  void load_user_bucket_successful();
+  void load_user_bucket_failed();
+
+  void save(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+
+  void create_account_bucket_index();
+  void create_account_bucket_index_successful();
+  void create_account_bucket_index_failed();
+  void create_account_user_bucket_index();
+  void create_account_user_bucket_index_successful();
+  void create_account_user_bucket_index_failed();
+
+  void save_account_bucket();
+  void save_account_bucket_successful();
+  void save_account_bucket_failed();
+  void save_user_bucket();
+  void save_user_bucket_successful();
+  void save_user_bucket_failed();
+
+  S3BucketMetadataState get_state() {
     return state;
   }
 

@@ -33,6 +33,7 @@ EXTERN_C_BLOCK_BEGIN
 #include "mero/init.h"
 
 #include "clovis/clovis.h"
+#include "clovis/clovis_idx.h"
 
 /* For htonl */
 #include <arpa/inet.h>

@@ -50,6 +50,13 @@ void S3Router::dispatch(evhtp_request_t * req) {
   }
   request->set_bucket_name(uri->get_bucket_name());
   request->set_object_name(uri->get_object_name());
+  // TODO remove - testing only - we will get this from auth
+  std::string account_name = "seagate";
+  std::string user_name = "kaustubh";
+  request->set_account_name(account_name);
+  request->set_account_id(account_name);
+  request->set_user_name(user_name);
+  request->set_user_id(user_name);
   printf("bucket name = %s\n", uri->get_bucket_name().c_str());
   printf("object name = %s\n", uri->get_object_name().c_str());
   std::shared_ptr<S3APIHandler> handler;

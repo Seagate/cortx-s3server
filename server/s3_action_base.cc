@@ -2,9 +2,10 @@
 
 #include "s3_action_base.h"
 
-S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req) {
+S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req), invalid_request(false) {
   task_iteration_index = 0;
   error_message = "";
+  setup_steps();
 }
 
 S3Action::~S3Action() {}

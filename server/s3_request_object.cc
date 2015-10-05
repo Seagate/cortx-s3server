@@ -2,8 +2,17 @@
 #include <string>
 #include "s3_request_object.h"
 
-S3RequestObject::S3RequestObject(evhtp_request_t *req) : ev_req(req) {
+// evhttp Helpers
+/* evhtp_kvs_iterator */
+extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg) {
+    S3RequestObject* request = (S3RequestObject*)arg;
+    request->in_headers_copy[kvobj->key] = kvobj->val ? kvobj->val : "";
+    return 0;
+}
+
+S3RequestObject::S3RequestObject(evhtp_request_t *req) : ev_req(req), in_headers_copied(false) {
   printf("S3RequestObject created.\n");
+  bucket_name = object_name = user_name = user_id = account_name = account_id = "";
 }
 
 S3RequestObject::~S3RequestObject(){
@@ -19,7 +28,15 @@ const char* S3RequestObject::c_get_full_path() {
   return ev_req->uri->path->full;
 }
 
-std::string S3RequestObject::get_header_value(std::string& key) {
+std::map<std::string, std::string> S3RequestObject::get_in_headers_copy(){
+  if(!in_headers_copied) {
+    evhtp_kvs_for_each(ev_req->uri->query, consume_header, this);
+    in_headers_copied = true;
+  }
+  return in_headers_copy;
+}
+
+std::string S3RequestObject::get_header_value(std::string key) {
   return evhtp_header_find(ev_req->headers_in, key.c_str());
 }
 
@@ -36,6 +53,27 @@ void S3RequestObject::set_out_header_value(std::string key, std::string value) {
 size_t S3RequestObject::get_content_length() {
   std::string content_length = "Content-Length";
   return std::stoi(get_header_value(content_length));
+}
+
+std::string& S3RequestObject::get_full_body_content_as_string() {
+
+  full_request_body = "";
+
+  size_t num_of_extents = evbuffer_peek(buffer_in(), get_content_length() /*-1*/, NULL, NULL, 0);
+
+  /* do the actual peek */
+  struct evbuffer_iovec *vec_in = NULL;
+  vec_in = (struct evbuffer_iovec *)malloc(num_of_extents * sizeof(struct evbuffer_iovec));
+
+  /* do the actual peek at data */
+  evbuffer_peek(buffer_in(), get_content_length(), NULL/*start of buffer*/, vec_in, num_of_extents);
+
+  for (size_t i = 0; i < num_of_extents; i++) {
+    full_request_body.append((char*)vec_in[i].iov_base, vec_in[i].iov_len);
+  }
+
+  free(vec_in);
+  return full_request_body;
 }
 
 bool S3RequestObject::has_query_param_key(std::string key) {
@@ -60,7 +98,7 @@ std::string& S3RequestObject::get_object_name() {
 }
 
 void S3RequestObject::set_user_name(std::string& name) {
-  object_name = name;
+  user_name = name;
 }
 
 std::string& S3RequestObject::get_user_name() {
@@ -81,6 +119,14 @@ void S3RequestObject::set_account_id(std::string& id) {
 
 std::string& S3RequestObject::get_account_id() {
   return account_id;
+}
+
+void S3RequestObject::set_account_name(std::string& name) {
+  account_name = name;
+}
+
+std::string& S3RequestObject::get_account_name() {
+  return account_name;
 }
 
 void S3RequestObject::send_response(int code, std::string body) {
