@@ -27,17 +27,17 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
   clovis_conf.cc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
   clovis_conf.cc_max_rpc_msg_size      = M0_RPC_DEF_MAX_RPC_MSG_SIZE;
 
+#if 0
   /* To be replaced in case of cassandra */
   clovis_conf.cc_idx_service_id        = M0_CLOVIS_IDX_MOCK;
   clovis_conf.cc_idx_service_conf      = (void *)clovis_indices;
+#endif
 
-#if 0
   cass_conf.cc_cluster_ep              = "127.0.0.1";
   cass_conf.cc_keyspace                = "clovis_index_keyspace";
   cass_conf.cc_max_column_family_num   = 1;
   clovis_conf.cc_idx_service_id        = M0_CLOVIS_IDX_CASS;
   clovis_conf.cc_idx_service_conf      = &cass_conf;
-#endif
 
   /* mero initilisation */
   m0_init(&mero);

@@ -119,15 +119,15 @@ void S3ClovisKVSWriter::set_up_key_value_store(struct s3_clovis_kvs_op_context *
 
   // TODO - clean up these buffers
 
-  kvs_ctx->keys->ov_vec.v_count[0] = key.length() + 1;
-  kvs_ctx->keys->ov_buf[0] = (char *)malloc(key.length() + 1);
-  memcpy(kvs_ctx->keys->ov_buf[0], (void *)key.c_str(), key.length() + 1);
+  kvs_ctx->keys->ov_vec.v_count[0] = key.length();
+  kvs_ctx->keys->ov_buf[0] = (char *)malloc(key.length());
+  memcpy(kvs_ctx->keys->ov_buf[0], (void *)key.c_str(), key.length());
 
-  kvs_ctx->values->ov_vec.v_count[0] = val.length() + 1;
-  kvs_ctx->values->ov_buf[0] = (char *)malloc(val.length() + 1);
-  memcpy(kvs_ctx->values->ov_buf[0], (void *)val.c_str(), val.length() + 1);
+  kvs_ctx->values->ov_vec.v_count[0] = val.length();
+  kvs_ctx->values->ov_buf[0] = (char *)malloc(val.length());
+  memcpy(kvs_ctx->values->ov_buf[0], (void *)val.c_str(), val.length());
 
   printf("Keys and value in clovis buffer\n");
-  printf("kvs_ctx->keys->ov_buf[0] = %s\n",kvs_ctx->keys->ov_buf[0]);
-  printf("kvs_ctx->vals->ov_buf[0] = %s\n",kvs_ctx->values->ov_buf[0]);
+  printf("kvs_ctx->keys->ov_buf[0] = %s\n", std::string((char*)kvs_ctx->keys->ov_buf[0], kvs_ctx->keys->ov_vec.v_count[0]).c_str());
+  printf("kvs_ctx->vals->ov_buf[0] = %s\n",std::string((char*)kvs_ctx->values->ov_buf[0], kvs_ctx->values->ov_vec.v_count[0]).c_str());
 }

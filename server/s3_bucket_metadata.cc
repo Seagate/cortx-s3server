@@ -99,7 +99,8 @@ void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<
 
   // TODO create only if it does not exists.
   // create_account_bucket_index();
-  create_account_user_bucket_index();
+  // create_account_user_bucket_index();
+  save_account_bucket();
 }
 
 void S3BucketMetadata::create_account_bucket_index() {

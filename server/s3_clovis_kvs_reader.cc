@@ -42,8 +42,8 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std:
 
   S3UriToMeroOID(index_name.c_str(), &id);
 
-  kvs_ctx->keys->ov_vec.v_count[0] = key.length() + 1;
-  kvs_ctx->keys->ov_buf[0] = calloc(1, key.length() + 1);
+  kvs_ctx->keys->ov_vec.v_count[0] = key.length();
+  kvs_ctx->keys->ov_buf[0] = calloc(1, key.length());
   memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
   // TODO - ?? for the sake of it allocate space for value we read.
   // kvs_ctx->values->ov_vec.v_count[0] = 4096;
