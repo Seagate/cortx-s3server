@@ -1,6 +1,7 @@
 
 #include "s3_api_handler.h"
 #include "s3_get_bucket_location_action.h"
+#include "s3_head_bucket_action.h"
 #include "s3_put_bucket_action.h"
 
 void S3BucketAPIHandler::dispatch() {
@@ -45,7 +46,7 @@ void S3BucketAPIHandler::dispatch() {
       // Perform operation on Bucket.
       switch (request->http_verb()) {
         case S3HttpVerb::HEAD:
-          // action = std::make_shared<S3HeadBucketAction>(request);
+          action = std::make_shared<S3HeadBucketAction>(request);
           break;
         case S3HttpVerb::PUT:
           action = std::make_shared<S3PutBucketAction>(request);
