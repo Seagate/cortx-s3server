@@ -91,9 +91,10 @@ private:
   // Holds references to buffers after the read so it can be consumed.
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   size_t iteration_index;
-
-  std::string content_md5;
-  size_t content_length;
+  // to Help iteration.
+  size_t object_size;
+  size_t clovis_block_size;
+  size_t clovis_block_count;
 
 public:
   //struct m0_uint128 id;
@@ -103,22 +104,8 @@ public:
     return state;
   }
 
-  std::string get_content_md5() {
-    return content_md5;
-  }
-
-  int get_content_length() {
-    return content_length;
-  }
-
-  std::string get_content_length_str() {
-    char c_content_size[1024];
-    sprintf(c_content_size, "%ld", content_length);
-    return std::string(c_content_size);
-  }
-
   // async read
-  void read_object(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void read_object(size_t obj_size, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void read_object_successful();
   void read_object_failed();
 

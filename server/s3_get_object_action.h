@@ -6,11 +6,11 @@
 #include <memory>
 
 #include "s3_action_base.h"
-// #include "s3_object_metadata.h"
+#include "s3_object_metadata.h"
 #include "s3_clovis_reader.h"
 
 class S3GetObjectAction : public S3Action {
-  // std::shared_ptr<S3ObjectMetadata> metadata;
+  std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisReader> clovis_reader;
 
 public:

@@ -98,9 +98,7 @@ int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
 
 struct s3_clovis_kvs_op_context*
 create_basic_kvs_op_ctx(int no_of_keys) {
-
-  int rc = 0;
-  printf("Called create_basic_kvs_op_ctx with no of keys = %zu\n", no_of_keys);
+  printf("Called create_basic_kvs_op_ctx with no of keys = %d\n", no_of_keys);
 
   struct s3_clovis_kvs_op_context* ctx = (struct s3_clovis_kvs_op_context*)calloc(1, sizeof(struct s3_clovis_kvs_op_context));
 

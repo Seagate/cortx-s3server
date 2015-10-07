@@ -11,7 +11,7 @@
 extern struct m0_clovis_scope     clovis_uber_scope;
 extern struct m0_clovis_container clovis_container;
 
-S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisKVSReaderOpState::start), iteration_index(0), last_value("") {
+S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisKVSReaderOpState::start), last_value(""), iteration_index(0) {
   printf("S3ClovisKVSReader created\n");
 }
 

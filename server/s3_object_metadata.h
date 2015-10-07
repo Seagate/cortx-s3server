@@ -58,8 +58,21 @@ private:
 public:
   S3ObjectMetadata(std::shared_ptr<S3RequestObject> req);
 
+  std::string get_bucket_index_name() {
+    return "BUCKET/" + bucket_name;
+  }
+
+  void set_content_length(std::string length);
+  size_t get_content_length();
+  std::string get_content_length_str();
+
+  void set_md5(std::string md5);
+  std::string get_md5();
+
   // Load attributes
+  std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);
+  std::string get_user_defined_attribute(std::string key);
   void add_user_defined_attribute(std::string key, std::string val);
 
   void load(std::function<void(void)> on_success, std::function<void(void)> on_failed);
@@ -67,8 +80,12 @@ public:
   void load_failed();
 
   void save(std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void save_successful();
-  void save_failed();
+  void create_bucket_index();
+  void create_bucket_index_successful();
+  void create_bucket_index_failed();
+  void save_metadata();
+  void save_metadata_successful();
+  void save_metadata_failed();
 
   S3ObjectMetadataState get_state() {
     return state;

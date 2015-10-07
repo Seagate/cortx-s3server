@@ -13,9 +13,8 @@ int MD5hash::Update(const char *input, size_t length) {
     if (status == 0) {
       return -1;  // failure
     }
-  } else {
-    return 0;  // success
   }
+  return 0;  // success
 }
 
 int MD5hash::Finalize() {

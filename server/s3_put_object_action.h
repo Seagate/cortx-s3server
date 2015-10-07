@@ -18,8 +18,6 @@ public:
 
   void setup_steps();
 
-  void fetch_metadata();
-  void fetch_metadata_done();
   void create_object();
   void create_object_failed();
   void write_object();

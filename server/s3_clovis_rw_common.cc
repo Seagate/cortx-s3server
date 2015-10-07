@@ -17,7 +17,7 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_dat
 
 // Clovis callbacks, run in clovis thread
 void s3_clovis_op_stable(struct m0_clovis_op *op) {
-  printf("s3_clovis_op_stable\n");
+  printf("s3_clovis_op_stable with return code = %d\n", op->op_sm.sm_rc);
 
   S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op->op_cbs->ocb_arg;
   ctx->set_op_status(S3AsyncOpStatus::success, "Success.");
@@ -25,7 +25,7 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
 }
 
 void s3_clovis_op_failed(struct m0_clovis_op *op) {
-  printf("s3_clovis_op_failed\n");
+  printf("s3_clovis_op_failed with error code = %d\n", op->op_sm.sm_rc);
   S3AsyncOpContextBase *ctx = (struct S3AsyncOpContextBase*)op->op_cbs->ocb_arg;
   ctx->set_op_status(S3AsyncOpStatus::failed, "Operation Failed.");
   S3PostToMainLoop(ctx->get_request(), ctx)(clovis_op_done_on_main_thread);

@@ -6,21 +6,22 @@
 #include "s3_clovis_config.h"
 #include "s3_clovis_reader.h"
 #include "s3_uri_to_mero_oid.h"
-#include "s3_md5_hash.h"
 
 extern struct m0_clovis_scope     clovis_uber_scope;
 
-S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisReaderOpState::start) {
+S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisReaderOpState::start), object_size(0), clovis_block_size(0), clovis_block_count(0) {
   clovis_rw_op_context = NULL;
 }
 
-void S3ClovisReader::read_object(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+void S3ClovisReader::read_object(size_t obj_size, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
 
+  object_size = obj_size;
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  size_t clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
-  size_t clovis_block_count = 2;  // TODO get from metadata
+  clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
+  /* Count Data blocks from data size */
+  clovis_block_count = (obj_size + (clovis_block_size - 1)) / clovis_block_size;
 
   S3ClovisReaderContext *context = new S3ClovisReaderContext(request, std::bind( &S3ClovisReader::read_object_successful, this), std::bind( &S3ClovisReader::read_object_failed, this));
 
@@ -54,18 +55,6 @@ void S3ClovisReader::read_object(std::function<void(void)> on_success, std::func
 
 void S3ClovisReader::read_object_successful() {
   state = S3ClovisReaderOpState::complete;
-
-  // Compute md5 - todo - we can read this from metadata (last saved state)
-  size_t clovis_block_count = 2;  // TODO get from metadata
-  MD5hash  md5crypt;
-  content_length = 0;
-  for (size_t i = 0; i < clovis_block_count; i++) {
-    md5crypt.Update((const char *)clovis_rw_op_context->data->ov_buf[i], clovis_rw_op_context->data->ov_vec.v_count[i]);
-    content_length += clovis_rw_op_context->data->ov_vec.v_count[i];  // todo - read from metadata.
-  }
-  md5crypt.Finalize();
-  content_md5 = md5crypt.get_md5_string();
-
   this->handler_on_success();
 }
 
@@ -83,7 +72,6 @@ size_t S3ClovisReader::get_first_block(char** data) {
 
 // Returns size of data in next block and -1 if there is no content or done
 size_t S3ClovisReader::get_next_block(char** data) {
-  size_t clovis_block_count = 2;  // TODO get from metadata
   size_t data_read = 0;
   if (iteration_index == clovis_block_count) {
     return 0;
@@ -92,14 +80,13 @@ size_t S3ClovisReader::get_next_block(char** data) {
   *data =  (char*)clovis_rw_op_context->data->ov_buf[iteration_index];
   data_read = clovis_rw_op_context->data->ov_vec.v_count[iteration_index];
   iteration_index++;
-  /* TODO last chunk size can be smaller than block size */
-  // For last chunk the actual valid data could be smaller.
-  // data_read = ObjectSize % CLOVIS_BLOCK_SIZE;
-  // if (data_read == 0)
-  // {
-  //     /* mean last chunk size was multiple of block size */
-  //     data_read = CLOVIS_BLOCK_SIZE;
-  // }
+  if (iteration_index == clovis_block_count) {
+    /* We just read last chunk and its size can be smaller than block size */
+    data_read = object_size % clovis_block_size;
+    if (data_read == 0) {
+        /* mean last chunk size was multiple of block size */
+        data_read = clovis_block_size;
+    }
+  }
   return data_read;
-
 }
