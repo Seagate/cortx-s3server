@@ -19,18 +19,16 @@ printf("S3ClovisWriter::create_object\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  S3ClovisWriterContext *context = new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::create_object_successful, this), std::bind( &S3ClovisWriter::create_object_failed, this));
+  writer_context.reset(new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::create_object_successful, this), std::bind( &S3ClovisWriter::create_object_failed, this)));
 
-  struct s3_clovis_op_context *ctx = context->get_clovis_op_ctx();
+  struct s3_clovis_op_context *ctx = writer_context->get_clovis_op_ctx();
 
-  ctx->cbs->ocb_arg = (void *)context;
+  ctx->cbs->ocb_arg = (void *)writer_context.get();
   ctx->cbs->ocb_executed = NULL;
   ctx->cbs->ocb_stable = s3_clovis_op_stable;
   ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
-  // id = M0_CLOVIS_ID_APP;
-  // id.u_lo = 7778;
-  S3UriToMeroOID(request->get_object_name().c_str(), &id);
+  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 
   m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
 
@@ -39,7 +37,6 @@ printf("S3ClovisWriter::create_object\n");
   m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
   m0_clovis_op_launch(ctx->ops, 1);
 
-  //sleep(10);
 }
 
 void S3ClovisWriter::create_object_successful() {
@@ -50,7 +47,11 @@ void S3ClovisWriter::create_object_successful() {
 
 void S3ClovisWriter::create_object_failed() {
   printf("S3ClovisWriter::create_object_failed\n");
-  state = S3ClovisWriterOpState::failed;
+  if (writer_context->get_errno() == -EEXIST) {
+    state = S3ClovisWriterOpState::exists;
+  } else {
+    state = S3ClovisWriterOpState::failed;
+  }
   this->handler_on_failed();
 }
 
@@ -62,21 +63,19 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   size_t clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
   size_t clovis_block_count = (request->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
 
-  S3ClovisWriterContext *context = new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::write_content_successful, this), std::bind( &S3ClovisWriter::write_content_failed, this));
+  writer_context.reset(new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::write_content_successful, this), std::bind( &S3ClovisWriter::write_content_failed, this)));
 
-  context->init_write_op_ctx(clovis_block_count, clovis_block_size);
+  writer_context->init_write_op_ctx(clovis_block_count, clovis_block_size);
 
-  struct s3_clovis_op_context *ctx = context->get_clovis_op_ctx();
-  struct s3_clovis_rw_op_context *rw_ctx = context->get_clovis_rw_op_ctx();
+  struct s3_clovis_op_context *ctx = writer_context->get_clovis_op_ctx();
+  struct s3_clovis_rw_op_context *rw_ctx = writer_context->get_clovis_rw_op_ctx();
 
-  ctx->cbs->ocb_arg = (void *)context;
+  ctx->cbs->ocb_arg = (void *)writer_context.get();
   ctx->cbs->ocb_executed = NULL;
   ctx->cbs->ocb_stable = s3_clovis_op_stable;
   ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
-  // id = M0_CLOVIS_ID_APP;
-  // id.u_lo = 7778;
-  S3UriToMeroOID(request->get_object_name().c_str(), &id);
+  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 
   // Remove this. Ideally we should do
   // for i = 0 to block_count

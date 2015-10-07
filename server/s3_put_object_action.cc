@@ -23,7 +23,14 @@ void S3PutObjectAction::create_object() {
 void S3PutObjectAction::create_object_failed() {
   // TODO - do anything more for failure?
   printf("Called S3PutObjectAction::create_object_failed\n");
-  send_response_to_s3_client();
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
+    // If object exists, S3 overwrites it.
+    printf("Existing object: Overwrite it.\n");
+    next();
+  } else {
+    // Any other error report failure.
+    send_response_to_s3_client();
+  }
 }
 
 void S3PutObjectAction::write_object() {

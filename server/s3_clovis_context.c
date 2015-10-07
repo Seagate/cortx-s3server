@@ -85,12 +85,24 @@ struct s3_clovis_idx_op_context* create_basic_idx_op_ctx(int idx_count) {
   struct s3_clovis_idx_op_context* ctx = (struct s3_clovis_idx_op_context*)calloc(1, sizeof(struct s3_clovis_idx_op_context));
 
   ctx->idx = (struct m0_clovis_idx *)calloc(idx_count, sizeof(struct m0_clovis_idx));
+  ctx->ops = (struct m0_clovis_op **)calloc(idx_count, sizeof(struct m0_clovis_op *));
+  ctx->cbs = (struct m0_clovis_op_cbs *)calloc(idx_count, sizeof(struct m0_clovis_op_cbs));
+
+  ctx->idx_count = idx_count;
+
   return ctx;
 }
 
 int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
   printf("Called free_basic_idx_op_ctx\n");
-
+  size_t i = 0;
+  for (i = 0; i < ctx->idx_count; i++) {
+    m0_clovis_op_fini(ctx->ops[i]);
+    m0_clovis_op_free(ctx->ops[i]);
+  }
+  m0_clovis_entity_fini(&ctx->idx->in_entity);
+  free(ctx->ops);
+  free(ctx->cbs);
   free(ctx->idx);
   free(ctx);
   return 0;

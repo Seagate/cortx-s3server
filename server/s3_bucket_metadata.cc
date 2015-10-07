@@ -116,10 +116,14 @@ void S3BucketMetadata::create_account_bucket_index_successful() {
 }
 
 void S3BucketMetadata::create_account_bucket_index_failed() {
-  // TODO - do anything more for failure?
   printf("Called S3BucketMetadata::create_account_bucket_index_failed\n");
-  state = S3BucketMetadataState::failed;
-  this->handler_on_failed();
+  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+    // We need to create index only once.
+    create_account_user_bucket_index();
+  } else {
+    state = S3BucketMetadataState::failed;
+    this->handler_on_failed();
+  }
 }
 
 void S3BucketMetadata::create_account_user_bucket_index() {
@@ -137,10 +141,14 @@ void S3BucketMetadata::create_account_user_bucket_index_successful() {
 }
 
 void S3BucketMetadata::create_account_user_bucket_index_failed() {
-  // TODO - do anything more for failure?
   printf("Called S3BucketMetadata::create_account_user_bucket_index_failed\n");
-  state = S3BucketMetadataState::failed;
-  this->handler_on_failed();
+  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+    // We need to create index only once.
+    save_account_bucket();
+  } else {
+    state = S3BucketMetadataState::failed;
+    this->handler_on_failed();
+  }
 }
 
 void S3BucketMetadata::save_account_bucket() {

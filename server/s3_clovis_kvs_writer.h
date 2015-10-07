@@ -13,9 +13,6 @@
 
 class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_op_context* clovis_op_context;
-  bool has_clovis_op_context;
-
   struct s3_clovis_idx_op_context *clovis_idx_op_context;
   bool has_clovis_idx_op_context;
 
@@ -25,35 +22,23 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
 
 public:
   S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+    printf("S3ClovisKVSWriterContext created\n");
     // Create or write, we need op context
-    clovis_op_context = create_basic_op_ctx(1);
-    has_clovis_op_context = true;
+    clovis_idx_op_context = create_basic_idx_op_ctx(1);
+    has_clovis_idx_op_context = true;
 
-    clovis_idx_op_context = NULL;
-    has_clovis_idx_op_context = false;
     clovis_kvs_op_context = NULL;
     has_clovis_kvs_op_context = false;
   }
 
   ~S3ClovisKVSWriterContext() {
-    if (has_clovis_op_context) {
-      free_basic_op_ctx(clovis_op_context);
-    }
+    printf("S3ClovisKVSWriterContext deleted.\n");
     if(has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }
     if (has_clovis_kvs_op_context) {
       free_basic_kvs_op_ctx(clovis_kvs_op_context);
     }
-  }
-
-  struct s3_clovis_op_context* get_clovis_op_ctx() {
-    return clovis_op_context;
-  }
-
-  void init_idx_create_op_ctx(int idx_count) {
-    clovis_idx_op_context = create_basic_idx_op_ctx(idx_count);
-    has_clovis_idx_op_context = true;
   }
 
   struct s3_clovis_idx_op_context* get_clovis_idx_op_ctx() {
@@ -77,6 +62,9 @@ enum class S3ClovisKVSWriterOpState {
   start,
   created,
   saved,
+  deleted,
+  exists,  // Object already exists
+  notexists,  // Object does not exists
 };
 
 class S3ClovisKVSWriter {
@@ -84,6 +72,7 @@ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
+  std::unique_ptr<S3ClovisKVSWriterContext> writer_context;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -92,7 +81,6 @@ private:
   S3ClovisKVSWriterOpState state;
 
 public:
-  //struct m0_uint128 id;
   S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req);
   ~S3ClovisKVSWriter();
 

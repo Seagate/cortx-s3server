@@ -23,25 +23,23 @@ void S3ClovisReader::read_object(size_t obj_size, std::function<void(void)> on_s
   /* Count Data blocks from data size */
   clovis_block_count = (obj_size + (clovis_block_size - 1)) / clovis_block_size;
 
-  S3ClovisReaderContext *context = new S3ClovisReaderContext(request, std::bind( &S3ClovisReader::read_object_successful, this), std::bind( &S3ClovisReader::read_object_failed, this));
+  reader_context.reset(new S3ClovisReaderContext(request, std::bind( &S3ClovisReader::read_object_successful, this), std::bind( &S3ClovisReader::read_object_failed, this)));
 
-  context->init_read_op_ctx(clovis_block_count, clovis_block_size);
+  reader_context->init_read_op_ctx(clovis_block_count, clovis_block_size);
 
-  struct s3_clovis_op_context *ctx = context->get_clovis_op_ctx();
-  struct s3_clovis_rw_op_context *rw_ctx = context->get_clovis_rw_op_ctx();
+  struct s3_clovis_op_context *ctx = reader_context->get_clovis_op_ctx();
+  struct s3_clovis_rw_op_context *rw_ctx = reader_context->get_clovis_rw_op_ctx();
 
   // Remember, so buffers can be iterated.
   clovis_rw_op_context = rw_ctx;
   iteration_index = 0;
 
-  ctx->cbs->ocb_arg = (void *)context;
+  ctx->cbs->ocb_arg = (void *)reader_context.get();
   ctx->cbs->ocb_executed = NULL;
   ctx->cbs->ocb_stable = s3_clovis_op_stable;
   ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
-  // id = M0_CLOVIS_ID_APP;
-  // id.u_lo = 7778;
-  S3UriToMeroOID(request->get_object_name().c_str(), &id);
+  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 
   /* Read the requisite number of blocks from the entity */
   m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);

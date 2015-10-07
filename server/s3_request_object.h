@@ -66,6 +66,8 @@ public:
   void set_out_header_value(std::string key, std::string value);
 
   // Operation params.
+  std::string get_object_uri();
+
   void set_bucket_name(std::string& name);
   std::string& get_bucket_name();
   void set_object_name(std::string& name);

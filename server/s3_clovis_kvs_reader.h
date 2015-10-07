@@ -13,9 +13,6 @@
 
 class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_op_context* clovis_op_context;
-  bool has_clovis_op_context;
-
   struct s3_clovis_idx_op_context *clovis_idx_op_context;
   bool has_clovis_idx_op_context;
 
@@ -25,35 +22,25 @@ class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
 
 public:
   S3ClovisKVSReaderContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
-    // Create or write, we need op context
-    clovis_op_context = create_basic_op_ctx(1);
-    has_clovis_op_context = true;
+    printf("S3ClovisKVSReaderContext created\n");
 
-    clovis_idx_op_context = NULL;
-    has_clovis_idx_op_context = false;
+    // Create or write, we need op context
+    clovis_idx_op_context = create_basic_idx_op_ctx(1);
+    has_clovis_idx_op_context = true;
+
     clovis_kvs_op_context = NULL;
     has_clovis_kvs_op_context = false;
   }
 
   ~S3ClovisKVSReaderContext() {
-    if (has_clovis_op_context) {
-      free_basic_op_ctx(clovis_op_context);
-    }
+    printf("S3ClovisKVSReaderContext deleted\n");
+
     if(has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }
     if (has_clovis_kvs_op_context) {
       free_basic_kvs_op_ctx(clovis_kvs_op_context);
     }
-  }
-
-  struct s3_clovis_op_context* get_clovis_op_ctx() {
-    return clovis_op_context;
-  }
-
-  void init_idx_read_op_ctx(int idx_count) {
-    clovis_idx_op_context = create_basic_idx_op_ctx(idx_count);
-    has_clovis_idx_op_context = true;
   }
 
   struct s3_clovis_idx_op_context* get_clovis_idx_op_ctx() {
@@ -83,6 +70,7 @@ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
+  std::unique_ptr<S3ClovisKVSReaderContext> reader_context;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -96,7 +84,6 @@ private:
   size_t iteration_index;
 
 public:
-  //struct m0_uint128 id;
   S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req);
 
   S3ClovisKVSReaderOpState get_state() {

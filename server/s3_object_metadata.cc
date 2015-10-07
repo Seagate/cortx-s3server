@@ -116,8 +116,13 @@ void S3ObjectMetadata::create_bucket_index_successful() {
 
 void S3ObjectMetadata::create_bucket_index_failed() {
   printf("Called S3ObjectMetadata::create_bucket_index_failed\n");
-  state = S3ObjectMetadataState::absent;  // todo Check error
-  this->handler_on_failed();
+  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+    // We need to create index only once.
+    save_metadata();
+  } else {
+    state = S3ObjectMetadataState::failed;  // todo Check error
+    this->handler_on_failed();
+  }
 }
 
 void S3ObjectMetadata::save_metadata() {

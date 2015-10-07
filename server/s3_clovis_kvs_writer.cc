@@ -26,29 +26,26 @@ void S3ClovisKVSWriter::create_index(std::string index_name, std::function<void(
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  S3ClovisKVSWriterContext *context = new S3ClovisKVSWriterContext(request, std::bind( &S3ClovisKVSWriter::create_index_successful, this), std::bind( &S3ClovisKVSWriter::create_index_failed, this));
+  writer_context.reset(new S3ClovisKVSWriterContext(request, std::bind( &S3ClovisKVSWriter::create_index_successful, this), std::bind( &S3ClovisKVSWriter::create_index_failed, this)));
 
-  context->init_idx_create_op_ctx(1);
+  struct s3_clovis_idx_op_context *idx_ctx = writer_context->get_clovis_idx_op_ctx();
 
-  struct s3_clovis_op_context *ctx = context->get_clovis_op_ctx();
-  struct s3_clovis_idx_op_context *idx_ctx = context->get_clovis_idx_op_ctx();
-
-  ctx->cbs->ocb_arg = (void *)context;
-  ctx->cbs->ocb_executed = NULL;
-  ctx->cbs->ocb_stable = s3_clovis_op_stable;
-  ctx->cbs->ocb_failed = s3_clovis_op_failed;
+  idx_ctx->cbs->ocb_arg = (void *)writer_context.get();
+  idx_ctx->cbs->ocb_executed = NULL;
+  idx_ctx->cbs->ocb_stable = s3_clovis_op_stable;
+  idx_ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
 
   S3UriToMeroOID(index_name.c_str(), &id);
 
   m0_clovis_idx_init(idx_ctx->idx, &clovis_uber_scope, &id);
-  rc = m0_clovis_entity_create(&idx_ctx->idx->in_entity, &(ctx->ops[0]));
+  rc = m0_clovis_entity_create(&idx_ctx->idx->in_entity, &(idx_ctx->ops[0]));
   if(rc != 0) {
     printf("m0_clovis_entity_create failed\n");
   }
 
-   m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
-   m0_clovis_op_launch(ctx->ops, 1);
+   m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+   m0_clovis_op_launch(idx_ctx->ops, 1);
 }
 
 void S3ClovisKVSWriter::create_index_successful() {
@@ -59,7 +56,11 @@ void S3ClovisKVSWriter::create_index_successful() {
 
 void S3ClovisKVSWriter::create_index_failed() {
   printf("S3ClovisKVSWriter::create_index_failed called\n");
-  state = S3ClovisKVSWriterOpState::failed;
+  if (writer_context->get_errno() == -EEXIST) {
+    state = S3ClovisKVSWriterOpState::exists;
+  } else {
+    state = S3ClovisKVSWriterOpState::failed;
+  }
   this->handler_on_failed();
 }
 
@@ -70,20 +71,18 @@ void S3ClovisKVSWriter::put_keyval(std::string index_name, std::string key, std:
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  S3ClovisKVSWriterContext *context = new S3ClovisKVSWriterContext(request, std::bind( &S3ClovisKVSWriter::put_keyval_successful, this), std::bind( &S3ClovisKVSWriter::put_keyval_failed, this));
+  writer_context.reset(new S3ClovisKVSWriterContext(request, std::bind( &S3ClovisKVSWriter::put_keyval_successful, this), std::bind( &S3ClovisKVSWriter::put_keyval_failed, this)));
 
-  context->init_idx_create_op_ctx(1);
   // Only one key value passed
-  context->init_kvs_write_op_ctx(1);
+  writer_context->init_kvs_write_op_ctx(1);
 
-  struct s3_clovis_op_context *ctx = context->get_clovis_op_ctx();
-  struct s3_clovis_idx_op_context *idx_ctx = context->get_clovis_idx_op_ctx();
-  struct s3_clovis_kvs_op_context *kvs_ctx = context->get_clovis_kvs_op_ctx();
+  struct s3_clovis_idx_op_context *idx_ctx = writer_context->get_clovis_idx_op_ctx();
+  struct s3_clovis_kvs_op_context *kvs_ctx = writer_context->get_clovis_kvs_op_ctx();
 
-  ctx->cbs->ocb_arg = (void *)context;
-  ctx->cbs->ocb_executed = NULL;
-  ctx->cbs->ocb_stable = s3_clovis_op_stable;
-  ctx->cbs->ocb_failed = s3_clovis_op_failed;
+  idx_ctx->cbs->ocb_arg = (void *)writer_context.get();
+  idx_ctx->cbs->ocb_executed = NULL;
+  idx_ctx->cbs->ocb_stable = s3_clovis_op_stable;
+  idx_ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
   S3UriToMeroOID(index_name.c_str(), &id);
 
@@ -91,7 +90,7 @@ void S3ClovisKVSWriter::put_keyval(std::string index_name, std::string key, std:
 
   m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_scope, &id);
 
-  rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values, &(ctx->ops[0]));
+  rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
   if(rc  != 0) {
     printf("m0_clovis_idx_op failed\n");
   }
@@ -99,8 +98,8 @@ void S3ClovisKVSWriter::put_keyval(std::string index_name, std::string key, std:
     printf("m0_clovis_idx_op suceeded\n");
   }
 
-  m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
-  m0_clovis_op_launch(ctx->ops, 1);
+  m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  m0_clovis_op_launch(idx_ctx->ops, 1);
 }
 
 void S3ClovisKVSWriter::put_keyval_successful() {

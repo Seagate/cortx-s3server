@@ -81,6 +81,10 @@ bool S3RequestObject::has_query_param_key(std::string key) {
 }
 
 // Operation params.
+std::string S3RequestObject::get_object_uri() {
+  return bucket_name + "/" + object_name;
+}
+
 void S3RequestObject::set_bucket_name(std::string& name) {
   bucket_name = name;
 }

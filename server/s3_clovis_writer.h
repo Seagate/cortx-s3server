@@ -22,6 +22,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
 
 public:
   S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+    printf("S3ClovisWriterContext created.\n");
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(1);
     has_clovis_op_context = true;
@@ -31,6 +32,7 @@ public:
   }
 
   ~S3ClovisWriterContext() {
+    printf("S3ClovisWriterContext deleted.\n");
     if (has_clovis_op_context) {
       free_basic_op_ctx(clovis_op_context);
     }
@@ -60,6 +62,9 @@ enum class S3ClovisWriterOpState {
   start,
   created,
   saved,
+  deleted,
+  exists,  // Object already exists
+  notexists,  // Object does not exists
 };
 
 class S3ClovisWriter {
@@ -67,6 +72,7 @@ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
+  std::unique_ptr<S3ClovisWriterContext> writer_context;
 
   // Used to report to caller
   std::function<void()> handler_on_success;

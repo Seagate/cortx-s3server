@@ -19,9 +19,10 @@ class S3AsyncOpContextBase {
   // Operational details
   S3AsyncOpStatus status;
   std::string error_message;
+  int error_code;  // this is same as Mero/Clovis errors
 public:
   S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed);
-  ~S3AsyncOpContextBase() {}
+  virtual ~S3AsyncOpContextBase() {}
 
   std::shared_ptr<S3RequestObject> get_request();
 
@@ -29,8 +30,10 @@ public:
   std::function<void(void)> on_failed_handler();
 
   S3AsyncOpStatus get_op_status();
+  int get_errno();
 
   void set_op_status(S3AsyncOpStatus opstatus, std::string message);
+  void set_op_errno(int err);
 
   std::string& get_error_message();
 
