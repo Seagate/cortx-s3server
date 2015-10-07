@@ -7,6 +7,7 @@ S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3A
 }
 
 void S3PutObjectAction::setup_steps(){
+  add_task(std::bind( &S3PutObjectAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3PutObjectAction::create_object, this ));
   add_task(std::bind( &S3PutObjectAction::write_object, this ));
   add_task(std::bind( &S3PutObjectAction::save_metadata, this ));
@@ -14,10 +15,20 @@ void S3PutObjectAction::setup_steps(){
   // ...
 }
 
+void S3PutObjectAction::fetch_bucket_info() {
+  printf("Called S3PutObjectAction::fetch_bucket_info\n");
+  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata->load(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::next, this));
+}
+
 void S3PutObjectAction::create_object() {
   printf("Called S3PutObjectAction::create_object\n");
-  clovis_writer = std::make_shared<S3ClovisWriter>(request);
-  clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
+  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    clovis_writer = std::make_shared<S3ClovisWriter>(request);
+    clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
+  } else {
+    send_response_to_s3_client();
+  }
 }
 
 void S3PutObjectAction::create_object_failed() {
@@ -59,8 +70,10 @@ void S3PutObjectAction::save_metadata() {
 
 void S3PutObjectAction::send_response_to_s3_client() {
   printf("Called S3PutObjectAction::send_response_to_s3_client\n");
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed) {
-    // TODO check if its object exists?
+  if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
+    // Invalid Bucket Name
+    request->send_response(S3HttpFailed400);
+  } else if (clovis_writer->get_state() == S3ClovisWriterOpState::failed) {
     request->send_response(S3HttpFailed500);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
     std::string etag_key("etag");
