@@ -26,7 +26,6 @@ void S3HeadBucketAction::send_response_to_s3_client() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     request->send_response(S3HttpSuccess200);
   } else {
-    // request->set_header_value(...)
     request->send_response(S3HttpFailed404);
   }
   done();

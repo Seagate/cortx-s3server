@@ -63,7 +63,7 @@ void S3BucketMetadata::load_account_bucket_successful() {
 
 void S3BucketMetadata::load_account_bucket_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3BucketMetadata::load_account_bucket_successful\n");
+  printf("Called S3BucketMetadata::load_account_bucket_failed\n");
   state = S3BucketMetadataState::failed;
   this->handler_on_failed();
 }
@@ -87,7 +87,7 @@ void S3BucketMetadata::load_user_bucket_successful() {
 
 void S3BucketMetadata::load_user_bucket_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3BucketMetadata::load_user_bucket_successful\n");
+  printf("Called S3BucketMetadata::load_user_bucket_failed\n");
   this->handler_on_failed();
 }
 
@@ -98,9 +98,7 @@ void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<
   this->handler_on_failed  = on_failed;
 
   // TODO create only if it does not exists.
-  // create_account_bucket_index();
-  // create_account_user_bucket_index();
-  save_account_bucket();
+  create_account_bucket_index();
 }
 
 void S3BucketMetadata::create_account_bucket_index() {

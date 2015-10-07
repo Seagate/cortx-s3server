@@ -32,8 +32,7 @@ void S3PutBucketAction::read_metadata() {
 
   // Trigger metadata read async operation with callback
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  // bucket_metadata->load(std::bind( &S3PutBucketAction::next, this), std::bind( &S3PutBucketAction::next, this));
-  next();
+  bucket_metadata->load(std::bind( &S3PutBucketAction::next, this), std::bind( &S3PutBucketAction::next, this));
 }
 
 void S3PutBucketAction::create_bucket() {
