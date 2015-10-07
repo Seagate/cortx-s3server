@@ -71,6 +71,10 @@ void S3ClovisKVSReader::get_keyval_successful() {
 
 void S3ClovisKVSReader::get_keyval_failed() {
   printf("S3ClovisKVSReader::get_keyval_failed called\n");
-  state = S3ClovisKVSReaderOpState::failed;
+  if (reader_context->get_errno() == -EEXIST) {
+    state = S3ClovisKVSReaderOpState::missing;
+  } else {
+    state = S3ClovisKVSReaderOpState::failed;
+  }
   this->handler_on_failed();
 }

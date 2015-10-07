@@ -16,7 +16,7 @@
 enum class S3BucketMetadataState {
   empty,    // Initial state, no lookup done
   present,  // Metadata exists and was read successfully
-  absent,   // Metadata not present in store.
+  missing,   // Metadata not present in store.
   saved,    // Metadata saved to store.
   failed
 };

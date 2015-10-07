@@ -103,6 +103,11 @@ public:
   void write_content_successful();
   void write_content_failed();
 
+  // Async delete operation.
+  void delete_object(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_object_successful();
+  void delete_object_failed();
+
   // xxx remove this
   void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx);
 };

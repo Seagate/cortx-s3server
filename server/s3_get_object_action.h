@@ -6,10 +6,12 @@
 #include <memory>
 
 #include "s3_action_base.h"
+#include "s3_bucket_metadata.h"
 #include "s3_object_metadata.h"
 #include "s3_clovis_reader.h"
 
 class S3GetObjectAction : public S3Action {
+  std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisReader> clovis_reader;
 
@@ -18,7 +20,8 @@ public:
 
   void setup_steps();
 
-  void fetch_metadata();
+  void fetch_bucket_info();
+  void fetch_object_info();
   void read_object();
   void read_object_failed();
   void send_response_to_s3_client();

@@ -63,6 +63,7 @@ enum class S3ClovisKVSReaderOpState {
   failed,
   start,
   present,
+  missing,
 };
 
 class S3ClovisKVSReader {

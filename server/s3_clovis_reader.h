@@ -78,6 +78,7 @@ enum class S3ClovisReaderOpState {
   failed,
   start,
   complete,
+  missing,  // Missing object
 };
 
 class S3ClovisReader {

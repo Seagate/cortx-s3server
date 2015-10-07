@@ -102,6 +102,43 @@ void S3ClovisWriter::write_content_failed() {
   this->handler_on_failed();
 }
 
+void S3ClovisWriter::delete_object(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+printf("S3ClovisWriter::delete_object\n");
+  this->handler_on_success = on_success;
+  this->handler_on_failed  = on_failed;
+
+  writer_context.reset(new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::delete_object_successful, this), std::bind( &S3ClovisWriter::delete_object_failed, this)));
+
+  struct s3_clovis_op_context *ctx = writer_context->get_clovis_op_ctx();
+
+  ctx->cbs->ocb_arg = (void *)writer_context.get();
+  ctx->cbs->ocb_executed = NULL;
+  ctx->cbs->ocb_stable = s3_clovis_op_stable;
+  ctx->cbs->ocb_failed = s3_clovis_op_failed;
+
+  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
+
+  m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
+
+  m0_clovis_entity_delete(&(ctx->obj->ob_entity), &(ctx->ops[0]));
+
+  m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
+  m0_clovis_op_launch(ctx->ops, 1);
+
+}
+
+void S3ClovisWriter::delete_object_successful() {
+  printf("S3ClovisWriter::delete_object_successful\n");
+  state = S3ClovisWriterOpState::deleted;
+  this->handler_on_success();
+}
+
+void S3ClovisWriter::delete_object_failed() {
+  printf("S3ClovisWriter::delete_object_failed\n");
+  state = S3ClovisWriterOpState::failed;
+  this->handler_on_failed();
+}
+
 void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx) {
   // Copy the data to clovis buffers.
   // xxx - move to S3RequestObject::consume(char* ptr, 4k);

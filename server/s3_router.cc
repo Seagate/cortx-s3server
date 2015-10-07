@@ -74,9 +74,12 @@ void S3Router::dispatch(evhtp_request_t * req) {
     request->respond_unsupported_api();
     return;
   }
-
-  handler->manage_self(handler);
-  handler->dispatch();  // Start processing the request
+  if (handler) {
+    handler->manage_self(handler);
+    handler->dispatch();  // Start processing the request
+  } else {
+    request->respond_unsupported_api();
+  }
   return;
 }
 

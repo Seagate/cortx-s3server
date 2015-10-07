@@ -114,6 +114,58 @@ void S3ClovisKVSWriter::put_keyval_failed() {
   this->handler_on_failed();
 }
 
+void S3ClovisKVSWriter::delete_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  printf("S3ClovisKVSWriter::delete_keyval called with index_name = %s and key = %s and value = %s\n", index_name.c_str(), key.c_str());
+
+  int rc = 0;
+  this->handler_on_success = on_success;
+  this->handler_on_failed  = on_failed;
+
+  writer_context.reset(new S3ClovisKVSWriterContext(request, std::bind( &S3ClovisKVSWriter::delete_keyval_successful, this), std::bind( &S3ClovisKVSWriter::delete_keyval_failed, this)));
+
+  // Only one key value passed
+  writer_context->init_kvs_write_op_ctx(1);
+
+  struct s3_clovis_idx_op_context *idx_ctx = writer_context->get_clovis_idx_op_ctx();
+  struct s3_clovis_kvs_op_context *kvs_ctx = writer_context->get_clovis_kvs_op_ctx();
+
+  idx_ctx->cbs->ocb_arg = (void *)writer_context.get();
+  idx_ctx->cbs->ocb_executed = NULL;
+  idx_ctx->cbs->ocb_stable = s3_clovis_op_stable;
+  idx_ctx->cbs->ocb_failed = s3_clovis_op_failed;
+
+  S3UriToMeroOID(index_name.c_str(), &id);
+
+  kvs_ctx->keys->ov_vec.v_count[0] = key.length();
+  kvs_ctx->keys->ov_buf[0] = calloc(1, key.length());  // TODO free
+  memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
+
+  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_scope, &id);
+
+  rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL, kvs_ctx->keys, NULL, &(idx_ctx->ops[0]));
+  if(rc  != 0) {
+    printf("m0_clovis_idx_op failed\n");
+  }
+  else {
+    printf("m0_clovis_idx_op suceeded\n");
+  }
+
+  m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  m0_clovis_op_launch(idx_ctx->ops, 1);
+}
+
+void S3ClovisKVSWriter::delete_keyval_successful() {
+  printf("S3ClovisKVSWriter::delete_keyval_successful called\n");
+  state = S3ClovisKVSWriterOpState::deleted;
+  this->handler_on_success();
+}
+
+void S3ClovisKVSWriter::delete_keyval_failed() {
+  printf("S3ClovisKVSWriter::delete_keyval_failed called\n");
+  state = S3ClovisKVSWriterOpState::failed;
+  this->handler_on_failed();
+}
+
 void S3ClovisKVSWriter::set_up_key_value_store(struct s3_clovis_kvs_op_context *kvs_ctx, std::string key, std::string val) {
 
   // TODO - clean up these buffers

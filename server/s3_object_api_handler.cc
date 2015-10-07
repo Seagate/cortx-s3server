@@ -2,6 +2,7 @@
 #include "s3_api_handler.h"
 #include "s3_get_object_action.h"
 #include "s3_put_object_action.h"
+#include "s3_delete_object_action.h"
 
 void S3ObjectAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
@@ -34,7 +35,7 @@ void S3ObjectAPIHandler::dispatch() {
           action = std::make_shared<S3GetObjectAction>(request);
           break;
         case S3HttpVerb::DELETE:
-          // action = std::make_shared<S3DeleteObjectAction>(request);
+          action = std::make_shared<S3DeleteObjectAction>(request);
           break;
         case S3HttpVerb::POST:
           // action = std::make_shared<S3PostObjectAction>(request);
@@ -52,7 +53,11 @@ void S3ObjectAPIHandler::dispatch() {
       i_am_done();
       return;
   };  // switch operation_code
-  action->manage_self(action);
-  action->start();
+  if (action) {
+    action->manage_self(action);
+    action->start();
+  } else {
+    request->respond_unsupported_api();
+  }
   i_am_done();
 }

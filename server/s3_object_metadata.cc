@@ -87,7 +87,11 @@ void S3ObjectMetadata::load_successful() {
 void S3ObjectMetadata::load_failed() {
   // TODO - do anything more for failure?
   printf("Called S3ObjectMetadata::load_failed\n");
-  state = S3ObjectMetadataState::absent;  // todo Check error
+  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    state = S3ObjectMetadataState::missing;  // Missing
+  } else {
+    state = S3ObjectMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 
@@ -102,8 +106,8 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success, std::function<
 
 void S3ObjectMetadata::create_bucket_index() {
   printf("Called S3ObjectMetadata::create_bucket_index\n");
-  // Mark absent as we initiate write, in case it fails to write.
-  state = S3ObjectMetadataState::absent;
+  // Mark missing as we initiate write, in case it fails to write.
+  state = S3ObjectMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
   clovis_kv_writer->create_index(get_bucket_index_name(), std::bind( &S3ObjectMetadata::create_bucket_index_successful, this), std::bind( &S3ObjectMetadata::create_bucket_index_failed, this));
@@ -145,6 +149,28 @@ void S3ObjectMetadata::save_metadata_successful() {
 void S3ObjectMetadata::save_metadata_failed() {
   // TODO - do anything more for failure?
   printf("Called S3ObjectMetadata::save_metadata_failed\n");
+  state = S3ObjectMetadataState::failed;
+  this->handler_on_failed();
+}
+
+void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  printf("Called S3ObjectMetadata::remove\n");
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed  = on_failed;
+
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer->delete_keyval(get_bucket_index_name(), object_name, std::bind( &S3ObjectMetadata::remove_successful, this), std::bind( &S3ObjectMetadata::remove_failed, this));
+}
+
+void S3ObjectMetadata::remove_successful() {
+  printf("Called S3ObjectMetadata::remove_successful\n");
+  state = S3ObjectMetadataState::deleted;
+  this->handler_on_success();
+}
+
+void S3ObjectMetadata::remove_failed() {
+  printf("Called S3ObjectMetadata::remove_failed\n");
   state = S3ObjectMetadataState::failed;
   this->handler_on_failed();
 }

@@ -94,9 +94,14 @@ public:
   void create_index_failed();
 
   // Async save operation.
-  void put_keyval(std::string index_name, std::string key, std::string val,std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void put_keyval(std::string index_name, std::string key, std::string val, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void put_keyval_successful();
   void put_keyval_failed();
+
+  // Async delete operation.
+  void delete_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_keyval_successful();
+  void delete_keyval_failed();
 
   void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx, std::string key, std::string val);
 };

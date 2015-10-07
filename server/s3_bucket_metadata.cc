@@ -47,8 +47,8 @@ void S3BucketMetadata::load(std::function<void(void)> on_success, std::function<
 
 void S3BucketMetadata::load_account_bucket() {
   printf("Called S3BucketMetadata::load_account_bucket\n");
-  // Mark absent as we initiate fetch, in case it fails to load due to missing.
-  state = S3BucketMetadataState::absent;
+  // Mark missing as we initiate fetch, in case it fails to load due to missing.
+  state = S3BucketMetadataState::missing;
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->get_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_account_bucket_successful, this), std::bind( &S3BucketMetadata::load_account_bucket_failed, this));
@@ -64,15 +64,19 @@ void S3BucketMetadata::load_account_bucket_successful() {
 void S3BucketMetadata::load_account_bucket_failed() {
   // TODO - do anything more for failure?
   printf("Called S3BucketMetadata::load_account_bucket_failed\n");
-  state = S3BucketMetadataState::failed;
+  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    state = S3BucketMetadataState::missing;
+  } else {
+    state = S3BucketMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 
 void S3BucketMetadata::load_user_bucket() {
   printf("Called S3BucketMetadata::load_user_bucket\n");
 
-  // Mark absent as we initiate fetch, in case it fails to load due to missing.
-  state = S3BucketMetadataState::absent;
+  // Mark missing as we initiate fetch, in case it fails to load due to missing.
+  state = S3BucketMetadataState::missing;
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->get_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_user_bucket_successful, this), std::bind( &S3BucketMetadata::load_user_bucket_failed, this));
@@ -86,8 +90,12 @@ void S3BucketMetadata::load_user_bucket_successful() {
 }
 
 void S3BucketMetadata::load_user_bucket_failed() {
-  // TODO - do anything more for failure?
   printf("Called S3BucketMetadata::load_user_bucket_failed\n");
+  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    state = S3BucketMetadataState::missing;
+  } else {
+    state = S3BucketMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 
@@ -103,8 +111,8 @@ void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<
 
 void S3BucketMetadata::create_account_bucket_index() {
   printf("Called S3BucketMetadata::create_account_bucket_index\n");
-  // Mark absent as we initiate write, in case it fails to write.
-  state = S3BucketMetadataState::absent;
+  // Mark missing as we initiate write, in case it fails to write.
+  state = S3BucketMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
   clovis_kv_writer->create_index(get_account_index_name(), std::bind( &S3BucketMetadata::create_account_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_bucket_index_failed, this));
@@ -128,8 +136,8 @@ void S3BucketMetadata::create_account_bucket_index_failed() {
 
 void S3BucketMetadata::create_account_user_bucket_index() {
   printf("Called S3BucketMetadata::create_account_user_bucket_index\n");
-  // Mark absent as we initiate write, in case it fails to write.
-  state = S3BucketMetadataState::absent;
+  // Mark missing as we initiate write, in case it fails to write.
+  state = S3BucketMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
   clovis_kv_writer->create_index(get_account_user_index_name(), std::bind( &S3BucketMetadata::create_account_user_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_user_bucket_index_failed, this));
@@ -153,8 +161,8 @@ void S3BucketMetadata::create_account_user_bucket_index_failed() {
 
 void S3BucketMetadata::save_account_bucket() {
   printf("Called S3BucketMetadata::save_account_bucket\n");
-  // Mark absent as we initiate write, in case it fails to write.
-  state = S3BucketMetadataState::absent;
+  // Mark missing as we initiate write, in case it fails to write.
+  state = S3BucketMetadataState::missing;
 
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
@@ -180,8 +188,8 @@ void S3BucketMetadata::save_account_bucket_failed() {
 
 void S3BucketMetadata::save_user_bucket() {
   printf("Called S3BucketMetadata::save_user_bucket\n");
-  // Mark absent as we initiate write, in case it fails to write.
-  state = S3BucketMetadataState::absent;
+  // Mark missing as we initiate write, in case it fails to write.
+  state = S3BucketMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
   clovis_kv_writer->put_keyval(get_account_user_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_user_bucket_successful, this), std::bind( &S3BucketMetadata::save_user_bucket_failed, this));

@@ -70,7 +70,11 @@ void S3BucketAPIHandler::dispatch() {
       i_am_done();
       return;
   };  // switch operation_code
-  action->manage_self(action);
-  action->start();
+  if (action) {
+    action->manage_self(action);
+    action->start();
+  } else {
+    request->respond_unsupported_api();
+  }
   i_am_done();
 }

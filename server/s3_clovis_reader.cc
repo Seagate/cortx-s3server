@@ -57,7 +57,11 @@ void S3ClovisReader::read_object_successful() {
 }
 
 void S3ClovisReader::read_object_failed() {
-  state = S3ClovisReaderOpState::failed;
+  if (reader_context->get_errno() == -EEXIST) {
+    state = S3ClovisReaderOpState::missing;
+  } else {
+    state = S3ClovisReaderOpState::failed;
+  }
   this->handler_on_failed();
 }
 

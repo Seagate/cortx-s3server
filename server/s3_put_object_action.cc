@@ -70,7 +70,7 @@ void S3PutObjectAction::save_metadata() {
 
 void S3PutObjectAction::send_response_to_s3_client() {
   printf("Called S3PutObjectAction::send_response_to_s3_client\n");
-  if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     request->send_response(S3HttpFailed400);
   } else if (clovis_writer->get_state() == S3ClovisWriterOpState::failed) {

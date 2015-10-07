@@ -17,8 +17,9 @@
 enum class S3ObjectMetadataState {
   empty,    // Initial state, no lookup done
   present,  // Metadata exists and was read successfully
-  absent,   // Metadata not present in store.
+  missing,   // Metadata not present in store.
   saved,    // Metadata saved to store.
+  deleted,  // Metadata deleted from store
   failed
 };
 
@@ -86,6 +87,10 @@ public:
   void save_metadata();
   void save_metadata_successful();
   void save_metadata_failed();
+
+  void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void remove_successful();
+  void remove_failed();
 
   S3ObjectMetadataState get_state() {
     return state;
