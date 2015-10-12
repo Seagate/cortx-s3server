@@ -42,12 +42,12 @@ void S3GetServiceAction::get_next_buckets_successful() {
   // We ask for more if there is any.
   size_t count_we_requested = S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count();
 
-  if (kvps.size() == count_we_requested) {
-    get_next_buckets();
-  } else {
+  if (kvps.size() < count_we_requested) {
     // Go ahead and respond.
     fetch_successful = true;
     send_response_to_s3_client();
+  } else {
+    get_next_buckets();
   }
 }
 

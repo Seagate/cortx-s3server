@@ -76,6 +76,15 @@ std::string& S3RequestObject::get_full_body_content_as_string() {
   return full_request_body;
 }
 
+std::string S3RequestObject::get_query_string_value(std::string key) {
+  const char *value = evhtp_kv_find(ev_req->uri->query, key.c_str());
+  std::string val_str = "";
+  if (value) {
+    val_str = value;
+  }
+  return val_str;
+}
+
 bool S3RequestObject::has_query_param_key(std::string key) {
   return evhtp_kvs_find_kv(ev_req->uri->query, key.c_str()) != NULL;
 }

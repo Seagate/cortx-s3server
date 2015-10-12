@@ -56,6 +56,8 @@ public:
   size_t get_content_length();
   std::string& get_full_body_content_as_string();
 
+  std::string get_query_string_value(std::string key);
+
   bool has_query_param_key(std::string key);
 
   // xxx Remove this soon

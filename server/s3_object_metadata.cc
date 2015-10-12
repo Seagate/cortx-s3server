@@ -35,6 +35,26 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req) : reque
   system_defined_attribute["x-amz-server-side-encryption-customer-key-MD5"] = "";
 }
 
+std::string S3ObjectMetadata::get_object_name() {
+  return object_name;
+}
+
+std::string S3ObjectMetadata::get_user_id() {
+  return user_id;
+}
+
+std::string S3ObjectMetadata::get_user_name() {
+  return user_name;
+}
+
+std::string S3ObjectMetadata::get_last_modified() {
+  return system_defined_attribute["Last-Modified"];
+}
+
+std::string S3ObjectMetadata::get_storage_class() {
+  return system_defined_attribute["x-amz-storage-class"];
+}
+
 void S3ObjectMetadata::set_content_length(std::string length) {
   system_defined_attribute["Content-Length"] = length;
 }
@@ -205,6 +225,10 @@ void S3ObjectMetadata::from_json(std::string content) {
     printf("Json Parsing failed.\n");
     return;
   }
+
+  bucket_name = newroot["Bucket-Name"].asString();
+  object_name = newroot["Object-Name"].asString();
+  object_key_uri = newroot["Object-URI"].asString();
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for(auto it : members) {

@@ -70,6 +70,12 @@ public:
   void set_md5(std::string md5);
   std::string get_md5();
 
+  std::string get_object_name();
+  std::string get_user_id();
+  std::string get_user_name();
+  std::string get_last_modified();
+  std::string get_storage_class();
+
   // Load attributes
   std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);

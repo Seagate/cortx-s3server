@@ -78,7 +78,8 @@ void S3ClovisKVSReader::get_keyval_failed() {
 }
 
 void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("S3ClovisKVSReader::next_keyval called\n");
+  printf("S3ClovisKVSReader::next_keyval with index_name = %s and key = %s and count = %zu\n", index_name.c_str(), key.c_str(), nr_kvp);
+
   int rc = 0;
 
   this->handler_on_success = on_success;
@@ -134,6 +135,9 @@ void S3ClovisKVSReader::next_keyval_successful() {
     if (kvs_ctx->keys->ov_buf[i] != NULL) {
       last_result_keys_values.insert({
         std::string((char*)kvs_ctx->keys->ov_buf[i], kvs_ctx->keys->ov_vec.v_count[i]), std::string((char*)kvs_ctx->values->ov_buf[i], kvs_ctx->values->ov_vec.v_count[i])});
+    } else {
+      printf("We fetched all.....\n");
+      break;
     }
   }
   this->handler_on_success();
