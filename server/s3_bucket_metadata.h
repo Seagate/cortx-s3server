@@ -48,6 +48,14 @@ private:
   S3BucketMetadataState state;
 
 private:
+  std::string get_account_index_name() {
+    return "ACCOUNT/" + account_name;
+  }
+
+  std::string get_account_user_index_name() {
+    return "ACCOUNTUSER/" + account_name + "/" + user_name;
+  }
+
   // AWS recommends that all bucket names comply with DNS naming convention
   // See Bucket naming restrictions in above link.
   void validate_bucket_name();
@@ -57,17 +65,12 @@ private:
 public:
   S3BucketMetadata(std::shared_ptr<S3RequestObject> req);
 
+  std::string get_bucket_name();
+  std::string get_creation_time();
+
   // Load attributes
   void add_system_attribute(std::string key, std::string val);
   void add_user_defined_attribute(std::string key, std::string val);
-
-  std::string get_account_index_name() {
-    return "ACCOUNT/" + account_name;
-  }
-
-  std::string get_account_user_index_name() {
-    return "ACCOUNTUSER/" + account_name + "/" + user_name;
-  }
 
   void load(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void load_account_bucket();

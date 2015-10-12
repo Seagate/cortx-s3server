@@ -60,7 +60,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  size_t clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
+  size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
   size_t clovis_block_count = (request->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
 
   writer_context.reset(new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::write_content_successful, this), std::bind( &S3ClovisWriter::write_content_failed, this)));
@@ -142,7 +142,7 @@ void S3ClovisWriter::delete_object_failed() {
 void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx) {
   // Copy the data to clovis buffers.
   // xxx - move to S3RequestObject::consume(char* ptr, 4k);
-  size_t clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
+  size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
   size_t clovis_block_count = (request->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
 
   int data_to_consume = clovis_block_size;

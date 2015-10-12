@@ -61,7 +61,7 @@ void S3Router::dispatch(evhtp_request_t * req) {
   printf("object name = %s\n", uri->get_object_name().c_str());
   std::shared_ptr<S3APIHandler> handler;
   if (uri->is_service_api()) {
-    // handler = std::make_shared<S3ServiceAPIHandler> (request, uri->get_operation_code());
+    handler = std::make_shared<S3ServiceAPIHandler> (request, uri->get_operation_code());
     printf("is_service_api\n");
   } else if (uri->is_bucket_api()) {
     printf("is_bucket_api\n");

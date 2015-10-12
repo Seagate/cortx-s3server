@@ -209,12 +209,10 @@ void S3ObjectMetadata::from_json(std::string content) {
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for(auto it : members) {
     system_defined_attribute[it.c_str()] = newroot["System-Defined"][it].asString().c_str();
-    printf("System-Defined [%s] = %s\n", it.c_str(), newroot["System-Defined"][it].asString().c_str());
   }
   members = newroot["User-Defined"].getMemberNames();
   for(auto it : members) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString().c_str();
-    printf("User-Defined [%s] = %s\n", it.c_str(), newroot["User-Defined"][it].asString().c_str());
   }
   object_ACL.from_json(newroot["ACL"].asString());
 }

@@ -1,18 +1,18 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_CONFIG_H__
-#define __MERO_FE_S3_SERVER_S3_CLOVIS_CONFIG_H__
+#ifndef __MERO_FE_S3_SERVER_S3_CONFIG_H__
+#define __MERO_FE_S3_SERVER_S3_CONFIG_H__
 
 #include <cstddef>
 
 // We should load this from config file.
 // Not thread-safe, but we are single threaded.
-class S3ClovisConfig {
+class S3Config {
 private:
-  static S3ClovisConfig* instance;
-  S3ClovisConfig();
-  // S3ClovisConfig(std::string config_file);
+  static S3Config* instance;
+  S3Config();
+  // S3Config(std::string config_file);
 
   // Config items.
   size_t clovis_block_size;
@@ -20,7 +20,7 @@ private:
   size_t clovis_idx_fetch_count;
 
 public:
-  static S3ClovisConfig* get_instance();
+  static S3Config* get_instance();
 
   // Config items
   size_t get_clovis_block_size();

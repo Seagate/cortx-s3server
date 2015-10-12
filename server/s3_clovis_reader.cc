@@ -19,7 +19,7 @@ void S3ClovisReader::read_object(size_t obj_size, std::function<void(void)> on_s
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  clovis_block_size = ClovisConfig::get_instance()->get_clovis_block_size();
+  clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
   /* Count Data blocks from data size */
   clovis_block_count = (obj_size + (clovis_block_size - 1)) / clovis_block_size;
 

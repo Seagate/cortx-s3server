@@ -108,59 +108,72 @@ int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
   return 0;
 }
 
+static struct m0_bufvec* idx_bufvec_alloc(int nr)
+{
+	struct m0_bufvec *bv;
+
+  bv = (m0_bufvec*)calloc(1, sizeof(*bv));
+	if (bv == NULL)
+		return NULL;
+
+	bv->ov_vec.v_nr = nr;
+	bv->ov_vec.v_count = (m0_bcount_t *)calloc(nr, sizeof(m0_bcount_t));
+	if (bv->ov_vec.v_count == NULL)
+		goto FAIL;
+
+	bv->ov_buf = (void **)calloc(nr, sizeof(char *));
+	if (bv->ov_buf == NULL)
+		goto FAIL;
+
+	return bv;
+
+FAIL:
+	m0_bufvec_free(bv);
+	return NULL;
+}
+
+static void idx_bufvec_free(struct m0_bufvec *bv)
+{
+	uint32_t i;
+
+	if (bv != NULL)
+		return;
+
+	if (bv->ov_buf != NULL) {
+		for (i = 0; i < bv->ov_vec.v_nr; ++i)
+			free(bv->ov_buf[i]);
+		free(bv->ov_buf);
+	}
+	free(bv->ov_vec.v_count);
+	free(bv);
+}
+
 struct s3_clovis_kvs_op_context*
 create_basic_kvs_op_ctx(int no_of_keys) {
   printf("Called create_basic_kvs_op_ctx with no of keys = %d\n", no_of_keys);
 
   struct s3_clovis_kvs_op_context* ctx = (struct s3_clovis_kvs_op_context*)calloc(1, sizeof(struct s3_clovis_kvs_op_context));
 
-  ctx->keys = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
-  ctx->values = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
-
-
-  ctx->keys->ov_vec.v_nr = no_of_keys;
-  ctx->values->ov_vec.v_nr = no_of_keys;
-
-  ctx->keys->ov_vec.v_count = (m0_bcount_t *)calloc(no_of_keys, sizeof(m0_bcount_t));
-  if(ctx->keys->ov_vec.v_count == NULL)
+  ctx->keys = idx_bufvec_alloc(no_of_keys);
+  if (ctx->keys == NULL)
     goto FAIL;
-
-  ctx->values->ov_vec.v_count = (m0_bcount_t *)calloc(no_of_keys, sizeof(m0_bcount_t));
-  if(ctx->values->ov_vec.v_count == NULL)
-    goto FAIL;
-
-  ctx->keys->ov_buf = (void **)calloc(no_of_keys, sizeof(char *));
-  if(ctx->keys->ov_buf == NULL)
-    goto FAIL;
-
-  ctx->values->ov_buf = (void **)calloc(no_of_keys, sizeof(char *));
-  if(ctx->values->ov_buf == NULL)
+  ctx->values = idx_bufvec_alloc(no_of_keys);
+  if (ctx->values == NULL)
     goto FAIL;
 
   return ctx;
 
 FAIL:
-  if(ctx->keys && ctx->keys->ov_vec.v_count)
-    free(ctx->keys->ov_vec.v_count);
-  if(ctx->values && ctx->values->ov_vec.v_count)
-    free(ctx->values->ov_vec.v_count);
-  if(ctx->keys && ctx->keys->ov_buf)
-    free(ctx->keys->ov_buf);
-  if(ctx->values && ctx->values->ov_buf)
-    free(ctx->values->ov_buf);
-  if(ctx->keys)
-    free(ctx->keys);
-  if(ctx->values)
-    free(ctx->values);
   if(ctx)
     free(ctx);
+  return NULL;
 }
 
 int free_basic_kvs_op_ctx(struct s3_clovis_kvs_op_context *ctx) {
   printf("Called free_basic_kvs_op_ctx\n");
 
-  free(ctx->keys);
-  free(ctx->values);
+  idx_bufvec_free(ctx->keys);
+  idx_bufvec_free(ctx->values);
   free(ctx);
   return 0;
 }

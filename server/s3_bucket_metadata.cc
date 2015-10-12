@@ -18,6 +18,14 @@ S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : reque
   system_defined_attribute["Owner-Account-id"] = "";
 }
 
+std::string S3BucketMetadata::get_bucket_name() {
+  return bucket_name;
+}
+
+std::string S3BucketMetadata::get_creation_time() {
+  return system_defined_attribute["Date"];
+}
+
 void S3BucketMetadata::add_system_attribute(std::string key, std::string val) {
   system_defined_attribute[key] = val;
 }
@@ -237,15 +245,18 @@ void S3BucketMetadata::from_json(std::string content) {
     return;
   }
 
+  bucket_name = newroot["Bucket-Name"].asString();
+
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for(auto it : members) {
     system_defined_attribute[it.c_str()] = newroot["System-Defined"][it].asString();
-    printf("System-Defined [%s] = %s\n", it.c_str(), newroot["System-Defined"][it].asString().c_str());
   }
   members = newroot["User-Defined"].getMemberNames();
   for(auto it : members) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString();
-    printf("User-Defined [%s] = %s\n", it.c_str(), newroot["User-Defined"][it].asString().c_str());
   }
+  user_name = system_defined_attribute["Owner-User"];
+  account_name = system_defined_attribute["Owner-Account"];
+
   bucket_ACL.from_json(newroot["ACL"].asString());
 }

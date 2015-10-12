@@ -82,6 +82,7 @@ private:
   // Holds references to keys and values after the read so it can be consumed.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   std::string last_value;
+  std::map<std::string, std::string> last_result_keys_values;
   size_t iteration_index;
 
 public:
@@ -91,15 +92,25 @@ public:
     return state;
   }
 
-  // Async save operation.
-  void get_keyval(std::string index_name, std::string key,std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  // Async get operation.
+  void get_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void get_keyval_successful();
   void get_keyval_failed();
-
-  // TODO
   std::string get_value() {
     return last_value;
   }
+
+  // Used to iterate over the key-value pairs.
+  // If the input key is empty string "", it returns the first count key-value pairs
+  // If input key is specified, it returns the next count key-value pairs
+  // Async call resutls can be accessed using get_values()
+  void next_keyval(std::string index_name, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void next_keyval_successful();
+  void next_keyval_failed();
+  std::map<std::string, std::string>& get_key_values() {
+    return last_result_keys_values;
+  }
+
 };
 
 #endif

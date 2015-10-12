@@ -115,7 +115,7 @@ void S3ClovisKVSWriter::put_keyval_failed() {
 }
 
 void S3ClovisKVSWriter::delete_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("S3ClovisKVSWriter::delete_keyval called with index_name = %s and key = %s and value = %s\n", index_name.c_str(), key.c_str());
+  printf("S3ClovisKVSWriter::delete_keyval called with index_name = %s and key = %s\n", index_name.c_str(), key.c_str());
 
   int rc = 0;
   this->handler_on_success = on_success;
