@@ -6,6 +6,7 @@
 
 
 #define S3HttpSuccess200         EVHTP_RES_OK
+#define S3HttpSuccess204         EVHTP_RES_NOCONTENT
 #define S3HttpFailed400          EVHTP_RES_400
 #define S3HttpFailed409          EVHTP_RES_CONFLICT
 #define S3HttpFailed500          EVHTP_RES_500

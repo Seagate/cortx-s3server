@@ -216,6 +216,54 @@ void S3BucketMetadata::save_user_bucket_failed() {
   this->handler_on_failed();
 }
 
+void S3BucketMetadata::remove(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  printf("Called S3BucketMetadata::remove\n");
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed  = on_failed;
+
+  remove_account_bucket();
+}
+
+void S3BucketMetadata::remove_account_bucket() {
+  printf("Called S3BucketMetadata::remove_account_bucket\n");
+
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer->delete_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_account_bucket_successful, this), std::bind( &S3BucketMetadata::remove_account_bucket_failed, this));
+}
+
+void S3BucketMetadata::remove_account_bucket_successful() {
+  printf("Called S3BucketMetadata::remove_account_bucket_successful\n");
+  remove_user_bucket();
+}
+
+void S3BucketMetadata::remove_account_bucket_failed() {
+  // TODO - do anything more for failure?
+  printf("Called S3BucketMetadata::remove_account_bucket_failed\n");
+  state = S3BucketMetadataState::failed;
+  this->handler_on_failed();
+}
+
+void S3BucketMetadata::remove_user_bucket() {
+  printf("Called S3BucketMetadata::remove_user_bucket\n");
+
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer->delete_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_user_bucket_successful, this), std::bind( &S3BucketMetadata::remove_user_bucket_failed, this));
+}
+
+void S3BucketMetadata::remove_user_bucket_successful() {
+  printf("Called S3BucketMetadata::remove_user_bucket_successful\n");
+  state = S3BucketMetadataState::deleted;
+  this->handler_on_success();
+}
+
+void S3BucketMetadata::remove_user_bucket_failed() {
+  // TODO - do anything more for failure?
+  printf("Called S3BucketMetadata::remove_user_bucket_failed\n");
+  state = S3BucketMetadataState::failed;
+  this->handler_on_failed();
+}
+
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
   printf("Called S3BucketMetadata::to_json\n");

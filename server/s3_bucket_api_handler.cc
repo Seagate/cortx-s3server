@@ -4,6 +4,7 @@
 #include "s3_head_bucket_action.h"
 #include "s3_get_bucket_action.h"
 #include "s3_put_bucket_action.h"
+#include "s3_delete_bucket_action.h"
 
 void S3BucketAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
@@ -57,7 +58,7 @@ void S3BucketAPIHandler::dispatch() {
           action = std::make_shared<S3PutBucketAction>(request);
           break;
         case S3HttpVerb::DELETE:
-          // action = std::make_shared<S3DeleteBucketAction>(request);
+          action = std::make_shared<S3DeleteBucketAction>(request);
           break;
         case S3HttpVerb::POST:
           // action = std::make_shared<S3PostBucketAction>(request);

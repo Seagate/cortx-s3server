@@ -18,6 +18,7 @@ enum class S3BucketMetadataState {
   present,  // Metadata exists and was read successfully
   missing,   // Metadata not present in store.
   saved,    // Metadata saved to store.
+  deleted,  // Metadata deleted from store
   failed
 };
 
@@ -97,6 +98,16 @@ public:
   void save_user_bucket();
   void save_user_bucket_successful();
   void save_user_bucket_failed();
+
+  void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+
+  void remove_account_bucket();
+  void remove_account_bucket_successful();
+  void remove_account_bucket_failed();
+  void remove_user_bucket();
+  void remove_user_bucket_successful();
+  void remove_user_bucket_failed();
+
 
   S3BucketMetadataState get_state() {
     return state;
