@@ -38,6 +38,10 @@ void S3ObjectListResponse::add_object(std::shared_ptr<S3ObjectMetadata> object) 
   object_list.push_back(object);
 }
 
+void S3ObjectListResponse::add_common_prefix(std::string common_prefix) {
+  common_prefixes.insert(common_prefix);
+}
+
 std::string& S3ObjectListResponse::get_xml() {
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   response_xml += "<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
@@ -62,6 +66,13 @@ std::string& S3ObjectListResponse::get_xml() {
                     "  </Owner>\n"
                     "</Contents>";
   }
+
+  for (auto&& prefix : common_prefixes) {
+    response_xml += "<CommonPrefixes>\n"
+                    "  <Prefix>" + prefix + "</Prefix>\n"
+                    "</CommonPrefixes>";
+  }
+
   response_xml += "</ListBucketResult>\n";
 
   return response_xml;
