@@ -58,7 +58,7 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
   printf("Called S3DeleteObjectAction::send_response_to_s3_client\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
-    request->send_response(S3HttpFailed400, "Invalid Bucket Name.");
+    request->send_response(S3HttpFailed400);  // TODO error xml
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     request->send_response(S3HttpFailed404);
   }

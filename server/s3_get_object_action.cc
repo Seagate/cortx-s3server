@@ -60,10 +60,10 @@ void S3GetObjectAction::send_response_to_s3_client() {
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     request->send_response(S3HttpFailed404);
   } else if (clovis_reader->get_state() == S3ClovisReaderOpState::complete) {
-    std::string etag_key("etag");
-    std::string content_len_key("Content-Length");
-    request->set_out_header_value(content_len_key, object_metadata->get_content_length_str());
-    request->set_out_header_value(etag_key, object_metadata->get_md5());
+    request->set_out_header_value("Last-Modified", object_metadata->get_last_modified());
+    request->set_out_header_value("ETag", object_metadata->get_md5());
+    request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value("Content-Length", object_metadata->get_content_length_str());
 
     char *data = NULL;
     int length = 0;

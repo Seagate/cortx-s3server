@@ -76,8 +76,7 @@ void S3PutObjectAction::send_response_to_s3_client() {
   } else if (clovis_writer->get_state() == S3ClovisWriterOpState::failed) {
     request->send_response(S3HttpFailed500);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
-    std::string etag_key("etag");
-    request->set_out_header_value(etag_key, clovis_writer->get_content_md5());
+    request->set_out_header_value("ETag", clovis_writer->get_content_md5());
 
     request->send_response(S3HttpSuccess200);
   } else {

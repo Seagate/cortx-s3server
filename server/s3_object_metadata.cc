@@ -3,6 +3,7 @@
 #include <json/json.h>
 
 #include "s3_object_metadata.h"
+#include "s3_datetime.h"
 
 S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
   account_name = request->get_account_name();
@@ -16,9 +17,10 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req) : reque
   object_key_uri = bucket_name + "\\" + object_name;
 
   // Set the defaults
-  system_defined_attribute["Date"] = "currentdate";  // TODO
-  system_defined_attribute["Content-Length"] = "";
-  system_defined_attribute["Last-Modified"] = "currentdate";  // TODO
+  S3DateTime current_time;
+  current_time.init_current_time();
+  system_defined_attribute["Date"] = current_time.get_GMT_string();  system_defined_attribute["Content-Length"] = "";
+  system_defined_attribute["Last-Modified"] = current_time.get_GMT_string();  // TODO
   system_defined_attribute["Content-MD5"] = "";
   system_defined_attribute["Owner-User"] = "";
   system_defined_attribute["Owner-User-id"] = "";
@@ -45,6 +47,10 @@ std::string S3ObjectMetadata::get_user_id() {
 
 std::string S3ObjectMetadata::get_user_name() {
   return user_name;
+}
+
+std::string S3ObjectMetadata::get_creation_date() {
+  return system_defined_attribute["Date"];
 }
 
 std::string S3ObjectMetadata::get_last_modified() {

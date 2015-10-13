@@ -66,10 +66,8 @@ void S3GetServiceAction::send_response_to_s3_client() {
   // Trigger metadata read async operation with callback
   if (fetch_successful) {
     std::string& response_xml = bucket_list.get_xml();
-    // std::string etag_key("etag");
     std::string content_len_key("Content-Length");
     request->set_out_header_value(content_len_key, std::to_string(response_xml.length()));
-    // request->set_out_header_value(etag_key, object_metadata->get_md5());
     printf("Bucket list response_xml = %s\n", response_xml.c_str());
     request->send_response(S3HttpSuccess200, response_xml);
   } else {

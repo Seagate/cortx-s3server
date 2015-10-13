@@ -2,6 +2,7 @@
 #include <json/json.h>
 
 #include "s3_bucket_metadata.h"
+#include "s3_datetime.h"
 
 S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
   account_name = request->get_account_name();
@@ -10,7 +11,9 @@ S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : reque
   state = S3BucketMetadataState::empty;
 
   // Set the defaults
-  system_defined_attribute["Date"] = "currentdate";  // TODO
+  S3DateTime current_time;
+  current_time.init_current_time();
+  system_defined_attribute["Date"] = current_time.get_GMT_string();
   system_defined_attribute["LocationConstraint"] = "US";
   system_defined_attribute["Owner-User"] = "";
   system_defined_attribute["Owner-User-id"] = "";

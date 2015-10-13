@@ -73,6 +73,7 @@ public:
   std::string get_object_name();
   std::string get_user_id();
   std::string get_user_name();
+  std::string get_creation_date();
   std::string get_last_modified();
   std::string get_storage_class();
 

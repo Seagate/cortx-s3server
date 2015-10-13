@@ -1,5 +1,6 @@
 
 #include "s3_api_handler.h"
+#include "s3_head_object_action.h"
 #include "s3_get_object_action.h"
 #include "s3_put_object_action.h"
 #include "s3_delete_object_action.h"
@@ -26,7 +27,7 @@ void S3ObjectAPIHandler::dispatch() {
       // Perform operation on Object.
       switch (request->http_verb()) {
         case S3HttpVerb::HEAD:
-          // action = std::make_shared<S3HeadObjectAction>(request);
+          action = std::make_shared<S3HeadObjectAction>(request);
           break;
         case S3HttpVerb::PUT:
           action = std::make_shared<S3PutObjectAction>(request);
