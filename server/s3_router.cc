@@ -13,6 +13,9 @@ bool S3Router::is_default_endpoint(std::string& endpoint) {
 }
 
 bool S3Router::is_exact_valid_endpoint(std::string& endpoint) {
+  if (endpoint == S3Config::get_instance()->get_default_endpoint()) {
+    return true;
+  }
   return S3Config::get_instance()->get_region_endpoints().find(endpoint) != S3Config::get_instance()->get_region_endpoints().end();
 }
 

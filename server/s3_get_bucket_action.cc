@@ -130,6 +130,7 @@ void S3GetBucketAction::send_response_to_s3_client() {
     std::string& response_xml = object_list.get_xml();
     std::string content_len_key("Content-Length");
     request->set_out_header_value(content_len_key, std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Type", "application/xml");
     printf("Object list response_xml = %s\n", response_xml.c_str());
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
