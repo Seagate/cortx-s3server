@@ -32,6 +32,8 @@ class S3RequestObject {
   std::string account_name;
   std::string account_id;  // Unique
 
+  std::string request_id;
+
 public:
   S3RequestObject(evhtp_request_t *req);
   ~S3RequestObject();
@@ -84,6 +86,8 @@ public:
   std::string& get_account_name();
   void set_account_id(std::string& id);
   std::string& get_account_id();
+
+  std::string& get_request_id();
 
   // Response Helpers
 private:

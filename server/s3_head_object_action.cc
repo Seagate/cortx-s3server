@@ -35,9 +35,19 @@ void S3HeadObjectAction::send_response_to_s3_client() {
   // Trigger metadata read async operation with callback
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
-    request->send_response(S3HttpFailed400);
+    S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    request->send_response(S3HttpFailed404);
+    S3Error error("NoSuchKey", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     request->set_out_header_value("Last-Modified", object_metadata->get_last_modified());
     request->set_out_header_value("ETag", object_metadata->get_md5());
@@ -46,8 +56,12 @@ void S3HeadObjectAction::send_response_to_s3_client() {
 
     request->send_response(S3HttpSuccess200);
   } else {
-    // request->set_header_value(...)
-    request->send_response(S3HttpFailed400);
+    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
   i_am_done();  // self delete

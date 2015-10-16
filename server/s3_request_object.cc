@@ -1,6 +1,7 @@
 
 #include <string>
 #include "s3_request_object.h"
+#include "s3_error_codes.h"
 
 // evhttp Helpers
 /* evhtp_kvs_iterator */
@@ -13,6 +14,7 @@ extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg) {
 S3RequestObject::S3RequestObject(evhtp_request_t *req) : ev_req(req), in_headers_copied(false) {
   printf("S3RequestObject created.\n");
   bucket_name = object_name = user_name = user_id = account_name = account_id = "";
+  request_id = "TODO-Gen uuid";
 }
 
 S3RequestObject::~S3RequestObject(){
@@ -142,6 +144,10 @@ std::string& S3RequestObject::get_account_name() {
   return account_name;
 }
 
+std::string& S3RequestObject::get_request_id() {
+  return request_id;
+}
+
 void S3RequestObject::send_response(int code, std::string body) {
   // If body not empty, write to response body. TODO
   if (!body.empty()) {
@@ -166,6 +172,10 @@ void S3RequestObject::send_reply_end() {
 }
 
 void S3RequestObject::respond_unsupported_api() {
-  evbuffer_add_printf(ev_req->buffer_out, "Unsupported API endpoint.\n");
-  evhtp_send_reply(ev_req, EVHTP_RES_NOTFOUND);
+  S3Error error("NotImplemented", get_request_id(), "");
+  std::string& response_xml = error.to_xml();
+  set_out_header_value("Content-Type", "application/xml");
+  set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+  send_response(error.get_http_status_code(), response_xml);
 }

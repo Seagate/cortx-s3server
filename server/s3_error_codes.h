@@ -4,6 +4,7 @@
 #ifndef __MERO_FE_S3_SERVER_S3_ERROR_CODES_H__
 #define __MERO_FE_S3_SERVER_S3_ERROR_CODES_H__
 
+#include "s3_error_messages.h"
 
 #define S3HttpSuccess200         EVHTP_RES_OK
 #define S3HttpSuccess204         EVHTP_RES_NOCONTENT
@@ -13,17 +14,29 @@
 #define S3HttpFailed404          EVHTP_RES_NOTFOUND
 
 
+/* Example error message:
+  <?xml version="1.0" encoding="UTF-8"?>
+  <Error>
+    <Code>NoSuchKey</Code>
+    <Message>The resource you requested does not exist</Message>
+    <Resource>/mybucket/myfoto.jpg</Resource>
+    <RequestId>4442587FB7D0A2F9</RequestId>
+  </Error>
+ */
 
-enum class S3Error {
-  InvalidBucketName,  // 400
-  InvalidBucketState,  // 409 The request is not valid with the current state of the bucket
-  NoSuchBucket,  // 404
-  NoSuchBucketPolicy,  // 404
-  BucketAlreadyExists,  // 409
-  BucketAlreadyOwnedByYou,  // 409 - previous request to create the named bucket succeeded and you already own it
-  TooManyBuckets,  // 400
-  PermanentRedirect,  // 301
-  UserKeyMustBeSpecified,  // 400 The bucket POST must contain the specified field name. If it is specified, check the order of the fields.
+class S3Error {
+  std::string code;  // Error codes are read from s3_error_messages.json
+  std::string request_id;
+  std::string resource_key;
+  S3ErrorDetails& details;
+
+  std::string xml_message;
+public:
+  S3Error(std::string error_code, std::string req_id, std::string res_key);
+
+  int get_http_status_code();
+
+  std::string& to_xml();
 };
 
 #endif

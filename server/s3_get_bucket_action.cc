@@ -72,7 +72,7 @@ void S3GetBucketAction::get_next_objects_successful() {
         object_list.add_object(object);
       } else {
         // Roll up
-        printf("Delimiter %s found at pos %d in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
+        printf("Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
         object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
       }
     } else {
@@ -84,7 +84,7 @@ void S3GetBucketAction::get_next_objects_successful() {
           object->from_json(kv.second);
           object_list.add_object(object);
         } else {
-          printf("Delimiter %s found at pos %d in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
+          printf("Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
           object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
         }
       } // else no prefix match, filter it out
@@ -128,14 +128,19 @@ void S3GetBucketAction::send_response_to_s3_client() {
   // Trigger metadata read async operation with callback
   if (fetch_successful) {
     std::string& response_xml = object_list.get_xml();
-    std::string content_len_key("Content-Length");
-    request->set_out_header_value(content_len_key, std::to_string(response_xml.length()));
+
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
     printf("Object list response_xml = %s\n", response_xml.c_str());
+
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
-    // request->set_header_value(...)
-    request->send_response(S3HttpFailed400);
+    S3Error error("InternalError", request->get_request_id(), request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
   i_am_done();  // self delete

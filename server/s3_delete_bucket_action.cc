@@ -72,15 +72,29 @@ void S3DeleteBucketAction::send_response_to_s3_client() {
   printf("Called S3DeleteBucketAction::send_response_to_s3_client\n");
   // Trigger metadata read async operation with callback
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    request->send_response(S3HttpFailed404);  // TODO add error xml
+    S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (is_bucket_empty == false) {
     // Bucket not empty, cannot delete
-    request->send_response(S3HttpFailed409);  // TODO add error xml
+    S3Error error("BucketNotEmpty", request->get_request_id(), request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (delete_successful) {
     request->send_response(S3HttpSuccess204);
   } else {
-    // request->set_header_value(...)
-    request->send_response(S3HttpFailed400);
+    S3Error error("InternalError", request->get_request_id(), request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
   i_am_done();  // self delete

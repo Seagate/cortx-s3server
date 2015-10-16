@@ -17,6 +17,7 @@
 #include "mero_object_header.pb.h"
 
 #include "s3_router.h"
+#include "s3_error_codes.h"
 
 #define WEBSTORE "/home/seagate/webstore"
 
@@ -152,6 +153,9 @@ main(int argc, char ** argv) {
     if (parse_args(argc, argv) < 0) {
         exit(1);
     }
+
+    // Load Any configs.
+    S3ErrorMessages::init_messages();
 
     /* Google protobuf */
     GOOGLE_PROTOBUF_VERIFY_VERSION;
