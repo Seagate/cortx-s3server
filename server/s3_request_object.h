@@ -41,10 +41,17 @@ public:
   struct event_base* get_evbase() {
     return this->ev_req->htp->evbase;
   }
+
+  evhtp_request_t * get_request() {
+    return this->ev_req;
+  }
+
+  unsigned char * c_get_uri_query();
   S3HttpVerb http_verb();
 
   const char* c_get_full_path();
 
+  char * c_get_file_name();
 private:
   std::map<std::string, std::string> in_headers_copy;
   bool in_headers_copied;

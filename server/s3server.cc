@@ -29,6 +29,10 @@ const char *clovis_confd_addr = "localhost@tcp:12345:33:100";
 const char *clovis_prof = "<0x7000000000000001:0>";
 uint16_t bind_port      = 8081;
 
+// S3 Auth service
+const char *auth_ip_addr = "127.0.0.1";
+uint16_t auth_port = 8085;
+
 /* MD5 helper */
 /* KD xxx - needed? intention? convert 16bytes to 32bytes readable string */
 void buf_to_hex(unsigned char *md5_digest, int in_len, char *md5_digest_chars, int out_len)
@@ -98,7 +102,7 @@ s3_handler(evhtp_request_t * req, void * a) {
 //     return EVHTP_RES_OK;
 // }
 
-const char * optstr = "a:p:l:c:h";
+const char * optstr = "a:p:l:c:s:d:h";
 
 const char * help   =
     "Options: \n"
@@ -106,7 +110,9 @@ const char * help   =
     "  -a <str> : Bind Address             (default: 0.0.0.0)\n"
     "  -p <int> : Bind Port                (default: 8081)\n"
     "  -l <str> : clovis local address     (default: 10.0.2.15@tcp:12345:33:100)\n"
-    "  -c <str> : clovis confd address     (default: 10.0.2.15@tcp:12345:33:100)\n";
+    "  -c <str> : clovis confd address     (default: 10.0.2.15@tcp:12345:33:100)\n"
+    "  -s <str> : Auth Service address     (default: 127.0.0.1)\n"
+    "  -d <int> : Auth Service port        (default: 8085)\n";
 
 int
 parse_args(int argc, char ** argv) {
@@ -133,6 +139,12 @@ parse_args(int argc, char ** argv) {
             case 'c':
                 clovis_confd_addr      = strdup(optarg);
                 break;
+            case 's':
+                auth_ip_addr           = strdup(optarg);
+                break;
+            case 'd':
+                auth_port             = atoi(optarg);
+                break;
             default:
                 printf("Unknown opt %s\n", optarg);
                 return -1;
@@ -142,6 +154,8 @@ parse_args(int argc, char ** argv) {
     printf("bind_port = %d\n", bind_port);
     printf("clovis_local_addr = %s\n", clovis_local_addr);
     printf("clovis_confd_addr = %s\n", clovis_confd_addr);
+    printf("Auth server: %s\n",auth_ip_addr);
+    printf("Auth server port: %d\n",auth_port);
 
     return 0;
 } /* parse_args */

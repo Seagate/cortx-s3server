@@ -8,6 +8,7 @@
 #include <functional>
 #include <vector>
 
+#include "s3_auth_client.h"
 #include "s3_request_object.h"
 
 // Derived Action Objects will have steps (member functions)
@@ -28,6 +29,7 @@ private:
   size_t task_iteration_index;
 
   std::shared_ptr<S3Action> self_ref;
+  std::shared_ptr<S3AuthClient> check_auth;
 
   std::string error_message;
 
@@ -69,6 +71,7 @@ public:
 
   // Common steps for all Actions like Authenticate.
   void check_authentication();
+  void check_authentication_failed();
   void send_response_to_s3_client();
 };
 

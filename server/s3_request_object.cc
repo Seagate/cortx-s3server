@@ -30,6 +30,14 @@ const char* S3RequestObject::c_get_full_path() {
   return ev_req->uri->path->full;
 }
 
+char * S3RequestObject::c_get_file_name() {
+  return ev_req->uri->path->file;
+}
+
+unsigned char* S3RequestObject::c_get_uri_query() {
+  return ev_req->uri->query_raw;
+}
+
 std::map<std::string, std::string> S3RequestObject::get_in_headers_copy(){
   if(!in_headers_copied) {
     evhtp_kvs_for_each(ev_req->uri->query, consume_header, this);

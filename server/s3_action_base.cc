@@ -1,6 +1,7 @@
 
 
 #include "s3_action_base.h"
+#include "s3_error_codes.h"
 
 S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req), invalid_request(false) {
   task_iteration_index = 0;
@@ -49,6 +50,19 @@ void S3Action::abort() {
 }
 
 void S3Action::check_authentication() {
-  // TODO auth code
-  this->next();  // For now assume success.
+  check_auth = std::make_shared<S3AuthClient>(request);
+  check_auth->check_authentication(std::bind( &S3Action::next, this), std::bind( &S3Action::check_authentication_failed, this));
+}
+
+void S3Action::check_authentication_failed() {
+  printf("Called S3Action::check_authentication_failed\n");
+  S3Error error("AccessDenied", request->get_request_id(), request->get_object_uri());
+  std::string& response_xml = error.to_xml();
+  request->set_out_header_value("Content-Type", "application/xml");
+  request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+  request->send_response(error.get_http_status_code(), response_xml);
+
+  done();
+  i_am_done();
 }
