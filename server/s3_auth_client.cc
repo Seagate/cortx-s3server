@@ -8,18 +8,58 @@
 
 /* S3 Auth client callbacks */
 
-std::string url_encode(const char *url) {
-  std::string oldstr(url);
-  std::string newstr("");
+static void escape_char(char c, std::string& destination)
+{
+  char buf[16];
+  snprintf(buf, sizeof(buf), "%%%.2X", (int)(unsigned char)c);
+  destination.append(buf);
+}
 
-  for(auto it : oldstr) {
-    if (it == '/') {
-      newstr.append("%2F");
+static bool char_needs_url_encoding(char c)
+{
+  if (c <= 0x20 || c >= 0x7f)
+    return true;
+
+  switch (c) {
+    case 0x22:
+    case 0x23:
+    case 0x25:
+    case 0x26:
+    case 0x2B:
+    case 0x2C:
+    case 0x2F:
+    case 0x3A:
+    case 0x3B:
+    case 0x3C:
+    case 0x3E:
+    case 0x3D:
+    case 0x3F:
+    case 0x40:
+    case 0x5B:
+    case 0x5D:
+    case 0x5C:
+    case 0x5E:
+    case 0x60:
+    case 0x7B:
+    case 0x7D:
+      return true;
+  }
+  return false;
+}
+
+
+std::string  url_encode(const char* src)
+{
+  std::string encoded_string = "";
+  size_t len = strlen(src);
+  for (size_t i = 0; i < len; i++, src++) {
+    if (char_needs_url_encoding(*src)) {
+      escape_char(*src, encoded_string);
     } else {
-      newstr.push_back(it);
+    encoded_string.append(src, 1);
     }
   }
-  return newstr;
+  return encoded_string;
 }
 
 static bool validate_auth_response(char *auth_response_body) {
@@ -136,16 +176,19 @@ void S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) 
   else if(request->http_verb() == S3HttpVerb::POST)
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "Method=POST&");
 
-  if(request->c_get_file_name())
-    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "CanonicalUri=/%s&", request->c_get_file_name());
-  else
-    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "CanonicalUri=/&");
+  printf("c_get_full_path = %s\n",request->c_get_full_path());
+  if(request->c_get_full_path() != NULL) {
+    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientAbsoluteUri=%s&", request->c_get_full_path());
+  } else {
+    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientAbsoluteUri=&");
+  }
 
   if(request->c_get_uri_query() != NULL) {
-    std::string escaped_val = url_encode((char*)request->c_get_uri_query());
-    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "CanonicalQuery=%s&", escaped_val.c_str());
+    printf("c_get_uri_query = %s\n",request->c_get_uri_query());
+    std::string encoded_string = url_encode((char *)request->c_get_uri_query());
+    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientQueryParams=%s&", encoded_string.c_str());
   } else {
-    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "CanonicalQuery=&");
+    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientQueryParams=&");
   }
 
   // May need to take it from config
