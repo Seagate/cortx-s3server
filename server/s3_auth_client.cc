@@ -203,17 +203,20 @@ setup_auth_request_headers(evhtp_header_t *header, void *arg) {
 
   struct s3_auth_op_context *auth_ctx = (struct s3_auth_op_context *)arg;
   if(auth_ctx->isfirstpass == true) {
-    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "%s=%s", header->key, header->val);
+    std::string encoded_string = url_encode((char *)header->val);
+    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "%s=%s", header->key, encoded_string.c_str());
   } else {
-    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "&%s=%s", header->key, header->val);
+    std::string encoded_string = url_encode((char *)header->val);
+    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "&%s=%s", header->key, encoded_string.c_str());
   }
   printf("key = %s and val = %s\n", header->key, header->val);
 
   auth_ctx->isfirstpass = false;
 
   if(strcmp(header->key, "Host") == 0) {
+    std::string encoded_string = url_encode((char *)header->val);
     evhtp_headers_add_header(auth_ctx->authrequest->headers_out,
-                              evhtp_header_new(header->key, header->val, 1, 1));
+                              evhtp_header_new(header->key, encoded_string.c_str(), 1, 1));
   }
 
   return 0;
