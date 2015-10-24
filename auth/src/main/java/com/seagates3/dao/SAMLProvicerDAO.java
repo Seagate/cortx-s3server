@@ -14,23 +14,38 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 15-Oct-2015
  */
 
 package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.User;
+import com.seagates3.model.SAMLProvider;
 
-public interface FedUserDAO {
+public interface SAMLProvicerDAO {
 
     /*
      * Get user details from the database.
      */
-    public User find(String accountName, String name) throws DataAccessException;
+    public SAMLProvider find(String accountName, String name) throws DataAccessException;
 
     /*
-     * Create a new entry for the user in the data base.
+     * Get the list of all the saml providers.
      */
-    public void save(User user) throws DataAccessException;
+    public SAMLProvider[] findAll(String accountName) throws DataAccessException;
+
+    /*
+     * Create a new entry for the saml provider in the data base.
+     */
+    public void save(SAMLProvider samlProvider) throws DataAccessException;
+
+    /*
+     * Delete the saml provider.
+     */
+    public void delete(SAMLProvider samlProvider) throws DataAccessException;
+
+    /*
+     * Modify saml provider metadata.
+     */
+    public void update(SAMLProvider samlProvider, String newSamlMetadata) throws DataAccessException;
 }

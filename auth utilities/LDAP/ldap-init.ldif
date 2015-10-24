@@ -24,6 +24,10 @@ objectclass: top
 objectclass: dcObject
 objectclass: organization
 
+dn: ou=accounts,dc=s3,dc=seagate,dc=com
+ou: accounts
+objectclass: organizationalunit
+
 dn: ou=accesskeys,dc=s3,dc=seagate,dc=com
 ou: accesskeys
-objectclass: s3Creds
+objectclass: organizationalunit

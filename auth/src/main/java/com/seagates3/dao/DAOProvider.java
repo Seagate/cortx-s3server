@@ -20,16 +20,16 @@
 package com.seagates3.dao;
 
 public enum DAOProvider {
-        LDAP("Ldap");
+    LDAP("Ldap");
 
-        private final String className;
+    private final String className;
 
-        private DAOProvider(final String className) {
-            this.className = className;
-        }
-
-        @Override
-        public String toString() {
-            return className;
-        }
+    private DAOProvider(final String className) {
+        this.className = className;
     }
+
+    @Override
+    public String toString() {
+        return className;
+    }
+}

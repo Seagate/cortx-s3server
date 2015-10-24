@@ -27,45 +27,67 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
 
 import com.seagates3.dao.FedUserDAO;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.User;
 
-public class LdapFedUserDAO implements FedUserDAO{
+public class FedUserImpl implements FedUserDAO{
 
+    /*
+     * Get the federated user details from LDAP.
+     *
+     * Search for the user under
+     * ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
+     */
     @Override
-    public User findUser(String accountName, String name) {
+    public User find(String accountName, String name) throws DataAccessException {
         User user = new User();
         user.setAccountName(accountName);
         user.setName(name);
 
-        String[] attrs = {"id", "objectclass"};
-        String ldapBase = String.format("ou=%s,%s", accountName, LdapUtils.getBaseDN());
+        String[] attrs = {"uid", "objectclass"};
+        String ldapBase = String.format("ou=users,o=%s,ou=accounts,%s",
+                accountName, LdapUtils.getBaseDN());
         String filter = String.format("(cn=%s)", name);
 
-        LDAPSearchResults ldapResults = LdapUtils.search(ldapBase,
-                LDAPConnection.SCOPE_SUB, filter, attrs);
+        LDAPSearchResults ldapResults;
+        try {
+            ldapResults = LdapUtils.search(ldapBase,
+                    LDAPConnection.SCOPE_SUB, filter, attrs);
+        } catch (LDAPException ex) {
+            throw new DataAccessException("Failed to find federated user details.\n" + ex);
+        }
         if(ldapResults.hasMore()) {
+            LDAPEntry entry;
             try {
-                LDAPEntry entry = ldapResults.next();
-                user.setId(entry.getAttribute("id").getStringValue());
+                entry = ldapResults.next();
             } catch (LDAPException ex) {
+                throw new DataAccessException("LDAP failure.\n" + ex);
             }
+            user.setId(entry.getAttribute("uid").getStringValue());
         }
 
         return user;
     }
 
+    /*
+     * Create a new entry for the user in LDAP.
+     */
     @Override
-    public Boolean saveUser(User user) {
+    public void save(User user) throws DataAccessException {
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add( new LDAPAttribute("objectclass", "iamFedUser"));
         attributeSet.add( new LDAPAttribute("cn", user.getName()));
         attributeSet.add( new LDAPAttribute("ou", user.getAccountName()));
         attributeSet.add( new LDAPAttribute("path", user.getPath()));
-        attributeSet.add(new LDAPAttribute("id", user.getId()));
+        attributeSet.add(new LDAPAttribute("uid", user.getId()));
 
-        String dn = String.format("cn=%s,ou=%s,%s", user.getName(),
-                user.getAccountName(), LdapUtils.getBaseDN());
+        String dn = String.format("uid=%s,ou=users,o=%s,ou=accounts,%s",
+                user.getId(), user.getAccountName(), LdapUtils.getBaseDN());
 
-        return LdapUtils.add(new LDAPEntry(dn, attributeSet));
+        try {
+            LdapUtils.add(new LDAPEntry(dn, attributeSet));
+        } catch (LDAPException ex) {
+            throw new DataAccessException("Failed to save federated user.\n" + ex);
+        }
     }
 }

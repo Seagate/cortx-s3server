@@ -19,15 +19,45 @@
 
 package com.seagates3.dao;
 
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.User;
 
 public interface AccessKeyDAO {
-    public AccessKey findAccessKey(String accessKeyId);
-    public AccessKey[] findUserAccessKeys(User user);
-    public Boolean hasAccessKeys(String userId);
-    public int getCount(String userId);
-    public Boolean delete(AccessKey accessKey);
-    public Boolean save(AccessKey accessKey);
-    public Boolean updateAccessKey(AccessKey accessKey, String newStatus);
+
+    /*
+     * Get the access key details from the database.
+     */
+    public AccessKey find(String accessKeyId) throws DataAccessException;
+
+    /*
+     * Get all the access keys belonging to the user.
+     */
+    public AccessKey[] findAll(User user) throws DataAccessException;
+
+    /*
+     * Return true if the user has an access key.
+     */
+    public Boolean hasAccessKeys(String userId) throws DataAccessException;
+
+    /*
+     * Return the no of access keys which a user has.
+     * AWS allows a maximum of 2 access keys per user.
+     */
+    public int getCount(String userId) throws DataAccessException;
+
+    /*
+     * Delete the access key.
+     */
+    public void delete(AccessKey accessKey) throws DataAccessException;
+
+    /*
+     * Create a new entry in the data base for the access key.
+     */
+    public void save(AccessKey accessKey) throws DataAccessException;
+
+    /*
+     * modify the access key details.
+     */
+    public void update(AccessKey accessKey, String newStatus) throws DataAccessException;
 }

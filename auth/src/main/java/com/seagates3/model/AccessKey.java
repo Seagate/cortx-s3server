@@ -20,6 +20,23 @@
 package com.seagates3.model;
 
 public class AccessKey {
+    
+    public enum AccessKeyStatus {
+        ACTIVE("Active"),
+        INACTIVE("Inactive");
+
+        private final String status;
+
+        private AccessKeyStatus(final String text) {
+            this.status = text;
+        }
+
+        @Override
+        public String toString() {
+            return status;
+        }
+    }
+
     protected String userId;
     protected String acessKeyId;
     protected String secretKey;

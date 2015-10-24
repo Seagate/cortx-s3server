@@ -21,7 +21,7 @@ package com.seagates3.validator;
 
 import java.util.Map;
 
-public class UserValidator {
+public class UserValidator extends AbstractValidator {
 
     private final ValidatorHelper validatorUtil;
 
@@ -31,12 +31,13 @@ public class UserValidator {
     /*
      * Validate the input parameters for create user request.
      */
+    @Override
     public Boolean create(Map<String, String> requestBody) {
         if(!requestBody.containsKey("UserName")) {
             return false;
         }
 
-        if(!validatorUtil.validUserName(requestBody.get("UserName"))) {
+        if(!validatorUtil.validName(requestBody.get("UserName"))) {
             return false;
         }
 
@@ -50,12 +51,13 @@ public class UserValidator {
     /*
      * Validate the input parameters for delete user request.
      */
+    @Override
     public Boolean delete(Map<String, String> requestBody) {
         if(!requestBody.containsKey("UserName")) {
             return false;
         }
 
-        return validatorUtil.validUserName(requestBody.get("UserName"));
+        return validatorUtil.validName(requestBody.get("UserName"));
     }
 
     /*
@@ -64,6 +66,7 @@ public class UserValidator {
      * To do
      * Validate Marker and MaxItems
      */
+    @Override
     public Boolean list(Map<String, String> requestBody) {
         if(requestBody.containsKey("PathPrefix")) {
             return validatorUtil.validPath(requestBody.get("PathPrefix"));
@@ -75,17 +78,18 @@ public class UserValidator {
     /*
      * Validate the input parameters for update user request.
      */
+    @Override
     public Boolean update(Map<String, String> requestBody) {
         if(!requestBody.containsKey("UserName")) {
             return false;
         }
 
-        if(!validatorUtil.validUserName(requestBody.get("UserName"))) {
+        if(!validatorUtil.validName(requestBody.get("UserName"))) {
             return false;
         }
 
         if(requestBody.containsKey("NewUserName")) {
-            if(!validatorUtil.validUserName(requestBody.get("UserName"))) {
+            if(!validatorUtil.validName(requestBody.get("UserName"))) {
                 return false;
             }
         }

@@ -19,9 +19,18 @@
 
 package com.seagates3.dao;
 
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 
 public interface AccountDAO {
-    public Account findAccount(String name);
-    public Boolean save(Account account);
+
+    /*
+     * Get account details from the database.
+     */
+    public Account find(String name) throws DataAccessException;
+
+    /*
+     * Add a new entry for the account in the database.
+     */
+    public void save(Account account) throws DataAccessException;
 }

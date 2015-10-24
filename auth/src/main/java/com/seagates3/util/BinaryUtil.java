@@ -26,10 +26,11 @@ import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.codec.binary.Base64;
 
 public class BinaryUtil {
     /*
@@ -73,7 +74,7 @@ public class BinaryUtil {
 
         byte[] digestBuff = hash(text);
         bb = ByteBuffer.wrap(digestBuff);
-        secret_key = Base64.getEncoder().encodeToString(bb.array());
+        secret_key = Base64.encodeBase64String(bb.array());
 
         return secret_key;
     }
@@ -143,6 +144,28 @@ public class BinaryUtil {
         String b64UUID = new org.apache.commons.codec.binary.Base64(true).encodeToString(bb.array());
 
         return b64UUID;
+    }
+
+    public static Boolean isBase64Encoded(String text) {
+        return org.apache.commons.codec.binary.Base64.isBase64(text);
+    }
+
+    /*
+     * Decode the base 64 text and return the bytes.
+     */
+    public static byte[] base64DecodedBytes(String text) {
+        return Base64.decodeBase64(text);
+    }
+
+    /*
+     * Decode base 64 string.
+     */
+    public static String base64Decode(String text) {
+        return new String(base64DecodedBytes(text));
+    }
+
+    public static byte[] encodeToBase64(String text) {
+        return Base64.encodeBase64(text.getBytes());
     }
 
     /*

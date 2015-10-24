@@ -25,6 +25,7 @@ import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.UserDAO;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.generator.xml.UserResponseGenerator;
@@ -44,8 +45,8 @@ public class UserController extends AbstractController {
     }
 
     @Override
-    public ServerResponse create() {
-        User user = userDAO.findUser(requestor.getAccountName(),
+    public ServerResponse create() throws DataAccessException {
+        User user = userDAO.find(requestor.getAccountName(),
                 requestBody.get("UserName"));
 
         if(user.exists()) {
@@ -62,18 +63,15 @@ public class UserController extends AbstractController {
 
         user.setId(KeyGenUtil.userId());
 
-        Boolean success = userDAO.saveUser(user);
-        if(!success) {
-            return userResponse.internalServerError();
-        }
+        userDAO.save(user);
 
         return userResponse.create(user.getName(), user.getPath(), user.getId());
     }
 
     @Override
-    public ServerResponse delete() {
+    public ServerResponse delete() throws DataAccessException {
         Boolean userHasAccessKeys, status;
-        User user = userDAO.findUser(requestor.getAccountName(),
+        User user = userDAO.find(requestor.getAccountName(),
                 requestBody.get("UserName"));
         if(!user.exists()) {
             return userResponse.noSuchEntity();
@@ -87,16 +85,13 @@ public class UserController extends AbstractController {
             return userResponse.deleteConflict();
         }
 
-        status = userDAO.deleteUser(user);
-        if(!status) {
-            return userResponse.internalServerError();
-        }
+        userDAO.delete(user);
 
         return userResponse.success("DeleteUser");
     }
 
     @Override
-    public ServerResponse list() {
+    public ServerResponse list() throws DataAccessException {
         String pathPrefix;
 
         if(requestBody.containsKey("PathPrefix")) {
@@ -106,7 +101,7 @@ public class UserController extends AbstractController {
         }
 
         User[] userList;
-        userList = userDAO.findUsers(requestor.getAccountName(), pathPrefix);
+        userList = userDAO.findAll(requestor.getAccountName(), pathPrefix);
 
         if(userList == null) {
             return userResponse.internalServerError();
@@ -116,7 +111,7 @@ public class UserController extends AbstractController {
     }
 
     @Override
-    public ServerResponse update() {
+    public ServerResponse update() throws DataAccessException {
         Boolean success;
         String newUserName = null, newPath = null;
 
@@ -125,7 +120,7 @@ public class UserController extends AbstractController {
             return userResponse.missingParameter();
         }
 
-        User user = userDAO.findUser(requestor.getAccountName(),
+        User user = userDAO.find(requestor.getAccountName(),
                 requestBody.get("UserName"));
 
         if (!user.exists()) {
@@ -134,7 +129,7 @@ public class UserController extends AbstractController {
 
         if(requestBody.containsKey("NewUserName")) {
             newUserName = requestBody.get("NewUserName");
-            User newUser = userDAO.findUser(requestor.getAccountName(),
+            User newUser = userDAO.find(requestor.getAccountName(),
                     newUserName);
 
             if(newUser.exists()) {
@@ -146,10 +141,7 @@ public class UserController extends AbstractController {
             newPath = requestBody.get("NewPath");
         }
 
-        success = userDAO.updateUser(user, newUserName, newPath);
-        if(!success) {
-            return userResponse.internalServerError();
-        }
+        userDAO.update(user, newUserName, newPath);
 
         return userResponse.update();
     }

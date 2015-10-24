@@ -28,7 +28,8 @@ public enum DAOResource {
     ACCOUNT("Account"),
     REQUESTEE("Requestee"),
     REQUESTOR("Requestor"),
-    USER("User");
+    USER("User"),
+    SAML_PROVIDER("SAMLProvider");
 
     private final String className;
 

@@ -43,6 +43,7 @@ import io.netty.handler.logging.LoggingHandler;
 
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.ldap.LdapConnectionManager;
+import com.seagates3.util.SAMLUtil;
 
 
 
@@ -80,16 +81,16 @@ public class AuthServer {
     }
 
     public static void main(String[] args) throws IOException {
-
         readConfig();
         logInit();
         DAODispatcher.Init(authServerConfig.getProperty("dataSource"));
         LdapConnectionManager.initLdap(authServerConfig);
+        AuthServerConfig.init(authServerConfig);
+        SAMLUtil.init();
 
         // Configure the server.
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        LOGGER.info("Server Bootstrapping");
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.option(ChannelOption.SO_BACKLOG, 1024);
@@ -108,6 +109,5 @@ public class AuthServer {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
-        LOGGER.info("Server bootstrap successful");
     }
 }

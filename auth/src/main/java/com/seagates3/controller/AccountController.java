@@ -26,8 +26,9 @@ import com.seagates3.dao.AccountDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.UserDAO;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.AccessKeyStatus;
+import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
@@ -51,9 +52,9 @@ public class AccountController extends AbstractController {
     }
 
     @Override
-    public ServerResponse create() {
+    public ServerResponse create() throws DataAccessException {
         String name = requestBody.get("AccountName");
-        Account account = accountDao.findAccount(name);
+        Account account = accountDao.find(name);
 
         if(account.exists()) {
             String errorMessage = String.format("The account %s exists already.",
@@ -61,10 +62,7 @@ public class AccountController extends AbstractController {
             return accountResponse.entityAlreadyExists(errorMessage);
         }
 
-        Boolean success = accountDao.save(account);
-        if(!success) {
-            return accountResponse.internalServerError();
-        }
+        accountDao.save(account);
 
         User root = createRootUser(name);
         if(root == null) {
@@ -79,7 +77,7 @@ public class AccountController extends AbstractController {
         return accountResponse.create(rootAccessKey);
     }
 
-    private User createRootUser(String accountName) {
+    private User createRootUser(String accountName) throws DataAccessException {
         UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
         User user = new User();
         user.setAccountName(accountName);
@@ -89,15 +87,11 @@ public class AccountController extends AbstractController {
 
         user.setId(KeyGenUtil.userId());
 
-        Boolean success = userDAO.saveUser(user);
-        if(!success) {
-            return null;
-        }
-
+        userDAO.save(user);
         return user;
     }
 
-    private AccessKey createRootAccessKey(User root) {
+    private AccessKey createRootAccessKey(User root) throws DataAccessException {
         AccessKeyDAO accessKeyDAO =
                 (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
         AccessKey accessKey = new AccessKey();
@@ -109,10 +103,7 @@ public class AccountController extends AbstractController {
         accessKey.setSecretKey(KeyGenUtil.userSercretKey(strToEncode));
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
-        Boolean success = accessKeyDAO.save(accessKey);
-        if(!success) {
-            return null;
-        }
+        accessKeyDAO.save(accessKey);
 
         return accessKey;
     }

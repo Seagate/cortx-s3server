@@ -14,24 +14,29 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 14-Oct-2015
  */
 
 package com.seagates3.model;
 
-public enum AccessKeyStatus {
-    ACTIVE("Active"),
-    INACTIVE("Inactive");
+public class SAMLAssertionAttribute {
 
-    private final String status;
+    private String name;
+    private String friendlyName;
 
-    private AccessKeyStatus(final String text) {
-        this.status = text;
+    public String getName() {
+        return name;
     }
 
-    @Override
-    public String toString() {
-        return status;
+    public String getFriendlyName() {
+        return friendlyName;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setFriendlyName(String friendlyName) {
+        this.friendlyName = friendlyName;
     }
 }
-

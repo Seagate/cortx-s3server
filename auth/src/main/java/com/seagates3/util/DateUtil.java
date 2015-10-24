@@ -22,6 +22,9 @@ package com.seagates3.util;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DateUtil {
 
@@ -43,6 +46,22 @@ public class DateUtil {
             SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
         return serverResponseFormat.format(date);
+    }
+
+    /*
+     * Return the current time in UTC.
+     */
+    public static long getCurrentTime() {
+        SimpleDateFormat dateFormatGmt = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss");
+        dateFormatGmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        try {
+            return dateFormatGmt.parse(dateFormatGmt.format(new Date())).getTime();
+        } catch (ParseException ex) {
+            Logger.getLogger(DateUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return 0;
     }
 
     public static Date toDate(String ldapdate) {

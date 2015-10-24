@@ -17,45 +17,37 @@
  * Original creation date: 17-Sep-2014
  */
 
-package com.seagates3.awssign;
+package com.seagates3.aws.sign;
 
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.seagates3.authserver.ClientRequest;
+import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.BinaryUtil;
 
-public class AWSV4Sign {
-    Requestor requestor;
-    ClientRequest request;
-
-    public AWSV4Sign(ClientRequest request, Requestor requestor) {
-        this.request = request;
-        this.requestor = requestor;
-    }
+public class AWSV4Sign implements AWSSign{
 
     /*
-     * Authenticate the user.
-     * If the user is authenticated
-     *   return requestor object
-     * else
-     *   return null.
+     * Return true if the signature is valid.
      */
-    public Boolean authenticate() {
+    @Override
+    public Boolean authenticate(ClientRequestToken clientRequestToken,
+            Requestor requestor) {
         String canonicalRequest, stringToSign, signature;
         byte[] signingKey;
 
-        canonicalRequest = createCanonicalRequest();
+        canonicalRequest = createCanonicalRequest(clientRequestToken);
 
-        stringToSign = createStringToSign(canonicalRequest);
+        stringToSign = createStringToSign(canonicalRequest, clientRequestToken);
 
-        signingKey = deriveSigningKey();
+        String secretKey = requestor.getAccesskey().getSecretKey();
+        signingKey = deriveSigningKey(clientRequestToken, secretKey);
 
         signature = calculateSignature(signingKey ,stringToSign);
 
-        return signature.equals(request.getSignature());
+        return signature.equals(clientRequestToken.getSignature());
     }
 
     /*
@@ -68,21 +60,22 @@ public class AWSV4Sign {
      * SignedHeaders + '\n' +
      * HexEncode(Hash(RequestPayload))
      */
-    private String createCanonicalRequest() {
+    private String createCanonicalRequest(ClientRequestToken clientRequestToken) {
         String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
                 hashedPayload, canonicalRequest;
-        httpMethod = request.getMethod();
-        canonicalURI = request.getCanonicalUri();
-        canonicalQuery = request.getCanonicalQuery();
-        canonicalHeader = request.getCanonicalHeader();
-        hashedPayload = request.getHashedPayLoad();
+
+        httpMethod = clientRequestToken.getHttpMethod();
+        canonicalURI = clientRequestToken.getCanonicalUri();
+        canonicalQuery = clientRequestToken.getCanonicalQuery();
+        canonicalHeader = clientRequestToken.getCanonicalHeader();
+        hashedPayload = clientRequestToken.getHashedPayLoad();
 
         canonicalRequest = String.format("%s\n%s\n%s\n%s\n%s\n%s",
                 httpMethod,
                 canonicalURI,
                 canonicalQuery,
                 canonicalHeader,
-                request.getSignedHeaders(),
+                clientRequestToken.getSignedHeaders(),
                 hashedPayload);
 
         return canonicalRequest;
@@ -98,14 +91,15 @@ public class AWSV4Sign {
      * CredentialScope + '\n' +
      * HashedCanonicalRequest
      */
-    private String createStringToSign(String canonicalRequest) {
+    private String createStringToSign(String canonicalRequest,
+            ClientRequestToken clientRequestToken) {
         String stringToSign, requestDate, hexEncodedCRHash;
 
-        requestDate = request.getRequestDate();
+        requestDate = clientRequestToken.getRequestDate();
         hexEncodedCRHash = BinaryUtil.hexEncodedHash(canonicalRequest);
 
-        stringToSign = String.format("%s\n%s\n%s\n%s", request.getAlgorithm(),
-                requestDate, request.getCredentialScope(), hexEncodedCRHash);
+        stringToSign = String.format("%s\n%s\n%s\n%s", clientRequestToken.getSigningAlgorithm(),
+                requestDate, clientRequestToken.getCredentialScope(), hexEncodedCRHash);
 
         return stringToSign;
     }
@@ -121,18 +115,18 @@ public class AWSV4Sign {
      * kService = HMAC(kRegion, Service)
      * kSigning = HMAC(kService, "aws4_request")
      */
-    private byte[] deriveSigningKey() {
+    private byte[] deriveSigningKey(ClientRequestToken clientRequestToken, String secretKey) {
         try {
-            byte[] kSecret = ("AWS4" + requestor.getAccesskey().getSecretKey())
+            byte[] kSecret = ("AWS4" + secretKey)
                     .getBytes("UTF-8");
             byte[] kDate = BinaryUtil.hmac(kSecret,
-                    request.getDate().getBytes("UTF-8"));
+                    clientRequestToken.getDate().getBytes("UTF-8"));
 
             byte[] kRegion = BinaryUtil.hmac(kDate,
-                    request.getRegion().getBytes("UTF-8"));
+                    clientRequestToken.getRegion().getBytes("UTF-8"));
 
             byte[] kService = BinaryUtil.hmac(kRegion,
-                    request.getService().getBytes("UTF-8"));
+                    clientRequestToken.getService().getBytes("UTF-8"));
 
             byte[] kSigning = BinaryUtil.hmac(kService,
                     "aws4_request".getBytes("UTF-8"));

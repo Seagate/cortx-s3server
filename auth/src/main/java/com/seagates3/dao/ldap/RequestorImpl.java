@@ -25,13 +25,14 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
 
 import com.seagates3.dao.RequestorDAO;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.Requestor;
 
-public class LdapRequestorDAO implements RequestorDAO {
+public class RequestorImpl implements RequestorDAO {
 
     @Override
-    public Requestor findRequestor(AccessKey accessKey) {
+    public Requestor find(AccessKey accessKey) throws DataAccessException {
         Requestor requestor = new Requestor();
 
         requestor.setAccessKey(accessKey);
@@ -39,27 +40,33 @@ public class LdapRequestorDAO implements RequestorDAO {
         if(accessKey.getUserId()!= null) {
             requestor.setId(accessKey.getUserId());
             String filter;
-            String[] attrs = {"ou", "cn"};
+            String[] attrs = {"o", "cn"};
             LDAPSearchResults ldapResults;
 
             if(accessKey.getToken() == null) {
-                filter = String.format("(&(id=%s)(objectclass=iamUser))",
+                filter = String.format("(&(uid=%s)(objectclass=iamUser))",
                         requestor.getId());
             } else {
-                filter = String.format("(&(id=%s)(objectclass=iamFedUser))",
+                filter = String.format("(&(uid=%s)(objectclass=iamFedUser))",
                         requestor.getId());
             }
 
-            ldapResults = LdapUtils.search(LdapUtils.getBaseDN(),
-                    LDAPConnection.SCOPE_SUB, filter, attrs);
+            try {
+                ldapResults = LdapUtils.search(LdapUtils.getBaseDN(),
+                        LDAPConnection.SCOPE_SUB, filter, attrs);
+            } catch (LDAPException ex) {
+                throw new DataAccessException("Failed to find requestor details.\n" + ex);
+            }
 
             if(ldapResults.hasMore()) {
+                LDAPEntry entry;
                 try {
-                    LDAPEntry entry = ldapResults.next();
-                    requestor.setAccountName(entry.getAttribute("ou").getStringValue());
-                    requestor.setName(entry.getAttribute("cn").getStringValue());
+                    entry = ldapResults.next();
                 } catch (LDAPException ex) {
+                    throw new DataAccessException("LDAP error\n" + ex);
                 }
+                requestor.setAccountName(entry.getAttribute("o").getStringValue());
+                requestor.setName(entry.getAttribute("cn").getStringValue());
             }
         }
 

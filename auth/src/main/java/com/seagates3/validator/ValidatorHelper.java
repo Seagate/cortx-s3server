@@ -34,7 +34,7 @@ public class ValidatorHelper {
     /*
      * User name should be at least 1 character long and at max 128 char long.
      */
-    public Boolean validUserName(String userName) {
+    public Boolean validName(String userName) {
         return !(userName.length() < 1 || userName.length() > 128);
     }
 
@@ -64,5 +64,14 @@ public class ValidatorHelper {
      */
     public Boolean validAccessKeyId(String accessKeyId) {
         return !(accessKeyId.length() < 1 || accessKeyId.length() > 32);
+    }
+
+    /*
+     * Saml metadata document should be atleast 1000 character long and at max
+     * 10000000 char long.
+     */
+    public Boolean validSAMLMetadata(String samlMetadataDocument) {
+        return !(samlMetadataDocument.length() < 1000 ||
+                samlMetadataDocument.length() > 10000000);
     }
 }

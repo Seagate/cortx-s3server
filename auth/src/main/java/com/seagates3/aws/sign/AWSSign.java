@@ -14,19 +14,17 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 22-Oct-2015
  */
+package com.seagates3.aws.sign;
 
-package com.seagates3.dao;
-
-import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.AccessKey;
+import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 
-public interface RequestorDAO {
+public interface AWSSign {
 
     /*
-     * Get the requestor details from the database.
+     * Authenticate the request using AWS algorithm.
      */
-    public Requestor find(AccessKey accessKey) throws DataAccessException;
+    public Boolean authenticate(ClientRequestToken clientRequestToken, Requestor requestor);
 }

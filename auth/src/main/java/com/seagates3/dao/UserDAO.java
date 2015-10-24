@@ -19,12 +19,33 @@
 
 package com.seagates3.dao;
 
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.User;
 
 public interface UserDAO {
-    public User findUser(String accountName, String name);
-    public User[] findUsers(String accountName, String pathPrefix);
-    public boolean deleteUser(User user);
-    public Boolean saveUser(User user);
-    public Boolean updateUser(User user, String newUserName, String newPath);
+
+    /*
+     * Get user details from the database.
+     */
+    public User find(String accountName, String name) throws DataAccessException;
+
+    /*
+     * Get the details of all the users with the given path prefix from an account.
+     */
+    public User[] findAll(String accountName, String pathPrefix) throws DataAccessException;
+
+    /*
+     * Delete the user.
+     */
+    public void delete(User user) throws DataAccessException;
+
+    /*
+     * Create a new entry for the user in the data base.
+     */
+    public void save(User user) throws DataAccessException;
+
+    /*
+     * Modify user details.
+     */
+    public void update(User user, String newUserName, String newPath) throws DataAccessException;
 }

@@ -25,8 +25,9 @@ import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.UserDAO;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.AccessKeyStatus;
+import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.generator.xml.AccessKeyResponseGenerator;
@@ -38,8 +39,7 @@ public class AccessKeyController extends AbstractController {
     UserDAO userDAO;
     AccessKeyResponseGenerator accessKeyResponse;
 
-    public AccessKeyController(Requestor requestor,
-            Map<String, String> requestBody) {
+    public AccessKeyController(Requestor requestor, Map<String, String> requestBody) {
         super(requestor, requestBody);
 
         accessKeyDAO = (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
@@ -51,7 +51,7 @@ public class AccessKeyController extends AbstractController {
      * Default maximum access keys allowed per user are 2.
      */
     @Override
-    public ServerResponse create() {
+    public ServerResponse create() throws DataAccessException {
         String userName;
 
         if(requestBody.containsKey("UserName")) {
@@ -60,7 +60,8 @@ public class AccessKeyController extends AbstractController {
             userName = requestor.getName();
         }
 
-        User user = userDAO.findUser(requestor.getAccountName(), userName);
+        User user;
+        user = userDAO.find(requestor.getAccountName(), userName);
 
         if(!user.exists()) {
             String errorMessage = String.format("the user with name %s cannot be "
@@ -80,17 +81,15 @@ public class AccessKeyController extends AbstractController {
         accessKey.setSecretKey(KeyGenUtil.userSercretKey(strToEncode));
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
-        Boolean success = accessKeyDAO.save(accessKey);
-        if(!success) {
-            return accessKeyResponse.internalServerError();
-        }
+        accessKeyDAO.save(accessKey);
 
         return accessKeyResponse.create(userName, accessKey);
     }
 
     @Override
-    public ServerResponse delete() {
-        AccessKey accessKey = accessKeyDAO.findAccessKey(requestBody.get("AccessKeyId"));
+    public ServerResponse delete() throws DataAccessException {
+        AccessKey accessKey;
+        accessKey = accessKeyDAO.find(requestBody.get("AccessKeyId"));
         String errorMessage;
 
         if(!accessKey.exists()) {
@@ -104,7 +103,8 @@ public class AccessKeyController extends AbstractController {
          * key id belongs to the user.
          */
         if(requestBody.containsKey("UserName")) {
-            User user = userDAO.findUser(requestor.getAccountName(),
+            User user;
+            user = userDAO.find(requestor.getAccountName(),
                     requestBody.get("UserName"));
 
             if(!user.exists()) {
@@ -120,17 +120,13 @@ public class AccessKeyController extends AbstractController {
             }
         }
 
-        Boolean success = accessKeyDAO.delete(accessKey);
-
-        if(!success) {
-            return accessKeyResponse.internalServerError();
-        }
+        accessKeyDAO.delete(accessKey);
 
         return accessKeyResponse.delete();
     }
 
     @Override
-    public ServerResponse list() {
+    public ServerResponse list() throws DataAccessException {
         String userName;
 
         if(requestBody.containsKey("UserName")) {
@@ -139,7 +135,8 @@ public class AccessKeyController extends AbstractController {
             userName = requestor.getName();
         }
 
-        User user = userDAO.findUser(requestor.getAccountName(), userName);
+        User user;
+        user = userDAO.find(requestor.getAccountName(), userName);
 
         if(!user.exists()) {
             String errorMessage = String.format("the user with name %s cannot be "
@@ -148,14 +145,15 @@ public class AccessKeyController extends AbstractController {
         }
 
         AccessKey[] accessKeyList;
-        accessKeyList = accessKeyDAO.findUserAccessKeys(user);
+        accessKeyList = accessKeyDAO.findAll(user);
 
         return accessKeyResponse.list(userName, accessKeyList);
     }
 
     @Override
-    public ServerResponse update() {
-        AccessKey accessKey = accessKeyDAO.findAccessKey(requestBody.get("AccessKeyId"));
+    public ServerResponse update() throws DataAccessException {
+        AccessKey accessKey;
+        accessKey = accessKeyDAO.find(requestBody.get("AccessKeyId"));
         String errorMessage;
 
         if(!accessKey.exists()) {
@@ -169,7 +167,8 @@ public class AccessKeyController extends AbstractController {
          * key id belongs to the user.
          */
         if(requestBody.containsKey("UserName")) {
-            User user = userDAO.findUser(requestor.getAccountName(),
+            User user;
+            user = userDAO.find(requestor.getAccountName(),
                     requestBody.get("UserName"));
 
             if(!user.exists()) {
@@ -187,11 +186,7 @@ public class AccessKeyController extends AbstractController {
 
         String newStatus = requestBody.get("Status");
         if(accessKey.getStatus().compareTo(newStatus) != 0) {
-            Boolean success = accessKeyDAO.updateAccessKey(accessKey, newStatus);
-
-            if(!success) {
-                return accessKeyResponse.internalServerError();
-            }
+            accessKeyDAO.update(accessKey, newStatus);
         }
 
         return accessKeyResponse.update();

@@ -14,19 +14,18 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 14-Oct-2015
  */
 
-package com.seagates3.dao;
+package com.seagates3.exception;
 
-import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.AccessKey;
-import com.seagates3.model.Requestor;
+public class DataAccessException extends Exception {
+    public DataAccessException(String ex) {
+        super(ex);
+    }
 
-public interface RequestorDAO {
-
-    /*
-     * Get the requestor details from the database.
-     */
-    public Requestor find(AccessKey accessKey) throws DataAccessException;
+    @Override
+    public String getMessage() {
+        return super.getMessage();
+    }
 }

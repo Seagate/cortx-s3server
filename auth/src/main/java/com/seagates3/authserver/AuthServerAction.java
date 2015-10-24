@@ -19,31 +19,41 @@
 
 package com.seagates3.authserver;
 
+import com.seagates3.aws.request.ClientRequestParser;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
 import java.util.Map;
 import java.util.HashMap;
+
 
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-import com.seagates3.awssign.RequestorAuthenticator;
+import com.seagates3.aws.sign.SignatureValidator;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.RequestorDAO;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
+import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.xml.AuthenticationResponseGenerator;
 import com.seagates3.response.generator.xml.XMLResponseGenerator;
+import com.seagates3.util.DateUtil;
 import java.lang.reflect.Constructor;
+import java.util.Date;
 
 public class AuthServerAction {
 
     private final String VALIDATOR_PACKAGE = "com.seagates3.validator";
     private final String CONTROLLER_PACKAGE = "com.seagates3.controller";
+    AuthenticationResponseGenerator responseGenerator;
+
+    public AuthServerAction() {
+        responseGenerator = new AuthenticationResponseGenerator();
+    }
 
     /*
      * Authenticate the requestor first.
@@ -53,36 +63,49 @@ public class AuthServerAction {
             Map<String, String> requestBody) {
 
         String requestAction = requestBody.get("Action");
-        ClientRequest request;
+        ClientRequestToken clientRequestToken;
         Requestor requestor;
+        ServerResponse serverResponse;
 
         if( !requestAction.equals("CreateAccount")) {
-            if(requestAction.equals("AuthenticateUser")) {
-                request = new ClientRequest(requestBody);
-            } else {
-                request = new ClientRequest(httpRequest);
-            }
+            clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
+
 
             AccessKeyDAO accessKeyDAO = (AccessKeyDAO)
                         DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
-            AccessKey accessKey = accessKeyDAO.findAccessKey(request.getAccessKeyId());
+            AccessKey accessKey;
+            try {
+                accessKey = accessKeyDAO.find(clientRequestToken.getAccessKeyId());
+            } catch (DataAccessException ex) {
+                return responseGenerator.internalServerError();
+            }
+
+            serverResponse = validateAccessKey(accessKey);
+            if(serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
+                return serverResponse;
+            }
 
             RequestorDAO requestorDAO = (RequestorDAO)
                     DAODispatcher.getResourceDAO(DAOResource.REQUESTOR);
-            requestor = requestorDAO.findRequestor(accessKey);
+            try {
+                requestor = requestorDAO.find(accessKey);
+            } catch (DataAccessException ex) {
+                return responseGenerator.internalServerError();
+            }
 
-            ServerResponse serverResponse =
-                    RequestorAuthenticator.authenticate(requestor, request);
+            serverResponse = validateRequestor(requestor, clientRequestToken);
+            if(serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
+                return serverResponse;
+            }
+
+            serverResponse = new SignatureValidator().validate(clientRequestToken, requestor);
 
             if(!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
                 return serverResponse;
             }
 
-            /* To do
-             * Replace this with requestor controller
-             */
             if(requestAction.equals("AuthenticateUser")) {
-                return new AuthenticationResponseGenerator().AuthenticateUser();
+                return responseGenerator.AuthenticateUser();
             }
         } else {
             requestor = new Requestor();
@@ -92,15 +115,75 @@ public class AuthServerAction {
         String controllerName = controllerAction.get("ControllerName");
         String action = controllerAction.get("Action");
 
-        if(! validRequest(controllerName, action, requestBody)) {
+        if(! validateRequest(controllerName, action, requestBody)) {
             return new XMLResponseGenerator().invalidParametervalue();
         }
 
         return performAction(controllerName, action, requestBody, requestor);
     }
 
+    /*
+     * Validate access Key.
+     *
+     * Check
+     *   if access key exists.
+     *   if access key is active.
+     */
+    private ServerResponse validateAccessKey(AccessKey accessKey) {
+        /*
+        * Return exit message if access key doesnt exist.
+        */
+       if(!accessKey.exists()) {
+           return responseGenerator.noSuchEntity();
+       }
 
-    private Boolean validRequest(String controllerName, String action,
+       if(!accessKey.isAccessKeyActive()) {
+           return responseGenerator.inactiveAccessKey();
+       }
+
+       return responseGenerator.ok();
+    }
+
+    /*
+     * Validdate the requestor.
+     *
+     * Check
+     *   if requestor exists.
+     *   if the requestor is a federated user, check if the access key is valid.
+     */
+    private ServerResponse validateRequestor(Requestor requestor,
+            ClientRequestToken clientRequestToken) {
+        /*
+        * Return internal server error if requestor doesn't exist.
+        *
+        * Ideally, an access key will be associated with a requestor.
+        * It is a server error if the access key doesn't belong to a user.
+        */
+       if(!requestor.exists()) {
+           return responseGenerator.internalServerError();
+       }
+
+       AccessKey accessKey = requestor.getAccesskey();
+       if(requestor.isFederatedUser()) {
+           if(!accessKey.getToken().equals(clientRequestToken.getSessionToken())) {
+               return responseGenerator.invalidClientTokenId();
+           }
+
+           Date currentDate = new Date();
+           Date expiryDate = DateUtil.toDate(accessKey.getExpiry());
+
+           if(currentDate.after(expiryDate)) {
+               return responseGenerator.expiredCredential();
+           }
+       }
+
+       return responseGenerator.ok();
+    }
+
+    /*
+     * Validate request parameters.
+     */
+    private Boolean validateRequest(String controllerName, String action,
             Map<String, String> requestBody) {
         Boolean isValidrequest = false;
         Class<?> validator;

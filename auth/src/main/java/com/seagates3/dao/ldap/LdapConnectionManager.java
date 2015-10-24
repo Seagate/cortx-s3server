@@ -19,11 +19,13 @@
 
 package com.seagates3.dao.ldap;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Properties;
+
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.connectionpool.PoolManager;
-import java.io.UnsupportedEncodingException;
-import java.util.Properties;
+
 
 public class LdapConnectionManager{
 

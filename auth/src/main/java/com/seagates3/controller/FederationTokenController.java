@@ -27,8 +27,9 @@ import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.UserDAO;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.AccessKeyStatus;
+import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.User;
 import com.seagates3.response.generator.xml.FederationTokenResponseGenerator;
 import com.seagates3.response.ServerResponse;
@@ -49,7 +50,7 @@ public class FederationTokenController extends AbstractController{
      * Store user policy
      */
     @Override
-    public ServerResponse create() {
+    public ServerResponse create() throws DataAccessException {
         String userName = requestBody.get("Name");
 
         int duration;
@@ -60,14 +61,11 @@ public class FederationTokenController extends AbstractController{
         }
 
         UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
-        User user = userDAO.findUser(requestor.getAccountName(), userName);
+        User user = userDAO.find(requestor.getAccountName(), userName);
         if(! user.exists()) {
             user.setId(KeyGenUtil.userId());
 
-            Boolean success = userDAO.saveUser(user);
-            if(!success) {
-                return fedTokenResponse.internalServerError();
-            }
+            userDAO.save(user);
         }
 
         AccessKey accessKey = createAccessKey(user, duration);
@@ -78,7 +76,7 @@ public class FederationTokenController extends AbstractController{
         return fedTokenResponse.create(user, accessKey);
     }
 
-    private AccessKey createAccessKey(User user, long timeToExpire) {
+    private AccessKey createAccessKey(User user, long timeToExpire) throws DataAccessException {
         AccessKeyDAO accessKeyDAO =
                 (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
         AccessKey accessKey = new AccessKey();
@@ -93,14 +91,11 @@ public class FederationTokenController extends AbstractController{
         accessKey.setToken(KeyGenUtil.userSercretKey(strToEncode));
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
-        long currentTime = new Date().getTime();
+        long currentTime = DateUtil.getCurrentTime();
         Date expiryDate = new Date(currentTime + (timeToExpire * 1000));
         accessKey.setExpiry(DateUtil.toLdapDate(expiryDate));
 
-        Boolean success = accessKeyDAO.save(accessKey);
-        if(!success) {
-            return null;
-        }
+        accessKeyDAO.save(accessKey);
 
         return accessKey;
     }

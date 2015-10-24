@@ -45,7 +45,7 @@ public class DAODispatcher {
     }
 
     private static String getResourceDAOName(String resourceName) {
-        String resourceDAOName = provider.toString()+ resourceName + "DAO";
+        String resourceDAOName = resourceName + "Impl";
 
         return String.format("%s.%s.%s", DAO_PACKAGE,
                 provider.toString().toLowerCase(), resourceDAOName);

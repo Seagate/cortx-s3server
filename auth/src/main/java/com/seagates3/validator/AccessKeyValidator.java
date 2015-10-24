@@ -23,18 +23,19 @@ import java.util.Map;
 
 public class AccessKeyValidator extends AbstractValidator {
 
-    private final ValidatorHelper validatorUtil;
+    private final ValidatorHelper validatorHelper;
 
     public AccessKeyValidator() {
-        validatorUtil = new ValidatorHelper();
+        validatorHelper = new ValidatorHelper();
     }
 
     /*
      * Validate the input parameters for create access key request.
      */
+    @Override
     public Boolean create(Map<String, String> requestBody) {
         if(requestBody.containsKey("UserName")) {
-            return validatorUtil.validUserName(requestBody.get("UserName"));
+            return validatorHelper.validName(requestBody.get("UserName"));
         }
 
         return true;
@@ -43,18 +44,19 @@ public class AccessKeyValidator extends AbstractValidator {
     /*
      * Validate the input parameters for delete access key request.
      */
+    @Override
     public Boolean delete(Map<String, String> requestBody) {
         if(! requestBody.containsKey("AccessKeyId")) {
             return false;
         }
 
-        if(!validatorUtil.validAccessKeyId(requestBody.get("AccessKeyId"))) {
+        if(!validatorHelper.validAccessKeyId(requestBody.get("AccessKeyId"))) {
             return false;
         }
 
         // User name should be at least 1 characted long and at max 128 char long.
         if(requestBody.containsKey("UserName")) {
-            return validatorUtil.validUserName(requestBody.get("UserName"));
+            return validatorHelper.validName(requestBody.get("UserName"));
         }
 
         return true;
@@ -66,9 +68,10 @@ public class AccessKeyValidator extends AbstractValidator {
      * To do
      * Validate Marker and MaxItems
      */
+    @Override
     public Boolean list(Map<String, String> requestBody) {
         if(requestBody.containsKey("UserName")) {
-            return validatorUtil.validUserName(requestBody.get("UserName"));
+            return validatorHelper.validName(requestBody.get("UserName"));
         }
 
         return true;
@@ -77,6 +80,7 @@ public class AccessKeyValidator extends AbstractValidator {
     /*
      * Validate the input parameters for update access key request.
      */
+    @Override
     public Boolean update(Map<String, String> requestBody) {
         if(! requestBody.containsKey("AccessKeyId")) {
             return false;
@@ -87,13 +91,13 @@ public class AccessKeyValidator extends AbstractValidator {
         }
 
         // Accepted values for status are 'Active' or 'Inactive'
-        if(!validatorUtil.validStatus(requestBody.get("Status"))) {
+        if(!validatorHelper.validStatus(requestBody.get("Status"))) {
             return false;
         }
 
         // User name should be at least 1 characted long and at max 128 char long.
         if(requestBody.containsKey("UserName")) {
-            return validatorUtil.validUserName(requestBody.get("UserName"));
+            return validatorHelper.validName(requestBody.get("UserName"));
         }
 
         return true;

@@ -79,7 +79,7 @@ public class AuthServerHandler extends ChannelInboundHandlerAdapter {
                 requestBody = parseChunkedRequest(decoder.getBodyHttpDatas());
 
                 AuthServerAction authserverAction = new AuthServerAction();
-                serverResponse = authserverAction.serve(httpRequest, requestBody);
+                    serverResponse = authserverAction.serve(httpRequest, requestBody);
                 sendResponse(ctx, httpRequest, serverResponse);
             }
         }

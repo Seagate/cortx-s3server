@@ -21,6 +21,7 @@ package com.seagates3.controller;
 
 import java.util.Map;
 
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 
@@ -33,19 +34,19 @@ public abstract class AbstractController {
         this.requestBody = requestBody;
     }
 
-    public ServerResponse create() {
+    public ServerResponse create() throws DataAccessException {
         return null;
     }
 
-    public ServerResponse delete() {
+    public ServerResponse delete() throws DataAccessException {
         return null;
     }
 
-    public ServerResponse list() {
+    public ServerResponse list() throws DataAccessException {
         return null;
     }
 
-    public ServerResponse update() {
+    public ServerResponse update() throws DataAccessException {
         return null;
     }
 }
