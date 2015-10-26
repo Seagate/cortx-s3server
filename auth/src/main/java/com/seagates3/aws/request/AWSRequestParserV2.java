@@ -19,18 +19,19 @@
 
 package com.seagates3.aws.request;
 
+import java.util.Map;
 
-import com.seagates3.model.ClientRequestToken;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
-import java.util.Map;
+
+import com.seagates3.model.ClientRequestToken;
 
 public class AWSRequestParserV2 extends AWSRequestParser{
 
     @Override
     public ClientRequestToken parse(HttpRequest httpRequest) {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
-        clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
+        clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V2);
 
         parseRequestHeaders(httpRequest, clientRequestToken);
 
@@ -43,7 +44,7 @@ public class AWSRequestParserV2 extends AWSRequestParser{
     @Override
     public ClientRequestToken parse(Map<String, String> requestBody) {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
-        clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
+        clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V2);
 
         parseRequestHeaders(requestBody, clientRequestToken);
 

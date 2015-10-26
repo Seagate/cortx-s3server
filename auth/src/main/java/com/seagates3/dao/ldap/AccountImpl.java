@@ -40,8 +40,8 @@ public class AccountImpl implements AccountDAO {
         Account account = new Account();
         account.setName(name);
 
-        String[] attrs = {"ou"};
-        String filter = String.format("(&(ou=%s)(objectClass=s3Account))", name);
+        String[] attrs = {"o"};
+        String filter = String.format("(&(o=%s)(objectClass=s3Account))", name);
 
         LDAPSearchResults ldapResults;
         try {
@@ -51,7 +51,7 @@ public class AccountImpl implements AccountDAO {
             throw new DataAccessException("failed to search account.\n" + ex);
         }
 
-        if(ldapResults.getCount() > 0) {
+        if(ldapResults.hasMore()) {
             account.setAccountExists(true);
         } else {
             account.setAccountExists(false);

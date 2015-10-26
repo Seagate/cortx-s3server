@@ -37,7 +37,6 @@ public class AWSRequestParserV4 extends AWSRequestParser {
 
         HttpHeaders httpHeaders = httpRequest.headers();
         authHeaderParser(httpHeaders.get("authorization"), clientRequestToken);
-        createCanonicalHeader(httpHeaders, clientRequestToken);
 
         return clientRequestToken;
     }
@@ -50,7 +49,6 @@ public class AWSRequestParserV4 extends AWSRequestParser {
         parseRequestHeaders(requestBody, clientRequestToken);
 
         authHeaderParser(requestBody.get("Authorization"), clientRequestToken);
-        createCanonicalHeader(requestBody, clientRequestToken);
 
         return clientRequestToken;
     }
@@ -91,77 +89,9 @@ public class AWSRequestParserV4 extends AWSRequestParser {
         clientRequestToken.setDate(credScopeTokens[0]);
         clientRequestToken.setRegion(credScopeTokens[1]);
         clientRequestToken.setService(credScopeTokens[2]);
-        //signVersion = credScopeTokens[3];
 
         subTokens = tokens[1].split("=");
         clientRequestToken.setSignedHeaders(subTokens[1]);
         clientRequestToken.setSignature(tokens[2].split("=")[1]);
-    }
-
-    /*
-     * The canonical headers consist of a list of all the HTTP headers are
-     * include as a part of the AWS request.
-     * Convert all header names to lowercase and trim excess white space
-     * characters out of the header values.
-     *
-     * Canonical Header = CanonicalHeadersEntry0 + CanonicalHeadersEntry1
-     *                      + ... + CanonicalHeadersEntryN
-     *
-     * CanonicalHeadersEntry = Lowercase(HeaderName) + ':' + Trimall(HeaderValue) + '\n'
-     */
-    private void createCanonicalHeader(HttpHeaders httpHeaders,
-            ClientRequestToken clientRequestToken) {
-        String headerValue;
-        String canonicalHeader = "";
-
-        for(String s : clientRequestToken.getSignedHeaders().split(";")) {
-            if(s.equalsIgnoreCase("content-type")) {
-                headerValue = httpHeaders.get(s);
-
-                /*
-                 * Strangely, the aws .net sdk doesn't send the content type.
-                 * Hence the content type is hard coded.
-                 */
-                if(headerValue.isEmpty()) {
-                    canonicalHeader += "content-type:application/x-www-form-urlencoded;"
-                                    + " charset=utf-8\n";
-                } else {
-                    canonicalHeader += String.format("%s:%s\n", s, headerValue);
-                }
-            } else {
-                headerValue = httpHeaders.get(s);
-                canonicalHeader += String.format("%s:%s\n", s, headerValue);
-            }
-        }
-
-        clientRequestToken.setCanonicalHeader(canonicalHeader);
-    }
-
-    private void createCanonicalHeader(Map<String, String> requestBody,
-            ClientRequestToken clientRequestToken) {
-        String headerValue;
-        String canonicalHeader = "";
-
-        for(String s : clientRequestToken.getSignedHeaders().split(";")) {
-            if(s.equalsIgnoreCase("content-type")) {
-                headerValue = requestBody.get(s);
-
-                /*
-                 * Strangely, the aws .net sdk doesn't send the content type.
-                 * Hence the content type is hard coded.
-                 */
-                if(headerValue.isEmpty()) {
-                    canonicalHeader += "content-type:application/x-www-form-urlencoded;"
-                                    + " charset=utf-8\n";
-                } else {
-                    canonicalHeader += String.format("%s:%s\n", s, headerValue);
-                }
-            } else {
-                headerValue = requestBody.get(s);
-                canonicalHeader += String.format("%s:%s\n", s, headerValue);
-            }
-        }
-
-        clientRequestToken.setCanonicalHeader(canonicalHeader);
     }
 }

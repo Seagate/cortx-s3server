@@ -26,6 +26,13 @@ import com.seagates3.response.ServerResponse;
 public abstract class AbstractResponseGenerator {
     protected final String IAM_XMLNS = "https://iam.seagate.com/doc/2010-05-08/";
 
+    public ServerResponse badRequest() {
+        String errorMessage = "Bad Request. Check request headers and body.";
+
+        return error(HttpResponseStatus.BAD_REQUEST,
+                "BadRequest", errorMessage);
+    }
+
     public ServerResponse deleteConflict() {
         String errorMessage = "The request was rejected because it attempted "
                 + "to delete a resource that has attached subordinate entities. "

@@ -19,8 +19,16 @@
 
 package com.seagates3.aws.sign;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
+import com.seagates3.util.BinaryUtil;
 
 public class AWSV2Sign implements AWSSign {
 
@@ -29,24 +37,26 @@ public class AWSV2Sign implements AWSSign {
      */
     @Override
     public Boolean authenticate(ClientRequestToken clientRequestToken, Requestor requestor) {
-        String canonicalizedResource, stringToSign, signature;
-        byte[] signingKey;
+        String stringToSign, signature;
 
-        canonicalizedResource = createCanonicalizedResource(clientRequestToken);
         stringToSign = createStringToSign(clientRequestToken);
+        byte[] kStringToSign;
 
-//        stringToSign = createStringToSign(canonicalRequest, clientRequestToken);
-//
-//        String secretKey = requestor.getAccesskey().getSecretKey();
-//        signingKey = deriveSigningKey(clientRequestToken, secretKey);
+        try {
+            kStringToSign = BinaryUtil.hmacSHA1(
+                    requestor.getAccesskey().getSecretKey().getBytes(),
+                    stringToSign.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+            /*
+             * To do
+             * Raise an exception
+             */
+            return false;
+        }
 
-        signature = "";//calculateSignature(signingKey ,stringToSign);
+        signature = BinaryUtil.encodeToBase64String(kStringToSign);
 
         return signature.equals(clientRequestToken.getSignature());
-    }
-
-    private String createCanonicalizedResource(ClientRequestToken clientRequestToken) {
-        return "";
     }
 
     /*
@@ -60,24 +70,170 @@ public class AWSV2Sign implements AWSSign {
      * CanonicalizedResource;
      */
     private String createStringToSign(ClientRequestToken clientRequestToken) {
-        String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
-                hashedPayload, canonicalRequest;
+        String httpMethod, contentMD5,contentType, date;
+        String canonicalizedAmzHeaders, canonicalizedResource, stringToSign;
+
+        Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
 
         httpMethod = clientRequestToken.getHttpMethod();
-        canonicalURI = clientRequestToken.getCanonicalUri();
-        canonicalQuery = clientRequestToken.getCanonicalQuery();
-        canonicalHeader = clientRequestToken.getCanonicalHeader();
-        hashedPayload = clientRequestToken.getHashedPayLoad();
+        if(requestHeaders.containsKey("Content-MD5")) {
+            contentMD5 = requestHeaders.get("Content-MD5");
+        } else {
+            contentMD5 = "";
+        }
 
-        canonicalRequest = String.format("%s\n%s\n%s\n%s\n%s\n%s",
+        if(requestHeaders.containsKey("Content-Type")) {
+            contentType = requestHeaders.get("Content-Type");
+        } else {
+            contentType = "";
+        }
+
+        if(requestHeaders.containsKey("Date")) {
+            date = requestHeaders.get("Date");
+        } else {
+            date = "";
+        }
+
+        canonicalizedAmzHeaders = createCanonicalziedAmzHeaders(clientRequestToken);
+        canonicalizedResource = createCanonicalizedResource(clientRequestToken);
+
+        stringToSign = String.format("%s\n%s\n%s\n%s\n%s%s",
                 httpMethod,
-                canonicalURI,
-                canonicalQuery,
-                canonicalHeader,
-                clientRequestToken.getSignedHeaders(),
-                hashedPayload);
+                contentMD5,
+                contentType,
+                date,
+                canonicalizedAmzHeaders,
+                canonicalizedResource
+                );
 
-        return canonicalRequest;
+        return stringToSign;
     }
 
+    /*
+     * 1. To construct the CanonicalizedAmzHeaders part of StringToSign,
+     * select all HTTP request headers that start with 'x-amz-'
+     *
+     * 2. Convert each HTTP header name to lowercase.
+     * For example, 'X-Amz-Date' becomes 'x-amz-date'.
+     *
+     * 3. Sort the collection of headers lexicographically by header name.
+     *
+     * 4. Combine header fields with the same name into one
+     * "header-name:comma-separated-value-list".
+     * Ex - the two metadata headers 'x-amz-meta-username: fred' and
+     * 'x-amz-meta-username: barney' would be combined into the single header
+     * 'x-amz-meta-username: fred,barney'.
+     *
+     * 5. Trim any whitespace around the colon in the header
+     *
+     * 6. Finally, append a newline character (U+000A) to each canonicalized
+     * header in the resulting list.
+     */
+    private String createCanonicalziedAmzHeaders(ClientRequestToken clientRequestToken) {
+        Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
+        Map<String, String> xAmzHeaders = new TreeMap<>();
+
+        for(Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+            String key = entry.getKey().toLowerCase();
+
+            if(key.startsWith("x-amz-")) {
+                if(xAmzHeaders.containsKey(key)) {
+                    String value = xAmzHeaders.get(key) + "," + entry.getValue();
+                    xAmzHeaders.put(key, value);
+                } else {
+                    xAmzHeaders.put(key, entry.getValue());
+                }
+            }
+        }
+
+        String canonicalizedAmzHeaders = "";
+        for(Map.Entry<String, String> entry : xAmzHeaders.entrySet()) {
+            canonicalizedAmzHeaders += String.format("%s:%s\n", entry.getKey(),
+                    entry.getValue().trim());
+        }
+
+        return canonicalizedAmzHeaders;
+    }
+
+    /*
+     * 1. If the request specifies a bucket using the HTTP Host header
+     * (virtual hosted-style), append the bucket name preceded by a "/"
+     * Ex -"/bucketname"
+     *
+     * 2. Append the path part of the un-decoded HTTP Request-URI,
+     * up-to but not including the query string.
+     *
+     * 2.a. For a virtual hosted-style request
+     * "https://johnsmith.s3.amazonaws.com/photos/puppy.jpg",
+     * the CanonicalizedResource is "/johnsmith/photos/puppy.jpg".
+     *
+     * 2.b. For a path-style request,
+     * "https://s3.amazonaws.com/johnsmith/photos/puppy.jpg",
+     * the CanonicalizedResource is "/johnsmith/photos/puppy.jpg"
+     *
+     * 3. Create sub resource string.
+     */
+    private String createCanonicalizedResource(ClientRequestToken clientRequestToken) {
+        String canonicalResource = "";
+
+        if(clientRequestToken.isVirtualHost()) {
+            String bucketName = clientRequestToken.getRequestHeaders()
+                    .get("host").split("\\.")[0];
+            canonicalResource += "/" + bucketName;
+        }
+
+        canonicalResource += clientRequestToken.getUri();
+        canonicalResource += createSubResourceString(clientRequestToken);
+
+        return canonicalResource;
+    }
+
+    /*
+     * If the request addresses a subresource, such as ?versioning, ?location,
+     * ?acl, ?torrent, ?lifecycle, or ?versionid, append the subresource,
+     * its value if it has one, and the question mark. Note that in case of
+     * multiple subresources, subresources must be lexicographically sorted
+     * by subresource name and separated by '&'.
+     *
+     * Ex -  ?acl&versionId=value.
+     */
+    private String createSubResourceString(ClientRequestToken clientRequestToken) {
+        List<String> subResources = Arrays.asList(
+            "acl", "lifecycle", "location", "logging", "notification", "partNumber",
+            "policy", "requestPayment", "torrent", "uploadId", "uploads",
+            "versionId", "versioning", "versions","website" );
+
+        Map<String, String> queryResources = new TreeMap<>();
+        String[] tokens = clientRequestToken.getQuery().split("&");
+
+        for(String s :tokens) {
+            String[] keyPair =  s.split("=");
+
+            if(subResources.contains(keyPair[0])) {
+                if(keyPair.length == 2) {
+                    queryResources.put(s, keyPair[1]);
+                } else {
+                    queryResources.put(s, "");
+                }
+            }
+        }
+
+        String subResourceString = "?";
+
+        Iterator<Map.Entry<String, String>> entries = queryResources.entrySet().iterator();
+        while (entries.hasNext()) {
+            Map.Entry<String, String> entry = entries.next();
+            subResourceString += entry.getKey();
+
+            if(!entry.getValue().isEmpty()) {
+                subResourceString += String.format("=%s", entry.getValue());
+            }
+
+            if(entries.hasNext()) {
+                subResourceString += "&";
+            }
+        }
+
+        return subResourceString;
+    }
 }

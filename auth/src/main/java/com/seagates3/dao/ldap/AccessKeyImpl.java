@@ -47,7 +47,7 @@ public class AccessKeyImpl implements AccessKeyDAO{
         AccessKey accessKey = new AccessKey();
         accessKey.setAccessKeyId(accessKeyId);
 
-        String[] attrs = {"uid", "sk", "status", "createTimestamp"};
+        String[] attrs = {"id", "sk", "status", "createTimestamp"};
         String filter = String.format("(&(ak=%s)(objectclass=accessKey))",
                 accessKeyId);
 
@@ -63,7 +63,7 @@ public class AccessKeyImpl implements AccessKeyDAO{
         if(ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
-                accessKey.setUserId(entry.getAttribute("uid").getStringValue());
+                accessKey.setUserId(entry.getAttribute("id").getStringValue());
                 accessKey.setSecretKey(entry.getAttribute("sk").getStringValue());
                 AccessKeyStatus status = AccessKeyStatus.valueOf(
                         entry.getAttribute("status").getStringValue().toUpperCase());
@@ -88,7 +88,7 @@ public class AccessKeyImpl implements AccessKeyDAO{
         AccessKey accessKey;
 
         String[] attrs = {"ak", "status", "createTimestamp"};
-        String filter = String.format("(&(uid=%s)(objectclass=accessKey))",
+        String filter = String.format("(&(id=%s)(objectclass=accessKey))",
                 user.getId());
 
         LDAPSearchResults ldapResults;
@@ -141,7 +141,7 @@ public class AccessKeyImpl implements AccessKeyDAO{
             String filter;
             String[] attrs = new String[] {"ak", "status"};
 
-            filter = String.format("(&(uid=%s)(objectclass=accessKey))", userId);
+            filter = String.format("(&(id=%s)(objectclass=accessKey))", userId);
 
             LDAPSearchResults ldapResults;
             ldapResults = LdapUtils.search(LdapUtils.getBaseDN(),
@@ -203,7 +203,7 @@ public class AccessKeyImpl implements AccessKeyDAO{
     private void saveAccessKey(AccessKey accessKey) throws DataAccessException {
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add( new LDAPAttribute("objectclass", "accessKey"));
-        attributeSet.add( new LDAPAttribute("uid", accessKey.getUserId()));
+        attributeSet.add( new LDAPAttribute("id", accessKey.getUserId()));
         attributeSet.add( new LDAPAttribute("ak", accessKey.getAccessKeyId()));
         attributeSet.add( new LDAPAttribute("sk", accessKey.getSecretKey()));
         attributeSet.add( new LDAPAttribute("status", accessKey.getStatus()));
@@ -226,7 +226,7 @@ public class AccessKeyImpl implements AccessKeyDAO{
 
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add( new LDAPAttribute("objectclass", "fedaccessKey"));
-        attributeSet.add( new LDAPAttribute("uid", accessKey.getUserId()));
+        attributeSet.add( new LDAPAttribute("id", accessKey.getUserId()));
         attributeSet.add( new LDAPAttribute("ak", accessKey.getAccessKeyId()));
         attributeSet.add( new LDAPAttribute("sk", accessKey.getSecretKey()));
         attributeSet.add( new LDAPAttribute("token", accessKey.getToken()));

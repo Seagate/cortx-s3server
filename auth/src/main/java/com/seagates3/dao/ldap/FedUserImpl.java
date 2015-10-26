@@ -44,7 +44,7 @@ public class FedUserImpl implements FedUserDAO{
         user.setAccountName(accountName);
         user.setName(name);
 
-        String[] attrs = {"uid", "objectclass"};
+        String[] attrs = {"id", "objectclass"};
         String ldapBase = String.format("ou=users,o=%s,ou=accounts,%s",
                 accountName, LdapUtils.getBaseDN());
         String filter = String.format("(cn=%s)", name);
@@ -63,7 +63,7 @@ public class FedUserImpl implements FedUserDAO{
             } catch (LDAPException ex) {
                 throw new DataAccessException("LDAP failure.\n" + ex);
             }
-            user.setId(entry.getAttribute("uid").getStringValue());
+            user.setId(entry.getAttribute("id").getStringValue());
         }
 
         return user;
@@ -79,9 +79,9 @@ public class FedUserImpl implements FedUserDAO{
         attributeSet.add( new LDAPAttribute("cn", user.getName()));
         attributeSet.add( new LDAPAttribute("ou", user.getAccountName()));
         attributeSet.add( new LDAPAttribute("path", user.getPath()));
-        attributeSet.add(new LDAPAttribute("uid", user.getId()));
+        attributeSet.add(new LDAPAttribute("id", user.getId()));
 
-        String dn = String.format("uid=%s,ou=users,o=%s,ou=accounts,%s",
+        String dn = String.format("id=%s,ou=users,o=%s,ou=accounts,%s",
                 user.getId(), user.getAccountName(), LdapUtils.getBaseDN());
 
         try {

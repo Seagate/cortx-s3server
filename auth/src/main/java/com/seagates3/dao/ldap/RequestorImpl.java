@@ -44,10 +44,10 @@ public class RequestorImpl implements RequestorDAO {
             LDAPSearchResults ldapResults;
 
             if(accessKey.getToken() == null) {
-                filter = String.format("(&(uid=%s)(objectclass=iamUser))",
+                filter = String.format("(&(id=%s)(objectclass=iamUser))",
                         requestor.getId());
             } else {
-                filter = String.format("(&(uid=%s)(objectclass=iamFedUser))",
+                filter = String.format("(&(id=%s)(objectclass=iamFedUser))",
                         requestor.getId());
             }
 

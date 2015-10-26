@@ -19,16 +19,17 @@
 
 package com.seagates3.authserver;
 
-import com.seagates3.aws.request.ClientRequestParser;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.Map;
 import java.util.HashMap;
-
 
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
+import com.seagates3.aws.request.ClientRequestParser;
 import com.seagates3.aws.sign.SignatureValidator;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -42,8 +43,6 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.xml.AuthenticationResponseGenerator;
 import com.seagates3.response.generator.xml.XMLResponseGenerator;
 import com.seagates3.util.DateUtil;
-import java.lang.reflect.Constructor;
-import java.util.Date;
 
 public class AuthServerAction {
 
@@ -70,6 +69,12 @@ public class AuthServerAction {
         if( !requestAction.equals("CreateAccount")) {
             clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
 
+            /*
+             * Client Request Token will be null if the request is incorrect.
+             */
+            if(clientRequestToken == null) {
+                return responseGenerator.badRequest();
+            }
 
             AccessKeyDAO accessKeyDAO = (AccessKeyDAO)
                         DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
@@ -165,7 +170,8 @@ public class AuthServerAction {
 
        AccessKey accessKey = requestor.getAccesskey();
        if(requestor.isFederatedUser()) {
-           if(!accessKey.getToken().equals(clientRequestToken.getSessionToken())) {
+           String sessionToken = clientRequestToken.getRequestHeaders().get("x-amz-content-sha256");
+           if(!accessKey.getToken().equals(sessionToken)) {
                return responseGenerator.invalidClientTokenId();
            }
 
@@ -189,7 +195,7 @@ public class AuthServerAction {
         Class<?> validator;
         Method method;
         Object obj;
-        String validatorClass = toValidatorClass(controllerName);
+        String validatorClass = toValidatorClassName(controllerName);
 
         try {
             validator = Class.forName(validatorClass);
@@ -212,7 +218,7 @@ public class AuthServerAction {
     private ServerResponse performAction(String controllerName, String action,
             Map<String, String> requestBody, Requestor requestor) {
 
-        String controllerClassName = toControllerClass(controllerName);
+        String controllerClassName = toControllerClassName(controllerName);
         Class<?> controller;
         Constructor<?> controllerConstructor;
         Method method;
@@ -262,11 +268,17 @@ public class AuthServerAction {
         return controllerAction;
     }
 
-    private String toControllerClass(String controllerName) {
+    /*
+     * Return the full name of the controller class.
+     */
+    private String toControllerClassName(String controllerName) {
         return String.format("%s.%sController", CONTROLLER_PACKAGE, controllerName);
     }
 
-    private String toValidatorClass(String controllerName) {
+    /*
+     * Return the full name of the validator class.
+     */
+    private String toValidatorClassName(String controllerName) {
         return String.format("%s.%sValidator", VALIDATOR_PACKAGE, controllerName);
     }
 }

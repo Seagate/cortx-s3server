@@ -19,37 +19,92 @@
 
 package com.seagates3.model;
 
+import java.util.Map;
+
 public class ClientRequestToken {
     public enum AWSSigningVersion {
         V4, V2;
     }
 
-    String accessKeyId;
-    String canonicalHeader;
-    String canonicalQuery;
     /*
-     * Canonical URI = URI - Bucket Name
-     * Ex -
-     * Suppose URI = /bucket/myfile
-     *
-     * Canonical URI = /myfile
-     *
+     * Access Key Id of the requestor.
      */
-    String canonicalUri;
+    String accessKeyId;
+
+    /*
+     * Credential scope is used in AWS V4 signing algorithm.
+     * It is a string that includes date (just the date and not the date and time),
+     * region, target service and a termination string ("aws_v4")
+     */
     String credentialScope;
+
+    /*
+     * This is used in AWS V4 signing algorithm.
+     * Date obtained from credential scope.
+     */
     String date;
-    String hashedPayLoad;
+
+    /*
+     * Http Method i.e GET, PUT, DELETE etc.
+     */
     String httpMethod;
+
+    /*
+     * Unparsed Query String
+     */
+    String query;
+
+    /*
+     * Target region obtained from credential scope.
+     */
     String region;
-    String requestDate;
+
+    /*
+     * Service name obtained from credential scope.
+     */
     String service;
-    String sessionToken;
+
+    /*
+     * Request signature.
+     */
     String signature;
+
+    /*
+     * Signed headers used in AWS V4 signing algorithm.
+     */
     String signedHeaders;
+
+    /*
+     * Algorithm used to sign the request.
+     * Ex - HMAC-SHA256
+     */
     String signingAlgorithm;
+
+    /*
+     * AWS Signing algorithm version.
+     */
     AWSSigningVersion signVersion;
 
+    /*
+     * Convert httpheaders into a hash map.
+     * The header attributes are required by signing algorithms.
+     */
+    Map<String, String> requestHeaders;
+
+    /*
+     * Sub resource is required for AWS signing version 2.
+     */
+    String subResource;
+
+    /*
+     * Unparsed URI received by the server.
+     */
     String uri;
+
+    /*
+     * If request uses virtual host style, then set this attribute to true.
+     */
+    Boolean virtualHost;
 
 
     /*
@@ -57,27 +112,6 @@ public class ClientRequestToken {
      */
     public String getAccessKeyId() {
         return accessKeyId;
-    }
-
-    /*
-     * Return the canonical header.
-     */
-    public String getCanonicalHeader() {
-        return canonicalHeader;
-    }
-
-    /*
-     * Return the canonical query
-     */
-    public String getCanonicalQuery() {
-        return canonicalQuery;
-    }
-
-    /*
-     * Return the canonical URI.
-     */
-    public String getCanonicalUri() {
-        return canonicalUri;
     }
 
     /*
@@ -95,17 +129,17 @@ public class ClientRequestToken {
     }
 
     /*
-     * Return the hashed pay load.
-     */
-    public String getHashedPayLoad() {
-        return hashedPayLoad;
-    }
-
-    /*
      * Return the HTTP method.
      */
     public String getHttpMethod() {
         return httpMethod;
+    }
+
+    /*
+     * Return the query string.
+     */
+    public String getQuery() {
+        return query;
     }
 
     /*
@@ -116,10 +150,10 @@ public class ClientRequestToken {
     }
 
     /*
-     * Return the request date.
+     * Set the request headers.
      */
-    public String getRequestDate() {
-        return requestDate;
+    public Map<String, String> getRequestHeaders() {
+        return requestHeaders;
     }
 
     /*
@@ -127,13 +161,6 @@ public class ClientRequestToken {
      */
     public String getService() {
         return service;
-    }
-
-    /*
-     * Return the session token.
-     */
-    public String getSessionToken() {
-        return sessionToken;
     }
 
     /*
@@ -165,6 +192,13 @@ public class ClientRequestToken {
     }
 
     /*
+     * Return sub resource.
+     */
+    public String getSubResource() {
+        return subResource;
+    }
+
+    /*
      * Return the uri.
      */
     public String getUri() {
@@ -172,31 +206,17 @@ public class ClientRequestToken {
     }
 
     /*
+     * Return true if the request uses virtual host name.
+     */
+    public Boolean isVirtualHost() {
+        return virtualHost;
+    }
+
+    /*
      * Set the access key id.
      */
     public void setAccessKeyId(String accessKeyId) {
         this.accessKeyId = accessKeyId;
-    }
-
-    /*
-     * Set the canonical header.
-     */
-    public void setCanonicalHeader(String canonicalHeader) {
-        this.canonicalHeader = canonicalHeader;
-    }
-
-    /*
-     * Set the canonical Query.
-     */
-    public void setCanonicalQuery(String canonicalQuery) {
-        this.canonicalQuery = canonicalQuery;
-    }
-
-    /*
-     * Set the canonical Uri.
-     */
-    public void setCanonicalUri(String canonicalUri) {
-        this.canonicalUri = canonicalUri;
     }
 
     /*
@@ -214,17 +234,17 @@ public class ClientRequestToken {
     }
 
     /*
-     * Set the hashed payload.
-     */
-    public void setHashedPayload(String hashedPayLoad) {
-        this.hashedPayLoad = hashedPayLoad;
-    }
-
-    /*
      * Set the http method.
      */
     public void setHttpMethod(String httpMethod) {
         this.httpMethod = httpMethod;
+    }
+
+    /*
+     * Set the query string
+     */
+    public void setQuery(String query) {
+        this.query = query;
     }
 
     /*
@@ -234,11 +254,8 @@ public class ClientRequestToken {
         this.region = region;
     }
 
-    /*
-     * Set the request date.
-     */
-    public void setRequestDate(String requestDate) {
-        this.requestDate = requestDate;
+    public void setRequestHeaders(Map<String, String> requestHeaders) {
+        this.requestHeaders = requestHeaders;
     }
 
     /*
@@ -246,13 +263,6 @@ public class ClientRequestToken {
      */
     public void setService(String service) {
         this.service = service;
-    }
-
-    /*
-     * Set the session token.
-     */
-    public void setSessionToken(String sessionToken) {
-        this.sessionToken = sessionToken;
     }
 
     /*
@@ -284,9 +294,23 @@ public class ClientRequestToken {
     }
 
     /*
+     * set the sub resource.
+     */
+    public void setSubResource(String subResource) {
+        this.subResource = subResource;
+    }
+
+    /*
      * Set the uri.
      */
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    /*
+     * set true if the request uses virtual host name.
+     */
+    public void setVirtualHost(Boolean virtualHost) {
+        this.virtualHost = virtualHost;
     }
 }

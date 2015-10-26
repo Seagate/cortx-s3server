@@ -49,7 +49,7 @@ public class SignatureValidator {
      */
     private AWSSign getSigner(ClientRequestToken clientRequestToken) {
         String signVersion = clientRequestToken.getSignVersion().toString();
-        String signerClassName = toSignerClass(signVersion);
+        String signerClassName = toSignerClassName(signVersion);
 
         Class<?> awsSigner;
         Object obj;
@@ -71,7 +71,7 @@ public class SignatureValidator {
     /*
      * Return the class name of the AWS signer.
      */
-    private String toSignerClass(String signVersion) {
+    private String toSignerClassName(String signVersion) {
         return String.format("%s.AWS%sSign", SIGNER_PACKAGE, signVersion);
     }
 }

@@ -152,7 +152,7 @@ public class SAMLProviderImpl implements SAMLProvicerDAO {
             attributeSet.add( new LDAPAttribute("objectclass", "SAMLKeyDescriptor"));
             attributeSet.add( new LDAPAttribute("samlkeyuse", k.getUse().toString()));
 
-            BinaryUtil.encodeToBase64("");
+            BinaryUtil.encodeToBase64Bytes("");
             for(Certificate cert : k.getCertificate()) {
                 attributeSet.add( new LDAPAttribute("cacertificate;binary", cert.getEncoded()));
             }

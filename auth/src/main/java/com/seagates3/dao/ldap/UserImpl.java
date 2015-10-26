@@ -49,7 +49,7 @@ public class UserImpl implements UserDAO {
         user.setAccountName(accountName);
         user.setName(name);
 
-        String[] attrs = {"uid", "path", "objectclass"};
+        String[] attrs = {"id", "path", "objectclass"};
         String ldapBase = String.format("ou=users,o=%s,ou=accounts,%s", accountName,
                 LdapUtils.getBaseDN());
         String filter = String.format("(cn=%s)", name);
@@ -65,7 +65,7 @@ public class UserImpl implements UserDAO {
         if(ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
-                user.setId(entry.getAttribute("uid").getStringValue());
+                user.setId(entry.getAttribute("id").getStringValue());
                 user.setPath(entry.getAttribute("path").getStringValue());
 
                 if(entry.getAttribute("objectclass").getStringValue().
@@ -94,7 +94,7 @@ public class UserImpl implements UserDAO {
         User user;
         Date d;
 
-        String[] attrs = {"uid", "cn", "path", "createTimestamp"};
+        String[] attrs = {"id", "cn", "path", "createTimestamp"};
         String ldapBase = String.format("ou=users,o=%s,ou=accounts,%s", accountName,
                 LdapUtils.getBaseDN());
         String filter = String.format("(&(path=%s*)(objectclass=iamUser))",
@@ -116,7 +116,7 @@ public class UserImpl implements UserDAO {
             } catch (LDAPException ex) {
                 throw new DataAccessException("Ldap failure.\n" + ex);
             }
-            user.setId(entry.getAttribute("uid").getStringValue());
+            user.setId(entry.getAttribute("id").getStringValue());
             user.setName(entry.getAttribute("cn").getStringValue());
             user.setPath(entry.getAttribute("path").getStringValue());
 
@@ -138,7 +138,7 @@ public class UserImpl implements UserDAO {
      */
     @Override
     public void delete(User user) throws DataAccessException {
-        String dn = String.format("uid=%s,ou=users,o=%s,ou=accounts,%s", user.getId(),
+        String dn = String.format("id=%s,ou=users,o=%s,ou=accounts,%s", user.getId(),
                 user.getAccountName(), LdapUtils.getBaseDN());
 
         try {
@@ -158,14 +158,14 @@ public class UserImpl implements UserDAO {
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add( new LDAPAttribute("objectclass", objectClass));
         attributeSet.add( new LDAPAttribute("cn", user.getName()));
-        attributeSet.add( new LDAPAttribute("ou", user.getAccountName()));
-        attributeSet.add(new LDAPAttribute("uid", user.getId()));
+        attributeSet.add( new LDAPAttribute("o", user.getAccountName()));
+        attributeSet.add(new LDAPAttribute("id", user.getId()));
 
         if(user.getPath() != null) {
             attributeSet.add( new LDAPAttribute("path", user.getPath()));
         }
 
-        String dn = String.format("uid=%s,ou=users,o=%s,ou=accounts,%s",
+        String dn = String.format("id=%s,ou=users,o=%s,ou=accounts,%s",
                 user.getId(), user.getAccountName(), LdapUtils.getBaseDN());
 
         try {
@@ -183,7 +183,7 @@ public class UserImpl implements UserDAO {
         ArrayList modList = new ArrayList();
         LDAPAttribute attr;
 
-        String dn = String.format("uid=%s,ou=users,o=%s,ou=accounts,dc=s3,dc=seagate,dc=com",
+        String dn = String.format("id=%s,ou=users,o=%s,ou=accounts,dc=s3,dc=seagate,dc=com",
                 user.getId(), user.getAccountName());
 
         if(newUserName != null) {

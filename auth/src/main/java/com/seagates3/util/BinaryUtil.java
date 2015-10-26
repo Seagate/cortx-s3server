@@ -74,7 +74,7 @@ public class BinaryUtil {
 
         byte[] digestBuff = hash(text);
         bb = ByteBuffer.wrap(digestBuff);
-        secret_key = Base64.encodeBase64String(bb.array());
+        secret_key = encodeToBase64String(bb.array());
 
         return secret_key;
     }
@@ -82,11 +82,26 @@ public class BinaryUtil {
     /*
      * Calculate the HMAC using SHA-256.
      */
-    public static byte[] hmac(byte[] key, byte[] data) {
+    public static byte[] hmacSHA256(byte[] key, byte[] data) {
         Mac mac;
         try {
             mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(key, "HmacSHA256"));
+
+            return mac.doFinal(data);
+        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
+        }
+        return null;
+    }
+
+    /*
+     * Calculate the HMAC using SHA-1.
+     */
+    public static byte[] hmacSHA1(byte[] key, byte[] data) {
+        Mac mac;
+        try {
+            mac = Mac.getInstance("HmacSHA1");
+            mac.init(new SecretKeySpec(key, "HmacSHA1"));
 
             return mac.doFinal(data);
         } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
@@ -141,13 +156,14 @@ public class BinaryUtil {
         bb.putLong(uid.getMostSignificantBits());
         bb.putLong(uid.getLeastSignificantBits());
 
-        String b64UUID = new org.apache.commons.codec.binary.Base64(true).encodeToString(bb.array());
-
-        return b64UUID;
+        return encodeToBase64String(bb.array());
     }
 
+    /*
+     * Return true if the text is base 64 encoded.
+     */
     public static Boolean isBase64Encoded(String text) {
-        return org.apache.commons.codec.binary.Base64.isBase64(text);
+        return Base64.isBase64(text);
     }
 
     /*
@@ -158,14 +174,24 @@ public class BinaryUtil {
     }
 
     /*
-     * Decode base 64 string.
+     * Decode base 64 string and return the string.
      */
-    public static String base64Decode(String text) {
+    public static String base64DecodeString(String text) {
         return new String(base64DecodedBytes(text));
     }
 
-    public static byte[] encodeToBase64(String text) {
+    /*
+     * Encode to base 64 format and return bytes.
+     */
+    public static byte[] encodeToBase64Bytes(String text) {
         return Base64.encodeBase64(text.getBytes());
+    }
+
+    /*
+     * Encode the text to base 64 and return the string.
+     */
+    public static String encodeToBase64String(byte[] text) {
+        return Base64.encodeBase64String(text);
     }
 
     /*
