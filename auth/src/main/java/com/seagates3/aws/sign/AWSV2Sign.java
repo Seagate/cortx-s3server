@@ -218,9 +218,13 @@ public class AWSV2Sign implements AWSSign {
             }
         }
 
-        String subResourceString = "?";
+        String subResourceString = "";
 
         Iterator<Map.Entry<String, String>> entries = queryResources.entrySet().iterator();
+        if(queryResources.size() > 0) {
+            subResourceString += "?";
+        }
+        
         while (entries.hasNext()) {
             Map.Entry<String, String> entry = entries.next();
             subResourceString += entry.getKey();
