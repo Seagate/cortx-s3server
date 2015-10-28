@@ -110,7 +110,7 @@ public class AuthServerAction {
             }
 
             if(requestAction.equals("AuthenticateUser")) {
-                return responseGenerator.AuthenticateUser();
+                return responseGenerator.AuthenticateUser(requestor);
             }
         } else {
             requestor = new Requestor();

@@ -28,6 +28,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 
 public class AuthenticationResponseGenerator extends XMLResponseGenerator {
@@ -37,7 +38,7 @@ public class AuthenticationResponseGenerator extends XMLResponseGenerator {
         xmlUtil = new XMLUtil();
     }
 
-    public ServerResponse AuthenticateUser() {
+    public ServerResponse AuthenticateUser(Requestor requestor) {
         Document doc;
         try {
             doc = xmlUtil.createNewDoc();
@@ -54,9 +55,21 @@ public class AuthenticationResponseGenerator extends XMLResponseGenerator {
         Element authenticatedUserResult = doc.createElement("AuthenticateUserResult");
         rootElement.appendChild(authenticatedUserResult);
 
-        Element authenticated = doc.createElement("Authenticated");
-        authenticated.appendChild(doc.createTextNode("True"));
-        authenticatedUserResult.appendChild(authenticated);
+        Element userId = doc.createElement("UserId");
+        userId.appendChild(doc.createTextNode(requestor.getId()));
+        authenticatedUserResult.appendChild(userId);
+
+        Element userName = doc.createElement("UserName");
+        userName.appendChild(doc.createTextNode(requestor.getName()));
+        authenticatedUserResult.appendChild(userName);
+
+        Element accountId = doc.createElement("AccountId");
+        accountId.appendChild(doc.createTextNode(requestor.getAccountName()));
+        authenticatedUserResult.appendChild(accountId);
+
+        Element account = doc.createElement("AccountName");
+        account.appendChild(doc.createTextNode(requestor.getAccountName()));
+        authenticatedUserResult.appendChild(account);
 
         Element responseMetaData = doc.createElement("ResponseMetadata");
         rootElement.appendChild(responseMetaData);
