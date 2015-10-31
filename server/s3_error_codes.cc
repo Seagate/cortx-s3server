@@ -10,6 +10,11 @@ int S3Error::get_http_status_code() {
 }
 
 std::string& S3Error::to_xml() {
+  if (get_http_status_code() == -1) {
+    // Object state is invalid, Wrong error code.
+    xml_message = "";
+    return xml_message;
+  }
   xml_message = "";
   xml_message = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   xml_message += "<Error>\n"

@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# make install things for testing
+
+S3_INSTALL_LOCATION=/opt/seagate/s3
+
+mkdir -p $S3_INSTALL_LOCATION/bin
+mkdir -p $S3_INSTALL_LOCATION/lib
+mkdir -p $S3_INSTALL_LOCATION/libevent
+mkdir -p $S3_INSTALL_LOCATION/libxml2
+mkdir -p $S3_INSTALL_LOCATION/resources
+
+# Copy over the mero libs
+echo "Copying clovis libraries and dependencies to install location..."
+cp ../../mero/.libs/libmero*.so $S3_INSTALL_LOCATION/lib/
+cp ../../extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATION/lib/
+
+# Copy the s3 dependencies
+echo "Copying s3 library dependencies to install location..."
+cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
+cp -R third_party/libxml2/s3_dist/lib/* $S3_INSTALL_LOCATION/libxml2/
+
+# Copy the s3 server
+echo "Copying s3 server to install location..."
+cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
+
+# Copy the resources
+echo "Copying s3 server resources to install location..."
+cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json
+
+# Copy the startup script.
+echo "Copying s3 startup script to install location..."
+cp starts3.sh $S3_INSTALL_LOCATION/
+
+echo "S3 server is setup."
+echo "Setup nginx using configuration similar to nginx.conf.sample."
+echo "Run starts3.sh to start the Seagate S3 server."
