@@ -59,8 +59,7 @@ public class UserController extends AbstractController {
             user.setPath("/");
         }
 
-        user.setFederateduser(Boolean.FALSE);
-
+        user.setUserType(User.UserType.IAM_USER);
         user.setId(KeyGenUtil.userId());
 
         userDAO.save(user);

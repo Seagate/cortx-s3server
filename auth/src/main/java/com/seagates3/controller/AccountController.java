@@ -77,13 +77,16 @@ public class AccountController extends AbstractController {
         return accountResponse.create(rootAccessKey);
     }
 
+    /*
+     * Create a root user for the account.
+     */
     private User createRootUser(String accountName) throws DataAccessException {
         UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
         User user = new User();
         user.setAccountName(accountName);
         user.setName("root");
         user.setPath("/");
-        user.setFederateduser(Boolean.FALSE);
+        user.setUserType(User.UserType.IAM_USER);
 
         user.setId(KeyGenUtil.userId());
 
@@ -91,6 +94,9 @@ public class AccountController extends AbstractController {
         return user;
     }
 
+    /*
+     * Create access keys for the root user.
+     */
     private AccessKey createRootAccessKey(User root) throws DataAccessException {
         AccessKeyDAO accessKeyDAO =
                 (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);

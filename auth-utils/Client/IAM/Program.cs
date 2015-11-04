@@ -13,6 +13,7 @@ using CommandLine.Text;
 using System.IO;
 using System.Net;
 using System.Xml;
+using Amazon;
 
 namespace IAM
 {
@@ -62,6 +63,14 @@ namespace IAM
           HelpText = "Input file")]
         public String File { get; set; }
 
+        [Option('r', "role-arn", Required = false,
+          HelpText = "Role ARN")]
+        public String RoleArn { get; set; }
+
+        [Option('i', "idp", Required = false,
+          HelpText = "SAML IDP ARN")]
+        public String SAMLIdp { get; set; }
+
         [ValueList(typeof(List<string>), MaximumElements = 3)]
         public IList<string> CommandItems { get; set; }
 
@@ -74,16 +83,20 @@ namespace IAM
                 AddDashesToOption = true
             };
             help.AddPreOptionsLine("Usage:");
+            help.AddPreOptionsLine("AssumeRoleWithSAML -i <SAML IDP ARN> -r <Role ARN> -f <File containing SAML Assertion>");
             help.AddPreOptionsLine("CreateAccount -a <Account Name>");
             help.AddPreOptionsLine("CreateAccessKey -u <User Name (Optional)>");
+            help.AddPreOptionsLine("CreateRole -n <Role Name> -f <Path of role policy document> -p <Path (Optional)>");
             help.AddPreOptionsLine("CreateUser -u <User Name> -p <Path (Optional)");
             help.AddPreOptionsLine("CreateSAMLProvider -n <Name of saml provider> -f <Path of metadata file>");
             help.AddPreOptionsLine("DeleteAccesskey -k <Access Key Id to be deleted>");
-            help.AddPreOptionsLine("DeleteUser -u <User Name>");
+            help.AddPreOptionsLine("Delete Role -n <Role Name>");
             help.AddPreOptionsLine("Delete Saml Provider -n <Saml Provider ARN>");
+            help.AddPreOptionsLine("DeleteUser -u <User Name>");
             help.AddPreOptionsLine("GetFederationToken -u <User Name)> -d <Duration in seconds (Optional)>");
-            help.AddPreOptionsLine("ListUsers");
+            help.AddPreOptionsLine("ListUsers -p <Path Prefix>");
             help.AddPreOptionsLine("ListAccessKeys -u <User Name (optional)");
+            help.AddPreOptionsLine("ListRoles -p <Path Prefix)");
             help.AddPreOptionsLine("ListSamlProviders");
             help.AddPreOptionsLine("UpdateUser -u <Old User Name> -p <New Path (Optional)> -n <New User Name>");
             help.AddPreOptionsLine("UpdateAccessKey -k <access key to be updated> -s <Active/Inactive> -u <User Name (Optional)>");
@@ -110,14 +123,15 @@ namespace IAM
             SignatureVersion = "4"
         };
 
-        static AmazonIdentityManagementServiceClient iamClient;
+        static AmazonIdentityManagementServiceClient stsClient;
 
         static void Main(string[] args)
         {
             var options = new Options();
             if (CommandLine.Parser.Default.ParseArguments(args, options))
             {
-                if (String.Compare(options.CommandItems[0].ToLower(), "createaccount") != 0)
+                if (String.Compare(options.CommandItems[0].ToLower(), "createaccount") != 0 &&
+                    String.Compare(options.CommandItems[0].ToLower(), "assumerolewithsaml") != 0)
                 {
                     if ((String.IsNullOrEmpty(options.KeyId) && !String.IsNullOrEmpty(options.SecretKey)) ||
                         (!String.IsNullOrEmpty(options.KeyId) && String.IsNullOrEmpty(options.SecretKey)))
@@ -127,7 +141,7 @@ namespace IAM
                         Environment.Exit(1);
                     }
 
-                    /* 
+                    /*
                         Try to fetch the default configuration from profile store
                         if the user doesn't specify the aws key id and aws access key
                         as command line arguments.
@@ -156,6 +170,27 @@ namespace IAM
 
                 switch (options.CommandItems[0].ToLower())
                 {
+                    case "assumerolewithsaml":
+                        if (String.IsNullOrEmpty(options.SAMLIdp))
+                        {
+                            Console.WriteLine("SAML IDP Name is missing");
+                            Environment.Exit(1);
+                        }
+
+                        if (String.IsNullOrEmpty(options.RoleArn))
+                        {
+                            Console.WriteLine("Role is missing");
+                            Environment.Exit(1);
+                        }
+
+                        if (String.IsNullOrEmpty(options.File))
+                        {
+                            Console.WriteLine("SAML assertion file is missing");
+                            Environment.Exit(1);
+                        }
+                        AssumeRoleWithSaml(options.SAMLIdp, options.RoleArn, options.File);
+                        break;
+
                     case "createaccount":
                         if (String.IsNullOrEmpty(options.Account))
                         {
@@ -167,6 +202,21 @@ namespace IAM
 
                     case "createaccesskey":
                         CreateAccessKey(options.UserName);
+                        break;
+
+                    case "createrole":
+                        if (String.IsNullOrEmpty(options.Name))
+                        {
+                            Console.WriteLine("Give a name for the role.");
+                            Environment.Exit(1);
+                        }
+                        if (String.IsNullOrEmpty(options.File))
+                        {
+                            Console.WriteLine("Role policy document is required.");
+                            Environment.Exit(1);
+                        }
+
+                        CreateRole(options.Name, options.File, options.Path);
                         break;
 
                     case "createsamlprovider":
@@ -187,7 +237,7 @@ namespace IAM
                     case "createuser":
                         if (String.IsNullOrEmpty(options.UserName))
                         {
-                            Console.WriteLine("User name missing.");
+                            Console.WriteLine("User name is missing.");
                             Environment.Exit(1);
                         }
 
@@ -211,6 +261,16 @@ namespace IAM
                         }
                         break;
 
+                    case "deleterole":
+                        if (String.IsNullOrEmpty(options.Name))
+                        {
+                            Console.WriteLine("Role name is missing.");
+                            Environment.Exit(1);
+                        }
+
+                        DeleteRole(options.Name);
+                        break;
+
                     case "deletesamlprovider":
                         if (String.IsNullOrEmpty(options.Name))
                         {
@@ -224,7 +284,7 @@ namespace IAM
                     case "deleteuser":
                         if (String.IsNullOrEmpty(options.UserName))
                         {
-                            Console.WriteLine("User name missing.");
+                            Console.WriteLine("User name is missing.");
                             Environment.Exit(1);
                         }
 
@@ -248,16 +308,20 @@ namespace IAM
                         }
                         break;
 
-                    case "listusers":
-                        ListUsers();
-                        break;
-
                     case "listaccesskeys":
                         ListAccessKeys(options.UserName);
                         break;
 
+                    case "listroles":
+                        ListRoles(options.Path);
+                        break;
+
                     case "listsamlproviders":
                         ListSamlProviders();
+                        break;
+
+                    case "listusers":
+                        ListUsers(options.Path);
                         break;
 
                     case "updateuser":
@@ -300,18 +364,12 @@ namespace IAM
 
                         break;
 
-                    case "assumerolewithsaml":
-                        AssumeRoleWithSaml();
-                        break;
-
                     default:
                         Console.WriteLine("Incorrect format or operation not supported.");
                         Console.WriteLine("Use --help option to see the usage.");
                         break;
                 }
             }
-
-            Console.ReadLine();
         }
 
         private static string[] ParseRequest(string request)
@@ -347,6 +405,30 @@ namespace IAM
             }
 
             return creds;
+        }
+
+        private static void AssumeRoleWithSaml(String PrincipalARN, String RoleARN, String SAMLAssertionFile)
+        {
+            AmazonSecurityTokenServiceClient stsClient = new AmazonSecurityTokenServiceClient("", "", stsconfig);
+            AssumeRoleWithSAMLRequest Req = new AssumeRoleWithSAMLRequest();
+            if (File.Exists(SAMLAssertionFile))
+            {
+                String Assertion = File.ReadAllText(SAMLAssertionFile);
+                Req.PrincipalArn = PrincipalARN;
+                Req.RoleArn = RoleARN;
+                Req.SAMLAssertion = Assertion;
+
+                AssumeRoleWithSAMLResponse response = stsClient.AssumeRoleWithSAML(Req);
+                Console.WriteLine("acess key id: {0}", response.Credentials.AccessKeyId);
+                Console.WriteLine("secret key: {0}", response.Credentials.SecretAccessKey);
+                Console.WriteLine("session token: {0}", response.Credentials.SessionToken);
+                Console.WriteLine("Expiration: {0}", response.Credentials.Expiration);
+                Console.WriteLine("AssumeRoleWithSAML was successful");
+            }
+            else
+            {
+                Console.WriteLine("Assertion file missing");
+            }
         }
 
         private static void CreateAccount(String AccountName)
@@ -399,15 +481,47 @@ namespace IAM
             Console.Write(output.ToString());
         }
 
+        private static void CreateRole(String RoleName, String PolicyDocumentFile, String Path = null)
+        {
+            if (String.IsNullOrEmpty(Token))
+            {
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+            }
+            else
+            {
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+            }
+
+            CreateRoleRequest Req = new CreateRoleRequest();
+
+            if (File.Exists(PolicyDocumentFile))
+            {
+                String policy = File.ReadAllText(PolicyDocumentFile);
+                Req.RoleName = RoleName;
+                Req.AssumeRolePolicyDocument = policy;
+                if (!string.IsNullOrEmpty(Path))
+                {
+                    Req.Path = Path;
+                }
+
+                CreateRoleResponse Response = stsClient.CreateRole(Req);
+                Console.WriteLine("Role created successfully");
+            }
+            else
+            {
+                Console.WriteLine("Assertion file missing");
+            }
+        }
+
         private static void CreateUser(String User, String Path)
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             CreateUserRequest req = new CreateUserRequest(User);
@@ -417,7 +531,7 @@ namespace IAM
             }
             try
             {
-                CreateUserResponse response = iamClient.CreateUser(req);
+                CreateUserResponse response = stsClient.CreateUser(req);
                 Console.WriteLine("User created");
             }
             catch (Exception ex)
@@ -430,11 +544,11 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             try
@@ -444,7 +558,7 @@ namespace IAM
                 {
                     accesskeyReq.UserName = User;
                 }
-                CreateAccessKeyResponse response = iamClient.CreateAccessKey(accesskeyReq);
+                CreateAccessKeyResponse response = stsClient.CreateAccessKey(accesskeyReq);
                 Console.WriteLine("Access keys :{0}, Secret Key: {1}", response.AccessKey.AccessKeyId,
                     response.AccessKey.SecretAccessKey);
             }
@@ -458,11 +572,11 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             try
@@ -474,9 +588,12 @@ namespace IAM
                     Req.SAMLMetadataDocument = Metadata;
                     Req.Name = Name;
 
-
-                    CreateSAMLProviderResponse response = iamClient.CreateSAMLProvider(Req);
+                    CreateSAMLProviderResponse response = stsClient.CreateSAMLProvider(Req);
                     Console.WriteLine("Saml Provider Created successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("Metadata file missing");
                 }
             }
             catch (Exception ex)
@@ -489,11 +606,11 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             try
@@ -503,8 +620,33 @@ namespace IAM
                 {
                     accesskeyReq.UserName = User;
                 }
-                DeleteAccessKeyResponse response = iamClient.DeleteAccessKey(accesskeyReq);
+                DeleteAccessKeyResponse response = stsClient.DeleteAccessKey(accesskeyReq);
                 Console.WriteLine("Access Key deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error occured while creating user. " + ex.ToString());
+            }
+        }
+
+        private static void DeleteRole(String RoleName)
+        {
+            if (String.IsNullOrEmpty(Token))
+            {
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+            }
+            else
+            {
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+            }
+
+            DeleteRoleRequest Req = new DeleteRoleRequest();
+            Req.RoleName = RoleName;
+
+            try
+            {
+                DeleteRoleResponse response = stsClient.DeleteRole(Req);
+                Console.WriteLine("Role Deleted");
             }
             catch (Exception ex)
             {
@@ -516,18 +658,18 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             DeleteUserRequest req = new DeleteUserRequest(UserName);
 
             try
             {
-                DeleteUserResponse response = iamClient.DeleteUser(req);
+                DeleteUserResponse response = stsClient.DeleteUser(req);
                 Console.WriteLine("User Deleted");
             }
             catch (Exception ex)
@@ -540,12 +682,11 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey);
-                //iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             try
@@ -553,7 +694,7 @@ namespace IAM
                 DeleteSAMLProviderRequest Req = new DeleteSAMLProviderRequest();
                 Req.SAMLProviderArn = Name;
 
-                DeleteSAMLProviderResponse response = iamClient.DeleteSAMLProvider(Req);
+                DeleteSAMLProviderResponse response = stsClient.DeleteSAMLProvider(Req);
                 Console.WriteLine("Saml Provider deleted successfully.");
             }
             catch (Exception ex)
@@ -585,32 +726,67 @@ namespace IAM
                 federationTokenRequest.DurationSeconds = Duration;
             }
 
-
             GetFederationTokenResponse federationTokenResponse = stsClient.GetFederationToken(federationTokenRequest);
-            Console.WriteLine("acess key id: {0}", federationTokenResponse.Credentials.AccessKeyId);
-            Console.WriteLine("secret key: {0}", federationTokenResponse.Credentials.SecretAccessKey);
-            Console.WriteLine("session token: {0}", federationTokenResponse.Credentials.SessionToken);
+            Console.WriteLine("Acess key id: {0}", federationTokenResponse.Credentials.AccessKeyId);
+            Console.WriteLine("Secret key: {0}", federationTokenResponse.Credentials.SecretAccessKey);
+            Console.WriteLine("Session token: {0}", federationTokenResponse.Credentials.SessionToken);
             Console.WriteLine("Expiration: {0}", federationTokenResponse.Credentials.Expiration);
         }
 
-        private static void ListUsers()
+        private static void ListUsers(String PathPrefix)
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             ListUsersRequest req = new ListUsersRequest();
+            if (!String.IsNullOrEmpty(PathPrefix))
+            {
+                req.PathPrefix = PathPrefix;
+            }
+
             try
             {
-                ListUsersResponse response = iamClient.ListUsers(req);
+                ListUsersResponse response = stsClient.ListUsers(req);
                 foreach (User u in response.Users)
                 {
                     Console.WriteLine("Id: {0}, User name : {1}, Path: {2}, Create Date: {3}", u.UserId, u.UserName, u.Path, u.CreateDate.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error occured while creating user. " + ex.ToString());
+            }
+        }
+
+        private static void ListRoles(String PathPrefix)
+        {
+            if (String.IsNullOrEmpty(Token))
+            {
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+            }
+            else
+            {
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+            }
+
+            ListRolesRequest Req = new ListRolesRequest();
+            if (!String.IsNullOrEmpty(PathPrefix))
+            {
+                Req.PathPrefix = PathPrefix;
+            }
+
+            try
+            {
+                ListRolesResponse response = stsClient.ListRoles(Req);
+                foreach (Role r in response.Roles)
+                {
+                    Console.WriteLine("Role name : {0}, Path: {1}, Create Date: {2}", r.RoleName, r.Path, r.CreateDate.ToString());
                 }
             }
             catch (Exception ex)
@@ -623,11 +799,11 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             ListAccessKeysRequest req = new ListAccessKeysRequest();
@@ -638,7 +814,7 @@ namespace IAM
 
             try
             {
-                ListAccessKeysResponse response = iamClient.ListAccessKeys(req);
+                ListAccessKeysResponse response = stsClient.ListAccessKeys(req);
                 foreach (AccessKeyMetadata a in response.AccessKeyMetadata)
                 {
                     Console.WriteLine("User Name: {0}, Access Key Id: {1}, Status: {2}, Create Date: {3}", a.UserName, a.AccessKeyId, a.Status, a.CreateDate);
@@ -654,18 +830,17 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey);
-                //iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             ListSAMLProvidersRequest req = new ListSAMLProvidersRequest();
             try
             {
-                ListSAMLProvidersResponse response = iamClient.ListSAMLProviders(req);
+                ListSAMLProvidersResponse response = stsClient.ListSAMLProviders(req);
                 foreach (SAMLProviderListEntry entry in response.SAMLProviderList)
                 {
                     Console.WriteLine("ARN: {0}, Valid Until: {1}, Create Date: {2}", entry.Arn, entry.ValidUntil, entry.CreateDate);
@@ -682,11 +857,11 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             UpdateUserRequest req = new UpdateUserRequest(OldUserName);
@@ -702,7 +877,7 @@ namespace IAM
 
             try
             {
-                UpdateUserResponse response = iamClient.UpdateUser(req);
+                UpdateUserResponse response = stsClient.UpdateUser(req);
                 Console.WriteLine("User updated");
             }
             catch (Exception ex)
@@ -715,11 +890,11 @@ namespace IAM
         {
             if (String.IsNullOrEmpty(Token))
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, iamconfig);
             }
             else
             {
-                iamClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
+                stsClient = new AmazonIdentityManagementServiceClient(AccessKeyId, SecretKey, Token, iamconfig);
             }
 
             UpdateAccessKeyRequest req = new UpdateAccessKeyRequest(UAccessKeyId, Status);
@@ -730,25 +905,13 @@ namespace IAM
 
             try
             {
-                UpdateAccessKeyResponse response = iamClient.UpdateAccessKey(req);
+                UpdateAccessKeyResponse response = stsClient.UpdateAccessKey(req);
                 Console.WriteLine("User updated");
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error occured while creating user. " + ex.ToString());
             }
-        }
-
-        private static void AssumeRoleWithSaml()
-        {
-            AmazonSecurityTokenServiceClient stsClient = new AmazonSecurityTokenServiceClient(AccessKeyId, SecretKey);
-            AssumeRoleWithSAMLRequest req = new AssumeRoleWithSAMLRequest();
-            req.PrincipalArn = "arn:aws:iam::842327222694:saml-provider/ADFS";
-            req.RoleArn = "arn:aws:iam::842327222694:role/ADFS-Dev";
-            req.SAMLAssertion = "PHNhbWxwOlJlc3BvbnNlIElEPSJfN2RkZjRjMTMtODdkNC00NDkxLWE5NTAtNDlmZGYxOTdhYTAzIiBWZXJzaW9uPSIyLjAiIElzc3VlSW5zdGFudD0iMjAxNS0xMC0wOFQyMTo0MjowNi4xMDZaIiBEZXN0aW5hdGlvbj0iaHR0cHM6Ly9zaWduaW4uYXdzLmFtYXpvbi5jb20vc2FtbCIgQ29uc2VudD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmNvbnNlbnQ6dW5zcGVjaWZpZWQiIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiPjxJc3N1ZXIgeG1sbnM9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDphc3NlcnRpb24iPmh0dHA6Ly9XSU4tRkpIRjRPTjBHMTgudGVzdC5vcmcvYWRmcy9zZXJ2aWNlcy90cnVzdDwvSXNzdWVyPjxzYW1scDpTdGF0dXM+PHNhbWxwOlN0YXR1c0NvZGUgVmFsdWU9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDpzdGF0dXM6U3VjY2VzcyIgLz48L3NhbWxwOlN0YXR1cz48QXNzZXJ0aW9uIElEPSJfYjIyZmE4NTgtMzMzMS00YzU2LTlmZjktYjhmNzgzZDExOTZhIiBJc3N1ZUluc3RhbnQ9IjIwMTUtMTAtMDhUMjE6NDI6MDYuMTA2WiIgVmVyc2lvbj0iMi4wIiB4bWxucz0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmFzc2VydGlvbiI+PElzc3Vlcj5odHRwOi8vV0lOLUZKSEY0T04wRzE4LnRlc3Qub3JnL2FkZnMvc2VydmljZXMvdHJ1c3Q8L0lzc3Vlcj48ZHM6U2lnbmF0dXJlIHhtbG5zOmRzPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwLzA5L3htbGRzaWcjIj48ZHM6U2lnbmVkSW5mbz48ZHM6Q2Fub25pY2FsaXphdGlvbk1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMTAveG1sLWV4Yy1jMTRuIyIgLz48ZHM6U2lnbmF0dXJlTWV0aG9kIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS8wNC94bWxkc2lnLW1vcmUjcnNhLXNoYTI1NiIgLz48ZHM6UmVmZXJlbmNlIFVSST0iI19iMjJmYTg1OC0zMzMxLTRjNTYtOWZmOS1iOGY3ODNkMTE5NmEiPjxkczpUcmFuc2Zvcm1zPjxkczpUcmFuc2Zvcm0gQWxnb3JpdGhtPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwLzA5L3htbGRzaWcjZW52ZWxvcGVkLXNpZ25hdHVyZSIgLz48ZHM6VHJhbnNmb3JtIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS8xMC94bWwtZXhjLWMxNG4jIiAvPjwvZHM6VHJhbnNmb3Jtcz48ZHM6RGlnZXN0TWV0aG9kIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS8wNC94bWxlbmMjc2hhMjU2IiAvPjxkczpEaWdlc3RWYWx1ZT56Uk5pOUdBOVFiUUFpWkROMU1XckpCTjlqSlpFSzM5Qm5CbzZSK0Z6b0pZPTwvZHM6RGlnZXN0VmFsdWU+PC9kczpSZWZlcmVuY2U+PC9kczpTaWduZWRJbmZvPjxkczpTaWduYXR1cmVWYWx1ZT56TGV2ejc1QXJ6aWVKd09CWkFFS0VEY1AxVE1tSnNDdFlOSmNWY3hjMUk2aWtjb2FWVDVPTEdISm9JMXY1bDFvZnJGcHRjWVVSaEpXQ3RXV05sVWFveUpPUnFRdjRNY2dVdHZzTjkrdUZEYXhrMHZmYnNtWkNRaVdpc1pQVGN1di9OSHNOUmNxV2FBSVdIdmRDK0w3cUVDREp3ZUdJWk02a2dJdjd0NFVVTE1nRFVxbi9xbm43dlg0UWYxMmk3YlJtdTRELzJnZENkdHpRaUtWK2EyM1JtaGQrSTBRSGNvWjNacmc4a0NaUVdZMUlYekVvWTdXTGUvNVNYcFhNV1lJTlR6d2tEdFlITmJvbEhja01NUnA3NkRNSXFPaTA4cmNueVhRc0VtZjdrM1FFYUM5MUd5MUVBdU0rQnhzMmw1RktMSG8yOEZzT2xadERRNllYenM0VEE9PTwvZHM6U2lnbmF0dXJlVmFsdWU+PEtleUluZm8geG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1sZHNpZyMiPjxkczpYNTA5RGF0YT48ZHM6WDUwOUNlcnRpZmljYXRlPk1JSUM3RENDQWRTZ0F3SUJBZ0lRZERPK3NZL1VJWU5FRFBmNW85Vkt2REFOQmdrcWhraUc5dzBCQVFzRkFEQXlNVEF3TGdZRFZRUURFeWRCUkVaVElGTnBaMjVwYm1jZ0xTQlhTVTR0UmtwSVJqUlBUakJITVRndWRHVnpkQzV2Y21jd0hoY05NVFV4TURBMk1qTXlOakU0V2hjTk1UWXhNREExTWpNeU5qRTRXakF5TVRBd0xnWURWUVFERXlkQlJFWlRJRk5wWjI1cGJtY2dMU0JYU1U0dFJrcElSalJQVGpCSE1UZ3VkR1Z6ZEM1dmNtY3dnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFEdWU0NjV1L3ZERGlHbFhTLytPTVE5Vjc3Z1l3Z0R4OGw3RFk2aVFMM2lJVENsVzBqeUR5OE8wQzl6b1ZNeGR3cDNncXZYMGFxZEUrRFVLUjBzWG11THN5M1ZIdi9iZ2JKN0Z1RE91TVZ6TjRZMXozc2t1QktYNEwrM20yanl5VFhaR09hQWtMdEJ3c1FMSWdjS1kxZm5iR3VDdjM1Y2lneS9ma1ppdnhmaHhLYXRHUFNXRVhxWGVQN0VaMFlyNy9mYnZTRkJKUVhyM3FMeVlmcWtmdlFBd2xUcGd4RzR1SGEwYmVCNkpuWXFPQXJPczJrc2RWbVdtODdYeWJhTVMvcmZzbWQ2c3QvdzRzeVFhYlpGb0duUlRFdmwvMG4zUWt2M21NUU4vRzJqemFLMjluY0ZkazhGaE9qT05kb0gxZkQyd2NCejlPcGlpb2ZQd0lLSVFad2xBZ01CQUFFd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFJVkYvMzlwRWNhVU1kaE9mNmYyYXpySmNvM3FYWlEySWJhajdleUtXaE9nQU5tWEN5NnBacVdLb0FaeEpZdEN5WXlFUGZNL0YwRVRSWXJCQk9WQVRiSEdYSXV4VVhsYUZJNW5qa0FudEpRdy9KbVdVemNsR3hTdjJNNFliZWpRbk9RN1ZoZ0tjaDV3NDlJUHIvbDNHYXlQMVFiOU5ObHVMK3J5UnpHRHd3VjR5ZTVzUG5VN2FqMnlLNU9lYU11N2RmL1FwY1dUUU1zUVNtTXl0MWxIM0E4NGdtN2hwUCtOSmgrRHhjSXJ2My9QVzZRa3E4UnZKZllad1hIVjB0VmtSUyt2SDJaWFBmUnFkN3g2UTQwOFRTSnpHb3JqakFrelpZam1xRmlNNGdPN0ptOURIZUljQXNmSGVCcGpJMWZvWlU5WnU1dGI5S280Q0JqVFVybEVLZU09PC9kczpYNTA5Q2VydGlmaWNhdGU+PC9kczpYNTA5RGF0YT48L0tleUluZm8+PC9kczpTaWduYXR1cmU+PFN1YmplY3Q+PE5hbWVJRCBGb3JtYXQ9InVybjpvYXNpczpuYW1lczp0YzpTQU1MOjIuMDpuYW1laWQtZm9ybWF0OnBlcnNpc3RlbnQiPlRFU1RcQWRtaW5pc3RyYXRvcjwvTmFtZUlEPjxTdWJqZWN0Q29uZmlybWF0aW9uIE1ldGhvZD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmNtOmJlYXJlciI+PFN1YmplY3RDb25maXJtYXRpb25EYXRhIE5vdE9uT3JBZnRlcj0iMjAxNS0xMC0wOFQyMTo0NzowNi4xMDZaIiBSZWNpcGllbnQ9Imh0dHBzOi8vc2lnbmluLmF3cy5hbWF6b24uY29tL3NhbWwiIC8+PC9TdWJqZWN0Q29uZmlybWF0aW9uPjwvU3ViamVjdD48Q29uZGl0aW9ucyBOb3RCZWZvcmU9IjIwMTUtMTAtMDhUMjE6NDI6MDYuMTA2WiIgTm90T25PckFmdGVyPSIyMDE1LTEwLTA4VDIyOjQyOjA2LjEwNloiPjxBdWRpZW5jZVJlc3RyaWN0aW9uPjxBdWRpZW5jZT51cm46YW1hem9uOndlYnNlcnZpY2VzPC9BdWRpZW5jZT48L0F1ZGllbmNlUmVzdHJpY3Rpb24+PC9Db25kaXRpb25zPjxBdHRyaWJ1dGVTdGF0ZW1lbnQ+PEF0dHJpYnV0ZSBOYW1lPSJodHRwczovL2F3cy5hbWF6b24uY29tL1NBTUwvQXR0cmlidXRlcy9Sb2xlIj48QXR0cmlidXRlVmFsdWU+YXJuOmF3czppYW06Ojg0MjMyNzIyMjY5NDpzYW1sLXByb3ZpZGVyL0FERlMsYXJuOmF3czppYW06Ojg0MjMyNzIyMjY5NDpyb2xlL0FERlMtRGV2PC9BdHRyaWJ1dGVWYWx1ZT48QXR0cmlidXRlVmFsdWU+YXJuOmF3czppYW06Ojg0MjMyNzIyMjY5NDpzYW1sLXByb3ZpZGVyL0FERlMsYXJuOmF3czppYW06Ojg0MjMyNzIyMjY5NDpyb2xlL0FERlMtUHJvZHVjdGlvbjwvQXR0cmlidXRlVmFsdWU+PC9BdHRyaWJ1dGU+PEF0dHJpYnV0ZSBOYW1lPSJodHRwczovL2F3cy5hbWF6b24uY29tL1NBTUwvQXR0cmlidXRlcy9Sb2xlU2Vzc2lvbk5hbWUiPjxBdHRyaWJ1dGVWYWx1ZT5hZG1pQHRlc3Qub3JnPC9BdHRyaWJ1dGVWYWx1ZT48L0F0dHJpYnV0ZT48L0F0dHJpYnV0ZVN0YXRlbWVudD48QXV0aG5TdGF0ZW1lbnQgQXV0aG5JbnN0YW50PSIyMDE1LTEwLTA4VDIxOjA5OjUzLjQ3MVoiIFNlc3Npb25JbmRleD0iX2IyMmZhODU4LTMzMzEtNGM1Ni05ZmY5LWI4Zjc4M2QxMTk2YSI+PEF1dGhuQ29udGV4dD48QXV0aG5Db250ZXh0Q2xhc3NSZWY+dXJuOmZlZGVyYXRpb246YXV0aGVudGljYXRpb246d2luZG93czwvQXV0aG5Db250ZXh0Q2xhc3NSZWY+PC9BdXRobkNvbnRleHQ+PC9BdXRoblN0YXRlbWVudD48L0Fzc2VydGlvbj48L3NhbWxwOlJlc3BvbnNlPg==";
-
-            AssumeRoleWithSAMLResponse response = stsClient.AssumeRoleWithSAML(req);
-            Console.ReadLine();
         }
     }
 }

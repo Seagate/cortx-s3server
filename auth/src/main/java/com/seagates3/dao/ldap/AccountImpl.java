@@ -86,11 +86,12 @@ public class AccountImpl implements AccountDAO {
             throw new DataAccessException("failed to add new account.\n" + ex);
         }
         createUserOU(account.getName());
+        createRoleOU(account.getName());
         createIdpOU(account.getName());
     }
 
     /*
-     * Create sub entry ou=user for the account.
+     * Create sub entry ou=users for the account.
      * The dn should be in the following format
      * dn: ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
      */
@@ -106,6 +107,26 @@ public class AccountImpl implements AccountDAO {
             LdapUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
             throw new DataAccessException("failed to create user ou.\n" + ex);
+        }
+    }
+
+    /*
+     * Create sub entry ou=roles for the account.
+     * The dn should be in the following format
+     * dn: ou=roles,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
+     */
+    private void createRoleOU(String accountName) throws DataAccessException {
+        String dn = String.format("ou=roles,o=%s,ou=accounts,%s",
+                accountName, LdapUtils.getBaseDN());
+
+        LDAPAttributeSet attributeSet = new LDAPAttributeSet();
+        attributeSet.add( new LDAPAttribute( "objectclass", "organizationalunit"));
+        attributeSet.add( new LDAPAttribute("ou", "roles"));
+
+        try {
+            LdapUtils.add(new LDAPEntry(dn, attributeSet));
+        } catch (LDAPException ex) {
+            throw new DataAccessException("failed to create role ou.\n" + ex);
         }
     }
 

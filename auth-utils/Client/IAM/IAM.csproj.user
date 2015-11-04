@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>createsamlprovider -u bob -s Inactive -k Fl1hby17RvWMbyexJ_wXUg -n bobby -x AaaKIAJPINPFRBTPAYOGNA -y ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYZ5Hd -n "test" -f "C: \Users\seagate\Desktop\federationmetadata-2.xml"</StartArguments>
+    <StartArguments>
+    </StartArguments>
     <RemoteDebugEnabled>false</RemoteDebugEnabled>
   </PropertyGroup>
 </Project>

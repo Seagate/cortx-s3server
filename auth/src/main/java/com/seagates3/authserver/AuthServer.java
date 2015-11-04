@@ -87,6 +87,7 @@ public class AuthServer {
         LdapConnectionManager.initLdap(authServerConfig);
         AuthServerConfig.init(authServerConfig);
         SAMLUtil.init();
+        SAMLUtil.setSamlMetadataFile(authServerConfig.getProperty("samlMetadataFile"));
 
         // Configure the server.
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);

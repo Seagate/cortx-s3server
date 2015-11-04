@@ -21,8 +21,9 @@ package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.SAMLProvider;
+import java.security.cert.Certificate;
 
-public interface SAMLProvicerDAO {
+public interface SAMLProviderDAO {
 
     /*
      * Get user details from the database.
@@ -33,6 +34,11 @@ public interface SAMLProvicerDAO {
      * Get the list of all the saml providers.
      */
     public SAMLProvider[] findAll(String accountName) throws DataAccessException;
+
+    /*
+     * Return true if the key exists for the idp.
+     */
+    public Boolean keyExists(String accountName, String name, Certificate cert) throws DataAccessException;
 
     /*
      * Create a new entry for the saml provider in the data base.

@@ -45,9 +45,9 @@ import com.seagates3.response.generator.xml.XMLResponseGenerator;
 import com.seagates3.util.DateUtil;
 
 public class AuthServerAction {
-
     private final String VALIDATOR_PACKAGE = "com.seagates3.validator";
     private final String CONTROLLER_PACKAGE = "com.seagates3.controller";
+
     AuthenticationResponseGenerator responseGenerator;
 
     public AuthServerAction() {
@@ -66,7 +66,8 @@ public class AuthServerAction {
         Requestor requestor;
         ServerResponse serverResponse;
 
-        if( !requestAction.equals("CreateAccount")) {
+            if( !requestAction.equals("CreateAccount") &&
+            !requestAction.equals("AssumeRoleWithSAML")) {
             clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
 
             /*
@@ -170,7 +171,7 @@ public class AuthServerAction {
 
        AccessKey accessKey = requestor.getAccesskey();
        if(requestor.isFederatedUser()) {
-           String sessionToken = clientRequestToken.getRequestHeaders().get("x-amz-content-sha256");
+           String sessionToken = clientRequestToken.getRequestHeaders().get("X-Amz-Security-Token");
            if(!accessKey.getToken().equals(sessionToken)) {
                return responseGenerator.invalidClientTokenId();
            }
@@ -249,12 +250,26 @@ public class AuthServerAction {
         String pattern  = "(?<=[a-z])(?=[A-Z])";
         String[] tokens = requestAction.split(pattern, 2);
 
+        tokens[0] = tokens[0].toLowerCase();
+
         Map<String, String> controllerAction = new HashMap<>();
 
-        if("Get".equals(tokens[0])) {
+        /*
+         * TODO
+         * replace this entire logic with a mapper class.
+         * ex -
+         * createuser -> action = create, Controller = com.seagates3.controller.user
+         */
+        if("assumerolewithsaml".equals(requestAction.toLowerCase())) {
+            controllerAction.put("Action", "create");
+            controllerAction.put("ControllerName", requestAction);
+            return controllerAction;
+        }
+
+        if("get".equals(tokens[0])) {
             controllerAction.put("Action", "create");
         } else {
-            controllerAction.put("Action", tokens[0].toLowerCase());
+            controllerAction.put("Action", tokens[0]);
         }
 
         if((tokens[0].compareTo("list") == 0) && (tokens[1].endsWith("s"))) {

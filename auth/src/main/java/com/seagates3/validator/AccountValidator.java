@@ -22,19 +22,12 @@ package com.seagates3.validator;
 import java.util.Map;
 
 public class AccountValidator extends AbstractValidator{
-
-    private final ValidatorHelper validatorUtil;
-
-    public AccountValidator() {
-        validatorUtil = new ValidatorHelper();
-    }
-
     @Override
     public Boolean create(Map<String, String> requestBody) {
         if(!requestBody.containsKey("AccountName")) {
             return false;
         }
 
-        return validatorUtil.validAccountName(requestBody.get("AccountName"));
+        return validatorHelper.validAccountName(requestBody.get("AccountName"));
     }
 }

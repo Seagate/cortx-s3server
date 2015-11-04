@@ -22,16 +22,22 @@ package com.seagates3.model;
 public class SAMLProvider {
 
     private String accountName;
+    private SAMLAssertionAttribute[] attributes;
     private String name;
     private String samlMetadata;
     private String expiry;
     private KeyDescriptor[] keyDescriptors;
     private SAMLServiceEndpoints[] samlServices;
     private String[] nameIdFormats;
-    private SAMLAssertionAttribute[] attributes;
+    private String issuer;
+    private String createDate;
 
     public String getAccountName() {
         return accountName;
+    }
+
+    public String getCreateDate() {
+        return createDate;
     }
 
     public String getName() {
@@ -62,8 +68,16 @@ public class SAMLProvider {
         return attributes;
     }
 
+    public String getIssuer() {
+        return issuer;
+    }
+
     public void setAccountName(String accountName) {
         this.accountName = accountName;
+    }
+
+    public void setCreateDate(String createDate) {
+        this.createDate = createDate;
     }
 
     public void setName(String name) {
@@ -94,7 +108,11 @@ public class SAMLProvider {
         this.attributes = attributes;
     }
 
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
     public Boolean exists() {
-        return !(samlMetadata == null);
+        return !(issuer == null);
     }
 }

@@ -45,8 +45,9 @@ public class FederationTokenController extends AbstractController{
 
         fedTokenResponse = new FederationTokenResponseGenerator();
     }
+
     /*
-     * To do
+     * TODO
      * Store user policy
      */
     @Override
@@ -60,13 +61,7 @@ public class FederationTokenController extends AbstractController{
             duration = 43200;
         }
 
-        UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
-        User user = userDAO.find(requestor.getAccountName(), userName);
-        if(! user.exists()) {
-            user.setId(KeyGenUtil.userId());
-
-            userDAO.save(user);
-        }
+        User user = createUser(requestor.getAccountName(), userName);
 
         AccessKey accessKey = createAccessKey(user, duration);
         if(accessKey == null) {
@@ -76,6 +71,26 @@ public class FederationTokenController extends AbstractController{
         return fedTokenResponse.create(user, accessKey);
     }
 
+    /*
+     * Search for the user in the data base. If the user exists, return the user.
+     * Else, create a new user.
+     */
+    private User createUser(String accountName, String userName) throws DataAccessException {
+        UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
+        User user = userDAO.find(accountName, userName);
+
+        if(! user.exists()) {
+            user.setId(KeyGenUtil.userId());
+            user.setUserType(User.UserType.IAM_FED_USER);
+            userDAO.save(user);
+
+        }
+        return user;
+    }
+
+    /*
+     * Create temporary access key, secret key and session token for the user.
+     */
     private AccessKey createAccessKey(User user, long timeToExpire) throws DataAccessException {
         AccessKeyDAO accessKeyDAO =
                 (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
@@ -93,7 +108,7 @@ public class FederationTokenController extends AbstractController{
 
         long currentTime = DateUtil.getCurrentTime();
         Date expiryDate = new Date(currentTime + (timeToExpire * 1000));
-        accessKey.setExpiry(DateUtil.toLdapDate(expiryDate));
+        accessKey.setExpiry(DateUtil.toServerResponseFormat(expiryDate));
 
         accessKeyDAO.save(accessKey);
 

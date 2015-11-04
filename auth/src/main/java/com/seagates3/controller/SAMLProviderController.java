@@ -26,7 +26,7 @@ import org.opensaml.xml.parse.XMLParserException;
 
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
-import com.seagates3.dao.SAMLProvicerDAO;
+import com.seagates3.dao.SAMLProviderDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.SAMLProvider;
 import com.seagates3.model.Requestor;
@@ -38,23 +38,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SAMLProviderController extends AbstractController {
-    SAMLProvicerDAO samlProviderDao;
+    SAMLProviderDAO samlProviderDao;
     SAMLProviderResponseGenerator samlProviderResponse;
 
     public SAMLProviderController(Requestor requestor, Map<String, String> requestBody) {
         super(requestor, requestBody);
 
-        samlProviderDao = (SAMLProvicerDAO) DAODispatcher.getResourceDAO(DAOResource.SAML_PROVIDER);
+        samlProviderDao = (SAMLProviderDAO) DAODispatcher.getResourceDAO(DAOResource.SAML_PROVIDER);
         samlProviderResponse = new SAMLProviderResponseGenerator();
     }
 
     @Override
     public ServerResponse create() throws DataAccessException {
-        /*
-         * Investigate why the received SAML metadatais not base 64 encoded.
-         */
-        //String samlMetadata = BinaryUtil.base64Decode(requestBody.get("SAMLMetadataDocument"));
-
         String samlMetadata = requestBody.get("SAMLMetadataDocument");
         SAMLProvider samlProvider = samlProviderDao.find(
                 requestor.getAccountName(), requestBody.get("Name"));

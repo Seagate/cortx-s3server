@@ -14,24 +14,32 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 31-Oct-2015
  */
 
 package com.seagates3.validator;
 
 import java.util.Map;
 
-public class UserValidator extends AbstractValidator {
+public class RoleValidator extends AbstractValidator {
     /*
-     * Validate the input parameters for create user request.
+     * Validate the input parameters for create role request.
      */
     @Override
     public Boolean create(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("UserName")) {
+        if(!requestBody.containsKey("AssumeRolePolicyDocument")) {
             return false;
         }
 
-        if(!validatorHelper.validName(requestBody.get("UserName"))) {
+        if(!requestBody.containsKey("RoleName")) {
+            return false;
+        }
+
+        if(!validPolicy(requestBody.get("AssumeRolePolicyDocument"))) {
+            return false;
+        }
+
+        if(!validRoleName(requestBody.get("RoleName"))) {
             return false;
         }
 
@@ -43,27 +51,26 @@ public class UserValidator extends AbstractValidator {
     }
 
     /*
-     * Validate the input parameters for delete user request.
+     * Validate the input parameters for delete role request.
      */
     @Override
     public Boolean delete(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("UserName")) {
+        if(!requestBody.containsKey("RoleName")) {
             return false;
         }
 
-        return validatorHelper.validName(requestBody.get("UserName"));
+        return validRoleName(requestBody.get("RoleName"));
     }
 
     /*
-     * Validate the input parameters for list users request.
-     *
-     * TODO
-     * Validate Marker and MaxItems
+     * Validate the input parameters for list role request.
      */
     @Override
     public Boolean list(Map<String, String> requestBody) {
         if(requestBody.containsKey("PathPrefix")) {
-            return validatorHelper.validPathPrefix(requestBody.get("PathPrefix"));
+            if(!validatorHelper.validPathPrefix(requestBody.get("PathPrefix"))) {
+                return false;
+            }
         }
 
         if(requestBody.containsKey("MaxItems")) {
@@ -82,29 +89,16 @@ public class UserValidator extends AbstractValidator {
     }
 
     /*
-     * Validate the input parameters for update user request.
+     * policy should be atleast 1 character long and at max 2048 char long.
      */
-    @Override
-    public Boolean update(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("UserName")) {
-            return false;
-        }
+    private Boolean validPolicy(String policy) {
+        return !(policy.length() < 1 || policy.length() > 2048);
+    }
 
-        if(!validatorHelper.validName(requestBody.get("UserName"))) {
-            return false;
-        }
-
-        if(requestBody.containsKey("NewUserName")) {
-            if(!validatorHelper.validName(requestBody.get("UserName"))) {
-                return false;
-            }
-        }
-
-        if(requestBody.containsKey("NewPath")) {
-            if(!validatorHelper.validPath(requestBody.get("NewPath"))) {
-                return false;
-            }
-        }
-        return true;
+    /*
+     * Role name should be atleast 1 character long and at max 2048 char long.
+     */
+    private Boolean validRoleName(String name) {
+        return !(name.length() < 1 || name.length() > 64);
     }
 }

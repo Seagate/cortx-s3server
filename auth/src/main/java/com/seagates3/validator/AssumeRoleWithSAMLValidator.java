@@ -14,22 +14,36 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 28-Oct-2015
  */
 
 package com.seagates3.validator;
 
+import com.seagates3.util.BinaryUtil;
 import java.util.Map;
 
-public class FederationTokenValidator extends AbstractValidator {
+public class AssumeRoleWithSAMLValidator extends AbstractValidator{
     @Override
     public Boolean create(Map<String, String> requestBody) {
         Boolean isValid;
-        if(!requestBody.containsKey("Name")) {
+
+        if(!requestBody.containsKey("PrincipalArn") ||
+                !requestBody.containsKey("RoleArn") ||
+                !requestBody.containsKey("SAMLAssertion")) {
             return false;
         }
 
-        isValid = validUserName(requestBody.get("Name"));
+        isValid = validatePrincipalArn(requestBody.get("PrincipalArn"));
+        if(!isValid) {
+            return false;
+        }
+
+        isValid = validateRoleArn(requestBody.get("RoleArn"));
+        if(!isValid) {
+            return false;
+        }
+
+        isValid = validateSAMLAssertion(requestBody.get("SAMLAssertion"));
         if(!isValid) {
             return false;
         }
@@ -45,20 +59,41 @@ public class FederationTokenValidator extends AbstractValidator {
             return validatePolicy(requestBody.get("Policy"));
         }
 
-        return true;
-    }
-
-    private Boolean validUserName(String userName) {
-        return !(userName.length() < 2 || userName.length() > 32);
+        return isValid;
     }
 
     private Boolean validateTokenDuration(String duration) {
         int durationInSeconds = Integer.parseInt(duration);
 
-        return !(durationInSeconds > 129600 || durationInSeconds < 900);
+        return !(durationInSeconds > 3600 || durationInSeconds < 900);
     }
 
     private Boolean validatePolicy(String policy) {
         return !(policy.length() < 1 || policy.length() > 2048);
+    }
+
+    /*
+     * TODO
+     * ARN should be minimum 20 characters long
+     */
+    private Boolean validatePrincipalArn(String arn) {
+        return !(arn.length() < 1 || arn.length() > 2048);
+    }
+
+    /*
+     * TODO
+     * ARN should be minimum 20 characters long
+     */
+    private Boolean validateRoleArn(String roleArn) {
+        return !(roleArn.length() < 1 || roleArn.length() > 2048);
+    }
+
+    private Boolean validateSAMLAssertion(String assertion) {
+        Boolean base64Encoded = BinaryUtil.isBase64Encoded(assertion);
+        if(!base64Encoded) {
+            return false;
+        }
+
+        return !(assertion.length() < 4 || assertion.length() > 50000);
     }
 }

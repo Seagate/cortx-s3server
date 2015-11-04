@@ -22,20 +22,26 @@ package com.seagates3.validator;
 import java.util.Map;
 
 public abstract class AbstractValidator {
+    protected final ValidatorHelper validatorHelper;
+
+    public AbstractValidator() {
+        validatorHelper = new ValidatorHelper();
+    }
+
     public Boolean create(Map<String, String> requestBody) {
-        return null;
+        return true;
     }
 
     public Boolean delete(Map<String, String> requestBody) {
-        return null;
+        return true;
     }
 
     public Boolean list(Map<String, String> requestBody) {
-        return null;
+        return true;
     }
 
 
     public Boolean update(Map<String, String> requestBody) {
-        return null;
+        return true;
     }
 }

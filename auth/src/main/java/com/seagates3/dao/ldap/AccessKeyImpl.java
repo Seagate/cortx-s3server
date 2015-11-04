@@ -20,7 +20,6 @@
 package com.seagates3.dao.ldap;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
@@ -41,14 +40,16 @@ public class AccessKeyImpl implements AccessKeyDAO{
 
     /*
      * Get the access key details from the database.
+     * Search for access key and federated access key.
      */
     @Override
     public AccessKey find(String accessKeyId) throws DataAccessException {
         AccessKey accessKey = new AccessKey();
         accessKey.setAccessKeyId(accessKeyId);
 
-        String[] attrs = {"id", "sk", "status", "createTimestamp"};
-        String filter = String.format("(&(ak=%s)(objectclass=accessKey))",
+        String[] attrs = {"id", "sk", "exp", "token", "status",
+                            "createTimestamp", "objectclass"};
+        String filter = String.format("ak=%s",
                 accessKeyId);
 
         LDAPSearchResults ldapResults;
@@ -59,7 +60,6 @@ public class AccessKeyImpl implements AccessKeyDAO{
             throw new DataAccessException("Access key find failed.\n" + ex);
         }
 
-        Date d;
         if(ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
@@ -69,8 +69,18 @@ public class AccessKeyImpl implements AccessKeyDAO{
                         entry.getAttribute("status").getStringValue().toUpperCase());
                 accessKey.setStatus(status);
 
-                d = DateUtil.toDate(entry.getAttribute("createTimestamp").getStringValue());
-                accessKey.setCreateDate(DateUtil.toServerResponseFormat(d));
+                String createTime = DateUtil.toServerResponseFormat(
+                        entry.getAttribute("createTimestamp").getStringValue());
+                accessKey.setCreateDate(createTime);
+
+                String objectClass = entry.getAttribute("objectclass").getStringValue();
+                if(objectClass.equalsIgnoreCase("fedaccesskey")) {
+                    String expiry = DateUtil.toServerResponseFormat(
+                        entry.getAttribute("exp").getStringValue());
+
+                    accessKey.setExpiry(expiry);
+                    accessKey.setToken(entry.getAttribute("token").getStringValue());
+                }
             } catch (LDAPException ex) {
                 throw new DataAccessException("Failed to update AccessKey.\n" + ex);
             }
@@ -81,6 +91,7 @@ public class AccessKeyImpl implements AccessKeyDAO{
 
     /*
      * Get the access key belonging to the user from LDAP.
+     * Federated access keys belonging to the user should not be displayed.
      */
     @Override
     public AccessKey[] findAll(User user) throws DataAccessException {
@@ -99,7 +110,6 @@ public class AccessKeyImpl implements AccessKeyDAO{
             throw new DataAccessException("Failed to searcf access keys" + ex);
         }
 
-        Date d;
         AccessKeyStatus accessKeystatus;
         while(ldapResults.hasMore()) {
             accessKey = new AccessKey();
@@ -111,8 +121,9 @@ public class AccessKeyImpl implements AccessKeyDAO{
                         entry.getAttribute("status").getStringValue().toUpperCase());
                 accessKey.setStatus(accessKeystatus);
 
-                d = DateUtil.toDate(entry.getAttribute("createTimestamp").getStringValue());
-                accessKey.setCreateDate(DateUtil.toServerResponseFormat(d));
+                String createTime = DateUtil.toServerResponseFormat(
+                        entry.getAttribute("createTimestamp").getStringValue());
+                accessKey.setCreateDate(createTime);
 
                 accessKeys.add(accessKey);
             } catch (LDAPException ex) {
@@ -222,18 +233,17 @@ public class AccessKeyImpl implements AccessKeyDAO{
      * Save the federated access key in LDAP.
      */
     private void saveFedAccessKey(AccessKey accessKey) throws DataAccessException {
-        String dn;
-
+        String expiry = DateUtil.toLdapDate(accessKey.getExpiry());
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add( new LDAPAttribute("objectclass", "fedaccessKey"));
         attributeSet.add( new LDAPAttribute("id", accessKey.getUserId()));
         attributeSet.add( new LDAPAttribute("ak", accessKey.getAccessKeyId()));
         attributeSet.add( new LDAPAttribute("sk", accessKey.getSecretKey()));
         attributeSet.add( new LDAPAttribute("token", accessKey.getToken()));
-        attributeSet.add( new LDAPAttribute("expiry", accessKey.getExpiry()));
+        attributeSet.add( new LDAPAttribute("expiry", expiry));
         attributeSet.add( new LDAPAttribute("status", accessKey.getStatus()));
 
-        dn = String.format("ak=%s,ou=accesskeys,%s", accessKey.getAccessKeyId(),
+        String dn = String.format("ak=%s,ou=accesskeys,%s", accessKey.getAccessKeyId(),
                 LdapUtils.getBaseDN());
 
         try {

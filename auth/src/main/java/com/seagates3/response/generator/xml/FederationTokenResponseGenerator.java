@@ -31,17 +31,9 @@ import org.w3c.dom.Element;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.util.DateUtil;
 
 public class FederationTokenResponseGenerator extends XMLResponseGenerator {
-    XMLUtil xmlUtil;
-
-    public FederationTokenResponseGenerator() {
-        xmlUtil = new XMLUtil();
-    }
-
     public ServerResponse create(User user, AccessKey accessKey) {
-
         Document doc;
         try {
             doc = xmlUtil.createNewDoc();
@@ -69,9 +61,8 @@ public class FederationTokenResponseGenerator extends XMLResponseGenerator {
         secretAccessKey.appendChild(doc.createTextNode(accessKey.getSecretKey()));
         credentials.appendChild(secretAccessKey);
 
-        String expirationDate = DateUtil.toServerResponseFormat(accessKey.getExpiry());
         Element expiryDate = doc.createElement("Expiration");
-        expiryDate.appendChild(doc.createTextNode(expirationDate));
+        expiryDate.appendChild(doc.createTextNode(accessKey.getExpiry()));
         credentials.appendChild(expiryDate);
 
         Element accessKeyIdEle = doc.createElement("AccessKeyId");

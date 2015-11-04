@@ -33,12 +33,6 @@ import com.seagates3.model.AccessKey;
 import com.seagates3.response.ServerResponse;
 
 public class AccessKeyResponseGenerator extends XMLResponseGenerator {
-    XMLUtil xmlUtil;
-
-    public AccessKeyResponseGenerator() {
-        xmlUtil = new XMLUtil();
-    }
-
     public ServerResponse create(String userName, AccessKey accessKey) {
 
         Document doc;

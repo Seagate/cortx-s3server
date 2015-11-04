@@ -43,13 +43,7 @@ public class RequestorImpl implements RequestorDAO {
             String[] attrs = {"o", "cn"};
             LDAPSearchResults ldapResults;
 
-            if(accessKey.getToken() == null) {
-                filter = String.format("(&(id=%s)(objectclass=iamUser))",
-                        requestor.getId());
-            } else {
-                filter = String.format("(&(id=%s)(objectclass=iamFedUser))",
-                        requestor.getId());
-            }
+            filter = String.format("id=%s", requestor.getId());
 
             try {
                 ldapResults = LdapUtils.search(LdapUtils.getBaseDN(),

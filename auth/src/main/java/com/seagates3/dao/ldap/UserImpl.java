@@ -20,7 +20,6 @@
 package com.seagates3.dao.ldap;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
@@ -49,7 +48,7 @@ public class UserImpl implements UserDAO {
         user.setAccountName(accountName);
         user.setName(name);
 
-        String[] attrs = {"id", "path", "objectclass"};
+        String[] attrs = {"id", "path", "rolename", "objectclass", "createTimestamp"};
         String ldapBase = String.format("ou=users,o=%s,ou=accounts,%s", accountName,
                 LdapUtils.getBaseDN());
         String filter = String.format("(cn=%s)", name);
@@ -66,14 +65,21 @@ public class UserImpl implements UserDAO {
             try {
                 LDAPEntry entry = ldapResults.next();
                 user.setId(entry.getAttribute("id").getStringValue());
-                user.setPath(entry.getAttribute("path").getStringValue());
 
-                if(entry.getAttribute("objectclass").getStringValue().
-                        compareTo("iamFedUser") == 0) {
-                    user.setFederateduser(Boolean.TRUE);
-                } else {
-                    user.setFederateduser(Boolean.FALSE);
+                String objectClass = entry.getAttribute("objectclass").getStringValue();
+                user.setUserType(objectClass);
+
+                if(user.getUserType() == User.UserType.IAM_USER) {
+                    user.setPath(entry.getAttribute("path").getStringValue());
                 }
+
+                if(user.getUserType() == User.UserType.ROLE_USER) {
+                    user.setRoleName(entry.getAttribute("rolename").getStringValue());
+                }
+
+                String createTime = DateUtil.toServerResponseFormat(
+                        entry.getAttribute("createTimeStamp").getStringValue());
+                user.setCreateDate(createTime);
             } catch (LDAPException ex) {
                 throw new DataAccessException("Failed to find user details.\n" + ex);
             }
@@ -84,15 +90,11 @@ public class UserImpl implements UserDAO {
 
     /*
      * Get all the users with path prefix from LDAP.
-     *
-     * Search for the users under
-     * ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
      */
     @Override
     public User[] findAll(String accountName, String pathPrefix) throws DataAccessException {
         ArrayList users = new ArrayList();
         User user;
-        Date d;
 
         String[] attrs = {"id", "cn", "path", "createTimestamp"};
         String ldapBase = String.format("ou=users,o=%s,ou=accounts,%s", accountName,
@@ -119,9 +121,11 @@ public class UserImpl implements UserDAO {
             user.setId(entry.getAttribute("id").getStringValue());
             user.setName(entry.getAttribute("cn").getStringValue());
             user.setPath(entry.getAttribute("path").getStringValue());
+            user.setAccountName(accountName);
 
-            d = DateUtil.toDate(entry.getAttribute("createTimeStamp").getStringValue());
-            user.setCreateDate(DateUtil.toServerResponseFormat(d));
+            String createTime = DateUtil.toServerResponseFormat(
+                        entry.getAttribute("createTimeStamp").getStringValue());
+            user.setCreateDate(createTime);
 
             users.add(user);
         }
@@ -132,9 +136,6 @@ public class UserImpl implements UserDAO {
 
     /*
      * Delete the user from LDAP.
-     *
-     * Search for the users under
-     * ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
      */
     @Override
     public void delete(User user) throws DataAccessException {
@@ -153,7 +154,7 @@ public class UserImpl implements UserDAO {
      */
     @Override
     public void save(User user) throws DataAccessException {
-        String objectClass = user.isFederatedUser() ? "iamFedUser" : "iamUser";
+        String objectClass = user.getUserType().toString();
 
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add( new LDAPAttribute("objectclass", objectClass));
@@ -161,8 +162,12 @@ public class UserImpl implements UserDAO {
         attributeSet.add( new LDAPAttribute("o", user.getAccountName()));
         attributeSet.add(new LDAPAttribute("id", user.getId()));
 
-        if(user.getPath() != null) {
+        if(user.getUserType() == User.UserType.IAM_USER) {
             attributeSet.add( new LDAPAttribute("path", user.getPath()));
+        }
+
+        if(user.getUserType() == User.UserType.ROLE_USER) {
+            attributeSet.add( new LDAPAttribute("rolename", user.getRoleName()));
         }
 
         String dn = String.format("id=%s,ou=users,o=%s,ou=accounts,%s",

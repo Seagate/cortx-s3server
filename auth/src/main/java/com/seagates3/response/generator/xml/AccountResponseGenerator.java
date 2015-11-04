@@ -34,12 +34,6 @@ import com.seagates3.model.AccessKey;
 import com.seagates3.response.ServerResponse;
 
 public class AccountResponseGenerator extends XMLResponseGenerator {
-    XMLUtil xmlUtil;
-
-    public AccountResponseGenerator() {
-        xmlUtil = new XMLUtil();
-    }
-
     public ServerResponse create(AccessKey rootAccessKey) {
 
         Document doc;

@@ -22,13 +22,6 @@ package com.seagates3.validator;
 import java.util.Map;
 
 public class AccessKeyValidator extends AbstractValidator {
-
-    private final ValidatorHelper validatorHelper;
-
-    public AccessKeyValidator() {
-        validatorHelper = new ValidatorHelper();
-    }
-
     /*
      * Validate the input parameters for create access key request.
      */
@@ -64,14 +57,23 @@ public class AccessKeyValidator extends AbstractValidator {
 
     /*
      * Validate the input parameters for list access key request.
-     *
-     * To do
-     * Validate Marker and MaxItems
      */
     @Override
     public Boolean list(Map<String, String> requestBody) {
         if(requestBody.containsKey("UserName")) {
             return validatorHelper.validName(requestBody.get("UserName"));
+        }
+
+        if(requestBody.containsKey("MaxItems")) {
+            int maxItems = Integer.parseInt(requestBody.get("MaxItems"));
+            if(!validatorHelper.validMaxItems(maxItems)) {
+                return false;
+            }
+        }
+
+        if(requestBody.containsKey("Marker")) {
+            int marker = Integer.parseInt(requestBody.get("Marker"));
+            return validatorHelper.validMarker(marker);
         }
 
         return true;
@@ -90,12 +92,10 @@ public class AccessKeyValidator extends AbstractValidator {
             return false;
         }
 
-        // Accepted values for status are 'Active' or 'Inactive'
         if(!validatorHelper.validStatus(requestBody.get("Status"))) {
             return false;
         }
 
-        // User name should be at least 1 characted long and at max 128 char long.
         if(requestBody.containsKey("UserName")) {
             return validatorHelper.validName(requestBody.get("UserName"));
         }

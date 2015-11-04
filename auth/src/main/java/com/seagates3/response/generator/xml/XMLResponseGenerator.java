@@ -33,6 +33,11 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AbstractResponseGenerator;
 
 public class XMLResponseGenerator extends AbstractResponseGenerator {
+    protected XMLUtil xmlUtil;
+
+    public XMLResponseGenerator() {
+        xmlUtil = new XMLUtil();
+    }
 
     @Override
     public ServerResponse success(String action) {

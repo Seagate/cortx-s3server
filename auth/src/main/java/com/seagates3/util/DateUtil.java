@@ -25,12 +25,23 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
+/*
+ * TODO
+ * replace java.util.date with org.joda.time.DateTime.
+ */
 public class DateUtil {
 
     public static String toLdapDate(Date date) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
         return (sdf.format(date) + "Z");
+    }
+
+    public static String toLdapDate(String date) {
+        return toLdapDate(toDate(date));
     }
 
     public static String toServerResponseFormat(Date date) {
@@ -40,12 +51,13 @@ public class DateUtil {
         return serverResponseFormat.format(date);
     }
 
-    public static String toServerResponseFormat(String ldapDate) {
-        Date date = toDate(ldapDate);
-        SimpleDateFormat serverResponseFormat = new
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    public static String toServerResponseFormat(DateTime date) {
+        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        return fmt.print(date);
+    }
 
-        return serverResponseFormat.format(date);
+    public static String toServerResponseFormat(String ldapDate) {
+        return toServerResponseFormat(toDate(ldapDate));
     }
 
     /*
@@ -64,11 +76,17 @@ public class DateUtil {
         return 0;
     }
 
-    public static Date toDate(String ldapdate) {
+    public static Date toDate(String date) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
 
         try {
-            return sdf.parse(ldapdate);
+            return sdf.parse(date);
+        } catch (ParseException e) {
+        }
+
+        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        try {
+            return sdf.parse(date);
         } catch (ParseException e) {
         }
 

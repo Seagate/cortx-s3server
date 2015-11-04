@@ -34,12 +34,6 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 
 public class UserResponseGenerator extends XMLResponseGenerator {
-    XMLUtil xmlUtil;
-
-    public UserResponseGenerator() {
-        xmlUtil = new XMLUtil();
-    }
-
     public ServerResponse create(String name, String path, String userId) {
         Document doc;
         try {
@@ -103,7 +97,6 @@ public class UserResponseGenerator extends XMLResponseGenerator {
     }
 
     public ServerResponse list(User[] userList) {
-
         Document doc;
         try {
             doc = xmlUtil.createNewDoc();
@@ -124,7 +117,7 @@ public class UserResponseGenerator extends XMLResponseGenerator {
         listUserResult.appendChild(usersEle);
 
         for(User user : userList) {
-            Element member = doc.createElement("Member");
+            Element member = doc.createElement("member");
             usersEle.appendChild(member);
 
             Element userId = doc.createElement("UserId");

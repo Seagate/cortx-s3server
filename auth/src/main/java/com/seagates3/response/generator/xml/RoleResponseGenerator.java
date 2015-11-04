@@ -14,12 +14,12 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: [Date]
+ * Original creation date: 1-Nov-2015
  */
 
 package com.seagates3.response.generator.xml;
 
-import com.seagates3.model.SAMLProvider;
+import com.seagates3.model.Role;
 import com.seagates3.response.ServerResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.logging.Level;
@@ -30,8 +30,8 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class SAMLProviderResponseGenerator extends XMLResponseGenerator {
-    public ServerResponse create(String name) {
+public class RoleResponseGenerator extends XMLResponseGenerator {
+    public ServerResponse create(Role role) {
         Document doc;
         try {
             doc = xmlUtil.createNewDoc();
@@ -39,19 +39,46 @@ public class SAMLProviderResponseGenerator extends XMLResponseGenerator {
             return null;
         }
 
-        Element rootElement = doc.createElement("CreateSAMLProviderResponse");
+        Element rootElement = doc.createElement("CreateRoleResponse");
         Attr attr = doc.createAttribute("xmlns");
         attr.setValue(IAM_XMLNS);
         rootElement.setAttributeNode(attr);
         doc.appendChild(rootElement);
 
-        Element createUserResponse = doc.createElement("CreateSAMLProviderResult");
-        rootElement.appendChild(createUserResponse);
+        Element createRoleResponse = doc.createElement("CreateRoleResult");
+        rootElement.appendChild(createRoleResponse);
 
-        String arnValue = String.format("arn:aws:iam::1:saml-metadata/%s", name);
-        Element arn = doc.createElement("SAMLProviderArn");
+        Element roleElement = doc.createElement("Role");
+        createRoleResponse.appendChild(roleElement);
+
+        Element pathEle = doc.createElement("Path");
+        pathEle.appendChild(doc.createTextNode(role.getPath()));
+        roleElement.appendChild(pathEle);
+
+        String arnValue = String.format("arn:aws:iam::1:role/%s", role.getName());
+        Element arn = doc.createElement("Arn");
         arn.appendChild(doc.createTextNode(arnValue));
-        createUserResponse.appendChild(arn);
+        roleElement.appendChild(arn);
+
+        Element roleName = doc.createElement("RoleName");
+        roleName.appendChild(doc.createTextNode(role.getName()));
+        roleElement.appendChild(roleName);
+
+        Element policyDoc = doc.createElement("AssumeRolePolicyDocument");
+        policyDoc.appendChild(doc.createTextNode(role.getRolePolicyDoc()));
+        roleElement.appendChild(policyDoc);
+
+        Element createDate = doc.createElement("CreateDate");
+        createDate.appendChild(doc.createTextNode(role.getCreateDate()));
+        roleElement.appendChild(createDate);
+
+        /*
+         * TODO
+         * Implement ID for roles.
+         */
+        Element roleId = doc.createElement("RoleId");
+        roleId.appendChild(doc.createTextNode(role.getName()));
+        roleElement.appendChild(roleId);
 
         Element responseMetaData = doc.createElement("ResponseMetadata");
         rootElement.appendChild(responseMetaData);
@@ -75,14 +102,10 @@ public class SAMLProviderResponseGenerator extends XMLResponseGenerator {
     }
 
     public ServerResponse delete() {
-        return success("DeleteSAMLProvider");
+        return success("DeleteRole");
     }
 
-    public ServerResponse update() {
-        return success("UpdateSAMLProvider");
-    }
-
-    public ServerResponse list(SAMLProvider[] samlProviderList) {
+    public ServerResponse list(Role[] roleList) {
         Document doc;
         try {
             doc = xmlUtil.createNewDoc();
@@ -90,36 +113,51 @@ public class SAMLProviderResponseGenerator extends XMLResponseGenerator {
             return null;
         }
 
-        Element rootElement = doc.createElement("ListSAMLProvidersResponse");
+        Element rootElement = doc.createElement("ListRolesResponse");
         Attr attr = doc.createAttribute("xmlns");
         attr.setValue(IAM_XMLNS);
         rootElement.setAttributeNode(attr);
         doc.appendChild(rootElement);
 
-        Element result = doc.createElement("ListSAMLProvidersResult");
-        rootElement.appendChild(result);
+        Element listRolesResult = doc.createElement("ListRolesResult");
+        rootElement.appendChild(listRolesResult);
 
-        Element samlProviderListEle = doc.createElement("SAMLProviderList");
-        result.appendChild(samlProviderListEle);
+        Element roles = doc.createElement("Roles");
+        listRolesResult.appendChild(roles);
 
-        for(SAMLProvider samlProvider : samlProviderList) {
+        for(Role role : roleList) {
             Element member = doc.createElement("member");
-            samlProviderListEle.appendChild(member);
+            roles.appendChild(member);
 
-            String arn = String.format("arn:aws:iam::000:instance-profile/%s",
-                    samlProvider.getName());
+            Element path = doc.createElement("Path");
+            path.appendChild(doc.createTextNode(role.getPath()));
+            member.appendChild(path);
+
+            String arn = "arn:aws:iam::000:roles/" + role.getName();
             Element arnEle = doc.createElement("Arn");
             arnEle.appendChild(doc.createTextNode(arn));
             member.appendChild(arnEle);
 
-            Element validUntil = doc.createElement("ValidUntil");
-            validUntil.appendChild(doc.createTextNode(samlProvider.getExpiry()));
-            member.appendChild(validUntil);
+            Element roleName = doc.createElement("RoleName");
+            roleName.appendChild(doc.createTextNode(role.getName()));
+            member.appendChild(roleName);
+
+            Element policyDoc = doc.createElement("AssumeRolePolicyDocument");
+            policyDoc.appendChild(doc.createTextNode(role.getRolePolicyDoc()));
+            member.appendChild(policyDoc);
 
             Element createDate = doc.createElement("CreateDate");
-            createDate.appendChild(doc.createTextNode(samlProvider.getCreateDate()));
+            createDate.appendChild(doc.createTextNode(role.getCreateDate()));
             member.appendChild(createDate);
+
+            Element userId = doc.createElement("RoleId");
+            userId.appendChild(doc.createTextNode(role.getName()));
+            member.appendChild(userId);
         }
+
+        Element isTruncated = doc.createElement("IsTruncated");
+        isTruncated.appendChild(doc.createTextNode("false"));
+        listRolesResult.appendChild(isTruncated);
 
         Element responseMetaData = doc.createElement("ResponseMetadata");
         rootElement.appendChild(responseMetaData);

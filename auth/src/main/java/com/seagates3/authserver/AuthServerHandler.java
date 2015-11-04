@@ -20,11 +20,11 @@
 package com.seagates3.authserver;
 
 import java.io.UnsupportedEncodingException;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,7 +55,8 @@ import com.seagates3.response.ServerResponse;
  */
 
 public class AuthServerHandler extends ChannelInboundHandlerAdapter {
-    static final String KEY_PAIR_REGEX = "([a-zA-Z]+)=([a-zA-Z0-9/-]+)";
+    private static final String KEY_PAIR_REGEX = "([a-zA-Z0-9/-]+)=([\\w\\W]*)";
+    private static final String SAML_METADATA_URI = "/static/saml-metadata.xml";
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
@@ -79,8 +80,15 @@ public class AuthServerHandler extends ChannelInboundHandlerAdapter {
                 requestBody = parseChunkedRequest(decoder.getBodyHttpDatas());
 
                 AuthServerAction authserverAction = new AuthServerAction();
-                    serverResponse = authserverAction.serve(httpRequest, requestBody);
+                serverResponse = authserverAction.serve(httpRequest, requestBody);
                 sendResponse(ctx, httpRequest, serverResponse);
+            } else if(httpRequest.getMethod().equals(HttpMethod.GET)) {
+                if(httpRequest.getUri().equals(SAML_METADATA_URI)) {
+                    /*
+                     * TODO
+                     * Transfer saml-metadata.xml.
+                     */
+                }
             }
         }
     }
@@ -137,7 +145,7 @@ public class AuthServerHandler extends ChannelInboundHandlerAdapter {
     private Map<String, String> parseChunkedRequest(List<InterfaceHttpData> datas) {
         Map<String, String> requestBody;
         requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        Pattern pattern = Pattern.compile("([a-zA-Z0-9/-]+)=(.*)");
+        Pattern pattern = Pattern.compile(KEY_PAIR_REGEX);
         Matcher matcher;
         String[] tokens;
 

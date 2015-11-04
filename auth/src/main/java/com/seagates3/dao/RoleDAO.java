@@ -14,34 +14,33 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 31-Oct-2015
  */
 
 package com.seagates3.dao;
 
-/*
- * TODO
- * Rename the enum name
- */
-public enum DAOResource {
-    ACCESS_KEY("AccessKey"),
-    ACCOUNT("Account"),
-    FED_USER("FedUser"),
-    REQUESTEE("Requestee"),
-    REQUESTOR("Requestor"),
-    ROLE("Role"),
-    SAML_PROVIDER("SAMLProvider"),
-    USER("User");
+import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Role;
 
+public interface RoleDAO {
+    /*
+     * Get role from the database.
+     */
+    public Role find(String accountName, String roleName) throws DataAccessException;
 
-    private final String className;
+    /*
+     * Get the details of all the roles with the given path prefix from an account.
+     */
+    public Role[] findAll(String accountName, String pathPrefix) throws DataAccessException;
 
-    private DAOResource(final String className) {
-        this.className = className;
-    }
+    /*
+     * Delete the role.
+     */
+    public void delete(Role role) throws DataAccessException;
 
-    @Override
-    public String toString() {
-        return className;
-    }
+    /*
+     * Create a new role.
+     */
+    public void save(Role role) throws DataAccessException;
+
 }

@@ -50,6 +50,24 @@ attributetype (1.3.6.1.4.99999.2.3.9
 	EQUALITY caseExactMatch
         SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
 
+attributetype (1.3.6.1.4.99999.2.3.10
+	NAME 'issuer'
+	DESC 'IDP Issuer Name'
+	EQUALITY caseExactMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype (1.3.6.1.4.99999.2.3.11
+	NAME 'rolepolicydoc'
+	DESC 'Policy Document'
+	EQUALITY caseExactMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype (1.3.6.1.4.99999.2.3.12
+	NAME 'roleName'
+	DESC 'Role Name'
+	EQUALITY caseExactMatch
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
 objectclass ( 1.3.6.1.4.99999.2.4.1 NAME 's3Account'
 	DESC 'S3 Account'
 	SUP top STRUCTURAL
@@ -66,22 +84,32 @@ objectclass (1.3.6.1.4.99999.2.4.3 NAME 'iamFedUser'
 	SUP S3Account STRUCTURAL
 	MUST ( cn $ id ) )
 
-objectclass (1.3.6.1.4.99999.2.4.4 NAME 'accessKey'
+objectclass (1.3.6.1.4.99999.2.4.4 NAME 'roleUser'
+        DESC 'S3 Role user'
+        SUP S3Account STRUCTURAL
+        MUST ( cn $ id $ roleName ) )
+
+objectclass (1.3.6.1.4.99999.2.4.5 NAME 'accessKey'
 	DESC 's3 access keys'
 	SUP top STRUCTURAL
 	MUST ( id $ ak $ sk $ status ) )
 
-objectclass (1.3.6.1.4.99999.2.4.5 NAME 'fedAccessKey'
+objectclass (1.3.6.1.4.99999.2.4.6 NAME 'fedAccessKey'
 	DESC 's3 federated user access keys'
 	SUP accessKey STRUCTURAL
 	MUST ( expiry $ token ) )
 
-objectclass (1.3.6.1.4.99999.2.4.6 NAME 'SAMLProvider'
+objectclass (1.3.6.1.4.99999.2.4.7 NAME 'SAMLProvider'
         DESC 'SAML Identity Provider'
         SUP top STRUCTURAL
-        MUST ( name $ samlmetadata $ exp ) )
+        MUST ( name $ samlmetadata $ exp $ issuer ) )
 
-objectclass (1.3.6.1.4.99999.2.4.7 NAME 'SAMLKeyDescriptor'
+objectclass (1.3.6.1.4.99999.2.4.8 NAME 'SAMLKeyDescriptor'
         DESC 'SAML Key Descriptor'
         SUP top STRUCTURAL
         MUST ( samlkeyuse $ cACertificate ) )
+
+objectclass (1.3.6.1.4.99999.2.4.9 NAME 'Role'
+	DESC 'Role'
+	SUP top STRUCTURAL
+	MUST ( rolename $ path $ rolepolicydoc ) )

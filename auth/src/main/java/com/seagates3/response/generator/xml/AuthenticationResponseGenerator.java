@@ -32,12 +32,6 @@ import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 
 public class AuthenticationResponseGenerator extends XMLResponseGenerator {
-    XMLUtil xmlUtil;
-
-    public AuthenticationResponseGenerator() {
-        xmlUtil = new XMLUtil();
-    }
-
     public ServerResponse AuthenticateUser(Requestor requestor) {
         Document doc;
         try {
@@ -63,6 +57,10 @@ public class AuthenticationResponseGenerator extends XMLResponseGenerator {
         userName.appendChild(doc.createTextNode(requestor.getName()));
         authenticatedUserResult.appendChild(userName);
 
+        /*
+         * TODO
+         * Create account ID for each account.
+         */
         Element accountId = doc.createElement("AccountId");
         accountId.appendChild(doc.createTextNode(requestor.getAccountName()));
         authenticatedUserResult.appendChild(accountId);

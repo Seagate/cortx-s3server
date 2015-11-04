@@ -48,7 +48,7 @@ public class AWSV2Sign implements AWSSign {
                     stringToSign.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException ex) {
             /*
-             * To do
+             * TODO
              * Raise an exception
              */
             return false;
@@ -224,7 +224,7 @@ public class AWSV2Sign implements AWSSign {
         if(queryResources.size() > 0) {
             subResourceString += "?";
         }
-        
+
         while (entries.hasNext()) {
             Map.Entry<String, String> entry = entries.next();
             subResourceString += entry.getKey();

@@ -27,18 +27,18 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
 
-import com.seagates3.dao.SAMLProvicerDAO;
+import com.seagates3.dao.SAMLProviderDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.SAMLProvider;
 import com.seagates3.model.KeyDescriptor;
-import com.seagates3.util.BinaryUtil;
+import com.seagates3.util.DateUtil;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SAMLProviderImpl implements SAMLProvicerDAO {
+public class SAMLProviderImpl implements SAMLProviderDAO {
 
     /*
      * Get the IDP descriptor from LDAP.
@@ -49,7 +49,7 @@ public class SAMLProviderImpl implements SAMLProvicerDAO {
         samlProvider.setAccountName(accountName);
         samlProvider.setName(name);
 
-        String[] attrs = {"samlmetadata", "exp"};
+        String[] attrs = {"issuer", "exp"};
         String ldapBase = String.format("name=%s,ou=idp,o=%s,ou=accounts,%s", name,
                 accountName, LdapUtils.getBaseDN());
         String filter = String.format("(name=%s)", name);
@@ -65,7 +65,7 @@ public class SAMLProviderImpl implements SAMLProvicerDAO {
         if(ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
-                samlProvider.setSamlMetadata(entry.getAttribute("samlmetadata").getStringValue());
+                samlProvider.setIssuer(entry.getAttribute("issuer").getStringValue());
                 samlProvider.setExpiry(entry.getAttribute("exp").getStringValue());
 
             } catch (LDAPException ex) {
@@ -79,9 +79,76 @@ public class SAMLProviderImpl implements SAMLProvicerDAO {
     /*
      * Get the list of all the saml providers.
      */
+    @Override
     public SAMLProvider[] findAll(String accountName) throws DataAccessException {
         ArrayList samlProviders = new ArrayList();
-        return null;
+        SAMLProvider samlProvider;
+
+        String[] attrs = {"name", "exp", "createTimestamp"};
+        String ldapBase = String.format("ou=idp,o=%s,ou=accounts,%s", accountName,
+                LdapUtils.getBaseDN());
+        String filter = "objectClass=SAMLProvider";
+
+        LDAPSearchResults ldapResults;
+        try {
+            ldapResults = LdapUtils.search(ldapBase,
+                    LDAPConnection.SCOPE_SUB, filter, attrs);
+        } catch (LDAPException ex) {
+            throw new DataAccessException("Failed to find IDPs.\n" + ex);
+        }
+
+        while(ldapResults.hasMore()) {
+            samlProvider = new SAMLProvider();
+            LDAPEntry entry;
+            try {
+                entry = ldapResults.next();
+            } catch (LDAPException ex) {
+                throw new DataAccessException("Ldap failure.\n" + ex);
+            }
+
+            samlProvider.setName(entry.getAttribute("name").getStringValue());
+            String createTime = DateUtil.toServerResponseFormat(
+                        entry.getAttribute("createTimeStamp").getStringValue());
+            samlProvider.setCreateDate(createTime);
+
+            String expiry = DateUtil.toServerResponseFormat(
+                        entry.getAttribute("exp").getStringValue());
+            samlProvider.setExpiry(expiry);
+
+            samlProviders.add(samlProvider);
+        }
+
+        SAMLProvider[] samlProviderList = new SAMLProvider[samlProviders.size()];
+        return (SAMLProvider[]) samlProviders.toArray(samlProviderList);
+    }
+
+    /*
+     * Return true if the key exists for the idp.
+     */
+    @Override
+    public Boolean keyExists(String accountName, String name, Certificate cert)
+            throws DataAccessException {
+        try {
+            String[] attrs = new String[] {"samlkeyuse"};
+
+            String filter;
+            try {
+                filter = String.format("cacertificate;binary", cert.getEncoded());
+            } catch (CertificateEncodingException ex) {
+                throw new DataAccessException("Failed to search the certificate." + ex);
+            }
+
+            LDAPSearchResults ldapResults;
+            ldapResults = LdapUtils.search(LdapUtils.getBaseDN(),
+                    LDAPConnection.SCOPE_SUB, filter, attrs);
+
+            if(ldapResults.hasMore()) {
+                return true;
+            }
+        } catch (LDAPException ex) {
+            throw new DataAccessException("Failed to get the count of user access keys" + ex);
+        }
+        return false;
     }
 
     /*
@@ -127,6 +194,7 @@ public class SAMLProviderImpl implements SAMLProvicerDAO {
         attributeSet.add( new LDAPAttribute("name", samlProvider.getName()));
         attributeSet.add( new LDAPAttribute("samlmetadata", samlProvider.getSamlMetadata()));
         attributeSet.add( new LDAPAttribute("exp", samlProvider.getExpiry()));
+        attributeSet.add( new LDAPAttribute("issuer", samlProvider.getIssuer()));
 
         String dn = String.format("name=%s,ou=idp,o=%s,ou=accounts,%s",
                 samlProvider.getName(), samlProvider.getAccountName(), LdapUtils.getBaseDN());
@@ -152,7 +220,6 @@ public class SAMLProviderImpl implements SAMLProvicerDAO {
             attributeSet.add( new LDAPAttribute("objectclass", "SAMLKeyDescriptor"));
             attributeSet.add( new LDAPAttribute("samlkeyuse", k.getUse().toString()));
 
-            BinaryUtil.encodeToBase64Bytes("");
             for(Certificate cert : k.getCertificate()) {
                 attributeSet.add( new LDAPAttribute("cacertificate;binary", cert.getEncoded()));
             }
@@ -185,7 +252,7 @@ public class SAMLProviderImpl implements SAMLProvicerDAO {
     /*
      * Openldap doesn't delete recursively. hence delete key descriptors first.
      *
-     * To Do
+     * TODO
      * Add a function to delete recursively in LdapUtils.
      */
     private void deleteKeyDescriptors(SAMLProvider samlProvider) throws DataAccessException {

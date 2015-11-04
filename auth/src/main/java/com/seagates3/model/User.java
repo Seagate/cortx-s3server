@@ -20,13 +20,31 @@
 package com.seagates3.model;
 
 public class User {
+    public enum UserType {
+        IAM_USER("iamUser"),
+        IAM_FED_USER("iamFedUser"),
+        ROLE_USER("roleUser");
+
+        private final String userType;
+
+        private UserType(final String userType) {
+            this.userType = userType;
+        }
+
+        @Override
+        public String toString() {
+            return userType;
+        }
+    }
+
     private String name;
     private String accountName;
     private String path;
     private String id;
     private String createDate;
     private String passwordLastUsed;
-    private Boolean federatedUser;
+    private UserType userType;
+    private String roleName;
 
     public String getName() {
         return name;
@@ -52,8 +70,12 @@ public class User {
         return passwordLastUsed;
     }
 
-    public Boolean isFederatedUser() {
-        return federatedUser;
+    public UserType getUserType() {
+        return userType;
+    }
+
+    public String getRoleName() {
+        return roleName;
     }
 
     public void setName(String name) {
@@ -72,8 +94,12 @@ public class User {
         this.id = id;
     }
 
-    public void setFederateduser(Boolean federatedUser) {
-        this.federatedUser = federatedUser;
+    public void setUserType(UserType userType) {
+        this.userType = userType;
+    }
+
+    public void setUserType(String userClass) {
+        this.userType = getUserTypeConstant(userClass);
     }
 
     public void setCreateDate(String createDate) {
@@ -84,7 +110,23 @@ public class User {
         this.passwordLastUsed = passwordLastUsed;
     }
 
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
+
     public Boolean exists() {
         return id != null;
+    }
+
+    private UserType getUserTypeConstant(String userClass) {
+        if(userClass.compareToIgnoreCase("iamuser") == 0) {
+            return UserType.IAM_USER;
+        }
+
+        if(userClass.compareToIgnoreCase("iamfeduser") == 0) {
+            return UserType.IAM_FED_USER;
+        }
+
+        return UserType.ROLE_USER;
     }
 }

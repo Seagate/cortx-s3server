@@ -22,7 +22,7 @@ package com.seagates3.validator;
 public class ValidatorHelper {
 
     /*
-     * To do
+     * TODO
      * new user name have length between 1 and 64 character while user name
      * validation allows upto 128 char. Investigate this.
      */
@@ -60,6 +60,13 @@ public class ValidatorHelper {
     }
 
     /*
+     * Path prefix should be at least 1 character long and at max 512 char long.
+     */
+    public Boolean validPathPrefix(String path) {
+        return !(path.length() < 1 || path.length() > 512);
+    }
+
+    /*
      * Access Key Id should be at least 1 character long and at max 32 char long.
      */
     public Boolean validAccessKeyId(String accessKeyId) {
@@ -67,11 +74,16 @@ public class ValidatorHelper {
     }
 
     /*
-     * Saml metadata document should be atleast 1000 character long and at max
-     * 10000000 char long.
+     * Allowed range is between 1 and 1000.
      */
-    public Boolean validSAMLMetadata(String samlMetadataDocument) {
-        return !(samlMetadataDocument.length() < 1000 ||
-                samlMetadataDocument.length() > 10000000);
+    public Boolean validMaxItems(int maxItems) {
+        return !(maxItems < 1 || maxItems > 1000);
+    }
+
+    /*
+     * Allowed range is between 1 and 320.
+     */
+    public Boolean validMarker(int marker) {
+        return !(marker < 1 || marker > 320);
     }
 }

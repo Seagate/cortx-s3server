@@ -23,30 +23,13 @@ import java.util.Map;
 
 
 public class SAMLProviderValidator extends AbstractValidator {
-
-    private final ValidatorHelper validatorHelper;
-
-    public SAMLProviderValidator() {
-        validatorHelper = new ValidatorHelper();
-    }
-
     @Override
     public Boolean create(Map<String, String> requestBody) {
         if(!validatorHelper.validName(requestBody.get("Name"))) {
             return false;
         }
 
-        /*
-         * Saml metadata doc is supposed to be in base 64 format.
-         * But looks like Netty is decoding from base 64 to ascii.
-         * Investigate this issue.
-         */
-        // if(!BinaryUtil.isBase64Encoded(requestBody.get("SAMLMetadataDocument"))) {
-        //     return false;
-        // }
-
-        return validatorHelper.validSAMLMetadata(
-                requestBody.get("SAMLMetadataDocument"));
+        return validSAMLMetadata(requestBody.get("SAMLMetadataDocument"));
     }
 
     /*
@@ -67,5 +50,14 @@ public class SAMLProviderValidator extends AbstractValidator {
         }
 
         return requestBody.containsKey("SAMLProviderArn");
+    }
+
+    /*
+     * Saml metadata document should be atleast 1000 character long and at max
+     * 10000000 char long.
+     */
+    private Boolean validSAMLMetadata(String samlMetadataDocument) {
+        return !(samlMetadataDocument.length() < 1000 ||
+                samlMetadataDocument.length() > 10000000);
     }
 }
