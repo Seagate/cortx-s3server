@@ -6,6 +6,7 @@
 
 #include <string>
 #include <map>
+#include <gtest/gtest_prod.h>
 
 class S3ErrorDetails {
   std::string description;
@@ -25,6 +26,9 @@ public:
   int get_http_status_code() {
     return http_return_code;
   }
+
+  FRIEND_TEST(S3ErrorDetailsTest, DefaultConstructor);
+  FRIEND_TEST(S3ErrorDetailsTest, ConstructorWithMsg);
 };
 
 class S3ErrorMessages {
@@ -40,6 +44,8 @@ public:
   static S3ErrorMessages* get_instance();
 
   S3ErrorDetails& get_details(std::string code);
+
+  FRIEND_TEST(S3ErrorMessagesTest, Constructor);
 };
 
 #endif

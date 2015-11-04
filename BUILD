@@ -9,7 +9,7 @@ cc_binary(
 
     copts = [" -std=c++11 -DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -DGCC_VERSION=4002 -DHAVE_CONFIG_H -DM0_TARGET=ClovisTest -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL= -DM0_EXTERN=extern -iquote $(MERO_SRC) -iquote . -include config.h -Ithird_party/lustre-2.5.1-headers/libcfs/include -I third_party/lustre-2.5.1-headers/lnet/include -Ithird_party/lustre-2.5.1-headers/lustre/include -fno-common -Wall -Wno-attributes -fno-strict-aliasing -fno-omit-frame-pointer  -ggdb3 -O3 -DNDEBUG"],
 
-    includes = ["third_party/libevent/s3_dist/include/", "third_party/libevhtp/s3_dist/include", "third_party/jsoncpp/dist", "third_party/libxml2/s3_dist/include/libxml2"],
+    includes = ["third_party/libevent/s3_dist/include/", "third_party/googletest/include/", "third_party/libevhtp/s3_dist/include", "third_party/jsoncpp/dist", "third_party/libxml2/s3_dist/include/libxml2"],
 
     linkopts = ["-L $(MERO_SRC)/mero/.libs  -L $(MERO_SRC)/extra-libs/gf-complete/src/.libs/ -Lthird_party/libevent/s3_dist/lib/  -Lthird_party/libevhtp/s3_dist/lib -Lthird_party/libxml2/s3_dist/lib third_party/libevhtp/s3_dist/lib/libevhtp.a -levent -levent_pthreads -levent_openssl -lssl -lcrypto -lpthread -ldl -lrt -lmero -lgf_complete -lm -lpthread -laio -lrt -lyaml -luuid -pthread -lprotobuf -lxml2 -lpthread -Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent/lib,-rpath,/opt/seagate/s3/libxml2/lib"],
 )
