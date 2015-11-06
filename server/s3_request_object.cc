@@ -59,7 +59,7 @@ unsigned char* S3RequestObject::c_get_uri_query() {
 
 std::map<std::string, std::string> S3RequestObject::get_in_headers_copy(){
   if(!in_headers_copied) {
-    evhtp_kvs_for_each(ev_req->uri->query, consume_header, this);
+    evhtp_kvs_for_each(ev_req->headers_in, consume_header, this);
     in_headers_copied = true;
   }
   return in_headers_copy;

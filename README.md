@@ -4,7 +4,9 @@
 ## How to Build?
 
 Fetch the third party dependencies.
+```sh
 ./fetch_thirdparty.sh
+```
 
 ## How to build?
 Run Bazel build. For details see bazel BUILD file.
@@ -14,6 +16,9 @@ bazel build //:s3server  --define MERO_SRC=`pwd`/../..
 
 ## How to build tests?
 ```sh
+cd third_party
+./setup_libevhtp.sh test
+cd ..
 bazel build //:s3ut  --define MERO_SRC=`pwd`/../..
 ```
 
