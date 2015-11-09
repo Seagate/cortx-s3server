@@ -24,6 +24,7 @@
 
 #include <string>
 #include <set>
+#include <gtest/gtest_prod.h>
 
 // We should load this from config file.
 // Not thread-safe, but we are single threaded.
@@ -43,6 +44,10 @@ public:
   // Config items
   std::string& get_default_endpoint();
   std::set<std::string>& get_region_endpoints();
+
+  FRIEND_TEST(S3ConfigTest, DefaultConstructor);
+  FRIEND_TEST(S3ConfigTest, GetInstance);
+  FRIEND_TEST(S3ConfigTest, GetEndPoints);
 };
 
 #endif
