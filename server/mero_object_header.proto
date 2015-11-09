@@ -1,7 +1,0 @@
-syntax = "proto3";
-package s3server;
-
-message MeroObjectHeader {
-  fixed64 object_size = 1;
-  string version = 2;
-}

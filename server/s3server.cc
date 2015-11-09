@@ -1,20 +1,26 @@
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include <stdint.h>
-// #include <errno.h>
-// // #include <evhtp.h>
-
-// /* KD */
-// #include <sys/stat.h>
-// #include <math.h>
+/*
+ * COPYRIGHT 2015 SEAGATE LLC
+ *
+ * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
+ * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
+ * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
+ * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
+ * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
+ * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
+ * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ *
+ * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
+ * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
+ * http://www.seagate.com/contact
+ *
+ * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
+ * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
+ * Original creation date: 9-Nov-2015
+ */
 
 #include "clovis_helpers.h"
 #include <openssl/md5.h>
 #include "murmur3_hash.h"
-
-/* protobuf */
-#include "mero_object_header.pb.h"
 
 #include "s3_router.h"
 #include "s3_error_codes.h"
@@ -170,22 +176,6 @@ main(int argc, char ** argv) {
 
     // Load Any configs.
     S3ErrorMessages::init_messages();
-
-    /* Google protobuf */
-    GOOGLE_PROTOBUF_VERIFY_VERSION;
-    /* protobuf example
-    s3server::MeroObjectHeader obj_header, deserialized_obj;
-    std::string streamed_data;
-
-    obj_header.set_object_size(8192);
-    obj_header.set_version("1.2");
-    obj_header.SerializeToString(&streamed_data);
-
-    deserialized_obj.ParseFromString(streamed_data);
-    printf("\ndeserialized_obj.object_size = %ld\n", deserialized_obj.object_size());
-    printf("deserialized_obj.version = %s\n", deserialized_obj.version().c_str());
-
-    return 0;*/
 
     evbase_t * evbase = event_base_new();
     evthread_use_pthreads();
