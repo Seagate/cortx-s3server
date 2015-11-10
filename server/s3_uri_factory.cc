@@ -14,18 +14,21 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original creation date: 10-Nov-2015
  */
 
-#include "gtest/gtest.h"
+#include "s3_uri.h"
 
-// Some declarations from s3server that are required to get compiled.
-// TODO - Remove such globals by implementing config file.
-// S3 Auth service
-const char *auth_ip_addr = "127.0.0.1";
-uint16_t auth_port = 8085;
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+S3URI* S3UriFactory::create_uri_object(S3UriType uri_type, std::shared_ptr<S3RequestObject> request) {
+  switch (uri_type) {
+    case S3UriType::path_style:
+      printf("Creating path_style object\n");
+      return new S3PathStyleURI(request);
+    case S3UriType::virtual_host_style:
+      printf("Creating virtual_host_style object\n");
+      return new S3VirtualHostStyleURI(request);
+    default:
+      break;
+  };
+  return NULL;
 }

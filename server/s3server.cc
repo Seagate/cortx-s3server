@@ -185,13 +185,13 @@ main(int argc, char ** argv) {
     }
     evhtp_t  * htp    = evhtp_new(evbase, NULL);
 
-    S3Router *router = new S3Router();
+    S3Router *router = new S3Router(new S3APIHandlerFactory(),
+                                    new S3UriFactory());
 
     // So we can support queries like s3.com/bucketname?location or ?acl
     evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
 
-    evhtp_set_gencb(htp, s3_handler, NULL);
-    // evhtp_set_gencb(htp, s3_handler, (void*)"someargnotused");
+    evhtp_set_gencb(htp, s3_handler, router);
 
     /* Initilise mero and Clovis */
     rc = init_clovis(clovis_local_addr, clovis_confd_addr, clovis_prof);

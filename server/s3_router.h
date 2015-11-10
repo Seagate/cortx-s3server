@@ -26,20 +26,44 @@
 /* libevhtp */
 #include <evhtp.h>
 
+#include <gtest/gtest_prod.h>
+
+#include "s3_uri.h"
+#include "s3_api_handler.h"
+
 // Not thread-safe, but we are single threaded.
 class S3Router {
 
 private:
+  S3APIHandlerFactory *api_handler_factory;
+  S3UriFactory *uri_factory;
+
   // Some way to map URL pattern with handler.
   bool is_default_endpoint(std::string& endpoint);
   bool is_exact_valid_endpoint(std::string& endpoint);
   bool is_subdomain_match(std::string& endpoint);
 
 public:
-  static S3Router* get_instance();
+  S3Router(S3APIHandlerFactory *api_creator, S3UriFactory *uri_creator);
+  virtual ~S3Router();
 
   // Dispatch to registered handlers.
   void dispatch(evhtp_request_t * req);
+
+  // For Unit testing only.
+  FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingDefaultEP);
+  FRIEND_TEST(S3RouterTest, ReturnsFalseForMisMatchOfDefaultEP);
+  FRIEND_TEST(S3RouterTest, ReturnsFalseForEmptyDefaultEP);
+  FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingEP);
+  FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingRegionEP);
+  FRIEND_TEST(S3RouterTest, ReturnsFalseForMisMatchRegionEP);
+  FRIEND_TEST(S3RouterTest, ReturnsFalseForEmptyRegionEP);
+  FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingSubEP);
+  FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingSubRegionEP);
+  FRIEND_TEST(S3RouterTest, ReturnsFalseForMisMatchSubRegionEP);
+  FRIEND_TEST(S3RouterTest, ReturnsFalseForInvalidEP);
+  FRIEND_TEST(S3RouterTest, ReturnsFalseForEmptyEP);
+  FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingEUSubRegionEP);
 };
 
 #endif

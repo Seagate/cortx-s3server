@@ -72,4 +72,14 @@ public:
   virtual void dispatch();
 };
 
+class S3APIHandlerFactory {
+public:
+  virtual ~S3APIHandlerFactory() {}
+
+  virtual std::shared_ptr<S3APIHandler> create_api_handler(
+        S3ApiType api_type,
+        std::shared_ptr<S3RequestObject> request,
+        S3OperationCode op_code);
+};
+
 #endif

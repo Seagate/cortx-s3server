@@ -32,6 +32,13 @@
 #define EXTERN_C_FUNC
 #endif
 
+enum class S3ApiType {
+  service,
+  bucket,
+  object,
+  unsupported  // Invalid or Unsupported API
+};
+
 enum class S3OperationCode {
   none,  // Operation on current object.
   list,

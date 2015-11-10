@@ -28,6 +28,11 @@
 #include "s3_request_object.h"
 #include "s3_common.h"
 
+enum class S3UriType {
+  path_style,
+  virtual_host_style,
+  unsupported
+};
 
 class S3URI {
 
@@ -35,12 +40,10 @@ protected:
   std::shared_ptr<S3RequestObject> request;
 
   S3OperationCode operation_code;
+  S3ApiType s3_api_type;
 
   std::string bucket_name;
   std::string object_name;
-  bool service_api;
-  bool bucket_api;
-  bool object_api;
 
 private:
   void setup_operation_code();
@@ -48,9 +51,7 @@ private:
 public:
   S3URI(std::shared_ptr<S3RequestObject> req);
 
-  bool is_service_api();
-  bool is_bucket_api();
-  bool is_object_api();
+  S3ApiType get_s3_api_type();
 
   std::string& get_bucket_name();
   std::string& get_object_name();  // Object key
@@ -71,6 +72,13 @@ class S3VirtualHostStyleURI : public S3URI {
   void setup_bucket_name();
 public:
   S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req);
+};
+
+class S3UriFactory {
+public:
+  virtual ~S3UriFactory() {}
+
+  virtual S3URI* create_uri_object(S3UriType uri_type, std::shared_ptr<S3RequestObject> request);
 };
 
 #endif

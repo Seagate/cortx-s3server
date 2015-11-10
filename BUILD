@@ -22,7 +22,7 @@ cc_binary(
                 "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
                 "-lpthread -ldl -lrt",
                 "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
-                "-lyaml -luuid -pthread -lprotobuf -lxml2 -lpthread", "-Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent/lib,-rpath,/opt/seagate/s3/libxml2/lib"],
+                "-lyaml -luuid -pthread -lxml2 -lpthread", "-Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent/lib,-rpath,/opt/seagate/s3/libxml2/lib"],
 )
 
 cc_test(
@@ -32,12 +32,10 @@ cc_test(
 
     name = "s3ut",
 
-    srcs = glob(["ut/*.cc", "server/s3_error_codes.cc",
-                 "server/s3_error_messages.cc",
-                 "server/s3_request_object.cc",
-                 "server/jsoncpp.cc"]),
+    srcs = glob(["ut/*.cc", "server/*.cc", "server/*.c"],
+                exclude = ["server/s3server.cc"]),
 
-    copts = ["-DEVHTP_DISABLE_REGEX -iquote $(MERO_SRC) -pie"],
+    copts = ["-DEVHTP_DISABLE_REGEX  -std=c++11 -DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -DGCC_VERSION=4002 -DHAVE_CONFIG_H -DM0_TARGET=ClovisTest -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL= -DM0_EXTERN=extern -iquote $(MERO_SRC) -pie"],
 
     includes = ["third_party/googletest/include",
                 "third_party/libevent/s3_dist/include/",
@@ -46,10 +44,15 @@ cc_test(
                 "third_party/libxml2/s3_dist/include/libxml2",
                 "server/"],
 
-    linkopts = ["-Lthird_party/libevent/s3_dist/lib/",
+    linkopts = ["-L $(MERO_SRC)/mero/.libs",
+                "-L $(MERO_SRC)/extra-libs/gf-complete/src/.libs/",
+                "-Lthird_party/libevent/s3_dist/lib/",
                 "-Lthird_party/libevhtp/s3_dist/lib",
                 "-Lthird_party/libxml2/s3_dist/lib third_party/libevhtp/s3_dist/lib/libevhtp.a",
                 "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
-                "-lxml2",
-                "-pthread third_party/googletest/build/libgtest.a"],
+                "-lpthread -ldl -lrt",
+                "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
+                "-lyaml -luuid -pthread -lxml2 -lpthread",
+                "-pthread third_party/googletest/build/libgtest.a",
+                "-Wl,-rpath,/usr/local/lib64,-rpath,$(MERO_SRC)/mero/.libs,-rpath,$(MERO_SRC)/extra-libs/gf-complete/src/.libs,-rpath,third_party/libevent/s3_dist/lib,-rpath,third_party/libxml2/s3_dist/lib"],
 )
