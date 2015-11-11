@@ -4,10 +4,10 @@ from framework import PyCliTest
 from framework import Config
 from framework import logit
 
-# 
+#
 class S3cmdTest(PyCliTest):
 	def __init__(self, description):
-		self.s3cfg = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests.s3cfg')
+		self.s3cfg = os.path.join(os.path.dirname(os.path.realpath(__file__)), Config.config_file)
 		super(S3cmdTest, self).__init__(description)
 
 	def setup(self):
@@ -24,19 +24,46 @@ class S3cmdTest(PyCliTest):
 	def teardown(self):
 		super(S3cmdTest, self).teardown()
 
-	def upload_test(self, filename, filesize):
+	def create_bucket(self, bucket_name):
+		self.bucket_name = bucket_name
+		self.with_cli("s3cmd -c " + self.s3cfg + " mb " + " s3://" + self.bucket_name)
+		return self
+
+	def list_buckets(self):
+		self.with_cli("s3cmd -c " + self.s3cfg + " ls ")
+		return self
+
+	def delete_bucket(self, bucket_name):
+		self.bucket_name = bucket_name
+		self.with_cli("s3cmd -c " + self.s3cfg + " rb " + " s3://" + self.bucket_name)
+		return self
+
+	def list_objects(self, bucket_name):
+		self.bucket_name = bucket_name
+		self.with_cli("s3cmd -c " + self.s3cfg + " ls " + " s3://" + self.bucket_name)
+		return self
+
+	def list_specific_objects(self, bucket_name, object_pattern):
+		self.bucket_name = bucket_name
+		self.object_pattern = object_pattern
+		self.with_cli("s3cmd -c " + self.s3cfg + " ls " + " s3://" + self.bucket_name + "/" + self.object_pattern)
+		return self
+
+	def upload_test(self, bucket_name, filename, filesize):
 		self.filename = filename
 		self.filesize = filesize
-		self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://evault")
+		self.bucket_name = bucket_name
+		self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
 		return self
 
-	def download_test(self, filename):
+	def download_test(self, bucket_name, filename):
 		self.filename = filename
-		self.with_cli("s3cmd -c " + self.s3cfg + " get " + "s3://evault/" + filename)
+		self.bucket_name = bucket_name
+		self.with_cli("s3cmd -c " + self.s3cfg + " get " + "s3://" + self.bucket_name + "/" + self.filename)
 		return self
 
-	def delete_test(self, filename):
+	def delete_test(self, bucket_name, filename):
 		self.filename = filename
-		self.with_cli("s3cmd -c " + self.s3cfg + " del " + "s3://evault/" + filename)
+		self.bucket_name = bucket_name
+		self.with_cli("s3cmd -c " + self.s3cfg + " del " + "s3://" + self.bucket_name + "/" + self.filename)
 		return self
-

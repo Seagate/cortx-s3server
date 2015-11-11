@@ -1,4 +1,29 @@
 
+What does it test:
+- create bucket
+- List buckets
+- Create objects of size 3k, 8k and 700k.
+- Download objects of size 3k, 8k and 700k.
+- List objects
+- List objects with specific starting pattern
+- Delete objects.
+- Delete Buckets.
+- All above under 2 scenarios: pathstyle s3 uri and virtualhoststyle s3 uri
+
+Assumptions:
+You have clean setup without a test bucket name 'seagate_bucket'
+Following access key pair is assumed, if your setup has different,
+please update below mentioned s3cfg files.
+
+Dependencies:
 Required scripttest.
 
 sudo pip install scripttest
+
+How to run?
+- Ensure you have s3server, auth server and mero running with test data.
+- Update access keys in pathstyle.s3cfg and virtualhoststyle.s3cfg if required.
+- Update /etc/hosts file to add following entry for tests.
+  127.0.0.1 seagate_bucket.s3.seagate.com s3.seagate.com
+- cd to clitests directory
+- run $ python s3cmd_spec.py

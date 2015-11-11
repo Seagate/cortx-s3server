@@ -7,6 +7,7 @@ from scripttest import TestFileEnvironment
 class Config:
 	log_enabled = False
 	dummy_run = False
+	config_file = 'pathstyle.s3cfg'
 
 def logit(str):
 	if Config.log_enabled:
@@ -59,18 +60,33 @@ class PyCliTest(object):
 		return self
 
 	def command_is_successful(self):
-		assert self.status.returncode == 0, 'Test Failed'
+		if not Config.dummy_run:
+			assert self.status.returncode == 0, 'Test Failed'
 		print "Command was successful."
 		return self
 
-	def command_response_has(self, msg):
-		assert msg in self.status.stdout, self.status.stdout
-		print "Response has [%s].", (file_name)
+	def command_response_should_have(self, msg):
+		if not Config.dummy_run:
+			assert msg in self.status.stdout
+		print "Response has [%s]." % (msg)
 		return self
 
-	def command_error_has(self, msg):
-		assert msg in self.status.stderr, self.status.stderr
-		print "Error message has [%s].", (file_name)
+	def command_response_should_not_have(self, msg):
+		if not Config.dummy_run:
+			assert msg not in self.status.stdout
+		print "Response does not have [%s]." % (msg)
+		return self
+
+	def command_error_should_have(self, msg):
+		if not Config.dummy_run:
+			assert msg in self.status.stderr
+		print "Error message has [%s]." % (msg)
+		return self
+
+	def command_error_should_not_have(self, msg):
+		if not Config.dummy_run:
+			assert msg in self.status.stderr
+		print "Error message does not have [%s]." % (msg)
 		return self
 
 	def command_created_file(self, file_name):
@@ -93,4 +109,3 @@ class PyCliTest(object):
 			assert file_name in self.status.files_updated, file_name + ' NOT updated'
 		print "File [%s] was updated." % (file_name)
 		return self
-
