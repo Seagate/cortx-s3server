@@ -8,6 +8,7 @@ cd third_party
 ./setup_jsoncpp.sh
 ./setup_libxml2.sh
 ./setup_gtest.sh
+./setup_gmock.sh
 ./setup_lustre_headers.sh
 
 # We copy generated source to server for inline compilation.

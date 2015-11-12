@@ -18,6 +18,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 // Some declarations from s3server that are required to get compiled.
 // TODO - Remove such globals by implementing config file.
@@ -27,5 +28,6 @@ uint16_t auth_port = 8085;
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  ::testing::InitGoogleMock(&argc, argv);
   return RUN_ALL_TESTS();
 }

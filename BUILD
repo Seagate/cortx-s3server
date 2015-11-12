@@ -38,6 +38,7 @@ cc_test(
     copts = ["-DEVHTP_DISABLE_REGEX  -std=c++11 -DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -DGCC_VERSION=4002 -DHAVE_CONFIG_H -DM0_TARGET=ClovisTest -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL= -DM0_EXTERN=extern -iquote $(MERO_SRC) -pie"],
 
     includes = ["third_party/googletest/include",
+                "third_party/googlemock/include",
                 "third_party/libevent/s3_dist/include/",
                 "third_party/libevhtp/s3_dist/include",
                 "third_party/jsoncpp/dist",
@@ -53,6 +54,6 @@ cc_test(
                 "-lpthread -ldl -lrt",
                 "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
                 "-lyaml -luuid -pthread -lxml2 -lpthread",
-                "-pthread third_party/googletest/build/libgtest.a",
+                "-pthread third_party/googletest/build/libgtest.a third_party/googlemock/build/libgmock.a",
                 "-Wl,-rpath,/usr/local/lib64,-rpath,$(MERO_SRC)/mero/.libs,-rpath,$(MERO_SRC)/extra-libs/gf-complete/src/.libs,-rpath,third_party/libevent/s3_dist/lib,-rpath,third_party/libxml2/s3_dist/lib"],
 )

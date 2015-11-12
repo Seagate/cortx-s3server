@@ -54,7 +54,7 @@ class S3RequestObject {
 
 public:
   S3RequestObject(evhtp_request_t *req);
-  ~S3RequestObject();
+  virtual ~S3RequestObject();
 
   struct event_base* get_evbase() {
     return this->ev_req->htp->evbase;
@@ -67,7 +67,7 @@ public:
   unsigned char * c_get_uri_query();
   S3HttpVerb http_verb();
 
-  const char* c_get_full_path();
+  virtual const char* c_get_full_path();
 
   char * c_get_file_name();
 private:
@@ -79,13 +79,13 @@ public:
   friend int consume_header(evhtp_kv_t * kvobj, void * arg);
 
   std::string get_header_value(std::string key);
-  std::string get_host_header();
+  virtual std::string get_host_header();
   size_t get_content_length();
   std::string& get_full_body_content_as_string();
 
   std::string get_query_string_value(std::string key);
 
-  bool has_query_param_key(std::string key);
+  virtual bool has_query_param_key(std::string key);
 
   // xxx Remove this soon
   struct evbuffer* buffer_in() {
