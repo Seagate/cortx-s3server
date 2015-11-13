@@ -24,14 +24,15 @@ MD5hash::MD5hash() {
 }
 
 int MD5hash::Update(const char *input, size_t length) {
+  if( input == NULL) {
+      return -1;
+  }
   if (status == 0) {
     return -1;  // failure
   }
-  if (length) {
-    status = MD5_Update(&md5ctx, input, length);
-    if (status == 0) {
+  status = MD5_Update(&md5ctx, input, length);
+  if (status == 0) {
       return -1;  // failure
-    }
   }
   return 0;  // success
 }

@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string>
+#include <gtest/gtest_prod.h>
 
 class MD5hash {
 private:
@@ -40,5 +41,10 @@ public:
   int Finalize();
 
   std::string get_md5_string();
+
+  FRIEND_TEST(MD5HashTest, Constructor);
+  FRIEND_TEST(MD5HashTest, FinalBasic);
+  FRIEND_TEST(MD5HashTest, FinalEmptyStr);
+  FRIEND_TEST(MD5HashTest, FinalNumeral);
 };
 #endif
