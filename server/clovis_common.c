@@ -21,10 +21,9 @@
 #include "clovis_helpers.h"
 #include <stdio.h>
 
-static struct m0                  mero;
 static struct m0_clovis          *clovis_instance = NULL;
 struct m0_clovis_container clovis_container;
-struct m0_clovis_scope     clovis_uber_scope;
+struct m0_clovis_realm     clovis_uber_realm;
 static struct m0_clovis_config    clovis_conf;
 
 static struct m0_idx_cass_config cass_conf;
@@ -59,11 +58,9 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
   clovis_conf.cc_idx_service_id        = M0_CLOVIS_IDX_CASS;
   clovis_conf.cc_idx_service_conf      = &cass_conf;
 
-  /* mero initilisation */
-  m0_init(&mero);
 
   /* Clovis instance */
-  rc = m0_clovis_init(&clovis_instance, &clovis_conf);
+  rc = m0_clovis_init(&clovis_instance, &clovis_conf, true);
 
   if (rc != 0) {
     printf("Failed to initilise Clovis: %d\n", rc);
@@ -72,25 +69,24 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
 
   /* And finally, clovis root scope */
   m0_clovis_container_init(&clovis_container,
-         NULL, &M0_CLOVIS_UBER_SCOPE,
+         NULL, &M0_CLOVIS_UBER_REALM,
          clovis_instance);
-  rc = clovis_container.co_scope.sc_entity.en_sm.sm_rc;
+  rc = clovis_container.co_realm.re_entity.en_sm.sm_rc;
 
   if (rc != 0) {
     printf("Failed to open uber scope\n");
     goto err_exit;
   }
 
-  clovis_uber_scope = clovis_container.co_scope;
+  clovis_uber_realm = clovis_container.co_realm;
   return 0;
 
 err_exit:
-  m0_fini();
+  fini_clovis(); 
   return rc;
 }
 
 void fini_clovis(void)
 {
-  m0_clovis_fini(&clovis_instance);
-  m0_fini();
+  m0_clovis_fini(&clovis_instance, true);
 }

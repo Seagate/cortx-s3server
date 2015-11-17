@@ -26,7 +26,7 @@
 #include "s3_clovis_reader.h"
 #include "s3_uri_to_mero_oid.h"
 
-extern struct m0_clovis_scope     clovis_uber_scope;
+extern struct m0_clovis_realm     clovis_uber_realm;
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisReaderOpState::start), object_size(0), clovis_block_size(0), clovis_block_count(0) {
   clovis_rw_op_context = NULL;
@@ -61,7 +61,7 @@ void S3ClovisReader::read_object(size_t obj_size, std::function<void(void)> on_s
   S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 
   /* Read the requisite number of blocks from the entity */
-  m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
+  m0_clovis_obj_init(ctx->obj, &clovis_uber_realm, &id);
 
   /* Create the read request */
   m0_clovis_obj_op(ctx->obj, M0_CLOVIS_OC_READ, rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
@@ -76,7 +76,7 @@ void S3ClovisReader::read_object_successful() {
 }
 
 void S3ClovisReader::read_object_failed() {
-  if (reader_context->get_errno() == -EEXIST) {
+  if (reader_context->get_errno() == -ENOENT) {
     state = S3ClovisReaderOpState::missing;
   } else {
     state = S3ClovisReaderOpState::failed;

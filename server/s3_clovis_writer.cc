@@ -27,7 +27,7 @@
 #include "s3_uri_to_mero_oid.h"
 #include "s3_md5_hash.h"
 
-extern struct m0_clovis_scope     clovis_uber_scope;
+extern struct m0_clovis_realm     clovis_uber_realm;
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisWriterOpState::start) {
 
@@ -49,7 +49,7 @@ printf("S3ClovisWriter::create_object\n");
 
   S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 
-  m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
+  m0_clovis_obj_init(ctx->obj, &clovis_uber_realm, &id);
 
   m0_clovis_entity_create(&(ctx->obj->ob_entity), &(ctx->ops[0]));
 
@@ -101,7 +101,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   //   S3RequestObject::consume(ctx.data->ov_buf[i], block_size)
   set_up_clovis_data_buffers(rw_ctx);
 
-  m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
+  m0_clovis_obj_init(ctx->obj, &clovis_uber_realm, &id);
 
   /* Create the write request */
   m0_clovis_obj_op(ctx->obj, M0_CLOVIS_OC_WRITE,
@@ -137,7 +137,7 @@ printf("S3ClovisWriter::delete_object\n");
 
   S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 
-  m0_clovis_obj_init(ctx->obj, &clovis_uber_scope, &id);
+  m0_clovis_obj_init(ctx->obj, &clovis_uber_realm, &id);
 
   m0_clovis_entity_delete(&(ctx->obj->ob_entity), &(ctx->ops[0]));
 

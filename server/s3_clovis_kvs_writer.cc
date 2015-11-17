@@ -27,7 +27,7 @@
 #include "s3_clovis_kvs_writer.h"
 #include "s3_uri_to_mero_oid.h"
 
-extern struct m0_clovis_scope     clovis_uber_scope;
+extern struct m0_clovis_realm     clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
 
 S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req) : request(req),state(S3ClovisKVSWriterOpState::start) {
@@ -57,7 +57,7 @@ void S3ClovisKVSWriter::create_index(std::string index_name, std::function<void(
 
   S3UriToMeroOID(index_name.c_str(), &id);
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_uber_scope, &id);
+  m0_clovis_idx_init(idx_ctx->idx, &clovis_uber_realm, &id);
   rc = m0_clovis_entity_create(&idx_ctx->idx->in_entity, &(idx_ctx->ops[0]));
   if(rc != 0) {
     printf("m0_clovis_entity_create failed\n");
@@ -107,7 +107,7 @@ void S3ClovisKVSWriter::put_keyval(std::string index_name, std::string key, std:
 
   set_up_key_value_store(kvs_ctx, key, val);
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_scope, &id);
+  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
 
   rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
   if(rc  != 0) {
@@ -159,7 +159,7 @@ void S3ClovisKVSWriter::delete_keyval(std::string index_name, std::string key, s
   kvs_ctx->keys->ov_buf[0] = calloc(1, key.length());  // TODO free
   memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_scope, &id);
+  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
 
   rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL, kvs_ctx->keys, NULL, &(idx_ctx->ops[0]));
   if(rc  != 0) {

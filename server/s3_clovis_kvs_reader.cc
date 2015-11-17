@@ -27,7 +27,7 @@
 #include "s3_clovis_kvs_reader.h"
 #include "s3_uri_to_mero_oid.h"
 
-extern struct m0_clovis_scope     clovis_uber_scope;
+extern struct m0_clovis_realm     clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
 
 S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisKVSReaderOpState::start), last_value(""), iteration_index(0) {
@@ -64,7 +64,7 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std:
   kvs_ctx->keys->ov_buf[0] = malloc(key.length());
   memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_scope, &id);
+  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
 
   rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_GET, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
   if(rc != 0) {
@@ -88,7 +88,7 @@ void S3ClovisKVSReader::get_keyval_successful() {
 
 void S3ClovisKVSReader::get_keyval_failed() {
   printf("S3ClovisKVSReader::get_keyval_failed called\n");
-  if (reader_context->get_errno() == -EEXIST) {
+  if (reader_context->get_errno() == -ENOENT) {
     state = S3ClovisKVSReaderOpState::missing;
   } else {
     state = S3ClovisKVSReaderOpState::failed;
@@ -130,7 +130,7 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
     memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
   }
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_scope, &id);
+  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
 
   rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
   if(rc != 0) {
@@ -164,7 +164,7 @@ void S3ClovisKVSReader::next_keyval_successful() {
 
 void S3ClovisKVSReader::next_keyval_failed() {
   printf("S3ClovisKVSReader::next_keyval_failed called\n");
-  if (reader_context->get_errno() == -EEXIST) {
+  if (reader_context->get_errno() == -ENOENT) {
     state = S3ClovisKVSReaderOpState::missing;
   } else {
     state = S3ClovisKVSReaderOpState::failed;
