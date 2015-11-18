@@ -18,20 +18,20 @@
  */
 
 
-#include "s3_request_object_test.h"
+#include "mock_s3_request_object.h"
 #include "s3_uri.h"
 
 using ::testing::Return;
-using ::testing::Exactly;
 using ::testing::StrEq;
 using ::testing::_;
 
 class S3URITEST : public testing::Test {
    protected:
    S3URITEST() {
+     evhtp_request_t * req = NULL;
      ptr_mock_request = std::make_shared<MockS3RequestObject> (req);
    }
-   evhtp_request_t * req = NULL;
+
    std::shared_ptr<MockS3RequestObject> ptr_mock_request;
 };
 

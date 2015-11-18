@@ -23,6 +23,7 @@
 #include "murmur3_hash.h"
 
 #include "s3_router.h"
+#include "s3_request_object.h"
 #include "s3_error_codes.h"
 
 #define WEBSTORE "/home/seagate/webstore"
@@ -98,7 +99,8 @@ void get_oid_using_hash(const char* url, struct m0_uint128 *object_id)
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
   S3Router *router = (S3Router*)a;
-  router->dispatch(req);
+  std::shared_ptr<S3RequestObject> s3_request = std::make_shared<S3RequestObject> (req);
+  router->dispatch(s3_request);
 }
 
 

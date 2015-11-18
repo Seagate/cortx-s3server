@@ -13,26 +13,28 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
+ * Original author:  Rajesh Nambiar   <rajesh.nambiarr@seagate.com>
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original creation date: 09-Nov-2015
  */
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
+#pragma once
 
-#include "s3_error_messages.h"
+#ifndef __MERO_FE_S3_UT_MOCK_S3_REQUEST_OBJECT_H__
+#define __MERO_FE_S3_UT_MOCK_S3_REQUEST_OBJECT_H__
 
-// Some declarations from s3server that are required to get compiled.
-// TODO - Remove such globals by implementing config file.
-// S3 Auth service
-const char *auth_ip_addr = "127.0.0.1";
-uint16_t auth_port = 8085;
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include "s3_request_object.h"
 
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  ::testing::InitGoogleMock(&argc, argv);
+class MockS3RequestObject : public S3RequestObject {
+  public:
+  MockS3RequestObject(evhtp_request_t *req) : S3RequestObject(req) {}
+  MOCK_METHOD0(c_get_full_path, const char *());
+  MOCK_METHOD0(get_host_header, std::string());
+  MOCK_METHOD1(has_query_param_key, bool(std::string key));
+  MOCK_METHOD1(set_bucket_name, void(std::string& name));
+  MOCK_METHOD1(set_object_name, void(std::string& name));
+};
 
-  S3ErrorMessages::init_messages("resources/s3_error_messages.json");
-
-  return RUN_ALL_TESTS();
-}
+#endif

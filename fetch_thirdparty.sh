@@ -11,7 +11,8 @@ cd third_party
 ./setup_gmock.sh
 ./setup_lustre_headers.sh
 
+cd $S3_SRC_FOLDER
+
 # We copy generated source to server for inline compilation.
 cp third_party/jsoncpp/dist/jsoncpp.cpp server/jsoncpp.cc
 
-cd $S3_SRC_FOLDER

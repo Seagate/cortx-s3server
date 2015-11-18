@@ -48,7 +48,7 @@ public:
   virtual ~S3Router();
 
   // Dispatch to registered handlers.
-  void dispatch(evhtp_request_t * req);
+  void dispatch(std::shared_ptr<S3RequestObject> request);
 
   // For Unit testing only.
   FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingDefaultEP);

@@ -50,13 +50,14 @@ private:
 
 public:
   S3URI(std::shared_ptr<S3RequestObject> req);
+  virtual ~S3URI() {}
 
-  S3ApiType get_s3_api_type();
+  virtual S3ApiType get_s3_api_type();
 
-  std::string& get_bucket_name();
-  std::string& get_object_name();  // Object key
+  virtual std::string& get_bucket_name();
+  virtual std::string& get_object_name();  // Object key
 
-  S3OperationCode get_operation_code();
+  virtual S3OperationCode get_operation_code();
 
 };
 

@@ -97,9 +97,9 @@ public:
   // Operation params.
   std::string get_object_uri();
 
-  void set_bucket_name(std::string& name);
+  virtual void set_bucket_name(std::string& name);
   std::string& get_bucket_name();
-  void set_object_name(std::string& name);
+  virtual void set_object_name(std::string& name);
   std::string& get_object_name();
 
   void set_user_name(std::string& name);

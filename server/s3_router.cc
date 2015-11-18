@@ -59,8 +59,7 @@ bool S3Router::is_subdomain_match(std::string& endpoint) {
   return false;
 }
 
-void S3Router::dispatch(evhtp_request_t * req) {
-  std::shared_ptr<S3RequestObject> request = std::make_shared<S3RequestObject> (req);
+void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
   std::shared_ptr<S3APIHandler> handler;
 
   std::string bucket_name, object_name;

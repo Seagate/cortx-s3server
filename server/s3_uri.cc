@@ -55,7 +55,10 @@ void S3URI::setup_operation_code() {
 }
 
 S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req) {
-  std::string full_path(request->c_get_full_path());
+  std::string full_uri(request->c_get_full_path());
+  // Strip the query params
+  std::size_t qparam_start = full_uri.find("?");
+  std::string full_path(full_uri, 0, qparam_start);
   // Regex is better, but lets live with raw parsing. regex = >gcc 4.9.0
   if (full_path.compare("/") == 0) {
     s3_api_type = S3ApiType::service;
@@ -86,7 +89,10 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> re
     host_header = request->get_host_header();
     setup_bucket_name();
 
-    std::string full_path(request->c_get_full_path());
+    std::string full_uri(request->c_get_full_path());
+    // Strip the query params
+    std::size_t qparam_start = full_uri.find("?");
+    std::string full_path(full_uri, 0, qparam_start);
     if (full_path.compare("/") == 0) {
       s3_api_type = S3ApiType::bucket;
     } else {
