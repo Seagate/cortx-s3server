@@ -45,9 +45,6 @@ import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.ldap.LdapConnectionManager;
 import com.seagates3.util.SAMLUtil;
 
-
-
-
 public class AuthServer {
 
     static Properties authServerConfig;

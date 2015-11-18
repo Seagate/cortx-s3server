@@ -14,20 +14,31 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 
 package com.seagates3.validator;
 
 import java.util.Map;
 
-public class AccountValidator extends AbstractValidator{
+/**
+ * Validate the input for Account API - Create.
+ */
+public class AccountValidator extends AbstractValidator {
+    /*
+     * TODO
+     * Find out maximum account name length.
+     */
+
+    /**
+     * Validate the input parameters for create account request.
+     * Account name is required.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
+     */
     @Override
     public Boolean create(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("AccountName")) {
-            return false;
-        }
-
-        return validatorHelper.validAccountName(requestBody.get("AccountName"));
+        return S3ValidatorUtil.isValidName(requestBody.get("AccountName"));
     }
 }

@@ -21,84 +21,44 @@ package com.seagates3.validator;
 
 import java.util.Map;
 
+/**
+ * Validate the input for role APIs - Create, Delete and List.
+ */
 public class RoleValidator extends AbstractValidator {
-    /*
+    /**
      * Validate the input parameters for create role request.
+     * Role name is required.
+     * AssumeRolePolicyDocument is required.
+     * Path is optional.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
      */
     @Override
     public Boolean create(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("AssumeRolePolicyDocument")) {
-            return false;
-        }
-
-        if(!requestBody.containsKey("RoleName")) {
-            return false;
-        }
-
-        if(!validPolicy(requestBody.get("AssumeRolePolicyDocument"))) {
-            return false;
-        }
-
-        if(!validRoleName(requestBody.get("RoleName"))) {
-            return false;
-        }
-
         if(requestBody.containsKey("Path")) {
-            return validatorHelper.validPath(requestBody.get("Path"));
+            if(! S3ValidatorUtil.isValidPath(requestBody.get("Path"))) {
+                return false;
+            }
         }
 
-        return true;
+        if(!S3ValidatorUtil.isValidName(requestBody.get("RoleName"))) {
+            return false;
+        }
+
+        return S3ValidatorUtil.isValidAssumeRolePolicyDocument(
+                requestBody.get("AssumeRolePolicyDocument"));
     }
 
-    /*
+    /**
      * Validate the input parameters for delete role request.
+     * Role name is required.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
      */
     @Override
     public Boolean delete(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("RoleName")) {
-            return false;
-        }
-
-        return validRoleName(requestBody.get("RoleName"));
-    }
-
-    /*
-     * Validate the input parameters for list role request.
-     */
-    @Override
-    public Boolean list(Map<String, String> requestBody) {
-        if(requestBody.containsKey("PathPrefix")) {
-            if(!validatorHelper.validPathPrefix(requestBody.get("PathPrefix"))) {
-                return false;
-            }
-        }
-
-        if(requestBody.containsKey("MaxItems")) {
-            int maxItems = Integer.parseInt(requestBody.get("MaxItems"));
-            if(!validatorHelper.validMaxItems(maxItems)) {
-                return false;
-            }
-        }
-
-        if(requestBody.containsKey("Marker")) {
-            int marker = Integer.parseInt(requestBody.get("Marker"));
-            return validatorHelper.validMarker(marker);
-        }
-
-        return true;
-    }
-
-    /*
-     * policy should be atleast 1 character long and at max 2048 char long.
-     */
-    private Boolean validPolicy(String policy) {
-        return !(policy.length() < 1 || policy.length() > 2048);
-    }
-
-    /*
-     * Role name should be atleast 1 character long and at max 2048 char long.
-     */
-    private Boolean validRoleName(String name) {
-        return !(name.length() < 1 || name.length() > 64);
+        return S3ValidatorUtil.isValidName(requestBody.get("RoleName"));
     }
 }

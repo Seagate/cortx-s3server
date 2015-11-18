@@ -109,10 +109,11 @@ public class AssumeRoleWithSAMLController extends AbstractController {
          *
          * Temporary fix -
          * PrincipalARN should be in this format -
-         * <account name>:<idp provider name>
+         * arn:seagate:iam::<account name>:<idp provider name>
          */
 
-        String[]tokens = requestBody.get("PrincipalArn").split(":");
+        String[]tokens = requestBody.get("PrincipalArn").split("arn:seagate:iam::");
+        tokens = tokens[1].split(":");
         String accountName = tokens[0];
         String providerName = tokens[1];
 
@@ -138,9 +139,15 @@ public class AssumeRoleWithSAMLController extends AbstractController {
         /*
          * TODO
          * Implement Role ARN.
-         * For now, Use rolename as ARN.
+         *
+         * Temporary fix -
+         * PrincipalARN should be in this format -
+         * arn:seagate:iam::roles:<role name>
          */
-        String roleName = requestBody.get("RoleArn");
+
+        tokens = requestBody.get("RoleArn").split("arn:seagate:iam::");
+        tokens = tokens[1].split(":");
+        String roleName = tokens[1];
         User user = createRoleUser(accountName, roleName, samlResponse.getRoleSessionName());
 
         AccessKey accessKey = createAccessKey(user, duration);

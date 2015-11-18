@@ -14,97 +14,70 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 
 package com.seagates3.validator;
 
 import java.util.Map;
 
+/**
+ * Validate the input for User APIs - Create, Delete, List and update.
+ */
 public class UserValidator extends AbstractValidator {
-    /*
+
+    /**
      * Validate the input parameters for create user request.
+     * User name is required.
+     * Path is optional.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
      */
     @Override
     public Boolean create(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("UserName")) {
-            return false;
+        if (requestBody.containsKey("Path")) {
+            return S3ValidatorUtil.isValidPath(requestBody.get("Path"));
         }
 
-        if(!validatorHelper.validName(requestBody.get("UserName"))) {
-            return false;
-        }
-
-        if(requestBody.containsKey("Path")) {
-            return validatorHelper.validPath(requestBody.get("Path"));
-        }
-
-        return true;
+        return S3ValidatorUtil.isValidName(requestBody.get("UserName"));
     }
 
-    /*
+    /**
      * Validate the input parameters for delete user request.
+     * User name is required.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
      */
     @Override
     public Boolean delete(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("UserName")) {
-            return false;
-        }
-
-        return validatorHelper.validName(requestBody.get("UserName"));
+        return S3ValidatorUtil.isValidName(requestBody.get("UserName"));
     }
 
-    /*
-     * Validate the input parameters for list users request.
-     *
-     * TODO
-     * Validate Marker and MaxItems
-     */
-    @Override
-    public Boolean list(Map<String, String> requestBody) {
-        if(requestBody.containsKey("PathPrefix")) {
-            return validatorHelper.validPathPrefix(requestBody.get("PathPrefix"));
-        }
-
-        if(requestBody.containsKey("MaxItems")) {
-            int maxItems = Integer.parseInt(requestBody.get("MaxItems"));
-            if(!validatorHelper.validMaxItems(maxItems)) {
-                return false;
-            }
-        }
-
-        if(requestBody.containsKey("Marker")) {
-            int marker = Integer.parseInt(requestBody.get("Marker"));
-            return validatorHelper.validMarker(marker);
-        }
-
-        return true;
-    }
-
-    /*
+    /**
      * Validate the input parameters for update user request.
+     * User name is required.
+     * New User name is optional.
+     * New Path is optional.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
      */
     @Override
     public Boolean update(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("UserName")) {
-            return false;
-        }
-
-        if(!validatorHelper.validName(requestBody.get("UserName"))) {
-            return false;
-        }
-
-        if(requestBody.containsKey("NewUserName")) {
-            if(!validatorHelper.validName(requestBody.get("UserName"))) {
+        if (requestBody.containsKey("NewUserName")) {
+            if (!S3ValidatorUtil.isValidName(requestBody.get("NewUserName"))) {
                 return false;
             }
         }
 
-        if(requestBody.containsKey("NewPath")) {
-            if(!validatorHelper.validPath(requestBody.get("NewPath"))) {
+        if (requestBody.containsKey("NewPath")) {
+            if (!S3ValidatorUtil.isValidPath(requestBody.get("NewPath"))) {
                 return false;
             }
         }
-        return true;
+
+        return S3ValidatorUtil.isValidName(requestBody.get("UserName"));
     }
 }

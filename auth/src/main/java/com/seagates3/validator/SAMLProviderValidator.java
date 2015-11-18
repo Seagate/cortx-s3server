@@ -21,43 +21,65 @@ package com.seagates3.validator;
 
 import java.util.Map;
 
-
+/**
+ * Validate the input for SAML provider APIs - Create, Delete and update.
+ */
 public class SAMLProviderValidator extends AbstractValidator {
+    /**
+     * Validate the input parameters for create SAML Provider request.
+     * SAML provider name is required.
+     * SAML metadata is required.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
+     */
     @Override
     public Boolean create(Map<String, String> requestBody) {
-        if(!validatorHelper.validName(requestBody.get("Name"))) {
+        if(!S3ValidatorUtil.isValidSamlProviderName(requestBody.get("Name"))) {
             return false;
         }
 
-        return validSAMLMetadata(requestBody.get("SAMLMetadataDocument"));
+        return S3ValidatorUtil.isValidSAMLMetadata(requestBody.get("SAMLMetadataDocument"));
     }
 
-    /*
-     * Validate the input parameters for delete saml provider request.
+    /**
+     * Validate the input parameters for delete user request.
+     * SAML Provider ARN is required.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
      */
     @Override
     public Boolean delete(Map<String, String> requestBody) {
-        return requestBody.containsKey("SAMLProviderArn");
+        return S3ValidatorUtil.isValidARN(requestBody.get("SAMLProviderArn"));
     }
 
-    /*
-     * Validate the input parameters for update user request.
+    /**
+     * Validate the input parameters for list SAML providers request.
+     * This API doesn't require an input.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true.
+     */
+    @Override
+    public Boolean list(Map<String, String> requestBody) {
+        return true;
+    }
+
+    /**
+     * Validate the input parameters for update SAML provider request.
+     * SAML provider ARN is required.
+     * SAML metadata is required.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true.
      */
     @Override
     public Boolean update(Map<String, String> requestBody) {
-        if(!requestBody.containsKey("SAMLMetadataDocument")) {
+        if(!S3ValidatorUtil.isValidARN(requestBody.get("SAMLProviderArn"))) {
             return false;
         }
 
-        return requestBody.containsKey("SAMLProviderArn");
-    }
-
-    /*
-     * Saml metadata document should be atleast 1000 character long and at max
-     * 10000000 char long.
-     */
-    private Boolean validSAMLMetadata(String samlMetadataDocument) {
-        return !(samlMetadataDocument.length() < 1000 ||
-                samlMetadataDocument.length() > 10000000);
+        return S3ValidatorUtil.isValidSAMLMetadata(requestBody.get("SAMLMetadataDocument"));
     }
 }

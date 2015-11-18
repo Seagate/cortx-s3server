@@ -80,7 +80,7 @@ public class SAMLUtil {
     private static final String SUCCESS = "urn:oasis:names:tc:SAML:2.0:status:Success";
     private static final String IDP_SSO_DESCRIPTOR = "urn:oasis:names:tc:SAML:2.0:protocol";
     private static final String SUBJECT_CONFIRMATION_BEARER = "urn:oasis:names:tc:SAML:2.0:cm:bearer";
-    private static final String Attribute_ROLE_SESSION_NAME = "https://aws.amazon.com/SAML/Attributes/RoleSessionName";
+    private static final String ATTRIBUTE_ROLE_SESSION_NAME = "https://aws.amazon.com/SAML/Attributes/RoleSessionName";
     private static final String PERSISTENT_SUBJECT_TYPE = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent";
 
     public static String samlMetadataFile;
@@ -193,7 +193,7 @@ public class SAMLUtil {
         for(AttributeStatement as : attributeStatements) {
             List<Attribute> attributes = as.getAttributes();
             for(Attribute a : attributes) {
-                if(a.getName().equals(Attribute_ROLE_SESSION_NAME)) {
+                if(a.getName().equals(ATTRIBUTE_ROLE_SESSION_NAME)) {
                     List<XMLObject> attributeValues = a.getAttributeValues();
                     XSAny xs = (XSAny) attributeValues.get(0);
                     return xs.getTextContent();

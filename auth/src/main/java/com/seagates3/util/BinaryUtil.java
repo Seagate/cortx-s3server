@@ -194,6 +194,10 @@ public class BinaryUtil {
         return Base64.encodeBase64String(text);
     }
 
+    public static String encodeToBase64String(String text) {
+        return encodeToBase64String(text.getBytes());
+    }
+
     /*
      * Convert bytes to String
      */

@@ -19,81 +19,46 @@
 
 package com.seagates3.validator;
 
-import com.seagates3.util.BinaryUtil;
 import java.util.Map;
 
-public class AssumeRoleWithSAMLValidator extends AbstractValidator{
+/**
+ * Validate the input for Assume Role with SAML API.
+ */
+public class AssumeRoleWithSAMLValidator extends AbstractValidator {
+    /**
+     * Validate the input parameters for assume role with SAML API.
+     * PrincipalArn is required.
+     * RoleArn is required.
+     * SAMLAssertion is required.
+     * DurationSeconds is optional.
+     * Policy is optional.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
+     */
     @Override
     public Boolean create(Map<String, String> requestBody) {
-        Boolean isValid;
-
-        if(!requestBody.containsKey("PrincipalArn") ||
-                !requestBody.containsKey("RoleArn") ||
-                !requestBody.containsKey("SAMLAssertion")) {
-            return false;
-        }
-
-        isValid = validatePrincipalArn(requestBody.get("PrincipalArn"));
-        if(!isValid) {
-            return false;
-        }
-
-        isValid = validateRoleArn(requestBody.get("RoleArn"));
-        if(!isValid) {
-            return false;
-        }
-
-        isValid = validateSAMLAssertion(requestBody.get("SAMLAssertion"));
-        if(!isValid) {
-            return false;
-        }
-
         if(requestBody.containsKey("DurationSeconds")) {
-            isValid = validateTokenDuration(requestBody.get("DurationSeconds"));
-            if(!isValid) {
+            if (! STSValidatorUtil.isValidAssumeRoleDuration(
+                    requestBody.get("DurationSeconds"))) {
                 return false;
             }
         }
 
         if(requestBody.containsKey("Policy")) {
-            return validatePolicy(requestBody.get("Policy"));
+            if (! STSValidatorUtil.isValidPolicy(requestBody.get("Policy"))) {
+                return false;
+            }
         }
 
-        return isValid;
-    }
-
-    private Boolean validateTokenDuration(String duration) {
-        int durationInSeconds = Integer.parseInt(duration);
-
-        return !(durationInSeconds > 3600 || durationInSeconds < 900);
-    }
-
-    private Boolean validatePolicy(String policy) {
-        return !(policy.length() < 1 || policy.length() > 2048);
-    }
-
-    /*
-     * TODO
-     * ARN should be minimum 20 characters long
-     */
-    private Boolean validatePrincipalArn(String arn) {
-        return !(arn.length() < 1 || arn.length() > 2048);
-    }
-
-    /*
-     * TODO
-     * ARN should be minimum 20 characters long
-     */
-    private Boolean validateRoleArn(String roleArn) {
-        return !(roleArn.length() < 1 || roleArn.length() > 2048);
-    }
-
-    private Boolean validateSAMLAssertion(String assertion) {
-        Boolean base64Encoded = BinaryUtil.isBase64Encoded(assertion);
-        if(!base64Encoded) {
+        if(! S3ValidatorUtil.isValidARN(requestBody.get("PrincipalArn"))) {
             return false;
         }
 
-        return !(assertion.length() < 4 || assertion.length() > 50000);
+        if(! S3ValidatorUtil.isValidARN(requestBody.get("RoleArn"))) {
+            return false;
+        }
+
+        return STSValidatorUtil.isValidSAMLAssertion(requestBody.get("SAMLAssertion"));
     }
 }

@@ -14,33 +14,78 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 
 package com.seagates3.validator;
 
 import java.util.Map;
 
+/**
+ * Abstract class for Validator classes.
+ */
 public abstract class AbstractValidator {
-    protected final ValidatorHelper validatorHelper;
 
-    public AbstractValidator() {
-        validatorHelper = new ValidatorHelper();
-    }
-
+    /**
+     * Abstract implementation to check create request parameters.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true
+     */
     public Boolean create(Map<String, String> requestBody) {
         return true;
     }
 
+    /**
+     * Abstract implementation to check delete request parameters.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true
+     */
     public Boolean delete(Map<String, String> requestBody) {
         return true;
     }
 
+    /**
+     * Abstract implementation to check delete request parameters.
+     * Validate the input parameters for list requests.
+     *
+     * List operation is used only on IAM resources i.e roles, user etc.
+     * Hence default implementation is specific to IAM APIs.
+     *
+     * Path prefix is optional.
+     * Max Items is optional.
+     * Marker is optional.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
+     */
     public Boolean list(Map<String, String> requestBody) {
+        if (requestBody.containsKey("PathPrefix")) {
+            if (!S3ValidatorUtil.isValidPathPrefix(requestBody.get("PathPrefix"))) {
+                return false;
+            }
+        }
+
+        if (requestBody.containsKey("MaxItems")) {
+            if (!S3ValidatorUtil.isValidMaxItems(requestBody.get("MaxItems"))) {
+                return false;
+            }
+        }
+
+        if (requestBody.containsKey("Marker")) {
+            return S3ValidatorUtil.isValidMarker(requestBody.get("Marker"));
+        }
+
         return true;
     }
 
-
+    /**
+     * Abstract implementation to check update request parameters.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true
+     */
     public Boolean update(Map<String, String> requestBody) {
         return true;
     }

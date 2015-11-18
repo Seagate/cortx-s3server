@@ -151,7 +151,7 @@ public class AuthServerAction {
     }
 
     /*
-     * Validdate the requestor.
+     * Validate the requestor.
      *
      * Check
      *   if requestor exists.
@@ -283,14 +283,14 @@ public class AuthServerAction {
         return controllerAction;
     }
 
-    /*
+    /**
      * Return the full name of the controller class.
      */
     private String toControllerClassName(String controllerName) {
         return String.format("%s.%sController", CONTROLLER_PACKAGE, controllerName);
     }
 
-    /*
+    /**
      * Return the full name of the validator class.
      */
     private String toValidatorClassName(String controllerName) {
