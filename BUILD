@@ -56,4 +56,6 @@ cc_test(
                 "-lyaml -luuid -pthread -lxml2 -lpthread",
                 "-pthread third_party/googletest/build/libgtest.a third_party/googlemock/build/libgmock.a",
                 "-Wl,-rpath,/usr/local/lib64,-rpath,$(MERO_SRC)/mero/.libs,-rpath,$(MERO_SRC)/extra-libs/gf-complete/src/.libs,-rpath,third_party/libevent/s3_dist/lib,-rpath,third_party/libxml2/s3_dist/lib"],
+
+    data = ["resources"],
 )
