@@ -3,12 +3,14 @@
 # make install things for testing
 
 S3_INSTALL_LOCATION=/opt/seagate/s3
+AUTH_INSTALL_LOCATION=/opt/seagate/auth
 
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/lib
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/libxml2
 mkdir -p $S3_INSTALL_LOCATION/resources
+mkdir -p $AUTH_INSTALL_LOCATION
 
 # Copy over the mero libs
 echo "Copying clovis libraries and dependencies to install location..."
@@ -28,10 +30,19 @@ cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
 echo "Copying s3 server resources to install location..."
 cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json
 
-# Copy the startup script.
+# Copy the s3 server startup script.
 echo "Copying s3 startup script to install location..."
 cp starts3.sh $S3_INSTALL_LOCATION/
 
-echo "S3 server is setup."
+# Copy Auth server jar to install location
+echo "Copying Auth server jar to install location..."
+cp -f auth/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION
+
+# Copy the auth server startup script.
+echo "Copying auth server startup script to install location..."
+cp startauth.sh $AUTH_INSTALL_LOCATION/
+
+echo "S3 server and Auth server are setup."
 echo "Setup nginx using configuration similar to nginx.conf.sample."
-echo "Run starts3.sh to start the Seagate S3 server."
+echo "Run /opt/seagate/s3/starts3.sh to start the Seagate S3 server."
+echo "Run /opt/seagate/auth/startauth.sh to start the Seagate Auth server."
