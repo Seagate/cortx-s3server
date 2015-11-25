@@ -29,6 +29,7 @@
 
 /* libevhtp */
 #include <evhtp.h>
+#include <gtest/gtest_prod.h>
 
 enum class S3HttpVerb {
   HEAD = htp_method_HEAD,
@@ -56,16 +57,20 @@ public:
   S3RequestObject(evhtp_request_t *req);
   virtual ~S3RequestObject();
 
-  struct event_base* get_evbase() {
-    return this->ev_req->htp->evbase;
+  virtual struct event_base* get_evbase() {
+    if(this->ev_req != NULL && this->ev_req->htp != NULL) {
+      return this->ev_req->htp->evbase;
+    } else {
+       return NULL;
+    }
   }
 
-  evhtp_request_t * get_request() {
+  virtual evhtp_request_t * get_request() {
     return this->ev_req;
   }
 
-  unsigned char * c_get_uri_query();
-  S3HttpVerb http_verb();
+  virtual const char * c_get_uri_query();
+  virtual S3HttpVerb http_verb();
 
   virtual const char* c_get_full_path();
 
@@ -124,6 +129,8 @@ public:
   void send_reply_body(char *data, int length);
   void send_reply_end();
   void respond_unsupported_api();
+
+  FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
 };
 
 #endif

@@ -204,16 +204,19 @@ S3AuthClient::S3AuthClient(std::shared_ptr<S3RequestObject> req) : request(req),
   auth_client_op_context = NULL;
 }
 
-void S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) {
+bool S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) {
+  const char * full_path;
+  const char * uri_query;
   printf("S3AuthClient::setup_auth_request_body\n");
-
+  if(auth_ctx == NULL) {
+    return false;
+  }
   if (auth_ctx->isfirstpass) {
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out,"Action=AuthenticateUser&");
   }
   else {
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out,"&Action=AuthenticateUser&");
   }
-
   if (request->http_verb() == S3HttpVerb::GET)
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "Method=GET&");
   else if(request->http_verb() == S3HttpVerb::HEAD)
@@ -225,16 +228,16 @@ void S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) 
   else if(request->http_verb() == S3HttpVerb::POST)
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "Method=POST&");
 
-  printf("c_get_full_path = %s\n",request->c_get_full_path());
-  if(request->c_get_full_path() != NULL) {
-    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientAbsoluteUri=%s&", request->c_get_full_path());
+  full_path = request->c_get_full_path();
+  if(full_path != NULL) {
+    evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientAbsoluteUri=%s&", full_path);
   } else {
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientAbsoluteUri=&");
   }
-
-  if(request->c_get_uri_query() != NULL) {
-    printf("c_get_uri_query = %s\n",request->c_get_uri_query());
-    std::string encoded_string = url_encode((char *)request->c_get_uri_query());
+  uri_query = request->c_get_uri_query();
+  if(uri_query != NULL) {
+    printf("c_get_uri_query = %s\n",uri_query);
+    std::string encoded_string = url_encode((char *)uri_query);
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientQueryParams=%s&", encoded_string.c_str());
   } else {
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientQueryParams=&");
@@ -243,7 +246,7 @@ void S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) 
   // May need to take it from config
   evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "Version=2010-05-08");
 
-  return;
+  return true;
 }
 
 extern "C" int
@@ -277,6 +280,10 @@ debug_print_auth_header(evhtp_header_t * header, void * arg) {
   return 0;
 }
 
+void S3AuthClient::execute_authconnect_request(struct s3_auth_op_context* auth_ctx) {
+  evhtp_make_request(auth_ctx->conn, auth_ctx->authrequest, htp_method_POST, "/");
+  evhtp_send_reply_body(auth_ctx->authrequest, auth_ctx->authrequest->buffer_out);
+}
 
 void S3AuthClient::check_authentication(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   printf("Called S3AuthClient::check_authentication\n");
@@ -293,13 +300,10 @@ void S3AuthClient::check_authentication(std::function<void(void)> on_success, st
   auth_context.reset(new S3AuthClientContext(request, std::bind( &S3AuthClient::check_authentication_successful, this), std::bind( &S3AuthClient::check_authentication_failed, this)));
 
   auth_context->init_auth_op_ctx(request->get_evbase());
-
   struct s3_auth_op_context* auth_ctx = auth_context->get_auth_op_ctx();
   auth_ctx->auth_callback = (evhtp_hook)auth_response;
-
   // Setup the auth callbacks
   evhtp_set_hook(&auth_ctx->authrequest->hooks, evhtp_hook_on_read, auth_ctx->auth_callback, auth_context.get());
-
   // Setup the headers to forward to auth service
   evhtp_headers_for_each(ev_req->headers_in, setup_auth_request_headers, auth_ctx);
 
@@ -315,16 +319,13 @@ void S3AuthClient::check_authentication(std::function<void(void)> on_success, st
     evhtp_header_new("User-Agent", "s3server", 1, 1));
   evhtp_headers_add_header(auth_ctx->authrequest->headers_out,
     evhtp_header_new("Connection", "close", 1, 1));
-
   // TODO remove debug
   evhtp_headers_for_each(auth_ctx->authrequest->headers_out, debug_print_auth_header, NULL);
   char mybuff[1000] = {0};
   evbuffer_copyout(auth_ctx->authrequest->buffer_out, mybuff, sizeof(mybuff));
   printf("Data being send to Auth server:\n%s\n", mybuff);
 
-  evhtp_make_request(auth_ctx->conn, auth_ctx->authrequest, htp_method_POST, "/");
-
-  evhtp_send_reply_body(auth_ctx->authrequest, auth_ctx->authrequest->buffer_out);
+  execute_authconnect_request(auth_ctx);
 
   printf("Return from S3AuthClient::check_authentication\n");
 }

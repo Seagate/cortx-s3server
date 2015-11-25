@@ -25,10 +25,13 @@
 
 #include <memory>
 #include <functional>
+#include <gtest/gtest_prod.h>
 
 #include "s3_request_object.h"
 #include "s3_auth_context.h"
 #include "s3_asyncop_context_base.h"
+
+extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg);
 
 class S3AuthClientContext : public S3AsyncOpContextBase {
   struct s3_auth_op_context* auth_client_op_context;
@@ -46,13 +49,20 @@ public:
     printf("S3AuthClientContext deleted.\n");
     if (has_auth_op_context) {
       free_basic_auth_client_op_ctx(auth_client_op_context);
+      auth_client_op_context = NULL;
     }
   }
 
   // Call this when you want to do auth op.
-  void init_auth_op_ctx(struct event_base* eventbase) {
+  virtual bool init_auth_op_ctx(struct event_base* eventbase) {
+    if(eventbase == NULL)
+      return false;
     auth_client_op_context = create_basic_auth_op_ctx(eventbase);
+    if(auth_client_op_context == NULL) {
+      return false;
+    }
     has_auth_op_context = true;
+    return true;
   }
 
   struct s3_auth_op_context* get_auth_op_ctx() {
@@ -63,6 +73,9 @@ public:
     has_auth_op_context = false;  // release ownership, caller should free.
     return auth_client_op_context;
   }
+
+  FRIEND_TEST(S3AuthClientContextTest, Constructor);
+  FRIEND_TEST(S3AuthClientContextTest, ReleaseOwnerShipAuth);
 };
 
 enum class S3AuthClientOpState {
@@ -87,7 +100,8 @@ private:
   S3AuthClientOpState state;
 
   // Helper
-  void setup_auth_request_body(struct s3_auth_op_context *auth_ctx);
+  bool setup_auth_request_body(struct s3_auth_op_context *auth_ctx);
+  virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx);
 
 public:
   S3AuthClient(std::shared_ptr<S3RequestObject> req);
@@ -95,12 +109,19 @@ public:
   S3AuthClientOpState get_state() {
     return state;
   }
-
+  virtual ~S3AuthClient() {};
   // async read
   void check_authentication(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void check_authentication_successful();
   void check_authentication_failed();
 
+  FRIEND_TEST(S3AuthClientTest, Constructor);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBody);
+  FRIEND_TEST(S3AuthClientCheckTest, CheckGetAuth);
+  FRIEND_TEST(S3AuthClientCheckTest, CheckPutAuth);
+  FRIEND_TEST(S3AuthClientCheckTest, CheckDelAuth);
+  FRIEND_TEST(S3AuthClientCheckTest, CheckHeadAuth);
+  FRIEND_TEST(S3AuthClientCheckTest, CheckPostAuth);
 };
 
 #endif

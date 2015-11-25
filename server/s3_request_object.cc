@@ -53,8 +53,8 @@ char * S3RequestObject::c_get_file_name() {
   return ev_req->uri->path->file;
 }
 
-unsigned char* S3RequestObject::c_get_uri_query() {
-  return ev_req->uri->query_raw;
+const char* S3RequestObject::c_get_uri_query() {
+  return (const char *)ev_req->uri->query_raw;
 }
 
 std::map<std::string, std::string> S3RequestObject::get_in_headers_copy(){
