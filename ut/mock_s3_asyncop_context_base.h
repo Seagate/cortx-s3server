@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_UT_MOCK_S3_ASYNCOP_CONTEXT_BASE_H___
-#define __MERO_FE_S3_UT_MOCK_S3_ASYNCOP_CONTEXT_BASE_H___
+#ifndef __MERO_FE_S3_UT_MOCK_S3_ASYNCOP_CONTEXT_BASE_H__
+#define __MERO_FE_S3_UT_MOCK_S3_ASYNCOP_CONTEXT_BASE_H__
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
