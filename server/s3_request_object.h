@@ -61,7 +61,7 @@ public:
     if(this->ev_req != NULL && this->ev_req->htp != NULL) {
       return this->ev_req->htp->evbase;
     } else {
-       return NULL;
+      return NULL;
     }
   }
 

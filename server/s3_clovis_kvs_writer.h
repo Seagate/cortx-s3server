@@ -25,10 +25,12 @@
 
 #include <memory>
 #include <functional>
+#include <gtest/gtest_prod.h>
 
 #include "s3_request_object.h"
 #include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_clovis_wrapper.h"
 
 class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
@@ -91,6 +93,7 @@ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::unique_ptr<S3ClovisKVSWriterContext> writer_context;
 
   // Used to report to caller
@@ -100,8 +103,8 @@ private:
   S3ClovisKVSWriterOpState state;
 
 public:
-  S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req);
-  ~S3ClovisKVSWriter();
+  S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> s3_clovis_api);
+  virtual ~S3ClovisKVSWriter();
 
   S3ClovisKVSWriterOpState get_state() {
     return state;
@@ -123,6 +126,18 @@ public:
   void delete_keyval_failed();
 
   void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx, std::string key, std::string val);
+
+  // For Testing purpose
+  FRIEND_TEST(S3ClovisKvsWritterTest, Constructor);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexSuccessCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFailCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFailEmpty);
+  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValSuccessCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailEmpty);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValSuccessCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailEmpty);
 };
 
 #endif

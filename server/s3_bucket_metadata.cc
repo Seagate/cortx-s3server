@@ -27,6 +27,7 @@ S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : reque
   user_name = request->get_user_name();
   bucket_name = request->get_bucket_name();
   state = S3BucketMetadataState::empty;
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
   // Set the defaults
   S3DateTime current_time;
@@ -106,7 +107,6 @@ void S3BucketMetadata::load_user_bucket() {
 
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3BucketMetadataState::missing;
-
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->get_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_user_bucket_successful, this), std::bind( &S3BucketMetadata::load_user_bucket_failed, this));
 }
@@ -142,8 +142,7 @@ void S3BucketMetadata::create_account_bucket_index() {
   printf("Called S3BucketMetadata::create_account_bucket_index\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
-
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->create_index(get_account_index_name(), std::bind( &S3BucketMetadata::create_account_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_bucket_index_failed, this));
 }
 
@@ -168,7 +167,7 @@ void S3BucketMetadata::create_account_user_bucket_index() {
   // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->create_index(get_account_user_index_name(), std::bind( &S3BucketMetadata::create_account_user_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_user_bucket_index_failed, this));
 }
 
@@ -199,7 +198,7 @@ void S3BucketMetadata::save_account_bucket() {
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = request->get_account_id();
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(get_account_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_account_bucket_successful, this), std::bind( &S3BucketMetadata::save_account_bucket_failed, this));
 }
 
@@ -220,7 +219,7 @@ void S3BucketMetadata::save_user_bucket() {
   // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(get_account_user_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_user_bucket_successful, this), std::bind( &S3BucketMetadata::save_user_bucket_failed, this));
 }
 
@@ -249,7 +248,7 @@ void S3BucketMetadata::remove(std::function<void(void)> on_success, std::functio
 void S3BucketMetadata::remove_account_bucket() {
   printf("Called S3BucketMetadata::remove_account_bucket\n");
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_account_bucket_successful, this), std::bind( &S3BucketMetadata::remove_account_bucket_failed, this));
 }
 
@@ -268,7 +267,7 @@ void S3BucketMetadata::remove_account_bucket_failed() {
 void S3BucketMetadata::remove_user_bucket() {
   printf("Called S3BucketMetadata::remove_user_bucket\n");
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_user_bucket_successful, this), std::bind( &S3BucketMetadata::remove_user_bucket_failed, this));
 }
 

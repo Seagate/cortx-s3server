@@ -58,6 +58,7 @@ private:
   S3BucketACL bucket_ACL;
 
   std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 

@@ -40,10 +40,13 @@ int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
   size_t i;
   printf("Called free_basic_op_ctx\n");
   for (i = 0; i < ctx->op_count; i++) {
+    if(ctx->ops[i] == NULL)
+      continue;
     m0_clovis_op_fini(ctx->ops[i]);
     m0_clovis_op_free(ctx->ops[i]);
   }
-  m0_clovis_entity_fini(&ctx->obj->ob_entity);
+  if(ctx->obj != NULL)
+    m0_clovis_entity_fini(&ctx->obj->ob_entity);
   free(ctx->ops);
   free(ctx->cbs);
   free(ctx->obj);
@@ -115,10 +118,15 @@ int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
   printf("Called free_basic_idx_op_ctx\n");
   size_t i = 0;
   for (i = 0; i < ctx->idx_count; i++) {
+    if(ctx->ops[i] == NULL) {
+      continue;
+    }
     m0_clovis_op_fini(ctx->ops[i]);
     m0_clovis_op_free(ctx->ops[i]);
   }
-  m0_clovis_entity_fini(&ctx->idx->in_entity);
+  if(ctx->idx != NULL && ctx->idx->in_entity.en_sm.sm_state != 0) {
+    m0_clovis_entity_fini(&ctx->idx->in_entity);
+  }
   free(ctx->ops);
   free(ctx->cbs);
   free(ctx->idx);

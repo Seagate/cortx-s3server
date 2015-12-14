@@ -13,21 +13,20 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original author:  Rajesh Nambiar <rajesh.nambiar@seagate.com>
+ * Original creation date: 22-Nov-2015
  */
 
-#include "s3_post_to_main_loop.h"
+#pragma once
 
-void S3PostToMainLoop::operator()(user_event_on_main_loop callback) {
-  struct event *ev_user = NULL;
-  struct event_base* base = request->get_evbase();
-  if(base == NULL) {
-    // TODO -- Have logging with log level FATAL
-    printf("ERROR: event base is NULL\n");
-    return;
-  }
-  ev_user = event_new(base, -1, EV_WRITE|EV_READ, callback, context);
-  event_active(ev_user, EV_READ|EV_WRITE, 1);
-}
+#ifndef __MERO_FE_S3_UT_MOCK_S3_CLOVIS_KVS_WRITER_H__
+#define __MERO_FE_S3_UT_MOCK_S3_CLOVIS_KVS_WRITER_H__
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
+public:
+  MockS3ClovisKVSWriter(std::shared_ptr<S3RequestObject>req, std::shared_ptr<ClovisAPI>s3_clovis_api) : S3ClovisKVSWriter(req, s3_clovis_api) {}
+};
+#endif

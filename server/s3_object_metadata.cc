@@ -32,6 +32,8 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req) : reque
   object_name = request->get_object_name();
   state = S3ObjectMetadataState::empty;
 
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+
   object_key_uri = bucket_name + "\\" + object_name;
 
   // Set the defaults
@@ -153,7 +155,7 @@ void S3ObjectMetadata::create_bucket_index() {
   // Mark missing as we initiate write, in case it fails to write.
   state = S3ObjectMetadataState::missing;
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->create_index(get_bucket_index_name(), std::bind( &S3ObjectMetadata::create_bucket_index_successful, this), std::bind( &S3ObjectMetadata::create_bucket_index_failed, this));
 }
 
@@ -180,7 +182,7 @@ void S3ObjectMetadata::save_metadata() {
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(get_bucket_index_name(), object_name, this->to_json(), std::bind( &S3ObjectMetadata::save_metadata_successful, this), std::bind( &S3ObjectMetadata::save_metadata_failed, this));
 }
 
@@ -203,7 +205,7 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::functio
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request);
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(get_bucket_index_name(), object_name, std::bind( &S3ObjectMetadata::remove_successful, this), std::bind( &S3ObjectMetadata::remove_failed, this));
 }
 
