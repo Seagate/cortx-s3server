@@ -1,0 +1,4 @@
+host : 127.0.0.1
+port : 389
+login_dn : cn=admin,dc=seagate,dc=com
+password : seagate

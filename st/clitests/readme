@@ -1,3 +1,4 @@
+s3cmd_spec.py :
 
 What does it test:
 - create bucket
@@ -10,14 +11,44 @@ What does it test:
 - Delete Buckets.
 - All above under 2 scenarios: pathstyle s3 uri and virtualhoststyle s3 uri
 
+auth_spec.py :
+
+What does it test:
+- Create account
+- Create, Delete, List and Update User
+- Create, Delete, List and Update Access Key
+- Create, Delete and List Roles
+- Create, Delete, List and Update SAML Provider
+- Get Federation Token.
+
 Assumptions:
 You have clean setup without a test bucket name 'seagate_bucket'
 Following access key pair is assumed, if your setup has different,
 please update below mentioned s3cfg files.
 
+System tests for auth server uses the python client 'pyclient'.
+Ensure you have all the dependencies installed for pyclient.
+
+Python Version 3.5 (package name - python3.5) and virtualenv are required.
+
+How to setup virtual env?
+- Install virtual env via pip
+sudo pip install virtualenv
+
+- Go to the directory where you want to create virtual environment directory.
+Ex - cd /home/seagate
+
+- Create a new virtual env called mero_st which uses python3.5
+sudo virtualenv -p /usr/local/bin/python3.5 mero_st
+
+- Change the python source via virtualenv
+sudo source mero_st/bin/activate
+
+- To deacticate virtual env run
+sudo deactivate mero_st
+
 Dependencies:
 Required scripttest.
-
 sudo pip install scripttest
 
 How to run?
@@ -25,5 +56,8 @@ How to run?
 - Update access keys in pathstyle.s3cfg and virtualhoststyle.s3cfg if required.
 - Update /etc/hosts file to add following entry for tests.
   127.0.0.1 seagate_bucket.s3.seagate.com s3.seagate.com
+  127.0.0.1 iam.seagate.com sts.seagate.com
+- Ensure you have sourced mero_st (python version 3.5) with virtualenv.
 - cd to clitests directory
 - run $ python s3cmd_spec.py
+- run $ python auth_spec.py

@@ -22,16 +22,19 @@ package com.seagates3.aws.request;
 import java.util.Map;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
 
 import com.seagates3.model.ClientRequestToken;
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.util.CharsetUtil;
 
 public class AWSRequestParserV4 extends AWSRequestParser {
 
     @Override
-    public ClientRequestToken parse(HttpRequest httpRequest) {
+    public ClientRequestToken parse(FullHttpRequest httpRequest) {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
         clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
+        clientRequestToken.setRequestPayload(getRequestPayload(httpRequest));
 
         parseRequestHeaders(httpRequest, clientRequestToken);
 
@@ -46,6 +49,12 @@ public class AWSRequestParserV4 extends AWSRequestParser {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
         clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
 
+        if(requestBody.get("RequestPayload") != null) {
+            clientRequestToken.setRequestPayload(requestBody.get("RequestPayload"));
+        } else {
+            clientRequestToken.setRequestPayload("");
+        }
+
         parseRequestHeaders(requestBody, clientRequestToken);
 
         authHeaderParser(requestBody.get("Authorization"), clientRequestToken);
@@ -53,13 +62,13 @@ public class AWSRequestParserV4 extends AWSRequestParser {
         return clientRequestToken;
     }
 
-    /*
+    /**
      * Authorization header is in following format (Line break added for readability)
      * Authorization: algorithm Credential=access key ID/credential scope,
      * SignedHeaders=SignedHeaders, Signature=signature
      *
      * Sample Authorization Header
-     * Authorization:AWS4-HMAC-SHA256 Credential=AKIAJTYX36YCKQSAJT7Q/20150810/us-east-1/iam/aws4_request,
+     * Authorization: AWS4-HMAC-SHA256 Credential=AKIAJTYX36YCKQSAJT7Q/20150810/us-east-1/iam/aws4_request,
      * SignedHeaders=content-type;host;user-agent;x-amz-content-sha256;x-amz-date,
      * Signature=b751427a69f5bb76fb171fec45bdb1e8f664fac7f7c23c983f9c7361bb382d76
      *
@@ -69,6 +78,8 @@ public class AWSRequestParserV4 extends AWSRequestParser {
      * tokens[2] : Signature=signature
      *
      * Credential Scope = date/region/service/aws4_request
+     * @param authorizationHeaderValue Authorization Header
+     * @param clientRequestToken
      */
     @Override
     public void authHeaderParser(String authorizationHeaderValue,
@@ -93,5 +104,19 @@ public class AWSRequestParserV4 extends AWSRequestParser {
         subTokens = tokens[1].split("=");
         clientRequestToken.setSignedHeaders(subTokens[1]);
         clientRequestToken.setSignature(tokens[2].split("=")[1]);
+    }
+
+    /**
+     * Get the request pay load from HTTP Request object.
+     *
+     * @param httpRequest HTTP Request object.
+     * @return request payload.
+     */
+    private String getRequestPayload(FullHttpRequest httpRequest) {
+        ByteBuf content = httpRequest.content();
+        StringBuilder payload = new StringBuilder();
+        payload.append(content.toString(CharsetUtil.UTF_8));
+
+        return payload.toString();
     }
 }

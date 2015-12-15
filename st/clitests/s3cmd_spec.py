@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from framework import Config
+from framework import PyCliTest
 from s3cmd import S3cmdTest
 
 # Helps debugging
@@ -8,6 +9,10 @@ from s3cmd import S3cmdTest
 # Config.dummy_run = True
 
 #  ***MAIN ENTRY POINT
+
+# Run before all to setup the test environment.
+print("Configuring LDAP")
+PyCliTest('Before_all').before_all()
 
 # Path style tests.
 Config.config_file = "pathstyle.s3cfg"

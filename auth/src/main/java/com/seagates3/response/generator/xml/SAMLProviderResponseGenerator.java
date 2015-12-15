@@ -78,8 +78,47 @@ public class SAMLProviderResponseGenerator extends XMLResponseGenerator {
         return success("DeleteSAMLProvider");
     }
 
-    public ServerResponse update() {
-        return success("UpdateSAMLProvider");
+    public ServerResponse update(String name) {
+        Document doc;
+        try {
+            doc = xmlUtil.createNewDoc();
+        } catch (ParserConfigurationException ex) {
+            return null;
+        }
+
+        Element rootElement = doc.createElement("UpdateSAMLProviderResponse");
+        Attr attr = doc.createAttribute("xmlns");
+        attr.setValue(IAM_XMLNS);
+        rootElement.setAttributeNode(attr);
+        doc.appendChild(rootElement);
+
+        Element updateUserResponse = doc.createElement("UpdateSAMLProviderResult");
+        rootElement.appendChild(updateUserResponse);
+
+        String arnValue = String.format("arn:aws:iam::1:saml-metadata/%s", name);
+        Element arn = doc.createElement("SAMLProviderArn");
+        arn.appendChild(doc.createTextNode(arnValue));
+        updateUserResponse.appendChild(arn);
+
+        Element responseMetaData = doc.createElement("ResponseMetadata");
+        rootElement.appendChild(responseMetaData);
+
+        Element requestId = doc.createElement("RequestId");
+        requestId.appendChild(doc.createTextNode("0000"));
+        responseMetaData.appendChild(requestId);
+
+        String responseBody;
+        try {
+            responseBody = xmlUtil.docToString(doc);
+            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.CREATED,
+                                                responseBody);
+
+            return serverResponse;
+        } catch (TransformerException ex) {
+            Logger.getLogger(AccountResponseGenerator.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return null;
     }
 
     public ServerResponse list(SAMLProvider[] samlProviderList) {

@@ -27,7 +27,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 
 import com.seagates3.authserver.AuthServerConfig;
@@ -38,7 +38,7 @@ public abstract class AWSRequestParser {
     /*
      * Parse the client request.
      */
-    public abstract ClientRequestToken parse(HttpRequest httpRequest);
+    public abstract ClientRequestToken parse(FullHttpRequest httpRequest);
 
     public abstract ClientRequestToken parse(Map<String, String> requestBody);
 
@@ -51,7 +51,7 @@ public abstract class AWSRequestParser {
     /*
      * Parse the request headers.
      */
-    public void parseRequestHeaders(HttpRequest httpRequest,
+    public void parseRequestHeaders(FullHttpRequest httpRequest,
             ClientRequestToken clientRequestToken) {
         HttpHeaders httpHeaders = httpRequest.headers();
         Map<String, String> requestHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

@@ -21,7 +21,7 @@ package com.seagates3.aws.request;
 
 import java.util.Map;
 
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 
 import com.seagates3.model.ClientRequestToken;
 
@@ -30,7 +30,7 @@ public class ClientRequestParser {
     private static final String REQUEST_PARSER_PACKAGE = "com.seagates3.aws.request";
     private static final String AWS_V2_AUTHRORIAZATION_PATTERN = "AWS [A-Z0-7]+:[a-zA-Z0-9+/=]+";
 
-    public static ClientRequestToken parse(HttpRequest httpRequest,
+    public static ClientRequestToken parse(FullHttpRequest httpRequest,
             Map<String, String> requestBody) {
         String requestAction = requestBody.get("Action");
         String authorizationHeader;

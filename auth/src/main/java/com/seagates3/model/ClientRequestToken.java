@@ -106,6 +106,11 @@ public class ClientRequestToken {
      */
     Boolean virtualHost;
 
+    /**
+     * HTTP Request payload.
+     */
+    String requestPayload;
+
 
     /*
      * Return the Access Key Id of the requestor.
@@ -203,6 +208,15 @@ public class ClientRequestToken {
      */
     public String getUri() {
         return uri;
+    }
+
+    /**
+     *Getter for request payload.
+     *
+     * @return HTTP request payload
+     */
+    public String getRequestPayload() {
+        return requestPayload;
     }
 
     /*
@@ -312,5 +326,14 @@ public class ClientRequestToken {
      */
     public void setVirtualHost(Boolean virtualHost) {
         this.virtualHost = virtualHost;
+    }
+
+    /**
+     * Setter for request payload.
+     *
+     * @param requestPayload
+     */
+    public void setRequestPayload(String requestPayload) {
+        this.requestPayload = requestPayload;
     }
 }

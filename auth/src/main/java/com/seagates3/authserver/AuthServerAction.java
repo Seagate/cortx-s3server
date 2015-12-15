@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.HashMap;
 
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 import com.seagates3.aws.request.ClientRequestParser;
@@ -58,7 +58,7 @@ public class AuthServerAction {
      * Authenticate the requestor first.
      * If the requestor is authenticated, then perform the requested action.
      */
-    public ServerResponse serve(HttpRequest httpRequest,
+    public ServerResponse serve(FullHttpRequest httpRequest,
             Map<String, String> requestBody) {
 
         String requestAction = requestBody.get("Action");

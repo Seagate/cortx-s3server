@@ -1,0 +1,3 @@
+iam: http://iam.seagate.com:8085
+sts: http://sts.seagate.com:8085
+s3: http://s3.seagate.com:8081

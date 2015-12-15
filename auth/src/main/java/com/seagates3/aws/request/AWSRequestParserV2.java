@@ -22,14 +22,14 @@ package com.seagates3.aws.request;
 import java.util.Map;
 
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 
 import com.seagates3.model.ClientRequestToken;
 
 public class AWSRequestParserV2 extends AWSRequestParser{
 
     @Override
-    public ClientRequestToken parse(HttpRequest httpRequest) {
+    public ClientRequestToken parse(FullHttpRequest httpRequest) {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
         clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V2);
 

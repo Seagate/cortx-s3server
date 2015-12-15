@@ -19,6 +19,12 @@
 
 package com.seagates3.dao.ldap;
 
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
 import com.novell.ldap.LDAPConnection;
@@ -29,14 +35,9 @@ import com.novell.ldap.LDAPSearchResults;
 
 import com.seagates3.dao.SAMLProviderDAO;
 import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.SAMLProvider;
 import com.seagates3.model.KeyDescriptor;
+import com.seagates3.model.SAMLProvider;
 import com.seagates3.util.DateUtil;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SAMLProviderImpl implements SAMLProviderDAO {
 
@@ -52,7 +53,7 @@ public class SAMLProviderImpl implements SAMLProviderDAO {
         String[] attrs = {"issuer", "exp"};
         String ldapBase = String.format("name=%s,ou=idp,o=%s,ou=accounts,%s", name,
                 accountName, LdapUtils.getBaseDN());
-        String filter = String.format("(name=%s)", name);
+        String filter = String.format("name=%s", name);
 
         LDAPSearchResults ldapResults;
         try {

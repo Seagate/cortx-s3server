@@ -1,0 +1,35 @@
+APIs supported
+- Create account
+- Create, Delete, List and Update User
+- Create, Delete, List and Update Access Key
+- Create, Delete and List Roles
+- Create, Delete, List and Update SAML Provider
+- Get Federation Token.
+- Assume role with SAML.
+
+Python Version 3.5 and "virtualenv" are required.
+
+How to setup virtual env?
+- Install virtual env via pip
+sudo pip install virtualenv
+
+- Go to the directory where you want to create virtual environment directory.
+Ex - cd /home/seagate
+
+- Create a new virtual env called mero_st which uses python3.5
+sudo virtualenv -p /usr/local/bin/python3.5 mero_st
+
+- Change the python source via virtualenv
+sudo source mero_st/bin/activate
+
+- To deacticate virtual env run
+sudo deactivate mero_st
+
+Dependencies:
+Required boto3, botocore, pyyaml, xmltodict.
+- sudo pip install boto3 botocore pyyaml xmltodict
+
+Usage:
+(Before running pyclient, activate python3.5 via virtual env.)
+
+python pyclient <command> <options>

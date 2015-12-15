@@ -20,6 +20,8 @@
 package com.seagates3.aws.sign;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,7 +81,7 @@ public class AWSV4Sign implements AWSSign{
                 clientRequestToken.getUri(), clientRequestToken.isVirtualHost());
         canonicalQuery = getCanonicalQuery(clientRequestToken.getQuery());
         canonicalHeader = createCanonicalHeader(clientRequestToken);
-        hashedPayload = clientRequestToken.getRequestHeaders().get("x-amz-content-sha256");
+        hashedPayload = createHashedPayload(clientRequestToken);
 
         canonicalRequest = String.format("%s\n%s\n%s\n%s\n%s\n%s",
                 httpMethod,
@@ -90,6 +92,35 @@ public class AWSV4Sign implements AWSSign{
                 hashedPayload);
 
         return canonicalRequest;
+    }
+
+    /**
+     * Calculate the hash of Payload using the following formula.
+     * HashedPayload = Lowercase(HexEncode(Hash(requestPayload)))
+     *
+     * @param clientRequestToken
+     * @return Hashed Payload
+     */
+    private String createHashedPayload(ClientRequestToken clientRequestToken) {
+        if(clientRequestToken.getRequestHeaders().get("x-amz-content-sha256") != null) {
+            return clientRequestToken.getRequestHeaders().get("x-amz-content-sha256");
+        } else {
+            String hashMethodName = AWSSign.AWSHashFunction.get(
+                                        clientRequestToken.getSigningAlgorithm());
+            Method method;
+            String hashedPayload = "";
+            try {
+                method = BinaryUtil.class.getMethod(hashMethodName, byte[].class);
+                byte[] hashedText = (byte[]) method.invoke(null,
+                        clientRequestToken.getRequestPayload().getBytes());
+                hashedPayload = new String(BinaryUtil.encodeToHex(hashedText)).toLowerCase();
+            } catch (NoSuchMethodException | SecurityException |
+                    IllegalAccessException | IllegalArgumentException |
+                    InvocationTargetException ex) {
+            }
+
+            return hashedPayload;
+        }
     }
 
     /*
@@ -267,7 +298,7 @@ public class AWSV4Sign implements AWSSign{
         return uri;
     }
 
-    /*
+    /**
      * To construct the canonical query string, complete the following steps:
      *
      * 1. URI-encode each parameter name and value according to the following rules:

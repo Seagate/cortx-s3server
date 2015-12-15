@@ -19,7 +19,10 @@
 
 package com.seagates3.controller;
 
+import java.security.cert.CertificateException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.parse.XMLParserException;
@@ -28,14 +31,11 @@ import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.SAMLProviderDAO;
 import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.SAMLProvider;
 import com.seagates3.model.Requestor;
+import com.seagates3.model.SAMLProvider;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.xml.SAMLProviderResponseGenerator;
 import com.seagates3.util.SAMLUtil;
-import java.security.cert.CertificateException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SAMLProviderController extends AbstractController {
     SAMLProviderDAO samlProviderDao;
@@ -74,8 +74,10 @@ public class SAMLProviderController extends AbstractController {
 
     @Override
     public ServerResponse delete() throws DataAccessException {
+        String samlProviderName = getSAMLProviderName(requestBody.get("SAMLProviderArn"));
+
         SAMLProvider samlProvider = samlProviderDao.find(
-                requestor.getAccountName(), requestBody.get("SAMLProviderArn"));
+                requestor.getAccountName(), samlProviderName);
 
         if(!samlProvider.exists()) {
             return samlProviderResponse.noSuchEntity();
@@ -103,8 +105,10 @@ public class SAMLProviderController extends AbstractController {
      */
     @Override
     public ServerResponse update() throws DataAccessException {
+        String samlProviderName = getSAMLProviderName(requestBody.get("SAMLProviderArn"));
+
         SAMLProvider samlProvider = samlProviderDao.find(
-                requestor.getAccountName(), requestBody.get("SAMLProviderArn"));
+                requestor.getAccountName(), samlProviderName);
 
         String samlMetadata = requestBody.get("SAMLMetadataDocument");
 
@@ -122,6 +126,18 @@ public class SAMLProviderController extends AbstractController {
 
         samlProviderDao.update(samlProvider, requestBody.get("SAMLMetadataDocument"));
 
-        return samlProviderResponse.update();
+        return samlProviderResponse.update(samlProviderName);
+    }
+
+    /**
+     * TODO
+     * Write a generic implementation to parse ARN.
+     *
+     * Get the SAML provider name from ARN.
+     * @param arn SAML provider ARN
+     * @return SAML provider name
+     */
+    private String getSAMLProviderName(String arn) {
+        return arn.split("/")[1];
     }
 }

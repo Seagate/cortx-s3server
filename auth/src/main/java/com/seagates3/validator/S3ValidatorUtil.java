@@ -38,7 +38,11 @@ public class S3ValidatorUtil {
     final static int MIN_ARN_LENGTH = 20;
     final static int MIN_SAML_METADATA_LENGTH = 1000;
 
-    final static String ACCESS_KEY_ID_PATTERN = "[\\w]+";
+    /**
+     * TODO
+     * Fix ACCESS_KEY_ID_PATTERN. It should be "[\\w]+"
+     */
+    final static String ACCESS_KEY_ID_PATTERN = "[\\w-]+";
     final static String ASSUME_ROLE_POLICY_DOC_PATTERN = "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+";
     final static String MARKER_PATTERN = "[\\u0020-\\u00FF]+";
     final static String NAME_PATTERN = "[\\w+=,.@-]+";

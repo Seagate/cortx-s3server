@@ -69,7 +69,7 @@ public class AccessKeyController extends AbstractController {
             return accessKeyResponse.noSuchEntity(errorMessage);
         }
 
-        if(accessKeyDAO.getCount(userName) == 2) {
+        if(accessKeyDAO.getCount(user.getId()) == 2) {
             return accessKeyResponse.accessKeyQuotaExceeded();
         }
 

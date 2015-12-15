@@ -1,0 +1,65 @@
+# vi ldap-init.ldif
+
+## DEFINE DIT ROOT/BASE/SUFFIX ####
+## uses RFC 2377 format
+## replace idevelopment and info as necessary below
+## or for experimentation, leave as is
+
+## dcObject is an AUXILIARY objectclass and MUST
+## have a STRUCTURAL objectclass (organization in this case)
+
+dn: dc=seagate,dc=com
+dc: seagate
+o: seagate
+description: Root entry for seagate.com.
+objectclass: top
+objectclass: dcObject
+objectclass: organization
+
+dn: dc=s3,dc=seagate,dc=com
+dc: s3
+o: s3
+description: Seagate S3 directory.
+objectclass: top
+objectclass: dcObject
+objectclass: organization
+
+dn: ou=accounts,dc=s3,dc=seagate,dc=com
+ou: accounts
+objectclass: organizationalunit
+
+dn: ou=accesskeys,dc=s3,dc=seagate,dc=com
+ou: accesskeys
+objectclass: organizationalunit
+
+dn: o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
+o: mango_org
+objectclass: s3Account
+
+dn: ou=users,o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: users
+objectclass: organizationalunit
+
+dn: ou=idp,o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: idp
+objectclass: organizationalunit
+
+dn: id=123,ou=users,o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
+id: 123
+o: mango_org
+cn: kd
+objectclass: iamUser
+
+dn: ak=AKIAJPINPFRBTPAYOGNA,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: AKIAJPINPFRBTPAYOGNA
+id: 123
+sk: ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYZ5Hd
+status: Active
+objectclass: accessKey
+
+dn: ak=AKIAJTYX36YCKQSAJT7Q,ou=accesskeys,dc=s3,dc=seagate,dc=com
+ak: AKIAJTYX36YCKQSAJT7Q
+id: 123
+sk: A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt
+status: Active
+objectclass: accessKey
