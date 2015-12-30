@@ -39,6 +39,10 @@ size_t S3ClovisConfig::get_clovis_block_size() {
     return clovis_block_size;
 }
 
+size_t S3ClovisConfig::get_clovis_write_payload_size() {
+    return clovis_block_size * 100;
+}
+
 size_t S3ClovisConfig::get_clovis_idx_fetch_count() {
   return clovis_idx_fetch_count;
 }

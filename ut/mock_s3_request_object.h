@@ -29,7 +29,7 @@
 
 class MockS3RequestObject : public S3RequestObject {
   public:
-  MockS3RequestObject(evhtp_request_t *req) : S3RequestObject(req) {}
+  MockS3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr) : S3RequestObject(req, evhtp_obj_ptr) {}
   MOCK_METHOD0(c_get_full_path, const char *());
   MOCK_METHOD0(get_host_header, std::string());
   MOCK_METHOD0(http_verb, S3HttpVerb());

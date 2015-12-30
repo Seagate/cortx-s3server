@@ -23,6 +23,7 @@
 S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req), invalid_request(false) {
   task_iteration_index = 0;
   error_message = "";
+  state = S3ActionState::start;
   setup_steps();
 }
 
@@ -38,10 +39,12 @@ void S3Action::setup_steps() {
 
 void S3Action::start() {
   task_iteration_index = 0;
+  state = S3ActionState::running;
   task_list[0]();
 }
 // Step to next async step.
 void S3Action::next() {
+  resume();
   if (task_iteration_index < task_list.size()) {
     task_list[++task_iteration_index]();  // Call the next step
   } else {
@@ -51,24 +54,33 @@ void S3Action::next() {
 
 void S3Action::done() {
   task_iteration_index = 0;
+  state = S3ActionState::complete;
 }
 
 void S3Action::pause() {
   // Set state as Paused.
+  state = S3ActionState::paused;
 }
 
 void S3Action::resume() {
   // Resume only if paused.
+  state = S3ActionState::running;
 }
 
 void S3Action::abort() {
   // Mark state as Aborted.
   task_iteration_index = 0;
+  state = S3ActionState::stopped;
 }
 
 void S3Action::check_authentication() {
   check_auth = std::make_shared<S3AuthClient>(request);
-  check_auth->check_authentication(std::bind( &S3Action::next, this), std::bind( &S3Action::check_authentication_failed, this));
+  check_auth->check_authentication(std::bind( &S3Action::check_authentication_successful, this), std::bind( &S3Action::check_authentication_failed, this));
+}
+
+void S3Action::check_authentication_successful() {
+  printf("Called S3Action::check_authentication_successful\n");
+  next();
 }
 
 void S3Action::check_authentication_failed() {

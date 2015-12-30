@@ -22,12 +22,16 @@
 #ifndef __MERO_FE_S3_SERVER_S3_PUT_BUCKET_ACTION_H__
 #define __MERO_FE_S3_SERVER_S3_PUT_BUCKET_ACTION_H__
 
+#include <vector>
+#include <tuple>
+
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 
 class S3PutBucketAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
+  std::string request_content;
   std::string location_constraint;  // Received in request body.
 public:
   S3PutBucketAction(std::shared_ptr<S3RequestObject> req);
@@ -35,6 +39,10 @@ public:
   void setup_steps();
 
   void validate_request();
+
+  void consume_incoming_content();
+  void validate_request_body(std::string content);
+
   void read_metadata();
   void create_bucket();
   void send_response_to_s3_client();

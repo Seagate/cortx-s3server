@@ -42,9 +42,6 @@ EXTERN_C_BLOCK_BEGIN
 #include <stdint.h>
 #include <errno.h>
 
-/* libevhtp */
-#include <evhtp.h>
-
 #include <sys/stat.h>
 #include <math.h>
 

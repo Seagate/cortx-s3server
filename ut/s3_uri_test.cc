@@ -29,7 +29,8 @@ class S3URITEST : public testing::Test {
    protected:
    S3URITEST() {
      evhtp_request_t * req = NULL;
-     ptr_mock_request = std::make_shared<MockS3RequestObject> (req);
+     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+     ptr_mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
    }
 
    std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -72,7 +73,8 @@ TEST_F(S3PathStyleURITEST, ServiceTest) {
 
 TEST_F(S3PathStyleURITEST, BucketTest) {
   evhtp_request_t * req = NULL;
-  std::shared_ptr<MockS3RequestObject> ptr_mock_request = std::make_shared<MockS3RequestObject> (req);
+  EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+  std::shared_ptr<MockS3RequestObject> ptr_mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
   EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
               .Times(4)
               .WillRepeatedly(Return(false));

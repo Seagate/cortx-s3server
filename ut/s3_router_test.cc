@@ -60,7 +60,8 @@ class S3RouterDispatchTest : public testing::Test {
     router = new S3Router(mock_api_handler_factory, uri_factory);
 
     evhtp_request_t * req = NULL;
-    mock_request = std::make_shared<MockS3RequestObject> (req);
+    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
   }
 
   ~S3RouterDispatchTest() {

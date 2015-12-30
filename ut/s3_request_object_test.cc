@@ -35,7 +35,8 @@ class S3RequestObjectTest : public testing::Test {
     // placeholder evbase
     evbase = event_base_new();
     ev_request = evhtp_request_new(dummy_request_cb, evbase);
-    request = new S3RequestObject(ev_request);
+    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    request = new S3RequestObject(ev_request, evhtp_obj_ptr);
   }
 
   ~S3RequestObjectTest() {
@@ -63,6 +64,7 @@ class S3RequestObjectTest : public testing::Test {
       evhtp_headers_add_header(ev_request->headers_in,
                                evhtp_header_new(itr.first.c_str(), itr.second.c_str(), 0, 0));
     }
+    request->initialise(); // reinitialize so proper state can be set
   }
 
   // For simplicity of test we take separate args and not repeat _evhtp_path_new()
@@ -89,6 +91,8 @@ class S3RequestObjectTest : public testing::Test {
 
   void fake_buffer_in(std::string content) {
     evbuffer_add(ev_request->buffer_in, content.c_str(), content.length());
+    // Since we are faking input data, we need to trigger notify on request object.
+    request->notify_incoming_data(ev_request->buffer_in);
   }
 
   // Declares the variables your tests want to use.

@@ -17,6 +17,8 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include <functional>
+
 #include "s3_put_bucket_action.h"
 #include "s3_put_bucket_body.h"
 #include "s3_error_codes.h"
@@ -35,7 +37,32 @@ void S3PutBucketAction::setup_steps(){
 
 void S3PutBucketAction::validate_request() {
   printf("S3PutBucketAction::validate_request\n");
-  S3PutBucketBody bucket(request->get_full_body_content_as_string());
+  request->resume();
+  if (request->get_content_length() > 0) {
+    if (request->has_all_body_content()) {
+      validate_request_body(request->get_full_body_content_as_string());
+    } else {
+      // Start streaming, logically pausing action till we get data.
+      request->listen_for_incoming_data(
+          std::bind(&S3PutBucketAction::consume_incoming_content, this),
+          4096 /* xmls will mostly be less, ~1k, but still */
+        );
+    }
+  } else {
+    validate_request_body("");
+  }
+}
+
+void S3PutBucketAction::consume_incoming_content() {
+  printf("Called S3PutBucketAction::consume_incoming_content\n");
+  if (request->has_all_body_content()) {
+    validate_request_body(request->get_full_body_content_as_string());
+  } // else just wait till entire body arrives. rare.
+}
+
+void S3PutBucketAction::validate_request_body(std::string content) {
+  printf("S3PutBucketAction::validate_request_body\n");
+  S3PutBucketBody bucket(content);
   if (bucket.isOK()) {
     location_constraint = bucket.get_location_constraint();
     next();

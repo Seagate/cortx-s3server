@@ -22,6 +22,12 @@
 #include <openssl/md5.h>
 #include "murmur3_hash.h"
 
+#include <tuple>
+#include <vector>
+
+#include <event2/thread.h>
+
+#include "evhtp_wrapper.h"
 #include "s3_router.h"
 #include "s3_request_object.h"
 #include "s3_error_codes.h"
@@ -98,17 +104,48 @@ void get_oid_using_hash(const char* url, struct m0_uint128 *object_id)
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
-  S3Router *router = (S3Router*)a;
-  std::shared_ptr<S3RequestObject> s3_request = std::make_shared<S3RequestObject> (req);
-  router->dispatch(s3_request);
+  // placeholder, required to complete the request processing.
 }
 
+extern "C" evhtp_res
+dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
+    printf("RECEIVED Request headers. Create S3Request with arg = %s\n", (char*)arg);
 
-// static evhtp_res
-// set_my_connection_handlers(evhtp_connection_t * conn, void * arg) {
-//     // evhtp_set_hook(&conn->hooks, evhtp_hook_on_read, print_data, "derp");
-//     return EVHTP_RES_OK;
-// }
+    S3Router *router = (S3Router*)arg;
+
+    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    std::shared_ptr<S3RequestObject> s3_request = std::make_shared<S3RequestObject> (req, evhtp_obj_ptr);
+
+    req->cbarg = s3_request.get();
+
+    router->dispatch(s3_request);
+
+    return EVHTP_RES_OK;
+}
+
+extern "C" evhtp_res
+process_request_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
+  printf("RECEIVED Request body for sock = %d\n", req->conn->sock);
+  evbuf_t            * s3_buf = evbuffer_new();
+
+  evbuffer_add_buffer(s3_buf, buf);
+  S3RequestObject* request = (S3RequestObject*)req->cbarg;
+
+  request->notify_incoming_data(s3_buf);
+
+  printf("got %zu bytes of data for sock = %d\n", evbuffer_get_length(buf), req->conn->sock);
+
+  return EVHTP_RES_OK;
+}
+
+extern "C" evhtp_res
+set_s3_connection_handlers(evhtp_connection_t * conn, void * arg) {
+
+    evhtp_set_hook(&conn->hooks, evhtp_hook_on_headers, (evhtp_hook)dispatch_request, arg);
+    evhtp_set_hook(&conn->hooks, evhtp_hook_on_read, (evhtp_hook)process_request_data, arg);
+
+    return EVHTP_RES_OK;
+}
 
 const char * optstr = "a:p:l:c:s:d:h";
 
@@ -193,6 +230,10 @@ main(int argc, char ** argv) {
     // So we can support queries like s3.com/bucketname?location or ?acl
     evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
 
+    // Main request processing (processing headers & body) is done in hooks
+    evhtp_set_post_accept_cb(htp, set_s3_connection_handlers, router);
+
+    // This handler is just like complete the request processing & respond
     evhtp_set_gencb(htp, s3_handler, router);
 
     /* Initilise mero and Clovis */

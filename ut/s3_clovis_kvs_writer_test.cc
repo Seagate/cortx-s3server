@@ -72,7 +72,8 @@ class S3ClovisKvsWritterTest : public testing::Test {
     S3ClovisKvsWritterTest() {
       evbase = event_base_new();
       req = evhtp_request_new(dummy_request_cb, evbase);
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (req);
+      EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
+      ptr_mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
       ptr_mock_s3clovis = std::make_shared<MockS3Clovis>();
       ptr_mock_cloviskvs_writer = std::make_shared<MockS3ClovisKVSWriter>(ptr_mock_request, ptr_mock_s3clovis);
     }

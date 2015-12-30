@@ -25,6 +25,7 @@
 #include "mock_s3_asyncop_context_base.h"
 #include "mock_s3_request_object.h"
 #include "mock_s3_auth_client.h"
+#include "mock_evhtp_wrapper.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -72,7 +73,8 @@ class S3AuthClientContextTest : public testing::Test {
   protected:
     S3AuthClientContextTest() {
       evhtp_request_t * req = NULL;
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (req);
+      EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
+      ptr_mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
       success_callback = NULL;
       failed_callback = NULL;
       p_authtest = new S3AuthClientContext(ptr_mock_request, success_callback, failed_callback);
@@ -92,7 +94,8 @@ class S3AuthClientTest : public testing::Test {
   protected:
     S3AuthClientTest() {
       evhtp_request_t * req = NULL;
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (req);
+      EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+      ptr_mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
       p_authclienttest = new S3AuthClient(ptr_mock_request);
       auth_client_op_context = (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
       auth_client_op_context->evbase = event_base_new();
@@ -115,7 +118,8 @@ class S3AuthClientCheckTest : public testing::Test {
     S3AuthClientCheckTest() {
       evbase = event_base_new();
       req = evhtp_request_new(dummy_request_cb, evbase);
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (req);
+      EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+      ptr_mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
       ptr_mock_auth_context = std::make_shared<MockS3AuthClientContext> (ptr_mock_request, std::bind(dummy_function), std::bind(dummy_function));
       ptr_auth_client = std::make_shared<MockS3AuthClient>(ptr_mock_request);
     }
@@ -154,7 +158,8 @@ class S3AuthResponseTest : public testing::Test {
     S3AuthResponseTest() {
       evbase = event_base_new();
       ev_request = evhtp_request_new(dummy_request_cb, evbase);
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (ev_request);
+      EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+      ptr_mock_request = std::make_shared<MockS3RequestObject> (ev_request, evhtp_obj_ptr);
       ptr_mock_async = new MockS3AsyncOpContextBase(ptr_mock_request, std::bind(dummy_function), std::bind(dummy_function));
   }
   evhtp_request_t *ev_request;

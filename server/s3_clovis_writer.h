@@ -23,11 +23,13 @@
 #define __MERO_FE_S3_SERVER_S3_CLOVIS_WRITER_H__
 
 #include <memory>
+#include <deque>
 #include <functional>
 
 #include "s3_request_object.h"
 #include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_md5_hash.h"
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
@@ -99,6 +101,14 @@ private:
   S3ClovisWriterOpState state;
 
   std::string content_md5;
+  uint64_t last_index;
+
+  // md5 for the content written to clovis.
+  MD5hash  md5crypt;
+
+  // TODO remove, just for debugging.
+  size_t total_written;
+
 public:
   //struct m0_uint128 id;
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req);
@@ -107,7 +117,14 @@ public:
     return state;
   }
 
+  // This concludes the md5 calculation
   std::string get_content_md5() {
+    // Complete MD5 computation and remember
+    if (content_md5.empty()) {
+      md5crypt.Finalize();
+      content_md5 = md5crypt.get_md5_string();
+    }
+    printf("content_md5 of data written = %s\n", content_md5.c_str());
     return content_md5;
   }
 
@@ -117,7 +134,8 @@ public:
   void create_object_failed();
 
   // Async save operation.
-  void write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed,
+      S3AsyncBufferContainer& buffer);
   void write_content_successful();
   void write_content_failed();
 
@@ -127,7 +145,8 @@ public:
   void delete_object_failed();
 
   // xxx remove this
-  void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx);
+  void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
+      std::deque< std::tuple<void*, size_t> >& data_items, size_t clovis_block_count);
 };
 
 #endif

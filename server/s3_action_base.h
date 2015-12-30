@@ -29,6 +29,14 @@
 #include "s3_auth_client.h"
 #include "s3_request_object.h"
 
+enum class S3ActionState {
+  start,
+  running,
+  complete,
+  paused,
+  stopped,  // Aborted
+};
+
 // Derived Action Objects will have steps (member functions)
 // required to complete the action.
 // All member functions should perform an async operation as
@@ -50,6 +58,7 @@ private:
   std::shared_ptr<S3AuthClient> check_auth;
 
   std::string error_message;
+  S3ActionState state;
 
 public:
   S3Action(std::shared_ptr<S3RequestObject> req);
@@ -89,6 +98,7 @@ public:
 
   // Common steps for all Actions like Authenticate.
   void check_authentication();
+  void check_authentication_successful();
   void check_authentication_failed();
   void send_response_to_s3_client();
 };
