@@ -31,6 +31,8 @@
 #include "s3_router.h"
 #include "s3_request_object.h"
 #include "s3_error_codes.h"
+#include "s3_perf_logger.h"
+#include "s3_timer.h"
 
 #define WEBSTORE "/home/seagate/webstore"
 
@@ -126,14 +128,21 @@ dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
 extern "C" evhtp_res
 process_request_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
   printf("RECEIVED Request body for sock = %d\n", req->conn->sock);
-  evbuf_t            * s3_buf = evbuffer_new();
-
-  evbuffer_add_buffer(s3_buf, buf);
   S3RequestObject* request = (S3RequestObject*)req->cbarg;
 
-  request->notify_incoming_data(s3_buf);
+  if (request) {
+    evbuf_t            * s3_buf = evbuffer_new();
+    size_t bytes_received = evbuffer_get_length(buf);
 
-  printf("got %zu bytes of data for sock = %d\n", evbuffer_get_length(buf), req->conn->sock);
+    evbuffer_add_buffer(s3_buf, buf);
+
+    request->notify_incoming_data(s3_buf);
+
+    printf("got %zu bytes of data for sock = %d\n", bytes_received, req->conn->sock);
+  } else {
+    evhtp_unset_all_hooks(&req->conn->hooks);
+    printf("S3 request failed, Ignoring data for this request \n");
+  }
 
   return EVHTP_RES_OK;
 }
@@ -216,6 +225,11 @@ main(int argc, char ** argv) {
     // Load Any configs.
     S3ErrorMessages::init_messages();
 
+    // Initilise loggers
+#ifdef S3_ENABLE_PERF
+    S3PerfLogger::initialize();
+#endif
+
     evbase_t * evbase = event_base_new();
     evthread_use_pthreads();
     if (evthread_make_base_notifiable(evbase)<0) {
@@ -262,6 +276,10 @@ main(int argc, char ** argv) {
 
     /* Clean-up */
     fini_clovis();
+#ifdef S3_ENABLE_PERF
+    S3PerfLogger::finalize();
+#endif
+
     delete router;
 
     return 0;

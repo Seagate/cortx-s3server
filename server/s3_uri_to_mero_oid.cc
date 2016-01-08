@@ -19,9 +19,13 @@
 
 #include "s3_uri_to_mero_oid.h"
 #include "murmur3_hash.h"
+#include "s3_timer.h"
+#include "s3_perf_logger.h"
 
 void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
   /* MurMur Hash */
+  S3Timer timer;
+  timer.start();
   size_t len = 0;
   uint64_t hash128_64[2];
 
@@ -35,5 +39,9 @@ void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
   *object_id = M0_CLOVIS_ID_APP;
   object_id->u_hi = hash128_64[0];
   object_id->u_lo = object_id->u_lo & hash128_64[1];
+
+  timer.stop();
+  LOG_PERF("S3UriToMeroOID_ns", timer.elapsed_time_in_nanosec());
+
   return;
 }

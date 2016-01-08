@@ -32,6 +32,7 @@ extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg) {
 
 S3RequestObject::S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr) : ev_req(req), in_headers_copied(false) {
   printf("S3RequestObject created.\n");
+  request_timer.start();
   bucket_name = object_name = user_name = user_id = account_name = account_id = "";
   request_id = "TODO-Gen uuid";
   is_paused = false;
@@ -45,6 +46,11 @@ void S3RequestObject::initialise() {
 
 S3RequestObject::~S3RequestObject(){
   printf("S3RequestObject deleted.\n");
+  request_timer.stop();
+  LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+  if (ev_req) {
+    ev_req->cbarg = NULL;
+  }
 }
 
 S3HttpVerb S3RequestObject::http_verb() {

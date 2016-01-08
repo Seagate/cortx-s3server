@@ -63,6 +63,8 @@ void S3ClovisKVSWriter::create_index(std::string index_name, std::function<void(
   }
   s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
 
+  writer_context->start_timer_for("create_index_op");
+
   s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1);
 }
 
@@ -119,6 +121,9 @@ void S3ClovisKVSWriter::put_keyval(std::string index_name, std::string key, std:
   }
 
   s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+
+  writer_context->start_timer_for("put_keyval");
+
   s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1);
 }
 
@@ -169,6 +174,9 @@ void S3ClovisKVSWriter::delete_keyval(std::string index_name, std::string key, s
   }
 
   s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+
+  writer_context->start_timer_for("delete_keyval");
+
   s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1);
 }
 

@@ -75,6 +75,9 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std:
   }
 
   m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+
+  reader_context->start_timer_for("get_keyval");
+
   m0_clovis_op_launch(idx_ctx->ops, 1);
 }
 
@@ -141,6 +144,9 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   }
 
   m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+
+  reader_context->start_timer_for("get_keyval");
+
   m0_clovis_op_launch(idx_ctx->ops, 1);
 }
 

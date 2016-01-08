@@ -28,6 +28,7 @@
 
 #include "s3_common.h"
 #include "s3_request_object.h"
+#include "s3_timer.h"
 
 class S3AsyncOpContextBase {
   std::shared_ptr<S3RequestObject> request;
@@ -38,6 +39,10 @@ class S3AsyncOpContextBase {
   S3AsyncOpStatus status;
   std::string error_message;
   int error_code;  // this is same as Mero/Clovis errors
+
+  // To measure performance
+  S3Timer timer;
+  std::string operation_key;  // used to identify operation(metric) name
 public:
   S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed);
   virtual ~S3AsyncOpContextBase() {}
@@ -56,6 +61,11 @@ public:
   std::string& get_error_message();
 
   // virtual void consume(char* chars, size_t length) = 0;
+
+  void start_timer_for(std::string op_key);
+  void stop_timer(bool success = true);  // arg indicates success/failed metric
+  // Call the logging always on main thread, so we dont need synchronisation of log file.
+  void log_timer();
 };
 
 #endif

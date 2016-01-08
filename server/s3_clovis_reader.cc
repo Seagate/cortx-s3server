@@ -67,6 +67,9 @@ void S3ClovisReader::read_object(size_t obj_size, std::function<void(void)> on_s
   m0_clovis_obj_op(ctx->obj, M0_CLOVIS_OC_READ, rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
 
   m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
+
+  reader_context->start_timer_for("read_object_" + std::to_string(obj_size) + "_bytes");
+
   m0_clovis_op_launch(ctx->ops, 1);
 }
 

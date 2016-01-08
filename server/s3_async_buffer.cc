@@ -56,31 +56,18 @@ S3AsyncBufferContainer::get_buffers_ref(size_t expected_content_size) {
   size_t num_of_extents = 0;
   struct evbuffer_iovec *vec_in = NULL;
   size_t size_we_can_share = length();
-  printf("size_we_can_share = %zu\n", size_we_can_share);
   evbuf_t* buf = NULL;
   count_bufs_shared_for_read = 0;
-
-  if (is_expecting_more) {
-    printf("is_expecting_more is true\n");
-  } else {
-    printf("is_expecting_more is false\n");
-  }
 
   if (size_we_can_share >= expected_content_size || !(is_expecting_more)) {
     std::deque<evbuf_t *>::iterator it = buffered_input.begin();
     while(it != buffered_input.end()) {
-      printf("Iterating with size_we_can_share = %zu\n", size_we_can_share);
-      printf("Iterating with expected_content_size = %zu\n", expected_content_size);
       buf = *it++;
-      printf("buf = %p\n", buf);
 
       bool is_shared_for_read = false;
       len_in_buf = evbuffer_get_length(buf);
 
       num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
-
-      printf("len_in_buf = %zu\n", len_in_buf);
-      printf("num_of_extents = %zu\n", num_of_extents);
 
       /* do the actual peek */
       vec_in = (struct evbuffer_iovec *)malloc(num_of_extents * sizeof(struct evbuffer_iovec));
@@ -93,10 +80,8 @@ S3AsyncBufferContainer::get_buffers_ref(size_t expected_content_size) {
             ((size_we_can_share >= expected_content_size) || !(is_expecting_more))) {
           if (expected_content_size >= vec_in[i].iov_len) {
             data_items.push_back(std::make_tuple(vec_in[i].iov_base, vec_in[i].iov_len));
-            printf("Sharing buffer with length = %zu\n", vec_in[i].iov_len);
           } else {
             data_items.push_back(std::make_tuple(vec_in[i].iov_base, expected_content_size));
-            printf("Sharing buffer with length = %zu\n", expected_content_size);
           }
 
           if (expected_content_size >= vec_in[i].iov_len) {
@@ -129,13 +114,11 @@ void S3AsyncBufferContainer::mark_size_of_data_consumed(size_t size_consumed) {
   printf("S3AsyncBufferContainer::mark_size_of_data_consumed size_consumed = %zu\n", size_consumed);
 
   for (size_t i = 0; (i < count_bufs_shared_for_read) && (buffered_input.size() != 0); ++i) {
-    printf("S3AsyncBufferContainer::mark_size_of_data_consumed count_bufs_shared_for_read = %zu\n", count_bufs_shared_for_read);
     if (size_consumed > 0) {
       evbuf_t* buf = buffered_input.front();
       size_t len = evbuffer_get_length(buf);
       if (size_consumed >= len) {
         // Drain everything
-        printf("Complete drain size = %zu\n", len);
         evbuffer_drain(buf, -1);
         size_consumed -= len;
         buffered_input_length -= len;
@@ -143,7 +126,6 @@ void S3AsyncBufferContainer::mark_size_of_data_consumed(size_t size_consumed) {
         evbuffer_free(buf);
       } else {
         // Partial drain, so we still need to remember this buf
-        printf("Partial drain size = %zu\n", size_consumed);
         evbuffer_drain(buf, size_consumed);
         buffered_input_length -= size_consumed;
         size_consumed = 0;

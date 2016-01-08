@@ -25,12 +25,15 @@
 #include "s3_clovis_config.h"
 #include "s3_clovis_writer.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_timer.h"
+#include "s3_perf_logger.h"
 
 extern struct m0_clovis_realm     clovis_uber_realm;
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisWriterOpState::start) {
   last_index = 0;
   total_written = 0;
+  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 }
 
 void S3ClovisWriter::create_object(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
@@ -46,8 +49,6 @@ printf("S3ClovisWriter::create_object\n");
   ctx->cbs->ocb_executed = NULL;
   ctx->cbs->ocb_stable = s3_clovis_op_stable;
   ctx->cbs->ocb_failed = s3_clovis_op_failed;
-
-  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
 
   m0_clovis_obj_init(ctx->obj, &clovis_uber_realm, &id);
 
@@ -113,9 +114,13 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   ctx->cbs->ocb_stable = s3_clovis_op_stable;
   ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
-  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
-
+  S3Timer copy_timer;
+  size_t last_w_cnt = total_written;
+  copy_timer.start();
   set_up_clovis_data_buffers(rw_ctx, data_items, clovis_block_count);
+  copy_timer.stop();
+  LOG_PERF(("copy_to_clovis_buf_" + std::to_string(total_written - last_w_cnt) + "_bytes_ns").c_str(),
+    copy_timer.elapsed_time_in_nanosec());
 
   // We have copied data to clovis buffers.
   buffer.mark_size_of_data_consumed(estimated_write_length);
@@ -127,6 +132,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
        rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
 
   m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
+  writer_context->start_timer_for("write_to_clovis_op_" + std::to_string(total_written - last_w_cnt) + "_bytes");
   m0_clovis_op_launch(ctx->ops, 1);
 }
 
@@ -154,15 +160,15 @@ printf("S3ClovisWriter::delete_object\n");
   ctx->cbs->ocb_stable = s3_clovis_op_stable;
   ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
-  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
-
   m0_clovis_obj_init(ctx->obj, &clovis_uber_realm, &id);
 
   m0_clovis_entity_delete(&(ctx->obj->ob_entity), &(ctx->ops[0]));
 
   m0_clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
-  m0_clovis_op_launch(ctx->ops, 1);
 
+  writer_context->start_timer_for("delete_object_from_clovis");
+
+  m0_clovis_op_launch(ctx->ops, 1);
 }
 
 void S3ClovisWriter::delete_object_successful() {
@@ -181,8 +187,8 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
     std::deque< std::tuple<void*, size_t> >& data_items, size_t clovis_block_count) {
   size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
 
-  int data_to_consume = clovis_block_size;
-  int pending_from_current_extent = 0;
+  size_t data_to_consume = clovis_block_size;
+  size_t pending_from_current_extent = 0;
   int idx_within_block = 0;
   int idx_within_extent = 0;
   int current_block_idx = 0;
@@ -195,7 +201,6 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
     data_items.pop_front();
     void *data_ptr = std::get<0>(item);
     size_t data_len = std::get<1>(item);
-    printf("S3ClovisWriter::set_up_clovis_data_buffers copy %zu bytes to clovis buffer\n", data_len);
     // printf("processing extent = %d of total %d\n", i, data_extents);
     pending_from_current_extent = data_len;
     /* KD xxx - we need to avoid this copy */
@@ -251,7 +256,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
       }
     }
   }
-  printf("total_written = %d\n", total_written);
+  printf("total_written = %zu\n", total_written);
 
   // Init clovis buffer attrs.
   for(size_t i = 0; i < clovis_block_count; i++)

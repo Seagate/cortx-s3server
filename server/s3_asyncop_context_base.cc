@@ -18,6 +18,7 @@
  */
 
 #include "s3_asyncop_context_base.h"
+#include "s3_perf_logger.h"
 
 S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed) : request(req), on_success(success), on_failed(failed), status(S3AsyncOpStatus::unknown), error_message(""), error_code(0) {
 }
@@ -53,4 +54,28 @@ int S3AsyncOpContextBase::get_errno() {
 
 void S3AsyncOpContextBase::set_op_errno(int err) {
   error_code = err;
+}
+
+void S3AsyncOpContextBase::start_timer_for(std::string op_key) {
+  operation_key = op_key;
+  timer.start();
+}
+
+void S3AsyncOpContextBase::stop_timer(bool success) {
+  timer.stop();
+  if (operation_key.empty()) {
+    return;
+  }
+  if (success) {
+    operation_key += "_success";
+  } else {
+    operation_key += "_failed";
+  }
+}
+
+void S3AsyncOpContextBase::log_timer() {
+  if (operation_key.empty()) {
+    return;
+  }
+  LOG_PERF((operation_key + "_ms").c_str(), timer.elapsed_time_in_millisec());
 }

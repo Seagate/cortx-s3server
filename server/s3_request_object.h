@@ -34,6 +34,8 @@
 #include <gtest/gtest_prod.h>
 
 #include "s3_async_buffer.h"
+#include "s3_timer.h"
+#include "s3_perf_logger.h"
 
 enum class S3HttpVerb {
   HEAD = htp_method_HEAD,
@@ -67,6 +69,8 @@ class S3RequestObject {
   std::function<void()> incoming_data_callback;
 
   std::unique_ptr<EvhtpInterface> evhtp_obj;
+
+  S3Timer request_timer;
 
 public:
   S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr);
@@ -178,13 +182,21 @@ public:
 
   void notify_incoming_data(evbuf_t * buf) {
     // Keep buffering till someone starts listening.
-    printf("Buffering data to be consumed.....%zu\n", evhtp_obj->evbuffer_get_length(buf));
+    size_t bytes_received = evhtp_obj->evbuffer_get_length(buf);
+    printf("Buffering data to be consumed.....%zu\n", bytes_received);
+    S3Timer buffering_timer;
+    buffering_timer.start();
+
     buffered_input.add_content(buf);
-    pending_in_flight -= evhtp_obj->evbuffer_get_length(buf);
+    pending_in_flight -= bytes_received;
     if (pending_in_flight == 0) {
       printf("Buffering complete for data to be consumed.....\n");
       buffered_input.freeze();
     }
+    buffering_timer.stop();
+    LOG_PERF(("total_buffering_time_" + std::to_string(bytes_received) + "_bytes_ns").c_str(),
+      buffering_timer.elapsed_time_in_nanosec());
+
     if ( incoming_data_callback &&
          ((buffered_input.length() >= notify_read_watermark) || (pending_in_flight == 0)) ) {
       printf("Sending data to be consumed.....\n");

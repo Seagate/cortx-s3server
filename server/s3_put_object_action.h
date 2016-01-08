@@ -29,6 +29,7 @@
 #include "s3_bucket_metadata.h"
 #include "s3_object_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_timer.h"
 
 class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -36,6 +37,8 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3ClovisWriter> clovis_writer;
 
   size_t total_data_to_stream;
+  S3Timer create_object_timer;
+  S3Timer write_content_timer;
 public:
   S3PutObjectAction(std::shared_ptr<S3RequestObject> req);
 

@@ -20,6 +20,7 @@
 #include "s3_put_object_action.h"
 #include "s3_clovis_config.h"
 #include "s3_error_codes.h"
+#include "s3_perf_logger.h"
 
 S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_data_to_stream(0) {
   setup_steps();
@@ -45,6 +46,7 @@ void S3PutObjectAction::fetch_bucket_info() {
 
 void S3PutObjectAction::create_object() {
   printf("Called S3PutObjectAction::create_object\n");
+  create_object_timer.start();
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     clovis_writer = std::make_shared<S3ClovisWriter>(request);
     clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
@@ -62,6 +64,9 @@ void S3PutObjectAction::create_object_failed() {
     printf("Existing object: Overwrite it.\n");
     next();
   } else {
+    create_object_timer.stop();
+    LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
+
     request->resume();
     // Any other error report failure.
     send_response_to_s3_client();
@@ -70,6 +75,9 @@ void S3PutObjectAction::create_object_failed() {
 
 void S3PutObjectAction::initiate_data_streaming() {
   printf("Called S3PutObjectAction::initiate_data_streaming\n");
+  create_object_timer.stop();
+  LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
+
   total_data_to_stream = request->get_content_length();
   request->resume();
 
@@ -120,11 +128,8 @@ void S3PutObjectAction::write_object_successful() {
   }
 }
 
-
 void S3PutObjectAction::write_object_failed() {
-  // TODO - do anything more for failure?
   printf("Called S3PutObjectAction::write_object_failed\n");
-  request->resume();
   send_response_to_s3_client();
 }
 
@@ -143,6 +148,7 @@ void S3PutObjectAction::save_metadata() {
 
 void S3PutObjectAction::send_response_to_s3_client() {
   printf("Called S3PutObjectAction::send_response_to_s3_client\n");
+
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
@@ -170,6 +176,8 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   }
+  request->resume();
+
   done();
   i_am_done();  // self delete
 }
