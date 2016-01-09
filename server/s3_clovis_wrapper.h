@@ -33,14 +33,31 @@ class ClovisAPI {
     virtual int init_clovis_api(const char *clovis_local_addr,
                             const char *clovis_confd_addr,
                             const char *clovis_prof) = 0;
+
     virtual void clovis_idx_init(struct m0_clovis_idx    *idx, struct m0_clovis_realm  *parent, const struct m0_uint128 *id) = 0;
+
+    virtual void clovis_obj_init(struct m0_clovis_obj     *obj,
+                         struct m0_clovis_realm   *parent,
+                         const struct m0_uint128  *id) = 0;
+
     virtual int  clovis_entity_create(struct m0_clovis_entity *entity, struct m0_clovis_op **op) = 0;
+
     virtual void clovis_op_setup(struct m0_clovis_op *op, const struct m0_clovis_op_cbs *ops, m0_time_t linger) = 0;
+
     virtual int  clovis_idx_op(struct m0_clovis_idx *idx,
                                enum m0_clovis_idx_opcode opcode,
                                struct m0_bufvec *keys,
                                struct m0_bufvec *vals,
                                struct m0_clovis_op **op) = 0;
+
+    virtual void clovis_obj_op(struct m0_clovis_obj       *obj,
+                               enum m0_clovis_obj_opcode   opcode,
+                               struct m0_indexvec         *ext,
+                               struct m0_bufvec           *data,
+                               struct m0_bufvec           *attr,
+                               uint64_t                    mask,
+                               struct m0_clovis_op       **op) = 0;
+
     virtual void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr) = 0;
 };
 
@@ -54,6 +71,12 @@ class ConcreteClovisAPI : public ClovisAPI {
 
     void clovis_idx_init(struct m0_clovis_idx    *idx, struct m0_clovis_realm  *parent, const struct m0_uint128 *id) {
       m0_clovis_idx_init(idx, parent, id);
+    }
+
+    void clovis_obj_init(struct m0_clovis_obj *obj,
+                         struct m0_clovis_realm *parent,
+                         const struct m0_uint128 *id) {
+      m0_clovis_obj_init(obj, parent, id);
     }
 
     int clovis_entity_create(struct m0_clovis_entity *entity, struct m0_clovis_op **op) {
@@ -71,6 +94,16 @@ class ConcreteClovisAPI : public ClovisAPI {
                       struct m0_bufvec           *vals,
                       struct m0_clovis_op       **op) {
       return m0_clovis_idx_op(idx, opcode, keys, vals, op);
+    }
+
+    void clovis_obj_op(struct m0_clovis_obj       *obj,
+                       enum m0_clovis_obj_opcode   opcode,
+                       struct m0_indexvec         *ext,
+                       struct m0_bufvec           *data,
+                       struct m0_bufvec           *attr,
+                       uint64_t                    mask,
+                       struct m0_clovis_op       **op) {
+       return m0_clovis_obj_op(obj, opcode, ext, data, attr, mask, op);
     }
 
     void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr) {

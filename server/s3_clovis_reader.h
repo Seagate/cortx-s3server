@@ -29,6 +29,7 @@
 #include "s3_request_object.h"
 #include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_clovis_wrapper.h"
 
 class S3ClovisReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
@@ -40,7 +41,9 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   bool has_clovis_rw_op_context;
 
 public:
-  S3ClovisReaderContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+  S3ClovisReaderContext(std::shared_ptr<S3RequestObject> req,
+      std::function<void()> success_callback, std::function<void()> failed_callback) :
+      S3AsyncOpContextBase(req, success_callback, failed_callback) {
     printf("S3ClovisReaderContext created.\n");
 
     // Create or write, we need op context
@@ -63,11 +66,10 @@ public:
   }
 
   // Call this when you want to do write op.
-  void init_read_op_ctx(size_t clovis_block_count, size_t clovis_block_size) {
+  uint64_t init_read_op_ctx(size_t clovis_block_count, size_t clovis_block_size, uint64_t last_index) {
     clovis_rw_op_context = create_basic_rw_op_ctx(clovis_block_count, clovis_block_size);
     has_clovis_rw_op_context = true;
 
-    uint64_t last_index = 0;
     for (size_t i = 0; i < clovis_block_count; i++) {
       clovis_rw_op_context->ext->iv_index[i] = last_index ;
       clovis_rw_op_context->ext->iv_vec.v_count[i] = clovis_block_size;
@@ -76,6 +78,7 @@ public:
       /* we don't want any attributes */
       clovis_rw_op_context->attr->ov_vec.v_count[i] = 0;
     }
+    return last_index;  // where next read should start
   }
 
   struct s3_clovis_op_context* get_clovis_op_ctx() {
@@ -96,7 +99,7 @@ public:
 enum class S3ClovisReaderOpState {
   failed,
   start,
-  complete,
+  success,
   missing,  // Missing object
 };
 
@@ -106,6 +109,7 @@ private:
 
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisReaderContext> reader_context;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -117,28 +121,33 @@ private:
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   size_t iteration_index;
   // to Help iteration.
-  size_t object_size;
   size_t clovis_block_size;
-  size_t clovis_block_count;
+  size_t num_of_blocks_read;
+
+  uint64_t last_index;
 
 public:
   //struct m0_uint128 id;
-  S3ClovisReader(std::shared_ptr<S3RequestObject> req);
+  S3ClovisReader(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api);
 
   S3ClovisReaderOpState get_state() {
     return state;
   }
 
   // async read
-  void read_object(size_t obj_size, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void read_object_successful();
-  void read_object_failed();
+  void read_object_data(size_t num_of_blocks, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void read_object_data_successful();
+  void read_object_data_failed();
 
   // Iterate over the content.
   // Returns size of data in first block and 0 if there is no content,
   // and content in data.
   size_t get_first_block(char** data);
   size_t get_next_block(char** data);
+
+  // For Testing purpose
+  FRIEND_TEST(S3ClovisReaderTest, Constructor);
+  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataSuccessStatusAndSuccessCallback);
 };
 
 #endif

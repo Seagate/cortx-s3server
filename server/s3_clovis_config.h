@@ -43,8 +43,9 @@ public:
   // Config items
   size_t get_clovis_block_size();
 
-  // Tunable param to perform writes in given size. Multiple of block size
+  // Tunable param to perform read/write in given size. Multiple of block size
   size_t get_clovis_write_payload_size();
+  size_t get_clovis_read_payload_size();
 
   // Number of rows to fetch from clovis idx in single call
   size_t get_clovis_idx_fetch_count();

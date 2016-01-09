@@ -13,40 +13,39 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
+ * Original author:  Rajesh Nambiar <rajesh.nambiar@seagate.com>
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original creation date: 27-Nov-2015
  */
 
-#include "s3_clovis_config.h"
+#pragma once
 
-S3ClovisConfig* S3ClovisConfig::instance = NULL;
+#ifndef __MERO_FE_S3_UT_S3_CALLBACK_TEST_HELPERS_H__
+#define __MERO_FE_S3_UT_S3_CALLBACK_TEST_HELPERS_H__
 
-S3ClovisConfig::S3ClovisConfig() {
-  // Read config items from some file.
-  clovis_block_size = 4096;
+#include "clovis_helpers.h"
+#include "s3_clovis_rw_common.h"
 
-  clovis_idx_fetch_count = 100;
-}
 
-S3ClovisConfig* S3ClovisConfig::get_instance() {
-  if(!instance){
-    instance = new S3ClovisConfig();
+class  S3CallBack {
+public:
+  S3CallBack() {
+    success_called = fail_called = false;
   }
-  return instance;
-}
 
-size_t S3ClovisConfig::get_clovis_block_size() {
-    return clovis_block_size;
-}
+  void on_success() {
+    success_called = true;
+  }
 
-size_t S3ClovisConfig::get_clovis_write_payload_size() {
-    return clovis_block_size * 100;
-}
+  void on_failed() {
+    fail_called = true;
+  }
+  int success_called;
+  int fail_called;
+};
 
-size_t S3ClovisConfig::get_clovis_read_payload_size() {
-    return clovis_block_size * 100;
-}
+void * async_success_call(void * arg);
 
-size_t S3ClovisConfig::get_clovis_idx_fetch_count() {
-  return clovis_idx_fetch_count;
-}
+void * async_fail_call(void * arg);
+
+#endif

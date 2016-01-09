@@ -34,6 +34,11 @@ class S3GetObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisReader> clovis_reader;
 
+  // Read state
+  size_t total_blocks_in_object;
+  size_t blocks_already_read;
+  size_t data_sent_to_client;
+
 public:
   S3GetObjectAction(std::shared_ptr<S3RequestObject> req);
 
@@ -42,7 +47,10 @@ public:
   void fetch_bucket_info();
   void fetch_object_info();
   void read_object();
-  void read_object_failed();
+
+  void read_object_data();
+  void read_object_data_failed();
+  void send_data_to_client();
   void send_response_to_s3_client();
 };
 

@@ -21,12 +21,12 @@
 #include <gmock/gmock.h>
 #include <functional>
 #include <iostream>
+
 #include "s3_clovis_kvs_writer.h"
 #include "mock_s3_request_object.h"
 #include "mock_s3_clovis_kvs_writer.h"
 #include "mock_s3_clovis_wrapper.h"
-#include "s3_clovis_rw_common.h"
-#include "clovis_helpers.h"
+#include "s3_callback_test_helpers.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -34,37 +34,6 @@ using ::testing::Return;
 
 static void
 dummy_request_cb(evhtp_request_t * req, void * arg) {
-}
-
-class  S3CallBack {
-  public:
-  S3CallBack() {
-    success_called = fail_called = false;
-  }
-
-  void on_success() {
-    success_called = true;
-  }
-
-  void on_failed() {
-    fail_called = true;
-  }
-  int success_called;
-  int fail_called;
-};
-
-void * async_success_call(void * arg) {
-  struct s3_clovis_idx_op_context *idx_ctx;
-  idx_ctx = (struct s3_clovis_idx_op_context *)arg;
-  s3_clovis_op_stable(idx_ctx->ops[0]);
-  return NULL;
-}
-
-void * async_fail_call(void * arg) {
-  struct s3_clovis_idx_op_context *idx_ctx;
-  idx_ctx = (struct s3_clovis_idx_op_context *)arg;
-  s3_clovis_op_failed(idx_ctx->ops[0]);
-  return NULL;
 }
 
 class S3ClovisKvsWritterTest : public testing::Test {

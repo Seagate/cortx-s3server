@@ -18,9 +18,10 @@
  */
 
 #include "s3_get_object_action.h"
+#include "s3_clovis_config.h"
 #include "s3_error_codes.h"
 
-S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_blocks_in_object(0), blocks_already_read(0), data_sent_to_client(0) {
   setup_steps();
 }
 
@@ -52,19 +53,83 @@ void S3GetObjectAction::fetch_object_info() {
 void S3GetObjectAction::read_object() {
   printf("Called S3GetObjectAction::read_object\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    size_t object_size = object_metadata->get_content_length();
-    printf("Reading object of size %zu\n", object_size);
+    request->set_out_header_value("Last-Modified", object_metadata->get_last_modified());
+    request->set_out_header_value("ETag", object_metadata->get_md5());
+    request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value("Content-Length", object_metadata->get_content_length_str());
+    request->send_reply_start(S3HttpSuccess200);
 
-    clovis_reader = std::make_shared<S3ClovisReader>(request);
-    clovis_reader->read_object(object_size, std::bind( &S3GetObjectAction::next, this), std::bind( &S3GetObjectAction::read_object_failed, this));
+    if (object_metadata->get_content_length() == 0) {
+      send_response_to_s3_client();
+    } else {
+
+      printf("Reading object of size %zu\n", object_metadata->get_content_length());
+      size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
+      /* Count Data blocks from data size */
+      total_blocks_in_object = (object_metadata->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
+
+      clovis_reader = std::make_shared<S3ClovisReader>(request, std::make_shared<ConcreteClovisAPI>());
+      read_object_data();
+    }
   } else {
     send_response_to_s3_client();
   }
 }
 
-void S3GetObjectAction::read_object_failed() {
+void S3GetObjectAction::read_object_data() {
+  printf("S3GetObjectAction::read_object_data\n");
+
+  size_t max_blocks_in_one_read_op = S3ClovisConfig::get_instance()->get_clovis_read_payload_size()/S3ClovisConfig::get_instance()->get_clovis_block_size();
+  size_t blocks_to_read = 0;
+
+  if (blocks_already_read != total_blocks_in_object) {
+    if ((total_blocks_in_object - blocks_already_read) > max_blocks_in_one_read_op) {
+      blocks_to_read = max_blocks_in_one_read_op;
+    } else {
+      blocks_to_read = total_blocks_in_object - blocks_already_read;
+    }
+
+    if (blocks_to_read > 0) {
+      clovis_reader->read_object_data(blocks_to_read, std::bind( &S3GetObjectAction::send_data_to_client, this), std::bind( &S3GetObjectAction::read_object_data_failed, this));
+    } else {
+      send_response_to_s3_client();
+    }
+  } else {
+    // We are done Reading
+    send_response_to_s3_client();
+  }
+
+}
+
+void S3GetObjectAction::send_data_to_client() {
+  printf("S3GetObjectAction::send_data_to_client\n");
+
+  char *data = NULL;
+  size_t length = 0;
+  size_t obj_size = object_metadata->get_content_length();
+
+  length = clovis_reader->get_first_block(&data);
+  while(length > 0)
+  {
+    blocks_already_read++;
+    if ((data_sent_to_client + length) >= obj_size) {
+      length = obj_size - data_sent_to_client;
+    }
+
+    data_sent_to_client += length;
+    request->send_reply_body(data, length);
+    length = clovis_reader->get_next_block(&data);
+  }
+  if (data_sent_to_client != obj_size) {
+    read_object_data();
+  } else {
+    send_response_to_s3_client();
+  }
+}
+
+void S3GetObjectAction::read_object_data_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3GetObjectAction::read_object_failed\n");
+  printf("Called S3GetObjectAction::read_object_data_failed\n");
   send_response_to_s3_client();
 }
 
@@ -87,22 +152,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (clovis_reader->get_state() == S3ClovisReaderOpState::complete) {
-    request->set_out_header_value("Last-Modified", object_metadata->get_last_modified());
-    request->set_out_header_value("ETag", object_metadata->get_md5());
-    request->set_out_header_value("Accept-Ranges", "bytes");
-    request->set_out_header_value("Content-Length", object_metadata->get_content_length_str());
-
-    char *data = NULL;
-    int length = 0;
-    request->send_reply_start(S3HttpSuccess200);
-
-    length = clovis_reader->get_first_block(&data);
-    while(length > 0)
-    {
-      request->send_reply_body(data, length);
-      length = clovis_reader->get_next_block(&data);
-    }
+  } else if ((object_metadata->get_content_length() == 0) || (clovis_reader->get_state() == S3ClovisReaderOpState::success)) {
     request->send_reply_end();
   } else {
     // request->set_header_value(...)

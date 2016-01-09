@@ -95,10 +95,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
       estimated_write_length = S3ClovisConfig::get_instance()->get_clovis_write_payload_size();
   }
 
-  printf("Called S3ClovisWriter::write_content -> estimated_write_length = %zu\n", estimated_write_length);
-
   std::deque< std::tuple<void*, size_t> > data_items = buffer.get_buffers_ref(estimated_write_length);
-  printf("Called S3ClovisWriter::write_content -> data_items size = %zu\n", data_items.size());
 
   size_t clovis_block_count = (estimated_write_length + (clovis_block_size - 1)) / clovis_block_size;
 
