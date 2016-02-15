@@ -7,7 +7,7 @@ fi
 
 rm -rf libevhtp
 
-git clone -b 1.2.10 https://github.com/ellzey/libevhtp.git
+git clone -b 1.2.10 --depth=1 https://github.com/ellzey/libevhtp.git
 cd libevhtp
 
 INSTALL_DIR=`pwd`/s3_dist

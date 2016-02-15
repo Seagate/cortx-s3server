@@ -2,7 +2,7 @@
 
 rm -rf googletest
 
-git clone -b release-1.7.0 https://github.com/google/googletest.git
+git clone -b release-1.7.0 --depth=1 https://github.com/google/googletest.git
 cd googletest
 
 mkdir build

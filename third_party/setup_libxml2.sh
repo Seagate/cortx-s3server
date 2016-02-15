@@ -2,7 +2,7 @@
 
 rm -rf libxml2
 
-git clone -b v2.9.2 https://git.gnome.org/browse/libxml2
+git clone -b v2.9.2 --depth=1 https://git.gnome.org/browse/libxml2
 cd libxml2
 
 INSTALL_DIR=`pwd`/s3_dist

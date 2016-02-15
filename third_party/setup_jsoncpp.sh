@@ -2,7 +2,7 @@
 
 rm -rf jsoncpp
 
-git clone -b 1.6.5 https://github.com/open-source-parsers/jsoncpp.git
+git clone -b 1.6.5 --depth=1 https://github.com/open-source-parsers/jsoncpp.git
 
 cd jsoncpp
 

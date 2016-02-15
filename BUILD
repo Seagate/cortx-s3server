@@ -22,7 +22,7 @@ cc_binary(
                 "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
                 "-lpthread -ldl -lrt",
                 "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
-                "-lyaml -luuid -pthread -lxml2 -lpthread", "-Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent/lib,-rpath,/opt/seagate/s3/libxml2/lib"],
+                "-lyaml -luuid -pthread -lxml2 -lpthread", "-Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent,-rpath,/opt/seagate/s3/libxml2/lib"],
 )
 
 cc_test(
