@@ -1,0 +1,13 @@
+#!/bin/sh
+
+echo "Ensure you have run makeinstall before running this..."
+
+rm -rf rpmsandbox
+rm -rf s3server*.rpm
+
+mkdir -p rpmsandbox/opt/seagate
+
+cp -R /opt/seagate/s3 rpmsandbox/opt/seagate/
+cp -R /opt/seagate/auth rpmsandbox/opt/seagate/
+
+fpm -s dir -t rpm -C rpmsandbox --name s3server --version 0.1 --description "Seagate S3 Server - Mero"
