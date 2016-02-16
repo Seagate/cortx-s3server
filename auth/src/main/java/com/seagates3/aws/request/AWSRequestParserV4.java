@@ -16,17 +16,14 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.aws.request;
-
-import java.util.Map;
-
-import io.netty.handler.codec.http.HttpHeaders;
 
 import com.seagates3.model.ClientRequestToken;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.CharsetUtil;
+import java.util.Map;
 
 public class AWSRequestParserV4 extends AWSRequestParser {
 
@@ -49,7 +46,7 @@ public class AWSRequestParserV4 extends AWSRequestParser {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
         clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
 
-        if(requestBody.get("RequestPayload") != null) {
+        if (requestBody.get("RequestPayload") != null) {
             clientRequestToken.setRequestPayload(requestBody.get("RequestPayload"));
         } else {
             clientRequestToken.setRequestPayload("");
@@ -63,21 +60,23 @@ public class AWSRequestParserV4 extends AWSRequestParser {
     }
 
     /**
-     * Authorization header is in following format (Line break added for readability)
-     * Authorization: algorithm Credential=access key ID/credential scope,
-     * SignedHeaders=SignedHeaders, Signature=signature
+     * Authorization header is in following format (Line break added for
+     * readability) Authorization: algorithm Credential=access key ID/credential
+     * scope, SignedHeaders=SignedHeaders, Signature=signature
      *
      * Sample Authorization Header
-     * Authorization: AWS4-HMAC-SHA256 Credential=AKIAJTYX36YCKQSAJT7Q/20150810/us-east-1/iam/aws4_request,
+     *
+     * Authorization: AWS4-HMAC-SHA256
+     * Credential=AKIAJTYX36YCKQSAJT7Q/20150810/us-east-1/iam/aws4_request,
      * SignedHeaders=content-type;host;user-agent;x-amz-content-sha256;x-amz-date,
      * Signature=b751427a69f5bb76fb171fec45bdb1e8f664fac7f7c23c983f9c7361bb382d76
      *
-     * Authorization header value is broken into 3 chunks.
-     * tokens[0] : algorithm Credential=access key ID/credential scope
-     * tokens[1] : SignedHeaders=SignedHeaders
-     * tokens[2] : Signature=signature
+     * Authorization header value is broken into 3 chunks. tokens[0] : algorithm
+     * Credential=access key ID/credential scope tokens[1] :
+     * SignedHeaders=SignedHeaders tokens[2] : Signature=signature
      *
      * Credential Scope = date/region/service/aws4_request
+     *
      * @param authorizationHeaderValue Authorization Header
      * @param clientRequestToken
      */

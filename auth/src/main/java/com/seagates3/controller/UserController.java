@@ -16,10 +16,7 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.controller;
-
-import java.util.Map;
 
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -28,32 +25,44 @@ import com.seagates3.dao.UserDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.response.generator.xml.UserResponseGenerator;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.UserResponseGenerator;
 import com.seagates3.util.KeyGenUtil;
+import java.util.Map;
 
 public class UserController extends AbstractController {
-    UserDAO userDAO;
-    UserResponseGenerator userResponse;
+
+    private final UserDAO userDAO;
+    private final UserResponseGenerator userResponseGenerator;
 
     public UserController(Requestor requestor,
             Map<String, String> requestBody) {
         super(requestor, requestBody);
 
         userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
-        userResponse = new UserResponseGenerator();
+        userResponseGenerator = new UserResponseGenerator();
     }
 
+    /**
+     * Create a new IAM user.
+     *
+     * @return ServerResponse
+     */
     @Override
-    public ServerResponse create() throws DataAccessException {
-        User user = userDAO.find(requestor.getAccountName(),
-                requestBody.get("UserName"));
-
-        if(user.exists()) {
-            return userResponse.entityAlreadyExists();
+    public ServerResponse create() {
+        User user;
+        try {
+            user = userDAO.find(requestor.getAccount().getName(),
+                    requestBody.get("UserName"));
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
         }
 
-        if(requestBody.containsKey("path")) {
+        if (user.exists()) {
+            return userResponseGenerator.entityAlreadyExists();
+        }
+
+        if (requestBody.containsKey("path")) {
             user.setPath(requestBody.get("path"));
         } else {
             user.setPath("/");
@@ -62,86 +71,135 @@ public class UserController extends AbstractController {
         user.setUserType(User.UserType.IAM_USER);
         user.setId(KeyGenUtil.userId());
 
-        userDAO.save(user);
-
-        return userResponse.create(user.getName(), user.getPath(), user.getId());
-    }
-
-    @Override
-    public ServerResponse delete() throws DataAccessException {
-        Boolean userHasAccessKeys, status;
-        User user = userDAO.find(requestor.getAccountName(),
-                requestBody.get("UserName"));
-        if(!user.exists()) {
-            return userResponse.noSuchEntity();
+        try {
+            userDAO.save(user);
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
         }
 
-        AccessKeyDAO accessKeyDao =
-                (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
-
-        userHasAccessKeys = accessKeyDao.hasAccessKeys(user.getId());
-        if(userHasAccessKeys) {
-            return userResponse.deleteConflict();
-        }
-
-        userDAO.delete(user);
-
-        return userResponse.success("DeleteUser");
+        return userResponseGenerator.generateCreateResponse(user);
     }
 
+    /**
+     * Delete an IAM user.
+     *
+     * @return ServerResponse
+     */
     @Override
-    public ServerResponse list() throws DataAccessException {
+    public ServerResponse delete() {
+        Boolean userHasAccessKeys;
+        User user;
+        try {
+            user = userDAO.find(requestor.getAccount().getName(),
+                    requestBody.get("UserName"));
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
+        }
+
+        if (!user.exists()) {
+            return userResponseGenerator.noSuchEntity();
+        }
+
+        AccessKeyDAO accessKeyDao
+                = (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
+
+        try {
+            userHasAccessKeys = accessKeyDao.hasAccessKeys(user.getId());
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
+        }
+
+        if (userHasAccessKeys) {
+            return userResponseGenerator.deleteConflict();
+        }
+
+        try {
+            userDAO.delete(user);
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
+        }
+
+        return userResponseGenerator.generateDeleteResponse();
+    }
+
+    /**
+     * List all the IAM users having the given path prefix.
+     *
+     * @return ServerResponse.
+     */
+    @Override
+    public ServerResponse list() {
         String pathPrefix;
 
-        if(requestBody.containsKey("PathPrefix")) {
+        if (requestBody.containsKey("PathPrefix")) {
             pathPrefix = requestBody.get("PathPrefix");
         } else {
             pathPrefix = "/";
         }
 
         User[] userList;
-        userList = userDAO.findAll(requestor.getAccountName(), pathPrefix);
-
-        if(userList == null) {
-            return userResponse.internalServerError();
+        try {
+            userList = userDAO.findAll(requestor.getAccount().getName(),
+                    pathPrefix);
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
         }
 
-        return userResponse.list(userList);
+        return userResponseGenerator.generateListResponse(userList);
     }
 
+    /**
+     * Update the name or path of an existing IAM user.
+     *
+     * @return ServerResponse
+     */
     @Override
-    public ServerResponse update() throws DataAccessException {
-        Boolean success;
+    public ServerResponse update() {
         String newUserName = null, newPath = null;
 
-        if(!requestBody.containsKey("NewUserName") &&
-                !requestBody.containsKey("NewPath")) {
-            return userResponse.missingParameter();
+        if (!requestBody.containsKey("NewUserName")
+                && !requestBody.containsKey("NewPath")) {
+            return userResponseGenerator.missingParameter();
         }
 
-        User user = userDAO.find(requestor.getAccountName(),
-                requestBody.get("UserName"));
+        User user;
+        try {
+            user = userDAO.find(requestor.getAccount().getName(),
+                    requestBody.get("UserName"));
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
+        }
 
         if (!user.exists()) {
-            return userResponse.noSuchEntity();
+            return userResponseGenerator.noSuchEntity();
         }
 
-        if(requestBody.containsKey("NewUserName")) {
+        if (requestBody.containsKey("NewUserName")) {
             newUserName = requestBody.get("NewUserName");
-            User newUser = userDAO.find(requestor.getAccountName(),
-                    newUserName);
+            User newUser;
 
-            if(newUser.exists()) {
-                return userResponse.entityAlreadyExists();
+            try {
+                newUser = userDAO.find(requestor.getAccount().getName(),
+                        newUserName);
+            } catch (DataAccessException ex) {
+                return userResponseGenerator.internalServerError();
+            }
+
+            if (newUser.exists()) {
+                return userResponseGenerator.entityAlreadyExists();
             }
         }
 
-        if(requestBody.containsKey("NewPath")) {
+        if (requestBody.containsKey("NewPath")) {
             newPath = requestBody.get("NewPath");
         }
 
-        userDAO.update(user, newUserName, newPath);
+        try {
+            userDAO.update(user, newUserName, newPath);
+        } catch (DataAccessException ex) {
+            return userResponseGenerator.internalServerError();
+        }
 
-        return userResponse.update();
+        return userResponseGenerator.generateUpdateResponse();
     }
 }

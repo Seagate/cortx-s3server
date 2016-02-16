@@ -16,10 +16,7 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.controller;
-
-import java.util.Map;
 
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
@@ -32,56 +29,73 @@ import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.response.generator.xml.AccountResponseGenerator;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.util.KeyGenUtil;
+import java.util.Map;
 
 public class AccountController extends AbstractController {
-    AccountDAO accountDao;
-    AccountResponseGenerator accountResponse;
 
-    /*
-     *
-     */
+    private final AccountDAO accountDao;
+    private final UserDAO userDAO;
+    private final AccessKeyDAO accessKeyDAO;
+    private final AccountResponseGenerator accountResponseGenerator;
+
     public AccountController(Requestor requestor,
             Map<String, String> requestBody) {
         super(requestor, requestBody);
 
-        accountResponse = new AccountResponseGenerator();
+        accountResponseGenerator = new AccountResponseGenerator();
         accountDao = (AccountDAO) DAODispatcher.getResourceDAO(DAOResource.ACCOUNT);
+        accessKeyDAO = (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
+        userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
+
     }
 
     @Override
-    public ServerResponse create() throws DataAccessException {
+    public ServerResponse create() {
         String name = requestBody.get("AccountName");
-        Account account = accountDao.find(name);
-
-        if(account.exists()) {
-            String errorMessage = String.format("The account %s exists already.",
-                    name);
-            return accountResponse.entityAlreadyExists(errorMessage);
+        Account account;
+        try {
+            account = accountDao.find(name);
+        } catch (DataAccessException ex) {
+            return accountResponseGenerator.internalServerError();
         }
 
-        accountDao.save(account);
-
-        User root = createRootUser(name);
-        if(root == null) {
-            return accountResponse.internalServerError();
+        if (account.exists()) {
+            return accountResponseGenerator.entityAlreadyExists();
         }
 
-        AccessKey rootAccessKey = createRootAccessKey(root);
-        if(rootAccessKey == null) {
-            return accountResponse.internalServerError();
+        account.setId(KeyGenUtil.userId());
+
+        try {
+            accountDao.save(account);
+        } catch (DataAccessException ex) {
+            return accountResponseGenerator.internalServerError();
         }
 
-        return accountResponse.create(rootAccessKey);
+        User root;
+        try {
+            root = createRootUser(name);
+        } catch (DataAccessException ex) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        AccessKey rootAccessKey;
+        try {
+            rootAccessKey = createRootAccessKey(root);
+        } catch (DataAccessException ex) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        return accountResponseGenerator.generateCreateResponse(account, root,
+                rootAccessKey);
     }
 
     /*
      * Create a root user for the account.
      */
     private User createRootUser(String accountName) throws DataAccessException {
-        UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
         User user = new User();
         user.setAccountName(accountName);
         user.setName("root");
@@ -98,14 +112,12 @@ public class AccountController extends AbstractController {
      * Create access keys for the root user.
      */
     private AccessKey createRootAccessKey(User root) throws DataAccessException {
-        AccessKeyDAO accessKeyDAO =
-                (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
         AccessKey accessKey = new AccessKey();
 
         String strToEncode = root.getId() + System.currentTimeMillis();
 
         accessKey.setUserId(root.getId());
-        accessKey.setAccessKeyId(KeyGenUtil.userAccessKeyId());
+        accessKey.setId(KeyGenUtil.userAccessKeyId());
         accessKey.setSecretKey(KeyGenUtil.userSercretKey(strToEncode));
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 

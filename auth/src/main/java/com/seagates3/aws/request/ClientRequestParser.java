@@ -16,19 +16,16 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
-
 package com.seagates3.aws.request;
 
-import java.util.Map;
-
-import io.netty.handler.codec.http.FullHttpRequest;
-
 import com.seagates3.model.ClientRequestToken;
+import io.netty.handler.codec.http.FullHttpRequest;
+import java.util.Map;
 
 public class ClientRequestParser {
 
     private static final String REQUEST_PARSER_PACKAGE = "com.seagates3.aws.request";
-    private static final String AWS_V2_AUTHRORIAZATION_PATTERN = "AWS [A-Z0-7]+:[a-zA-Z0-9+/=]+";
+    private static final String AWS_V2_AUTHRORIAZATION_PATTERN = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
 
     public static ClientRequestToken parse(FullHttpRequest httpRequest,
             Map<String, String> requestBody) {
@@ -36,24 +33,24 @@ public class ClientRequestParser {
         String authorizationHeader;
         ClientRequestToken.AWSSigningVersion awsSigningVersion;
 
-        if(requestAction.equals("AuthenticateUser")) {
+        if (requestAction.equals("AuthenticateUser")) {
             authorizationHeader = requestBody.get("authorization");
         } else {
             authorizationHeader = httpRequest.headers().get("authorization");
         }
 
-        if(authorizationHeader == null) {
+        if (authorizationHeader == null) {
             return null;
         }
 
-        if(authorizationHeader.matches(AWS_V2_AUTHRORIAZATION_PATTERN)) {
+        if (authorizationHeader.matches(AWS_V2_AUTHRORIAZATION_PATTERN)) {
             awsSigningVersion = ClientRequestToken.AWSSigningVersion.V2;
         } else {
             awsSigningVersion = ClientRequestToken.AWSSigningVersion.V4;
         }
 
         AWSRequestParser awsRequestParser = getAWSRequestParser(awsSigningVersion);
-        if(requestAction.equals("AuthenticateUser")) {
+        if (requestAction.equals("AuthenticateUser")) {
             return awsRequestParser.parse(requestBody);
         } else {
             return awsRequestParser.parse(httpRequest);

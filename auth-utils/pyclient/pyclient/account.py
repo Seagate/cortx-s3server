@@ -36,8 +36,8 @@ class Account:
             account_response = json.loads(json.dumps(xmltodict.parse(data)))
             account = account_response['CreateAccountResponse']['CreateAccountResult']['Account']
 
-            print("RootUserName = %s, AccessKeyId = %s, SecretKey = %s" %
-                    (account['RootUserName'], account['AccessKeyId'], account['RootSecretKeyId']))
+            print("AccountId = %s, RootUserName = %s, AccessKeyId = %s, SecretKey = %s" %
+                    (account['AccountId'], account['RootUserName'], account['AccessKeyId'], account['RootSecretKeyId']))
         else:
             print("Account wasn't created.")
             print(response.reason)

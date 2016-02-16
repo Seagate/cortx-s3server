@@ -16,9 +16,9 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 23-Nov-2015
  */
-
 package com.seagates3.authserver;
 
+import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -39,55 +39,59 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AuthServerPostHandler {
+
     final String KEY_PAIR_REGEX = "([a-zA-Z0-9/-]+)=([\\w\\W]*)";
     final ChannelHandlerContext ctx;
     final FullHttpRequest httpRequest;
+    final Boolean keepAlive;
 
-    public AuthServerPostHandler(ChannelHandlerContext ctx, FullHttpRequest httpRequest) {
-        this.ctx = ctx;
+    public AuthServerPostHandler(ChannelHandlerContext ctx,
+            FullHttpRequest httpRequest) {
         this.httpRequest = httpRequest;
+        this.ctx = ctx;
+        keepAlive = HttpHeaders.isKeepAlive(httpRequest);
     }
 
     public void run() {
         Map<String, String> requestBody;
         ServerResponse serverResponse;
-        HttpDataFactory factory = new
-                    DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE);
+        HttpDataFactory factory = new DefaultHttpDataFactory(
+                DefaultHttpDataFactory.MINSIZE);
 
-        HttpPostRequestDecoder decoder =
-                new HttpPostRequestDecoder(factory, httpRequest);
+        HttpPostRequestDecoder decoder
+                = new HttpPostRequestDecoder(factory, httpRequest);
 
         requestBody = parseChunkedRequest(decoder.getBodyHttpDatas());
 
-        AuthServerAction authserverAction = new AuthServerAction();
-        serverResponse = authserverAction.serve(httpRequest, requestBody);
-        sendResponse(ctx, httpRequest, serverResponse);
+        if (httpRequest.getUri().startsWith("/saml")) {
+            FullHttpResponse response = new SAMLWebSSOController(requestBody)
+                    .samlSignIn();
+            returnHTTPResponse(response);
+        } else {
+            AuthServerAction authserverAction = new AuthServerAction();
+            serverResponse = authserverAction.serve(httpRequest, requestBody);
+            returnHTTPResponse(serverResponse);
+        }
     }
 
     /**
      * Read the requestResponse object and send the response to the client.
      */
-    private void sendResponse(ChannelHandlerContext ctx, FullHttpRequest request,
-            ServerResponse requestResponse) {
-
+    private void returnHTTPResponse(ServerResponse requestResponse) {
         String responseBody = requestResponse.getResponseBody();
-        Boolean keepAlive = HttpHeaders.isKeepAlive(request);
         FullHttpResponse response;
 
         try {
-            response = new DefaultFullHttpResponse( HttpVersion.HTTP_1_1,
-                            requestResponse.getResponseStatus(),
-                            Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
-                    );
+            response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                    requestResponse.getResponseStatus(),
+                    Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
+            );
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger("authLog").log(Level.SEVERE, null, ex);
-            return;
+            response = null;
         }
 
         response.headers().set(CONTENT_TYPE, "text/xml");
@@ -101,14 +105,21 @@ public class AuthServerPostHandler {
         }
     }
 
+    private void returnHTTPResponse(FullHttpResponse response) {
+        if (!keepAlive) {
+            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+        } else {
+            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+            ctx.writeAndFlush(response);
+        }
+    }
+
     /**
-     * S3 Clients sends the request body in chunks. These chunks are then
-     * and aggregated using HttpObjectAggregator handler.
+     * S3 Clients sends the request body in chunks. These chunks are then and
+     * aggregated using HttpObjectAggregator handler.
      *
-     * The request body looks like this -
-     * Mixed: Action=CreateUser
-     * Mixed: UserName=admin
-     * Mixed: Version=2010-05-08
+     * The request body looks like this - Mixed: Action=CreateUser Mixed:
+     * UserName=admin Mixed: Version=2010-05-08
      *
      * This method should parse this body and return a hash map of values like
      * [<Action, Createuser>, <UserName, arjun>, <Version, 2010-05-08>]
@@ -123,10 +134,9 @@ public class AuthServerPostHandler {
         Matcher matcher;
         String[] tokens;
 
-        for(InterfaceHttpData data: datas) {
+        for (InterfaceHttpData data : datas) {
             matcher = pattern.matcher(data.toString());
-            if (matcher.find())
-            {
+            if (matcher.find()) {
                 tokens = matcher.group().split("=", 2);
                 requestBody.put(tokens[0], tokens[1]);
             }

@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.util;
 
 import java.text.ParseException;
@@ -35,8 +34,12 @@ import org.joda.time.format.DateTimeFormatter;
  */
 public class DateUtil {
 
+    private static final String LDAP_DATE_FORMAT = "yyyyMMddHHmmss";
+    private static final String SERVER_RESPONSE_DATE_FORMAT
+            = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+
     public static String toLdapDate(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        SimpleDateFormat sdf = getSimpleDateFormat(LDAP_DATE_FORMAT);
         return (sdf.format(date) + "Z");
     }
 
@@ -45,14 +48,15 @@ public class DateUtil {
     }
 
     public static String toServerResponseFormat(Date date) {
-        SimpleDateFormat serverResponseFormat = new
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        SimpleDateFormat serverResponseFormat
+                = getSimpleDateFormat(SERVER_RESPONSE_DATE_FORMAT);
 
         return serverResponseFormat.format(date);
     }
 
     public static String toServerResponseFormat(DateTime date) {
-        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        DateTimeFormatter fmt = DateTimeFormat.forPattern(
+                SERVER_RESPONSE_DATE_FORMAT);
         return fmt.print(date);
     }
 
@@ -64,8 +68,8 @@ public class DateUtil {
      * Return the current time in UTC.
      */
     public static long getCurrentTime() {
-        SimpleDateFormat dateFormatGmt = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss");
-        dateFormatGmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+        SimpleDateFormat dateFormatGmt = getSimpleDateFormat("yyyy-MMM-dd HH:mm:ss");
+        dateFormatGmt.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         try {
             return dateFormatGmt.parse(dateFormatGmt.format(new Date())).getTime();
@@ -77,19 +81,35 @@ public class DateUtil {
     }
 
     public static Date toDate(String date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        SimpleDateFormat sdf = getSimpleDateFormat(LDAP_DATE_FORMAT);
 
         try {
             return sdf.parse(date);
         } catch (ParseException e) {
         }
 
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        sdf = getSimpleDateFormat(SERVER_RESPONSE_DATE_FORMAT);
         try {
             return sdf.parse(date);
         } catch (ParseException e) {
         }
 
         return null;
+    }
+
+    private static SimpleDateFormat getSimpleDateFormat(String pattern) {
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+        sdf.setTimeZone(getDefatulTimeZone());
+
+        return sdf;
+    }
+
+    /**
+     * Return the default time zone (UTC).
+     *
+     * @return UTC Time zone.
+     */
+    private static TimeZone getDefatulTimeZone() {
+        return TimeZone.getTimeZone("UTC");
     }
 }

@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 31-Oct-2015
  */
-
 package com.seagates3.dao.ldap;
 
 import com.novell.ldap.LDAPAttribute;
@@ -27,45 +26,61 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.dao.RoleDAO;
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
 import com.seagates3.model.Role;
 import com.seagates3.util.DateUtil;
 import java.util.ArrayList;
 
 public class RoleImpl implements RoleDAO {
 
-    /*
+    /**
      * Get the role from LDAP.
      *
      * Search for the role under
      * ou=roles,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
+     *
+     * @param account User Account details.
+     * @param roleName Role name.
+     * @return Role
+     * @throws com.seagates3.exception.DataAccessException
      */
     @Override
-    public Role find(String accountName, String roleName) throws DataAccessException {
+    public Role find(Account account, String roleName) throws DataAccessException {
         Role role = new Role();
-        role.setAccountName(accountName);
+        role.setAccount(account);
         role.setName(roleName);
 
-        String[] attrs = {"rolePolicyDoc", "path", "createTimestamp"};
-        String ldapBase = String.format("ou=roles,o=%s,ou=accounts,%s", accountName,
-                LdapUtils.getBaseDN());
-        String filter = String.format("(rolename=%s)", roleName);
+        String[] attrs = {LDAPUtils.ROLE_POLICY_DOC,
+            LDAPUtils.PATH, LDAPUtils.CREATE_TIMESTAMP};
+
+        String ldapBase = String.format("%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ROLE_OU,
+                LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN
+        );
+        String filter = String.format("(%s=%s)", LDAPUtils.ROLE_NAME, roleName);
 
         LDAPSearchResults ldapResults;
+
         try {
-            ldapResults = LdapUtils.search(ldapBase,
+            ldapResults = LDAPUtils.search(ldapBase,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to find the role.\n" + ex);
         }
 
-        if(ldapResults.hasMore()) {
+        if (ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
-                role.setPath(entry.getAttribute("path").getStringValue());
-                role.setRolePolicyDoc(entry.getAttribute("rolePolicyDoc").getStringValue());
+                role.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
+                role.setRolePolicyDoc(entry.getAttribute(
+                        LDAPUtils.ROLE_POLICY_DOC).getStringValue());
 
+                String createTimeStamp = entry.getAttribute(
+                        LDAPUtils.CREATE_TIMESTAMP).getStringValue();
                 String createTime = DateUtil.toServerResponseFormat(
-                        entry.getAttribute("createTimeStamp").getStringValue());
+                        createTimeStamp);
                 role.setCreateDate(createTime);
             } catch (LDAPException ex) {
                 throw new DataAccessException("Failed to find user details.\n" + ex);
@@ -75,29 +90,41 @@ public class RoleImpl implements RoleDAO {
         return role;
     }
 
-    /*
+    /**
      * Get all the roles with path prefix from LDAP.
+     *
+     * @param account User Account details.
+     * @param pathPrefix Path prefix of roles.
+     * @return Roles.
+     * @throws com.seagates3.exception.DataAccessException
      */
     @Override
-    public Role[] findAll(String accountName, String pathPrefix) throws DataAccessException {
+    public Role[] findAll(Account account, String pathPrefix)
+            throws DataAccessException {
         ArrayList roles = new ArrayList();
         Role role;
 
-        String[] attrs = {"rolename", "rolePolicyDoc", "path", "createTimestamp"};
-        String ldapBase = String.format("ou=roles,o=%s,ou=accounts,%s", accountName,
-                LdapUtils.getBaseDN());
-        String filter = String.format("(&(path=%s*)(objectclass=role))",
-                pathPrefix, accountName);
+        String[] attrs = {LDAPUtils.ROLE_NAME, LDAPUtils.ROLE_POLICY_DOC,
+            LDAPUtils.PATH, LDAPUtils.CREATE_TIMESTAMP};
+
+        String ldapBase = String.format("%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ROLE_OU,
+                LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN);
+        String filter = String.format("(&(%s=%s*)(%s=%s))", LDAPUtils.PATH,
+                pathPrefix, LDAPUtils.OBJECT_CLASS, LDAPUtils.ROLE_OBJECT_CLASS
+        );
 
         LDAPSearchResults ldapResults;
         try {
-            ldapResults = LdapUtils.search(ldapBase,
+            ldapResults = LDAPUtils.search(ldapBase,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to find all roles.\n" + ex);
         }
 
-        while(ldapResults.hasMore()) {
+        while (ldapResults.hasMore()) {
             role = new Role();
             LDAPEntry entry;
             try {
@@ -105,13 +132,16 @@ public class RoleImpl implements RoleDAO {
             } catch (LDAPException ex) {
                 throw new DataAccessException("Ldap failure.\n" + ex);
             }
-            role.setAccountName(accountName);
-            role.setName(entry.getAttribute("rolename").getStringValue());
-            role.setPath(entry.getAttribute("path").getStringValue());
-            role.setRolePolicyDoc(entry.getAttribute("rolePolicyDoc").getStringValue());
+            role.setAccount(account);
+            role.setName(entry.getAttribute(LDAPUtils.ROLE_NAME)
+                    .getStringValue());
+            role.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
+            role.setRolePolicyDoc(entry.getAttribute(LDAPUtils.ROLE_POLICY_DOC)
+                    .getStringValue());
 
             String createTime = DateUtil.toServerResponseFormat(
-                        entry.getAttribute("createTimeStamp").getStringValue());
+                    entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
+                    .getStringValue());
             role.setCreateDate(createTime);
 
             roles.add(role);
@@ -121,37 +151,54 @@ public class RoleImpl implements RoleDAO {
         return (Role[]) roles.toArray(roleList);
     }
 
-    /*
+    /**
      * Delete the role from LDAP.
+     *
+     * @param role Role.
+     * @throws com.seagates3.exception.DataAccessException
      */
     @Override
     public void delete(Role role) throws DataAccessException {
-        String dn = String.format("rolename=%s,ou=roles,o=%s,ou=accounts,%s", role.getName(),
-                role.getAccountName(), LdapUtils.getBaseDN());
+        String dn = String.format("%s=%s,%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ROLE_NAME, role.getName(),
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ROLE_OU,
+                LDAPUtils.ORGANIZATIONAL_NAME, role.getAccount().getName(),
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN
+        );
 
         try {
-            LdapUtils.delete(dn);
+            LDAPUtils.delete(dn);
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to delete the role.\n" + ex);
         }
     }
 
-    /*
+    /**
      * Create a new entry for the role in LDAP.
+     *
+     * @param role Role
+     * @throws com.seagates3.exception.DataAccessException
      */
     @Override
     public void save(Role role) throws DataAccessException {
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
-        attributeSet.add( new LDAPAttribute("objectclass", "role"));
-        attributeSet.add( new LDAPAttribute("rolename", role.getName()));
-        attributeSet.add( new LDAPAttribute("rolepolicydoc", role.getRolePolicyDoc()));
-        attributeSet.add( new LDAPAttribute("path", role.getPath()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ROLE_OBJECT_CLASS));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.ROLE_NAME, role.getName()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.ROLE_POLICY_DOC,
+                role.getRolePolicyDoc()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.PATH, role.getPath()));
 
-        String dn = String.format("rolename=%s,ou=roles,o=%s,ou=accounts,%s",
-                role.getName(), role.getAccountName(), LdapUtils.getBaseDN());
+        String dn = String.format("%s=%s,%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ROLE_NAME, role.getName(),
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ROLE_OU,
+                LDAPUtils.ORGANIZATIONAL_NAME, role.getAccount().getName(),
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN);
 
         try {
-            LdapUtils.add(new LDAPEntry(dn, attributeSet));
+            LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to create role.\n" + ex);
         }

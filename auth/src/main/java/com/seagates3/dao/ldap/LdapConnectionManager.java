@@ -16,33 +16,34 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.dao.ldap;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Properties;
 
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.connectionpool.PoolManager;
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.exception.ServerInitialisationException;
+import java.io.UnsupportedEncodingException;
 
-
-public class LdapConnectionManager{
+public class LdapConnectionManager {
 
     static PoolManager ldapPool;
     static String ldapLoginDN, ldapLoginPW;
 
-    public static void initLdap(Properties authServerConfig) {
+    public static void initLdap()
+            throws ServerInitialisationException {
         try {
-            ldapPool  = new PoolManager(authServerConfig.getProperty("ldapHost"),
-                    Integer.parseInt(authServerConfig.getProperty("ldapPort")),
-                    Integer.parseInt(authServerConfig.getProperty("maxCons")),
-                    Integer.parseInt(authServerConfig.getProperty("maxSharedCons")),
+            ldapPool = new PoolManager(AuthServerConfig.getLdapHost(),
+                    AuthServerConfig.getLdapPort(),
+                    AuthServerConfig.getLdapMaxConnections(),
+                    AuthServerConfig.getLdapMaxSharedConnections(),
                     null);
 
-            ldapLoginDN = authServerConfig.getProperty("ldapLoginDN");
-            ldapLoginPW = authServerConfig.getProperty("ldapLoginPW");
+            ldapLoginDN = AuthServerConfig.getLdapLoginDN();
+            ldapLoginPW = AuthServerConfig.getLdapLoginPassword();
         } catch (LDAPException ex) {
+            String msg = "Failed to initialise LDAP.\n" + ex.toString();
+            throw new ServerInitialisationException(msg);
         }
     }
 

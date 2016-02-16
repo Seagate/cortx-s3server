@@ -32,8 +32,8 @@ public class AuthServerActionTest {
     }
 
     /**
-     * Test AuthServerAction#toControllerClassName.
-     * Case - Check if valid controller class name is returned.
+     * Test AuthServerAction#toControllerClassName. Case - Check if valid
+     * controller class name is returned.
      *
      * @throws java.lang.NoSuchMethodException
      * @throws java.lang.IllegalAccessException
@@ -58,8 +58,8 @@ public class AuthServerActionTest {
     }
 
     /**
-     * Test AuthServerAction#toValidatorClassName.
-     * Case - Check if valid validator class name is returned.
+     * Test AuthServerAction#toValidatorClassName. Case - Check if valid
+     * validator class name is returned.
      *
      * @throws java.lang.NoSuchMethodException
      * @throws java.lang.IllegalAccessException
@@ -78,7 +78,7 @@ public class AuthServerActionTest {
         Object[] parameters = new Object[1];
         parameters[0] = "User";
 
-        String expectedClassName = "com.seagates3.validator.UserValidator";
+        String expectedClassName = "com.seagates3.parameter.validator.UserParameterValidator";
         String className = (String) private_method.invoke(authServerAction, parameters);
         Assert.assertEquals(expectedClassName, className);
     }

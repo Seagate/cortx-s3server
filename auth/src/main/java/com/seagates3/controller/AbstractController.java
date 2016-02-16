@@ -16,16 +16,15 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.controller;
-
-import java.util.Map;
 
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
+import java.util.Map;
 
 public abstract class AbstractController {
+
     final Requestor requestor;
     final Map<String, String> requestBody;
 

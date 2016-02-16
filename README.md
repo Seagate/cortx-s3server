@@ -56,3 +56,38 @@ sudo /opt/seagate/s3/starts3.sh
 ```sh
 sudo /opt/seagate/s3/startauth.sh
 ```
+
+
+## Steps to create Java key store and Certificate.
+```sh
+keytool -genkey -keyalg RSA -alias s3auth -keystore s3_auth.jks -storepass seagate -validity 360 -keysize 2048
+```
+What is your first and last name?
+   [Unknown]: signin.seagate.com
+What is the name of your organization unit?
+   [Unknown]: s3
+What is the name of your organization?
+   [Unknown]: seagate
+What is the name of your City or Locality?
+   [Unknown]: Pune
+What is the name of your State or Province?
+   [Unknown]: MH
+What is the two-letter country code for this unit?
+   [Unknown]: IN
+is CN=signin.seagate.com, OU=s3, O=seagate, L=Pune, ST=MH, C=IN correct?
+   [no]: yes
+
+Enter key password for <s3auth>
+	(RETURN if same as keystore password):
+
+## Steps to generate crt from Key store
+```sh
+keytool -importkeystore -srckeystore s3_auth.jks -destkeystore s3_auth.p12 -srcstoretype jks -deststoretype pkcs12
+```
+```sh
+openssl pkcs12 -in s3_auth.jks.p12 -out s3_auth.jks.pem
+```
+
+```sh
+openssl x509 -in seagates3.pem -out seagates3.crt
+```

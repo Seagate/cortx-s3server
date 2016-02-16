@@ -35,7 +35,7 @@ def account_tests():
     account_args['AccountName'] = 's3test'
 
     test_msg = "Create account s3test"
-    account_response_pattern = "RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w-]*$"
+    account_response_pattern = "AccountId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w-]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
 
@@ -225,11 +225,14 @@ def saml_provider_tests():
     saml_provider_args['SAMLProviderArn'] = response_elements['SAMLProviderArn']
 
     test_msg = 'Update SAML provider'
+    saml_provider_args = {}
+    saml_provider_args['SAMLProviderArn'] = "arn:seagate:iam:::S3IDP"
+    saml_provider_args['SAMLMetadataDocument'] = metadata_doc_full_path
     result = AuthTest(test_msg).update_saml_provider(**saml_provider_args).execute_test()
     result.command_response_should_have("SAML provider Updated.")
 
     test_msg = 'List SAML providers'
-    saml_provider_response_pattern = "ARN = arn:aws:iam::000:instance-profile/S3IDP, ValidUntil = [\S\s]*$"
+    saml_provider_response_pattern = "ARN = arn:seagate:iam:::S3IDP, ValidUntil = [\S\s]*$"
     result = AuthTest(test_msg).list_saml_providers(**saml_provider_args).execute_test()
     result.command_should_match_pattern(saml_provider_response_pattern)
 
@@ -241,7 +244,7 @@ def saml_provider_tests():
     result = AuthTest(test_msg).list_saml_providers(**saml_provider_args).execute_test()
     result.command_should_match_pattern("")
 
-def get_deferation_token_test():
+def get_federation_token_test():
     federation_token_args = {}
     federation_token_args['Name'] = 's3root'
 
@@ -269,4 +272,4 @@ user_tests()
 accesskey_tests()
 role_tests()
 saml_provider_tests()
-get_deferation_token_test()
+get_federation_token_test()

@@ -16,12 +16,12 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.model;
 
 public class AccessKey {
-    
+
     public enum AccessKeyStatus {
+
         ACTIVE("Active"),
         INACTIVE("Inactive");
 
@@ -37,20 +37,20 @@ public class AccessKey {
         }
     }
 
-    protected String userId;
-    protected String acessKeyId;
-    protected String secretKey;
-    protected AccessKeyStatus status;
-    protected String createDate;
+    private String userId;
+    private String id;
+    private String secretKey;
+    private String createDate;
     private String token;
     private String expiry;
+    private AccessKeyStatus status;
 
     public String getUserId() {
         return userId;
     }
 
-    public String getAccessKeyId() {
-        return acessKeyId;
+    public String getId() {
+        return id;
     }
 
     public String getSecretKey() {
@@ -77,8 +77,8 @@ public class AccessKey {
         this.userId = userId;
     }
 
-    public void setAccessKeyId(String accessKeyId) {
-        this.acessKeyId = accessKeyId;
+    public void setId(String accessKeyId) {
+        this.id = accessKeyId;
     }
 
     public void setSecretKey(String secretKey) {

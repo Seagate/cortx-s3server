@@ -16,18 +16,22 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.dao.ldap;
 
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
-
+import com.seagates3.dao.AccountDAO;
+import com.seagates3.dao.DAODispatcher;
+import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.RequestorDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
+import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RequestorImpl implements RequestorDAO {
 
@@ -37,33 +41,78 @@ public class RequestorImpl implements RequestorDAO {
 
         requestor.setAccessKey(accessKey);
 
-        if(accessKey.getUserId()!= null) {
-            requestor.setId(accessKey.getUserId());
+        if (accessKey.getUserId() != null) {
             String filter;
-            String[] attrs = {"o", "cn"};
+            String[] attrs = {LDAPUtils.COMMON_NAME};
             LDAPSearchResults ldapResults;
 
-            filter = String.format("id=%s", requestor.getId());
+            filter = String.format("%s=%s", LDAPUtils.USER_ID,
+                    accessKey.getUserId());
+
+            String baseDN = String.format("%s=%s,%s",
+                    LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                    LDAPUtils.BASE_DN);
 
             try {
-                ldapResults = LdapUtils.search(LdapUtils.getBaseDN(),
-                        LDAPConnection.SCOPE_SUB, filter, attrs);
+                ldapResults = LDAPUtils.search(baseDN, LDAPConnection.SCOPE_SUB,
+                        filter, attrs);
             } catch (LDAPException ex) {
-                throw new DataAccessException("Failed to find requestor details.\n" + ex);
+                throw new DataAccessException(
+                        "Failed to find requestor details.\n" + ex);
             }
 
-            if(ldapResults.hasMore()) {
+            if (ldapResults.hasMore()) {
                 LDAPEntry entry;
                 try {
                     entry = ldapResults.next();
                 } catch (LDAPException ex) {
                     throw new DataAccessException("LDAP error\n" + ex);
                 }
-                requestor.setAccountName(entry.getAttribute("o").getStringValue());
-                requestor.setName(entry.getAttribute("cn").getStringValue());
+
+                requestor.setId(accessKey.getUserId());
+                requestor.setName(entry.getAttribute(
+                        LDAPUtils.COMMON_NAME).getStringValue());
+
+                String accountName = getAccountName(entry.getDN());
+                requestor.setAccount(getAccount(accountName));
+            } else {
+                throw new DataAccessException(
+                        "Failed to find the requestor who owns the "
+                        + "given access key.\n");
             }
         }
 
         return requestor;
+    }
+
+    /**
+     * Extract the account name from user distinguished name.
+     *
+     * @param dn
+     * @return Account Name
+     */
+    private String getAccountName(String dn) {
+        String dnRegexPattern = "[\\w\\W]+,o=(.*?),[\\w\\W]+";
+
+        Pattern pattern = Pattern.compile(dnRegexPattern);
+        Matcher matcher = pattern.matcher(dn);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return "";
+    }
+
+    /**
+     * Get the account details from account name.
+     *
+     * @param accountName Account name.
+     * @return Account
+     */
+    private Account getAccount(String accountName) throws DataAccessException {
+        AccountDAO accountDao = (AccountDAO) DAODispatcher.getResourceDAO(
+                DAOResource.ACCOUNT);
+
+        return accountDao.find(accountName);
     }
 }

@@ -32,6 +32,11 @@ Ensure you have all the dependencies installed for pyclient.
 Python Version 3.5 (package name - python3.5) and virtualenv are required.
 
 How to setup virtual env?
+- Run setup.sh as root user to setup virtual env with dependencies.
+Note - virtual env directory "mero_st" gets created in current directory.
+
+            Or
+
 - Install virtual env via pip
 sudo pip install virtualenv
 
@@ -48,8 +53,13 @@ sudo source mero_st/bin/activate
 sudo deactivate mero_st
 
 Dependencies:
-Required scripttest.
-sudo pip install scripttest
+Run the following to install the dependencies.
+sudo pip install pyyaml==3.11
+sudo pip install xmltodict==0.9.2
+sudo pip install boto3==1.2.2
+sudo pip install botocore==1.3.8
+sudo pip install scripttest==1.3
+
 
 How to run?
 - Ensure you have s3server, auth server and mero running with test data.

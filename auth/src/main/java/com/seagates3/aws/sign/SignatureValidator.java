@@ -23,7 +23,7 @@ package com.seagates3.aws.sign;
 import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.response.generator.xml.AuthenticationResponseGenerator;
+import com.seagates3.response.generator.AuthenticationResponseGenerator;
 
 public class SignatureValidator {
     private final String SIGNER_PACKAGE = "com.seagates3.aws.sign";

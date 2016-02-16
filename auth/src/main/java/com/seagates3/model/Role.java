@@ -16,14 +16,14 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 31-Oct-2015
  */
-
 package com.seagates3.model;
 
 public class Role {
+
     private String rolePolicyDoc;
     private String path;
     private String name;
-    private String accountName;
+    private Account account;
 
     /*
      * Store the date in the server response format i.e
@@ -43,8 +43,8 @@ public class Role {
         return name;
     }
 
-    public String getAccountName() {
-        return accountName;
+    public Account getAccount() {
+        return account;
     }
 
     public String getCreateDate() {
@@ -63,8 +63,8 @@ public class Role {
         this.name = name;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     public void setCreateDate(String createDate) {

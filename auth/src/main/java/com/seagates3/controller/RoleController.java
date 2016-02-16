@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 1-Nov-2015
  */
-
 package com.seagates3.controller;
 
 import com.seagates3.dao.DAODispatcher;
@@ -26,12 +25,13 @@ import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.Role;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.response.generator.xml.RoleResponseGenerator;
+import com.seagates3.response.generator.RoleResponseGenerator;
 import com.seagates3.util.DateUtil;
 import java.util.Map;
 import org.joda.time.DateTime;
 
 public class RoleController extends AbstractController {
+
     RoleDAO roleDAO;
     RoleResponseGenerator responseGenerator;
 
@@ -43,18 +43,28 @@ public class RoleController extends AbstractController {
         responseGenerator = new RoleResponseGenerator();
     }
 
+    /**
+     * Create new role.
+     *
+     * @return ServerReponse
+     */
     @Override
-    public ServerResponse create() throws DataAccessException {
-        Role role = roleDAO.find(requestor.getAccountName(),
-                requestBody.get("RoleName"));
+    public ServerResponse create() {
+        Role role;
+        try {
+            role = roleDAO.find(requestor.getAccount(),
+                    requestBody.get("RoleName"));
+        } catch (DataAccessException ex) {
+            return responseGenerator.internalServerError();
+        }
 
-        if(role.exists()) {
+        if (role.exists()) {
             return responseGenerator.entityAlreadyExists();
         }
 
         role.setRolePolicyDoc(requestBody.get("AssumeRolePolicyDocument"));
 
-        if(requestBody.containsKey("path")) {
+        if (requestBody.containsKey("path")) {
             role.setPath(requestBody.get("path"));
         } else {
             role.setPath("/");
@@ -62,9 +72,13 @@ public class RoleController extends AbstractController {
 
         role.setCreateDate(DateUtil.toServerResponseFormat(DateTime.now()));
 
-        roleDAO.save(role);
+        try {
+            roleDAO.save(role);
+        } catch (DataAccessException ex) {
+            return responseGenerator.internalServerError();
+        }
 
-        return responseGenerator.create(role);
+        return responseGenerator.generateCreateResponse(role);
     }
 
     /*
@@ -72,39 +86,45 @@ public class RoleController extends AbstractController {
      * Check if the role has policy attached before deleting.
      */
     @Override
-    public ServerResponse delete() throws DataAccessException {
-        Role role = roleDAO.find(requestor.getAccountName(),
-                requestBody.get("RoleName"));
+    public ServerResponse delete() {
+        Role role;
+        try {
+            role = roleDAO.find(requestor.getAccount(),
+                    requestBody.get("RoleName"));
+        } catch (DataAccessException ex) {
+            return responseGenerator.internalServerError();
+        }
 
-        if(!role.exists()) {
+        if (!role.exists()) {
             return responseGenerator.noSuchEntity();
         }
 
-        /*
-         * Check if policy is associated with the role.
-         */
-        roleDAO.delete(role);
+        try {
+            roleDAO.delete(role);
+        } catch (DataAccessException ex) {
+            return responseGenerator.internalServerError();
+        }
 
-        return responseGenerator.delete();
+        return responseGenerator.generateDeleteResponse();
     }
 
     @Override
-    public ServerResponse list() throws DataAccessException {
+    public ServerResponse list() {
         String pathPrefix;
 
-        if(requestBody.containsKey("PathPrefix")) {
+        if (requestBody.containsKey("PathPrefix")) {
             pathPrefix = requestBody.get("PathPrefix");
         } else {
             pathPrefix = "/";
         }
 
         Role[] roleList;
-        roleList = roleDAO.findAll(requestor.getAccountName(), pathPrefix);
-
-        if(roleList == null) {
+        try {
+            roleList = roleDAO.findAll(requestor.getAccount(), pathPrefix);
+        } catch (DataAccessException ex) {
             return responseGenerator.internalServerError();
         }
 
-        return responseGenerator.list(roleList);
+        return responseGenerator.generateListResponse(roleList);
     }
 }

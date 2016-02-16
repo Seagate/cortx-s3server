@@ -16,28 +16,31 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.model;
 
 public class Account {
 
+    private String id;
     private String name;
-    private Boolean accountExists;
+
+    public String getId() {
+        return id;
+    }
 
     public String getName() {
         return name;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setAccountExists(Boolean accountExists) {
-        this.accountExists = accountExists;
-    }
-
     public Boolean exists() {
-        return accountExists;
+        return id != null;
     }
 
 }

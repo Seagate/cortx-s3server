@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
@@ -29,6 +28,8 @@ public interface AccessKeyDAO {
      * Get the access key details from the database.
      */
     public AccessKey find(String accessKeyId) throws DataAccessException;
+
+    public AccessKey findFromToken(String accessKeyId) throws DataAccessException;
 
     /*
      * Get all the access keys belonging to the user.

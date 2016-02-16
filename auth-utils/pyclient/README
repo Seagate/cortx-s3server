@@ -29,7 +29,36 @@ Dependencies:
 Required boto3, botocore, pyyaml, xmltodict.
 - sudo pip install boto3 botocore pyyaml xmltodict
 
+Update /etc/hosts:
+Add the following entries to /etc/hosts.
+127.0.0.1    iam.seagate.com
+127.0.0.1    sts.seagate.com
+127.0.0.1    s3.seagate.com
+
 Usage:
-(Before running pyclient, activate python3.5 via virtual env.)
+(Before running pyclient, activate python3.5 via virtual env and go to mero/fe/s3/auth-utils/pyclient directory.)
 
 python pyclient <command> <options>
+
+Ex -
+
+Create account
+python pyclient CreateAccount -n "myaccount"
+
+Create user
+python pyclient CreateUser -n "myUser" --access_key "1234" --secret_key "ABCD12"
+
+Help:
+You use --help option to view available commands and options.
+
+python pyclient --help
+
+SAML commands (for debugging)
+- LDAP search
+ldapsearch -b "dc=s3,dc=seagate,dc=com" -x -w seagate -D "cn=admin,dc=seagate,dc=com"
+
+- Ldap Delete all entries
+ldapdelete -x -w seagate -D "cn=admin,dc=seagate,dc=com" -r "dc=seagate,dc=com"
+
+- LDAP Add entries from ldap-init script
+ldapadd -w seagate -x -D "cn=admin,dc=seagate,dc=com" -f ldap-init.ldif

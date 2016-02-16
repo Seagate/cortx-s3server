@@ -16,27 +16,20 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.controller;
 
-import java.util.Date;
-import java.util.Map;
-
-import com.seagates3.model.Requestor;
-import com.seagates3.dao.AccessKeyDAO;
-import com.seagates3.dao.DAODispatcher;
-import com.seagates3.dao.DAOResource;
-import com.seagates3.dao.UserDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.AccessKey.AccessKeyStatus;
+import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.response.generator.xml.FederationTokenResponseGenerator;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.util.DateUtil;
-import com.seagates3.util.KeyGenUtil;
+import com.seagates3.response.generator.FederationTokenResponseGenerator;
+import com.seagates3.service.AccessKeyService;
+import com.seagates3.service.UserService;
+import java.util.Map;
 
-public class FederationTokenController extends AbstractController{
+public class FederationTokenController extends AbstractController {
+
     FederationTokenResponseGenerator fedTokenResponse;
 
     public FederationTokenController(Requestor requestor,
@@ -55,63 +48,21 @@ public class FederationTokenController extends AbstractController{
         String userName = requestBody.get("Name");
 
         int duration;
-        if(requestBody.containsKey("DurationSeconds")) {
+        if (requestBody.containsKey("DurationSeconds")) {
             duration = Integer.parseInt(requestBody.get("DurationSeconds"));
         } else {
             duration = 43200;
         }
 
-        User user = createUser(requestor.getAccountName(), userName);
+        User user = UserService.createFederationUser(requestor.getAccount(),
+                userName);
 
-        AccessKey accessKey = createAccessKey(user, duration);
-        if(accessKey == null) {
+        AccessKey accessKey = AccessKeyService.createFedAccessKey(user,
+                duration);
+        if (accessKey == null) {
             return fedTokenResponse.internalServerError();
         }
 
-        return fedTokenResponse.create(user, accessKey);
-    }
-
-    /*
-     * Search for the user in the data base. If the user exists, return the user.
-     * Else, create a new user.
-     */
-    private User createUser(String accountName, String userName) throws DataAccessException {
-        UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
-        User user = userDAO.find(accountName, userName);
-
-        if(! user.exists()) {
-            user.setId(KeyGenUtil.userId());
-            user.setUserType(User.UserType.IAM_FED_USER);
-            userDAO.save(user);
-
-        }
-        return user;
-    }
-
-    /*
-     * Create temporary access key, secret key and session token for the user.
-     */
-    private AccessKey createAccessKey(User user, long timeToExpire) throws DataAccessException {
-        AccessKeyDAO accessKeyDAO =
-                (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
-        AccessKey accessKey = new AccessKey();
-
-        String strToEncode = user.getId() + System.currentTimeMillis();
-
-        accessKey.setUserId(user.getId());
-        accessKey.setAccessKeyId(KeyGenUtil.userAccessKeyId());
-        accessKey.setSecretKey(KeyGenUtil.userSercretKey(strToEncode));
-
-        strToEncode = user.getId() + System.currentTimeMillis();
-        accessKey.setToken(KeyGenUtil.userSercretKey(strToEncode));
-        accessKey.setStatus(AccessKeyStatus.ACTIVE);
-
-        long currentTime = DateUtil.getCurrentTime();
-        Date expiryDate = new Date(currentTime + (timeToExpire * 1000));
-        accessKey.setExpiry(DateUtil.toServerResponseFormat(expiryDate));
-
-        accessKeyDAO.save(accessKey);
-
-        return accessKey;
+        return fedTokenResponse.generateCreateResponse(user, accessKey);
     }
 }

@@ -16,13 +16,22 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 
 public interface AccountDAO {
+
+    /**
+     * TODO - Replace this method with an overloaded find method taking integer
+     * account id as a parameter.
+     *
+     * @param accountID Account ID.
+     * @return Account
+     * @throws DataAccessException
+     */
+    public Account findByID(String accountID) throws DataAccessException;
 
     /*
      * Get account details from the database.

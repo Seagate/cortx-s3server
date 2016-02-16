@@ -16,15 +16,24 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.dao;
 
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.dao.ldap.LdapConnectionManager;
+import com.seagates3.exception.ServerInitialisationException;
+
 public class DAODispatcher {
+
     static final String DAO_PACKAGE = "com.seagates3.dao";
     static DAOProvider provider;
 
-    public static void Init(String dataSource) {
+    public static void Init() throws ServerInitialisationException {
+        String dataSource = AuthServerConfig.getDataSource();
         DAODispatcher.provider = DAOProvider.valueOf(dataSource.toUpperCase());
+
+        if ("LDAP".equals(dataSource.toUpperCase())) {
+            LdapConnectionManager.initLdap();
+        }
     }
 
     public static Object getResourceDAO(DAOResource daoResource) {

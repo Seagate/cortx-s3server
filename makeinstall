@@ -38,6 +38,10 @@ cp starts3.sh $S3_INSTALL_LOCATION/
 echo "Copying Auth server jar to install location..."
 cp -f auth/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION
 
+#Copy Auth Server resources to install location
+echo "Copying auth/resources to install location"
+cp -ru auth/resources/ /opt/seagate/auth/
+
 # Copy the auth server startup script.
 echo "Copying auth server startup script to install location..."
 cp startauth.sh $AUTH_INSTALL_LOCATION/

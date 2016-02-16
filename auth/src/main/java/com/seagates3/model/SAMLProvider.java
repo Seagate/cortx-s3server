@@ -16,24 +16,20 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 14-Oct-2015
  */
-
 package com.seagates3.model;
 
 public class SAMLProvider {
 
-    private String accountName;
-    private SAMLAssertionAttribute[] attributes;
+    private Account account;
     private String name;
     private String samlMetadata;
     private String expiry;
-    private KeyDescriptor[] keyDescriptors;
-    private SAMLServiceEndpoints[] samlServices;
-    private String[] nameIdFormats;
     private String issuer;
     private String createDate;
+    private SAMLMetadataTokens samlMetadataTokens;
 
-    public String getAccountName() {
-        return accountName;
+    public Account getAccount() {
+        return account;
     }
 
     public String getCreateDate() {
@@ -52,28 +48,16 @@ public class SAMLProvider {
         return expiry;
     }
 
-    public KeyDescriptor[] getKeyDescriptors() {
-        return keyDescriptors;
-    }
-
-    public SAMLServiceEndpoints[] getSAMLServices() {
-        return samlServices;
-    }
-
-    public String[] getNameIdFormats() {
-        return nameIdFormats;
-    }
-
-    public SAMLAssertionAttribute[] getAttributes() {
-        return attributes;
-    }
-
     public String getIssuer() {
         return issuer;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
+    public SAMLMetadataTokens getSAMLMetadataTokens() {
+        return samlMetadataTokens;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     public void setCreateDate(String createDate) {
@@ -92,24 +76,12 @@ public class SAMLProvider {
         this.expiry = expiry;
     }
 
-    public void setKeyDescriptors(KeyDescriptor[] keyDescriptors) {
-        this.keyDescriptors = keyDescriptors;
-    }
-
-    public void setSAMLServices(SAMLServiceEndpoints[] samlServices) {
-        this.samlServices = samlServices;
-    }
-
-    public void setNameIdFormats(String[] nameIdFormats) {
-        this.nameIdFormats = nameIdFormats;
-    }
-
-    public void setAttributes(SAMLAssertionAttribute[] attributes) {
-        this.attributes = attributes;
-    }
-
     public void setIssuer(String issuer) {
         this.issuer = issuer;
+    }
+
+    public void setSAMLMetadataTokens(SAMLMetadataTokens samlTokens) {
+        this.samlMetadataTokens = samlTokens;
     }
 
     public Boolean exists() {

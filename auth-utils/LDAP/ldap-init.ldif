@@ -31,3 +31,7 @@ objectclass: organizationalunit
 dn: ou=accesskeys,dc=s3,dc=seagate,dc=com
 ou: accesskeys
 objectclass: organizationalunit
+
+dn: ou=idp,dc=s3,dc=seagate,dc=com
+ou: idp
+objectclass: organizationalunit

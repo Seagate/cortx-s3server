@@ -16,10 +16,7 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.controller;
-
-import java.util.Map;
 
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -30,165 +27,213 @@ import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.response.generator.xml.AccessKeyResponseGenerator;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.AccessKeyResponseGenerator;
 import com.seagates3.util.KeyGenUtil;
+import java.util.Map;
 
 public class AccessKeyController extends AbstractController {
+
     AccessKeyDAO accessKeyDAO;
     UserDAO userDAO;
-    AccessKeyResponseGenerator accessKeyResponse;
+    AccessKeyResponseGenerator accessKeyResponseGenerator;
 
     public AccessKeyController(Requestor requestor, Map<String, String> requestBody) {
         super(requestor, requestBody);
 
         accessKeyDAO = (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
         userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
-        accessKeyResponse = new AccessKeyResponseGenerator();
+        accessKeyResponseGenerator = new AccessKeyResponseGenerator();
     }
 
-    /*
-     * Default maximum access keys allowed per user are 2.
+    /**
+     * Create an access key for the user. Maximum access keys allowed per user
+     * are 2.
+     *
+     * @return ServerRepsonse
      */
     @Override
-    public ServerResponse create() throws DataAccessException {
+    public ServerResponse create() {
         String userName;
 
-        if(requestBody.containsKey("UserName")) {
+        if (requestBody.containsKey("UserName")) {
             userName = requestBody.get("UserName");
         } else {
             userName = requestor.getName();
         }
 
         User user;
-        user = userDAO.find(requestor.getAccountName(), userName);
-
-        if(!user.exists()) {
-            String errorMessage = String.format("the user with name %s cannot be "
-                + "found", userName);
-            return accessKeyResponse.noSuchEntity(errorMessage);
+        try {
+            user = userDAO.find(requestor.getAccount().getName(), userName);
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
         }
 
-        if(accessKeyDAO.getCount(user.getId()) == 2) {
-            return accessKeyResponse.accessKeyQuotaExceeded();
+        if (!user.exists()) {
+            return accessKeyResponseGenerator.noSuchEntity();
+        }
+
+        try {
+            if (accessKeyDAO.getCount(user.getId()) == 2) {
+                return accessKeyResponseGenerator.accessKeyQuotaExceeded();
+            }
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
         }
 
         AccessKey accessKey = new AccessKey();
         String strToEncode = user.getId() + System.currentTimeMillis();
 
         accessKey.setUserId(user.getId());
-        accessKey.setAccessKeyId(KeyGenUtil.userAccessKeyId());
+        accessKey.setId(KeyGenUtil.userAccessKeyId());
         accessKey.setSecretKey(KeyGenUtil.userSercretKey(strToEncode));
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
-        accessKeyDAO.save(accessKey);
+        try {
+            accessKeyDAO.save(accessKey);
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
+        }
 
-        return accessKeyResponse.create(userName, accessKey);
+        return accessKeyResponseGenerator.generateCreateResponse(userName,
+                accessKey);
     }
 
+    /**
+     * Delete an access key.
+     *
+     * @return ServerResponse
+     */
     @Override
-    public ServerResponse delete() throws DataAccessException {
+    public ServerResponse delete() {
         AccessKey accessKey;
-        accessKey = accessKeyDAO.find(requestBody.get("AccessKeyId"));
-        String errorMessage;
-
-        if(!accessKey.exists()) {
-            errorMessage = String.format("The access key with id %s does "
-                    + "not exist", accessKey.getAccessKeyId());
-            return accessKeyResponse.noSuchEntity(errorMessage);
+        try {
+            accessKey = accessKeyDAO.find(requestBody.get("AccessKeyId"));
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
         }
 
-        /*
-         * When both access key id and username are given, ensure that the access
-         * key id belongs to the user.
+        if (!accessKey.exists()) {
+            return accessKeyResponseGenerator.noSuchEntity();
+        }
+
+        /**
+         * When both access key id and username are given, ensure that the
+         * access key id belongs to the user.
          */
-        if(requestBody.containsKey("UserName")) {
+        if (requestBody.containsKey("UserName")) {
             User user;
-            user = userDAO.find(requestor.getAccountName(),
-                    requestBody.get("UserName"));
-
-            if(!user.exists()) {
-                errorMessage = String.format("the user with name %s cannot be "
-                + "found", user.getName());
-                return accessKeyResponse.noSuchEntity(errorMessage);
+            try {
+                user = userDAO.find(requestor.getAccount().getName(),
+                        requestBody.get("UserName"));
+            } catch (DataAccessException ex) {
+                return accessKeyResponseGenerator.internalServerError();
             }
 
-            if(accessKey.getUserId().compareTo(user.getId()) != 0) {
-                errorMessage = String.format("User has no access key id %s",
-                        accessKey.getAccessKeyId());
-                return accessKeyResponse.noSuchEntity(errorMessage);
+            if (!user.exists()) {
+                return accessKeyResponseGenerator.noSuchEntity();
+            }
+
+            if (accessKey.getUserId().compareTo(user.getId()) != 0) {
+                return accessKeyResponseGenerator.badRequest();
             }
         }
 
-        accessKeyDAO.delete(accessKey);
+        try {
+            accessKeyDAO.delete(accessKey);
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
+        }
 
-        return accessKeyResponse.delete();
+        return accessKeyResponseGenerator.generateDeleteResponse();
     }
 
+    /**
+     * List the access keys belonging to the user.
+     *
+     * @return ServerResponse
+     */
     @Override
-    public ServerResponse list() throws DataAccessException {
+    public ServerResponse list() {
         String userName;
 
-        if(requestBody.containsKey("UserName")) {
+        if (requestBody.containsKey("UserName")) {
             userName = requestBody.get("UserName");
         } else {
             userName = requestor.getName();
         }
 
         User user;
-        user = userDAO.find(requestor.getAccountName(), userName);
+        try {
+            user = userDAO.find(requestor.getAccount().getName(), userName);
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
+        }
 
-        if(!user.exists()) {
-            String errorMessage = String.format("the user with name %s cannot be "
-                + "found", userName);
-            return accessKeyResponse.noSuchEntity(errorMessage);
+        if (!user.exists()) {
+            return accessKeyResponseGenerator.noSuchEntity();
         }
 
         AccessKey[] accessKeyList;
-        accessKeyList = accessKeyDAO.findAll(user);
-
-        return accessKeyResponse.list(userName, accessKeyList);
-    }
-
-    @Override
-    public ServerResponse update() throws DataAccessException {
-        AccessKey accessKey;
-        accessKey = accessKeyDAO.find(requestBody.get("AccessKeyId"));
-        String errorMessage;
-
-        if(!accessKey.exists()) {
-            errorMessage = String.format("The access key with id %s does "
-                    + "not exist", accessKey.getAccessKeyId());
-            return accessKeyResponse.noSuchEntity(errorMessage);
+        try {
+            accessKeyList = accessKeyDAO.findAll(user);
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
         }
 
-        /*
-         * When both access key id and username are given, ensure that the access
-         * key id belongs to the user.
-         */
-        if(requestBody.containsKey("UserName")) {
-            User user;
-            user = userDAO.find(requestor.getAccountName(),
-                    requestBody.get("UserName"));
+        return accessKeyResponseGenerator.generateListResponse(userName,
+                accessKeyList);
+    }
 
-            if(!user.exists()) {
-                errorMessage = String.format("the user with name %s cannot be "
-                + "found", user.getName());
-                return accessKeyResponse.noSuchEntity(errorMessage);
+    /**
+     * Update the access key status.
+     *
+     * @return ServerResponse
+     */
+    @Override
+    public ServerResponse update() {
+        AccessKey accessKey;
+        try {
+            accessKey = accessKeyDAO.find(requestBody.get("AccessKeyId"));
+        } catch (DataAccessException ex) {
+            return accessKeyResponseGenerator.internalServerError();
+        }
+
+        if (!accessKey.exists()) {
+            return accessKeyResponseGenerator.noSuchEntity();
+        }
+
+        /**
+         * When both access key id and username are given, ensure that the
+         * access key id belongs to the user.
+         */
+        if (requestBody.containsKey("UserName")) {
+            User user;
+            try {
+                user = userDAO.find(requestor.getAccount().getName(),
+                        requestBody.get("UserName"));
+            } catch (DataAccessException ex) {
+                return accessKeyResponseGenerator.internalServerError();
             }
 
-            if(accessKey.getUserId().compareTo(user.getId()) != 0) {
-                errorMessage = String.format("User has no access key id %s",
-                        accessKey.getAccessKeyId());
-                return accessKeyResponse.noSuchEntity(errorMessage);
+            if (!user.exists()) {
+                return accessKeyResponseGenerator.noSuchEntity();
+            }
+
+            if (accessKey.getUserId().compareTo(user.getId()) != 0) {
+                return accessKeyResponseGenerator.noSuchEntity();
             }
         }
 
         String newStatus = requestBody.get("Status");
-        if(accessKey.getStatus().compareTo(newStatus) != 0) {
-            accessKeyDAO.update(accessKey, newStatus);
+        if (accessKey.getStatus().compareTo(newStatus) != 0) {
+            try {
+                accessKeyDAO.update(accessKey, newStatus);
+            } catch (DataAccessException ex) {
+                return accessKeyResponseGenerator.internalServerError();
+            }
         }
 
-        return accessKeyResponse.update();
+        return accessKeyResponseGenerator.generateUpdateResponse();
     }
 }

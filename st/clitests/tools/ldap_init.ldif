@@ -32,34 +32,38 @@ dn: ou=accesskeys,dc=s3,dc=seagate,dc=com
 ou: accesskeys
 objectclass: organizationalunit
 
-dn: o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
-o: mango_org
-objectclass: s3Account
+dn: ou=idp,dc=s3,dc=seagate,dc=com
+ou: accesskeys
+objectclass: organizationalunit
 
-dn: ou=users,o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
+dn: o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+o: s3_test
+accountid: 12345
+objectclass: Account
+
+dn: ou=users,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
 ou: users
 objectclass: organizationalunit
 
-dn: ou=idp,o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
-ou: idp
+dn: ou=roles,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: roles
 objectclass: organizationalunit
 
-dn: id=123,ou=users,o=mango_org,ou=accounts,dc=s3,dc=seagate,dc=com
-id: 123
-o: mango_org
-cn: kd
+dn: s3userid=123,ou=users,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+s3userid: 123
+cn: tester
 objectclass: iamUser
 
 dn: ak=AKIAJPINPFRBTPAYOGNA,ou=accesskeys,dc=s3,dc=seagate,dc=com
 ak: AKIAJPINPFRBTPAYOGNA
-id: 123
+s3userid: 123
 sk: ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYZ5Hd
 status: Active
 objectclass: accessKey
 
 dn: ak=AKIAJTYX36YCKQSAJT7Q,ou=accesskeys,dc=s3,dc=seagate,dc=com
 ak: AKIAJTYX36YCKQSAJT7Q
-id: 123
+s3userid: 123
 sk: A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt
 status: Active
 objectclass: accessKey

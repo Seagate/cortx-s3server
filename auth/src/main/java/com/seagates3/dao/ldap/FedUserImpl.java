@@ -46,12 +46,12 @@ public class FedUserImpl implements FedUserDAO{
 
         String[] attrs = {"id", "objectclass"};
         String ldapBase = String.format("ou=users,o=%s,ou=accounts,%s",
-                accountName, LdapUtils.getBaseDN());
+                accountName, LDAPUtils.getBaseDN());
         String filter = String.format("(cn=%s)", name);
 
         LDAPSearchResults ldapResults;
         try {
-            ldapResults = LdapUtils.search(ldapBase,
+            ldapResults = LDAPUtils.search(ldapBase,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to find federated user details.\n" + ex);
@@ -82,10 +82,10 @@ public class FedUserImpl implements FedUserDAO{
         attributeSet.add(new LDAPAttribute("id", user.getId()));
 
         String dn = String.format("id=%s,ou=users,o=%s,ou=accounts,%s",
-                user.getId(), user.getAccountName(), LdapUtils.getBaseDN());
+                user.getId(), user.getAccountName(), LDAPUtils.getBaseDN());
 
         try {
-            LdapUtils.add(new LDAPEntry(dn, attributeSet));
+            LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to save federated user.\n" + ex);
         }

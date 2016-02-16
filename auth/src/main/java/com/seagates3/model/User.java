@@ -16,11 +16,12 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.model;
 
 public class User {
+
     public enum UserType {
+
         IAM_USER("iamUser"),
         IAM_FED_USER("iamFedUser"),
         ROLE_USER("roleUser");
@@ -44,6 +45,11 @@ public class User {
     private String createDate;
     private String passwordLastUsed;
     private UserType userType;
+
+    /**
+     * TODO - Remove RoleName. User Type is sufficient to identify a role user
+     * from federated user or IAM user.
+     */
     private String roleName;
 
     public String getName() {
@@ -119,11 +125,11 @@ public class User {
     }
 
     private UserType getUserTypeConstant(String userClass) {
-        if(userClass.compareToIgnoreCase("iamuser") == 0) {
+        if (userClass.compareToIgnoreCase("iamuser") == 0) {
             return UserType.IAM_USER;
         }
 
-        if(userClass.compareToIgnoreCase("iamfeduser") == 0) {
+        if (userClass.compareToIgnoreCase("iamfeduser") == 0) {
             return UserType.IAM_FED_USER;
         }
 

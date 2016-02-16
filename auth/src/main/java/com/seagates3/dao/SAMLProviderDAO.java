@@ -16,29 +16,39 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 15-Oct-2015
  */
-
 package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
 import com.seagates3.model.SAMLProvider;
 import java.security.cert.Certificate;
 
 public interface SAMLProviderDAO {
 
+    /**
+     * Get the SAML provider from issuer name.
+     *
+     * @param issuer Issuer name.
+     * @return SAMLProvider
+     * @throws DataAccessException
+     */
+    public SAMLProvider find(String issuer) throws DataAccessException;
+
     /*
      * Get user details from the database.
      */
-    public SAMLProvider find(String accountName, String name) throws DataAccessException;
+    public SAMLProvider find(Account account, String name) throws DataAccessException;
 
     /*
      * Get the list of all the saml providers.
      */
-    public SAMLProvider[] findAll(String accountName) throws DataAccessException;
+    public SAMLProvider[] findAll(Account account) throws DataAccessException;
 
     /*
      * Return true if the key exists for the idp.
      */
-    public Boolean keyExists(String accountName, String name, Certificate cert) throws DataAccessException;
+    public Boolean keyExists(String accountId, String name, Certificate cert)
+            throws DataAccessException;
 
     /*
      * Create a new entry for the saml provider in the data base.
@@ -53,5 +63,6 @@ public interface SAMLProviderDAO {
     /*
      * Modify saml provider metadata.
      */
-    public void update(SAMLProvider samlProvider, String newSamlMetadata) throws DataAccessException;
+    public void update(SAMLProvider samlProvider, String newSamlMetadata)
+            throws DataAccessException;
 }

@@ -16,13 +16,14 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.model;
 
 public class Requestor {
+
     String id;
     String name;
-    String accountName;
+
+    Account account;
     AccessKey accessKey;
 
     /*
@@ -30,13 +31,6 @@ public class Requestor {
      */
     public String getId() {
         return id;
-    }
-
-    /*
-     * Return the accountId of the user.
-     */
-    public String getAccountName() {
-        return accountName;
     }
 
     /*
@@ -50,9 +44,16 @@ public class Requestor {
         return accessKey;
     }
 
+    public Account getAccount() {
+        return account;
+    }
 
     public void setAccessKey(AccessKey accessKey) {
         this.accessKey = accessKey;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     public void setId(String id) {
@@ -61,10 +62,6 @@ public class Requestor {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setAccountName(String accountId) {
-        this.accountName = accountId;
     }
 
     /*

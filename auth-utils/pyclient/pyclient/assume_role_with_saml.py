@@ -1,3 +1,4 @@
+import os
 class AssumeRoleWithSAML:
     def __init__(self, sts_client, cli_args):
         self.sts_client = sts_client
@@ -16,13 +17,13 @@ class AssumeRoleWithSAML:
             print("SAML assertion is required.")
             return
 
-        file_path = os.path.abspath(self.cli_args.saml_assertion)
-        if(not os.path.isfile(file_path)):
+        assertion_file_path = os.path.abspath(self.cli_args.saml_assertion)
+        if(not os.path.isfile(assertion_file_path)):
             print("Saml assertion file not found.")
             return
 
-        with open (file_path, "r") as saml_assertion_file:
-            assertion = federation_token_file.read()
+        with open (assertion_file_path, "r") as saml_assertion_file:
+            assertion = saml_assertion_file.read()
 
         assume_role_with_saml_args = {}
         assume_role_with_saml_args['SAMLAssertion'] = assertion
@@ -50,8 +51,8 @@ class AssumeRoleWithSAML:
             print(str(ex))
             return
 
-        print("FederatedUserId- %s, AccessKeyId- %s, SecretAccessKey- %s, SessionToken- %s" % (
-                result['FederatedUser']['FederatedUserId'],
+        print("AssumedRoleId- %s, AccessKeyId- %s, SecretAccessKey- %s, SessionToken- %s" % (
+                result['AssumedRoleUser']['AssumedRoleId'],
                 result['Credentials']['AccessKeyId'],
                 result['Credentials']['SecretAccessKey'],
-                result['Credentials']['SessionToken']))
+                result['Credentials']['SessionToken'],))

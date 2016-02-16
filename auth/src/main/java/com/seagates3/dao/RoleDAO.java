@@ -16,22 +16,26 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 31-Oct-2015
  */
-
 package com.seagates3.dao;
 
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
 import com.seagates3.model.Role;
 
 public interface RoleDAO {
-    /*
+
+    /**
      * Get role from the database.
      */
-    public Role find(String accountName, String roleName) throws DataAccessException;
+    public Role find(Account account, String roleName)
+            throws DataAccessException;
 
-    /*
-     * Get the details of all the roles with the given path prefix from an account.
+    /**
+     * Get the details of all the roles with the given path prefix from an
+     * account.
      */
-    public Role[] findAll(String accountName, String pathPrefix) throws DataAccessException;
+    public Role[] findAll(Account account, String pathPrefix)
+            throws DataAccessException;
 
     /*
      * Delete the role.
