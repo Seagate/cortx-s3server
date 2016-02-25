@@ -30,21 +30,39 @@
 #include "s3_request_object.h"
 #include "s3_timer.h"
 
+class S3AsyncOpResponse {
+public:
+  S3AsyncOpResponse() {
+    status = S3AsyncOpStatus::unknown;
+    error_message = "";
+    error_code = 0;
+  }
+
+  S3AsyncOpStatus status;
+  std::string error_message;
+  int error_code;  // this is same as Mero/Clovis errors
+};
+
 class S3AsyncOpContextBase {
   std::shared_ptr<S3RequestObject> request;
   std::function<void(void)> on_success;
   std::function<void(void)> on_failed;
 
   // Operational details
-  S3AsyncOpStatus status;
-  std::string error_message;
-  int error_code;  // this is same as Mero/Clovis errors
+  // When multiple operations are invoked in a single launch
+  // this indicates the status in order with tuple
+  // <return_code, message>
+  std::vector<S3AsyncOpResponse> ops_response;
+
+  int ops_count;
+  int response_received_count;
+  bool at_least_one_success;
 
   // To measure performance
   S3Timer timer;
   std::string operation_key;  // used to identify operation(metric) name
 public:
-  S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed);
+  S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed, int ops_cnt = 1);
   virtual ~S3AsyncOpContextBase() {}
 
   std::shared_ptr<S3RequestObject> get_request();
@@ -52,14 +70,25 @@ public:
   std::function<void(void)> on_success_handler();
   std::function<void(void)> on_failed_handler();
 
-  S3AsyncOpStatus get_op_status();
-  int get_errno();
+  S3AsyncOpStatus get_op_status_for(int op_idx);
+  int get_errno_for(int op_idx);
 
-  void set_op_status(S3AsyncOpStatus opstatus, std::string message);
-  void set_op_errno(int err);
+  void set_op_status_for(int op_idx, S3AsyncOpStatus opstatus, std::string message);
+  void set_op_errno_for(int op_idx, int err);
 
-  std::string& get_error_message();
+  std::string& get_error_message_for(int op_idx);
 
+  int incr_response_count() {
+    return ++response_received_count;
+  }
+
+  int get_ops_count() {
+    return ops_count;
+  }
+
+  bool is_at_least_one_op_successful() {
+    return at_least_one_success;
+  }
   // virtual void consume(char* chars, size_t length) = 0;
 
   void start_timer_for(std::string op_key);

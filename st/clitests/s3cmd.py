@@ -178,3 +178,8 @@ class S3cmdTest(PyCliTest):
         self.bucket_name = bucket_name
         self.with_cli("s3cmd -c " + self.s3cfg + " del " + "s3://" + self.bucket_name + "/" + self.filename)
         return self
+
+    def multi_delete_test(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " del " + "s3://" + self.bucket_name + "/ --recursive --force")
+        return self

@@ -36,17 +36,28 @@ S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req) : req
 }
 
 void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("S3ClovisKVSReader::get_keyval called with index_name = %s and key = %s\n", index_name.c_str(), key.c_str());
+  std::vector<std::string> keys;
+  keys.push_back(key);
+
+  get_keyval(index_name, keys, on_success, on_failed);
+}
+
+void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  printf("S3ClovisKVSReader::get_keyval called with index_name = %s\n", index_name.c_str());
+  for(auto key : keys) {
+    printf("S3ClovisKVSReader::get_keyval called with key = %s\n", key.c_str());
+  }
 
   int rc = 0;
+  last_result_keys_values.clear();
+  last_value = "";
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  key_name = key;
   reader_context.reset(new S3ClovisKVSReaderContext(request, std::bind( &S3ClovisKVSReader::get_keyval_successful, this), std::bind( &S3ClovisKVSReader::get_keyval_failed, this)));
 
-  reader_context->init_kvs_read_op_ctx(1);
+  reader_context->init_kvs_read_op_ctx(keys.size());
 
   struct s3_clovis_idx_op_context *idx_ctx = reader_context->get_clovis_idx_op_ctx();
   struct s3_clovis_kvs_op_context *kvs_ctx = reader_context->get_clovis_kvs_op_ctx();
@@ -54,16 +65,25 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std:
   // Remember, so buffers can be iterated.
   clovis_kvs_op_context = kvs_ctx;
 
-  idx_ctx->cbs->ocb_arg = (void *)reader_context.get();
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)calloc(1, sizeof(struct s3_clovis_context_obj));
+
+  op_ctx->op_index_in_launch = 0;
+  op_ctx->application_context = (void *)reader_context.get();
+
+  idx_ctx->cbs->ocb_arg = (void *)op_ctx;
   idx_ctx->cbs->ocb_executed = NULL;
   idx_ctx->cbs->ocb_stable = s3_clovis_op_stable;
   idx_ctx->cbs->ocb_failed = s3_clovis_op_failed;
 
   S3UriToMeroOID(index_name.c_str(), &id);
 
-  kvs_ctx->keys->ov_vec.v_count[0] = key.length();
-  kvs_ctx->keys->ov_buf[0] = malloc(key.length());
-  memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
+  int i = 0;
+  for(auto key : keys) {
+    kvs_ctx->keys->ov_vec.v_count[i] = key.length();
+    kvs_ctx->keys->ov_buf[i] = malloc(key.length());
+    memcpy(kvs_ctx->keys->ov_buf[i], (void*)key.c_str(), key.length());
+    ++i;
+  }
 
   m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
 
@@ -86,13 +106,26 @@ void S3ClovisKVSReader::get_keyval_successful() {
   printf("S3ClovisKVSReader::get_keyval_successful called\n");
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
-  last_value = std::string((char*)clovis_kvs_op_context->values->ov_buf[0], clovis_kvs_op_context->values->ov_vec.v_count[0]);
+  struct s3_clovis_kvs_op_context *kvs_ctx = reader_context->get_clovis_kvs_op_ctx();
+  for(size_t i = 0; i < kvs_ctx->keys->ov_vec.v_nr; i++)
+  {
+    if (kvs_ctx->keys->ov_buf[i] != NULL) {
+      last_result_keys_values.insert({
+        std::string((char*)kvs_ctx->keys->ov_buf[i], kvs_ctx->keys->ov_vec.v_count[i]), std::string((char*)kvs_ctx->values->ov_buf[i], kvs_ctx->values->ov_vec.v_count[i])});
+    } else {
+      last_result_keys_values.insert({
+        std::string((char*)kvs_ctx->keys->ov_buf[i], kvs_ctx->keys->ov_vec.v_count[i]), std::string("")});
+    }
+  }
+  if (kvs_ctx->keys->ov_vec.v_nr == 1) {
+    last_value = std::string((char*)clovis_kvs_op_context->values->ov_buf[0], clovis_kvs_op_context->values->ov_vec.v_count[0]);
+  }
   this->handler_on_success();
 }
 
 void S3ClovisKVSReader::get_keyval_failed() {
   printf("S3ClovisKVSReader::get_keyval_failed called\n");
-  if (reader_context->get_errno() == -ENOENT) {
+  if (reader_context->get_errno_for(0) == -ENOENT) {
     state = S3ClovisKVSReaderOpState::missing;
   } else {
     state = S3ClovisKVSReaderOpState::failed;
@@ -104,11 +137,11 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   printf("S3ClovisKVSReader::next_keyval with index_name = %s and key = %s and count = %zu\n", index_name.c_str(), key.c_str(), nr_kvp);
 
   int rc = 0;
+  last_result_keys_values.clear();
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  key_name = key;
   reader_context.reset(new S3ClovisKVSReaderContext(request, std::bind( &S3ClovisKVSReader::next_keyval_successful, this), std::bind( &S3ClovisKVSReader::next_keyval_failed, this)));
 
   reader_context->init_kvs_read_op_ctx(nr_kvp);
@@ -119,7 +152,12 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   // Remember, so buffers can be iterated.
   clovis_kvs_op_context = kvs_ctx;
 
-  idx_ctx->cbs->ocb_arg = (void *)reader_context.get();
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)calloc(1, sizeof(struct s3_clovis_context_obj));
+
+  op_ctx->op_index_in_launch = 0;
+  op_ctx->application_context = (void *)reader_context.get();
+
+  idx_ctx->cbs->ocb_arg = (void *)op_ctx;
   idx_ctx->cbs->ocb_executed = NULL;
   idx_ctx->cbs->ocb_stable = s3_clovis_op_stable;
   idx_ctx->cbs->ocb_failed = s3_clovis_op_failed;
@@ -172,7 +210,7 @@ void S3ClovisKVSReader::next_keyval_successful() {
 
 void S3ClovisKVSReader::next_keyval_failed() {
   printf("S3ClovisKVSReader::next_keyval_failed called\n");
-  if (reader_context->get_errno() == -ENOENT) {
+  if (reader_context->get_errno_for(0) == -ENOENT) {
     state = S3ClovisKVSReaderOpState::missing;
   } else {
     state = S3ClovisKVSReaderOpState::failed;

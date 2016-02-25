@@ -25,10 +25,13 @@
 void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_data) {
   printf("clovis_op_done_on_main_thread\n");
   struct user_event_context * user_context = (struct user_event_context *)user_data;
-  S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->async_ctx;
+  S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
   context->log_timer();
+
+  // Free user event
   event_free((struct event *)user_context->user_event);
-  if (context->get_op_status() == S3AsyncOpStatus::success) {
+
+  if (context->is_at_least_one_op_successful()) {
     context->on_success_handler()();  // Invoke the handler.
   } else {
     context->on_failed_handler()();  // Invoke the handler.
@@ -39,24 +42,40 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_dat
 // Clovis callbacks, run in clovis thread
 void s3_clovis_op_stable(struct m0_clovis_op *op) {
   printf("s3_clovis_op_stable with return code = %d\n", op->op_sm.sm_rc);
-  struct user_event_context *user_ctx = (struct user_event_context *)calloc(1,sizeof(struct user_event_context)); 
 
-  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op->op_cbs->ocb_arg;
-  ctx->stop_timer();
-  ctx->set_op_errno(op->op_sm.sm_rc);
-  ctx->set_op_status(S3AsyncOpStatus::success, "Success.");
-  user_ctx->async_ctx = ctx;
-  S3PostToMainLoop(ctx->get_request(), user_ctx)(clovis_op_done_on_main_thread);
+  struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op->op_cbs->ocb_arg;
+
+  S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase*)ctx->application_context;
+  printf("s3_clovis_op_stable with op_index_in_launch = %d\n", ctx->op_index_in_launch);
+
+  app_ctx->set_op_errno_for(ctx->op_index_in_launch, op->op_sm.sm_rc);
+  app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::success, "Success.");
+
+  free(ctx);
+  if(app_ctx->incr_response_count() == app_ctx->get_ops_count()) {
+    struct user_event_context *user_ctx = (struct user_event_context *)calloc(1, sizeof(struct user_event_context));
+    user_ctx->app_ctx = app_ctx;
+    app_ctx->stop_timer();
+    S3PostToMainLoop(app_ctx->get_request(), user_ctx)(clovis_op_done_on_main_thread);
+  }
 }
 
 void s3_clovis_op_failed(struct m0_clovis_op *op) {
   printf("s3_clovis_op_failed with error code = %d\n", op->op_sm.sm_rc);
-  struct user_event_context *user_ctx = (struct user_event_context *)calloc(1,sizeof(struct user_event_context));
 
-  S3AsyncOpContextBase *ctx = (struct S3AsyncOpContextBase*)op->op_cbs->ocb_arg;
-  ctx->stop_timer(false);
-  ctx->set_op_errno(op->op_sm.sm_rc);
-  ctx->set_op_status(S3AsyncOpStatus::failed, "Operation Failed.");
-  user_ctx->async_ctx = ctx;
-  S3PostToMainLoop(ctx->get_request(), user_ctx)(clovis_op_done_on_main_thread);
+  struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op->op_cbs->ocb_arg;
+
+  S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase*)ctx->application_context;
+  printf("s3_clovis_op_failed with op_index_in_launch = %d\n", ctx->op_index_in_launch);
+
+  app_ctx->set_op_errno_for(ctx->op_index_in_launch, op->op_sm.sm_rc);
+  app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::failed, "Operation Failed.");
+
+  free(ctx);
+  if(app_ctx->incr_response_count() == app_ctx->get_ops_count()) {
+    struct user_event_context *user_ctx = (struct user_event_context *)calloc(1,sizeof(struct user_event_context));
+    user_ctx->app_ctx = app_ctx;
+    app_ctx->stop_timer(false);
+    S3PostToMainLoop(app_ctx->get_request(), user_ctx)(clovis_op_done_on_main_thread);
+  }
 }

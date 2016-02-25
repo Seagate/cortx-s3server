@@ -91,11 +91,13 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessCallback) {
   cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
   op.op_cbs = &cbs;
   idx_ctx->ops[0] = &op;
-  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)idx_ctx->cbs->ocb_arg;
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::unknown);
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+
+  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
   pthread_create(&tid, NULL, async_success_call, (void *)idx_ctx);
   pthread_join(tid,NULL);
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::success);
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::success);
   // To ensure cleanup doesn't call fini
   idx_ctx->idx_count = 0;
 }
@@ -126,11 +128,14 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFailCallback) {
   cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
   op.op_cbs = &cbs;
   idx_ctx->ops[0] = &op;
-  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)idx_ctx->cbs->ocb_arg;
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::unknown);
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+
+  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
+
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
   pthread_create(&tid, NULL, async_fail_call, (void *)idx_ctx);
   pthread_join(tid,NULL);
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::failed);
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::failed);
   idx_ctx->idx_count = 0;
 }
 
@@ -218,11 +223,14 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
   cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
   op.op_cbs = &cbs;
   idx_ctx->ops[0] = &op;
-  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)idx_ctx->cbs->ocb_arg;
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::unknown);
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+
+  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
+
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
   pthread_create(&tid, NULL, async_success_call, (void *)idx_ctx);
   pthread_join(tid,NULL);
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::success);
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::success);
   idx_ctx->idx_count = 0;
 }
 
@@ -255,11 +263,15 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailCallback) {
   cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
   op.op_cbs = &cbs;
   idx_ctx->ops[0] = &op;
-  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)idx_ctx->cbs->ocb_arg;
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::unknown);
+
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+
+  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
+
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
   pthread_create(&tid, NULL, async_fail_call, (void *)idx_ctx);
   pthread_join(tid,NULL);
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::failed);
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::failed);
   idx_ctx->idx_count = 0;
 }
 
@@ -352,11 +364,15 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccessCallback) {
   cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
   op.op_cbs = &cbs;
   idx_ctx->ops[0] = &op;
-  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)idx_ctx->cbs->ocb_arg;
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::unknown);
+
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+
+  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
+
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
   pthread_create(&tid, NULL, async_success_call, (void *)idx_ctx);
   pthread_join(tid,NULL);
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::success);
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::success);
   idx_ctx->idx_count = 0;
 }
 
@@ -387,11 +403,15 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailCallback) {
   cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
   op.op_cbs = &cbs;
   idx_ctx->ops[0] = &op;
-  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)idx_ctx->cbs->ocb_arg;
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::unknown);
+
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+
+  S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
+
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
   pthread_create(&tid, NULL, async_fail_call, (void *)idx_ctx);
   pthread_join(tid,NULL);
-  EXPECT_TRUE(ctx->get_op_status() == S3AsyncOpStatus::failed);
+  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::failed);
   idx_ctx->idx_count = 0;
 }
 

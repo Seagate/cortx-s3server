@@ -105,7 +105,7 @@ enum class S3ClovisReaderOpState {
 
 class S3ClovisReader {
 private:
-  struct m0_uint128 id;
+  struct m0_uint128 oid;
 
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisReaderContext> reader_context;
@@ -132,6 +132,11 @@ public:
 
   S3ClovisReaderOpState get_state() {
     return state;
+  }
+
+  void set_oid(struct m0_uint128 id) {
+    //TODO
+    // oid = id;
   }
 
   // async read

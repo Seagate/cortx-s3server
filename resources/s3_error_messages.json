@@ -70,5 +70,13 @@
   "MalformedXML": {
     "Description": "The XML you provided was not well-formed or did not validate against our published schema.",
     "httpcode": 400
+  },
+  "BadDigest": {
+    "Description": "The Content-MD5 you specified did not match what we received.",
+    "httpcode": 400
+  },
+  "MaxMessageLengthExceeded": {
+    "Description": "Your request was too big.",
+    "httpcode": 400
   }
 }

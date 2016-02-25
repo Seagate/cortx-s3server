@@ -25,7 +25,7 @@
 // To create a basic clovis operation
 struct s3_clovis_op_context* create_basic_op_ctx(size_t op_count) {
   printf("Called create_basic_op_ctx with op_count = %zu\n", op_count);
-  struct s3_clovis_op_context* ctx = (struct s3_clovis_op_context*)calloc(op_count, sizeof(struct s3_clovis_op_context));
+  struct s3_clovis_op_context* ctx = (struct s3_clovis_op_context*)calloc(1, sizeof(struct s3_clovis_op_context));
 
   ctx->ops = (struct m0_clovis_op **)calloc(op_count, sizeof(struct m0_clovis_op *));
 
@@ -40,13 +40,13 @@ int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
   size_t i;
   printf("Called free_basic_op_ctx\n");
   for (i = 0; i < ctx->op_count; i++) {
-    if(ctx->ops[i] == NULL)
-      continue;
-    m0_clovis_op_fini(ctx->ops[i]);
-    m0_clovis_op_free(ctx->ops[i]);
+    if(ctx->ops[i] != NULL) {
+      m0_clovis_op_fini(ctx->ops[i]);
+      m0_clovis_op_free(ctx->ops[i]);
+      m0_clovis_entity_fini(&ctx->obj[i].ob_entity);
+    }
   }
-  if(ctx->obj != NULL)
-    m0_clovis_entity_fini(&ctx->obj->ob_entity);
+
   free(ctx->ops);
   free(ctx->cbs);
   free(ctx->obj);

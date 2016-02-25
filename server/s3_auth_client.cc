@@ -183,13 +183,13 @@ extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) 
   is_auth_successful = validate_auth_response(auth_response_body, context, error_code, msg);
   if (is_auth_successful) {
     printf("Authentication successful\n");
-    context->set_op_status(S3AsyncOpStatus::success, "Success.");
+    context->set_op_status_for(0, S3AsyncOpStatus::success, "Success.");
   } else {
     printf("Authentication unsuccessful\n");
-    context->set_op_status(S3AsyncOpStatus::failed, msg);
+    context->set_op_status_for(0, S3AsyncOpStatus::failed, msg);
   }
 
-  if (context->get_op_status() == S3AsyncOpStatus::success) {
+  if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
     context->on_success_handler()();  // Invoke the handler.
   } else {
     context->on_failed_handler()();  // Invoke the handler.

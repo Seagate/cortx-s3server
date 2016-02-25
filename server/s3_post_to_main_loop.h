@@ -29,7 +29,7 @@
 #include "s3_asyncop_context_base.h"
 
 struct user_event_context {
-  void *async_ctx;
+  void *app_ctx;
   void *user_event;
 };
 

@@ -63,6 +63,16 @@ S3cmdTest('s3cmd can download 18MB file').download_test("seagatebucket", "18MBfi
 
 S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
+# ************ Multiple Delete bucket TEST ************
+file_name = "3kfile"
+for num in range(0, 4):
+  new_file_name = '%s%d' % (file_name, num)
+  S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", new_file_name, 3000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete multiple objects').multi_delete_test("seagatebucket").execute_test().command_is_successful().command_response_should_have('delete: \'s3://seagatebucket/3kfile0\'').command_response_should_have('delete: \'s3://seagatebucket/3kfile3\'')
+
+S3cmdTest('s3cmd should not have objects after multiple delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile')
+
 # ************ Delete bucket TEST ************
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
@@ -124,6 +134,16 @@ S3cmdTest('s3cmd can abort multipart upload of 18MB file').multipartupload_abort
 S3cmdTest('s3cmd can list parts of multipart upload 18MB file').multipartupload_partlist_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+
+# ************ Multiple Delete bucket TEST ************
+file_name = "3kfile"
+for num in range(0, 4):
+  new_file_name = '%s%d' % (file_name, num)
+  S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", new_file_name, 3000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete multiple objects').multi_delete_test("seagatebucket").execute_test().command_is_successful().command_response_should_have('delete: \'s3://seagatebucket/3kfile0\'').command_response_should_have('delete: \'s3://seagatebucket/3kfile3\'')
+
+S3cmdTest('s3cmd should not have objects after multiple delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile')
 
 # ************ Delete bucket TEST ************
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()

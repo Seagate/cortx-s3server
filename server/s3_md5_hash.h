@@ -41,6 +41,7 @@ public:
   int Finalize();
 
   std::string get_md5_string();
+  std::string get_md5_base64enc_string();
 
   FRIEND_TEST(MD5HashTest, Constructor);
   FRIEND_TEST(MD5HashTest, FinalBasic);

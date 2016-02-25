@@ -85,7 +85,7 @@ enum class S3ClovisKVSWriterOpState {
   saved,
   deleted,
   exists,  // Object already exists
-  notexists,  // Object does not exists
+  missing,  // Object does not exists
 };
 
 class S3ClovisKVSWriter {
@@ -127,6 +127,8 @@ public:
 
   // Async delete operation.
   void delete_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+
   void delete_keyval_successful();
   void delete_keyval_failed();
 

@@ -20,7 +20,9 @@
 #include "s3_asyncop_context_base.h"
 #include "s3_perf_logger.h"
 
-S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed) : request(req), on_success(success), on_failed(failed), status(S3AsyncOpStatus::unknown), error_message(""), error_code(0) {
+S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed, int ops_cnt) : request(req), on_success(success), on_failed(failed), ops_count(ops_cnt), response_received_count(0),
+at_least_one_success(false) {
+  ops_response.resize(ops_count);
 }
 
 std::shared_ptr<S3RequestObject> S3AsyncOpContextBase::get_request() {
@@ -35,25 +37,28 @@ std::function<void(void)> S3AsyncOpContextBase::on_failed_handler() {
   return on_failed;
 }
 
-S3AsyncOpStatus S3AsyncOpContextBase::get_op_status() {
-  return status;
+S3AsyncOpStatus S3AsyncOpContextBase::get_op_status_for(int op_idx) {
+  return ops_response[op_idx].status;
 }
 
-std::string& S3AsyncOpContextBase::get_error_message() {
-  return error_message;
+std::string& S3AsyncOpContextBase::get_error_message_for(int op_idx) {
+  return ops_response[op_idx].error_message;
 }
 
-void S3AsyncOpContextBase::set_op_status(S3AsyncOpStatus opstatus, std::string message) {
-  status = opstatus;
-  error_message = message;
+void S3AsyncOpContextBase::set_op_status_for(int op_idx, S3AsyncOpStatus opstatus, std::string message) {
+  ops_response[op_idx].status = opstatus;
+  ops_response[op_idx].error_message = message;
 }
 
-int S3AsyncOpContextBase::get_errno() {
-  return error_code;
+int S3AsyncOpContextBase::get_errno_for(int op_idx) {
+  return ops_response[op_idx].error_code;
 }
 
-void S3AsyncOpContextBase::set_op_errno(int err) {
-  error_code = err;
+void S3AsyncOpContextBase::set_op_errno_for(int op_idx, int err) {
+  ops_response[op_idx].error_code = err;
+  if (err == 0) {
+    at_least_one_success = true;
+  }
 }
 
 void S3AsyncOpContextBase::start_timer_for(std::string op_key) {

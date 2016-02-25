@@ -68,7 +68,7 @@ void S3GetMultipartPartAction::get_key_object() {
 
 void S3GetMultipartPartAction::get_key_object_successful() {
   printf("Called S3GetMultipartPartAction::get_key_object_successful\n");
-  std::string key_name = clovis_kv_reader->get_key_name();
+  std::string key_name = last_key;
   if (!(clovis_kv_reader->get_value()).empty()) {
     printf("Read Part = %s\n", key_name.c_str());
     std::shared_ptr<S3PartMetadata> part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(key_name.c_str()));

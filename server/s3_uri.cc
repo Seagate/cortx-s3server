@@ -52,6 +52,8 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::location;
   } else if (request->has_query_param_key("uploads") || request->has_query_param_key("uploadid")) {
     operation_code = S3OperationCode::multipart;
+  } else if (request->has_query_param_key("delete")) {
+    operation_code = S3OperationCode::multidelete;
   }
   // Other operations - todo
 }

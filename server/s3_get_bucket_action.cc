@@ -72,6 +72,7 @@ void S3GetBucketAction::get_next_objects_successful() {
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     printf("Read Object = %s\n", kv.first.c_str());
+    printf("Read Object Value = %s\n", kv.second.c_str());
     auto object = std::make_shared<S3ObjectMetadata>(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {

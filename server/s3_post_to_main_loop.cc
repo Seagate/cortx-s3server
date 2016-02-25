@@ -22,8 +22,7 @@
 
 void S3PostToMainLoop::operator()(user_event_on_main_loop callback) {
   struct event *ev_user = NULL;
-  struct user_event_context *user_context;
-  user_context = (struct user_event_context *)context;
+  struct user_event_context *user_context = (struct user_event_context *)context;
   struct event_base* base = request->get_evbase();
   if(base == NULL) {
     // TODO -- Have logging with log level FATAL
@@ -31,6 +30,6 @@ void S3PostToMainLoop::operator()(user_event_on_main_loop callback) {
     return;
   }
   ev_user = event_new(base, -1, EV_WRITE|EV_READ|EV_TIMEOUT, callback, (void *)(user_context));
-  user_context->user_event = ev_user;
+  user_context->user_event = (void*)ev_user;  // remember so we can free this event.
   event_active(ev_user, EV_READ|EV_WRITE|EV_TIMEOUT, 1);
 }

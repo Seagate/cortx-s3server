@@ -33,7 +33,7 @@ S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
       state(S3ClovisReaderOpState::start), clovis_rw_op_context(NULL),
       iteration_index(0), clovis_block_size(0), num_of_blocks_read(0),
       last_index(0) {
-  S3UriToMeroOID(request->get_object_uri().c_str(), &id);
+  S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
 }
 
 void S3ClovisReader::read_object_data(size_t num_of_blocks,
@@ -57,18 +57,23 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
   clovis_rw_op_context = rw_ctx;
   iteration_index = 0;
 
-  ctx->cbs->ocb_arg = (void *)reader_context.get();
-  ctx->cbs->ocb_executed = NULL;
-  ctx->cbs->ocb_stable = s3_clovis_op_stable;
-  ctx->cbs->ocb_failed = s3_clovis_op_failed;
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)calloc(1, sizeof(struct s3_clovis_context_obj));
+
+  op_ctx->op_index_in_launch = 0;
+  op_ctx->application_context = (void *)reader_context.get();
+
+  ctx->cbs[0].ocb_arg = (void *)op_ctx;
+  ctx->cbs[0].ocb_executed = NULL;
+  ctx->cbs[0].ocb_stable = s3_clovis_op_stable;
+  ctx->cbs[0].ocb_failed = s3_clovis_op_failed;
 
   /* Read the requisite number of blocks from the entity */
-  s3_clovis_api->clovis_obj_init(ctx->obj, &clovis_uber_realm, &id);
+  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
 
   /* Create the read request */
-  s3_clovis_api->clovis_obj_op(ctx->obj, M0_CLOVIS_OC_READ, rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
+  s3_clovis_api->clovis_obj_op(&ctx->obj[0], M0_CLOVIS_OC_READ, rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
 
-  s3_clovis_api->clovis_op_setup(ctx->ops[0], ctx->cbs, 0);
+  s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   reader_context->start_timer_for("read_object_data_" + std::to_string(num_of_blocks_read * clovis_block_size) + "_bytes");
 
@@ -83,7 +88,7 @@ void S3ClovisReader::read_object_data_successful() {
 
 void S3ClovisReader::read_object_data_failed() {
   printf("S3ClovisReader::read_object_data_failed\n");
-  if (reader_context->get_errno() == -ENOENT) {
+  if (reader_context->get_errno_for(0) == -ENOENT) {
     state = S3ClovisReaderOpState::missing;
   } else {
     state = S3ClovisReaderOpState::failed;

@@ -84,7 +84,7 @@ TEST_F(S3ClovisReaderTest, Constructor) {
 //
 //   // clovis calls this, we(=test) fake.
 //   s3_clovis_op_stable(clovis_reader_ptr->reader_context->get_clovis_op_ctx()->ops[0]);
-//   EXPECT_TRUE(clovis_reader_ptr->reader_context->get_op_status() == S3AsyncOpStatus::success);
+//   EXPECT_TRUE(clovis_reader_ptr->reader_context->get_op_status_for(0) == S3AsyncOpStatus::success);
 //
 //   // Main thread handler call this, we(=test) fake it
 //   clovis_reader_ptr->read_object_data_successful();

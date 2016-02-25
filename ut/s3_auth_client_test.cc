@@ -508,12 +508,12 @@ TEST_F(S3AuthResponseTest, AuthTrueResp) {
   char authresp[] = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthenticateUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthenticateUserResult><Authenticated>True</Authenticated></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>";
   evbuffer_add(ev_request->buffer_in,authresp, sizeof(authresp));
   s3authrespobj.auth_response_wrapper(ev_request, ev_request->buffer_in, (void*)(ptr_mock_async));
-  EXPECT_TRUE(ptr_mock_async->get_op_status() == S3AsyncOpStatus::success);
+  EXPECT_TRUE(ptr_mock_async->get_op_status_for(0) == S3AsyncOpStatus::success);
 }
 
 TEST_F(S3AuthResponseTest, AuthFailResp) {
   char authresp[] = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthenticateUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Code>403</Code><Message>Access Denied</Message></AuthenticateUserResponse>";
   evbuffer_add(ev_request->buffer_in,authresp, sizeof(authresp));
   s3authrespobj.auth_response_wrapper(ev_request, ev_request->buffer_in, (void*)(ptr_mock_async));
-  EXPECT_TRUE(ptr_mock_async->get_op_status() == S3AsyncOpStatus::failed);
+  EXPECT_TRUE(ptr_mock_async->get_op_status_for(0) == S3AsyncOpStatus::failed);
 }

@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <json/json.h>
+#include "base64.h"
 
 #include "s3_object_metadata.h"
 #include "s3_datetime.h"
@@ -33,6 +34,7 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool is
   state = S3ObjectMetadataState::empty;
   is_multipart = ismultipart;
   upload_id = uploadid;
+  oid = M0_CLOVIS_ID_APP;
 
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
@@ -41,7 +43,8 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool is
   // Set the defaults
   S3DateTime current_time;
   current_time.init_current_time();
-  system_defined_attribute["Date"] = current_time.get_gmtformat_string();  system_defined_attribute["Content-Length"] = "";
+  system_defined_attribute["Date"] = current_time.get_gmtformat_string();
+  system_defined_attribute["Content-Length"] = "";
   system_defined_attribute["Last-Modified"] = current_time.get_gmtformat_string();  // TODO
   system_defined_attribute["Content-MD5"] = "";
   system_defined_attribute["Owner-User"] = "";
@@ -264,6 +267,10 @@ std::string S3ObjectMetadata::to_json() {
     root["Upload-ID"] = upload_id;
   }
 
+  root["mero_oid_u_hi"] = base64_encode((unsigned char const*)&oid.u_hi, sizeof(oid.u_hi));
+  root["mero_oid_u_lo"] = base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
+  // root["mero_oid"] = base64_encode((unsigned char const*)&oid, sizeof(struct m0_uint128));
+
   for (auto sit: system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
   }
@@ -291,6 +298,15 @@ void S3ObjectMetadata::from_json(std::string content) {
   object_name = newroot["Object-Name"].asString();
   object_key_uri = newroot["Object-URI"].asString();
   upload_id = newroot["Upload-ID"].asString();
+  std::string oid_u_hi_str = newroot["mero_oid_u_hi"].asString();
+  std::string oid_u_lo_str = newroot["mero_oid_u_lo"].asString();
+
+  std::string dec_oid_u_hi_str = base64_decode(oid_u_hi_str);
+  std::string dec_oid_u_lo_str = base64_decode(oid_u_lo_str);
+
+  // std::string decoded_oid_str = base64_decode(oid_str);
+  memcpy((void*)&oid.u_hi, dec_oid_u_hi_str.c_str(), dec_oid_u_hi_str.length());
+  memcpy((void*)&oid.u_lo, dec_oid_u_lo_str.c_str(), dec_oid_u_lo_str.length());
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for(auto it : members) {

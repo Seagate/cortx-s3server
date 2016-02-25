@@ -138,6 +138,7 @@ void S3PutObjectAction::save_metadata() {
   object_metadata = std::make_shared<S3ObjectMetadata>(request);
   object_metadata->set_content_length(request->get_header_value("Content-Length"));
   object_metadata->set_md5(clovis_writer->get_content_md5());
+  object_metadata->set_oid(clovis_writer->get_oid());
   for (auto it: request->get_in_headers_copy()) {
     if(it.first.find("x-amz-meta-") != std::string::npos) {
       object_metadata->add_user_defined_attribute(it.first, it.second);

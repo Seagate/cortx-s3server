@@ -17,6 +17,8 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include "base64.h"
+
 #include "s3_md5_hash.h"
 
 MD5hash::MD5hash() {
@@ -38,7 +40,7 @@ int MD5hash::Update(const char *input, size_t length) {
 }
 
 int MD5hash::Finalize() {
-  status = MD5_Final(md5_digest,&md5ctx);
+  status = MD5_Final(md5_digest, &md5ctx);
   if (status == 0) {
     return -1;  // failure
   }
@@ -54,4 +56,11 @@ std::string MD5hash::get_md5_string() {
     return std::string("");  // failure
   }
   return std::string(md5_digest_chars);
+}
+
+std::string MD5hash::get_md5_base64enc_string() {
+  if (status == 0) {
+    return std::string("");  // failure
+  }
+  return base64_encode(md5_digest, MD5_DIGEST_LENGTH);
 }

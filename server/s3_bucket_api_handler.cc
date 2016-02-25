@@ -19,6 +19,7 @@
 
 #include "s3_api_handler.h"
 #include "s3_get_bucket_location_action.h"
+#include "s3_delete_multiple_objects_action.h"
 #include "s3_head_bucket_action.h"
 #include "s3_get_bucket_action.h"
 #include "s3_get_multipart_bucket_action.h"
@@ -27,7 +28,8 @@
 
 void S3BucketAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
-  printf("Action operation code = %d\n", operation_code);
+  printf("S3BucketAPIHandler::Action operation code = %d\n", operation_code);
+
   switch(operation_code) {
     case S3OperationCode::location:
       switch (request->http_verb()) {
@@ -46,6 +48,9 @@ void S3BucketAPIHandler::dispatch() {
       break;
     case S3OperationCode::list:
       // action = std::make_shared<S3BucketListingAction>(request);
+      break;
+    case S3OperationCode::multidelete:
+      action = std::make_shared<S3DeleteMultipleObjectsAction>(request);
       break;
     case S3OperationCode::acl:
       // ACL operations.

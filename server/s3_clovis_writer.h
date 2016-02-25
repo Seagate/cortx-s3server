@@ -41,10 +41,10 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   bool has_clovis_rw_op_context;
 
 public:
-  S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+  S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback, int ops_count = 1) : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count) {
     printf("S3ClovisWriterContext created.\n");
     // Create or write, we need op context
-    clovis_op_context = create_basic_op_ctx(1);
+    clovis_op_context = create_basic_op_ctx(ops_count);
     has_clovis_op_context = true;
 
     clovis_rw_op_context = NULL;
@@ -84,12 +84,12 @@ enum class S3ClovisWriterOpState {
   saved,
   deleted,
   exists,  // Object already exists
-  notexists,  // Object does not exists
+  missing,  // Object does not exists
 };
 
 class S3ClovisWriter {
 private:
-  struct m0_uint128 id;
+  struct m0_uint128 oid;
 
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisWriterContext> writer_context;
@@ -109,12 +109,23 @@ private:
   // TODO remove, just for debugging.
   size_t total_written;
 
+  int ops_count;
+
 public:
   //struct m0_uint128 id;
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0);
 
   S3ClovisWriterOpState get_state() {
     return state;
+  }
+
+  struct m0_uint128 get_oid() {
+    return oid;
+  }
+
+  void set_oid(struct m0_uint128 id) {
+    //TODO
+    // oid = id;
   }
 
   // This concludes the md5 calculation
@@ -143,6 +154,14 @@ public:
   void delete_object(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void delete_object_successful();
   void delete_object_failed();
+
+  void delete_objects(std::vector<struct m0_uint128> oids, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_objects_successful();
+  void delete_objects_failed();
+
+  int get_op_ret_code_for(int index) {
+    return writer_context->get_errno_for(index);
+  }
 
   // xxx remove this
   void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,

@@ -40,4 +40,13 @@ void s3_clovis_op_stable(struct m0_clovis_op *op);
 void s3_clovis_op_failed(struct m0_clovis_op *op);
 EXTERN_C_BLOCK_END
 
+// Clovis operation context from application perspective.
+// When multiple ops are launched in single call,
+// op_index_in_launch indicates index in ops array to
+// identify specific operation.
+struct s3_clovis_context_obj {
+  int op_index_in_launch;
+  void *application_context;
+};
+
 #endif

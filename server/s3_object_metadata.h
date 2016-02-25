@@ -38,7 +38,8 @@ enum class S3ObjectMetadataState {
   missing,   // Metadata not present in store.
   saved,    // Metadata saved to store.
   deleted,  // Metadata deleted from store
-  failed
+  failed,
+  invalid
 };
 
 class S3ObjectMetadata {
@@ -57,6 +58,8 @@ private:
 
   // The name for a key is a sequence of Unicode characters whose UTF-8 encoding is at most 1024 bytes long. http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
   std::string object_key_uri;
+
+  struct m0_uint128 oid;
 
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
@@ -96,6 +99,14 @@ public:
   void set_md5(std::string md5);
   std::string get_md5();
 
+  void set_oid(struct m0_uint128 id) {
+    oid = id;
+  }
+
+  struct m0_uint128 get_oid() {
+    return oid;
+  }
+
   std::string get_object_name();
   std::string get_user_id();
   std::string get_user_name();
@@ -131,6 +142,11 @@ public:
 
   S3ObjectMetadataState get_state() {
     return state;
+  }
+
+  // placeholder state, so as to not perform any operation on this.
+  void mark_invalid() {
+    state = S3ObjectMetadataState::invalid;
   }
 
   std::string to_json();

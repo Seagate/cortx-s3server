@@ -30,6 +30,7 @@
 
 void S3ObjectAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
+  printf("S3ObjectAPIHandler::Action operation code = %d\n", operation_code);
   switch(operation_code) {
     case S3OperationCode::acl:
       switch (request->http_verb()) {
