@@ -16,9 +16,11 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
-
 package com.seagates3.aws.sign;
 
+import com.seagates3.model.ClientRequestToken;
+import com.seagates3.model.Requestor;
+import com.seagates3.util.BinaryUtil;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -26,14 +28,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.seagates3.model.ClientRequestToken;
-import com.seagates3.model.Requestor;
-import com.seagates3.util.BinaryUtil;
-
 public class AWSV2Sign implements AWSSign {
 
-    /*
+    /**
      * Return true if the signature is valid.
+     *
+     * Reference -
+     * http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html
+     *
+     * @param clientRequestToken
+     * @param requestor
+     * @return True if user is authenticated
      */
     @Override
     public Boolean authenticate(ClientRequestToken clientRequestToken, Requestor requestor) {
@@ -70,25 +75,25 @@ public class AWSV2Sign implements AWSSign {
      * CanonicalizedResource;
      */
     private String createStringToSign(ClientRequestToken clientRequestToken) {
-        String httpMethod, contentMD5,contentType, date;
+        String httpMethod, contentMD5, contentType, date;
         String canonicalizedAmzHeaders, canonicalizedResource, stringToSign;
 
         Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
 
         httpMethod = clientRequestToken.getHttpMethod();
-        if(requestHeaders.containsKey("Content-MD5")) {
+        if (requestHeaders.containsKey("Content-MD5")) {
             contentMD5 = requestHeaders.get("Content-MD5");
         } else {
             contentMD5 = "";
         }
 
-        if(requestHeaders.containsKey("Content-Type")) {
+        if (requestHeaders.containsKey("Content-Type")) {
             contentType = requestHeaders.get("Content-Type");
         } else {
             contentType = "";
         }
 
-        if(requestHeaders.containsKey("Date")) {
+        if (requestHeaders.containsKey("Date")) {
             date = requestHeaders.get("Date");
         } else {
             date = "";
@@ -104,7 +109,7 @@ public class AWSV2Sign implements AWSSign {
                 date,
                 canonicalizedAmzHeaders,
                 canonicalizedResource
-                );
+        );
 
         return stringToSign;
     }
@@ -133,11 +138,11 @@ public class AWSV2Sign implements AWSSign {
         Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
         Map<String, String> xAmzHeaders = new TreeMap<>();
 
-        for(Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+        for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
             String key = entry.getKey().toLowerCase();
 
-            if(key.startsWith("x-amz-")) {
-                if(xAmzHeaders.containsKey(key)) {
+            if (key.startsWith("x-amz-")) {
+                if (xAmzHeaders.containsKey(key)) {
                     String value = xAmzHeaders.get(key) + "," + entry.getValue();
                     xAmzHeaders.put(key, value);
                 } else {
@@ -147,7 +152,7 @@ public class AWSV2Sign implements AWSSign {
         }
 
         String canonicalizedAmzHeaders = "";
-        for(Map.Entry<String, String> entry : xAmzHeaders.entrySet()) {
+        for (Map.Entry<String, String> entry : xAmzHeaders.entrySet()) {
             canonicalizedAmzHeaders += String.format("%s:%s\n", entry.getKey(),
                     entry.getValue().trim());
         }
@@ -176,7 +181,7 @@ public class AWSV2Sign implements AWSSign {
     private String createCanonicalizedResource(ClientRequestToken clientRequestToken) {
         String canonicalResource = "";
 
-        if(clientRequestToken.isVirtualHost()) {
+        if (clientRequestToken.isVirtualHost()) {
             String bucketName = clientRequestToken.getRequestHeaders()
                     .get("host").split("\\.")[0];
             canonicalResource += "/" + bucketName;
@@ -188,29 +193,29 @@ public class AWSV2Sign implements AWSSign {
         return canonicalResource;
     }
 
-    /*
+    /**
      * If the request addresses a subresource, such as ?versioning, ?location,
-     * ?acl, ?torrent, ?lifecycle, or ?versionid, append the subresource,
-     * its value if it has one, and the question mark. Note that in case of
-     * multiple subresources, subresources must be lexicographically sorted
-     * by subresource name and separated by '&'.
+     * ?acl, ?torrent, ?lifecycle, or ?versionid, append the subresource, its
+     * value if it has one, and the question mark. Note that in case of multiple
+     * subresources, subresources must be lexicographically sorted by
+     * subresource name and separated by '&'.
      *
-     * Ex -  ?acl&versionId=value.
+     * Ex - ?acl&versionId=value.
      */
     private String createSubResourceString(ClientRequestToken clientRequestToken) {
         List<String> subResources = Arrays.asList(
-            "acl", "lifecycle", "location", "logging", "notification", "partNumber",
-            "policy", "requestPayment", "torrent", "uploadId", "uploads",
-            "versionId", "versioning", "versions","website" );
+                "acl", "delete", "lifecycle", "location", "logging", "notification", "partNumber",
+                "policy", "requestPayment", "torrent", "uploadId", "uploads",
+                "versionId", "versioning", "versions", "website");
 
         Map<String, String> queryResources = new TreeMap<>();
         String[] tokens = clientRequestToken.getQuery().split("&");
 
-        for(String s :tokens) {
-            String[] keyPair =  s.split("=");
+        for (String s : tokens) {
+            String[] keyPair = s.split("=");
 
-            if(subResources.contains(keyPair[0])) {
-                if(keyPair.length == 2) {
+            if (subResources.contains(keyPair[0])) {
+                if (keyPair.length == 2) {
                     queryResources.put(s, keyPair[1]);
                 } else {
                     queryResources.put(s, "");
@@ -221,7 +226,7 @@ public class AWSV2Sign implements AWSSign {
         String subResourceString = "";
 
         Iterator<Map.Entry<String, String>> entries = queryResources.entrySet().iterator();
-        if(queryResources.size() > 0) {
+        if (queryResources.size() > 0) {
             subResourceString += "?";
         }
 
@@ -229,11 +234,11 @@ public class AWSV2Sign implements AWSSign {
             Map.Entry<String, String> entry = entries.next();
             subResourceString += entry.getKey();
 
-            if(!entry.getValue().isEmpty()) {
+            if (!entry.getValue().isEmpty()) {
                 subResourceString += String.format("=%s", entry.getValue());
             }
 
-            if(entries.hasNext()) {
+            if (entries.hasNext()) {
                 subResourceString += "&";
             }
         }
