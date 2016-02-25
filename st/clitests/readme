@@ -22,7 +22,8 @@ What does it test:
 - Get Federation Token.
 
 Assumptions:
-You have clean setup without a test bucket name 'seagate_bucket'
+You have clean setup without a test bucket name 'seagatebucket', 'seagate-bucket'
+and 'SEAGATEBUCKET123'.
 Following access key pair is assumed, if your setup has different,
 please update below mentioned s3cfg files.
 
@@ -65,7 +66,8 @@ How to run?
 - Ensure you have s3server, auth server and mero running with test data.
 - Update access keys in pathstyle.s3cfg and virtualhoststyle.s3cfg if required.
 - Update /etc/hosts file to add following entry for tests.
-  127.0.0.1 seagate_bucket.s3.seagate.com s3.seagate.com
+  127.0.0.1 seagatebucket.s3.seagate.com s3.seagate.com
+  127.0.0.1 seagate-bucket.s3.seagate.com SEAGATEBUCKET123.s3.seagate.com
   127.0.0.1 iam.seagate.com sts.seagate.com
 - Ensure you have sourced mero_st (python version 3.5) with virtualenv.
 - cd to clitests directory
