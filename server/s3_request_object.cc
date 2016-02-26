@@ -185,6 +185,8 @@ std::string& S3RequestObject::get_account_name() {
 }
 
 std::string& S3RequestObject::get_request_id() {
+  S3Uuid uuid;
+  request_id = uuid.get_string_uuid();
   return request_id;
 }
 

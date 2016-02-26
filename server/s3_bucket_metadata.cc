@@ -32,7 +32,7 @@ S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : reque
   // Set the defaults
   S3DateTime current_time;
   current_time.init_current_time();
-  system_defined_attribute["Date"] = current_time.get_GMT_string();
+  system_defined_attribute["Date"] = current_time.get_isoformat_string();
   system_defined_attribute["LocationConstraint"] = "US";
   system_defined_attribute["Owner-User"] = "";
   system_defined_attribute["Owner-User-id"] = "";

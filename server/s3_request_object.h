@@ -36,6 +36,7 @@
 #include "s3_async_buffer.h"
 #include "s3_timer.h"
 #include "s3_perf_logger.h"
+#include "s3_uuid.h"
 
 enum class S3HttpVerb {
   HEAD = htp_method_HEAD,

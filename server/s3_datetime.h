@@ -28,6 +28,7 @@
 #include <string>
 
 #define S3_GMT_DATETIME_FORMAT "%a, %d %b %Y %H:%M:%S %Z"
+#define S3_ISO_DATETIME_FORMAT "%Y-%m-%dT%T.000Z"
 
 // Helper to store DateTime in KV store in Json
 class S3DateTime {
@@ -41,7 +42,9 @@ public:
   // Returns if the Object state is valid.
   bool is_OK();
 
-  std::string get_GMT_string();
+  std::string get_isoformat_string();
+  std::string get_gmtformat_string();
+  std::string get_format_string(std::string format);
 };
 
 #endif

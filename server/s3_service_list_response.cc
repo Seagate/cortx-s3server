@@ -46,10 +46,10 @@ std::string& S3ServiceListResponse::get_xml() {
 
   response_xml += "<Buckets>\n";
   for (auto&& bucket : bucket_list) {
-    response_xml += "<Bucket>\n"
-                    "  <Name>" + bucket->get_bucket_name() + "</Name>\n"
-                    "  <CreationDate>" + bucket->get_creation_time() + "</CreationDate>\n"
-                    "</Bucket>";
+    response_xml += "  <Bucket>\n"
+                    "    <Name>" + bucket->get_bucket_name() + "</Name>\n"
+                    "    <CreationDate>" + bucket->get_creation_time() + "</CreationDate>\n"
+                    "  </Bucket>\n";
   }
   response_xml += "</Buckets>\n";
   response_xml += "</ListAllMyBucketsResult>\n";

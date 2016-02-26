@@ -37,17 +37,25 @@ void S3DateTime::init_current_time() {
   }
 }
 
-std::string S3DateTime::get_GMT_string() {
-  std::string gmt_time = "";
-  char buffer[100] = {0};
+std::string S3DateTime::get_isoformat_string() {
+   return get_format_string(S3_ISO_DATETIME_FORMAT);
+}
+
+std::string S3DateTime::get_gmtformat_string() {
+   return get_format_string(S3_GMT_DATETIME_FORMAT);
+}
+
+std::string S3DateTime::get_format_string(std::string format) {
+  std::string formatted_time = "";
+  char timebuffer[100] = {0};
   if (is_OK()) {
-    if (strftime(buffer, sizeof(buffer), S3_GMT_DATETIME_FORMAT, &current_tm) == 0) {
+    if (strftime(timebuffer, sizeof(timebuffer), format.c_str(), &current_tm) == 0) {
         printf("strftime returned 0");
         is_valid = false;
     } else {
       is_valid = true;
-      gmt_time = buffer;
+      formatted_time = timebuffer;
     }
   }
-  return gmt_time;
+  return formatted_time;
 }

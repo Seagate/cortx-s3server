@@ -39,8 +39,8 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req) : reque
   // Set the defaults
   S3DateTime current_time;
   current_time.init_current_time();
-  system_defined_attribute["Date"] = current_time.get_GMT_string();  system_defined_attribute["Content-Length"] = "";
-  system_defined_attribute["Last-Modified"] = current_time.get_GMT_string();  // TODO
+  system_defined_attribute["Date"] = current_time.get_gmtformat_string();  system_defined_attribute["Content-Length"] = "";
+  system_defined_attribute["Last-Modified"] = current_time.get_gmtformat_string();  // TODO
   system_defined_attribute["Content-MD5"] = "";
   system_defined_attribute["Owner-User"] = "";
   system_defined_attribute["Owner-User-id"] = "";
