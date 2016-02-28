@@ -21,6 +21,7 @@
 #include "s3_get_bucket_location_action.h"
 #include "s3_head_bucket_action.h"
 #include "s3_get_bucket_action.h"
+#include "s3_get_multipart_bucket_action.h"
 #include "s3_put_bucket_action.h"
 #include "s3_delete_bucket_action.h"
 
@@ -57,6 +58,18 @@ void S3BucketAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
+          request->respond_unsupported_api();
+          i_am_done();
+          return;
+      };
+      break;
+    case S3OperationCode::multipart:
+      //Perform multipart operation on Bucket.
+      switch(request->http_verb()) {
+        case S3HttpVerb::GET:
+          action = std::make_shared<S3GetMultipartBucketAction>(request);
+          break;
+      default:
           request->respond_unsupported_api();
           i_am_done();
           return;

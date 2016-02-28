@@ -65,7 +65,8 @@ enum class S3OperationCode {
   partupload,
   completeupload,
   abortupload,
-  multidelete
+  multidelete,
+  multipart
 };
 
 enum class S3AsyncOpStatus {

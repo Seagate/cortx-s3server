@@ -21,7 +21,12 @@
 #include "s3_head_object_action.h"
 #include "s3_get_object_action.h"
 #include "s3_put_object_action.h"
+#include "s3_put_multiobject_action.h"
+#include "s3_post_multipartobject_action.h"
+#include "s3_post_complete_action.h"
 #include "s3_delete_object_action.h"
+#include "s3_get_multipart_part_action.h"
+#include "s3_abort_multipart_action.h"
 
 void S3ObjectAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
@@ -39,6 +44,31 @@ void S3ObjectAPIHandler::dispatch() {
           request->respond_unsupported_api();
           i_am_done();
           return;
+      };
+      break;
+    case S3OperationCode::multipart:
+      switch (request->http_verb()) {
+        case S3HttpVerb::POST:
+           if(request->has_query_param_key("uploadid")) {
+             // Complete multipart upload
+             action = std::make_shared<S3PostCompleteAction>(request);
+           } else {
+            // Initiate Multipart
+            action = std::make_shared<S3PostMultipartObjectAction>(request);
+           }
+          break;
+        case S3HttpVerb::PUT:
+          // Multipart part uploads
+          action = std::make_shared<S3PutMultiObjectAction>(request);
+          break;
+        case S3HttpVerb::GET:
+          // Multipart part listing
+          action = std::make_shared<S3GetMultipartPartAction>(request);
+          break;
+        case S3HttpVerb::DELETE:
+          // Multipart abort
+          action = std::make_shared<S3AbortMultipartAction>(request);
+          break;
       };
       break;
     case S3OperationCode::none:

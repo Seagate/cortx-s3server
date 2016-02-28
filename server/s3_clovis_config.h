@@ -35,6 +35,9 @@ private:
   // Config items.
   size_t clovis_block_size;
 
+  // To ensure that payoad size is of certain size
+  int factor;
+
   size_t clovis_idx_fetch_count;
 
 public:

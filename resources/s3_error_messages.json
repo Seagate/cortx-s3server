@@ -15,6 +15,14 @@
     "Description": "We encountered an internal error. Please try again.",
     "httpcode": 500
   },
+  "ServiceUnavailable": {
+    "Description:": "Reduce your request rate.",
+    "httpcode": 503
+  },
+  "InvalidObjectState": {
+    "Description:": "The operation is not valid for the current state of the object.",
+    "httpcode": 403
+  },
   "InvalidAccessKeyId": {
     "Description": "The AWS access key Id you provided does not exist in our records.",
     "httpcode":	403
@@ -27,8 +35,28 @@
     "Description": "The specified bucket does not exist.",
     "httpcode": 404
   },
+  "NoSuchUpload": {
+    "Description": "The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.",
+    "httpcode": 404
+  },
   "NoSuchKey": {
     "Description": "The specified key does not exist.",
+    "httpcode": 404
+  },
+  "EntityTooSmall": {
+    "Description": "Your proposed upload is smaller than the minimum allowed object size. Each part must be at least 5 MB in size, except the last part.",
+    "httpcode": 400
+  },
+  "InvalidPart": {
+    "Description": "One or more of the specified parts could not be found. The part might not have been uploaded, or the specified entity tag might not have matched the part's entity tag.",
+    "httpcode": 400
+  },
+  "InvalidPartOrder": {
+    "Description": "The list of parts was not in ascending order. The parts list must be specified in order by part number.",
+    "httpcode": 400
+  },
+  "NoSuchUpload": {
+    "Description": "The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.",
     "httpcode": 404
   },
   "NotImplemented": {

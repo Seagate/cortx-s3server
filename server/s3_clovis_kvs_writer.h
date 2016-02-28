@@ -115,6 +115,11 @@ public:
   void create_index_successful();
   void create_index_failed();
 
+  // async delete
+  void delete_index(std::string index_name,std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_index_successful();
+  void delete_index_failed();
+
   // Async save operation.
   void put_keyval(std::string index_name, std::string key, std::string val, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void put_keyval_successful();

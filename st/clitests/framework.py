@@ -21,6 +21,7 @@ class PyCliTest(object):
     def __init__(self, description):
         self.description = description
         self.command = ''
+        self.negative_case = False
         self._create_temp_working_dir()
         self.env = TestFileEnvironment(base_path = self.working_dir)
 
@@ -48,7 +49,11 @@ class PyCliTest(object):
         if Config.dummy_run:
             self.status = self.env.run("echo [%s]" % (self.command))
         else:
-            self.status = self.env.run(self.command)
+            if(self.negative_case):
+              self.status = self.env.run(self.command, expect_stderr=True, expect_error=True)
+            else:
+              self.status = self.env.run(self.command)
+
         logit("returncode: [%d]" % (self.status.returncode))
         logit("stdout: [%s]" % (self.status.stdout))
         logit("stderr: [%s]" % (self.status.stderr))
@@ -60,8 +65,9 @@ class PyCliTest(object):
         shutil.rmtree(self.working_dir, ignore_errors=True)
         return self
 
-    def execute_test(self):
+    def execute_test(self, negative_case = False):
         print("\nTest case [%s]" % (self.description))
+        self.negative_case = negative_case
         self.setup()
         self.run()
         self.teardown()
@@ -69,8 +75,14 @@ class PyCliTest(object):
 
     def command_is_successful(self):
         if not Config.dummy_run:
-            assert self.status.returncode == 0, 'Test Failed'
+           assert self.status.returncode == 0, 'Test Failed'
         print("Command was successful.")
+        return self
+
+    def command_should_fail(self):
+        if not Config.dummy_run:
+          assert self.status.returncode != 0, 'Test Failed'
+        print("Command has failed.")
         return self
 
     def command_response_should_have(self, msg):

@@ -101,6 +101,7 @@ private:
   // Holds references to keys and values after the read so it can be consumed.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   std::string last_value;
+  std::string key_name;
   std::map<std::string, std::string> last_result_keys_values;
   size_t iteration_index;
 
@@ -117,6 +118,9 @@ public:
   void get_keyval_failed();
   std::string get_value() {
     return last_value;
+  }
+  std::string get_key_name() {
+    return key_name;
   }
 
   // Used to iterate over the key-value pairs.

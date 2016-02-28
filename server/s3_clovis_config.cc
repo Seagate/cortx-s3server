@@ -23,8 +23,8 @@ S3ClovisConfig* S3ClovisConfig::instance = NULL;
 
 S3ClovisConfig::S3ClovisConfig() {
   // Read config items from some file.
-  clovis_block_size = 4096;
-
+  clovis_block_size = 1048576;
+  factor = 1048576/clovis_block_size;
   clovis_idx_fetch_count = 100;
 }
 
@@ -40,11 +40,11 @@ size_t S3ClovisConfig::get_clovis_block_size() {
 }
 
 size_t S3ClovisConfig::get_clovis_write_payload_size() {
-    return clovis_block_size * 100;
+    return clovis_block_size * factor;
 }
 
 size_t S3ClovisConfig::get_clovis_read_payload_size() {
-    return clovis_block_size * 100;
+    return clovis_block_size * factor;
 }
 
 size_t S3ClovisConfig::get_clovis_idx_fetch_count() {

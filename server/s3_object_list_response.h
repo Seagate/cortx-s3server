@@ -28,10 +28,14 @@
 #include <unordered_set>
 
 #include "s3_object_metadata.h"
+#include "s3_part_metadata.h"
 
 class S3ObjectListResponse {
   std::string bucket_name;
+  std::string object_name, user_name, user_id, storage_class, upload_id;
+  std::string account_name, account_id;
   std::vector<std::shared_ptr<S3ObjectMetadata>> object_list;
+  std::vector<std::shared_ptr<S3PartMetadata>> part_list;
 
   // We use unordered for performance as the keys are already
   // in sorted order as stored in clovis-kv (cassandra)
@@ -41,28 +45,52 @@ class S3ObjectListResponse {
   std::string request_prefix;
   std::string request_delimiter;
   std::string request_marker_key;
+  std::string request_marker_uploadid;
   std::string max_keys;
   bool response_is_truncated;
   std::string next_marker_key;
 
   std::string response_xml;
+  std::string max_uploads;
+  std::string max_parts;
+  std::string next_marker_uploadid;
 
 public:
   S3ObjectListResponse();
 
   void set_bucket_name(std::string name);
+  void set_object_name(std::string name);
+  void set_user_id(std::string);
+  void set_user_name(std::string);
+  void set_account_id(std::string);
+  void set_account_name(std::string);
+  void set_storage_class(std::string);
+  void set_upload_id(std::string upload_id);
   void set_request_prefix(std::string prefix);
   void set_request_delimiter(std::string delimiter);
   void set_request_marker_key(std::string marker);
+  void set_request_marker_uploadid(std::string marker);
   void set_max_keys(std::string count);
+  void set_max_uploads(std::string count);
+  void set_max_parts(std::string count);
   void set_response_is_truncated(bool flag);
   void set_next_marker_key(std::string next);
+  void set_next_marker_uploadid(std::string next);
+  std::string& get_object_name();
 
   void add_object(std::shared_ptr<S3ObjectMetadata> object);
+  void add_part(std::shared_ptr<S3PartMetadata> part);
   void add_common_prefix(std::string);
 
   std::string& get_xml();
-
+  std::string& get_multipart_xml();
+  std::string& get_multiupload_xml();
+  std::string& get_user_id();
+  std::string& get_user_name();
+  std::string& get_account_id();
+  std::string& get_account_name();
+  std::string& get_storage_class();
+  std::string& get_upload_id();
 };
 
 #endif

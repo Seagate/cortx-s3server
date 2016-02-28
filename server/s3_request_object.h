@@ -46,6 +46,12 @@ enum class S3HttpVerb {
   POST = htp_method_POST
 };
 
+enum class S3RequestError {
+  None,
+  EntityTooSmall,
+  InvalidPartOrder
+};
+
 extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg);
 
 class S3RequestObject {
@@ -102,6 +108,7 @@ private:
   std::map<std::string, std::string> in_headers_copy;
   bool in_headers_copied;
   std::string full_request_body;
+  S3RequestError request_error;
 public:
   std::map<std::string, std::string> get_in_headers_copy();
   friend int consume_header(evhtp_kv_t * kvobj, void * arg);
@@ -141,6 +148,14 @@ public:
   std::string& get_account_id();
 
   std::string& get_request_id();
+
+  S3RequestError get_request_error() {
+    return request_error;
+  }
+
+  void set_request_error(S3RequestError req_error) {
+    request_error = req_error;
+  }
 
   /* INFO: https://github.com/ellzey/libevhtp/issues/93
      Pause and resume will essentially stop and start attempting to read from the client socket.

@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -14,34 +14,31 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original creation date: 5-Feb-2016
  */
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
-#define __MERO_FE_S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
+#ifndef __MERO_FE_S3_SERVER_S3_AWS_ETAG_H__
+#define __MERO_FE_S3_SERVER_S3_AWS_ETAG_H__
 
-/* libevhtp */
-#include <evhtp.h>
+#include <string>
 
-#include "s3_request_object.h"
-#include "s3_asyncop_context_base.h"
+// Used to generate Etag for multipart uploads.
+class S3AwsEtag {
+  std::string hex_etag;
+  std::string final_etag;
+  int part_count;
 
-struct user_event_context {
-  void *async_ctx;
-  void *user_event;
-};
-
-extern "C" typedef void (*user_event_on_main_loop)(evutil_socket_t, short events, void *user_data);
-
-class S3PostToMainLoop {
-  std::shared_ptr<S3RequestObject> request;
-  void* context;
+  // Helpers
+  int hex_to_dec(char ch);
+  std::string convert_hex_bin(std::string hex);
 public:
-  S3PostToMainLoop(std::shared_ptr<S3RequestObject> req, void* ctx) : request(req), context(ctx) { printf("Called S3PostToMainLoop Constructor\n");}
+  S3AwsEtag() : part_count(0) {}
 
-  void operator()(user_event_on_main_loop callback);
+  void add_part_etag(std::string etag);
+  std::string finalize();
+  std::string get_final_etag();
 };
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -14,13 +14,14 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Author         :  Rajesh Nambiar        <rajesh.nambiar@seagate.com>
+ * Original creation date: 13-Jan-2016
  */
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_GET_BUCKET_ACTION_H__
-#define __MERO_FE_S3_SERVER_S3_GET_BUCKET_ACTION_H__
+#ifndef __MERO_FE_S3_SERVER_S3_GET_MULTIPART_BUCKET_ACTION_H__
+#define __MERO_FE_S3_SERVER_S3_GET_MULTIPART_BUCKET_ACTION_H__
 
 #include <memory>
 
@@ -28,18 +29,13 @@
 #include "s3_object_list_response.h"
 #include "s3_clovis_kvs_reader.h"
 
-class S3GetBucketAction : public S3Action {
+class S3GetMultipartBucketAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::string last_key;  // last key during each iteration
-  S3ObjectListResponse object_list;
+  S3ObjectListResponse multipart_object_list;
   size_t return_list_size;
 
   bool fetch_successful;
-
-  // Helpers
-  std::string get_bucket_index_name() {
-    return "BUCKET/" + request->get_bucket_name();
-  }
 
   std::string get_multipart_bucket_index_name() {
     return "BUCKET/" + request->get_bucket_name() + "/Multipart";
@@ -49,16 +45,21 @@ class S3GetBucketAction : public S3Action {
   std::string request_prefix;
   std::string request_delimiter;
   std::string request_marker_key;
-  size_t max_keys;
+  std::string last_uploadid;
+  std::string request_marker_uploadid;
+  size_t max_uploads;
 
 public:
-  S3GetBucketAction(std::shared_ptr<S3RequestObject> req);
+  S3GetMultipartBucketAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
 
   void get_next_objects();
   void get_next_objects_successful();
   void get_next_objects_failed();
+  void get_key_object();
+  void get_key_object_successful();
+  void get_key_object_failed();
 
   void send_response_to_s3_client();
 };

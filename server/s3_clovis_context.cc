@@ -125,7 +125,7 @@ int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
     m0_clovis_op_free(ctx->ops[i]);
   }
   if(ctx->idx != NULL && ctx->idx->in_entity.en_sm.sm_state != 0) {
-    m0_clovis_entity_fini(&ctx->idx->in_entity);
+    m0_clovis_idx_fini(ctx->idx);
   }
   free(ctx->ops);
   free(ctx->cbs);

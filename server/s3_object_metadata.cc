@@ -23,7 +23,7 @@
 #include "s3_object_metadata.h"
 #include "s3_datetime.h"
 
-S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
+S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool ismultipart, std::string uploadid) : request(req) {
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
@@ -31,6 +31,8 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req) : reque
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
   state = S3ObjectMetadataState::empty;
+  is_multipart = ismultipart;
+  upload_id = uploadid;
 
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
@@ -63,6 +65,10 @@ std::string S3ObjectMetadata::get_object_name() {
 
 std::string S3ObjectMetadata::get_user_id() {
   return user_id;
+}
+
+std::string S3ObjectMetadata::get_upload_id() {
+  return upload_id;
 }
 
 std::string S3ObjectMetadata::get_user_name() {
@@ -120,7 +126,11 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success, std::function<
   this->handler_on_failed  = on_failed;
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->get_keyval(get_bucket_index_name(), object_name, std::bind( &S3ObjectMetadata::load_successful, this), std::bind( &S3ObjectMetadata::load_failed, this));
+  if(is_multipart) {
+    clovis_kv_reader->get_keyval(get_multipart_index_name(), object_name, std::bind( &S3ObjectMetadata::load_successful, this), std::bind( &S3ObjectMetadata::load_failed, this));
+  } else {
+    clovis_kv_reader->get_keyval(get_bucket_index_name(), object_name, std::bind( &S3ObjectMetadata::load_successful, this), std::bind( &S3ObjectMetadata::load_failed, this));
+  }
 }
 
 void S3ObjectMetadata::load_successful() {
@@ -151,12 +161,18 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success, std::function<
 }
 
 void S3ObjectMetadata::create_bucket_index() {
+  std::string index_name;
   printf("Called S3ObjectMetadata::create_bucket_index\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3ObjectMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->create_index(get_bucket_index_name(), std::bind( &S3ObjectMetadata::create_bucket_index_successful, this), std::bind( &S3ObjectMetadata::create_bucket_index_failed, this));
+  if(is_multipart) {
+    index_name = get_multipart_index_name();
+  } else {
+    index_name = get_bucket_index_name();
+  }
+  clovis_kv_writer->create_index(index_name, std::bind( &S3ObjectMetadata::create_bucket_index_successful, this), std::bind( &S3ObjectMetadata::create_bucket_index_failed, this));
 }
 
 void S3ObjectMetadata::create_bucket_index_successful() {
@@ -176,14 +192,22 @@ void S3ObjectMetadata::create_bucket_index_failed() {
 }
 
 void S3ObjectMetadata::save_metadata() {
+  std::string index_name;
+  std::string key;
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
   system_defined_attribute["Owner-User-id"] = user_id;
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
+  if( is_multipart ) {
+    system_defined_attribute["Upload-ID"] = upload_id;
+    index_name = get_multipart_index_name();
+  } else {
+    index_name = get_bucket_index_name();
+  }
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->put_keyval(get_bucket_index_name(), object_name, this->to_json(), std::bind( &S3ObjectMetadata::save_metadata_successful, this), std::bind( &S3ObjectMetadata::save_metadata_failed, this));
+  clovis_kv_writer->put_keyval(index_name, object_name, this->to_json(), std::bind( &S3ObjectMetadata::save_metadata_successful, this), std::bind( &S3ObjectMetadata::save_metadata_failed, this));
 }
 
 void S3ObjectMetadata::save_metadata_successful() {
@@ -200,13 +224,21 @@ void S3ObjectMetadata::save_metadata_failed() {
 }
 
 void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  std::string index_name;
   printf("Called S3ObjectMetadata::remove\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
+  if( is_multipart ) {
+    index_name = get_multipart_index_name();
+  } else {
+    index_name = get_bucket_index_name();
+  }
+
+
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->delete_keyval(get_bucket_index_name(), object_name, std::bind( &S3ObjectMetadata::remove_successful, this), std::bind( &S3ObjectMetadata::remove_failed, this));
+  clovis_kv_writer->delete_keyval(index_name, object_name, std::bind( &S3ObjectMetadata::remove_successful, this), std::bind( &S3ObjectMetadata::remove_failed, this));
 }
 
 void S3ObjectMetadata::remove_successful() {
@@ -228,6 +260,9 @@ std::string S3ObjectMetadata::to_json() {
   root["Bucket-Name"] = bucket_name;
   root["Object-Name"] = object_name;
   root["Object-URI"] = object_key_uri;
+  if(is_multipart) {
+    root["Upload-ID"] = upload_id;
+  }
 
   for (auto sit: system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -255,6 +290,7 @@ void S3ObjectMetadata::from_json(std::string content) {
   bucket_name = newroot["Bucket-Name"].asString();
   object_name = newroot["Object-Name"].asString();
   object_key_uri = newroot["Object-URI"].asString();
+  upload_id = newroot["Upload-ID"].asString();
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for(auto it : members) {

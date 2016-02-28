@@ -43,6 +43,7 @@ const char *clovis_local_addr = "localhost@tcp:12345:33:100";
 const char *clovis_confd_addr = "localhost@tcp:12345:33:100";
 const char *clovis_prof = "<0x7000000000000001:0>";
 uint16_t bind_port      = 8081;
+short    clovis_layout_id = 9;
 
 // S3 Auth service
 const char *auth_ip_addr = "127.0.0.1";
@@ -156,7 +157,7 @@ set_s3_connection_handlers(evhtp_connection_t * conn, void * arg) {
     return EVHTP_RES_OK;
 }
 
-const char * optstr = "a:p:l:c:s:d:h";
+const char * optstr = "a:p:l:c:s:d:h:i";
 
 const char * help   =
     "Options: \n"
@@ -166,7 +167,8 @@ const char * help   =
     "  -l <str> : clovis local address     (default: 10.0.2.15@tcp:12345:33:100)\n"
     "  -c <str> : clovis confd address     (default: 10.0.2.15@tcp:12345:33:100)\n"
     "  -s <str> : Auth Service address     (default: 127.0.0.1)\n"
-    "  -d <int> : Auth Service port        (default: 8085)\n";
+    "  -d <int> : Auth Service port        (default: 8085)\n"
+    "  -i <int> : Clovis layout id         (default: 9 (1MB))\n";
 
 int
 parse_args(int argc, char ** argv) {
@@ -199,6 +201,9 @@ parse_args(int argc, char ** argv) {
             case 'd':
                 auth_port             = atoi(optarg);
                 break;
+            case 'i':
+                clovis_layout_id      = atoi(optarg);
+                break;
             default:
                 printf("Unknown opt %s\n", optarg);
                 return -1;
@@ -210,6 +215,7 @@ parse_args(int argc, char ** argv) {
     printf("clovis_confd_addr = %s\n", clovis_confd_addr);
     printf("Auth server: %s\n",auth_ip_addr);
     printf("Auth server port: %d\n",auth_port);
+    printf("clovis_layout_id = %d\n", clovis_layout_id);
 
     return 0;
 } /* parse_args */
@@ -251,7 +257,7 @@ main(int argc, char ** argv) {
     evhtp_set_gencb(htp, s3_handler, router);
 
     /* Initilise mero and Clovis */
-    rc = init_clovis(clovis_local_addr, clovis_confd_addr, clovis_prof);
+    rc = init_clovis(clovis_local_addr, clovis_confd_addr, clovis_prof, clovis_layout_id);
     if (rc < 0) {
         printf("clovis_init failed!\n");
         return rc;

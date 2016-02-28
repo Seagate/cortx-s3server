@@ -36,6 +36,7 @@ S3RequestObject::S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj
   bucket_name = object_name = user_name = user_id = account_name = account_id = "";
   request_id = "TODO-Gen uuid";
   is_paused = false;
+  request_error = S3RequestError::None;
   evhtp_obj.reset(evhtp_obj_ptr);
   initialise();
 }

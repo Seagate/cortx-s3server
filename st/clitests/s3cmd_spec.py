@@ -56,6 +56,13 @@ S3cmdTest('s3cmd can download 700K file').download_test("seagatebucket", "700Kfi
 
 S3cmdTest('s3cmd can delete 700K file').delete_test("seagatebucket", "700Kfile").execute_test().command_is_successful()
 
+# ************ 18MB FILE Multipart Upload TEST ***********
+S3cmdTest('s3cmd can upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can download 18MB file').download_test("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
+
+S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+
 # ************ Delete bucket TEST ************
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
@@ -100,6 +107,23 @@ S3cmdTest('s3cmd can upload 700K file').upload_test("seagatebucket", "700Kfile",
 S3cmdTest('s3cmd can download 700K file').download_test("seagatebucket", "700Kfile").execute_test().command_is_successful().command_created_file("700Kfile")
 
 S3cmdTest('s3cmd can delete 700K file').delete_test("seagatebucket", "700Kfile").execute_test().command_is_successful()
+
+# ************ 18MB FILE Multipart Upload TEST ***********
+S3cmdTest('s3cmd can multipart upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can download 18MB file').download_test("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
+
+S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can list multipart upload 18MB file').multipartupload_list_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can abort multipart upload of 18MB file').multipartupload_abort_test("seagatebucket", "18MBfile", 18000000).execute_test(True).command_should_fail()
+
+S3cmdTest('s3cmd can list parts of multipart upload 18MB file').multipartupload_partlist_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
 # ************ Delete bucket TEST ************
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()

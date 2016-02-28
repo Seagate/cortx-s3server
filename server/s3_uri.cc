@@ -50,6 +50,8 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::acl;
   } else if (request->has_query_param_key("location")) {
     operation_code = S3OperationCode::location;
+  } else if (request->has_query_param_key("uploads") || request->has_query_param_key("uploadid")) {
+    operation_code = S3OperationCode::multipart;
   }
   // Other operations - todo
 }

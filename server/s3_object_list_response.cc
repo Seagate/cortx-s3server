@@ -19,13 +19,18 @@
 
 #include "s3_object_list_response.h"
 
-S3ObjectListResponse::S3ObjectListResponse() : request_prefix(""), request_delimiter(""), request_marker_key(""), max_keys(""), response_is_truncated(false), next_marker_key(""), response_xml("") {
+S3ObjectListResponse::S3ObjectListResponse() : request_prefix(""), request_delimiter(""), request_marker_key(""), request_marker_uploadid(""), max_keys(""), response_is_truncated(false), next_marker_key(""), response_xml(""), max_uploads(""), next_marker_uploadid("") {
   printf("S3ObjectListResponse created\n");
   object_list.clear();
+  part_list.clear();
 }
 
 void S3ObjectListResponse::set_bucket_name(std::string name) {
   bucket_name = name;
+}
+
+void S3ObjectListResponse::set_object_name(std::string name) {
+  object_name = name;
 }
 
 void S3ObjectListResponse::set_request_prefix(std::string prefix) {
@@ -40,8 +45,20 @@ void S3ObjectListResponse::set_request_marker_key(std::string marker) {
   request_marker_key = marker;
 }
 
+void S3ObjectListResponse::set_request_marker_uploadid(std::string marker) {
+  request_marker_uploadid = marker;
+}
+
 void S3ObjectListResponse::set_max_keys(std::string count) {
   max_keys = count;
+}
+
+void S3ObjectListResponse::set_max_uploads(std::string upload_count) {
+  max_uploads = upload_count;
+}
+
+void S3ObjectListResponse::set_max_parts(std::string part_count) {
+  max_parts = part_count;
 }
 
 void S3ObjectListResponse::set_response_is_truncated(bool flag) {
@@ -52,12 +69,72 @@ void S3ObjectListResponse::set_next_marker_key(std::string next) {
   next_marker_key = next;
 }
 
+void S3ObjectListResponse::set_next_marker_uploadid(std::string next) {
+  next_marker_uploadid = next;
+}
+
+std::string& S3ObjectListResponse::get_object_name() {
+  return object_name;
+}
+
 void S3ObjectListResponse::add_object(std::shared_ptr<S3ObjectMetadata> object) {
   object_list.push_back(object);
 }
 
+void S3ObjectListResponse::add_part(std::shared_ptr<S3PartMetadata> part) {
+  part_list.push_back(part);
+}
+
 void S3ObjectListResponse::add_common_prefix(std::string common_prefix) {
   common_prefixes.insert(common_prefix);
+}
+
+void S3ObjectListResponse::set_user_id(std::string userid) {
+  user_id = userid;
+}
+
+void S3ObjectListResponse::set_user_name(std::string username) {
+  user_name = username;
+}
+
+void S3ObjectListResponse::set_account_id(std::string accountid) {
+  account_id = accountid;
+}
+
+void S3ObjectListResponse::set_account_name(std::string accountname) {
+  account_name = accountname;
+}
+
+std::string& S3ObjectListResponse::get_account_id() {
+  return account_id;
+}
+
+std::string& S3ObjectListResponse::get_account_name() {
+  return account_name;
+}
+
+void S3ObjectListResponse::set_storage_class(std::string stor_class) {
+  storage_class = stor_class;
+}
+
+std::string& S3ObjectListResponse::get_user_id() {
+  return user_id;
+}
+
+std::string& S3ObjectListResponse::get_user_name() {
+  return user_name;
+}
+
+std::string& S3ObjectListResponse::get_storage_class() {
+  return storage_class;
+}
+
+void S3ObjectListResponse::set_upload_id(std::string uploadid) {
+  upload_id = uploadid;
+}
+
+std::string& S3ObjectListResponse::get_upload_id() {
+  return upload_id;
 }
 
 std::string& S3ObjectListResponse::get_xml() {
@@ -92,6 +169,79 @@ std::string& S3ObjectListResponse::get_xml() {
   }
 
   response_xml += "</ListBucketResult>\n";
+
+  return response_xml;
+}
+
+std::string& S3ObjectListResponse::get_multiupload_xml() {
+  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  response_xml += "<ListMultipartUploadsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
+  response_xml += "<Bucket>" + bucket_name + "</Bucket>"
+                  "<KeyMarker>" + request_marker_key + "</KeyMarker>"
+                  "<UploadIdMarker>" + request_marker_uploadid + "</UploadIdMarker>"
+                  "<NextKeyMarker>" + (response_is_truncated ? next_marker_key : "") + "</NextKeyMarker>"
+                  "<NextUploadIdMarker>" + (response_is_truncated ? next_marker_uploadid : "") + "</NextUploadIdMarker>"
+                  "<MaxUploads>" + max_uploads + "</MaxUploads>\n"
+                  "<IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
+
+  for (auto&& object : object_list) {
+    response_xml += "<Upload>\n"
+                    "  <Key>" + object->get_object_name() + "</Key>\n"
+                    "  <UploadId>" + object->get_upload_id() + "</UploadId>\n"
+                    "  <Initiator>\n"
+                    "    <ID>" + object->get_user_id() + "</ID>\n"
+                    "    <DisplayName>" + object->get_user_name() + "</DisplayName>\n"
+                    "  </Initiator>\n"
+                    "  <Owner>\n"
+                    "    <ID>" + object->get_user_id() + "</ID>\n"
+                    "    <DisplayName>" + object->get_user_name() + "</DisplayName>\n"
+                    "  </Owner>\n"
+                    "  <StorageClass>" + object->get_storage_class() + "</StorageClass>\n" 
+                    "  <Initiated>" + object->get_last_modified() + "</Initiated>\n"
+                    "</Upload>\n";
+  }
+
+  for (auto&& prefix : common_prefixes) {
+    response_xml += "<CommonPrefixes>\n"
+                    "  <Prefix>" + prefix + "</Prefix>\n"
+                    "</CommonPrefixes>";
+  }
+
+  response_xml += "</ListMultipartUploadsResult>\n";
+
+  return response_xml;
+}
+
+std::string& S3ObjectListResponse::get_multipart_xml() {
+  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  response_xml += "<ListPartsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
+  response_xml += "  <Bucket>" + bucket_name + "</Bucket>\n"
+                  "  <Key>" + get_object_name() + "</Key>\n"
+                  "  <UploadID>" + get_upload_id() + "</UploadID>\n"
+                  "  <Initiator>\n"
+                  "      <ID>" + get_user_id() + "</ID>\n"
+                  "      <DisplayName>" + get_user_name() + "</DisplayName>\n"
+                  "  </Initiator>\n"
+                  "  <Owner>\n"
+                  "    <ID>" + get_account_id() + "</ID>\n"
+                  "    <DisplayName>" + get_account_name() + "</DisplayName>\n"
+                  "  </Owner>\n"
+                  "  <StorageClass>" + get_storage_class() + "</StorageClass>\n"
+                  "  <PartNumberMarker>" + request_marker_key + "</PartNumberMarker>\n"
+                  "  <NextPartNumberMarker>" + (response_is_truncated ? next_marker_key : "") + "</NextPartNumberMarker>\n"
+                  "  <MaxParts>" + max_parts + "</MaxParts>\n"
+                  "  <IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
+
+  for (auto&& part : part_list) {
+    response_xml += "  <Part>\n"
+                    "  <PartNumber>" + part->get_part_number() + "</PartNumber>\n"
+                    "  <LastModified>" + part->get_last_modified() + "</LastModified>\n"
+                    "  <ETag>" + part->get_md5() + "</ETag>\n"
+                    "  <Size>" + part->get_content_length_str() + "</Size>\n"
+                    "  </Part>\n";
+  }
+
+  response_xml += "</ListPartsResult>\n";
 
   return response_xml;
 }

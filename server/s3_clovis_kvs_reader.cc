@@ -43,6 +43,7 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std:
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
+  key_name = key;
   reader_context.reset(new S3ClovisKVSReaderContext(request, std::bind( &S3ClovisKVSReader::get_keyval_successful, this), std::bind( &S3ClovisKVSReader::get_keyval_failed, this)));
 
   reader_context->init_kvs_read_op_ctx(1);
@@ -107,6 +108,7 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
+  key_name = key;
   reader_context.reset(new S3ClovisKVSReaderContext(request, std::bind( &S3ClovisKVSReader::next_keyval_successful, this), std::bind( &S3ClovisKVSReader::next_keyval_failed, this)));
 
   reader_context->init_kvs_read_op_ctx(nr_kvp);
