@@ -25,11 +25,10 @@
 #include <memory>
 
 #include "s3_action_base.h"
-// #include "s3_bucket_metadata.h"
-// #include "s3_clovis_kv_reader.h"
+#include "s3_bucket_metadata.h"
 
 class S3GetBucketlocationAction : public S3Action {
-  // std::shared_ptr<S3BucketMetadata> metadata;
+  std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
 public:
   S3GetBucketlocationAction(std::shared_ptr<S3RequestObject> req);

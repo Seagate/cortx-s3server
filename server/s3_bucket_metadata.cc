@@ -48,6 +48,14 @@ std::string S3BucketMetadata::get_creation_time() {
   return system_defined_attribute["Date"];
 }
 
+std::string S3BucketMetadata::get_location_constraint() {
+  return system_defined_attribute["LocationConstraint"];
+}
+
+void S3BucketMetadata::set_location_constraint(std::string location) {
+  system_defined_attribute["LocationConstraint"] = location;
+}
+
 void S3BucketMetadata::add_system_attribute(std::string key, std::string val) {
   system_defined_attribute[key] = val;
 }

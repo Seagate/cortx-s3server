@@ -82,7 +82,7 @@ class PyCliTest(object):
     def command_should_fail(self):
         if not Config.dummy_run:
           assert self.status.returncode != 0, 'Test Failed'
-        print("Command has failed.")
+        print("Command has failed as expected.")
         return self
 
     def command_response_should_have(self, msg):

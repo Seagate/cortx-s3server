@@ -17,5 +17,5 @@ pip install scripttest==1.3
 
 echo ""
 echo "Add the following to /etc/hosts"
-echo "127.0.0.1 seagatebucket.s3.seagate.com seagate-bucket.s3.seagate.com SEAGATEBUCKET123.s3.seagate.com"
+echo "127.0.0.1 seagatebucket.s3.seagate.com seagate-bucket.s3.seagate.com seagatebucket123.s3.seagate.com seagate.bucket.s3.seagate.com"
 echo "127.0.0.1 iam.seagate.com sts.seagate.com"

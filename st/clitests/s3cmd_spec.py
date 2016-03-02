@@ -77,10 +77,24 @@ S3cmdTest('s3cmd should not have objects after multiple delete').list_objects('s
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
 # ************ Signing algorithm test ************
+S3cmdTest('s3cmd can create bucket nondnsbucket').create_bucket("nondnsbucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can create bucket seagate-bucket').create_bucket("seagate-bucket").execute_test().command_is_successful()
-S3cmdTest('s3cmd can create bucket SEAGATEBUCKET123').create_bucket("SEAGATEBUCKET123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can create bucket seagatebucket123').create_bucket("seagatebucket123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can create bucket seagate.bucket').create_bucket("seagate.bucket").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete bucket nondnsbucket').delete_bucket("nondnsbucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket seagate-bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
-S3cmdTest('s3cmd can delete bucket SEAGATEBUCKET123').delete_bucket("SEAGATEBUCKET123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete bucket seagatebucket123').delete_bucket("seagatebucket123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete bucket seagate.bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
+
+# ************ Create bucket in region ************
+S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket", "eu-west-1").execute_test().command_is_successful()
+
+## Note: we expect info to fail since we dont yet support all APIs
+## that info calls under the hood, but we do support ?location API.
+S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket").execute_test(True).command_should_fail().command_response_should_have('eu-west-1')
+
+S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+
 
 # Virtual Host style tests.
 Config.config_file = "virtualhoststyle.s3cfg"
@@ -150,6 +164,17 @@ S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test
 
 # ************ Signing algorithm test ************
 S3cmdTest('s3cmd can create bucket seagate-bucket').create_bucket("seagate-bucket").execute_test().command_is_successful()
-S3cmdTest('s3cmd can create bucket SEAGATEBUCKET123').create_bucket("SEAGATEBUCKET123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can create bucket seagatebucket123').create_bucket("seagatebucket123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can create bucket seagate.bucket').create_bucket("seagate.bucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket seagate-bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
-S3cmdTest('s3cmd can delete bucket SEAGATEBUCKET123').delete_bucket("SEAGATEBUCKET123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete bucket seagatebucket123').delete_bucket("seagatebucket123").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete bucket seagate.bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
+
+# ************ Create bucket in region ************
+S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket", "eu-west-1").execute_test().command_is_successful()
+
+## Note: we expect info to fail since we dont yet support all APIs
+## that info calls under the hood, but we do support ?location API.
+S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket").execute_test(True).command_should_fail().command_response_should_have('eu-west-1')
+
+S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()

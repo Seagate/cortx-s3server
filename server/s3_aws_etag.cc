@@ -51,7 +51,7 @@ int S3AwsEtag::hex_to_dec(char ch) {
 std::string S3AwsEtag::convert_hex_bin(std::string hex) {
   std::string binary;
   unsigned char digest_byte = 0;
-  for (int i = 0; i < hex.length(); i += 2) {
+  for (size_t i = 0; i < hex.length(); i += 2) {
     digest_byte = hex_to_dec(hex[i]);
 
     digest_byte = digest_byte << 4;  // shift to msb

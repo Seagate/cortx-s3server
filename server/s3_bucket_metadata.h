@@ -88,6 +88,9 @@ public:
 
   std::string get_bucket_name();
   std::string get_creation_time();
+  std::string get_location_constraint();
+
+  void set_location_constraint(std::string location);
 
   // Load attributes
   void add_system_attribute(std::string key, std::string val);

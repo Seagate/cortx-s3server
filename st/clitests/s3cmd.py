@@ -27,13 +27,21 @@ class S3cmdTest(PyCliTest):
     def teardown(self):
         super(S3cmdTest, self).teardown()
 
-    def create_bucket(self, bucket_name):
+    def create_bucket(self, bucket_name, region=None):
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd -c " + self.s3cfg + " mb " + " s3://" + self.bucket_name)
+        if region:
+            self.with_cli("s3cmd -c " + self.s3cfg + " mb " + " s3://" + self.bucket_name + " --bucket-location=" + region)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + " mb " + " s3://" + self.bucket_name)
         return self
 
     def list_buckets(self):
         self.with_cli("s3cmd -c " + self.s3cfg + " ls ")
+        return self
+
+    def info_bucket(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " info " + " s3://" + self.bucket_name)
         return self
 
     def delete_bucket(self, bucket_name):

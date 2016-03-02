@@ -91,7 +91,7 @@ void S3PutBucketAction::create_bucket() {
   } else {
     // xxx set attributes & save
     if (!location_constraint.empty()) {
-      bucket_metadata->add_system_attribute("LocationConstraint", location_constraint);
+      bucket_metadata->set_location_constraint(location_constraint);
     }
     bucket_metadata->save(std::bind( &S3PutBucketAction::next, this), std::bind( &S3PutBucketAction::next, this));
   }
