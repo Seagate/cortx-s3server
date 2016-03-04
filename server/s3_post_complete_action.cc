@@ -112,31 +112,33 @@ void S3PostCompleteAction::get_parts_successful() {
   }
   std::map<std::string, std::string>::iterator part_kv;
   std::map<std::string, std::string>::iterator store_kv;
+
   for (part_kv = parts.begin(), store_kv = kvps.begin(); part_kv != parts.end(); part_kv++, store_kv++) {
     if(part_kv->first != store_kv->first) {
       part_metadata->set_state(S3PartMetadataState::missing);
       send_response_to_s3_client();
     } else {
+        printf("Metadata for key %s %s\n", store_kv->first.c_str(), store_kv->second.c_str());
         part_metadata->from_json(store_kv->second);
-        printf("Content of part = %zu\n", part_metadata->get_content_length());
         curr_size = part_metadata->get_content_length();
         if(store_kv != kvps.begin()) {
           if(prev_size != curr_size) {
-            // Check is this the last part
-            if(store_kv->first != total_parts) {
-              printf("The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",
-                     store_kv->first.c_str(),
-                     curr_size, prev_size);
-              // Will be deleting complete object along with the part index and multipart kv
-              set_abort_multipart(true);
-              break;
+            if(store_kv->first == total_parts) {
+              // This is the last part, ignore it
+              continue;
             }
-          }
-          prev_size = curr_size;
-
+            printf("The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",
+                   store_kv->first.c_str(),
+                   curr_size, prev_size);
+            // Will be deleting complete object along with the part index and multipart kv
+            set_abort_multipart(true);
+            break;
+          } else {
+             prev_size = curr_size;
+            }
         } else {
           prev_size = curr_size;
-        }
+          }
         object_size += part_metadata->get_content_length();
         awsetag.add_part_etag(part_metadata->get_md5());
       }
