@@ -30,6 +30,7 @@
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_log.h"
 
 class S3AbortMultipartAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;

@@ -25,6 +25,7 @@
 #include "s3_error_codes.h"
 
 S3AbortMultipartAction::S3AbortMultipartAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   upload_id = request->get_query_string_value("uploadId");
   object_name = request->get_object_name();
   bucket_name = request->get_bucket_name();
@@ -32,6 +33,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(std::shared_ptr<S3RequestObject> 
 }
 
 void S3AbortMultipartAction::setup_steps(){
+  s3_log(S3_LOG_DEBUG, "Setup the action\n");
   add_task(std::bind( &S3AbortMultipartAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3AbortMultipartAction::delete_multipart_metadata, this));
   add_task(std::bind( &S3AbortMultipartAction::fetch_parts_info, this ));
@@ -42,53 +44,65 @@ void S3AbortMultipartAction::setup_steps(){
 }
 
 void S3AbortMultipartAction::fetch_bucket_info() {
-  printf("Called S3AbortMultipartAction::fetch_bucket_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AbortMultipartAction::fetch_parts_info() {
-  printf("Called S3AbortMultipartAction::fetch_parts_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 1);
   part_metadata->load(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::fetch_parts_failed, this), 1);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AbortMultipartAction::fetch_parts_failed() {
-  printf("Called S3AbortMultipartAction::fetch_parts_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Fetching of parts failed\n");
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AbortMultipartAction::delete_parts() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   clovis_writer = std::make_shared<S3ClovisWriter>(request);
   clovis_writer->delete_object(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::delete_parts_failed, this));
+  s3_log(S3_LOG_ERROR, "Exiting\n");
 }
 
 void S3AbortMultipartAction::delete_parts_failed() {
-  printf("Called S3AbortMultipartAction::delete_parts_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Deletion of parts failed\n");
   send_response_to_s3_client();
+  s3_log(S3_LOG_ERROR, "Exiting\n");
 }
 
 
 void S3AbortMultipartAction::delete_multipart_metadata() {
-  printf("Called S3AbortMultipartAction::delete multipart_metadata\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
   object_multipart_metadata->remove(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::delete_multipart_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AbortMultipartAction::delete_multipart_failed() {
   //Log error
-  printf("Called S3AbortMultipartAction::delete_multipart_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Deletion of multipart index failed\n");
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AbortMultipartAction::delete_part_index() {
-  printf("Called S3AbortMultipartAction::delete_part_index\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   part_metadata->remove_index(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 
 void S3AbortMultipartAction::send_response_to_s3_client() {
-  printf("Called S3AbortMultipartAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if ( bucket_metadata && (bucket_metadata->get_state() == S3BucketMetadataState::missing)) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
@@ -113,4 +127,5 @@ void S3AbortMultipartAction::send_response_to_s3_client() {
     }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

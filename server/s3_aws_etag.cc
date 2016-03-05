@@ -44,7 +44,7 @@ int S3AwsEtag::hex_to_dec(char ch) {
     case 'd': return 13; break;
     case 'e': return 14; break;
     case 'f': return 15; break;
-    default:  printf("\nInvalid hexadecimal digit %c ", ch); return 0;
+    default:  s3_log(S3_LOG_ERROR, "Invalid hexadecimal digit %c \n", ch); return 0;
   }
 }
 

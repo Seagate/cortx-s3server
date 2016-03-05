@@ -23,6 +23,7 @@
 #include "s3_datetime.h"
 
 S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor");
   account_name = request->get_account_name();
   user_name = request->get_user_name();
   bucket_name = request->get_bucket_name();
@@ -75,128 +76,150 @@ void S3BucketMetadata::validate() {
 }
 
 void S3BucketMetadata::load(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3BucketMetadata::load\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
   load_account_bucket();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::load_account_bucket() {
-  printf("Called S3BucketMetadata::load_account_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3BucketMetadataState::missing;
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->get_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_account_bucket_successful, this), std::bind( &S3BucketMetadata::load_account_bucket_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::load_account_bucket_successful() {
-  printf("Called S3BucketMetadata::load_account_bucket_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   this->from_json(clovis_kv_reader->get_value());
   state = S3BucketMetadataState::present;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::load_account_bucket_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3BucketMetadata::load_account_bucket_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, "Account bucket metadata is missing\n");
     state = S3BucketMetadataState::missing;
   } else {
+    s3_log(S3_LOG_ERROR, "Loading of account bucket metadata failed\n");
     state = S3BucketMetadataState::failed;
   }
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::load_user_bucket() {
-  printf("Called S3BucketMetadata::load_user_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3BucketMetadataState::missing;
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->get_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_user_bucket_successful, this), std::bind( &S3BucketMetadata::load_user_bucket_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::load_user_bucket_successful() {
-  printf("Called S3BucketMetadata::load_user_bucket_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   this->from_json(clovis_kv_reader->get_value());
   state = S3BucketMetadataState::present;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::load_user_bucket_failed() {
-  printf("Called S3BucketMetadata::load_user_bucket_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, "User bucket metadata missing\n");
     state = S3BucketMetadataState::missing;
   } else {
+    s3_log(S3_LOG_ERROR, "Loading of user bucket metadata failed\n");
     state = S3BucketMetadataState::failed;
   }
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3BucketMetadata::save\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
   // TODO create only if it does not exists.
   create_account_bucket_index();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::create_account_bucket_index() {
-  printf("Called S3BucketMetadata::create_account_bucket_index\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->create_index(get_account_index_name(), std::bind( &S3BucketMetadata::create_account_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_bucket_index_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::create_account_bucket_index_successful() {
-  printf("Called S3BucketMetadata::create_account_bucket_index_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   create_account_user_bucket_index();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::create_account_bucket_index_failed() {
-  printf("Called S3BucketMetadata::create_account_bucket_index_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+    s3_log(S3_LOG_DEBUG, "Account bucket index already exists\n");
     // We need to create index only once.
     create_account_user_bucket_index();
   } else {
+    s3_log(S3_LOG_ERROR, "Index creation failed\n");
     state = S3BucketMetadataState::failed;
     this->handler_on_failed();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::create_account_user_bucket_index() {
-  printf("Called S3BucketMetadata::create_account_user_bucket_index\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->create_index(get_account_user_index_name(), std::bind( &S3BucketMetadata::create_account_user_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_user_bucket_index_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::create_account_user_bucket_index_successful() {
-  printf("Called S3BucketMetadata::create_account_user_bucket_index_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   save_account_bucket();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::create_account_user_bucket_index_failed() {
-  printf("Called S3BucketMetadata::create_account_user_bucket_index_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+    s3_log(S3_LOG_DEBUG, "Account user bucket index already exists\n");
     // We need to create index only once.
     save_account_bucket();
   } else {
+    s3_log(S3_LOG_ERROR, "Creation of Account user bucket index failed\n");
     state = S3BucketMetadataState::failed;
     this->handler_on_failed();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::save_account_bucket() {
-  printf("Called S3BucketMetadata::save_account_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
 
@@ -208,93 +231,110 @@ void S3BucketMetadata::save_account_bucket() {
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(get_account_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_account_bucket_successful, this), std::bind( &S3BucketMetadata::save_account_bucket_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::save_account_bucket_successful() {
-  printf("Called S3BucketMetadata::save_account_bucket_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   save_user_bucket();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::save_account_bucket_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3BucketMetadata::save_account_bucket_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Saving of account bucket metadata failed\n");
   state = S3BucketMetadataState::failed;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::save_user_bucket() {
-  printf("Called S3BucketMetadata::save_user_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(get_account_user_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_user_bucket_successful, this), std::bind( &S3BucketMetadata::save_user_bucket_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::save_user_bucket_successful() {
-  printf("Called S3BucketMetadata::save_user_bucket_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3BucketMetadataState::saved;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::save_user_bucket_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3BucketMetadata::save_user_bucket_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Saving of user bucket metadata failed\n");
   state = S3BucketMetadataState::failed;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::remove(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3BucketMetadata::remove\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
   remove_account_bucket();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::remove_account_bucket() {
-  printf("Called S3BucketMetadata::remove_account_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_account_bucket_successful, this), std::bind( &S3BucketMetadata::remove_account_bucket_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::remove_account_bucket_successful() {
-  printf("Called S3BucketMetadata::remove_account_bucket_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   remove_user_bucket();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::remove_account_bucket_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3BucketMetadata::remove_account_bucket_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Removal of account bucket metadata failed\n");
   state = S3BucketMetadataState::failed;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::remove_user_bucket() {
-  printf("Called S3BucketMetadata::remove_user_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_user_bucket_successful, this), std::bind( &S3BucketMetadata::remove_user_bucket_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::remove_user_bucket_successful() {
-  printf("Called S3BucketMetadata::remove_user_bucket_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3BucketMetadataState::deleted;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::remove_user_bucket_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3BucketMetadata::remove_user_bucket_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Removal of user bucket metadata failed\n");
   state = S3BucketMetadataState::failed;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
-  printf("Called S3BucketMetadata::to_json\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
 
@@ -307,17 +347,18 @@ std::string S3BucketMetadata::to_json() {
   root["ACL"] = bucket_ACL.to_json();
 
   Json::FastWriter fastWriter;
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return fastWriter.write(root);;
 }
 
 void S3BucketMetadata::from_json(std::string content) {
-  printf("Called S3BucketMetadata::from_json\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
   if (!parsingSuccessful)
   {
-    printf("Json Parsing failed.\n");
+    s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
     return;
   }
 
@@ -335,4 +376,5 @@ void S3BucketMetadata::from_json(std::string content) {
   account_name = system_defined_attribute["Owner-Account"];
 
   bucket_ACL.from_json(newroot["ACL"].asString());
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

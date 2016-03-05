@@ -23,6 +23,7 @@
 #define __MERO_FE_S3_SERVER_S3_AWS_ETAG_H__
 
 #include <string>
+#include "s3_log.h"
 
 // Used to generate Etag for multipart uploads.
 class S3AwsEtag {

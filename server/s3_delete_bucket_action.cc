@@ -19,12 +19,15 @@
 
 #include "s3_delete_bucket_action.h"
 #include "s3_error_codes.h"
+#include "s3_log.h"
 
 S3DeleteBucketAction::S3DeleteBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), is_bucket_empty(false), delete_successful(false) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
 void S3DeleteBucketAction::setup_steps(){
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3DeleteBucketAction::fetch_bucket_metadata, this ));
   add_task(std::bind( &S3DeleteBucketAction::fetch_first_object_metadata, this ));
   add_task(std::bind( &S3DeleteBucketAction::delete_bucket, this ));
@@ -33,15 +36,16 @@ void S3DeleteBucketAction::setup_steps(){
 }
 
 void S3DeleteBucketAction::fetch_bucket_metadata() {
-  printf("S3DeleteBucketAction::fetch_bucket_metadata\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   // Trigger metadata read async operation with callback
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3DeleteBucketAction::next, this), std::bind( &S3DeleteBucketAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::fetch_first_object_metadata() {
-  printf("Called S3DeleteBucketAction::fetch_first_object_metadata\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
@@ -50,44 +54,53 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
   } else {
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::fetch_first_object_metadata_successful() {
-  printf("Called S3DeleteBucketAction::fetch_first_object_metadata_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   is_bucket_empty = false;
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::fetch_first_object_metadata_failed() {
-  printf("Called S3DeleteBucketAction::fetch_first_object_metadata_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, "There is no object in bucket\n");
     is_bucket_empty = true;
     next();
   } else {
     is_bucket_empty = false;
+    s3_log(S3_LOG_ERROR, "Failed to retrieve object metadata\n");
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::delete_bucket() {
-  printf("Called S3DeleteBucketAction::delete_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   bucket_metadata->remove(std::bind( &S3DeleteBucketAction::delete_bucket_successful, this), std::bind( &S3DeleteBucketAction::delete_bucket_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::delete_bucket_successful() {
-  printf("Called S3DeleteBucketAction::delete_bucket_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   delete_successful = true;
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::delete_bucket_failed() {
-  printf("Called S3DeleteBucketAction::delete_bucket_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Bucket deletion failed\n");
   delete_successful = false;
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::send_response_to_s3_client() {
-  printf("Called S3DeleteBucketAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Trigger metadata read async operation with callback
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
@@ -116,4 +129,5 @@ void S3DeleteBucketAction::send_response_to_s3_client() {
   }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

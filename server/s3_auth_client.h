@@ -30,6 +30,7 @@
 #include "s3_request_object.h"
 #include "s3_auth_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_log.h"
 
 extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg);
 
@@ -39,14 +40,14 @@ class S3AuthClientContext : public S3AsyncOpContextBase {
 
 public:
   S3AuthClientContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
-    printf("S3AuthClientContext created.\n");
+    s3_log(S3_LOG_DEBUG, "Constructor\n");
 
     auth_client_op_context = NULL;
     has_auth_op_context = false;
   }
 
   ~S3AuthClientContext() {
-    printf("S3AuthClientContext deleted.\n");
+    s3_log(S3_LOG_DEBUG, "Destructor\n");
     if (has_auth_op_context) {
       free_basic_auth_client_op_ctx(auth_client_op_context);
       auth_client_op_context = NULL;
@@ -109,7 +110,7 @@ public:
   S3AuthClientOpState get_state() {
     return state;
   }
-  virtual ~S3AuthClient() {};
+  virtual ~S3AuthClient() { s3_log(S3_LOG_DEBUG, "Destructor\n"); };
   // async read
   void check_authentication(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void check_authentication_successful();

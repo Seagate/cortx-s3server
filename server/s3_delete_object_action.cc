@@ -21,10 +21,12 @@
 #include "s3_error_codes.h"
 
 S3DeleteObjectAction::S3DeleteObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
 void S3DeleteObjectAction::setup_steps(){
+  s3_log(S3_LOG_DEBUG, "Setup the action\n");
   add_task(std::bind( &S3DeleteObjectAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3DeleteObjectAction::fetch_object_info, this ));
   add_task(std::bind( &S3DeleteObjectAction::delete_object, this ));
@@ -34,13 +36,14 @@ void S3DeleteObjectAction::setup_steps(){
 }
 
 void S3DeleteObjectAction::fetch_bucket_info() {
-  printf("Called S3DeleteObjectAction::fetch_bucket_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3DeleteObjectAction::next, this), std::bind( &S3DeleteObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteObjectAction::fetch_object_info() {
-  printf("Called S3DeleteObjectAction::fetch_bucket_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     object_metadata = std::make_shared<S3ObjectMetadata>(request);
 
@@ -48,10 +51,11 @@ void S3DeleteObjectAction::fetch_object_info() {
   } else {
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteObjectAction::delete_object() {
-  printf("Called S3DeleteObjectAction::delete_object\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     clovis_writer = std::make_shared<S3ClovisWriter>(request);
     clovis_writer->set_oid(object_metadata->get_oid());
@@ -59,22 +63,27 @@ void S3DeleteObjectAction::delete_object() {
   } else {
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteObjectAction::delete_object_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3DeleteObjectAction::delete_object_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Any other error report failure.
+  s3_log(S3_LOG_ERROR, "Deletion of object failed\n");
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteObjectAction::delete_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   object_metadata = std::make_shared<S3ObjectMetadata>(request);
   object_metadata->remove(std::bind( &S3DeleteObjectAction::next, this), std::bind( &S3DeleteObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteObjectAction::send_response_to_s3_client() {
-  printf("Called S3DeleteObjectAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
@@ -103,4 +112,5 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
   }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -30,6 +30,7 @@
 #include "s3_request_object.h"
 #include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_log.h"
 
 class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.

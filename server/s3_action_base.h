@@ -28,6 +28,7 @@
 
 #include "s3_auth_client.h"
 #include "s3_request_object.h"
+#include "s3_log.h"
 
 enum class S3ActionState {
   start,

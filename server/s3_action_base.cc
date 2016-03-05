@@ -21,19 +21,21 @@
 #include "s3_error_codes.h"
 
 S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req), invalid_request(false) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   task_iteration_index = 0;
   error_message = "";
   state = S3ActionState::start;
   setup_steps();
 }
 
-S3Action::~S3Action() {}
+S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, "Destructor\n"); }
 
 void S3Action::get_error_message(std::string& message) {
     error_message = message;
 }
 
 void S3Action::setup_steps() {
+  s3_log(S3_LOG_DEBUG, "Setup the action\n");
   add_task(std::bind( &S3Action::check_authentication, this ));
 }
 
@@ -79,12 +81,14 @@ void S3Action::check_authentication() {
 }
 
 void S3Action::check_authentication_successful() {
-  printf("Called S3Action::check_authentication_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   next();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3Action::check_authentication_failed() {
-  printf("Called S3Action::check_authentication_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Authentication failure\n");
   S3Error error("AccessDenied", request->get_request_id(), request->get_object_uri());
   std::string& response_xml = error.to_xml();
   request->set_out_header_value("Content-Type", "application/xml");
@@ -94,4 +98,5 @@ void S3Action::check_authentication_failed() {
 
   done();
   i_am_done();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

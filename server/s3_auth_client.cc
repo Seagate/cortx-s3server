@@ -89,21 +89,21 @@ bool validate_auth_response(char *auth_response_body, S3AsyncOpContextBase *cont
   std::shared_ptr<S3RequestObject> request;
 
   if(auth_response_body == NULL) {
-    printf("XML response is NULL\n");
+    s3_log(S3_LOG_ERROR, "XML response is NULL\n");
     return false;
   }
 
-  printf("Parsing auth xml response = %s\n", auth_response_body);
+  s3_log(S3_LOG_DEBUG, "Parsing auth xml response = %s\n", auth_response_body);
   xmlDocPtr document = xmlParseDoc((const xmlChar*)auth_response_body);
   if (document == NULL ) {
-    printf("Auth response XML request body Invalid.\n");
+    s3_log(S3_LOG_ERROR, "Auth response XML request body Invalid.\n");
     return false;
   }
 
   xmlNodePtr root_node = xmlDocGetRootElement(document);
 
   if(root_node == NULL) {
-    printf("Auth response XML body is Invalid.\n");
+    s3_log(S3_LOG_ERROR, "Auth response XML body is Invalid.\n");
     xmlFreeDoc(document);
     return false;
   }
@@ -115,19 +115,19 @@ bool validate_auth_response(char *auth_response_body, S3AsyncOpContextBase *cont
       for(child_node = child->children; child_node != NULL; child_node = child_node->next) {
         key = xmlNodeGetContent(child_node);
         if((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
-          printf("UserId = %s\n",(char*)key);
+          s3_log(S3_LOG_DEBUG, "UserId = %s\n",(char*)key);
           account_details = (char*)key;
           request->set_user_id(account_details);
         } else if((!xmlStrcmp(child_node->name, (const xmlChar *)"UserName"))) {
-          printf("UserName = %s\n",(char*)key);
+          s3_log(S3_LOG_DEBUG, "UserName = %s\n",(char*)key);
           account_details = (char*)key;
           request->set_user_name(account_details);
         } else if((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountName"))) {
-          printf("AccountName = %s\n",(char*)key);
+          s3_log(S3_LOG_DEBUG, "AccountName = %s\n",(char*)key);
           account_details = (char*)key;
           request->set_account_name(account_details);
         } else if((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountId"))) {
-          printf("AccountId =%s\n",(char*)key);
+          s3_log(S3_LOG_DEBUG, "AccountId =%s\n",(char*)key);
           account_details = (char*)key;
           request->set_account_id(account_details);
         }
@@ -166,8 +166,8 @@ bool validate_auth_response(char *auth_response_body, S3AsyncOpContextBase *cont
 extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) {
   std::string msg;
   std::string error_code;
-  printf("Called S3AuthClient auth_response callback\n");
-  printf("req->status= %d\n", req->status);
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "req->status= %d\n", req->status);
 
 
 
@@ -176,16 +176,16 @@ extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) 
   char *auth_response_body = (char*)malloc(buffer_len * sizeof(char));
   memset(auth_response_body, 0, buffer_len);
   evbuffer_copyout(buf, auth_response_body, buffer_len);
-  printf("Data received from Auth service = %s\n\n\n", auth_response_body);
+  s3_log(S3_LOG_DEBUG, "Data received from Auth service = %s\n\n\n", auth_response_body);
 
   S3AsyncOpContextBase *context = (S3AsyncOpContextBase*)arg;
 
   is_auth_successful = validate_auth_response(auth_response_body, context, error_code, msg);
   if (is_auth_successful) {
-    printf("Authentication successful\n");
+    s3_log(S3_LOG_DEBUG, "Authentication successful\n");
     context->set_op_status_for(0, S3AsyncOpStatus::success, "Success.");
   } else {
-    printf("Authentication unsuccessful\n");
+    s3_log(S3_LOG_ERROR, "Authentication unsuccessful\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed, msg);
   }
 
@@ -195,6 +195,7 @@ extern "C" void auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) 
     context->on_failed_handler()();  // Invoke the handler.
   }
   free(auth_response_body);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return;
 }
 
@@ -207,7 +208,7 @@ S3AuthClient::S3AuthClient(std::shared_ptr<S3RequestObject> req) : request(req),
 bool S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) {
   const char * full_path;
   const char * uri_query;
-  printf("S3AuthClient::setup_auth_request_body\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if(auth_ctx == NULL) {
     return false;
   }
@@ -236,7 +237,7 @@ bool S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) 
   }
   uri_query = request->c_get_uri_query();
   if(uri_query != NULL) {
-    printf("c_get_uri_query = %s\n",uri_query);
+    s3_log(S3_LOG_DEBUG, "c_get_uri_query = %s\n",uri_query);
     std::string encoded_string = url_encode((char *)uri_query);
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "ClientQueryParams=%s&", encoded_string.c_str());
   } else {
@@ -245,13 +246,13 @@ bool S3AuthClient::setup_auth_request_body(struct s3_auth_op_context *auth_ctx) 
 
   // May need to take it from config
   evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "Version=2010-05-08");
-
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return true;
 }
 
 extern "C" int
 setup_auth_request_headers(evhtp_header_t *header, void *arg) {
-  printf("Calling setup_auth_request_headers\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   struct s3_auth_op_context *auth_ctx = (struct s3_auth_op_context *)arg;
   if(auth_ctx->isfirstpass == true) {
@@ -261,7 +262,7 @@ setup_auth_request_headers(evhtp_header_t *header, void *arg) {
     std::string encoded_string = url_encode((char *)header->val);
     evbuffer_add_printf(auth_ctx->authrequest->buffer_out, "&%s=%s", header->key, encoded_string.c_str());
   }
-  printf("key = %s and val = %s\n", header->key, header->val);
+  s3_log(S3_LOG_DEBUG, "key = %s and val = %s\n", header->key, header->val);
 
   auth_ctx->isfirstpass = false;
 
@@ -270,13 +271,13 @@ setup_auth_request_headers(evhtp_header_t *header, void *arg) {
     evhtp_headers_add_header(auth_ctx->authrequest->headers_out,
                               evhtp_header_new(header->key, encoded_string.c_str(), 1, 1));
   }
-
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return 0;
 }
 
 extern "C" int
 debug_print_auth_header(evhtp_header_t * header, void * arg) {
-  printf("Header:%s Value:%s\n", header->key, header->val);
+  s3_log(S3_LOG_DEBUG, "Header:%s Value:%s\n", header->key, header->val);
   return 0;
 }
 
@@ -286,7 +287,7 @@ void S3AuthClient::execute_authconnect_request(struct s3_auth_op_context* auth_c
 }
 
 void S3AuthClient::check_authentication(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3AuthClient::check_authentication\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   evhtp_request_t *ev_req = NULL;
   size_t out_len = 0;
   char sz_size[100] = {0};
@@ -323,19 +324,24 @@ void S3AuthClient::check_authentication(std::function<void(void)> on_success, st
   evhtp_headers_for_each(auth_ctx->authrequest->headers_out, debug_print_auth_header, NULL);
   char mybuff[1000] = {0};
   evbuffer_copyout(auth_ctx->authrequest->buffer_out, mybuff, sizeof(mybuff));
-  printf("Data being send to Auth server:\n%s\n", mybuff);
+  s3_log(S3_LOG_DEBUG, "Data being send to Auth server:\n%s\n", mybuff);
 
   execute_authconnect_request(auth_ctx);
 
-  printf("Return from S3AuthClient::check_authentication\n");
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AuthClient::check_authentication_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3AuthClientOpState::authenticated;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AuthClient::check_authentication_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Authentication failure\n");
   state = S3AuthClientOpState::unauthenticated;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

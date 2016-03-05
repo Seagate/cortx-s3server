@@ -21,8 +21,10 @@
 #include <libxml/parser.h>
 
 #include "s3_delete_multiple_objects_body.h"
+#include "s3_log.h"
 
 S3DeleteMultipleObjectsBody::S3DeleteMultipleObjectsBody() : is_valid(false), quiet(false) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
 }
 
 void S3DeleteMultipleObjectsBody::initialize(std::string& xml) {
@@ -35,6 +37,7 @@ bool S3DeleteMultipleObjectsBody::isOK() {
 }
 
 bool S3DeleteMultipleObjectsBody::parse_and_validate() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   /* Sample body:
   <?xml version="1.0" encoding="UTF-8"?>
   <Delete>
@@ -53,11 +56,10 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
     is_valid = false;
     return false;
   }
-  printf("S3DeleteMultipleObjectsBody::parse_and_validate\n");
-  printf("Parsing xml request = %s\n", xml_content.c_str());
+  s3_log(S3_LOG_DEBUG, "Parsing xml request = %s\n", xml_content.c_str());
   xmlDocPtr document = xmlParseDoc((const xmlChar*)xml_content.c_str());
   if (document == NULL ) {
-    printf("S3DeleteMultipleObjectsBody XML request body Invalid.\n");
+    s3_log(S3_LOG_DEBUG, "XML request body Invalid.\n");
     is_valid = false;
     return false;
   }
@@ -66,7 +68,7 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
 
   // Validate the root node
   if (root_node == NULL || xmlStrcmp(root_node->name, (const xmlChar *)"Delete")) {
-    printf("S3DeleteMultipleObjectsBody XML request body Invalid.\n");
+    s3_log(S3_LOG_ERROR, "XML request body Invalid.\n");
     xmlFreeDoc(document);
     is_valid = false;
     return false;
@@ -79,7 +81,7 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
     if ((!xmlStrcmp(child->name, (const xmlChar *)"Quiet"))) {
       key = xmlNodeGetContent(child);
       if (key == NULL) {
-        printf("S3DeleteMultipleObjectsBody XML request body Invalid.\n");
+        s3_log(S3_LOG_ERROR, "XML request body Invalid.\n");
       } else if ((!xmlStrcmp(key, (const xmlChar *)"true"))){
         quiet = true;
       }
@@ -88,18 +90,18 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
       }
       break;
     } else if ((!xmlStrcmp(child->name, (const xmlChar *)"Object"))) {
-      printf("Found child in xml = Object\n");
+      s3_log(S3_LOG_DEBUG, "Found child in xml = Object\n");
       // Read delete object details
       xmlChar *obj_key = NULL;
       xmlChar *ver_id = NULL;
 
       xmlNodePtr obj_child = child->xmlChildrenNode;
       while (obj_child != NULL) {
-        printf("Found child in xml = %s\n", (const char*)obj_child->name);
+        s3_log(S3_LOG_DEBUG, "Found child in xml = %s\n", (const char*)obj_child->name);
         if ((!xmlStrcmp(obj_child->name, (const xmlChar *)"Key"))) {
           obj_key = xmlNodeGetContent(obj_child);
           if (obj_key == NULL) {
-            printf("S3DeleteMultipleObjectsBody - Object key missing in request.\n");
+            s3_log(S3_LOG_DEBUG, "Object key missing in request.\n");
             if (ver_id != NULL) {
               xmlFree(ver_id);
             }
@@ -110,7 +112,7 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
         } else if ((!xmlStrcmp(obj_child->name, (const xmlChar *)"VersionId"))) {
           ver_id = xmlNodeGetContent(obj_child);
           if (ver_id == NULL) {
-            printf("S3DeleteMultipleObjectsBody - Version ID missing in request.\n");
+            s3_log(S3_LOG_DEBUG, "Version ID missing in request.\n");
           }
         }
         obj_child = obj_child->next;
@@ -131,7 +133,7 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
       }
 
       // object_list.emplace_back(new DeleteObjectInfo((const char* obj_key), (const char*)ver_id));
-      printf("Object to delete = %s\n", (const char*) obj_key);
+      s3_log(S3_LOG_DEBUG, "Object to delete = %s\n", (const char*) obj_key);
       if (obj_key != NULL) {
         xmlFree(obj_key);
       }
@@ -144,5 +146,6 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
 
   is_valid = true;
   xmlFreeDoc(document);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return is_valid;
 }

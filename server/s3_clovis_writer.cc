@@ -31,6 +31,7 @@
 extern struct m0_clovis_realm     clovis_uber_realm;
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset) : request(req), state(S3ClovisWriterOpState::start) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   last_index = offset;
   total_written = 0;
   ops_count = 0;
@@ -38,7 +39,7 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t of
 }
 
 void S3ClovisWriter::create_object(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-printf("S3ClovisWriter::create_object\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
@@ -62,27 +63,31 @@ printf("S3ClovisWriter::create_object\n");
 
   m0_clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
   m0_clovis_op_launch(ctx->ops, 1);
-
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::create_object_successful() {
-  printf("S3ClovisWriter::create_object_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisWriterOpState::created;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::create_object_failed() {
-  printf("S3ClovisWriter::create_object_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (writer_context->get_errno_for(0) == -EEXIST) {
     state = S3ClovisWriterOpState::exists;
+    s3_log(S3_LOG_DEBUG, "Object already exists\n");
   } else {
     state = S3ClovisWriterOpState::failed;
+    s3_log(S3_LOG_ERROR, "Object creation failed\n");
   }
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed, S3AsyncBufferContainer& buffer) {
-  printf("Called S3ClovisWriter::write_content\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
@@ -142,20 +147,26 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   m0_clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
   writer_context->start_timer_for("write_to_clovis_op_" + std::to_string(total_written - last_w_cnt) + "_bytes");
   m0_clovis_op_launch(ctx->ops, 1);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::write_content_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisWriterOpState::saved;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::write_content_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Write to object failed\n");
   state = S3ClovisWriterOpState::failed;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::delete_object(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-printf("S3ClovisWriter::delete_object\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
@@ -182,22 +193,26 @@ printf("S3ClovisWriter::delete_object\n");
   writer_context->start_timer_for("delete_object_from_clovis");
 
   m0_clovis_op_launch(ctx->ops, 1);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::delete_object_successful() {
-  printf("S3ClovisWriter::delete_object_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisWriterOpState::deleted;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::delete_object_failed() {
-  printf("S3ClovisWriter::delete_object_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Object deletion failed\n");
   state = S3ClovisWriterOpState::failed;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("S3ClovisWriter::delete_objects\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
@@ -229,22 +244,27 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids, std::fu
   writer_context->start_timer_for("delete_objects_from_clovis");
 
   m0_clovis_op_launch(ctx->ops, oids.size());
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::delete_objects_successful() {
-  printf("S3ClovisWriter::delete_objects_successful\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisWriterOpState::deleted;
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::delete_objects_failed() {
-  printf("S3ClovisWriter::delete_objects_failed\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Objects deletion failed\n");
   state = S3ClovisWriterOpState::failed;
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
     std::deque< std::tuple<void*, size_t> >& data_items, size_t clovis_block_count) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
 
   size_t data_to_consume = clovis_block_size;
@@ -261,7 +281,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
     data_items.pop_front();
     void *data_ptr = std::get<0>(item);
     size_t data_len = std::get<1>(item);
-    // printf("processing extent = %d of total %d\n", i, data_extents);
+    // s3_log(S3_LOG_DEBUG, "processing extent = %d of total %d\n", i, data_extents);
     pending_from_current_extent = data_len;
     /* KD xxx - we need to avoid this copy */
     while (1) /* consume all data in extent */
@@ -269,8 +289,8 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
       if (pending_from_current_extent == data_to_consume)
       {
         /* consume all */
-        // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
-        // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, data_ptr + idx_within_extent, pending_from_current_extent);
+        // s3_log(S3_LOG_DEBUG, "Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
+        // s3_log(S3_LOG_DEBUG, "memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, data_ptr + idx_within_extent, pending_from_current_extent);
         source = (char*)data_ptr + idx_within_extent;
         destination = (char*) rw_ctx->data->ov_buf[current_block_idx] + idx_within_block;
 
@@ -284,8 +304,8 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
         break; /* while(1) */
       } else if (pending_from_current_extent < data_to_consume)
       {
-        // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
-        // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, data_ptr + idx_within_extent, pending_from_current_extent);
+        // s3_log(S3_LOG_DEBUG, "Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", pending_from_current_extent, i, current_block_idx, idx_within_block);
+        // s3_log(S3_LOG_DEBUG, "memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, data_ptr + idx_within_extent, pending_from_current_extent);
         source = (char*)data_ptr + idx_within_extent;
         destination = (char*)rw_ctx->data->ov_buf[current_block_idx] + idx_within_block;
 
@@ -299,8 +319,8 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
         break; /* while(1) */
       } else /* if (pending_from_current_extent > data_to_consume) */
       {
-        // printf("Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", data_to_consume, i, current_block_idx, idx_within_block);
-        // printf("memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, data_ptr + idx_within_extent, data_to_consume);
+        // s3_log(S3_LOG_DEBUG, "Writing @ %d bytes from extent = [%d] in block [%d] at index [%d]\n", data_to_consume, i, current_block_idx, idx_within_block);
+        // s3_log(S3_LOG_DEBUG, "memcpy(%p, %p, %d)\n", data.ov_buf[current_block_idx] + idx_within_block, data_ptr + idx_within_extent, data_to_consume);
         source = (char*)data_ptr + idx_within_extent;
         destination = (char*)rw_ctx->data->ov_buf[current_block_idx] + idx_within_block;
 
@@ -316,7 +336,7 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
       }
     }
   }
-  printf("total_written = %zu\n", total_written);
+  s3_log(S3_LOG_DEBUG, "total_written = %zu\n", total_written);
 
   // Init clovis buffer attrs.
   for(size_t i = 0; i < clovis_block_count; i++)
@@ -328,5 +348,5 @@ void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* 
     /* we don't want any attributes */
     rw_ctx->attr->ov_vec.v_count[i] = 0;
   }
-
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -18,13 +18,15 @@
  */
 
 #include "s3_api_handler.h"
+#include "s3_log.h"
 
 std::shared_ptr<S3APIHandler>
 S3APIHandlerFactory::create_api_handler(S3ApiType api_type,
           std::shared_ptr<S3RequestObject> request,
           S3OperationCode op_code) {
   std::shared_ptr<S3APIHandler> handler;
-
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "api_type = %d\n", api_type);
   switch(api_type) {
     case S3ApiType::service:
       handler = std::make_shared<S3ServiceAPIHandler> (request, op_code);
@@ -38,5 +40,6 @@ S3APIHandlerFactory::create_api_handler(S3ApiType api_type,
     default:
       break;
   };
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return handler;
 }

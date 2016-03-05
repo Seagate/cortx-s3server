@@ -30,6 +30,7 @@
 #include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
 #include "s3_md5_hash.h"
+#include "s3_log.h"
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
@@ -42,7 +43,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
 
 public:
   S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback, int ops_count = 1) : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count) {
-    printf("S3ClovisWriterContext created.\n");
+    s3_log(S3_LOG_DEBUG, "Constructor\n");
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(ops_count);
     has_clovis_op_context = true;
@@ -52,7 +53,7 @@ public:
   }
 
   ~S3ClovisWriterContext() {
-    printf("S3ClovisWriterContext deleted.\n");
+    s3_log(S3_LOG_DEBUG, "Destructor\n");
     if (has_clovis_op_context) {
       free_basic_op_ctx(clovis_op_context);
     }
@@ -135,7 +136,7 @@ public:
       md5crypt.Finalize();
       content_md5 = md5crypt.get_md5_string();
     }
-    printf("content_md5 of data written = %s\n", content_md5.c_str());
+    s3_log(S3_LOG_DEBUG, "content_md5 of data written = %s\n", content_md5.c_str());
     return content_md5;
   }
 

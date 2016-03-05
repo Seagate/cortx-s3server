@@ -30,6 +30,7 @@ EXTERN_C_BLOCK_BEGIN
 #include "mero/init.h"
 
 #include "clovis/clovis.h"
+#include "s3_log.h"
 
 // To create a basic clovis operation
 struct s3_clovis_op_context {

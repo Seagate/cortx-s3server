@@ -28,25 +28,26 @@ extern uint16_t auth_port;
 //To Create a auth client operation
 struct s3_auth_op_context *
 create_basic_auth_op_ctx(struct event_base* eventbase) {
-  printf("Called create_basic_auth_op_ctx\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
  struct s3_auth_op_context *ctx = (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
 
  ctx->evbase = eventbase;
  // TODO do we really need this?
  if(evthread_make_base_notifiable(ctx->evbase) < 0)
-   printf("evthread_make_base_notifiable failed\n");
+   s3_log(S3_LOG_ERROR, "evthread_make_base_notifiable failed\n");
 
  ctx->conn = evhtp_connection_new(ctx->evbase, auth_ip_addr, auth_port);
  ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
  ctx->isfirstpass = true;
-
+ s3_log(S3_LOG_DEBUG, "Exiting\n");
  return ctx;
 }
 
 
 int free_basic_auth_client_op_ctx(struct s3_auth_op_context *ctx) {
-  printf("Called free_basic_auth_client_op_ctx\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   free(ctx);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return 0;
 }

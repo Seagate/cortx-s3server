@@ -31,7 +31,7 @@ extern struct m0_clovis_realm     clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
 
 S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisKVSReaderOpState::start), last_value(""), iteration_index(0) {
-  printf("S3ClovisKVSReader created\n");
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   last_result_keys_values.clear();
 }
 
@@ -43,9 +43,10 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std:
 }
 
 void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("S3ClovisKVSReader::get_keyval called with index_name = %s\n", index_name.c_str());
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
   for(auto key : keys) {
-    printf("S3ClovisKVSReader::get_keyval called with key = %s\n", key.c_str());
+    s3_log(S3_LOG_DEBUG, "key = %s\n", key.c_str());
   }
 
   int rc = 0;
@@ -89,10 +90,10 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::stri
 
   rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_GET, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
   if(rc != 0) {
-    printf("m0_clovis_idx_op failed\n");
+    s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   }
   else {
-    printf("m0_clovis_idx_op suceeded\n");
+    s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op suceeded\n");
   }
 
   m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
@@ -100,10 +101,11 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::stri
   reader_context->start_timer_for("get_keyval");
 
   m0_clovis_op_launch(idx_ctx->ops, 1);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSReader::get_keyval_successful() {
-  printf("S3ClovisKVSReader::get_keyval_successful called\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
   struct s3_clovis_kvs_op_context *kvs_ctx = reader_context->get_clovis_kvs_op_ctx();
@@ -121,20 +123,25 @@ void S3ClovisKVSReader::get_keyval_successful() {
     last_value = std::string((char*)clovis_kvs_op_context->values->ov_buf[0], clovis_kvs_op_context->values->ov_vec.v_count[0]);
   }
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSReader::get_keyval_failed() {
-  printf("S3ClovisKVSReader::get_keyval_failed called\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (reader_context->get_errno_for(0) == -ENOENT) {
+    s3_log(S3_LOG_DEBUG, "The key doesn't exist\n");
     state = S3ClovisKVSReaderOpState::missing;
   } else {
+    s3_log(S3_LOG_ERROR, "Getting the value for a key failed\n");
     state = S3ClovisKVSReaderOpState::failed;
   }
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("S3ClovisKVSReader::next_keyval with index_name = %s and key = %s and count = %zu\n", index_name.c_str(), key.c_str(), nr_kvp);
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "Index_name = %s, key = %s and count = %zu\n", index_name.c_str(), key.c_str(), nr_kvp);
 
   int rc = 0;
   last_result_keys_values.clear();
@@ -177,10 +184,10 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
 
   rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
   if(rc != 0) {
-    printf("m0_clovis_idx_op failed\n");
+    s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   }
   else {
-    printf("m0_clovis_idx_op suceeded\n");
+    s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op suceeded\n");
   }
 
   m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
@@ -188,10 +195,11 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   reader_context->start_timer_for("get_keyval");
 
   m0_clovis_op_launch(idx_ctx->ops, 1);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSReader::next_keyval_successful() {
-  printf("S3ClovisKVSReader::next_keyval_successful called\n");
+  s3_log(S3_LOG_DEBUG, "S3ClovisKVSReader::next_keyval_successful called\n");
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
   struct s3_clovis_kvs_op_context *kvs_ctx = reader_context->get_clovis_kvs_op_ctx();
@@ -201,19 +209,23 @@ void S3ClovisKVSReader::next_keyval_successful() {
       last_result_keys_values.insert({
         std::string((char*)kvs_ctx->keys->ov_buf[i], kvs_ctx->keys->ov_vec.v_count[i]), std::string((char*)kvs_ctx->values->ov_buf[i], kvs_ctx->values->ov_vec.v_count[i])});
     } else {
-      printf("We fetched all.....\n");
+      s3_log(S3_LOG_DEBUG, "We fetched all.....\n");
       break;
     }
   }
   this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSReader::next_keyval_failed() {
-  printf("S3ClovisKVSReader::next_keyval_failed called\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (reader_context->get_errno_for(0) == -ENOENT) {
+    s3_log(S3_LOG_DEBUG, "The key doesn't exist in metadata\n");
     state = S3ClovisKVSReaderOpState::missing;
   } else {
+    s3_log(S3_LOG_ERROR, "fetching of next set of key values failed\n");
     state = S3ClovisKVSReaderOpState::failed;
   }
   this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -23,6 +23,9 @@
 #ifndef __MERO_FE_S3_SERVER_LOG_H__
 #define __MERO_FE_S3_SERVER_LOG_H__
 
+#include <stdio.h>
+#include <sys/time.h>
+
 #define S3_LOG_FATAL 1
 #define S3_LOG_ERROR 2
 #define S3_LOG_WARN  3

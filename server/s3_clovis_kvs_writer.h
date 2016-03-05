@@ -31,6 +31,7 @@
 #include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
 #include "s3_clovis_wrapper.h"
+#include "s3_log.h"
 
 class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
@@ -43,7 +44,7 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
 
 public:
   S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
-    printf("S3ClovisKVSWriterContext created\n");
+    s3_log(S3_LOG_DEBUG, "Constructor\n");
     // Create or write, we need op context
     clovis_idx_op_context = create_basic_idx_op_ctx(1);
     has_clovis_idx_op_context = true;
@@ -53,7 +54,7 @@ public:
   }
 
   ~S3ClovisKVSWriterContext() {
-    printf("S3ClovisKVSWriterContext deleted.\n");
+    s3_log(S3_LOG_DEBUG, "Destructor\n");
     if(has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }

@@ -17,13 +17,14 @@
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
  * Original creation date: 1-Oct-2015
  */
- 
+
 #pragma once
 
 #ifndef __MERO_FE_S3_SERVER_S3_AUTH_CONTEXT_H__
 #define __MERO_FE_S3_SERVER_S3_AUTH_CONTEXT_H__
 
 #include "s3_common.h"
+#include "s3_log.h"
 
 EXTERN_C_BLOCK_BEGIN
 

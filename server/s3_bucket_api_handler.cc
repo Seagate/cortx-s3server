@@ -25,10 +25,12 @@
 #include "s3_get_multipart_bucket_action.h"
 #include "s3_put_bucket_action.h"
 #include "s3_delete_bucket_action.h"
+#include "s3_log.h"
 
 void S3BucketAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
-  printf("S3BucketAPIHandler::Action operation code = %d\n", operation_code);
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_INFO, "Action operation code = %d\n", operation_code);
 
   switch(operation_code) {
     case S3OperationCode::location:
@@ -119,4 +121,5 @@ void S3BucketAPIHandler::dispatch() {
     request->respond_unsupported_api();
   }
   i_am_done();
+  s3_log(S3_LOG_DEBUG, "Exiting");
 }

@@ -19,6 +19,7 @@
  */
 
 #include "clovis_helpers.h"
+#include "s3_log.h"
 #include <stdio.h>
 
 static struct m0_clovis          *clovis_instance = NULL;
@@ -62,7 +63,7 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
   rc = m0_clovis_init(&clovis_instance, &clovis_conf, true);
 
   if (rc != 0) {
-    printf("Failed to initilise Clovis: %d\n", rc);
+    s3_log(S3_LOG_FATAL, "Failed to initilise Clovis: %d\n", rc);
     goto err_exit;
   }
 
@@ -73,7 +74,7 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
   rc = clovis_container.co_realm.re_entity.en_sm.sm_rc;
 
   if (rc != 0) {
-    printf("Failed to open uber scope\n");
+    s3_log(S3_LOG_FATAL, "Failed to open uber scope\n");
     goto err_exit;
   }
 
@@ -81,7 +82,7 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
   return 0;
 
 err_exit:
-  fini_clovis(); 
+  fini_clovis();
   return rc;
 }
 

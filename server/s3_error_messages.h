@@ -24,6 +24,7 @@
 
 #include <string>
 #include <map>
+#include "s3_log.h"
 #include <gtest/gtest_prod.h>
 
 class S3ErrorDetails {
@@ -33,6 +34,7 @@ public:
   S3ErrorDetails() : description(""), http_return_code(-1) {}
 
   S3ErrorDetails(std::string message, int http_code) {
+    s3_log(S3_LOG_DEBUG, "Constructor\n");
     description = message;
     http_return_code = http_code;
   }

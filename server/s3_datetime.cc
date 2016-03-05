@@ -19,6 +19,7 @@
 
 #include "s3_datetime.h"
 #include <string.h>
+#include "s3_log.h"
 
 S3DateTime::S3DateTime() : is_valid(true) {
   memset(&current_tm, 0, sizeof(struct tm));
@@ -32,7 +33,7 @@ void S3DateTime::init_current_time() {
   time_t t = time(NULL);
   struct tm *tmp = gmtime_r(&t, &current_tm);
   if (tmp == NULL) {
-      printf("gmtime error");
+      s3_log(S3_LOG_ERROR, "gmtime error\n");
       is_valid = false;
   }
 }
@@ -50,7 +51,7 @@ std::string S3DateTime::get_format_string(std::string format) {
   char timebuffer[100] = {0};
   if (is_OK()) {
     if (strftime(timebuffer, sizeof(timebuffer), format.c_str(), &current_tm) == 0) {
-        printf("strftime returned 0");
+        s3_log(S3_LOG_ERROR, "strftime returned 0\n");
         is_valid = false;
     } else {
       is_valid = true;

@@ -33,6 +33,7 @@
 #include "s3_clovis_kvs_reader.h"
 #include "s3_delete_multiple_objects_body.h"
 #include "s3_delete_multiple_objects_response_body.h"
+#include "s3_log.h"
 
 class S3DeleteMultipleObjectsAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;

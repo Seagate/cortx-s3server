@@ -27,6 +27,7 @@
 #include <tuple>
 
 #include <evhtp.h>
+#include "s3_log.h"
 
 #include <gtest/gtest_prod.h>
 
