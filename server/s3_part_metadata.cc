@@ -23,8 +23,11 @@
 
 #include "s3_part_metadata.h"
 #include "s3_datetime.h"
+#include "s3_log.h"
 
 S3PartMetadata::S3PartMetadata(std::shared_ptr<S3RequestObject> req, std::string uploadid, int part) : request(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
   state = S3PartMetadataState::empty;
@@ -100,7 +103,7 @@ void S3PartMetadata::add_user_defined_attribute(std::string key, std::string val
 }
 
 void S3PartMetadata::load(std::function<void(void)> on_success, std::function<void(void)> on_failed, int part_num = 1) {
-  printf("Called S3PartMetadata::load\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string str_part_num = "";
   if(part_num > 0) {
     str_part_num = std::to_string(part_num);
@@ -111,18 +114,18 @@ void S3PartMetadata::load(std::function<void(void)> on_success, std::function<vo
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->get_keyval(get_part_index_name(), str_part_num, std::bind( &S3PartMetadata::load_successful, this),
                                    std::bind( &S3PartMetadata::load_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PartMetadata::load_successful() {
-  printf("Called S3PartMetadata::load_successful\n");
+  s3_log(S3_LOG_DEBUG, "Found part metadata\n");
   this->from_json(clovis_kv_reader->get_value());
   state = S3PartMetadataState::present;
   this->handler_on_success();
 }
 
 void S3PartMetadata::load_failed() {
-  // TODO - do anything more for failure?
-  printf("Called S3PartMetadata::load_failed\n");
+  s3_log(S3_LOG_WARN, "Missing part metadata\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     state = S3PartMetadataState::missing;  // Missing
   } else {
@@ -132,36 +135,38 @@ void S3PartMetadata::load_failed() {
 }
 
 void S3PartMetadata::create_index(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3PartMetadata::create_index\n");
-
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
   put_metadata = false;
   create_part_index();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 
 void S3PartMetadata::save(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3PartMetadata::save\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
   put_metadata = true;
   save_metadata();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PartMetadata::create_part_index() {
-  printf("Called S3PartMetadata::create_bucket_index\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3PartMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->create_index(get_part_index_name(), std::bind( &S3PartMetadata::create_part_index_successful, this), std::bind( &S3PartMetadata::create_part_index_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PartMetadata::create_part_index_successful() {
-  printf("Called S3PartMetadata::create_part_index_successful\n");
-  if(put_metadata) {
+  s3_log(S3_LOG_DEBUG, "Created index for part info\n");
+  if (put_metadata) {
     save_metadata();
   } else {
     state = S3PartMetadataState::store_created;
@@ -170,10 +175,10 @@ void S3PartMetadata::create_part_index_successful() {
 }
 
 void S3PartMetadata::create_part_index_failed() {
-  printf("Called S3PartMetadata::create_part_index_failed\n");
+  s3_log(S3_LOG_DEBUG, "Failed to create index for part info\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
     // We need to create index only once, do logging with log level as warning
-    printf("Warning: Index %s already exist", get_part_index_name().c_str());
+    s3_log(S3_LOG_WARN, "Index %s already exist\n", get_part_index_name().c_str());
     state = S3PartMetadataState::present;
     this->handler_on_success();
   } else {
@@ -183,6 +188,7 @@ void S3PartMetadata::create_part_index_failed() {
 }
 
 void S3PartMetadata::save_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string index_name;
   std::string key;
   // Set up system attributes
@@ -190,63 +196,68 @@ void S3PartMetadata::save_metadata() {
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(get_part_index_name(), part_number, this->to_json(), std::bind( &S3PartMetadata::save_metadata_successful, this), std::bind( &S3PartMetadata::save_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PartMetadata::save_metadata_successful() {
-  printf("Called S3PartMetadata::save_metadata_successful\n");
+  s3_log(S3_LOG_DEBUG, "Saved part metadata\n");
   state = S3PartMetadataState::saved;
   this->handler_on_success();
 }
 
 void S3PartMetadata::save_metadata_failed() {
   // TODO - do anything more for failure?
-  printf("Called S3PartMetadata::save_metadata_failed\n");
+  s3_log(S3_LOG_DEBUG, "Failed to save part metadata\n");
   state = S3PartMetadataState::failed;
   this->handler_on_failed();
 }
 
 void S3PartMetadata::remove(std::function<void(void)> on_success, std::function<void(void)> on_failed, int remove_part = 0) {
-  printf("Called S3PartMetadata::remove\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string part_removal = std::to_string(remove_part);
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
+  s3_log(S3_LOG_DEBUG, "Deleting part info for part = %s\n", part_removal.c_str());
+
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(get_part_index_name(), part_removal, std::bind( &S3PartMetadata::remove_successful, this), std::bind( &S3PartMetadata::remove_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PartMetadata::remove_successful() {
-  printf("Called S3PartMetadata::remove_successful\n");
+  s3_log(S3_LOG_DEBUG, "Deleted part info\n");
   state = S3PartMetadataState::deleted;
   this->handler_on_success();
 }
 
 void S3PartMetadata::remove_failed() {
-  printf("Called S3PartMetadata::remove_failed\n");
+  s3_log(S3_LOG_WARN, "Failed to delete part info\n");
   state = S3PartMetadataState::failed;
   this->handler_on_failed();
 }
 
 
 void S3PartMetadata::remove_index(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3PartMetadata::remove_index\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_index(get_part_index_name(), std::bind( &S3PartMetadata::remove_index_successful, this), std::bind( &S3PartMetadata::remove_index_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PartMetadata::remove_index_successful() {
-  printf("Called S3PartMetadata::remove_index_successful\n");
+  s3_log(S3_LOG_DEBUG, "Deleted index for part info\n");
   state = S3PartMetadataState::index_deleted;
   this->handler_on_success();
 }
 
 void S3PartMetadata::remove_index_failed() {
-  printf("Called S3PartMetadata::remove_index_failed\n");
+  s3_log(S3_LOG_WARN, "Failed to remove index for part info\n");
   if(clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::failed) {
     state = S3PartMetadataState::failed;
   }
@@ -255,7 +266,7 @@ void S3PartMetadata::remove_index_failed() {
 
 // Streaming to json
 std::string S3PartMetadata::to_json() {
-  printf("Called S3PartMetadata::to_json\n");
+  s3_log(S3_LOG_DEBUG, "\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
   root["Object-Name"] = object_name;
@@ -273,7 +284,7 @@ std::string S3PartMetadata::to_json() {
 }
 
 void S3PartMetadata::from_json(std::string content) {
-  printf("Called S3PartMetadata::from_json\n");
+  s3_log(S3_LOG_DEBUG, "\n");
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
@@ -297,4 +308,3 @@ void S3PartMetadata::from_json(std::string content) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString().c_str();
   }
 }
-

@@ -23,8 +23,11 @@
 
 #include "s3_object_metadata.h"
 #include "s3_datetime.h"
+#include "s3_log.h"
 
 S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool ismultipart, std::string uploadid) : request(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
@@ -123,7 +126,7 @@ void S3ObjectMetadata::validate() {
 }
 
 void S3ObjectMetadata::load(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3ObjectMetadata::load\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
@@ -134,28 +137,29 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success, std::function<
   } else {
     clovis_kv_reader->get_keyval(get_bucket_index_name(), object_name, std::bind( &S3ObjectMetadata::load_successful, this), std::bind( &S3ObjectMetadata::load_failed, this));
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ObjectMetadata::load_successful() {
-  printf("Called S3ObjectMetadata::load_successful\n");
+  s3_log(S3_LOG_DEBUG, "Object metadata load successful\n");
   this->from_json(clovis_kv_reader->get_value());
   state = S3ObjectMetadataState::present;
   this->handler_on_success();
 }
 
 void S3ObjectMetadata::load_failed() {
-  // TODO - do anything more for failure?
-  printf("Called S3ObjectMetadata::load_failed\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, "Object metadata missing\n");
     state = S3ObjectMetadataState::missing;  // Missing
   } else {
+    s3_log(S3_LOG_WARN, "Object metadata load failed\n");
     state = S3ObjectMetadataState::failed;
   }
   this->handler_on_failed();
 }
 
 void S3ObjectMetadata::save(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  printf("Called S3ObjectMetadata::save\n");
+  s3_log(S3_LOG_DEBUG, "Saving Object metadata\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
@@ -164,8 +168,8 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success, std::function<
 }
 
 void S3ObjectMetadata::create_bucket_index() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string index_name;
-  printf("Called S3ObjectMetadata::create_bucket_index\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3ObjectMetadataState::missing;
 
@@ -176,25 +180,28 @@ void S3ObjectMetadata::create_bucket_index() {
     index_name = get_bucket_index_name();
   }
   clovis_kv_writer->create_index(index_name, std::bind( &S3ObjectMetadata::create_bucket_index_successful, this), std::bind( &S3ObjectMetadata::create_bucket_index_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ObjectMetadata::create_bucket_index_successful() {
-  printf("Called S3ObjectMetadata::create_bucket_index_successful\n");
+  s3_log(S3_LOG_DEBUG, "Object metadata bucket index created.\n");
   save_metadata();
 }
 
 void S3ObjectMetadata::create_bucket_index_failed() {
-  printf("Called S3ObjectMetadata::create_bucket_index_failed\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
+    s3_log(S3_LOG_DEBUG, "Object metadata bucket index present.\n");
     // We need to create index only once.
     save_metadata();
   } else {
+    s3_log(S3_LOG_DEBUG, "Object metadata create bucket index failed.\n");
     state = S3ObjectMetadataState::failed;  // todo Check error
     this->handler_on_failed();
   }
 }
 
 void S3ObjectMetadata::save_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string index_name;
   std::string key;
   // Set up system attributes
@@ -211,24 +218,25 @@ void S3ObjectMetadata::save_metadata() {
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(index_name, object_name, this->to_json(), std::bind( &S3ObjectMetadata::save_metadata_successful, this), std::bind( &S3ObjectMetadata::save_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ObjectMetadata::save_metadata_successful() {
-  printf("Called S3ObjectMetadata::save_metadata_successful\n");
+  s3_log(S3_LOG_DEBUG, "Object metadata saved for Object [%s].\n", object_name.c_str());
   state = S3ObjectMetadataState::saved;
   this->handler_on_success();
 }
 
 void S3ObjectMetadata::save_metadata_failed() {
-  // TODO - do anything more for failure?
-  printf("Called S3ObjectMetadata::save_metadata_failed\n");
+  s3_log(S3_LOG_ERROR, "Object metadata save failed for Object [%s].\n", object_name.c_str());
   state = S3ObjectMetadataState::failed;
   this->handler_on_failed();
 }
 
 void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, "Deleting Object metadata for Object [%s].\n", object_name.c_str());
+
   std::string index_name;
-  printf("Called S3ObjectMetadata::remove\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
@@ -239,26 +247,25 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::functio
     index_name = get_bucket_index_name();
   }
 
-
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(index_name, object_name, std::bind( &S3ObjectMetadata::remove_successful, this), std::bind( &S3ObjectMetadata::remove_failed, this));
 }
 
 void S3ObjectMetadata::remove_successful() {
-  printf("Called S3ObjectMetadata::remove_successful\n");
+  s3_log(S3_LOG_DEBUG, "Deleted Object metadata for Object [%s].\n", object_name.c_str());
   state = S3ObjectMetadataState::deleted;
   this->handler_on_success();
 }
 
 void S3ObjectMetadata::remove_failed() {
-  printf("Called S3ObjectMetadata::remove_failed\n");
+  s3_log(S3_LOG_DEBUG, "Delete Object metadata failed for Object [%s].\n", object_name.c_str());
   state = S3ObjectMetadataState::failed;
   this->handler_on_failed();
 }
 
 // Streaming to json
 std::string S3ObjectMetadata::to_json() {
-  printf("Called S3ObjectMetadata::to_json\n");
+  s3_log(S3_LOG_DEBUG, "\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
   root["Object-Name"] = object_name;
@@ -284,7 +291,7 @@ std::string S3ObjectMetadata::to_json() {
 }
 
 void S3ObjectMetadata::from_json(std::string content) {
-  printf("Called S3ObjectMetadata::from_json\n");
+  s3_log(S3_LOG_DEBUG, "\n");
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);

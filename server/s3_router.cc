@@ -25,12 +25,15 @@
 #include "s3_uri.h"
 #include "s3_api_handler.h"
 #include "s3_server_config.h"
+#include "s3_log.h"
 
 S3Router::S3Router(S3APIHandlerFactory *api_creator, S3UriFactory *uri_creator) :
-    api_handler_factory(api_creator), uri_factory(uri_creator){
+    api_handler_factory(api_creator), uri_factory(uri_creator) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
 }
 
 S3Router::~S3Router() {
+  s3_log(S3_LOG_DEBUG, "Destructor\n");
   delete api_handler_factory;
   delete uri_factory;
 }
@@ -60,24 +63,27 @@ bool S3Router::is_subdomain_match(std::string& endpoint) {
 }
 
 void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
   std::shared_ptr<S3APIHandler> handler;
 
   std::string bucket_name, object_name;
 
   std::string host_header = request->get_host_header();
-  printf("host_header = %s\n", host_header.c_str());
-  printf("uri = %s\n", request->c_get_full_path());
+  s3_log(S3_LOG_DEBUG, "host_header = %s\n", host_header.c_str());
+  s3_log(S3_LOG_DEBUG, "uri = %s\n", request->c_get_full_path());
+
   std::unique_ptr<S3URI> uri;
   S3UriType uri_type = S3UriType::unsupported;
 
   if ( host_header.empty() || is_exact_valid_endpoint(host_header) || !is_subdomain_match(host_header)) {
     // Path style API
     // Bucket for the request will be the first slash-delimited component of the Request-URI
-    printf("S3PathStyleURI\n");
+    s3_log(S3_LOG_DEBUG, "Detected S3PathStyleURI\n");
     uri_type = S3UriType::path_style;
   } else {
     // Virtual host style endpoint
-    printf("S3VirtualHostStyleURI\n");
+    s3_log(S3_LOG_DEBUG, "Detected S3VirtualHostStyleURI\n");
     uri_type = S3UriType::virtual_host_style;
   }
 
@@ -85,8 +91,8 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
 
   request->set_bucket_name(uri->get_bucket_name());
   request->set_object_name(uri->get_object_name());
-  printf("bucket name = %s\n", uri->get_bucket_name().c_str());
-  printf("object name = %s\n", uri->get_object_name().c_str());
+  s3_log(S3_LOG_DEBUG, "Detected bucket name = %s\n", uri->get_bucket_name().c_str());
+  s3_log(S3_LOG_DEBUG, "Detected object name = %s\n", uri->get_object_name().c_str());
 
   handler = api_handler_factory->create_api_handler(uri->get_s3_api_type(), request, uri->get_operation_code());
 

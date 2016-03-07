@@ -25,8 +25,11 @@
 #include "s3_error_codes.h"
 #include "s3_md5_hash.h"
 #include "s3_aws_etag.h"
+#include "s3_log.h"
 
 S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   upload_id = request->get_query_string_value("uploadId");
   object_name = request->get_object_name();
   bucket_name = request->get_bucket_name();
@@ -35,7 +38,9 @@ S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req)
   setup_steps();
 }
 
-void S3PostCompleteAction::setup_steps(){
+void S3PostCompleteAction::setup_steps() {
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+
   add_task(std::bind( &S3PostCompleteAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3PostCompleteAction::fetch_multipart_info, this ));
   add_task(std::bind( &S3PostCompleteAction::fetch_parts_info, this ));
@@ -48,15 +53,16 @@ void S3PostCompleteAction::setup_steps(){
 }
 
 void S3PostCompleteAction::fetch_bucket_info() {
-  printf("Called S3PostCompleteAction::fetch_bucket_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string input_str = request->get_full_body_content_as_string();
   parse_xml_str(input_str);
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::fetch_multipart_info() {
-  printf("Called S3PostCompleteAction::fetch_multipart_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
     clovis_kv_reader->get_keyval(get_multipart_bucket_index_name(),
@@ -64,24 +70,26 @@ void S3PostCompleteAction::fetch_multipart_info() {
                                  std::bind( &S3PostCompleteAction::fetch_multipart_info_successful, this),
                                  std::bind( &S3PostCompleteAction::fetch_multipart_info_failed, this));
   } else {
+    s3_log(S3_LOG_ERROR, "Missing bucket [%s]\n", request->get_bucket_name().c_str());
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::fetch_multipart_info_successful() {
-  printf("Called S3GetMultipartBucketAction::fetch_mutipart_info_successful\n");
+  s3_log(S3_LOG_DEBUG, "Found multipart info\n");
   object_metadata = std::make_shared<S3ObjectMetadata>(request);
   object_metadata->from_json(clovis_kv_reader->get_value());
   next();
 }
 
 void S3PostCompleteAction::fetch_multipart_info_failed() {
-  printf("Called S3GetMultipartBucketAction::fetch_mutipart_info_failed\n");
+  s3_log(S3_LOG_ERROR, "Multipart info missing\n");
   send_response_to_s3_client();
 }
 
 void S3PostCompleteAction::fetch_parts_info() {
-  printf("Called S3PostCompleteAction::fetch_parts_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->next_keyval(get_part_index_name(),
                                "",
@@ -89,6 +97,7 @@ void S3PostCompleteAction::fetch_parts_info() {
                                std::bind( &S3PostCompleteAction::get_parts_successful, this),
                                std::bind( &S3PostCompleteAction::get_parts_failed,
                                this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::set_abort_multipart(bool abortit) {
@@ -100,10 +109,11 @@ bool S3PostCompleteAction::is_abort_multipart() {
 }
 
 void S3PostCompleteAction::get_parts_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   S3AwsEtag awsetag;
   size_t curr_size;
   size_t prev_size = 0;
-  printf("Called S3PostCompleteAction::get_parts_successful\n");
+
   auto& kvps = clovis_kv_reader->get_key_values();
   part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 0);
   if(parts.size() != kvps.size()) {
@@ -118,7 +128,7 @@ void S3PostCompleteAction::get_parts_successful() {
       part_metadata->set_state(S3PartMetadataState::missing);
       send_response_to_s3_client();
     } else {
-        printf("Metadata for key %s %s\n", store_kv->first.c_str(), store_kv->second.c_str());
+        s3_log(S3_LOG_DEBUG, "Metadata for key [%s] -> [%s]\n", store_kv->first.c_str(), store_kv->second.c_str());
         part_metadata->from_json(store_kv->second);
         curr_size = part_metadata->get_content_length();
         if(store_kv != kvps.begin()) {
@@ -127,7 +137,7 @@ void S3PostCompleteAction::get_parts_successful() {
               // This is the last part, ignore it
               continue;
             }
-            printf("The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",
+            s3_log(S3_LOG_DEBUG, "The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",
                    store_kv->first.c_str(),
                    curr_size, prev_size);
             // Will be deleting complete object along with the part index and multipart kv
@@ -147,72 +157,78 @@ void S3PostCompleteAction::get_parts_successful() {
     etag = awsetag.finalize();
   }
   next();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::get_parts_failed() {
-  printf("Called S3PostCompleteAction::get_parts_failed\n");
+  s3_log(S3_LOG_ERROR, "Parts info missing\n");
   send_response_to_s3_client();
 }
 
 void S3PostCompleteAction::save_metadata() {
-  if(is_abort_multipart()) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (is_abort_multipart()) {
     next();
   } else {
-    printf("Calling S3PostCompleteAction::save_metadata\n");
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
     object_metadata->save(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::send_response_to_s3_client, this));
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-
 void S3PostCompleteAction::delete_multipart_metadata() {
-  printf("Called S3PostCompleteAction::remove multipart\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
   object_multipart_metadata->remove(std::bind( &S3PostCompleteAction::delete_multipart_successful, this), std::bind( &S3PostCompleteAction::delete_multipart_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::delete_multipart_successful() {
-  printf("Called S3PostCompleteAction::delete_multipart_successful\n");
+  s3_log(S3_LOG_DEBUG, "Deleted part metadata\n");
   next();
 }
 
 void S3PostCompleteAction::delete_multipart_failed() {
-  printf("Called S3PostCompleteAction::delete_multipart_failed\n");
+  s3_log(S3_LOG_ERROR, "Delete part metadata failed\n");
   next();
 }
 
 void S3PostCompleteAction::delete_part_index() {
-  printf("Called S3PostCompleteAction::delete_part_index\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   part_metadata->remove_index(std::bind( &S3PostCompleteAction::delete_part_index_successful, this), std::bind( &S3PostCompleteAction::delete_part_index_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::delete_part_index_successful() {
-  printf("Called S3PostCompleteAction::delete_part_index_successful\n");
+  s3_log(S3_LOG_DEBUG, "Deleted part index\n");
   next();
 }
 
 void S3PostCompleteAction::delete_part_index_failed() {
-  printf("Called S3PostCompleteAction::delete_part_index_failed\n");
+  s3_log(S3_LOG_ERROR, "Delete index failed for part info\n");
   next();
 }
 
 void S3PostCompleteAction::delete_parts() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if(is_abort_multipart()) {
-    printf("Calling S3PostCompleteAction::delete_parts\n");
     clovis_writer = std::make_shared<S3ClovisWriter>(request);
     clovis_writer->delete_object(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::delete_parts_failed, this));
   } else {
     next();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::delete_parts_failed() {
-  printf("Called S3PostCompleteAction::delete_parts_failed\n");
+  s3_log(S3_LOG_DEBUG, "Delete parts info failed.\n");
   send_response_to_s3_client();
 }
 
 void S3PostCompleteAction::parse_xml_str(std::string &xml_str) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
   xmlNode *child_node;
   xmlChar * xml_part_number;
   xmlChar * xml_etag;
@@ -220,12 +236,12 @@ void S3PostCompleteAction::parse_xml_str(std::string &xml_str) {
   std::string prev_partnumber = "";
   int previous_part;
   std::string input_etag;
-  printf("Called S3PostCompleteAction::parse_xml_str\n");
-  printf("xml string = %s",xml_str.c_str());
+
+  s3_log(S3_LOG_DEBUG, "xml string = %s",xml_str.c_str());
   xmlDocPtr document = xmlParseDoc((const xmlChar*)xml_str.c_str());
   if (document == NULL ) {
     xmlFreeDoc(document);
-    printf("The xml string %s is invalid\n", xml_str.c_str());
+    s3_log(S3_LOG_ERROR, "The xml string %s is invalid\n", xml_str.c_str());
     send_response_to_s3_client();
   }
 
@@ -235,45 +251,45 @@ void S3PostCompleteAction::parse_xml_str(std::string &xml_str) {
   //xmlNodePtr child = root_node->xmlChildrenNode;
   xmlNodePtr child = root_node->xmlChildrenNode;
   while (child != NULL) {
-    printf("Xml Tag = %s\n",(char *)child->name);
-    if(!xmlStrcmp(child->name, (const xmlChar *)"Part")) {
+    s3_log(S3_LOG_DEBUG, "Xml Tag = %s\n", (char *)child->name);
+    if (!xmlStrcmp(child->name, (const xmlChar *)"Part")) {
       partnumber = "";
       input_etag = "";
-      for(child_node = child->children; child_node != NULL; child_node = child_node->next) {
-        if((!xmlStrcmp(child_node->name, (const xmlChar *)"PartNumber"))) {
+      for (child_node = child->children; child_node != NULL; child_node = child_node->next) {
+        if ((!xmlStrcmp(child_node->name, (const xmlChar *)"PartNumber"))) {
           xml_part_number = xmlNodeGetContent(child_node);
-          if(xml_part_number != NULL) {
+          if (xml_part_number != NULL) {
             partnumber = (char *)xml_part_number;
             xmlFree(xml_part_number);
             xml_part_number = NULL;
           }
         }
-        if((!xmlStrcmp(child_node->name, (const xmlChar *)"ETag"))) {
+        if ((!xmlStrcmp(child_node->name, (const xmlChar *)"ETag"))) {
           xml_etag = xmlNodeGetContent(child_node);
-          if(xml_etag != NULL) {
+          if (xml_etag != NULL) {
             input_etag = (char *)xml_etag;
             xmlFree(xml_etag);
             xml_etag = NULL;
           }
         }
       }
-      if(!partnumber.empty() && !input_etag.empty()) {
+      if (!partnumber.empty() && !input_etag.empty()) {
         parts[partnumber] = input_etag;
-        if(prev_partnumber.empty()) {
+        if (prev_partnumber.empty()) {
           previous_part = 0;
         } else {
           previous_part = std::stoi(prev_partnumber);
         }
-        if(previous_part > std::stoi(partnumber)) {
+        if (previous_part > std::stoi(partnumber)) {
           // The request doesn't contain part numbers in ascending order
           request->set_request_error(S3RequestError::InvalidPartOrder);
           xmlFreeDoc(document);
-          printf("The XML string doesn't contain parts in ascending order\n");
+          s3_log(S3_LOG_DEBUG, "The XML string doesn't contain parts in ascending order\n");
           send_response_to_s3_client();
         }
         prev_partnumber = partnumber;
       } else {
-          printf("Error:Part number/Etag missing for a part\n");
+          s3_log(S3_LOG_DEBUG, "Error: Part number/Etag missing for a part\n");
           xmlFreeDoc(document);
           send_response_to_s3_client();
         }
@@ -286,7 +302,7 @@ void S3PostCompleteAction::parse_xml_str(std::string &xml_str) {
 }
 
 void S3PostCompleteAction::send_response_to_s3_client() {
-  printf("Called S3PostCompleteAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   S3RequestError req_state = request->get_request_error();
   S3PartMetadataState part_state = S3PartMetadataState::empty;
   if(part_metadata) {
@@ -345,4 +361,5 @@ void S3PostCompleteAction::send_response_to_s3_client() {
     }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

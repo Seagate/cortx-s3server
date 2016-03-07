@@ -31,10 +31,12 @@ extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg) {
 }
 
 S3RequestObject::S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr) : ev_req(req), in_headers_copied(false) {
-  printf("S3RequestObject created.\n");
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   request_timer.start();
   bucket_name = object_name = user_name = user_id = account_name = account_id = "";
-  request_id = "TODO-Gen uuid";
+  S3Uuid uuid;
+  request_id = uuid.get_string_uuid();
   is_paused = false;
   request_error = S3RequestError::None;
   evhtp_obj.reset(evhtp_obj_ptr);
@@ -42,11 +44,12 @@ S3RequestObject::S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj
 }
 
 void S3RequestObject::initialise() {
+  s3_log(S3_LOG_DEBUG, "Initializing the request.\n");
   pending_in_flight = get_content_length();
 }
 
 S3RequestObject::~S3RequestObject(){
-  printf("S3RequestObject deleted.\n");
+  s3_log(S3_LOG_DEBUG, "Destructor\n");
   request_timer.stop();
   LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
   if (ev_req) {
@@ -186,8 +189,6 @@ std::string& S3RequestObject::get_account_name() {
 }
 
 std::string& S3RequestObject::get_request_id() {
-  S3Uuid uuid;
-  request_id = uuid.get_string_uuid();
   return request_id;
 }
 
@@ -215,10 +216,13 @@ void S3RequestObject::send_reply_end() {
 }
 
 void S3RequestObject::respond_unsupported_api() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
   S3Error error("NotImplemented", get_request_id(), "");
   std::string& response_xml = error.to_xml();
   set_out_header_value("Content-Type", "application/xml");
   set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
   send_response(error.get_http_status_code(), response_xml);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

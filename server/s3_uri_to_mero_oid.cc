@@ -21,8 +21,11 @@
 #include "murmur3_hash.h"
 #include "s3_timer.h"
 #include "s3_perf_logger.h"
+#include "s3_log.h"
 
 void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
   /* MurMur Hash */
   S3Timer timer;
   timer.start();
@@ -43,5 +46,6 @@ void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
   timer.stop();
   LOG_PERF("S3UriToMeroOID_ns", timer.elapsed_time_in_nanosec());
 
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return;
 }

@@ -20,12 +20,15 @@
 #include "s3_get_object_action.h"
 #include "s3_clovis_config.h"
 #include "s3_error_codes.h"
+#include "s3_log.h"
 
 S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_blocks_in_object(0), blocks_already_read(0), data_sent_to_client(0) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
 void S3GetObjectAction::setup_steps(){
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3GetObjectAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3GetObjectAction::fetch_object_info, this ));
   add_task(std::bind( &S3GetObjectAction::read_object, this ));
@@ -34,24 +37,25 @@ void S3GetObjectAction::setup_steps(){
 }
 
 void S3GetObjectAction::fetch_bucket_info() {
-  printf("Called S3GetObjectAction::fetch_bucket_info\n");
+  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3GetObjectAction::next, this), std::bind( &S3GetObjectAction::next, this));
 }
 
 void S3GetObjectAction::fetch_object_info() {
-  printf("Called S3GetObjectAction::fetch_bucket_info\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    s3_log(S3_LOG_DEBUG, "Found bucket metadata\n");
     object_metadata = std::make_shared<S3ObjectMetadata>(request);
 
     object_metadata->load(std::bind( &S3GetObjectAction::next, this), std::bind( &S3GetObjectAction::next, this));
   } else {
+    s3_log(S3_LOG_DEBUG, "Bucket not found\n");
     send_response_to_s3_client();
   }
 }
 
 void S3GetObjectAction::read_object() {
-  printf("Called S3GetObjectAction::read_object\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     request->set_out_header_value("Last-Modified", object_metadata->get_last_modified());
     request->set_out_header_value("ETag", object_metadata->get_md5());
@@ -60,10 +64,11 @@ void S3GetObjectAction::read_object() {
     request->send_reply_start(S3HttpSuccess200);
 
     if (object_metadata->get_content_length() == 0) {
+      s3_log(S3_LOG_DEBUG, "Found object of size %zu\n", object_metadata->get_content_length());
       send_response_to_s3_client();
     } else {
+      s3_log(S3_LOG_DEBUG, "Reading object of size %zu\n", object_metadata->get_content_length());
 
-      printf("Reading object of size %zu\n", object_metadata->get_content_length());
       size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
       /* Count Data blocks from data size */
       total_blocks_in_object = (object_metadata->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
@@ -75,10 +80,11 @@ void S3GetObjectAction::read_object() {
   } else {
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3GetObjectAction::read_object_data() {
-  printf("S3GetObjectAction::read_object_data\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   size_t max_blocks_in_one_read_op = S3ClovisConfig::get_instance()->get_clovis_read_payload_size()/S3ClovisConfig::get_instance()->get_clovis_block_size();
   size_t blocks_to_read = 0;
@@ -99,11 +105,11 @@ void S3GetObjectAction::read_object_data() {
     // We are done Reading
     send_response_to_s3_client();
   }
-
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3GetObjectAction::send_data_to_client() {
-  printf("S3GetObjectAction::send_data_to_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   char *data = NULL;
   size_t length = 0;
@@ -126,17 +132,17 @@ void S3GetObjectAction::send_data_to_client() {
   } else {
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3GetObjectAction::read_object_data_failed() {
-  // TODO - do anything more for failure?
-  printf("Called S3GetObjectAction::read_object_data_failed\n");
+  s3_log(S3_LOG_DEBUG, "Failed to read object data from clovis\n");
   send_response_to_s3_client();
 }
 
 
 void S3GetObjectAction::send_response_to_s3_client() {
-  printf("Called S3GetObjectAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Trigger metadata read async operation with callback
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
@@ -161,4 +167,5 @@ void S3GetObjectAction::send_response_to_s3_client() {
   }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

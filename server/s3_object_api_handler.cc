@@ -27,10 +27,12 @@
 #include "s3_delete_object_action.h"
 #include "s3_get_multipart_part_action.h"
 #include "s3_abort_multipart_action.h"
+#include "s3_log.h"
 
 void S3ObjectAPIHandler::dispatch() {
+  s3_log(S3_LOG_DEBUG, "Operation code = %d\n", operation_code);
+
   std::shared_ptr<S3Action> action;
-  printf("S3ObjectAPIHandler::Action operation code = %d\n", operation_code);
   switch(operation_code) {
     case S3OperationCode::acl:
       switch (request->http_verb()) {

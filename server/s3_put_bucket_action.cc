@@ -22,12 +22,16 @@
 #include "s3_put_bucket_action.h"
 #include "s3_put_bucket_body.h"
 #include "s3_error_codes.h"
+#include "s3_log.h"
 
 S3PutBucketAction::S3PutBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  location_constraint = "";
   setup_steps();
 }
 
 void S3PutBucketAction::setup_steps(){
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3PutBucketAction::validate_request, this ));
   add_task(std::bind( &S3PutBucketAction::read_metadata, this ));
   add_task(std::bind( &S3PutBucketAction::create_bucket, this ));
@@ -36,7 +40,7 @@ void S3PutBucketAction::setup_steps(){
 }
 
 void S3PutBucketAction::validate_request() {
-  printf("S3PutBucketAction::validate_request\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   request->resume();
   if (request->get_content_length() > 0) {
     if (request->has_all_body_content()) {
@@ -51,17 +55,18 @@ void S3PutBucketAction::validate_request() {
   } else {
     validate_request_body("");
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutBucketAction::consume_incoming_content() {
-  printf("Called S3PutBucketAction::consume_incoming_content\n");
+  s3_log(S3_LOG_DEBUG, "Consume data\n");
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
   } // else just wait till entire body arrives. rare.
 }
 
 void S3PutBucketAction::validate_request_body(std::string content) {
-  printf("S3PutBucketAction::validate_request_body\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   S3PutBucketBody bucket(content);
   if (bucket.isOK()) {
     location_constraint = bucket.get_location_constraint();
@@ -70,22 +75,25 @@ void S3PutBucketAction::validate_request_body(std::string content) {
     invalid_request = true;
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutBucketAction::read_metadata() {
-  printf("S3PutBucketAction::read_metadata\n");
-
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Trigger metadata read async operation with callback
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PutBucketAction::next, this), std::bind( &S3PutBucketAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutBucketAction::create_bucket() {
-  printf("S3PutBucketAction::create_bucket\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   // Trigger metadata write async operation with callback
   // XXX Check if last step was successful.
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    s3_log(S3_LOG_WARN, "Bucket already exists\n");
+
     // Report 409 bucket exists.
     send_response_to_s3_client();
   } else {
@@ -95,10 +103,11 @@ void S3PutBucketAction::create_bucket() {
     }
     bucket_metadata->save(std::bind( &S3PutBucketAction::next, this), std::bind( &S3PutBucketAction::next, this));
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutBucketAction::send_response_to_s3_client() {
-  printf("S3PutBucketAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (invalid_request) {
     S3Error error("MalformedXML", request->get_request_id(), request->get_bucket_name());
@@ -127,4 +136,5 @@ void S3PutBucketAction::send_response_to_s3_client() {
   }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

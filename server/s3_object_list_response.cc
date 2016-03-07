@@ -18,9 +18,10 @@
  */
 
 #include "s3_object_list_response.h"
+#include "s3_log.h"
 
 S3ObjectListResponse::S3ObjectListResponse() : request_prefix(""), request_delimiter(""), request_marker_key(""), request_marker_uploadid(""), max_keys(""), response_is_truncated(false), next_marker_key(""), response_xml(""), max_uploads(""), next_marker_uploadid("") {
-  printf("S3ObjectListResponse created\n");
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   object_list.clear();
   part_list.clear();
 }
@@ -196,7 +197,7 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
                     "    <ID>" + object->get_user_id() + "</ID>\n"
                     "    <DisplayName>" + object->get_user_name() + "</DisplayName>\n"
                     "  </Owner>\n"
-                    "  <StorageClass>" + object->get_storage_class() + "</StorageClass>\n" 
+                    "  <StorageClass>" + object->get_storage_class() + "</StorageClass>\n"
                     "  <Initiated>" + object->get_last_modified() + "</Initiated>\n"
                     "</Upload>\n";
   }

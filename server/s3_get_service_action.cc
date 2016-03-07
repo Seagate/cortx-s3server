@@ -23,21 +23,24 @@
 #include "s3_get_service_action.h"
 #include "s3_bucket_metadata.h"
 #include "s3_error_codes.h"
+#include "s3_log.h"
 
 S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
   bucket_list.set_owner_name(request->get_user_name());
   bucket_list.set_owner_id(request->get_user_id());
 }
 
-void S3GetServiceAction::setup_steps(){
+void S3GetServiceAction::setup_steps() {
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3GetServiceAction::get_next_buckets, this ));
   add_task(std::bind( &S3GetServiceAction::send_response_to_s3_client, this ));
   // ...
 }
 
 void S3GetServiceAction::get_next_buckets() {
-  printf("Called S3GetServiceAction::get_next_buckets\n");
+  s3_log(S3_LOG_DEBUG, "Fetching bucket list from KV store\n");
   size_t count = S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count();
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
@@ -45,7 +48,7 @@ void S3GetServiceAction::get_next_buckets() {
 }
 
 void S3GetServiceAction::get_next_buckets_successful() {
-  printf("Called S3GetServiceAction::get_next_buckets_successful\n");
+  s3_log(S3_LOG_DEBUG, "Found buckets listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
@@ -70,17 +73,18 @@ void S3GetServiceAction::get_next_buckets_successful() {
 }
 
 void S3GetServiceAction::get_next_buckets_failed() {
-  printf("Called S3GetServiceAction::get_next_buckets_failed\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, "Buckets list is empty\n");
     fetch_successful = true;  // With no entries.
   } else {
+    s3_log(S3_LOG_ERROR, "Failed to fetch bucket list info\n");
     fetch_successful = false;
   }
   send_response_to_s3_client();
 }
 
 void S3GetServiceAction::send_response_to_s3_client() {
-  printf("Called S3GetServiceAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Trigger metadata read async operation with callback
   if (fetch_successful) {
     std::string& response_xml = bucket_list.get_xml();
@@ -98,4 +102,5 @@ void S3GetServiceAction::send_response_to_s3_client() {
   }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

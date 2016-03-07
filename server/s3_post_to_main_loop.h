@@ -27,6 +27,7 @@
 
 #include "s3_request_object.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_log.h"
 
 struct user_event_context {
   void *app_ctx;
@@ -39,7 +40,7 @@ class S3PostToMainLoop {
   std::shared_ptr<S3RequestObject> request;
   void* context;
 public:
-  S3PostToMainLoop(std::shared_ptr<S3RequestObject> req, void* ctx) : request(req), context(ctx) { printf("Called S3PostToMainLoop Constructor\n");}
+  S3PostToMainLoop(std::shared_ptr<S3RequestObject> req, void* ctx) : request(req), context(ctx) { s3_log(S3_LOG_DEBUG, "Constructor\n"); }
 
   void operator()(user_event_on_main_loop callback);
 };

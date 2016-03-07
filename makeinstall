@@ -6,7 +6,7 @@ S3_INSTALL_LOCATION=/opt/seagate/s3
 AUTH_INSTALL_LOCATION=/opt/seagate/auth
 
 mkdir -p $S3_INSTALL_LOCATION/bin
-mkdir -p $S3_INSTALL_LOCATION/log
+mkdir -p /var/log/seagate/s3/
 mkdir -p $S3_INSTALL_LOCATION/lib
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/libxml2

@@ -24,11 +24,15 @@
 #include "s3_get_multipart_part_action.h"
 #include "s3_part_metadata.h"
 #include "s3_error_codes.h"
+#include "s3_log.h"
 
 S3GetMultipartPartAction::S3GetMultipartPartAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), return_list_size(0), fetch_successful(false) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   request_marker_key = request->get_query_string_value("part-number-marker");
   multipart_part_list.set_request_marker_key(request_marker_key);
-  printf("part-number-marker = %s\n", request_marker_key.c_str());
+  s3_log(S3_LOG_DEBUG, "part-number-marker = %s\n", request_marker_key.c_str());
+
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
   last_key = request_marker_key;  // as requested by user
@@ -46,12 +50,12 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(std::shared_ptr<S3RequestObje
     multipart_part_list.set_max_parts(maxparts);
   }
   setup_steps();
-  printf("End of S3GetMultipartPartAction\n");
   // TODO request param validations
 }
 
 void S3GetMultipartPartAction::setup_steps(){
-  if(!request_marker_key.empty()) {
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  if (!request_marker_key.empty()) {
     add_task(std::bind( &S3GetMultipartPartAction::get_key_object, this ));
   }
   add_task(std::bind( &S3GetMultipartPartAction::get_next_objects, this ));
@@ -60,17 +64,17 @@ void S3GetMultipartPartAction::setup_steps(){
 }
 
 void S3GetMultipartPartAction::get_key_object() {
-  printf("Called S3GetMultipartPartAction::get_key_object\n");
+  s3_log(S3_LOG_DEBUG, "Fetching part listing\n");
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->get_keyval(get_part_index_name(), last_key, std::bind( &S3GetMultipartPartAction::get_key_object_successful, this), std::bind( &S3GetMultipartPartAction::get_key_object_failed, this));
 }
 
 void S3GetMultipartPartAction::get_key_object_successful() {
-  printf("Called S3GetMultipartPartAction::get_key_object_successful\n");
+  s3_log(S3_LOG_DEBUG, "Found part listing\n");
   std::string key_name = last_key;
   if (!(clovis_kv_reader->get_value()).empty()) {
-    printf("Read Part = %s\n", key_name.c_str());
+    s3_log(S3_LOG_DEBUG, "Read Part = %s\n", key_name.c_str());
     std::shared_ptr<S3PartMetadata> part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(key_name.c_str()));
 
     part->from_json(clovis_kv_reader->get_value());
@@ -96,7 +100,7 @@ void S3GetMultipartPartAction::get_key_object_successful() {
 }
 
 void S3GetMultipartPartAction::get_key_object_failed() {
-  printf("Called S3GetMultipartPartAction::get_key_object_failed\n");
+  s3_log(S3_LOG_DEBUG, "Failed to find part listing\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     fetch_successful = true;  // With no entries.
     next();
@@ -107,7 +111,7 @@ void S3GetMultipartPartAction::get_key_object_failed() {
 }
 
 void S3GetMultipartPartAction::get_next_objects() {
-  printf("Called S3GetMultipartPartAction::get_next_objects\n");
+  s3_log(S3_LOG_DEBUG, "Fetching next part listing\n");
   size_t count = S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count();
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
@@ -115,11 +119,11 @@ void S3GetMultipartPartAction::get_next_objects() {
 }
 
 void S3GetMultipartPartAction::get_next_objects_successful() {
-  printf("Called S3GetMultipartPartAction::get_next_objects_successful\n");
+  s3_log(S3_LOG_DEBUG, "Found part listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
-    printf("Read Object = %s\n", kv.first.c_str());
+    s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
     auto part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(kv.first.c_str()));
 
     part->from_json(kv.second);
@@ -149,17 +153,18 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
 }
 
 void S3GetMultipartPartAction::get_next_objects_failed() {
-  printf("Called S3GetMultipartPartAction::get_next_objects_failed\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    s3_log(S3_LOG_DEBUG, "Missing part listing\n");
     fetch_successful = true;  // With no entries.
   } else {
+    s3_log(S3_LOG_DEBUG, "Failed to find part listing\n");
     fetch_successful = false;
   }
   send_response_to_s3_client();
 }
 
 void S3GetMultipartPartAction::send_response_to_s3_client() {
-  printf("Called S3GetMultipartPartAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   // Trigger metadata read async operation with callback
   if (fetch_successful) {
     multipart_part_list.set_user_id(request->get_user_id());
@@ -171,7 +176,7 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
 
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    printf("Object list response_xml = %s\n", response_xml.c_str());
+    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n", response_xml.c_str());
 
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
@@ -184,4 +189,5 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
   }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

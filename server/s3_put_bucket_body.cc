@@ -21,8 +21,10 @@
 #include <libxml/parser.h>
 
 #include "s3_put_bucket_body.h"
+#include "s3_log.h"
 
 S3PutBucketBody::S3PutBucketBody(std::string& xml) : xml_content(xml), is_valid(false) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   parse_and_validate();
 }
 
@@ -36,16 +38,18 @@ bool S3PutBucketBody::parse_and_validate() {
     <LocationConstraint>EU</LocationConstraint>
   </CreateBucketConfiguration >
   */
+  s3_log(S3_LOG_DEBUG, "Parsing put bucket body\n");
+
   if (xml_content.empty()) {
     // Default location intended.
     location_constraint = "US";
     is_valid = true;
     return true;
   }
-  printf("Parsing xml request = %s\n", xml_content.c_str());
+  s3_log(S3_LOG_DEBUG, "Parsing xml request = %s\n", xml_content.c_str());
   xmlDocPtr document = xmlParseDoc((const xmlChar*)xml_content.c_str());
   if (document == NULL ) {
-    printf("S3PutBucketBody XML request body Invalid.\n");
+    s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
     is_valid = false;
     return false;
   }
@@ -54,7 +58,7 @@ bool S3PutBucketBody::parse_and_validate() {
 
   // Validate the root node
   if (root_node == NULL || xmlStrcmp(root_node->name, (const xmlChar *)"CreateBucketConfiguration")) {
-    printf("S3PutBucketBody XML request body Invalid.\n");
+    s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
     xmlFreeDoc(document);
     is_valid = false;
     return false;
@@ -67,7 +71,7 @@ bool S3PutBucketBody::parse_and_validate() {
     if ((!xmlStrcmp(child->name, (const xmlChar *)"LocationConstraint"))){
       key = xmlNodeGetContent(child);
       if (key == NULL) {
-        printf("S3PutBucketBody XML request body Invalid.\n");
+        s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
         xmlFree(key);
         xmlFreeDoc(document);
         is_valid = false;

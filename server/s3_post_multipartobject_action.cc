@@ -19,12 +19,15 @@
 
 #include "s3_post_multipartobject_action.h"
 #include "s3_error_codes.h"
+#include "s3_log.h"
 
 S3PostMultipartObjectAction::S3PostMultipartObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
 void S3PostMultipartObjectAction::setup_steps(){
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3PostMultipartObjectAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::create_upload_id, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::save_metadata, this ));
@@ -34,30 +37,37 @@ void S3PostMultipartObjectAction::setup_steps(){
 }
 
 void S3PostMultipartObjectAction::fetch_bucket_info() {
-  printf("Called S3PostMultipartObjectAction::fetch_bucket_info\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostMultipartObjectAction::create_upload_id() {
-  printf("Called S3PostMultipartObjectAction::create_upload_id\n");
-  S3Uuid uuid;
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    S3Uuid uuid;
     upload_id = uuid.get_string_uuid();
     object_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
     object_metadata->load(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
   } else {
+    s3_log(S3_LOG_WARN, "Missing bucket [%s]\n", request->get_bucket_name().c_str());
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostMultipartObjectAction::create_part_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 0);
   part_metadata->create_index(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostMultipartObjectAction::save_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
   if (object_metadata->get_state() != S3ObjectMetadataState::present) {
     for (auto it: request->get_in_headers_copy()) {
       if(it.first.find("x-amz-meta-") != std::string::npos) {
@@ -66,20 +76,21 @@ void S3PostMultipartObjectAction::save_metadata() {
     }
     object_metadata->save(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
   } else {
-      //++
-      // Bailing out in case if the multipart upload is already in progress, this will ensure that object
-      // doesn't go to inconsistent state
+    //++
+    // Bailing out in case if the multipart upload is already in progress,
+    // this will ensure that object doesn't go to inconsistent state
 
-      // Once multipart is taken care in mero, it may not be needed
-      // Note - Currently as per aws doc. (http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html) multipart upload details
-      // of the same key initiated at different times is allowed.
-      //--
-      send_response_to_s3_client();
-    }
+    // Once multipart is taken care in mero, it may not be needed
+    // Note - Currently as per aws doc. (http://docs.aws.amazon.com/AmazonS3/latest/API/mpUploadListMPUpload.html) multipart upload details
+    // of the same key initiated at different times is allowed.
+    //--
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostMultipartObjectAction::send_response_to_s3_client() {
-  printf("Called S3PostMultipartObjectAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
@@ -116,4 +127,5 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
   }
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

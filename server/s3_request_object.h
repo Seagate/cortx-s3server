@@ -37,6 +37,7 @@
 #include "s3_timer.h"
 #include "s3_perf_logger.h"
 #include "s3_uuid.h"
+#include "s3_log.h"
 
 enum class S3HttpVerb {
   HEAD = htp_method_HEAD,
@@ -167,7 +168,7 @@ public:
   // we dont flood with data coming from socket in user buffers.
   void pause() {
     if (!is_paused) {
-      printf("Pausing the request for sock %d.....\n", ev_req->conn->sock);
+      s3_log(S3_LOG_DEBUG, "Pausing the request for sock %d...\n", ev_req->conn->sock);
       evhtp_obj->http_request_pause(ev_req);
       is_paused = true;
     }
@@ -175,7 +176,7 @@ public:
 
   void resume() {
     if (is_paused) {
-      printf("Resuming the request for sock %d.....\n", ev_req->conn->sock);
+      s3_log(S3_LOG_DEBUG, "Resuming the request for sock %d...\n", ev_req->conn->sock);
       evhtp_obj->http_request_resume(ev_req);
       is_paused = false;
     }
@@ -197,16 +198,17 @@ public:
   }
 
   void notify_incoming_data(evbuf_t * buf) {
+    s3_log(S3_LOG_DEBUG, "Entering\n");
     // Keep buffering till someone starts listening.
     size_t bytes_received = evhtp_obj->evbuffer_get_length(buf);
-    printf("Buffering data to be consumed.....%zu\n", bytes_received);
+    s3_log(S3_LOG_DEBUG, "Buffering data to be consumed: %zu\n", bytes_received);
     S3Timer buffering_timer;
     buffering_timer.start();
 
     buffered_input.add_content(buf);
     pending_in_flight -= bytes_received;
     if (pending_in_flight == 0) {
-      printf("Buffering complete for data to be consumed.....\n");
+      s3_log(S3_LOG_DEBUG, "Buffering complete for data to be consumed.\n");
       buffered_input.freeze();
     }
     buffering_timer.stop();
@@ -215,9 +217,10 @@ public:
 
     if ( incoming_data_callback &&
          ((buffered_input.length() >= notify_read_watermark) || (pending_in_flight == 0)) ) {
-      printf("Sending data to be consumed.....\n");
+      s3_log(S3_LOG_DEBUG, "Sending data to be consumed...\n");
       incoming_data_callback();
     }
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
   }
 
   // Check whether we already have (read) the entire body.

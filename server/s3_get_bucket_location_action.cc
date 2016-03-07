@@ -19,25 +19,28 @@
 
 #include "s3_get_bucket_location_action.h"
 #include "s3_error_codes.h"
+#include "s3_log.h"
 
 S3GetBucketlocationAction::S3GetBucketlocationAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
 void S3GetBucketlocationAction::setup_steps(){
+  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3GetBucketlocationAction::get_metadata, this ));
   add_task(std::bind( &S3GetBucketlocationAction::send_response_to_s3_client, this ));
   // ...
 }
 
 void S3GetBucketlocationAction::get_metadata() {
-  printf("Called S3GetObjectAction::fetch_bucket_info\n");
+  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3GetBucketlocationAction::next, this), std::bind( &S3GetBucketlocationAction::next, this));
 }
 
 void S3GetBucketlocationAction::send_response_to_s3_client() {
-  printf("Called S3GetBucketlocationAction::send_response_to_s3_client\n");
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string response_xml;
@@ -58,4 +61,5 @@ void S3GetBucketlocationAction::send_response_to_s3_client() {
 
   done();
   i_am_done();  // self delete
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

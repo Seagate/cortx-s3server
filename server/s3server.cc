@@ -121,7 +121,7 @@ s3_handler(evhtp_request_t * req, void * a) {
 
 extern "C" evhtp_res
 dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
-    s3_log(S3_LOG_INFO, "RECEIVED Request headers. Create S3Request with arg = %s\n", (char*)arg);
+    s3_log(S3_LOG_INFO, "RECEIVED Request headers.\n");
 
     S3Router *router = (S3Router*)arg;
 

@@ -21,6 +21,7 @@
 
 #include "s3_uri.h"
 #include "s3_server_config.h"
+#include "s3_log.h"
 
 S3URI::S3URI(std::shared_ptr<S3RequestObject> req) : request(req),
              operation_code(S3OperationCode::none),
@@ -55,10 +56,13 @@ void S3URI::setup_operation_code() {
   } else if (request->has_query_param_key("delete")) {
     operation_code = S3OperationCode::multidelete;
   }
+  s3_log(S3_LOG_DEBUG, "operation_code set to %d\n", operation_code);
   // Other operations - todo
 }
 
 S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   std::string full_uri(request->c_get_full_path());
   // Strip the query params
   std::size_t qparam_start = full_uri.find("?");
@@ -90,6 +94,7 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req
 }
 
 S3VirtualHostStyleURI::S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req) {
+    s3_log(S3_LOG_DEBUG, "Constructor\n");
     host_header = request->get_host_header();
     setup_bucket_name();
 
@@ -109,6 +114,7 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> re
 }
 
 void S3VirtualHostStyleURI::setup_bucket_name() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (host_header.find(S3Config::get_instance()->get_default_endpoint()) != std::string::npos) {
     bucket_name = host_header.substr(0, (host_header.length() - S3Config::get_instance()->get_default_endpoint().length() - 1));
   }
@@ -117,4 +123,5 @@ void S3VirtualHostStyleURI::setup_bucket_name() {
       bucket_name = host_header.substr(0, (host_header.length() - (*it).length() - 1));
     }
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
