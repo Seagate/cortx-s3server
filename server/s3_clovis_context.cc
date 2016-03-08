@@ -73,20 +73,29 @@ create_basic_rw_op_ctx(size_t clovis_block_count, size_t clovis_block_size) {
 
   rc = m0_bufvec_alloc(ctx->data, clovis_block_count, clovis_block_size);
   if (rc != 0) {
+    free(ctx->ext);
+    free(ctx->data);
+    free(ctx->attr);
     free(ctx);
     return NULL;
   }
 
   rc = m0_bufvec_alloc(ctx->attr, clovis_block_count, 1);
   if (rc != 0) {
+    m0_bufvec_free(ctx->data);
     free(ctx->data);
+    free(ctx->attr);
+    free(ctx->ext);
     free(ctx);
     return NULL;
   }
   rc = m0_indexvec_alloc(ctx->ext, clovis_block_count);
   if (rc != 0) {
+    m0_bufvec_free(ctx->data);
+    m0_bufvec_free(ctx->attr);
     free(ctx->data);
     free(ctx->attr);
+    free(ctx->ext);
     free(ctx);
     return NULL;
   }
@@ -97,6 +106,9 @@ create_basic_rw_op_ctx(size_t clovis_block_count, size_t clovis_block_size) {
 int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
+  m0_bufvec_free(ctx->data);
+  m0_bufvec_free(ctx->attr);
+  m0_indexvec_free(ctx->ext);
   free(ctx->ext);
   free(ctx->data);
   free(ctx->attr);
@@ -200,8 +212,15 @@ create_basic_kvs_op_ctx(int no_of_keys) {
   return ctx;
 
 FAIL:
-  if(ctx)
+  if(ctx->keys) {
+    idx_bufvec_free(ctx->keys);
+  }
+  if(ctx->values) {
+    idx_bufvec_free(ctx->values);
+  }
+  if(ctx) {
     free(ctx);
+  }
   return NULL;
 }
 
