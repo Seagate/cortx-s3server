@@ -8,6 +8,9 @@ from s3cmd import S3cmdTest
 # Config.log_enabled = True
 # Config.dummy_run = True
 
+# Set time_readable_format to False if you want to display the time in milli seconds.
+# Config.time_readable_format = False
+
 # TODO
 # DNS-compliant bucket names should not contains underscore or other special characters.
 # The allowed characters are [a-zA-Z0-9.-]*

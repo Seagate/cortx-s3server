@@ -2,11 +2,7 @@ import os
 from framework import PyCliTest
 from framework import Config
 from framework import logit
-
-class PyClientConfig:
-    access_key_id = ""
-    secret_key = ""
-    token = ""
+from s3client_config import S3ClientConfig
 
 class AuthTest(PyCliTest):
     def __init__(self, description):
@@ -31,12 +27,12 @@ class AuthTest(PyCliTest):
         return self
 
     def create_user(self, **user_args):
-        cmd = "python %s createuser --access_key \"%s\" --secret_key \"%s\" -n %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, user_args['UserName'])
+        cmd = "python %s createuser --access_key '%s' --secret_key '%s' -n %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, user_args['UserName'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('Path' in user_args.keys()):
             cmd += " -p %s" % user_args['Path']
@@ -45,12 +41,12 @@ class AuthTest(PyCliTest):
         return self
 
     def update_user(self, **user_args):
-        cmd = "python %s updateuser --access_key \"%s\" --secret_key \"%s\" -n %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, user_args['UserName'])
+        cmd = "python %s updateuser --access_key '%s' --secret_key '%s' -n %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, user_args['UserName'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('NewUserName' in user_args.keys()):
             cmd += " --new_user %s" % user_args['NewUserName']
@@ -62,23 +58,23 @@ class AuthTest(PyCliTest):
         return self
 
     def delete_user(self, **user_args):
-        cmd = "python %s deleteuser --access_key \"%s\" --secret_key \"%s\" -n %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, user_args['UserName'])
+        cmd = "python %s deleteuser --access_key '%s' --secret_key '%s' -n %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, user_args['UserName'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         self.with_cli(cmd)
         return self
 
     def list_users(self, **user_args):
-        cmd = "python %s listusers --access_key \"%s\" --secret_key \"%s\"" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key)
+        cmd = "python %s listusers --access_key '%s' --secret_key '%s'" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key)
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('PathPrefix' in user_args.keys()):
             cmd += " -p %s" % user_args['PathPrefix']
@@ -87,12 +83,12 @@ class AuthTest(PyCliTest):
         return self
 
     def create_access_key(self, **access_key_args):
-        cmd = "python %s createaccesskey --access_key \"%s\" --secret_key \"%s\" " % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key)
+        cmd = "python %s createaccesskey --access_key '%s' --secret_key '%s' " % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key)
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('UserName' in access_key_args.keys()):
             cmd += " -n %s" % access_key_args['UserName']
@@ -101,12 +97,12 @@ class AuthTest(PyCliTest):
         return self
 
     def delete_access_key(self, **access_key_args):
-        cmd = "python %s deleteaccesskey --access_key \"%s\" --secret_key \"%s\" -k %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, access_key_args['AccessKeyId'])
+        cmd = "python %s deleteaccesskey --access_key '%s' --secret_key '%s' -k %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, access_key_args['AccessKeyId'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('UserName' in access_key_args.keys()):
             cmd += " -n %s" % access_key_args['UserName']
@@ -115,13 +111,13 @@ class AuthTest(PyCliTest):
         return self
 
     def update_access_key(self, **access_key_args):
-        cmd = "python %s updateaccesskey --access_key \"%s\" --secret_key \"%s\" -k %s -s %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, access_key_args['AccessKeyId'],
+        cmd = "python %s updateaccesskey --access_key '%s' --secret_key '%s' -k %s -s %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, access_key_args['AccessKeyId'],
                 access_key_args['Status'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('UserName' in access_key_args.keys()):
             cmd += " -n %s" % access_key_args['UserName']
@@ -130,12 +126,12 @@ class AuthTest(PyCliTest):
         return self
 
     def list_access_keys(self, **access_key_args):
-        cmd = "python %s listaccesskeys --access_key \"%s\" --secret_key \"%s\"" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key)
+        cmd = "python %s listaccesskeys --access_key '%s' --secret_key '%s'" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key)
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('UserName' in access_key_args.keys()):
             cmd += " -n %s" % access_key_args['UserName']
@@ -144,13 +140,13 @@ class AuthTest(PyCliTest):
         return self
 
     def create_role(self, **role_args):
-        cmd = "python %s createrole --access_key \"%s\" --secret_key \"%s\" -n %s -f %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, role_args['RoleName'],
+        cmd = "python %s createrole --access_key '%s' --secret_key '%s' -n %s -f %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, role_args['RoleName'],
                 role_args['AssumeRolePolicyDocument'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('Path' in role_args.keys()):
             cmd += " -p %s" % role_args['Path']
@@ -159,23 +155,23 @@ class AuthTest(PyCliTest):
         return self
 
     def delete_role(self, **role_args):
-        cmd = "python %s deleterole --access_key \"%s\" --secret_key \"%s\" -n %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, role_args['RoleName'])
+        cmd = "python %s deleterole --access_key '%s' --secret_key '%s' -n %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, role_args['RoleName'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         self.with_cli(cmd)
         return self
 
     def list_roles(self, **role_args):
-        cmd = "python %s listroles --access_key \"%s\" --secret_key \"%s\"" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key)
+        cmd = "python %s listroles --access_key '%s' --secret_key '%s'" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key)
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('Path' in role_args.keys()):
             cmd += " -p %s" % role_args['Path']
@@ -184,61 +180,61 @@ class AuthTest(PyCliTest):
         return self
 
     def create_saml_provider(self, **saml_provider_args):
-        cmd = "python %s createsamlprovider --access_key \"%s\" --secret_key \"%s\" -n %s -f %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, saml_provider_args['Name'],
+        cmd = "python %s createsamlprovider --access_key '%s' --secret_key '%s' -n %s -f %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, saml_provider_args['Name'],
                 saml_provider_args['SAMLMetadataDocument'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         self.with_cli(cmd)
         return self
 
     def update_saml_provider(self, **saml_provider_args):
-        cmd = "python %s updatesamlprovider --access_key \"%s\" --secret_key \"%s\" \
-                --arn \"%s\" -f %s" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, saml_provider_args['SAMLProviderArn'],
+        cmd = "python %s updatesamlprovider --access_key '%s' --secret_key '%s' \
+                --arn '%s' -f %s" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, saml_provider_args['SAMLProviderArn'],
                 saml_provider_args['SAMLMetadataDocument'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         self.with_cli(cmd)
         return self
 
     def list_saml_providers(self, **saml_provider_args):
-        cmd = "python %s listsamlproviders --access_key \"%s\" --secret_key \"%s\"" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key)
+        cmd = "python %s listsamlproviders --access_key '%s' --secret_key '%s'" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key)
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         self.with_cli(cmd)
         return self
 
     def delete_saml_provider(self, **saml_provider_args):
-        cmd = "python %s deletesamlprovider --access_key \"%s\" --secret_key \"%s\" \
-                --arn \"%s\"" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, saml_provider_args['SAMLProviderArn'])
+        cmd = "python %s deletesamlprovider --access_key '%s' --secret_key '%s' \
+                --arn '%s'" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, saml_provider_args['SAMLProviderArn'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         self.with_cli(cmd)
         return self
 
     def get_federation_token(self, **federation_token_args):
-        cmd = "python %s getfederationtoken --access_key \"%s\" --secret_key \"%s\" \
-                -n \"%s\"" % (
-                self.get_pyclient_dir(), PyClientConfig.access_key_id,
-                PyClientConfig.secret_key, federation_token_args['Name'])
+        cmd = "python %s getfederationtoken --access_key '%s' --secret_key '%s' \
+                -n '%s'" % (
+                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key, federation_token_args['Name'])
 
-        if(not PyClientConfig.token is ""):
-            cmd += " --session_token \"%s\"" % PyClientConfig.token
+        if(not S3ClientConfig.token is ""):
+            cmd += " --session_token '%s'" % S3ClientConfig.token
 
         if('Policy' in federation_token_args.keys()):
             cmd += " -f %s" % federation_token_args['Policy']

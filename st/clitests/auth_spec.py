@@ -2,11 +2,14 @@ import os
 from framework import Config
 from framework import PyCliTest
 from auth import AuthTest
-from auth import PyClientConfig
+from s3client_config import S3ClientConfig
 
 # Helps debugging
 # Config.log_enabled = True
 # Config.dummy_run = True
+
+# Set time_readable_format to False if you want to display the time in milli seconds.
+# Config.time_readable_format = False
 
 # Store the access keys created during the test.
 # These keys should be deleted after
@@ -41,9 +44,9 @@ def account_tests():
 
     account_response_elements = get_response_elements(result.status.stdout)
 
-    # Set PyClientConfig with root credentials
-    PyClientConfig.access_key_id = account_response_elements['AccessKeyId']
-    PyClientConfig.secret_key = account_response_elements['SecretKey']
+    # Set S3ClientConfig with root credentials
+    S3ClientConfig.access_key_id = account_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = account_response_elements['SecretKey']
 
     # Add the access key id for clean up
     access_key_id.append(account_response_elements['AccessKeyId'])
@@ -254,9 +257,9 @@ def get_federation_token_test():
     result.command_should_match_pattern(response_pattern)
 
     response_elements = get_response_elements(result.status.stdout)
-    PyClientConfig.access_key_id = response_elements['AccessKeyId']
-    PyClientConfig.secret_key = response_elements['SecretAccessKey']
-    PyClientConfig.token = response_elements['SessionToken']
+    S3ClientConfig.access_key_id = response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = response_elements['SecretAccessKey']
+    S3ClientConfig.token = response_elements['SessionToken']
 
     test_msg = 'List Users (default path)'
     user_args = {}

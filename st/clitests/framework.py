@@ -10,6 +10,8 @@ class Config:
     log_enabled = False
     dummy_run = False
     config_file = 'pathstyle.s3cfg'
+    time_readable_format = True
+
 
 def logit(str):
     if Config.log_enabled:
@@ -46,6 +48,8 @@ class PyCliTest(object):
     def run(self):
         # Execute the test.
         logit("Running command: [%s]" % (self.command))
+
+        start_time = time.time()
         if Config.dummy_run:
             self.status = self.env.run("echo [%s]" % (self.command))
         else:
@@ -54,19 +58,37 @@ class PyCliTest(object):
             else:
               self.status = self.env.run(self.command)
 
+        end_time = time.time()
+        self.print_time(round(end_time - start_time, 3))
+
         logit("returncode: [%d]" % (self.status.returncode))
         logit("stdout: [%s]" % (self.status.stdout))
         logit("stderr: [%s]" % (self.status.stderr))
         return self
 
+    def print_time(self, time):
+        time_str = "Execution time - "
+        if(Config.time_readable_format):
+            if(time < 1):
+                time_str += str(round(time * 1000)) + " ms"
+            elif(time > 60):
+                m, s = divmod(time, 60)
+                time_str += str(round(m)) + " min " + str(round(s,3)) + " seconds"
+            else:
+                time_str += str(round(time,3)) + " seconds"
+        else:
+            time_str += str(round(time * 1000)) + " ms"
+
+        print(time_str)
+
     def teardown(self):
         # Do some cleanup
-        logit("Running teardown [%s]" % (self.description))
+        logit("Running teardown [%s]" % (self.description) + "    ")
         shutil.rmtree(self.working_dir, ignore_errors=True)
         return self
 
     def execute_test(self, negative_case = False):
-        print("\nTest case [%s]" % (self.description))
+        print("\nTest case [%s] - " % (self.description), end="")
         self.negative_case = negative_case
         self.setup()
         self.run()
