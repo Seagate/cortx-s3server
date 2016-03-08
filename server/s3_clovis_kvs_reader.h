@@ -43,7 +43,7 @@ class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
 
 public:
   S3ClovisKVSReaderContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
-    printf("S3ClovisKVSReaderContext created\n");
+    s3_log(S3_LOG_DEBUG, "Constructor\n");
 
     // Create or write, we need op context
     clovis_idx_op_context = create_basic_idx_op_ctx(1);
@@ -54,7 +54,7 @@ public:
   }
 
   ~S3ClovisKVSReaderContext() {
-    printf("S3ClovisKVSReaderContext deleted\n");
+    s3_log(S3_LOG_DEBUG, "Destructor\n");
 
     if(has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);

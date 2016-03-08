@@ -297,7 +297,7 @@ void S3ObjectMetadata::from_json(std::string content) {
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
   if (!parsingSuccessful)
   {
-    printf("Json Parsing failed.\n");
+    s3_log(S3_LOG_ERROR,"Json Parsing failed\n");
     return;
   }
 
