@@ -216,9 +216,11 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
   EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
   EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) != 0);
-  EXPECT_STREQ("3kfile", (char *)kvs_ctx->keys->ov_buf[0]);
+  std::string key_str((char *)kvs_ctx->keys->ov_buf[0], kvs_ctx->keys->ov_vec.v_count[0]);
+  EXPECT_STREQ("3kfile", key_str.c_str());
+  std::string value_str((char *)kvs_ctx->values->ov_buf[0], kvs_ctx->values->ov_vec.v_count[0]);
   EXPECT_STREQ("{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}",
-              (char *)kvs_ctx->values->ov_buf[0]);
+               value_str.c_str());
 
   cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
   op.op_cbs = &cbs;

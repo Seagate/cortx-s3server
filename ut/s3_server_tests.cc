@@ -34,9 +34,16 @@ const char *log_level_str[S3_LOG_DEBUG] = {"FATAL", "ERROR", "WARN", "INFO", "DE
 FILE *fp_log;
 
 //To be read from config file
-int s3log_level = S3_LOG_INFO;
+int s3log_level = S3_LOG_FATAL;
+
 
 int main(int argc, char **argv) {
+  // This will be taken care during S3 Config changes -- TODO
+  fp_log = std::fopen("s3ut.log", "w");
+  if(fp_log == NULL) {
+    printf("Failed to open log file\n");
+    return -1;
+  }
   ::testing::InitGoogleTest(&argc, argv);
   ::testing::InitGoogleMock(&argc, argv);
 

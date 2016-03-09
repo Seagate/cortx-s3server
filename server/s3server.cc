@@ -179,7 +179,7 @@ const char * help   =
     "  -d <int> : Auth Service port        (default: 8085)\n"
     "  -i <int> : Clovis layout id         (default: 9 (1MB))\n"
     "  -o <str> : S3 Log file              (default: stdout)\n"
-    "  -m <str> : S3 Log Level             (DEBUG | INFO | ERROR | FATAL  default is : INFO)\n";
+    "  -m <str> : S3 Log Level             (DEBUG | INFO | WARN | ERROR | FATAL  default is : INFO)\n";
 
 int
 parse_args(int argc, char ** argv) {
@@ -243,17 +243,24 @@ parse_args(int argc, char ** argv) {
     s3_log(S3_LOG_INFO, "Auth server: %s\n",auth_ip_addr);
     s3_log(S3_LOG_INFO, "Auth server port: %d\n",auth_port);
     s3_log(S3_LOG_INFO, "clovis_layout_id = %d\n", clovis_layout_id);
-    s3_log(S3_LOG_INFO, "s3_log_file = %s\n", s3_log_file);
-    s3_log(S3_LOG_INFO, "s3_log_mode = %s\n", s3_log_mode);
+    if(s3_log_file != NULL)
+      s3_log(S3_LOG_INFO, "s3_log_file = %s\n", s3_log_file);
 
-    if(strcmp(s3_log_mode,"INFO") == 0) {
-      s3log_level = S3_LOG_INFO;
-    } else if(strcmp(s3_log_mode, "DEBUG") == 0) {
-      s3log_level = S3_LOG_DEBUG;
-    } else if(strcmp(s3_log_mode, "ERROR") == 0) {
-      s3log_level = S3_LOG_ERROR;
-    } else if(strcmp(s3_log_mode, "FATAL") == 0) {
-      s3log_level = S3_LOG_FATAL;
+    if(s3_log_mode != NULL) {
+      s3_log(S3_LOG_INFO, "s3_log_mode = %s\n", s3_log_mode);
+      if(strcmp(s3_log_mode,"INFO") == 0) {
+        s3log_level = S3_LOG_INFO;
+      } else if(strcmp(s3_log_mode, "DEBUG") == 0) {
+        s3log_level = S3_LOG_DEBUG;
+      } else if(strcmp(s3_log_mode, "ERROR") == 0) {
+        s3log_level = S3_LOG_ERROR;
+      } else if(strcmp(s3_log_mode, "FATAL") == 0) {
+        s3log_level = S3_LOG_FATAL;
+      } else if(strcmp(s3_log_mode, "WARN") == 0) {
+        s3log_level = S3_LOG_WARN;
+      }
+    } else {
+      s3_log(S3_LOG_INFO, "s3_log_mode = INFO\n");
     }
     return 0;
 } /* parse_args */
