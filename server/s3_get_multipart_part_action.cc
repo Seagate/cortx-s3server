@@ -30,6 +30,9 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(std::shared_ptr<S3RequestObje
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   request_marker_key = request->get_query_string_value("part-number-marker");
+  if (request_marker_key.empty()) {
+    request_marker_key = "0";
+  }
   multipart_part_list.set_request_marker_key(request_marker_key);
   s3_log(S3_LOG_DEBUG, "part-number-marker = %s\n", request_marker_key.c_str());
 
@@ -90,8 +93,8 @@ void S3GetMultipartPartAction::get_key_object_successful() {
     // Go ahead and respond.
     if (return_list_size == max_parts) {
       multipart_part_list.set_response_is_truncated(true);
-      multipart_part_list.set_next_marker_key(last_key);
     }
+    multipart_part_list.set_next_marker_key(last_key);
     fetch_successful = true;
     send_response_to_s3_client();
   } else {
@@ -143,8 +146,8 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
     // Go ahead and respond.
     if (return_list_size == max_parts) {
       multipart_part_list.set_response_is_truncated(true);
-      multipart_part_list.set_next_marker_key(last_key);
     }
+    multipart_part_list.set_next_marker_key(last_key);
     fetch_successful = true;
     send_response_to_s3_client();
   } else {

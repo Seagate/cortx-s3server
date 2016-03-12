@@ -46,9 +46,9 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool is
   // Set the defaults
   S3DateTime current_time;
   current_time.init_current_time();
-  system_defined_attribute["Date"] = current_time.get_gmtformat_string();
+  system_defined_attribute["Date"] = current_time.get_isoformat_string();
   system_defined_attribute["Content-Length"] = "";
-  system_defined_attribute["Last-Modified"] = current_time.get_gmtformat_string();  // TODO
+  system_defined_attribute["Last-Modified"] = current_time.get_isoformat_string();  // TODO
   system_defined_attribute["Content-MD5"] = "";
   system_defined_attribute["Owner-User"] = "";
   system_defined_attribute["Owner-User-id"] = "";
@@ -86,6 +86,17 @@ std::string S3ObjectMetadata::get_creation_date() {
 }
 
 std::string S3ObjectMetadata::get_last_modified() {
+  return system_defined_attribute["Last-Modified"];
+}
+
+std::string S3ObjectMetadata::get_last_modified_gmt() {
+  S3DateTime temp_time;
+  temp_time.init_with_iso(system_defined_attribute["Last-Modified"]);
+  return temp_time.get_gmtformat_string();
+}
+
+std::string S3ObjectMetadata::get_last_modified_iso() {
+  // we store isofmt in json
   return system_defined_attribute["Last-Modified"];
 }
 
@@ -265,7 +276,7 @@ void S3ObjectMetadata::remove_failed() {
 
 // Streaming to json
 std::string S3ObjectMetadata::to_json() {
-  s3_log(S3_LOG_DEBUG, "\n");
+  s3_log(S3_LOG_DEBUG, "Called\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
   root["Object-Name"] = object_name;
@@ -291,7 +302,7 @@ std::string S3ObjectMetadata::to_json() {
 }
 
 void S3ObjectMetadata::from_json(std::string content) {
-  s3_log(S3_LOG_DEBUG, "\n");
+  s3_log(S3_LOG_DEBUG, "Called\n");
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);

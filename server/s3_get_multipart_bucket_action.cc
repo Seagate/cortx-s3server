@@ -30,7 +30,9 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(std::shared_ptr<S3Request
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   request_marker_key = request->get_query_string_value("key-marker");
-  multipart_object_list.set_request_marker_key(request_marker_key);
+  if (!request_marker_key.empty()) {
+    multipart_object_list.set_request_marker_key(request_marker_key);
+  }
   s3_log(S3_LOG_DEBUG, "request_marker_key = %s\n", request_marker_key.c_str());
 
   last_key = request_marker_key;  // as requested by user
@@ -142,9 +144,9 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
     // Go ahead and respond.
     if (return_list_size == max_uploads) {
       multipart_object_list.set_response_is_truncated(true);
-      multipart_object_list.set_next_marker_key(last_key);
-      multipart_object_list.set_next_marker_uploadid(last_uploadid);
     }
+    multipart_object_list.set_next_marker_key(last_key);
+    multipart_object_list.set_next_marker_uploadid(last_uploadid);
     fetch_successful = true;
     send_response_to_s3_client();
   } else {
@@ -231,9 +233,9 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
     // Go ahead and respond.
     if (return_list_size == max_uploads) {
       multipart_object_list.set_response_is_truncated(true);
-      multipart_object_list.set_next_marker_key(last_key);
-      multipart_object_list.set_next_marker_uploadid(last_uploadid);
     }
+    multipart_object_list.set_next_marker_key(last_key);
+    multipart_object_list.set_next_marker_uploadid(last_uploadid);
     fetch_successful = true;
     send_response_to_s3_client();
   } else {

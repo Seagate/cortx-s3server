@@ -146,13 +146,13 @@ std::string& S3ObjectListResponse::get_xml() {
                   "<Delimiter>" + request_delimiter + "</Delimiter>\n"
                   "<Marker>" + request_marker_key + "</Marker>\n"
                   "<MaxKeys>" + max_keys + "</MaxKeys>\n"
-                  "<NextMarker>" + (response_is_truncated ? next_marker_key : "") + "</NextMarker>\n"
+                  "<NextMarker>" + next_marker_key + "</NextMarker>\n"
                   "<IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
 
   for (auto&& object : object_list) {
     response_xml += "<Contents>\n"
                     "  <Key>" + object->get_object_name() + "</Key>\n"
-                    "  <LastModified>" + object->get_last_modified() + "</LastModified>\n"
+                    "  <LastModified>" + object->get_last_modified_iso() + "</LastModified>\n"
                     "  <ETag>" + object->get_md5() + "</ETag>\n"
                     "  <Size>" + object->get_content_length_str() + "</Size>\n"
                     "  <StorageClass>" + object->get_storage_class() + "</StorageClass>\n"
@@ -180,8 +180,8 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
   response_xml += "<Bucket>" + bucket_name + "</Bucket>"
                   "<KeyMarker>" + request_marker_key + "</KeyMarker>"
                   "<UploadIdMarker>" + request_marker_uploadid + "</UploadIdMarker>"
-                  "<NextKeyMarker>" + (response_is_truncated ? next_marker_key : "") + "</NextKeyMarker>"
-                  "<NextUploadIdMarker>" + (response_is_truncated ? next_marker_uploadid : "") + "</NextUploadIdMarker>"
+                  "<NextKeyMarker>" + next_marker_key + "</NextKeyMarker>"
+                  "<NextUploadIdMarker>" + next_marker_uploadid + "</NextUploadIdMarker>"
                   "<MaxUploads>" + max_uploads + "</MaxUploads>\n"
                   "<IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
 
@@ -198,7 +198,7 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
                     "    <DisplayName>" + object->get_user_name() + "</DisplayName>\n"
                     "  </Owner>\n"
                     "  <StorageClass>" + object->get_storage_class() + "</StorageClass>\n"
-                    "  <Initiated>" + object->get_last_modified() + "</Initiated>\n"
+                    "  <Initiated>" + object->get_last_modified_iso() + "</Initiated>\n"
                     "</Upload>\n";
   }
 
@@ -229,14 +229,14 @@ std::string& S3ObjectListResponse::get_multipart_xml() {
                   "  </Owner>\n"
                   "  <StorageClass>" + get_storage_class() + "</StorageClass>\n"
                   "  <PartNumberMarker>" + request_marker_key + "</PartNumberMarker>\n"
-                  "  <NextPartNumberMarker>" + (response_is_truncated ? next_marker_key : "") + "</NextPartNumberMarker>\n"
+                  "  <NextPartNumberMarker>" + (next_marker_key.empty() ? "0" : next_marker_key) + "</NextPartNumberMarker>\n"
                   "  <MaxParts>" + max_parts + "</MaxParts>\n"
                   "  <IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
 
   for (auto&& part : part_list) {
     response_xml += "  <Part>\n"
                     "  <PartNumber>" + part->get_part_number() + "</PartNumber>\n"
-                    "  <LastModified>" + part->get_last_modified() + "</LastModified>\n"
+                    "  <LastModified>" + part->get_last_modified_iso() + "</LastModified>\n"
                     "  <ETag>" + part->get_md5() + "</ETag>\n"
                     "  <Size>" + part->get_content_length_str() + "</Size>\n"
                     "  </Part>\n";

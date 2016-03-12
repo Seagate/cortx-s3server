@@ -57,7 +57,7 @@ void S3GetObjectAction::fetch_object_info() {
 void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    request->set_out_header_value("Last-Modified", object_metadata->get_last_modified());
+    request->set_out_header_value("Last-Modified", object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", object_metadata->get_md5());
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value("Content-Length", object_metadata->get_content_length_str());

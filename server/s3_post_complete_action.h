@@ -57,13 +57,13 @@ public:
 
   void fetch_bucket_info();
   void fetch_multipart_info();
+  void fetch_multipart_info_failed();
+
   void fetch_parts_info();
   void get_parts_successful();
   void get_parts_failed();
   void get_part_info(int part);
   void save_metadata();
-  void fetch_multipart_info_successful();
-  void fetch_multipart_info_failed();
   void delete_multipart_metadata();
   void delete_multipart_successful();
   void delete_multipart_failed();

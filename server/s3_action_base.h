@@ -56,7 +56,7 @@ private:
   size_t task_iteration_index;
 
   std::shared_ptr<S3Action> self_ref;
-  std::shared_ptr<S3AuthClient> check_auth;
+  std::shared_ptr<S3AuthClient> auth_client;
 
   std::string error_message;
   S3ActionState state;
@@ -70,6 +70,14 @@ public:
 protected:
   void add_task(std::function<void()> task) {
     task_list.push_back(task);
+  }
+
+  void clear_tasks() {
+    task_list.clear();
+  }
+
+  std::shared_ptr<S3AuthClient>& get_auth_client() {
+    return auth_client;
   }
 
 public:
@@ -101,6 +109,8 @@ public:
   void check_authentication();
   void check_authentication_successful();
   void check_authentication_failed();
+  void start_chunk_authentication();
+
   void send_response_to_s3_client();
 };
 

@@ -47,6 +47,7 @@ class S3DeleteMultipleObjectsAction : public S3Action {
   bool is_request_too_large;
   S3DeleteMultipleObjectsBody delete_request;
   int delete_index;
+  std::vector<std::string> keys_to_delete;
 
   S3DeleteMultipleObjectsResponseBody delete_objects_response;
 

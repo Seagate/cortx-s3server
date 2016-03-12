@@ -22,7 +22,7 @@
 #include "s3_log.h"
 
 S3DateTime::S3DateTime() : is_valid(true) {
-  memset(&current_tm, 0, sizeof(struct tm));
+  memset(&point_in_time, 0, sizeof(struct tm));
 }
 
 bool S3DateTime::is_OK() {
@@ -31,11 +31,24 @@ bool S3DateTime::is_OK() {
 
 void S3DateTime::init_current_time() {
   time_t t = time(NULL);
-  struct tm *tmp = gmtime_r(&t, &current_tm);
+  struct tm *tmp = gmtime_r(&t, &point_in_time);
   if (tmp == NULL) {
       s3_log(S3_LOG_ERROR, "gmtime error\n");
       is_valid = false;
   }
+}
+
+void S3DateTime::init_with_fmt(std::string time_str, std::string format) {
+  memset(&point_in_time, 0, sizeof(struct tm));
+  strptime(time_str.c_str(), format.c_str(), &point_in_time);
+}
+
+void S3DateTime::init_with_gmt(std::string time_str) {
+  init_with_fmt(time_str, S3_GMT_DATETIME_FORMAT);
+}
+
+void S3DateTime::init_with_iso(std::string time_str) {
+  init_with_fmt(time_str, S3_ISO_DATETIME_FORMAT);
 }
 
 std::string S3DateTime::get_isoformat_string() {
@@ -50,7 +63,7 @@ std::string S3DateTime::get_format_string(std::string format) {
   std::string formatted_time = "";
   char timebuffer[100] = {0};
   if (is_OK()) {
-    if (strftime(timebuffer, sizeof(timebuffer), format.c_str(), &current_tm) == 0) {
+    if (strftime(timebuffer, sizeof(timebuffer), format.c_str(), &point_in_time) == 0) {
         s3_log(S3_LOG_ERROR, "strftime returned 0\n");
         is_valid = false;
     } else {

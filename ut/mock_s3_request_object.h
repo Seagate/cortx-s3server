@@ -37,8 +37,8 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(get_evbase, struct event_base*());
   MOCK_METHOD0(get_request, evhtp_request_t *());
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
-  MOCK_METHOD1(set_bucket_name, void(std::string& name));
-  MOCK_METHOD1(set_object_name, void(std::string& name));
+  MOCK_METHOD1(set_bucket_name, void(const std::string& name));
+  MOCK_METHOD1(set_object_name, void(const std::string& name));
 };
 
 #endif

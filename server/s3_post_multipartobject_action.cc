@@ -29,9 +29,10 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(std::shared_ptr<S3Reque
 void S3PostMultipartObjectAction::setup_steps(){
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3PostMultipartObjectAction::fetch_bucket_info, this ));
-  add_task(std::bind( &S3PostMultipartObjectAction::create_upload_id, this ));
-  add_task(std::bind( &S3PostMultipartObjectAction::save_metadata, this ));
-  add_task(std::bind( &S3PostMultipartObjectAction::create_part_metadata, this ));
+  add_task(std::bind( &S3PostMultipartObjectAction::check_upload_is_inprogress, this ));
+  add_task(std::bind( &S3PostMultipartObjectAction::create_object, this ));
+  add_task(std::bind( &S3PostMultipartObjectAction::save_upload_metadata, this ));
+  add_task(std::bind( &S3PostMultipartObjectAction::create_part_meta_index, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::send_response_to_s3_client, this ));
   // ...
 }
@@ -43,7 +44,7 @@ void S3PostMultipartObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3PostMultipartObjectAction::create_upload_id() {
+void S3PostMultipartObjectAction::check_upload_is_inprogress() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
@@ -58,23 +59,12 @@ void S3PostMultipartObjectAction::create_upload_id() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3PostMultipartObjectAction::create_part_metadata() {
+void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 0);
-  part_metadata->create_index(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3PostMultipartObjectAction::save_metadata() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-
   if (object_metadata->get_state() != S3ObjectMetadataState::present) {
-    for (auto it: request->get_in_headers_copy()) {
-      if(it.first.find("x-amz-meta-") != std::string::npos) {
-        object_metadata->add_user_defined_attribute(it.first, it.second);
-      }
-    }
-    object_metadata->save(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
+    create_object_timer.start();
+    clovis_writer = std::make_shared<S3ClovisWriter>(request);
+    clovis_writer->create_object(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::create_object_failed, this));
   } else {
     //++
     // Bailing out in case if the multipart upload is already in progress,
@@ -89,6 +79,54 @@ void S3PostMultipartObjectAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+void S3PostMultipartObjectAction::create_object_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  create_object_timer.stop();
+  LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
+
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
+    // If object exists, S3 overwrites it.
+    s3_log(S3_LOG_INFO, "Existing object: Overwrite it.\n");
+    next();
+  } else {
+    s3_log(S3_LOG_WARN, "Create object failed.\n");
+    // TODO - rollback
+    // Any other error report failure.
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::save_upload_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  create_object_timer.stop();
+  LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
+
+  for (auto it: request->get_in_headers_copy()) {
+    if(it.first.find("x-amz-meta-") != std::string::npos) {
+      object_metadata->add_user_defined_attribute(it.first, it.second);
+    }
+  }
+  object_metadata->set_oid(clovis_writer->get_oid());
+  object_metadata->save(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::save_upload_metadata_failed, this));
+
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::save_upload_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  // TODO rollback
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::create_part_meta_index() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 0);
+  part_metadata->create_index(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 void S3PostMultipartObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -98,7 +136,7 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if(object_metadata->get_state() == S3ObjectMetadataState::present) {
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     S3Error error("InvalidObjectState", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");

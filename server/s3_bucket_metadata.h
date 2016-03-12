@@ -90,6 +90,8 @@ public:
   std::string get_bucket_name();
   std::string get_creation_time();
   std::string get_location_constraint();
+  std::string get_owner_id();
+  std::string get_owner_name();
 
   void set_location_constraint(std::string location);
 

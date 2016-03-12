@@ -119,6 +119,19 @@ s3_handler(evhtp_request_t * req, void * a) {
   // placeholder, required to complete the request processing.
 }
 
+extern "C" void on_client_conn_err_callback(evhtp_request_t * req, evhtp_error_flags errtype, void * arg) {
+  s3_log(S3_LOG_DEBUG, "S3 Client disconnected.\n");
+  S3RequestObject* request = (S3RequestObject*)req->cbarg;
+
+  if (request) {
+    request->client_has_disconnected();
+  }
+  evhtp_unset_all_hooks(&req->conn->hooks);
+  evhtp_unset_all_hooks(&req->hooks);
+
+  return;
+}
+
 extern "C" evhtp_res
 dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
     s3_log(S3_LOG_INFO, "RECEIVED Request headers.\n");
@@ -129,6 +142,8 @@ dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
     std::shared_ptr<S3RequestObject> s3_request = std::make_shared<S3RequestObject> (req, evhtp_obj_ptr);
 
     req->cbarg = s3_request.get();
+
+    evhtp_set_hook(&req->hooks, evhtp_hook_on_error, (evhtp_hook)on_client_conn_err_callback, NULL);
 
     router->dispatch(s3_request);
 
@@ -143,14 +158,15 @@ process_request_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
   if (request) {
     evbuf_t            * s3_buf = evbuffer_new();
     size_t bytes_received = evbuffer_get_length(buf);
+    s3_log(S3_LOG_DEBUG, "got %zu bytes of data for sock = %d\n", bytes_received, req->conn->sock);
 
     evbuffer_add_buffer(s3_buf, buf);
 
     request->notify_incoming_data(s3_buf);
 
-    s3_log(S3_LOG_DEBUG, "got %zu bytes of data for sock = %d\n", bytes_received, req->conn->sock);
   } else {
     evhtp_unset_all_hooks(&req->conn->hooks);
+    evhtp_unset_all_hooks(&req->hooks);
     s3_log(S3_LOG_DEBUG, "S3 request failed, Ignoring data for this request \n");
   }
 
@@ -161,7 +177,7 @@ extern "C" evhtp_res
 set_s3_connection_handlers(evhtp_connection_t * conn, void * arg) {
 
     evhtp_set_hook(&conn->hooks, evhtp_hook_on_headers, (evhtp_hook)dispatch_request, arg);
-    evhtp_set_hook(&conn->hooks, evhtp_hook_on_read, (evhtp_hook)process_request_data, arg);
+    evhtp_set_hook(&conn->hooks, evhtp_hook_on_read, (evhtp_hook)process_request_data, NULL);
 
     return EVHTP_RES_OK;
 }

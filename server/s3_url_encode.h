@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -14,32 +14,21 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
- * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
+ * Original creation date: 10-Mar-2016
  */
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_AUTH_CONTEXT_H__
-#define __MERO_FE_S3_SERVER_S3_AUTH_CONTEXT_H__
+#ifndef __MERO_FE_S3_SERVER_S3_URL_ENCODE_H__
+#define __MERO_FE_S3_SERVER_S3_URL_ENCODE_H__
 
-#include "s3_common.h"
+#include <string>
 
-EXTERN_C_BLOCK_BEGIN
+void escape_char(char c, std::string& destination);
 
-#include <evhtp.h>
+bool char_needs_url_encoding(char c);
 
-struct s3_auth_op_context {
-  evbase_t                * evbase;
-  evhtp_connection_t      * conn;
-  evhtp_request_t         * authrequest;
-  // evhtp_hook                auth_callback;
-  // bool                      isfirstpass;
-};
-
-struct s3_auth_op_context * create_basic_auth_op_ctx(struct event_base* eventbase);
-int free_basic_auth_client_op_ctx(struct s3_auth_op_context *ctx);
-
-EXTERN_C_BLOCK_END
+std::string  url_encode(const char* src);
 
 #endif

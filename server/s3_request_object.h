@@ -34,6 +34,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "s3_async_buffer.h"
+#include "s3_chunk_payload_parser.h"
 #include "s3_timer.h"
 #include "s3_perf_logger.h"
 #include "s3_uuid.h"
@@ -50,7 +51,8 @@ enum class S3HttpVerb {
 enum class S3RequestError {
   None,
   EntityTooSmall,
-  InvalidPartOrder
+  InvalidPartOrder,
+  InvalidChunkFormat
 };
 
 extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg);
@@ -80,6 +82,11 @@ class S3RequestObject {
 
   S3Timer request_timer;
 
+  bool is_client_connected;
+
+  bool is_chunked_upload;
+  S3ChunkPayloadParser chunk_parser;
+
 public:
   S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr);
   virtual ~S3RequestObject();
@@ -95,10 +102,6 @@ public:
     }
   }
 
-  virtual evhtp_request_t * get_request() {
-    return this->ev_req;
-  }
-
   virtual const char * c_get_uri_query();
   virtual S3HttpVerb http_verb();
 
@@ -111,11 +114,15 @@ private:
   std::string full_request_body;
   S3RequestError request_error;
 public:
-  std::map<std::string, std::string> get_in_headers_copy();
+  std::map<std::string, std::string>& get_in_headers_copy();
   friend int consume_header(evhtp_kv_t * kvobj, void * arg);
 
   std::string get_header_value(std::string key);
   virtual std::string get_host_header();
+  // returns x-amz-decoded-content-length OR Content-Length
+  std::string get_data_length_str();
+  std::string get_content_length_str();
+  size_t get_data_length();
   size_t get_content_length();
   std::string& get_full_body_content_as_string();
 
@@ -133,22 +140,22 @@ public:
   // Operation params.
   std::string get_object_uri();
 
-  virtual void set_bucket_name(std::string& name);
-  std::string& get_bucket_name();
-  virtual void set_object_name(std::string& name);
-  std::string& get_object_name();
+  virtual void set_bucket_name(const std::string& name);
+  const std::string& get_bucket_name();
+  virtual void set_object_name(const std::string& name);
+  const std::string& get_object_name();
 
-  void set_user_name(std::string& name);
-  std::string& get_user_name();
-  void set_user_id(std::string& id);
-  std::string& get_user_id();
+  void set_user_name(const std::string& name);
+  const std::string& get_user_name();
+  void set_user_id(const std::string& id);
+  const std::string& get_user_id();
 
-  void set_account_name(std::string& name);
-  std::string& get_account_name();
-  void set_account_id(std::string& id);
-  std::string& get_account_id();
+  void set_account_name(const std::string& name);
+  const std::string& get_account_name();
+  void set_account_id(const std::string& id);
+  const std::string& get_account_id();
 
-  std::string& get_request_id();
+  const std::string& get_request_id();
 
   S3RequestError get_request_error() {
     return request_error;
@@ -182,6 +189,27 @@ public:
     }
   }
 
+  void client_has_disconnected() {
+    is_client_connected = false;
+  }
+
+  bool client_connected() {
+    return is_client_connected;
+  }
+
+  bool is_chunked() {
+    return is_chunked_upload;
+  }
+
+  // pass thru functions
+  bool is_chunk_detail_ready() {
+    return chunk_parser.is_chunk_detail_ready();
+  }
+
+  S3ChunkDetail pop_chunk_detail() {
+    return chunk_parser.pop_chunk_detail();
+  }
+
   // Streaming
   // Note: Call this only if request object has to still receive from socket
   // Setup listeners for input data (data coming from s3 clients)
@@ -197,31 +225,7 @@ public:
       incoming_data_callback = callback;
   }
 
-  void notify_incoming_data(evbuf_t * buf) {
-    s3_log(S3_LOG_DEBUG, "Entering\n");
-    // Keep buffering till someone starts listening.
-    size_t bytes_received = evhtp_obj->evbuffer_get_length(buf);
-    s3_log(S3_LOG_DEBUG, "Buffering data to be consumed: %zu\n", bytes_received);
-    S3Timer buffering_timer;
-    buffering_timer.start();
-
-    buffered_input.add_content(buf);
-    pending_in_flight -= bytes_received;
-    if (pending_in_flight == 0) {
-      s3_log(S3_LOG_DEBUG, "Buffering complete for data to be consumed.\n");
-      buffered_input.freeze();
-    }
-    buffering_timer.stop();
-    LOG_PERF(("total_buffering_time_" + std::to_string(bytes_received) + "_bytes_ns").c_str(),
-      buffering_timer.elapsed_time_in_nanosec());
-
-    if ( incoming_data_callback &&
-         ((buffered_input.length() >= notify_read_watermark) || (pending_in_flight == 0)) ) {
-      s3_log(S3_LOG_DEBUG, "Sending data to be consumed...\n");
-      incoming_data_callback();
-    }
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
-  }
+  void notify_incoming_data(evbuf_t * buf);
 
   // Check whether we already have (read) the entire body.
   size_t has_all_body_content() {

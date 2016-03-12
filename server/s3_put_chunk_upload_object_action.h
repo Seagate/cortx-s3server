@@ -13,15 +13,14 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 20-Jan-2016
+ * Original creation date: 17-Mar-2016
  */
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_PUT_MULTIOBJECT_ACTION_H__
-#define __MERO_FE_S3_SERVER_S3_PUT_MULTIOBJECT_ACTION_H__
+#ifndef __MERO_FE_S3_SERVER_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_H__
+#define __MERO_FE_S3_SERVER_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_H__
 
 #include <memory>
 
@@ -29,26 +28,17 @@
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
 #include "s3_object_metadata.h"
-#include "s3_part_metadata.h"
 #include "s3_clovis_writer.h"
 #include "s3_timer.h"
 
-class S3PutMultiObjectAction : public S3Action {
+class S3PutChunkUploadObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3PartMetadata> part_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
+  std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
 
   size_t total_data_to_stream;
   S3Timer create_object_timer;
   S3Timer write_content_timer;
-  int     part_number;
-  std::string upload_id;
-
-  int get_part_number() {
-    return atoi((request->get_query_string_value("partNumber")).c_str());
-  }
-
 
   bool auth_failed;
   bool write_failed;
@@ -59,22 +49,17 @@ class S3PutMultiObjectAction : public S3Action {
   bool auth_in_progress;
   bool auth_completed; // all chunk auth
 
+public:
+  S3PutChunkUploadObjectAction(std::shared_ptr<S3RequestObject> req);
+
+  void setup_steps();
+
   void chunk_auth_successful();
   void chunk_auth_failed();
 
-public:
-  S3PutMultiObjectAction(std::shared_ptr<S3RequestObject> req);
-
-  void setup_steps();
-  // void start();
-
   void fetch_bucket_info();
-  void fetch_bucket_info_failed();
-  void fetch_multipart_metadata();
-  void fetch_multipart_failed();
-  void fetch_firstpart_info();
-  void fetch_firstpart_info_failed();
-  void compute_part_offset();
+  void create_object();
+  void create_object_failed();
 
   void initiate_data_streaming();
   void consume_incoming_content();

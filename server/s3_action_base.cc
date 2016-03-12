@@ -48,7 +48,11 @@ void S3Action::start() {
 void S3Action::next() {
   resume();
   if (task_iteration_index < task_list.size()) {
-    task_list[++task_iteration_index]();  // Call the next step
+    if (request->client_connected()) {
+      task_list[++task_iteration_index]();  // Call the next step
+    } else {
+      i_am_done();
+    }
   } else {
     done();
   }
@@ -76,8 +80,8 @@ void S3Action::abort() {
 }
 
 void S3Action::check_authentication() {
-  check_auth = std::make_shared<S3AuthClient>(request);
-  check_auth->check_authentication(std::bind( &S3Action::check_authentication_successful, this), std::bind( &S3Action::check_authentication_failed, this));
+  auth_client = std::make_shared<S3AuthClient>(request);
+  auth_client->check_authentication(std::bind( &S3Action::check_authentication_successful, this), std::bind( &S3Action::check_authentication_failed, this));
 }
 
 void S3Action::check_authentication_successful() {
@@ -88,15 +92,25 @@ void S3Action::check_authentication_successful() {
 
 void S3Action::check_authentication_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Authentication failure\n");
-  S3Error error("AccessDenied", request->get_request_id(), request->get_object_uri());
-  std::string& response_xml = error.to_xml();
-  request->set_out_header_value("Content-Type", "application/xml");
-  request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+  if (request->client_connected()) {
+    std::string error_code = auth_client->get_error_code();
+    s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", error_code.c_str());
 
-  request->send_response(error.get_http_status_code(), response_xml);
+    S3Error error(error_code, request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
+    request->send_response(error.get_http_status_code(), response_xml);
+    s3_log(S3_LOG_ERROR, "Authentication failure (http status): %d\n", error.get_http_status_code());
+    s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", response_xml.c_str());
+  }
   done();
-  i_am_done();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
+  i_am_done();
+}
+
+void S3Action::start_chunk_authentication() {
+  auth_client = std::make_shared<S3AuthClient>(request);
+  auth_client->check_chunk_auth(std::bind( &S3Action::check_authentication_successful, this), std::bind( &S3Action::check_authentication_failed, this));
 }

@@ -55,6 +55,14 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::multipart;
   } else if (request->has_query_param_key("delete")) {
     operation_code = S3OperationCode::multidelete;
+  } else if (request->has_query_param_key("requestPayment")) {
+    operation_code = S3OperationCode::requestPayment;
+  } else if (request->has_query_param_key("policy")) {
+    operation_code = S3OperationCode::policy;
+  } else if (request->has_query_param_key("lifecycle")) {
+    operation_code = S3OperationCode::lifecycle;
+  } else if (request->has_query_param_key("cors")) {
+    operation_code = S3OperationCode::cors;
   }
   s3_log(S3_LOG_DEBUG, "operation_code set to %d\n", operation_code);
   // Other operations - todo

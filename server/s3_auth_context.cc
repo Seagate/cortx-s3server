@@ -21,6 +21,7 @@
 #include <event2/thread.h>
 
 #include "s3_auth_context.h"
+#include "s3_log.h"
 
 extern const char *auth_ip_addr;
 extern uint16_t auth_port;
@@ -34,20 +35,19 @@ create_basic_auth_op_ctx(struct event_base* eventbase) {
 
  ctx->evbase = eventbase;
  // TODO do we really need this?
- if(evthread_make_base_notifiable(ctx->evbase) < 0)
-   s3_log(S3_LOG_ERROR, "evthread_make_base_notifiable failed\n");
+ // if (evthread_make_base_notifiable(ctx->evbase) < 0)
+ //   s3_log(S3_LOG_ERROR, "evthread_make_base_notifiable failed\n");
 
  ctx->conn = evhtp_connection_new(ctx->evbase, auth_ip_addr, auth_port);
  ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
- ctx->isfirstpass = true;
+ // ctx->isfirstpass = true;
  s3_log(S3_LOG_DEBUG, "Exiting\n");
  return ctx;
 }
 
 
 int free_basic_auth_client_op_ctx(struct s3_auth_op_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "Called\n");
   free(ctx);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return 0;
 }

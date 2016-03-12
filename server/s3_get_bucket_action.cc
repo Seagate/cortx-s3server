@@ -38,7 +38,9 @@ S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3A
   s3_log(S3_LOG_DEBUG, "delimiter = %s\n", request_delimiter.c_str());
 
   request_marker_key = request->get_query_string_value("marker");
-  object_list.set_request_marker_key(request_marker_key);
+  if (!request_marker_key.empty()) {
+    object_list.set_request_marker_key(request_marker_key);
+  }
   s3_log(S3_LOG_DEBUG, "request_marker_key = %s\n", request_marker_key.c_str());
 
   last_key = request_marker_key;  // as requested by user
@@ -56,9 +58,16 @@ S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3A
 
 void S3GetBucketAction::setup_steps(){
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  add_task(std::bind( &S3GetBucketAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3GetBucketAction::get_next_objects, this ));
   add_task(std::bind( &S3GetBucketAction::send_response_to_s3_client, this ));
   // ...
+}
+
+void S3GetBucketAction::fetch_bucket_info() {
+  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
+  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata->load(std::bind( &S3GetBucketAction::next, this), std::bind( &S3GetBucketAction::send_response_to_s3_client, this));
 }
 
 void S3GetBucketAction::get_next_objects() {
@@ -126,8 +135,8 @@ void S3GetBucketAction::get_next_objects_successful() {
     // Go ahead and respond.
     if (return_list_size == max_keys) {
       object_list.set_response_is_truncated(true);
-      object_list.set_next_marker_key(last_key);
     }
+    object_list.set_next_marker_key(last_key);
     fetch_successful = true;
     send_response_to_s3_client();
   } else {
@@ -148,8 +157,14 @@ void S3GetBucketAction::get_next_objects_failed() {
 
 void S3GetBucketAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Trigger metadata read async operation with callback
-  if (fetch_successful) {
+  if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
+    S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (fetch_successful) {
     std::string& response_xml = object_list.get_xml();
 
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));

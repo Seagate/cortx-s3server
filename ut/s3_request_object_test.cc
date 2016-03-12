@@ -101,10 +101,6 @@ class S3RequestObjectTest : public testing::Test {
   evbase_t *evbase;
 };
 
-TEST_F(S3RequestObjectTest, ReturnsValidEVRequest) {
-  EXPECT_EQ(ev_request, request->get_request());
-}
-
 TEST_F(S3RequestObjectTest, ReturnsValidRawQuery) {
   fake_query_params("location=US&policy=test");
 

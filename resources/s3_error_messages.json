@@ -16,7 +16,7 @@
     "httpcode": 500
   },
   "ServiceUnavailable": {
-    "Description:": "Reduce your request rate.",
+    "Description": "Reduce your request rate.",
     "httpcode": 503
   },
   "InvalidObjectState": {
@@ -27,16 +27,24 @@
     "Description": "The AWS access key Id you provided does not exist in our records.",
     "httpcode":	403
   },
+  "SignatureDoesNotMatch": {
+    "Description": "The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.",
+    "httpcode":	403
+  },
+  "InvalidToken": {
+    "Description": "The provided token is malformed or otherwise invalid.",
+    "httpcode":	400
+  },
+  "ExpiredToken": {
+    "Description": "The provided token has expired.",
+    "httpcode":	400
+  },
   "InvalidBucketName": {
     "Description": "The specified bucket is not valid.",
     "httpcode": 400
   },
   "NoSuchBucket": {
     "Description": "The specified bucket does not exist.",
-    "httpcode": 404
-  },
-  "NoSuchUpload": {
-    "Description": "The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.",
     "httpcode": 404
   },
   "NoSuchKey": {

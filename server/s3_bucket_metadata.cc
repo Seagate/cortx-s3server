@@ -53,6 +53,14 @@ std::string S3BucketMetadata::get_location_constraint() {
   return system_defined_attribute["LocationConstraint"];
 }
 
+std::string S3BucketMetadata::get_owner_id() {
+  return system_defined_attribute["Owner-User"];
+}
+
+std::string S3BucketMetadata::get_owner_name() {
+  return system_defined_attribute["Owner-User-id"];
+}
+
 void S3BucketMetadata::set_location_constraint(std::string location) {
   system_defined_attribute["LocationConstraint"] = location;
 }
@@ -334,7 +342,7 @@ void S3BucketMetadata::remove_user_bucket_failed() {
 
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "Called\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
 
@@ -347,12 +355,11 @@ std::string S3BucketMetadata::to_json() {
   root["ACL"] = bucket_ACL.to_json();
 
   Json::FastWriter fastWriter;
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
   return fastWriter.write(root);;
 }
 
 void S3BucketMetadata::from_json(std::string content) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "Called\n");
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
@@ -376,5 +383,4 @@ void S3BucketMetadata::from_json(std::string content) {
   account_name = system_defined_attribute["Owner-Account"];
 
   bucket_ACL.from_json(newroot["ACL"].asString());
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

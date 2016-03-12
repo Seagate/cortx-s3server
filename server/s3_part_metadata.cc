@@ -70,6 +70,17 @@ std::string S3PartMetadata::get_last_modified() {
   return system_defined_attribute["Last-Modified"];
 }
 
+std::string S3PartMetadata::get_last_modified_gmt() {
+  S3DateTime temp_time;
+  temp_time.init_with_iso(system_defined_attribute["Last-Modified"]);
+  return temp_time.get_gmtformat_string();
+}
+
+std::string S3PartMetadata::get_last_modified_iso() {
+  // we store isofmt in json
+  return system_defined_attribute["Last-Modified"];
+}
+
 std::string S3PartMetadata::get_storage_class() {
   return system_defined_attribute["x-amz-storage-class"];
 }

@@ -26,10 +26,10 @@
 #include <gmock/gmock.h>
 #include "s3_auth_client.h"
 
-class MockS3AuthClientContext : public S3AuthClientContext {
+class MockS3AuthClientOpContext : public S3AuthClientOpContext {
 public:
-  MockS3AuthClientContext(std::shared_ptr<S3RequestObject>req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AuthClientContext(req, success_callback, failed_callback) {}
-  MOCK_METHOD1(init_auth_op_ctx, bool(struct event_base* eventbase));
+  MockS3AuthClientOpContext(std::shared_ptr<S3RequestObject>req, std::function<void()> success_callback, std::function<void()> failed_callback) : S3AuthClientOpContext(req, success_callback, failed_callback) {}
+  MOCK_METHOD0(init_auth_op_ctx, bool());
   MOCK_METHOD1(create_basic_auth_op_ctx, struct s3_auth_op_context *(struct event_base* eventbase));
 };
 

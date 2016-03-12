@@ -206,7 +206,11 @@ void S3ClovisWriter::delete_object_successful() {
 void S3ClovisWriter::delete_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_ERROR, "Object deletion failed\n");
-  state = S3ClovisWriterOpState::failed;
+  if (writer_context->get_errno_for(0) == -ENOENT) {
+    state = S3ClovisWriterOpState::missing;
+  } else {
+    state = S3ClovisWriterOpState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

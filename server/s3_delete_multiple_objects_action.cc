@@ -113,17 +113,27 @@ void S3DeleteMultipleObjectsAction::fetch_bucket_info_failed() {
 void S3DeleteMultipleObjectsAction::fetch_objects_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (delete_index < delete_request.get_count()) {
-    std::vector<std::string> keys = delete_request.get_keys(delete_index, S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count());
+    keys_to_delete.clear();
+    keys_to_delete = delete_request.get_keys(delete_index, S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count());
 
-    clovis_kv_reader->get_keyval(get_bucket_index_name(), keys, std::bind( &S3DeleteMultipleObjectsAction::delete_objects, this), std::bind( &S3DeleteMultipleObjectsAction::fetch_objects_info_failed, this));
-    delete_index += keys.size();
+    clovis_kv_reader->get_keyval(get_bucket_index_name(), keys_to_delete, std::bind( &S3DeleteMultipleObjectsAction::delete_objects, this), std::bind( &S3DeleteMultipleObjectsAction::fetch_objects_info_failed, this));
+    delete_index += keys_to_delete.size();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteMultipleObjectsAction::fetch_objects_info_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  send_response_to_s3_client();
+  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    for (auto& key : keys_to_delete) {
+      delete_objects_response.add_success(key);
+    }
+  }
+  if (delete_index < delete_request.get_count()) {
+    fetch_objects_info();
+  } else {
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -142,7 +152,7 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
       oids.push_back(object->get_oid());
     } else {
       s3_log(S3_LOG_DEBUG, "Delete Object missing = %s\n", kv.first.c_str());
-      delete_objects_response.add_failure(kv.first, "NoSuchKey");
+      delete_objects_response.add_success(kv.first);
     }
   }
   // Now trigger the delete.
@@ -154,7 +164,8 @@ void S3DeleteMultipleObjectsAction::delete_objects_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   int i = 0;
   for (auto& obj : objects_metadata) {
-    if (clovis_writer->get_op_ret_code_for(i) == 0) {
+    if (clovis_writer->get_op_ret_code_for(i) == 0 ||
+        clovis_writer->get_op_ret_code_for(i) == -ENOENT) {
       delete_objects_response.add_success(obj->get_object_name());
     } else {
       // TODO - ACL may also return AccessDenied
@@ -175,14 +186,14 @@ void S3DeleteMultipleObjectsAction::delete_objects_failed() {
 
 void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::vector<std::string> keys_to_delete;
+  std::vector<std::string> keys;
   for (auto& obj : objects_metadata) {
     if (obj->get_state() != S3ObjectMetadataState::invalid) {
-      keys_to_delete.push_back(obj->get_object_name());
+      keys.push_back(obj->get_object_name());
     }
   }
 
-  clovis_kv_writer->delete_keyval(get_bucket_index_name(), keys_to_delete, std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_successful, this), std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_failed, this));
+  clovis_kv_writer->delete_keyval(get_bucket_index_name(), keys, std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_successful, this), std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -227,7 +238,7 @@ void S3DeleteMultipleObjectsAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (clovis_kv_reader->get_state() != S3ClovisKVSReaderOpState::present ||
+  } else if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::failed ||
              clovis_writer->get_state()    == S3ClovisWriterOpState::failed ||
              clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::failed ) {
     S3Error error("InternalError", request->get_request_id(), request->get_object_uri());

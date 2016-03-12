@@ -21,6 +21,7 @@
 #include "s3_head_object_action.h"
 #include "s3_get_object_action.h"
 #include "s3_put_object_action.h"
+#include "s3_put_chunk_upload_object_action.h"
 #include "s3_put_multiobject_action.h"
 #include "s3_post_multipartobject_action.h"
 #include "s3_post_complete_action.h"
@@ -52,7 +53,7 @@ void S3ObjectAPIHandler::dispatch() {
     case S3OperationCode::multipart:
       switch (request->http_verb()) {
         case S3HttpVerb::POST:
-           if(request->has_query_param_key("uploadid")) {
+           if (request->has_query_param_key("uploadid")) {
              // Complete multipart upload
              action = std::make_shared<S3PostCompleteAction>(request);
            } else {
@@ -81,7 +82,13 @@ void S3ObjectAPIHandler::dispatch() {
           action = std::make_shared<S3HeadObjectAction>(request);
           break;
         case S3HttpVerb::PUT:
-          action = std::make_shared<S3PutObjectAction>(request);
+          if (request->get_header_value("x-amz-content-sha256") == "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
+            // chunk upload
+            action = std::make_shared<S3PutChunkUploadObjectAction>(request);
+          } else {
+            // single chunk upload
+            action = std::make_shared<S3PutObjectAction>(request);
+          }
           break;
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetObjectAction>(request);

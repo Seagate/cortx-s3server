@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -13,33 +13,30 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original creation date: 31-Mar-2016
  */
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_AUTH_CONTEXT_H__
-#define __MERO_FE_S3_SERVER_S3_AUTH_CONTEXT_H__
+#ifndef __MERO_FE_S3_SERVER_S3_GET_BUCKET_ACL_ACTION_H__
+#define __MERO_FE_S3_SERVER_S3_GET_BUCKET_ACL_ACTION_H__
 
-#include "s3_common.h"
+#include <memory>
 
-EXTERN_C_BLOCK_BEGIN
+#include "s3_action_base.h"
+#include "s3_bucket_metadata.h"
 
-#include <evhtp.h>
+class S3GetBucketACLAction : public S3Action {
+  std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
-struct s3_auth_op_context {
-  evbase_t                * evbase;
-  evhtp_connection_t      * conn;
-  evhtp_request_t         * authrequest;
-  // evhtp_hook                auth_callback;
-  // bool                      isfirstpass;
+public:
+  S3GetBucketACLAction(std::shared_ptr<S3RequestObject> req);
+
+  void setup_steps();
+
+  void get_metadata();
+  void send_response_to_s3_client();
 };
-
-struct s3_auth_op_context * create_basic_auth_op_ctx(struct event_base* eventbase);
-int free_basic_auth_client_op_ctx(struct s3_auth_op_context *ctx);
-
-EXTERN_C_BLOCK_END
 
 #endif

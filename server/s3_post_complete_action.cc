@@ -64,23 +64,13 @@ void S3PostCompleteAction::fetch_bucket_info() {
 void S3PostCompleteAction::fetch_multipart_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-    clovis_kv_reader->get_keyval(get_multipart_bucket_index_name(),
-                                 object_name,
-                                 std::bind( &S3PostCompleteAction::fetch_multipart_info_successful, this),
-                                 std::bind( &S3PostCompleteAction::fetch_multipart_info_failed, this));
+    object_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
+    object_metadata->load(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::fetch_multipart_info_failed, this));
   } else {
     s3_log(S3_LOG_ERROR, "Missing bucket [%s]\n", request->get_bucket_name().c_str());
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3PostCompleteAction::fetch_multipart_info_successful() {
-  s3_log(S3_LOG_DEBUG, "Found multipart info\n");
-  object_metadata = std::make_shared<S3ObjectMetadata>(request);
-  object_metadata->from_json(clovis_kv_reader->get_value());
-  next();
 }
 
 void S3PostCompleteAction::fetch_multipart_info_failed() {
@@ -171,6 +161,8 @@ void S3PostCompleteAction::save_metadata() {
   if (is_abort_multipart()) {
     next();
   } else {
+    // Mark it as non-multipart, create final object metadata.
+    object_metadata->mark_as_non_multipart();
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
     object_metadata->save(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::send_response_to_s3_client, this));
@@ -306,7 +298,7 @@ void S3PostCompleteAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   S3RequestError req_state = request->get_request_error();
   S3PartMetadataState part_state = S3PartMetadataState::empty;
-  if(part_metadata) {
+  if (part_metadata) {
     part_state = part_metadata->get_state();
   }
   if ( bucket_metadata && (bucket_metadata->get_state() == S3BucketMetadataState::missing)) {

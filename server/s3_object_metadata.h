@@ -112,6 +112,8 @@ public:
   std::string get_user_name();
   std::string get_creation_date();
   std::string get_last_modified();
+  std::string get_last_modified_gmt();
+  std::string get_last_modified_iso();
   std::string get_storage_class();
   std::string get_upload_id();
 
@@ -147,6 +149,10 @@ public:
   // placeholder state, so as to not perform any operation on this.
   void mark_invalid() {
     state = S3ObjectMetadataState::invalid;
+  }
+
+  void mark_as_non_multipart() {
+    is_multipart = false;
   }
 
   std::string to_json();

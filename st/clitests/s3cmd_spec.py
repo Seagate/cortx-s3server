@@ -92,9 +92,7 @@ S3cmdTest('s3cmd can delete bucket seagate.bucket').delete_bucket("seagate.bucke
 # ************ Create bucket in region ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket", "eu-west-1").execute_test().command_is_successful()
 
-## Note: we expect info to fail since we dont yet support all APIs
-## that info calls under the hood, but we do support ?location API.
-S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket").execute_test(True).command_should_fail().command_response_should_have('eu-west-1')
+S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket").execute_test().command_is_successful().command_response_should_have('eu-west-1')
 
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
@@ -176,8 +174,6 @@ S3cmdTest('s3cmd can delete bucket seagate.bucket').delete_bucket("seagate.bucke
 # ************ Create bucket in region ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket", "eu-west-1").execute_test().command_is_successful()
 
-## Note: we expect info to fail since we dont yet support all APIs
-## that info calls under the hood, but we do support ?location API.
-S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket").execute_test(True).command_should_fail().command_response_should_have('eu-west-1')
+S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket").execute_test().command_is_successful().command_response_should_have('eu-west-1')
 
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()

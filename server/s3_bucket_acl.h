@@ -26,12 +26,19 @@
 // #include <json.h>
 
 class S3BucketACL {
-  // TODO
+  std::string owner_id;
+  std::string owner_name;
 
+  std::string response_xml;
 public:
+
+  void set_owner_id(std::string id);
+  void set_owner_name(std::string name);
   std::string to_json();
 
   void from_json(std::string content);
+
+  std::string& get_xml_response();
 };
 
 #endif

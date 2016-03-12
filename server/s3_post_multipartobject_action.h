@@ -26,30 +26,37 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_clovis_writer.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
 #include "s3_uuid.h"
-
+#include "s3_timer.h"
 
 class S3PostMultipartObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
+  std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::string  upload_id;
 
+  S3Timer create_object_timer;
 public:
   S3PostMultipartObjectAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
 
   void fetch_bucket_info();
-  void create_upload_id();
-  void create_part_metadata();
-  void save_metadata();
+  void check_upload_is_inprogress();
+  void create_object();
+  void create_object_failed();
+  void save_upload_metadata();
+  void save_upload_metadata_failed();
+  void create_part_meta_index();
+  void send_response_to_s3_client();
+
   std::shared_ptr<S3RequestObject> get_request() {
     return request;
   }
-  void send_response_to_s3_client();
 };
 
 #endif
