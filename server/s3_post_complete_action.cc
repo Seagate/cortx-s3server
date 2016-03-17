@@ -134,7 +134,8 @@ void S3PostCompleteAction::get_parts_successful() {
         if(store_kv != kvps.begin()) {
           if(prev_size != curr_size) {
             if(store_kv->first == total_parts) {
-              // This is the last part, ignore it
+              // This is the last part, ignore it after size calculation
+              object_size += part_metadata->get_content_length();
               continue;
             }
             s3_log(S3_LOG_DEBUG, "The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",

@@ -136,7 +136,7 @@ class S3cmdTest(PyCliTest):
                else:
                  break
 
-            if(counter > 2 or retry > 4):
+            if(counter > 2 or retry > 8):
               if(counter > 2):
                 print(total_output)
               else:
@@ -152,7 +152,7 @@ class S3cmdTest(PyCliTest):
         self.filename = filename
         self.filesize = filesize
         self.bucket_name = bucket_name
-        t = Timer(10, self.list_multipart)
+        t = Timer(4, self.list_multipart)
         t.start()
         self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
         return self
@@ -161,7 +161,7 @@ class S3cmdTest(PyCliTest):
         self.filename = filename
         self.filesize = filesize
         self.bucket_name = bucket_name
-        t = Timer(10, self.abort_multipart)
+        t = Timer(4, self.abort_multipart)
         t.start()
         self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
         return self
@@ -170,7 +170,7 @@ class S3cmdTest(PyCliTest):
         self.filename = filename
         self.filesize = filesize
         self.bucket_name = bucket_name
-        t = Timer(10, self.partlist_multipart)
+        t = Timer(4, self.partlist_multipart)
         t.start()
         self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
         return self
