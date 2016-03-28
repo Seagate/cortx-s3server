@@ -45,9 +45,9 @@ void S3PostCompleteAction::setup_steps() {
   add_task(std::bind( &S3PostCompleteAction::fetch_multipart_info, this ));
   add_task(std::bind( &S3PostCompleteAction::fetch_parts_info, this ));
   add_task(std::bind( &S3PostCompleteAction::save_metadata, this ));
-  add_task(std::bind( &S3PostCompleteAction::delete_multipart_metadata, this));
   add_task(std::bind( &S3PostCompleteAction::delete_part_index, this));
   add_task(std::bind( &S3PostCompleteAction::delete_parts, this));
+  add_task(std::bind( &S3PostCompleteAction::delete_multipart_metadata, this));
   add_task(std::bind( &S3PostCompleteAction::send_response_to_s3_client, this ));
   // ...
 }
@@ -138,7 +138,7 @@ void S3PostCompleteAction::get_parts_successful() {
               object_size += part_metadata->get_content_length();
               continue;
             }
-            s3_log(S3_LOG_DEBUG, "The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",
+            s3_log(S3_LOG_ERROR, "The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",
                    store_kv->first.c_str(),
                    curr_size, prev_size);
             // Will be deleting complete object along with the part index and multipart kv

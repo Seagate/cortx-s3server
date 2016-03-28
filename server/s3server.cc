@@ -265,6 +265,11 @@ parse_args(int argc, char ** argv) {
     return 0;
 } /* parse_args */
 
+void fatal_libevent(int err) {
+  s3_log(S3_LOG_ERROR, "Fatal error occured in libevent, error = %d\n", err);
+}
+
+
 int
 main(int argc, char ** argv) {
     int rc = 0;
@@ -280,14 +285,20 @@ main(int argc, char ** argv) {
 #ifdef S3_ENABLE_PERF
     S3PerfLogger::initialize();
 #endif
+    // Call this function before creating event base
+    evthread_use_pthreads();
 
     evbase_t * evbase = event_base_new();
-    evthread_use_pthreads();
+
+    // Uncomment below api if we want to run libevent in debug mode
+    // event_enable_debug_mode();
+
     if (evthread_make_base_notifiable(evbase)<0) {
       s3_log(S3_LOG_ERROR, "Couldn't make base notifiable!");
       return 1;
     }
     evhtp_t  * htp    = evhtp_new(evbase, NULL);
+    event_set_fatal_callback(fatal_libevent);
 
     S3Router *router = new S3Router(new S3APIHandlerFactory(),
                                     new S3UriFactory());
@@ -319,7 +330,12 @@ main(int argc, char ** argv) {
 #endif
     evhtp_bind_socket(htp, bind_addr, bind_port, 1024);
 
-    event_base_loop(evbase, 0);
+    rc = event_base_loop(evbase, 0);
+    if( rc == 0) {
+      s3_log(S3_LOG_DEBUG, "Event base loop exited normally\n");
+    } else {
+      s3_log(S3_LOG_ERROR, "Event base loop exited due to unhandled exception in libevent's backend\n");
+    }
 
     evhtp_unbind_socket(htp);
     evhtp_free(htp);

@@ -217,6 +217,7 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    s3_log(S3_LOG_ERROR, "Missing bucket for multipart upload, upload id = %s, request id = %s object uri = %s\n",upload_id.c_str(), request->get_request_id().c_str(), request->get_object_uri().c_str());
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
@@ -226,6 +227,8 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_multipart_metadata && (object_multipart_metadata->get_state() == S3ObjectMetadataState::missing)) {
     // The multipart upload may have been aborted
+    s3_log(S3_LOG_WARN, "The metadata of multipart upload doesn't exist, upload id = %s request id = %s object uri = %s\n",
+           upload_id.c_str(), request->get_request_id().c_str(), request->get_object_uri().c_str());
     S3Error error("NoSuchUpload", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
@@ -235,6 +238,8 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
   } else if (part_metadata && (part_metadata->get_state() == S3PartMetadataState::missing)) {
     // May happen if part 2/3... comes before part 1, in that case those part
     // upload need to be retried(by that time part 1 meta data will get in)
+    s3_log(S3_LOG_WARN, "Part one metadata is not available, asking client to retry, upload id = %s request id = %s object uri = %s\n",
+         upload_id.c_str(),  request->get_request_id().c_str(), request->get_object_uri().c_str());
     S3Error error("ServiceUnavailable", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
@@ -244,6 +249,8 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
 
   } else if (clovis_writer->get_state() == S3ClovisWriterOpState::failed) {
+    s3_log(S3_LOG_ERROR, "Clovis failed to write for multipart upload, upload id = %s request id = %s object uri = %s",
+           upload_id.c_str(), request->get_request_id().c_str(), request->get_object_uri().c_str());
     S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
@@ -255,6 +262,8 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
 
     request->send_response(S3HttpSuccess200);
   } else {
+    s3_log(S3_LOG_ERROR, "Internal error upload id = %s request id = %s object uri = %s\n",
+           upload_id.c_str(), request->get_request_id().c_str(), request->get_object_uri().c_str());
     S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");

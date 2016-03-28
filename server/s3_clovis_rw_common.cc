@@ -25,12 +25,20 @@
 // This is run on main thread.
 void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (user_data == NULL) {
+    s3_log(S3_LOG_FATAL, "Input argument user_data is NULL\n");
+  }
+
   struct user_event_context * user_context = (struct user_event_context *)user_data;
   S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
+  if (context == NULL) {
+    s3_log(S3_LOG_FATAL, "context pointer is NULL\n");
+  }
+  struct event * s3user_event = (struct event *)user_context->user_event;
+  if (s3user_event == NULL) {
+    s3_log(S3_LOG_FATAL, "User event is NULL\n");
+  }
   context->log_timer();
-
-  // Free user event
-  event_free((struct event *)user_context->user_event);
 
   if (context->is_at_least_one_op_successful()) {
     context->on_success_handler()();  // Invoke the handler.
@@ -38,6 +46,8 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_dat
     context->on_failed_handler()();  // Invoke the handler.
   }
   free(user_data);
+  // Free user event
+  event_free(s3user_event);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

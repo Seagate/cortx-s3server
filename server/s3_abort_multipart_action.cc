@@ -68,7 +68,7 @@ void S3AbortMultipartAction::delete_parts() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   clovis_writer = std::make_shared<S3ClovisWriter>(request);
   clovis_writer->delete_object(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::delete_parts_failed, this));
-  s3_log(S3_LOG_ERROR, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AbortMultipartAction::delete_parts_failed() {
