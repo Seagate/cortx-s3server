@@ -23,12 +23,17 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extend the Channel Inbound Handler Adapter to create a custom handler for
  * authentication and authorization server.
  */
 public class AuthServerHandler extends ChannelInboundHandlerAdapter {
+
+    private final Logger LOGGER = LoggerFactory.getLogger(
+            AuthServerHandler.class.getName());
 
     /**
      *
@@ -52,6 +57,10 @@ public class AuthServerHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof FullHttpRequest) {
             FullHttpRequest httpRequest = (FullHttpRequest) msg;
+
+            LOGGER.debug("Channel read succesful.");
+            LOGGER.debug("Http method - " + httpRequest.getMethod());
+            LOGGER.debug("URI - " + httpRequest.getUri());
 
             if (httpRequest.getMethod().equals(HttpMethod.POST)) {
                 new AuthServerPostHandler(ctx, httpRequest).run();

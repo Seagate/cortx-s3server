@@ -19,6 +19,7 @@
 package com.seagates3.response.generator;
 
 import com.seagates3.model.Account;
+import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -29,6 +30,9 @@ public class AuthenticationResponseGeneratorTest {
 
     @Test
     public void testCreateResponse() {
+        ClientRequestToken requestToken = new ClientRequestToken();
+        requestToken.setSignature("testsign");
+
         Account account = new Account();
         account.setId("12345");
         account.setName("s3test");
@@ -47,6 +51,7 @@ public class AuthenticationResponseGeneratorTest {
                 + "<UserName>s3test</UserName>"
                 + "<AccountId>12345</AccountId>"
                 + "<AccountName>s3test</AccountName>"
+                + "<SignatureSHA256>testsign</SignatureSHA256>"
                 + "</AuthenticateUserResult>"
                 + "<ResponseMetadata>"
                 + "<RequestId>0000</RequestId>"
@@ -55,9 +60,10 @@ public class AuthenticationResponseGeneratorTest {
 
         AuthenticationResponseGenerator responseGenerator
                 = new AuthenticationResponseGenerator();
-        ServerResponse response = responseGenerator.generateAuthenticatedResponse(requestor);
+        ServerResponse response = responseGenerator.
+                generateAuthenticatedResponse(requestor, requestToken);
 
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.ACCEPTED, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
 }

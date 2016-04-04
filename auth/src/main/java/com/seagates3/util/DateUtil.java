@@ -25,6 +25,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -64,7 +65,11 @@ public class DateUtil {
         return toServerResponseFormat(toDate(ldapDate));
     }
 
-    /*
+    public static DateTime getCurrentDateTime() {
+        return DateTime.now(DateTimeZone.UTC);
+    }
+
+    /**
      * Return the current time in UTC.
      */
     public static long getCurrentTime() {
@@ -78,6 +83,19 @@ public class DateUtil {
         }
 
         return 0;
+    }
+
+    public static DateTime toDateTime(String date) {
+        DateTimeFormatter dateFormatter = getDateTimeFormat(LDAP_DATE_FORMAT);
+
+        try {
+            return dateFormatter.parseDateTime(date);
+        } catch (Exception ex) {
+        }
+
+        dateFormatter = getDateTimeFormat(SERVER_RESPONSE_DATE_FORMAT);
+        return dateFormatter.parseDateTime(date);
+
     }
 
     public static Date toDate(String date) {
@@ -95,6 +113,11 @@ public class DateUtil {
         }
 
         return null;
+    }
+
+    private static DateTimeFormatter getDateTimeFormat(String pattern) {
+        DateTimeFormatter dtf = DateTimeFormat.forPattern(pattern);
+        return dtf.withZoneUTC();
     }
 
     private static SimpleDateFormat getSimpleDateFormat(String pattern) {

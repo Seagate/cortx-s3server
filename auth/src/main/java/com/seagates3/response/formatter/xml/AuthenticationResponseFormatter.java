@@ -16,21 +16,17 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 16-Dec-2015
  */
-
 package com.seagates3.response.formatter.xml;
 
+import com.seagates3.response.ServerResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.seagates3.response.ServerResponse;
 
 public class AuthenticationResponseFormatter extends XMLResponseFormatter {
 
@@ -68,7 +64,7 @@ public class AuthenticationResponseFormatter extends XMLResponseFormatter {
         String responseBody;
         try {
             responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.ACCEPTED,
+            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.OK,
                     responseBody);
 
             return serverResponse;

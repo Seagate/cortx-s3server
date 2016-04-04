@@ -16,31 +16,36 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.aws.sign;
-
 
 import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SignatureValidator {
+
+    private final Logger LOGGER = LoggerFactory.getLogger(
+            SignatureValidator.class.getName());
+
     private final String SIGNER_PACKAGE = "com.seagates3.aws.sign";
 
-    public ServerResponse validate(ClientRequestToken clientRequestToken
-            ,Requestor requestor) {
+    public ServerResponse validate(ClientRequestToken clientRequestToken, Requestor requestor) {
 
-            AuthenticationResponseGenerator responseGenerator =
-                new AuthenticationResponseGenerator();
+        AuthenticationResponseGenerator responseGenerator
+                = new AuthenticationResponseGenerator();
 
         AWSSign awsSign = getSigner(clientRequestToken);
 
         Boolean isRequestorAuthenticated = awsSign.authenticate(clientRequestToken, requestor);
-        if(!isRequestorAuthenticated) {
-            return responseGenerator.incorrectSignature();
+        if (!isRequestorAuthenticated) {
+            LOGGER.debug("Requestor is not authenticated.");
+            return responseGenerator.signatureDoesNotMatch();
         }
 
+        LOGGER.debug("Requestor is authenticated.");
         return responseGenerator.ok();
     }
 
@@ -48,6 +53,9 @@ public class SignatureValidator {
      * Get the client request version and return the AWS signer object.
      */
     private AWSSign getSigner(ClientRequestToken clientRequestToken) {
+        LOGGER.debug("Signature version "
+                + clientRequestToken.getSignVersion().toString());
+
         String signVersion = clientRequestToken.getSignVersion().toString();
         String signerClassName = toSignerClassName(signVersion);
 

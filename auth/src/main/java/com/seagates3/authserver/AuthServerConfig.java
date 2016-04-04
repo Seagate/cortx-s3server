@@ -125,6 +125,14 @@ public class AuthServerConfig {
         return authServerConfig.getProperty("consoleURL");
     }
 
+    public static String getLogConfigFile() {
+        return authServerConfig.getProperty("logConfigFile");
+    }
+
+    public static String getLogLevel() {
+        return authServerConfig.getProperty("logLevel");
+    }
+
     /**
      * Set the SAML Metadata file Path.
      *

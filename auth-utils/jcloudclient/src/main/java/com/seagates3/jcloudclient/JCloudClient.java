@@ -162,7 +162,7 @@ public class JCloudClient {
                 + "      java -jar jcloudclient.jar clrbdir s3://BUCKET DIR/\n"
                 + "  Multipart upload\n"
                 + "      java -jar jcloudclient.jar put FILE s3://BUCKET[/PREFIX] "
-                + "-m [size of each chunk in MB]\n";
+                + "-m [size of each part in MB]\n";
         HelpFormatter s3HelpFormatter = new HelpFormatter();
 
         s3HelpFormatter.printHelp(usage, s3Options);

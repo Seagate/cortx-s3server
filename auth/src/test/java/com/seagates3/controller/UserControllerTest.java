@@ -37,9 +37,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+@PowerMockIgnore({"javax.management.*"})
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DAODispatcher.class, KeyGenUtil.class})
 public class UserControllerTest {
@@ -381,7 +383,7 @@ public class UserControllerTest {
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                 response.getResponseStatus());
     }
 
@@ -716,7 +718,7 @@ public class UserControllerTest {
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                 response.getResponseStatus());
     }
 

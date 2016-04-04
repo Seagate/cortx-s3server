@@ -86,7 +86,7 @@ public class AbstractResponseGeneratorTest extends AbstractResponseGenerator {
 
         ServerResponse response = expiredCredential();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.FORBIDDEN, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
     }
 
     @Test
@@ -102,24 +102,26 @@ public class AbstractResponseGeneratorTest extends AbstractResponseGenerator {
 
         ServerResponse response = inactiveAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.FORBIDDEN, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                response.getResponseStatus());
     }
 
     @Test
-    public void testIncorrectSignature() {
+    public void testSignatureDoesNotMatch() {
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
                 + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>IncorrectSignature</Code>"
+                + "<Code>SignatureDoesNotMatch</Code>"
                 + "<Message>The request signature we calculated does not match "
-                + "the signature you provided. Check your Secret Access Key and "
-                + "signing method.</Message>"
+                + "the signature you provided. Check your AWS secret access key "
+                + "and signing method. For more information, see REST "
+                + "Authentication andSOAP Authentication for details.</Message>"
                 + "<RequestId>0000</RequestId>"
                 + "</Error>";
 
-        ServerResponse response = incorrectSignature();
+        ServerResponse response = signatureDoesNotMatch();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.FORBIDDEN, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
     }
 
     @Test
@@ -169,7 +171,7 @@ public class AbstractResponseGeneratorTest extends AbstractResponseGenerator {
 
         ServerResponse response = invalidClientTokenId();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.FORBIDDEN,
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                 response.getResponseStatus());
     }
 
@@ -219,7 +221,7 @@ public class AbstractResponseGeneratorTest extends AbstractResponseGenerator {
 
         ServerResponse response = noSuchEntity();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                 response.getResponseStatus());
     }
 

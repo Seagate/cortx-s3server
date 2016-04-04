@@ -20,10 +20,8 @@ package com.seagates3.javaclient;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -33,6 +31,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 
 public class JavaClient {
 
@@ -41,16 +41,18 @@ public class JavaClient {
     private static Options s3Options;
     private static CommandLine cmd;
 
-    public static void main(String[] args) throws FileNotFoundException,
-            UnsupportedEncodingException {
+    public static void main(String[] args) throws Exception {
         JavaClient.run(args);
     }
 
-    public static void run(String[] args) throws FileNotFoundException,
-            UnsupportedEncodingException {
+    public static void run(String[] args) throws Exception {
         init(args);
         if (cmd.hasOption("h")) {
             showUsage();
+        }
+
+        if (cmd.hasOption("L")) {
+            setLogLevel();
         }
 
         String[] commandArguments = cmd.getArgs();
@@ -107,6 +109,17 @@ public class JavaClient {
         }
     }
 
+    private static void setLogLevel() throws Exception {
+        String logLevel = cmd.getOptionValue("L");
+
+        Level level = Level.toLevel(logLevel);
+        if (level == null) {
+            throw new Exception("Incorrect logging level");
+        }
+
+        LogManager.getRootLogger().setLevel(level);
+    }
+
     /**
      * Construct the options required for s3 java cli.
      *
@@ -122,6 +135,8 @@ public class JavaClient {
                 .addOption("m", "multi_part_chunk_size", true,
                         "Size of chunk in MB")
                 .addOption("a", "aws", false, "Run operation on AWS S3 (only for debugging)")
+                .addOption("L", "log_level", true, "Log level (INFO, DEFAULT, "
+                        + "ALL, WARN, ERROR, TRACE). Default ERROR.")
                 .addOption("h", "help", false, "Show usage");
 
         return options;

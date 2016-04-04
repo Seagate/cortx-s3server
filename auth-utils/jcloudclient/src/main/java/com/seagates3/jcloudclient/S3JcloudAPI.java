@@ -40,6 +40,7 @@ import org.jclouds.blobstore.options.ListContainerOptions;
 import static org.jclouds.blobstore.options.PutOptions.Builder.multipart;
 import org.jclouds.io.payloads.FilePayload;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
+import org.jclouds.s3.S3ApiMetadata;
 
 public class S3JcloudAPI {
 
@@ -62,8 +63,9 @@ public class S3JcloudAPI {
                     + "are not supported");
         } else {
             try {
-                builder = ContextBuilder.newBuilder("aws-s3")
+                builder = ContextBuilder.newBuilder(new S3ApiMetadata())
                         .credentials(cmd.getOptionValue("x"), cmd.getOptionValue("y"))
+                        .endpoint("https://s3.amazonaws.com")
                         .modules(modules);
             } catch (Exception ex) {
                 System.out.println(ex.toString());

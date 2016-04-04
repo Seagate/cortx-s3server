@@ -28,8 +28,16 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AWSV4Sign implements AWSSign {
+
+    private final Logger LOGGER = LoggerFactory.getLogger(
+            AWSV4Sign.class.getName());
+
+    private final String STREAMING_AWS4_HMAC_SHA256_PAYLOAD
+            = "STREAMING-AWS4-HMAC-SHA256-PAYLOAD";
 
     /**
      * Return true if the signature is valid.
@@ -41,19 +49,113 @@ public class AWSV4Sign implements AWSSign {
     @Override
     public Boolean authenticate(ClientRequestToken clientRequestToken,
             Requestor requestor) {
+        Map<String, String> requestHeaders
+                = clientRequestToken.getRequestHeaders();
+
+        if (requestHeaders.containsKey("x-amz-content-sha256")
+                && requestHeaders.get("x-amz-content-sha256")
+                .equals(STREAMING_AWS4_HMAC_SHA256_PAYLOAD)) {
+
+            LOGGER.debug("Chunked upload. Verify seed signature");
+            return verifyChunkedSeedSignature(clientRequestToken, requestor);
+        } else if (requestHeaders.containsKey("previous-signature-sha256")) {
+
+            LOGGER.debug("Chunked upload. Verify chunk signature.");
+            return verifyChunkedSignature(clientRequestToken, requestor);
+        } else {
+
+            LOGGER.debug("Verify signature of unchunked request.");
+            return verifySignature(clientRequestToken, requestor);
+        }
+    }
+
+    /**
+     * Verify the signature of a regular S3/IAM API.
+     *
+     * @param clientRequestToken
+     * @param requestor
+     * @return
+     */
+    private Boolean verifySignature(
+            ClientRequestToken clientRequestToken, Requestor requestor) {
         String canonicalRequest, stringToSign, signature;
         byte[] signingKey;
 
         canonicalRequest = createCanonicalRequest(clientRequestToken);
+        LOGGER.debug("Canonical request- " + canonicalRequest);
 
         stringToSign = createStringToSign(canonicalRequest, clientRequestToken);
+        LOGGER.debug("String to sign- " + stringToSign);
 
         String secretKey = requestor.getAccesskey().getSecretKey();
         signingKey = deriveSigningKey(clientRequestToken, secretKey);
+        LOGGER.debug("Signing key- " + signingKey);
 
         signature = calculateSignature(signingKey, stringToSign);
+        LOGGER.debug("Request signature- " + clientRequestToken.getSignature());
+        LOGGER.debug("Calculated signature- " + signature);
 
         return signature.equals(clientRequestToken.getSignature());
+    }
+
+    /**
+     * Authenticate seed signature of a chunked upload request.
+     *
+     * @param clientRequestToken
+     * @param requestor
+     * @return
+     */
+    private Boolean verifyChunkedSeedSignature(
+            ClientRequestToken clientRequestToken, Requestor requestor) {
+        String canonicalRequest, stringToSign, signature;
+        byte[] signingKey;
+
+        canonicalRequest = createCanonicalRequestChunkedSeed(clientRequestToken);
+        LOGGER.debug("Canonical request- " + canonicalRequest);
+
+        stringToSign = createStringToSign(canonicalRequest,
+                clientRequestToken);
+        LOGGER.debug("String to sign- " + stringToSign);
+
+        String secretKey = requestor.getAccesskey().getSecretKey();
+        signingKey = deriveSigningKey(clientRequestToken, secretKey);
+        LOGGER.debug("Signing key- " + signingKey);
+
+        signature = calculateSignature(signingKey, stringToSign);
+        LOGGER.debug("Request signature- " + clientRequestToken.getSignature());
+        LOGGER.debug("Calculated signature- " + signature);
+
+        return signature.equals(clientRequestToken.getSignature());
+    }
+
+    /**
+     * Verify signature the chunk in a chunked upload request.
+     *
+     * @param clientRequestToken
+     * @param requestor
+     * @return
+     */
+    private Boolean verifyChunkedSignature(
+            ClientRequestToken clientRequestToken, Requestor requestor) {
+        String stringToSign, signature, currentSign;
+        byte[] signingKey;
+
+        stringToSign = createStringToSignChunked(clientRequestToken);
+        LOGGER.debug("String to sign- " + stringToSign);
+
+        String secretKey = requestor.getAccesskey().getSecretKey();
+        signingKey = deriveSigningKey(clientRequestToken, secretKey);
+        LOGGER.debug("Signing key- " + signingKey);
+
+        signature = calculateSignature(signingKey, stringToSign);
+        LOGGER.debug("Request signature- " + clientRequestToken.getSignature());
+        LOGGER.debug("Calculated signature- " + signature);
+
+        currentSign = clientRequestToken.getRequestHeaders()
+                .get("current-signature-sha256");
+
+        clientRequestToken.setSignature(currentSign);
+        return signature.equals(currentSign);
     }
 
     /**
@@ -66,8 +168,6 @@ public class AWSV4Sign implements AWSSign {
     private String createCanonicalRequest(ClientRequestToken clientRequestToken) {
         String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
                 hashedPayload, canonicalRequest;
-
-        Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
 
         httpMethod = clientRequestToken.getHttpMethod();
         canonicalURI = clientRequestToken.getUri();
@@ -82,6 +182,37 @@ public class AWSV4Sign implements AWSSign {
                 canonicalHeader,
                 clientRequestToken.getSignedHeaders(),
                 hashedPayload);
+
+        return canonicalRequest;
+    }
+
+    /**
+     * Create a canonical request for seed request of a chunked request.
+     *
+     * HTTPRequestMethod + '\n' + CanonicalURI + '\n' + CanonicalQueryString +
+     * '\n' + CanonicalHeaders + '\n' + SignedHeaders + '\n' +
+     * STREAMING-AWS4-HMAC-SHA256-PAYLOAD
+     *
+     * @param clientRequestToken
+     * @return
+     */
+    private String createCanonicalRequestChunkedSeed(
+            ClientRequestToken clientRequestToken) {
+        String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
+                canonicalRequest;
+
+        httpMethod = clientRequestToken.getHttpMethod();
+        canonicalURI = clientRequestToken.getUri();
+        canonicalQuery = getCanonicalQuery(clientRequestToken.getQuery());
+        canonicalHeader = createCanonicalHeader(clientRequestToken);
+
+        canonicalRequest = String.format("%s\n%s\n%s\n%s\n%s\n%s",
+                httpMethod,
+                canonicalURI,
+                canonicalQuery,
+                canonicalHeader,
+                clientRequestToken.getSignedHeaders(),
+                STREAMING_AWS4_HMAC_SHA256_PAYLOAD);
 
         return canonicalRequest;
     }
@@ -119,7 +250,7 @@ public class AWSV4Sign implements AWSSign {
      * The string to sign includes meta information about your request and about
      * the canonical request.
      *
-     * Structure of String to sign Algorithm + '\n' + RequestDate + '\n' +
+     * Structure of String to sign- Algorithm + '\n' + RequestDate + '\n' +
      * CredentialScope + '\n' + HashedCanonicalRequest
      */
     private String createStringToSign(String canonicalRequest,
@@ -129,8 +260,37 @@ public class AWSV4Sign implements AWSSign {
         requestDate = clientRequestToken.getRequestHeaders().get("x-amz-date");
         hexEncodedCRHash = BinaryUtil.hexEncodedHash(canonicalRequest);
 
-        stringToSign = String.format("%s\n%s\n%s\n%s", clientRequestToken.getSigningAlgorithm(),
-                requestDate, clientRequestToken.getCredentialScope(), hexEncodedCRHash);
+        stringToSign = String.format("%s\n%s\n%s\n%s",
+                clientRequestToken.getSigningAlgorithm(), requestDate,
+                clientRequestToken.getCredentialScope(), hexEncodedCRHash);
+
+        return stringToSign;
+    }
+
+    /**
+     * The string to sign includes meta information about your request and about
+     * the canonical request.
+     *
+     * Structure of String to sign Algorithm + '\n' + RequestDate + '\n' +
+     * CredentialScope + '\n' + HashedCanonicalRequest
+     */
+    private String createStringToSignChunked(
+            ClientRequestToken clientRequestToken) {
+        String stringToSign, requestDate, prevSign, hashCurrentChunk;
+        String hashEmptyInput
+                = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+        requestDate = clientRequestToken.getRequestHeaders().get("x-amz-date");
+        prevSign = clientRequestToken.getRequestHeaders()
+                .get("previous-signature-sha256");
+
+        hashCurrentChunk = clientRequestToken.getRequestHeaders()
+                .get("x-amz-content-sha256");
+
+        stringToSign = String.format("AWS4-HMAC-SHA256-PAYLOAD\n%s\n%s\n%s\n%s\n%s",
+                requestDate, clientRequestToken.getCredentialScope(), prevSign,
+                hashEmptyInput, hashCurrentChunk
+        );
 
         return stringToSign;
     }
@@ -144,10 +304,10 @@ public class AWSV4Sign implements AWSSign {
      * kRegion = HMAC(kDate, Region) kService = HMAC(kRegion, Service) kSigning
      * = HMAC(kService, "aws4_request")
      */
-    private byte[] deriveSigningKey(ClientRequestToken clientRequestToken, String secretKey) {
+    private byte[] deriveSigningKey(ClientRequestToken clientRequestToken,
+            String secretKey) {
         try {
-            byte[] kSecret = ("AWS4" + secretKey)
-                    .getBytes("UTF-8");
+            byte[] kSecret = ("AWS4" + secretKey).getBytes("UTF-8");
             byte[] kDate = BinaryUtil.hmacSHA256(kSecret,
                     clientRequestToken.getDate().getBytes("UTF-8"));
 
@@ -250,7 +410,7 @@ public class AWSV4Sign implements AWSSign {
      * except for the last value in the list.
      */
     private String getCanonicalQuery(String query) {
-        if (query.isEmpty()) {
+        if (query == null || query.isEmpty()) {
             return "";
         }
 

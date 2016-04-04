@@ -55,10 +55,6 @@
         "Class": "S3JcloudAPI",
         "Action": "deleteDirectory"
     },
-    "direxists": {
-        "Class": "S3JcloudAPI",
-        "Action": "directoryExists"
-    },
     "clrb": {
         "Class": "S3JcloudAPI",
         "Action": "clearBucket"
@@ -66,9 +62,5 @@
     "clrbdir": {
         "Class": "S3JcloudAPI",
         "Action": "clearBucketDirectory"
-    },
-    "multipart": {
-        "Class": "S3JcloudAPI",
-        "Action": "listMultiParts"
     }
 }

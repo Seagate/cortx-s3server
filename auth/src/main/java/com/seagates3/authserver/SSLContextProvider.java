@@ -18,21 +18,36 @@
  */
 package com.seagates3.authserver;
 
+import com.seagates3.exception.ServerInitialisationException;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManagerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SSLContextProvider {
 
     private static int httpsPort;
     private static SslContext authSSLContext;
+    private static final Logger LOGGER
+            = LogManager.getLogger(SSLContextProvider.class.getName());
 
-    public static void init() throws Exception {
+    public static void init() throws ServerInitialisationException {
+        LOGGER.info("Initializing SSl Context");
+
         if (AuthServerConfig.isHttpsEnabled()) {
+            LOGGER.info("HTTPS is enabled.");
+
             httpsPort = AuthServerConfig.getHttpsPort();
 
             String s3KeystoreName = AuthServerConfig.getKeyStoreName();
@@ -42,16 +57,34 @@ public class SSLContextProvider {
                     .toCharArray();
             char[] keyPassword = AuthServerConfig.getKeyPassword().toCharArray();
 
-            FileInputStream fin = new FileInputStream(s3KeystoreFile.toFile());
-            KeyStore s3Keystore = KeyStore.getInstance("JKS");
-            s3Keystore.load(fin, keystorePassword);
+            FileInputStream fin;
+            KeyStore s3Keystore;
+            KeyManagerFactory kmf;
+            try {
+                fin = new FileInputStream(s3KeystoreFile.toFile());
+                s3Keystore = KeyStore.getInstance("JKS");
+                s3Keystore.load(fin, keystorePassword);
 
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-                    KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(s3Keystore, keyPassword);
+                kmf = KeyManagerFactory.getInstance(
+                        KeyManagerFactory.getDefaultAlgorithm());
+                kmf.init(s3Keystore, keyPassword);
+                authSSLContext = SslContextBuilder.forServer(kmf).build();
 
-            authSSLContext = SslContextBuilder.forServer(kmf).build();
+                LOGGER.info("SSL context created.");
+            } catch (FileNotFoundException ex) {
+                throw new ServerInitialisationException(
+                        "Exception occured while initializnig ssl context.\n"
+                        + ex.getMessage());
+            } catch (IOException | NoSuchAlgorithmException |
+                    CertificateException | KeyStoreException |
+                    UnrecoverableKeyException ex) {
+                throw new ServerInitialisationException(
+                        "Exception occured while initializnig ssl context.\n"
+                        + ex.getMessage());
+            }
+
         } else {
+            LOGGER.info("HTTPS is disabled.");
             authSSLContext = null;
         }
     }

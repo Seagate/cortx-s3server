@@ -24,8 +24,10 @@ import java.util.Map;
 
 public class ClientRequestParser {
 
-    private static final String REQUEST_PARSER_PACKAGE = "com.seagates3.aws.request";
-    private static final String AWS_V2_AUTHRORIAZATION_PATTERN = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
+    private static final String REQUEST_PARSER_PACKAGE
+            = "com.seagates3.aws.request";
+    private static final String AWS_V2_AUTHRORIAZATION_PATTERN
+            = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
 
     public static ClientRequestToken parse(FullHttpRequest httpRequest,
             Map<String, String> requestBody) {

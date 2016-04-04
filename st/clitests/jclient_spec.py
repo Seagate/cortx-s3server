@@ -26,9 +26,6 @@ from s3client_config import S3ClientConfig
 print("Configuring LDAP")
 PyCliTest('Before_all').before_all()
 
-# S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-# S3ClientConfig.secret_key = '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'
-
 S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
 S3ClientConfig.secret_key = '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'
 
@@ -63,12 +60,17 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can download 700K file').get_object("seagatebucket", "700Kfile").execute_test().command_is_successful().command_created_file("700Kfile")
 
+    # ************ 18MB FILE TEST (Without multipart) ************
+    JClientTest('Jclient can upload 18MB file').put_object("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+
+    JClientTest('Jclient can delete 18MB file').delete_object("seagatebucket", "18MBfile").execute_test().command_is_successful()
+
     # ************ 18MB FILE Multipart Upload TEST ***********
     JClientTest('Jclient can upload 18MB file (multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15).execute_test().command_is_successful()
 
     JClientTest('Jclient can download 18MB file').get_object("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
 
-    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 5, 2).execute_test().command_is_successful()
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
 
     result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
     result.command_response_should_have('18MBfile')
@@ -81,13 +83,13 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
 
-    JClientTest('Jclient can test the multipart was aborted.').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+    JClientTest('Jclient can test the multipart was aborted.').list_multipart('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 
     # ************ DELETE OBJECT TEST ************
     JClientTest('Jclient can delete 3k file').delete_object("seagatebucket", "3kfile").execute_test().command_is_successful()
 
     # ************ DELETE MULTIPLE OBJECTS TEST ************
-    JClientTest('Jclient can delete 8k, 700k and 18MB files').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile"]).execute_test().command_is_successful()
+    JClientTest('Jclient can delete 8k, 700k and 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test().command_is_successful()
 
     # ************ Delete bucket TEST ************
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
@@ -103,7 +105,7 @@ for i, val in enumerate(pathstyle_values):
 
 # Add tests which are specific to Path style APIs
 
-S3ClientConfig.pathstyle = true
+S3ClientConfig.pathstyle = True
 
 # ************ Signing algorithm test ************
 # /etc/hosts should not contains nondnsbucket. This is to test the path style APIs.

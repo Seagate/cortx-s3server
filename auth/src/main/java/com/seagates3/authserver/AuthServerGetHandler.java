@@ -50,8 +50,13 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.activation.MimetypesFileTypeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthServerGetHandler {
+
+    private final Logger LOGGER = LoggerFactory.getLogger(
+            AuthServerGetHandler.class.getName());
 
     final ChannelHandlerContext ctx;
     final FullHttpRequest httpRequest;
@@ -65,19 +70,28 @@ public class AuthServerGetHandler {
     }
 
     public void run() {
+        LOGGER.debug("Get handler called.");
+
         if (httpRequest.getUri().startsWith("/static")) {
             Path staticFilePath = Paths.get("", "resources", httpRequest.getUri());
             File file = staticFilePath.toFile();
+
+            LOGGER.debug("Static file path - " + staticFilePath);
 
             RandomAccessFile raf;
             long fileLength;
             try {
                 raf = new RandomAccessFile(file, "r");
                 fileLength = raf.length();
+
+                LOGGER.debug("Static file length - " + fileLength);
             } catch (FileNotFoundException ex) {
+                LOGGER.debug("File not found.");
                 sendeErrorResponse(HttpResponseStatus.NOT_FOUND, "Resource not found.");
                 return;
             } catch (IOException ex) {
+                LOGGER.error("Error occured while reading file.\n"
+                        + ex.getMessage());
                 sendeErrorResponse(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                         "Error occured while reading the file.");
                 return;
@@ -86,10 +100,13 @@ public class AuthServerGetHandler {
             writeHeader(file, fileLength);
             writeContent(raf, fileLength);
         } else if (httpRequest.getUri().startsWith("/saml/session")) {
+            LOGGER.debug("Calling SAML WEB SSO Controller");
+
             ServerResponse severReponse = new SAMLWebSSOController(null)
                     .createSession(httpRequest);
             returnHTTPResponse(severReponse);
         } else {
+            LOGGER.debug("Bad request.");
             HttpResponse response = new DefaultHttpResponse(HTTP_1_1,
                     HttpResponseStatus.BAD_REQUEST);
             if (keepAlive) {
@@ -111,6 +128,8 @@ public class AuthServerGetHandler {
                     requestResponse.getResponseStatus(),
                     Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
             );
+
+            LOGGER.debug("HTTP Response sent.");
         } catch (UnsupportedEncodingException ex) {
             response = null;
         }
@@ -120,9 +139,13 @@ public class AuthServerGetHandler {
 
         if (!keepAlive) {
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+
+            LOGGER.debug("Connection closed.");
         } else {
             response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             ctx.writeAndFlush(response);
+
+            LOGGER.debug("Connection kept alive.");
         }
     }
 
@@ -160,6 +183,8 @@ public class AuthServerGetHandler {
                                         new ChunkedFile(raf, 0, fileLength, 4)),
                                 ctx.newProgressivePromise());
                 lastContentFuture = sendFileFuture;
+
+                LOGGER.debug("Static resource sent to client.");
             } catch (IOException ex) {
                 lastContentFuture = null;
             }
@@ -172,6 +197,7 @@ public class AuthServerGetHandler {
         if (!keepAlive) {
             // Close the connection when the whole content is written out.
             lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+            LOGGER.debug("Connection closed.");
         }
     }
 
@@ -183,6 +209,8 @@ public class AuthServerGetHandler {
             response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                     status, Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
             );
+
+            LOGGER.debug("Error response sent.");
         } catch (UnsupportedEncodingException ex) {
             response = null;
         }
@@ -192,9 +220,13 @@ public class AuthServerGetHandler {
 
         if (!keepAlive) {
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+
+            LOGGER.debug("Connection closed.");
         } else {
             response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             ctx.writeAndFlush(response);
+
+            LOGGER.debug("Connection kept alive.");
         }
     }
 

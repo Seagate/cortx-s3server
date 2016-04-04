@@ -36,11 +36,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthServerAction {
+
+    private final Logger LOGGER = LoggerFactory.getLogger(
+            AuthServerAction.class.getName());
 
     private final String VALIDATOR_PACKAGE = "com.seagates3.parameter.validator";
     private final String CONTROLLER_PACKAGE = "com.seagates3.controller";
@@ -65,6 +70,7 @@ public class AuthServerAction {
 
         if (!requestAction.equals("CreateAccount")
                 && !requestAction.equals("AssumeRoleWithSAML")) {
+            LOGGER.debug("Parsing Client Request");
             clientRequestToken = ClientRequestParser.parse(httpRequest,
                     requestBody);
 
@@ -81,13 +87,20 @@ public class AuthServerAction {
             try {
                 accessKey = accessKeyDAO.find(clientRequestToken.getAccessKeyId());
             } catch (DataAccessException ex) {
+                LOGGER.error("Error occured while searching for requestor's "
+                        + "access key id.\n" + ex.getMessage());
                 return responseGenerator.internalServerError();
             }
 
             serverResponse = validateAccessKey(accessKey);
             if (serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
+                LOGGER.debug("Access key is invalid.\n"
+                        + serverResponse.getResponseBody());
+
                 return serverResponse;
             }
+
+            LOGGER.debug("Access Key is valid");
 
             RequestorDAO requestorDAO = (RequestorDAO) DAODispatcher
                     .getResourceDAO(DAOResource.REQUESTOR);
@@ -99,18 +112,31 @@ public class AuthServerAction {
 
             serverResponse = validateRequestor(requestor, clientRequestToken);
             if (serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
+                LOGGER.debug("Invalid requestor.\n"
+                        + serverResponse.getResponseBody());
+
                 return serverResponse;
             }
+
+            LOGGER.debug("Requestor is valid.");
+            LOGGER.debug("Calling signature validator.");
 
             serverResponse = new SignatureValidator().validate(
                     clientRequestToken, requestor);
 
             if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+                LOGGER.debug("Incorrect signature.Request not authenticated");
                 return serverResponse;
             }
 
             if (requestAction.equals("AuthenticateUser")) {
-                return responseGenerator.generateAuthenticatedResponse(requestor);
+                serverResponse = responseGenerator.generateAuthenticatedResponse(
+                        requestor, clientRequestToken);
+
+                LOGGER.debug("Request is authenticated. Authenticate user "
+                        + "response - " + serverResponse.getResponseBody());
+
+                return serverResponse;
             }
         } else {
             requestor = new Requestor();
@@ -120,29 +146,33 @@ public class AuthServerAction {
         String controllerName = controllerAction.get("ControllerName");
         String action = controllerAction.get("Action");
 
+        LOGGER.debug("Controller name -" + controllerName);
+        LOGGER.debug("Action name - " + action);
+
         if (!validateRequest(controllerName, action, requestBody)) {
+            LOGGER.debug("Input parameters are not valid." + action);
             return responseGenerator.invalidParametervalue();
         }
 
         return performAction(controllerName, action, requestBody, requestor);
     }
 
-    /*
+    /**
      * Validate access Key.
      *
-     * Check
-     *   if access key exists.
-     *   if access key is active.
+     * Check if access key exists. if access key is active.
      */
     private ServerResponse validateAccessKey(AccessKey accessKey) {
         /*
          * Return exit message if access key doesnt exist.
          */
         if (!accessKey.exists()) {
-            return responseGenerator.noSuchEntity();
+            LOGGER.debug("Access key doesn't exist.");
+            return responseGenerator.invalidAccessKey();
         }
 
         if (!accessKey.isAccessKeyActive()) {
+            LOGGER.debug("Access key in not active.");
             return responseGenerator.inactiveAccessKey();
         }
 
@@ -164,22 +194,34 @@ public class AuthServerAction {
          * Ideally, an access key will be associated with a requestor.
          * It is a server error if the access key doesn't belong to a user.
          */
+
+        /**
+         * TODO - AWS supports an error message called "TokenRefreshRequired".
+         * Use case - If the creds gets expired in the middle of a huge file
+         * upload, this token can be issued.
+         *
+         */
         if (!requestor.exists()) {
+            LOGGER.debug("Requestor doesn't exist.");
             return responseGenerator.internalServerError();
         }
 
         AccessKey accessKey = requestor.getAccesskey();
         if (requestor.isFederatedUser()) {
+            LOGGER.debug("Requestor is using federated credentials.");
+
             String sessionToken = clientRequestToken.getRequestHeaders()
                     .get("X-Amz-Security-Token");
             if (!accessKey.getToken().equals(sessionToken)) {
+                LOGGER.debug("Invalid clientt token ID.");
                 return responseGenerator.invalidClientTokenId();
             }
 
-            Date currentDate = new Date();
-            Date expiryDate = DateUtil.toDate(accessKey.getExpiry());
+            DateTime currentDate = DateUtil.getCurrentDateTime();
+            DateTime expiryDate = DateUtil.toDateTime(accessKey.getExpiry());
 
-            if (currentDate.after(expiryDate)) {
+            if (currentDate.isAfter(expiryDate)) {
+                LOGGER.debug("Federated credentials have expired.");
                 return responseGenerator.expiredCredential();
             }
         }
@@ -199,6 +241,7 @@ public class AuthServerAction {
         String validatorClass = toValidatorClassName(controllerName);
 
         try {
+            LOGGER.debug("Calling " + action + " validator.");
             validator = Class.forName(validatorClass);
             obj = validator.newInstance();
             method = validator.getMethod(action, Map.class);
@@ -226,6 +269,7 @@ public class AuthServerAction {
         Object obj;
 
         try {
+            LOGGER.debug("Calling " + action + " controller.");
             controller = Class.forName(controllerClassName);
             controllerConstructor = controller.getConstructor(Requestor.class, Map.class);
             obj = controllerConstructor.newInstance(requestor, requestBody);

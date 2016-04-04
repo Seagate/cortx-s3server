@@ -81,7 +81,7 @@ public class AWSRequestParserV4 extends AWSRequestParser {
      * @param clientRequestToken
      */
     @Override
-    public void authHeaderParser(String authorizationHeaderValue,
+    protected void authHeaderParser(String authorizationHeaderValue,
             ClientRequestToken clientRequestToken) {
         String[] tokens = authorizationHeaderValue.split(",");
         String[] subTokens, credTokens, credScopeTokens;

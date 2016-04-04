@@ -55,22 +55,30 @@ public abstract class AbstractResponseGenerator {
         String errorMessage = "The request was rejected because the credential "
                 + "used to sign the request has expired.";
 
-        return formatResponse(HttpResponseStatus.FORBIDDEN,
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
                 "ExpiredCredential", errorMessage);
     }
 
     public ServerResponse inactiveAccessKey() {
         String errorMessage = "The access key used to sign the request is inactive.";
-        return formatResponse(HttpResponseStatus.FORBIDDEN,
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
                 "InactiveAccessKey", errorMessage);
     }
 
-    public ServerResponse incorrectSignature() {
+    public ServerResponse invalidAccessKey() {
+        String errorMessage = "The AWS access key Id you provided does not "
+                + "exist in our records.";
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                "InvalidAccessKeyId", errorMessage);
+    }
+
+    public ServerResponse signatureDoesNotMatch() {
         String errorMessage = "The request signature we calculated does not "
-                + "match the signature you provided. Check your "
-                + "Secret Access Key and signing method.";
-        return formatResponse(HttpResponseStatus.FORBIDDEN,
-                "IncorrectSignature", errorMessage);
+                + "match the signature you provided. Check your AWS secret "
+                + "access key and signing method. For more information, see "
+                + "REST Authentication andSOAP Authentication for details.";
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                "SignatureDoesNotMatch", errorMessage);
     }
 
     public ServerResponse internalServerError() {
@@ -93,7 +101,7 @@ public abstract class AbstractResponseGenerator {
         String errorMessage = "The X.509 certificate or AWS access key ID "
                 + "provided does not exist in our records.";
 
-        return formatResponse(HttpResponseStatus.FORBIDDEN,
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
                 "InvalidClientTokenId", errorMessage);
     }
 
@@ -117,7 +125,7 @@ public abstract class AbstractResponseGenerator {
         String errorMessage = "The request was rejected because it referenced an "
                 + "entity that does not exist. ";
 
-        return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchEntity",
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED, "NoSuchEntity",
                 errorMessage);
     }
 

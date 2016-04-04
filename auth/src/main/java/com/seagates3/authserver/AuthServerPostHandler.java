@@ -41,8 +41,13 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthServerPostHandler {
+
+    private final Logger LOGGER = LoggerFactory.getLogger(
+            AuthServerHandler.class.getName());
 
     final String KEY_PAIR_REGEX = "([a-zA-Z0-9/-]+)=([\\w\\W]*)";
     final ChannelHandlerContext ctx;
@@ -68,10 +73,14 @@ public class AuthServerPostHandler {
         requestBody = parseChunkedRequest(decoder.getBodyHttpDatas());
 
         if (httpRequest.getUri().startsWith("/saml")) {
+            LOGGER.debug("Calling SAML WebSSOControler.");
+
             FullHttpResponse response = new SAMLWebSSOController(requestBody)
                     .samlSignIn();
             returnHTTPResponse(response);
         } else {
+            LOGGER.debug("Requested Action - " + requestBody.get("Action"));
+
             AuthServerAction authserverAction = new AuthServerAction();
             serverResponse = authserverAction.serve(httpRequest, requestBody);
             returnHTTPResponse(serverResponse);
@@ -90,6 +99,8 @@ public class AuthServerPostHandler {
                     requestResponse.getResponseStatus(),
                     Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
             );
+
+            LOGGER.debug("Response sent successfully.");
         } catch (UnsupportedEncodingException ex) {
             response = null;
         }
@@ -99,9 +110,13 @@ public class AuthServerPostHandler {
 
         if (!keepAlive) {
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+
+            LOGGER.debug("Connection closed.");
         } else {
             response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             ctx.writeAndFlush(response);
+
+            LOGGER.debug("Connection kept alive.");
         }
     }
 
@@ -142,6 +157,7 @@ public class AuthServerPostHandler {
             }
         }
 
+        LOGGER.debug("Request Body - " + requestBody.toString());
         return requestBody;
     }
 }

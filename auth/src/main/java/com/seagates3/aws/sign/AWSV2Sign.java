@@ -27,8 +27,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AWSV2Sign implements AWSSign {
+
+    private final Logger LOGGER = LoggerFactory.getLogger(
+            AWSSign.class.getName());
 
     /**
      * Return true if the signature is valid.
@@ -41,12 +46,14 @@ public class AWSV2Sign implements AWSSign {
      * @return True if user is authenticated
      */
     @Override
-    public Boolean authenticate(ClientRequestToken clientRequestToken, Requestor requestor) {
+    public Boolean authenticate(ClientRequestToken clientRequestToken,
+            Requestor requestor) {
         String stringToSign, signature;
 
         stringToSign = createStringToSign(clientRequestToken);
-        byte[] kStringToSign;
+        LOGGER.debug("String to sign - \n" + stringToSign);
 
+        byte[] kStringToSign;
         try {
             kStringToSign = BinaryUtil.hmacSHA1(
                     requestor.getAccesskey().getSecretKey().getBytes(),
@@ -60,6 +67,8 @@ public class AWSV2Sign implements AWSSign {
         }
 
         signature = BinaryUtil.encodeToBase64String(kStringToSign);
+        LOGGER.debug("Request signature- " + clientRequestToken.getSignature());
+        LOGGER.debug("Calculated signature- " + signature);
 
         return signature.equals(clientRequestToken.getSignature());
     }
@@ -216,7 +225,7 @@ public class AWSV2Sign implements AWSSign {
 
             if (subResources.contains(keyPair[0])) {
                 if (keyPair.length == 2) {
-                    queryResources.put(s, keyPair[1]);
+                    queryResources.put(keyPair[0], keyPair[1]);
                 } else {
                     queryResources.put(s, "");
                 }

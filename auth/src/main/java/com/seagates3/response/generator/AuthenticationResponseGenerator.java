@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.AuthenticationResponseFormatter;
@@ -25,12 +26,14 @@ import java.util.LinkedHashMap;
 
 public class AuthenticationResponseGenerator extends AbstractResponseGenerator {
 
-    public ServerResponse generateAuthenticatedResponse(Requestor requestor) {
+    public ServerResponse generateAuthenticatedResponse(Requestor requestor,
+            ClientRequestToken requestToken) {
         LinkedHashMap responseElements = new LinkedHashMap();
         responseElements.put("UserId", requestor.getId());
         responseElements.put("UserName", requestor.getName());
         responseElements.put("AccountId", requestor.getAccount().getId());
         responseElements.put("AccountName", requestor.getAccount().getName());
+        responseElements.put("SignatureSHA256", requestToken.getSignature());
 
         return (ServerResponse) new AuthenticationResponseFormatter()
                 .create(responseElements, "0000");

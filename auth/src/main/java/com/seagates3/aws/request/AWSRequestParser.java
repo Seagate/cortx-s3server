@@ -18,6 +18,10 @@
  */
 package com.seagates3.aws.request;
 
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.model.ClientRequestToken;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,36 +31,45 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-
-import com.seagates3.authserver.AuthServerConfig;
-import com.seagates3.model.ClientRequestToken;
-
 public abstract class AWSRequestParser {
 
-    /*
+    /**
      * Parse the client request.
+     *
+     * @param httpRequest
+     * @return
      */
     public abstract ClientRequestToken parse(FullHttpRequest httpRequest);
 
+    /**
+     *
+     * @param requestBody
+     * @return
+     */
     public abstract ClientRequestToken parse(Map<String, String> requestBody);
 
-    /*
+    /**
      * Parse the authorization header.
+     *
+     * @param authorizationHeaderValue
+     * @param clientRequestToken
      */
-    public abstract void authHeaderParser(String authorizationHeaderValue,
+    protected abstract void authHeaderParser(String authorizationHeaderValue,
             ClientRequestToken clientRequestToken);
 
-    /*
+    /**
      * Parse the request headers.
+     *
+     * @param httpRequest
+     * @param clientRequestToken
      */
-    public void parseRequestHeaders(FullHttpRequest httpRequest,
+    protected void parseRequestHeaders(FullHttpRequest httpRequest,
             ClientRequestToken clientRequestToken) {
         HttpHeaders httpHeaders = httpRequest.headers();
-        Map<String, String> requestHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, String> requestHeaders
+                = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        for(Entry<String, String> e : httpHeaders) {
+        for (Entry<String, String> e : httpHeaders) {
             requestHeaders.put(e.getKey(), e.getValue());
         }
 
@@ -66,10 +79,10 @@ public abstract class AWSRequestParser {
         Boolean virtualHost = isVirtualHost(host);
         clientRequestToken.setVirtualHost(virtualHost);
 
-        String []tokens = httpRequest.getUri().split("\\?", -1);
+        String[] tokens = httpRequest.getUri().split("\\?", -1);
         clientRequestToken.setUri(tokens[0]);
 
-        if(tokens.length == 2) {
+        if (tokens.length == 2) {
             clientRequestToken.setQuery(tokens[1]);
         } else {
             clientRequestToken.setQuery("");
@@ -78,10 +91,13 @@ public abstract class AWSRequestParser {
         clientRequestToken.setRequestHeaders(requestHeaders);
     }
 
-    /*
+    /**
      * Parse the client request.
+     *
+     * @param requestBody
+     * @param clientRequestToken
      */
-    public void parseRequestHeaders(Map<String, String> requestBody,
+    protected void parseRequestHeaders(Map<String, String> requestBody,
             ClientRequestToken clientRequestToken) {
 
         clientRequestToken.setHttpMethod(requestBody.get("Method"));
@@ -96,10 +112,13 @@ public abstract class AWSRequestParser {
         clientRequestToken.setRequestHeaders(requestBody);
     }
 
-    /*
+    /**
      * Return true if request is using virtual host format.
+     *
+     * @param host
+     * @return
      */
-    private Boolean isVirtualHost(String host) {
+    protected Boolean isVirtualHost(String host) {
         List<String> s3Endpoints = Arrays.asList(AuthServerConfig.getEndpoints());
         List<String> uriEndpoints = new ArrayList<>();
         uriEndpoints.add(AuthServerConfig.getDefaultEndpoint());
@@ -113,13 +132,12 @@ public abstract class AWSRequestParser {
          * Iterate over the endpoints to check if the request is using
          * virtual host format.
          */
-        for(String endPoint : uriEndpoints) {
+        for (String endPoint : uriEndpoints) {
             patternToMatch = String.format("(^[\\w]*).%s[:\\d]*$", endPoint);
             pattern = Pattern.compile(patternToMatch);
             matcher = pattern.matcher(host);
 
-            if (matcher.matches())
-            {
+            if (matcher.matches()) {
                 /*
                  * It is virtual host format.
                  */

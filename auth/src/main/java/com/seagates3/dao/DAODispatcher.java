@@ -19,13 +19,18 @@
 package com.seagates3.dao;
 
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.authserver.SSLContextProvider;
 import com.seagates3.dao.ldap.LdapConnectionManager;
 import com.seagates3.exception.ServerInitialisationException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DAODispatcher {
 
-    static final String DAO_PACKAGE = "com.seagates3.dao";
-    static DAOProvider provider;
+    private static final String DAO_PACKAGE = "com.seagates3.dao";
+    private static DAOProvider provider;
+    private static final Logger LOGGER
+            = LogManager.getLogger(SSLContextProvider.class.getName());
 
     public static void Init() throws ServerInitialisationException {
         String dataSource = AuthServerConfig.getDataSource();
@@ -33,6 +38,7 @@ public class DAODispatcher {
 
         if ("LDAP".equals(dataSource.toUpperCase())) {
             LdapConnectionManager.initLdap();
+            LOGGER.info("Initialized LDAP");
         }
     }
 

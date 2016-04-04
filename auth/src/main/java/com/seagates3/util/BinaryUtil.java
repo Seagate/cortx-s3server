@@ -16,18 +16,16 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.util;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
-
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 
 public class BinaryUtil {
@@ -87,6 +85,7 @@ public class BinaryUtil {
 
             return mac.doFinal(data);
         } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
+            System.out.println("");
         }
         return null;
     }
@@ -146,7 +145,7 @@ public class BinaryUtil {
     /*
      * Return a base 64 encoded UUID.
      */
-    public static String base64UUID(){
+    public static String base64UUID() {
         UUID uid = UUID.randomUUID();
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
 
@@ -167,6 +166,7 @@ public class BinaryUtil {
     /*
      * Return true if the text is base 64 encoded.
      */
+
     public static Boolean isBase64Encoded(String text) {
         return Base64.isBase64(text);
     }
@@ -210,10 +210,10 @@ public class BinaryUtil {
      */
     private static String toString(byte[] bytes) {
         final char[] dest = new char[bytes.length];
-        int i=0;
+        int i = 0;
 
-        for (byte b: bytes) {
-            dest[i++] = (char)b;
+        for (byte b : bytes) {
+            dest[i++] = (char) b;
         }
 
         return new String(dest);
@@ -228,9 +228,9 @@ public class BinaryUtil {
         byte[] dest = new byte[src.length * 2];
         byte p;
 
-        for (int i=0,j=0; i < src.length; i++) {
-            dest[j++] = (byte)hexChars[(p=src[i]) >>> 4 & MASK_4BITS];
-            dest[j++] = (byte)hexChars[p & MASK_4BITS];
+        for (int i = 0, j = 0; i < src.length; i++) {
+            dest[j++] = (byte) hexChars[(p = src[i]) >>> 4 & MASK_4BITS];
+            dest[j++] = (byte) hexChars[p & MASK_4BITS];
         }
         return dest;
     }

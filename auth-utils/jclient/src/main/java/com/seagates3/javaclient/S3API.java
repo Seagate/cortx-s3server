@@ -361,8 +361,8 @@ public class S3API {
         String[] objects = cmd.getArgs();
         List<DeleteObjectsRequest.KeyVersion> objectList = new LinkedList<>();
 
-        for (String s : objects) {
-            objectList.add(new DeleteObjectsRequest.KeyVersion(s));
+        for (int index = 2; index < objects.length; index++) {
+            objectList.add(new DeleteObjectsRequest.KeyVersion(objects[index]));
         }
 
         try {

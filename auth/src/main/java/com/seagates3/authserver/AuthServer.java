@@ -19,6 +19,7 @@
 package com.seagates3.authserver;
 
 import com.seagates3.dao.DAODispatcher;
+import com.seagates3.exception.ServerInitialisationException;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -36,70 +37,90 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthServer {
-
-    static Properties authServerConfig;
-    static final Logger LOGGER = Logger.getLogger("authLog");
 
     /**
      * Read the properties file.
      */
     static void readConfig() throws FileNotFoundException, IOException {
         Path authProperties = Paths.get("", "resources", "authserver.properties");
-        authServerConfig = new Properties();
+        Properties authServerConfig = new Properties();
         InputStream input = new FileInputStream(authProperties.toString());
         authServerConfig.load(input);
+
+        AuthServerConfig.init(authServerConfig);
     }
 
     /**
      * Create a File handler for Logger. Set level to ALL.
      */
-    static void logInit() throws IOException {
-        File logFile = new File(authServerConfig.getProperty("logFilePath"),
-                "auth.log");
-        if (!logFile.exists()) {
-            logFile.createNewFile();
+    static void logInit() throws IOException, ServerInitialisationException {
+        String logConfigFilePath = AuthServerConfig.getLogConfigFile();
+
+        /**
+         * If log4j config file is given, override the default Logging
+         * properties file.
+         */
+        if (logConfigFilePath != null) {
+            File logConfigFile = new File(AuthServerConfig.getLogConfigFile());
+            if (logConfigFile.exists()) {
+                ConfigurationSource source = new ConfigurationSource(
+                        new FileInputStream(logConfigFile));
+                Configurator.initialize(null, source);
+            } else {
+                throw new ServerInitialisationException(
+                        "Logging config file doesn't exist.");
+            }
         }
 
-        FileHandler fh = new FileHandler(logFile.toString(), 1048576, 3, true);
-        fh.setFormatter(new SimpleFormatter());
-        LOGGER.addHandler(fh);
-        LOGGER.setLevel(Level.ALL);
+        String logLevel = AuthServerConfig.getLogLevel();
+        if (logLevel != null) {
+            Level level = Level.getLevel(logLevel);
+            if (level == null) {
+                throw new ServerInitialisationException(
+                        "Incorrect logging level.");
+            } else {
+                Configurator.setRootLevel(level);
+            }
+        }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws InterruptedException,
+            IOException, ServerInitialisationException {
         readConfig();
         logInit();
 
-        AuthServerConfig.init(authServerConfig);
-        LOGGER.info("Auth server configured.");
+        Logger logger = LoggerFactory.getLogger(AuthServer.class.getName());
 
         SSLContextProvider.init();
-        LOGGER.info("SSL Context provider initialized.");
-
         DAODispatcher.Init();
-        LOGGER.info("Database initialized.");
 
         // Configure the server.
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        logger.info("Created boss event loop group");
+
         EventLoopGroup workerGroup = new NioEventLoopGroup(4);
+        logger.info("Created worker event loop group");
 
         ArrayList<Channel> serverChannels = new ArrayList<>();
         int httpPort = AuthServerConfig.getHttpPort();
         Channel serverChannel = httpServerBootstrap(bossGroup, workerGroup,
                 httpPort);
         serverChannels.add(serverChannel);
+        logger.info("Auth server is listening on port " + httpPort);
 
         if (AuthServerConfig.isHttpsEnabled()) {
             int httpsPort = AuthServerConfig.getHttpsPort();
             serverChannel = httpsServerBootstrap(bossGroup, workerGroup,
                     httpsPort);
             serverChannels.add(serverChannel);
+            logger.info("Auth server is listening on port " + httpsPort);
         }
 
         for (Channel ch : serverChannels) {
@@ -113,44 +134,28 @@ public class AuthServer {
      * @param port Http port.
      */
     private static Channel httpServerBootstrap(EventLoopGroup bossGroup,
-            EventLoopGroup workerGroup, int port) {
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.option(ChannelOption.SO_BACKLOG, 1024);
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new AuthServerHTTPInitializer());
+            EventLoopGroup workerGroup, int port) throws InterruptedException {
+        ServerBootstrap b = new ServerBootstrap();
+        b.option(ChannelOption.SO_BACKLOG, 1024);
+        b.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
+                .childHandler(new AuthServerHTTPInitializer());
 
-            Channel serverChannel = b.bind(port).sync().channel();
-            LOGGER.info("Auth server(http) is running.");
-            return serverChannel;
-
-        } catch (InterruptedException ex) {
-            Logger.getLogger(AuthServer.class.getName()).log(Level.SEVERE,
-                    null, ex);
-        }
-        return null;
+        Channel serverChannel = b.bind(port).sync().channel();
+        return serverChannel;
     }
 
     private static Channel httpsServerBootstrap(EventLoopGroup bossGroup,
-            EventLoopGroup workerGroup, int port) {
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.option(ChannelOption.SO_BACKLOG, 1024);
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new AuthServerHTTPSInitializer());
+            EventLoopGroup workerGroup, int port) throws InterruptedException {
+        ServerBootstrap b = new ServerBootstrap();
+        b.option(ChannelOption.SO_BACKLOG, 1024);
+        b.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
+                .childHandler(new AuthServerHTTPSInitializer());
 
-            Channel serverChannel = b.bind(port).sync().channel();
-            LOGGER.info("Auth server (https) is running.");
-            return serverChannel;
-        } catch (InterruptedException ex) {
-            Logger.getLogger(AuthServer.class.getName())
-                    .log(Level.SEVERE, null, ex);
-        }
-
-        return null;
+        Channel serverChannel = b.bind(port).sync().channel();
+        return serverChannel;
     }
 }

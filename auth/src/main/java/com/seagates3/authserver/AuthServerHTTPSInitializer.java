@@ -26,17 +26,13 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import java.util.logging.Logger;
 
 public class AuthServerHTTPSInitializer extends ChannelInitializer<SocketChannel> {
-
-    static final Logger LOGGER = Logger.getLogger("authLog");
 
     @Override
     public void initChannel(SocketChannel ch) {
         SslContext sslContext = SSLContextProvider.getServerContext();
 
-        LOGGER.info("Initializing server channel");
         ChannelPipeline p = ch.pipeline();
 
         if (sslContext != null) {
@@ -48,6 +44,5 @@ public class AuthServerHTTPSInitializer extends ChannelInitializer<SocketChannel
         p.addLast("aggregator", new HttpObjectAggregator(1048576));
         p.addLast(new ChunkedWriteHandler());
         p.addLast(new AuthServerHandler());
-        LOGGER.info("Server channel initialized");
     }
 }

@@ -38,11 +38,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DAODispatcher.class, LDAPUtils.class})
+@PowerMockIgnore({"javax.management.*"})
 public class RequestorImplTest {
 
     private final String BASE_DN = "ou=accounts,dc=s3,dc=seagate,dc=com";
