@@ -41,6 +41,7 @@
 #include <unistd.h>
 const char   * bind_addr      = "0.0.0.0";
 const char *clovis_local_addr = "localhost@tcp:12345:33:100";
+const char *clovis_ha_addr = CLOVIS_DEFAULT_HA_ADDR;
 const char *clovis_confd_addr = "localhost@tcp:12345:33:100";
 const char *clovis_prof = "<0x7000000000000001:0>";
 uint16_t bind_port      = 8081;
@@ -182,15 +183,16 @@ set_s3_connection_handlers(evhtp_connection_t * conn, void * arg) {
     return EVHTP_RES_OK;
 }
 
-const char * optstr = "a:p:l:c:s:m:o:d:h:i";
+const char * optstr = "a:p:l:b:c:s:m:o:d:h:i";
 
 const char * help   =
     "Options: \n"
     "  -h       : This help text\n"
     "  -a <str> : Bind Address             (default: 0.0.0.0)\n"
     "  -p <int> : Bind Port                (default: 8081)\n"
-    "  -l <str> : clovis local address     (default: 10.0.2.15@tcp:12345:33:100)\n"
-    "  -c <str> : clovis confd address     (default: 10.0.2.15@tcp:12345:33:100)\n"
+    "  -l <str> : clovis local address     (default: localhost@tcp:12345:33:100)\n"
+    "  -b <str> : clovis ha address        (default: CLOVIS_DEFAULT_HA_ADDR)\n"
+    "  -c <str> : clovis confd address     (default: localhost@tcp:12345:33:100)\n"
     "  -s <str> : Auth Service address     (default: 127.0.0.1)\n"
     "  -d <int> : Auth Service port        (default: 8085)\n"
     "  -i <int> : Clovis layout id         (default: 9 (1MB))\n"
@@ -218,6 +220,9 @@ parse_args(int argc, char ** argv) {
                 break;
             case 'l':
                 clovis_local_addr      = strdup(optarg);
+                break;
+            case 'b':
+                clovis_ha_addr         = strdup(optarg);
                 break;
             case 'c':
                 clovis_confd_addr      = strdup(optarg);
@@ -255,6 +260,7 @@ parse_args(int argc, char ** argv) {
     s3_log(S3_LOG_INFO, "bind_addr = %s\n", bind_addr);
     s3_log(S3_LOG_INFO, "bind_port = %d\n", bind_port);
     s3_log(S3_LOG_INFO, "clovis_local_addr = %s\n", clovis_local_addr);
+    s3_log(S3_LOG_INFO, "clovis_ha_addr = %s\n", clovis_ha_addr);
     s3_log(S3_LOG_INFO, "clovis_confd_addr = %s\n", clovis_confd_addr);
     s3_log(S3_LOG_INFO, "Auth server: %s\n",auth_ip_addr);
     s3_log(S3_LOG_INFO, "Auth server port: %d\n",auth_port);
@@ -329,7 +335,7 @@ main(int argc, char ** argv) {
     evhtp_set_gencb(htp, s3_handler, router);
 
     /* Initilise mero and Clovis */
-    rc = init_clovis(clovis_local_addr, clovis_confd_addr, clovis_prof, clovis_layout_id);
+    rc = init_clovis(clovis_local_addr, clovis_ha_addr, clovis_confd_addr, clovis_prof, clovis_layout_id);
     if (rc < 0) {
         s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
         return rc;

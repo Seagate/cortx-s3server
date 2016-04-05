@@ -31,6 +31,7 @@
 class ClovisAPI {
   public:
     virtual int init_clovis_api(const char *clovis_local_addr,
+                            const char *clovis_ha_addr,
                             const char *clovis_confd_addr,
                             const char *clovis_prof,
                             short clovis_layout_id) = 0;
@@ -67,10 +68,11 @@ class ClovisAPI {
 class ConcreteClovisAPI : public ClovisAPI {
   public:
     int init_clovis_api(const char *clovis_local_addr,
+                        const char *clovis_ha_addr,
                         const char *clovis_confd_addr,
                         const char *clovis_prof,
                         short clovis_layout_id) {
-      return init_clovis(clovis_local_addr, clovis_confd_addr, clovis_prof,clovis_layout_id);
+      return init_clovis(clovis_local_addr, clovis_ha_addr, clovis_confd_addr, clovis_prof,clovis_layout_id);
     }
 
     void clovis_idx_init(struct m0_clovis_idx    *idx, struct m0_clovis_realm  *parent, const struct m0_uint128 *id) {

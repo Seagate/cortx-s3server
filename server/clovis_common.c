@@ -33,14 +33,14 @@ const char *clovis_indices = "./indices";
 
 // extern struct m0_addb_ctx m0_clovis_addb_ctx;
 
-int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, const char *clovis_prof, short layout_id)
+int init_clovis(const char *clovis_local_addr, const char *clovis_ha_addr, const char *clovis_confd_addr, const char *clovis_prof, short layout_id)
 {
   int rc;
   /* CLOVIS_DEFAULT_EP, CLOVIS_DEFAULT_HA_ADDR*/
   clovis_conf.cc_is_oostore            = false;
   clovis_conf.cc_is_read_verify        = false;
   clovis_conf.cc_local_addr            = clovis_local_addr;
-  clovis_conf.cc_ha_addr               = CLOVIS_DEFAULT_HA_ADDR;
+  clovis_conf.cc_ha_addr               = clovis_ha_addr;
   clovis_conf.cc_confd                 = clovis_confd_addr;
   clovis_conf.cc_profile               = clovis_prof;
   clovis_conf.cc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
@@ -64,7 +64,7 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
 
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "Failed to initilise Clovis: %d\n", rc);
-    goto err_exit;
+    return rc;
   }
 
   /* And finally, clovis root scope */
@@ -75,15 +75,12 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_confd_addr, co
 
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "Failed to open uber scope\n");
-    goto err_exit;
+    fini_clovis();
+    return rc;
   }
 
   clovis_uber_realm = clovis_container.co_realm;
   return 0;
-
-err_exit:
-  fini_clovis();
-  return rc;
 }
 
 void fini_clovis(void)
