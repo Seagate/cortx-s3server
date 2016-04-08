@@ -1,0 +1,24 @@
+S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_CLOVIS_CONFIG]
+S3_SERVER_CONFIG:                                     # Section for S3 Server
+   S3_LOG_FILENAME: "/var/log/seagate/s3/s3server.log"  # S3 Log file name, for output to stdout have value as ""
+   S3_LOG_MODE: INFO                                    # logging levels, levels can be INFO, DEBUG, ERROR, WARN, FATAL, default is INFO
+   S3_SERVER_BIND_ADDR: 0.0.0.0                         # S3 Server bind address, 0.0.0.0 is default
+   S3_SERVER_BIND_PORT: 8081                            # S3 Server port number
+   S3_SERVER_REGION_ENDPOINTS: [s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
+   S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
+   S3_ENABLE_PERF: 0                                    # S3 Performance metric collection, to enable have value 1, default is 0 (disabled)
+S3_AUTH_CONFIG:                                       # Section for S3 Auth Service
+   S3_AUTH_IP_ADDR: 127.0.0.1                           # Auth server IP address
+   S3_AUTH_PORT: 8085                                   # Auth server port
+S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
+   S3_CLOVIS_LOCAL_ADDR: <ipaddress>@tcp:12345:33:100   # Clovis end points, replace <ipaddress> with host's ip address
+   S3_CLOVIS_CONFD_ADDR: <ipaddress>@tcp:12345:33:100   # Clovis end points, replace <ipaddress> with host's ip address
+   S3_CLOVIS_HA_ADDR: <ipaddress>@tcp:12345:34:1        # Clovis end point, replace <ipaddress> with host's ip address
+   S3_CLOVIS_PROF: <0x7000000000000001:0>               # Clovis end point
+   S3_CLOVIS_LAYOUT_ID: 9                               # Clovis will select a Unit size of a layout according to the
+                                                        # layout id set in the configuration file, mapping is as follows:
+                                                        # 1->4K, 2->8K, 3->16K, 4->32K, 5->64K, 6->128K, 7->256K, 8->512K, 9->1024K,
+                                                        # 10->2048K, 11->4096K, 12->8192K, 13->16384K, 14->32768K, default is layout id 9 (1 MB)
+   S3_CLOVIS_BLOCK_SIZE: 1048576                        # Clovis Block size for an IO operation
+   S3_CLOVIS_MAX_BLOCKS_PER_REQUEST: 1                  # Maximum blocks of size S3_CLOVIS_BLOCK_SIZE per read/write request to clovis
+   S3_CLOVIS_MAX_IDX_FETCH_COUNT: 100                   # Clovis will read from index(If not specified) at a time maximim of this many key values

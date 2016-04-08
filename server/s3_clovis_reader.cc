@@ -22,7 +22,7 @@
 #include <unistd.h>
 
 #include "s3_clovis_rw_common.h"
-#include "s3_clovis_config.h"
+#include "s3_option.h"
 #include "s3_clovis_reader.h"
 #include "s3_uri_to_mero_oid.h"
 
@@ -46,7 +46,7 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
   this->handler_on_failed  = on_failed;
   num_of_blocks_read = num_of_blocks;
 
-  clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
+  clovis_block_size = S3Option::get_instance()->get_clovis_block_size();
 
   reader_context.reset(new S3ClovisReaderContext(request, std::bind( &S3ClovisReader::read_object_data_successful, this), std::bind( &S3ClovisReader::read_object_data_failed, this)));
 

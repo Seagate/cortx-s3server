@@ -18,7 +18,7 @@
  */
 
 #include "s3_delete_multiple_objects_action.h"
-#include "s3_clovis_config.h"
+#include "s3_option.h"
 #include "s3_error_codes.h"
 #include "s3_perf_logger.h"
 
@@ -114,7 +114,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (delete_index < delete_request.get_count()) {
     keys_to_delete.clear();
-    keys_to_delete = delete_request.get_keys(delete_index, S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count());
+    keys_to_delete = delete_request.get_keys(delete_index, S3Option::get_instance()->get_clovis_idx_fetch_count());
 
     clovis_kv_reader->get_keyval(get_bucket_index_name(), keys_to_delete, std::bind( &S3DeleteMultipleObjectsAction::delete_objects, this), std::bind( &S3DeleteMultipleObjectsAction::fetch_objects_info_failed, this));
     delete_index += keys_to_delete.size();

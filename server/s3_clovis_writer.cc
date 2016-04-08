@@ -22,7 +22,7 @@
 #include <unistd.h>
 
 #include "s3_clovis_rw_common.h"
-#include "s3_clovis_config.h"
+#include "s3_option.h"
 #include "s3_clovis_writer.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_timer.h"
@@ -91,19 +91,20 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
+  size_t clovis_block_size = S3Option::get_instance()->get_clovis_block_size();
+  int clovis_write_payload_size = S3Option::get_instance()->get_clovis_write_payload_size();
 
   size_t estimated_write_length = 0;
-  if (buffer.is_freezed() && buffer.length() < S3ClovisConfig::get_instance()->get_clovis_write_payload_size()) {
+  if (buffer.is_freezed() && buffer.length() < clovis_write_payload_size) {
     estimated_write_length = buffer.length();
   } else {
-    estimated_write_length = (buffer.length() / S3ClovisConfig::get_instance()->get_clovis_write_payload_size()) *  S3ClovisConfig::get_instance()->get_clovis_write_payload_size();
+    estimated_write_length = (buffer.length() / clovis_write_payload_size) *  clovis_write_payload_size;
   }
 
-  if (estimated_write_length > S3ClovisConfig::get_instance()->get_clovis_write_payload_size()) {
+  if (estimated_write_length > clovis_write_payload_size) {
       // TODO : we should just write whatever is buffered, but mero has error where if we
       // have high block count, it fails, failure seen around 800k+ data.
-      estimated_write_length = S3ClovisConfig::get_instance()->get_clovis_write_payload_size();
+      estimated_write_length = clovis_write_payload_size;
   }
 
   std::deque< std::tuple<void*, size_t> > data_items = buffer.get_buffers_ref(estimated_write_length);
@@ -269,7 +270,7 @@ void S3ClovisWriter::delete_objects_failed() {
 void S3ClovisWriter::set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
     std::deque< std::tuple<void*, size_t> >& data_items, size_t clovis_block_count) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
+  size_t clovis_block_size = S3Option::get_instance()->get_clovis_block_size();
 
   size_t data_to_consume = clovis_block_size;
   size_t pending_from_current_extent = 0;

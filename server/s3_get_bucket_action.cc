@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include "s3_clovis_config.h"
+#include "s3_option.h"
 #include "s3_get_bucket_action.h"
 #include "s3_object_metadata.h"
 #include "s3_error_codes.h"
@@ -72,7 +72,7 @@ void S3GetBucketAction::fetch_bucket_info() {
 
 void S3GetBucketAction::get_next_objects() {
   s3_log(S3_LOG_DEBUG, "Fetching object listing\n");
-  size_t count = S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count();
+  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
   clovis_kv_reader->next_keyval(get_bucket_index_name(), last_key, count, std::bind( &S3GetBucketAction::get_next_objects_successful, this), std::bind( &S3GetBucketAction::get_next_objects_failed, this));
@@ -129,7 +129,7 @@ void S3GetBucketAction::get_next_objects_successful() {
     }
   }
   // We ask for more if there is any.
-  size_t count_we_requested = S3ClovisConfig::get_instance()->get_clovis_idx_fetch_count();
+  size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
   if ((return_list_size == max_keys) || (kvps.size() < count_we_requested)) {
     // Go ahead and respond.

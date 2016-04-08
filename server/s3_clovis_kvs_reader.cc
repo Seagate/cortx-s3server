@@ -23,7 +23,7 @@
 #include "s3_common.h"
 
 #include "s3_clovis_rw_common.h"
-#include "s3_clovis_config.h"
+#include "s3_option.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_uri_to_mero_oid.h"
 

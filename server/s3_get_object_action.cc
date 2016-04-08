@@ -18,7 +18,7 @@
  */
 
 #include "s3_get_object_action.h"
-#include "s3_clovis_config.h"
+#include "s3_option.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
@@ -69,7 +69,7 @@ void S3GetObjectAction::read_object() {
     } else {
       s3_log(S3_LOG_DEBUG, "Reading object of size %zu\n", object_metadata->get_content_length());
 
-      size_t clovis_block_size = S3ClovisConfig::get_instance()->get_clovis_block_size();
+      size_t clovis_block_size = S3Option::get_instance()->get_clovis_block_size();
       /* Count Data blocks from data size */
       total_blocks_in_object = (object_metadata->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
 
@@ -86,7 +86,7 @@ void S3GetObjectAction::read_object() {
 void S3GetObjectAction::read_object_data() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  size_t max_blocks_in_one_read_op = S3ClovisConfig::get_instance()->get_clovis_read_payload_size()/S3ClovisConfig::get_instance()->get_clovis_block_size();
+  size_t max_blocks_in_one_read_op = S3Option::get_instance()->get_clovis_read_payload_size()/S3Option::get_instance()->get_clovis_block_size();
   size_t blocks_to_read = 0;
 
   if (blocks_already_read != total_blocks_in_object) {

@@ -13,6 +13,7 @@ cc_binary(
                 "third_party/googletest/include/",
                 "third_party/libevhtp/s3_dist/include",
                 "third_party/jsoncpp/dist",
+                "third_party/yaml-cpp/include/",
                 "third_party/libxml2/s3_dist/include/libxml2"],
 
     linkopts = ["-L $(MERO_SRC)/mero/.libs",
@@ -22,7 +23,7 @@ cc_binary(
                 "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
                 "-lpthread -ldl -lrt",
                 "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
-                "-lyaml -luuid -pthread -lxml2 -lpthread", "-Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent,-rpath,/opt/seagate/s3/libxml2/lib"],
+                "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lpthread", "-Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent,-rpath,/opt/seagate/s3/libyaml-cpp/lib,-rpath,/opt/seagate/s3/libxml2/lib"],
 )
 
 cc_test(
@@ -42,6 +43,7 @@ cc_test(
                 "third_party/libevent/s3_dist/include/",
                 "third_party/libevhtp/s3_dist/include",
                 "third_party/jsoncpp/dist",
+                "third_party/yaml-cpp/include/",
                 "third_party/libxml2/s3_dist/include/libxml2",
                 "server/"],
 
@@ -53,9 +55,9 @@ cc_test(
                 "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
                 "-lpthread -ldl -lrt",
                 "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
-                "-lyaml -luuid -pthread -lxml2 -lpthread",
+                "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lpthread",
                 "-pthread third_party/googletest/build/libgtest.a third_party/googlemock/build/libgmock.a",
-                "-Wl,-rpath,/usr/local/lib64,-rpath,$(MERO_SRC)/mero/.libs,-rpath,$(MERO_SRC)/extra-libs/gf-complete/src/.libs,-rpath,third_party/libevent/s3_dist/lib,-rpath,third_party/libxml2/s3_dist/lib"],
+                "-Wl,-rpath,/usr/local/lib64,-rpath,$(MERO_SRC)/mero/.libs,-rpath,$(MERO_SRC)/extra-libs/gf-complete/src/.libs,-rpath,third_party/libevent/s3_dist/lib,-rpath,third_party/libxml2/s3_dist/lib,-rpath,/opt/seagate/s3/libyaml-cpp/lib"],
 
     data = ["resources"],
 )

@@ -4,14 +4,17 @@
 
 S3_INSTALL_LOCATION=/opt/seagate/s3
 AUTH_INSTALL_LOCATION=/opt/seagate/auth
+S3_CONFIG_FILE_LOCATION=/opt/seagate/s3conf
 
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p /var/log/seagate/s3/
 mkdir -p $S3_INSTALL_LOCATION/lib
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/libxml2
+mkdir -p $S3_INSTALL_LOCATION/libyaml-cpp/lib
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION
+mkdir -p $S3_CONFIG_FILE_LOCATION
 
 # Copy over the mero libs
 echo "Copying clovis libraries and dependencies to install location..."
@@ -22,7 +25,8 @@ cp ../../extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATIO
 echo "Copying s3 library dependencies to install location..."
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
 cp -R third_party/libxml2/s3_dist/lib/* $S3_INSTALL_LOCATION/libxml2/
-
+cp third_party/yaml-cpp/build/libyaml-cpp.so $S3_INSTALL_LOCATION/libyaml-cpp/lib
+cp third_party/yaml-cpp/build/libyaml-cpp.so.0.5 $S3_INSTALL_LOCATION/libyaml-cpp/lib
 # Copy the s3 server
 echo "Copying s3 server to install location..."
 cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
@@ -30,6 +34,10 @@ cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
 # Copy the resources
 echo "Copying s3 server resources to install location..."
 cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json
+
+# Copy the S3 Config option file
+echo "Copying s3 config file to install location..."
+cp s3config.yaml $S3_CONFIG_FILE_LOCATION
 
 # Copy the s3 server startup script.
 echo "Copying s3 startup script to install location..."

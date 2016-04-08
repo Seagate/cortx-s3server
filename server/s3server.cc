@@ -34,29 +34,16 @@
 #include "s3_perf_logger.h"
 #include "s3_timer.h"
 #include "s3_log.h"
+#include "s3_option.h"
 
 #define WEBSTORE "/home/seagate/webstore"
 
 /* Program options */
 #include <unistd.h>
-const char   * bind_addr      = "0.0.0.0";
-const char *clovis_local_addr = "localhost@tcp:12345:33:100";
-const char *clovis_ha_addr = CLOVIS_DEFAULT_HA_ADDR;
-const char *clovis_confd_addr = "localhost@tcp:12345:33:100";
-const char *clovis_prof = "<0x7000000000000001:0>";
-uint16_t bind_port      = 8081;
-short    clovis_layout_id = 9;
-char *s3_log_file;
-char *s3_log_mode;
-// S3 Auth service
-const char *auth_ip_addr = "127.0.0.1";
-uint16_t auth_port = 8085;
 
 const char *log_level_str[S3_LOG_DEBUG] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG"};
 
 FILE *fp_log;
-
-//To be read from config file
 int s3log_level = S3_LOG_INFO;
 
 /* MD5 helper */
@@ -206,84 +193,48 @@ parse_args(int argc, char ** argv) {
     extern int    opterr;
     extern int    optopt;
     int           c;
-
+    S3Option  *option_instance = S3Option::get_instance();
     while ((c = getopt(argc, argv, optstr)) != -1) {
         switch (c) {
             case 'h':
                 printf("Usage: %s [opts]\n%s", argv[0], help);
                 return -1;
             case 'a':
-                bind_addr              = strdup(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_BIND_ADDR, optarg);
                 break;
             case 'p':
-                bind_port              = atoi(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_BIND_PORT, optarg);
                 break;
             case 'l':
-                clovis_local_addr      = strdup(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, optarg);
                 break;
             case 'b':
-                clovis_ha_addr         = strdup(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_CLOVIS_HA_ADDR, optarg);
                 break;
             case 'c':
-                clovis_confd_addr      = strdup(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, optarg);
                 break;
             case 's':
-                auth_ip_addr           = strdup(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, optarg);
                 break;
             case 'd':
-                auth_port             = atoi(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_AUTH_PORT, optarg);
                 break;
             case 'i':
-                clovis_layout_id      = atoi(optarg);
+                option_instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, optarg);
                 break;
             case 'o':
-                s3_log_file           = strdup(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_LOG_FILE, optarg);
                 break;
             case 'm':
-                s3_log_mode            = strdup(optarg);
+                option_instance->set_cmdline_option(S3_OPTION_LOG_MODE, optarg);
                 break;
             default:
                 printf("Unknown opt %s\n", optarg);
                 return -1;
         } /* switch */
     }
-    if(s3_log_file) {
-      fp_log = std::fopen(s3_log_file, "a");
-      if(fp_log == NULL) {
-        printf("File opening of log %s failed\n",s3_log_file);
-        return -1;
-      }
-    } else {
-      fp_log = stdout;
-    }
 
-    s3_log(S3_LOG_INFO, "bind_addr = %s\n", bind_addr);
-    s3_log(S3_LOG_INFO, "bind_port = %d\n", bind_port);
-    s3_log(S3_LOG_INFO, "clovis_local_addr = %s\n", clovis_local_addr);
-    s3_log(S3_LOG_INFO, "clovis_ha_addr = %s\n", clovis_ha_addr);
-    s3_log(S3_LOG_INFO, "clovis_confd_addr = %s\n", clovis_confd_addr);
-    s3_log(S3_LOG_INFO, "Auth server: %s\n",auth_ip_addr);
-    s3_log(S3_LOG_INFO, "Auth server port: %d\n",auth_port);
-    s3_log(S3_LOG_INFO, "clovis_layout_id = %d\n", clovis_layout_id);
-    if(s3_log_file != NULL)
-      s3_log(S3_LOG_INFO, "s3_log_file = %s\n", s3_log_file);
-
-    if(s3_log_mode != NULL) {
-      s3_log(S3_LOG_INFO, "s3_log_mode = %s\n", s3_log_mode);
-      if(strcmp(s3_log_mode,"INFO") == 0) {
-        s3log_level = S3_LOG_INFO;
-      } else if(strcmp(s3_log_mode, "DEBUG") == 0) {
-        s3log_level = S3_LOG_DEBUG;
-      } else if(strcmp(s3_log_mode, "ERROR") == 0) {
-        s3log_level = S3_LOG_ERROR;
-      } else if(strcmp(s3_log_mode, "FATAL") == 0) {
-        s3log_level = S3_LOG_FATAL;
-      } else if(strcmp(s3_log_mode, "WARN") == 0) {
-        s3log_level = S3_LOG_WARN;
-      }
-    } else {
-      s3_log(S3_LOG_INFO, "s3_log_mode = INFO\n");
-    }
     return 0;
 } /* parse_args */
 
@@ -294,84 +245,129 @@ void fatal_libevent(int err) {
 
 int
 main(int argc, char ** argv) {
-    int rc = 0;
+  int rc = 0;
+  const char  *bind_addr;
+  const char  *clovis_local_addr;
+  const char  *clovis_confd_addr;
+  const char  *clovis_ha_addr;
+  const char  *clovis_prof;
+  uint16_t     bind_port;
+  short        clovis_layout_id;
 
-    if (parse_args(argc, argv) < 0) {
-        exit(1);
+  S3Option * option_instance = S3Option::get_instance();
+  if (parse_args(argc, argv) < 0) {
+      exit(1);
+  }
+
+  // Load Any configs.
+  S3ErrorMessages::init_messages();
+  // Load options from S3Config.yaml file, will ignore options provided at command line
+  option_instance->load_all_sections(true);
+  if(option_instance->get_log_level() != "") {
+    if(option_instance->get_log_level() == "INFO") {
+      s3log_level = S3_LOG_INFO;
+    } else if(option_instance->get_log_level() == "DEBUG") {
+      s3log_level = S3_LOG_DEBUG;
+    } else if(option_instance->get_log_level() == "ERROR") {
+      s3log_level = S3_LOG_ERROR;
+    } else if(option_instance->get_log_level() == "FATAL") {
+      s3log_level = S3_LOG_FATAL;
+    } else if(option_instance->get_log_level() == "WARN") {
+      s3log_level = S3_LOG_WARN;
     }
+  } else {
+    s3log_level = S3_LOG_INFO;
+  }
 
-    // Load Any configs.
-    S3ErrorMessages::init_messages();
+  if(option_instance->get_log_filename() != "") {
+    fp_log = std::fopen(option_instance->get_log_filename().c_str(), "a");
+    if(fp_log == NULL) {
+      printf("File opening of log %s failed\n", option_instance->get_log_filename().c_str());
+      return -1;
+    }
+  } else {
+    fp_log = stdout;
+  }
 
+  option_instance->dump_options();
     // Initilise loggers
-#ifdef S3_ENABLE_PERF
+  if(option_instance->s3_performance_enabled()) {
     S3PerfLogger::initialize();
-#endif
-    // Call this function before creating event base
-    evthread_use_pthreads();
+  }
 
-    evbase_t * evbase = event_base_new();
+  // Call this function before creating event base
+  evthread_use_pthreads();
 
-    // Uncomment below api if we want to run libevent in debug mode
-    // event_enable_debug_mode();
+  evbase_t * evbase = event_base_new();
 
-    if (evthread_make_base_notifiable(evbase)<0) {
-      s3_log(S3_LOG_ERROR, "Couldn't make base notifiable!");
-      return 1;
-    }
-    evhtp_t  * htp    = evhtp_new(evbase, NULL);
-    event_set_fatal_callback(fatal_libevent);
+  // Uncomment below api if we want to run libevent in debug mode
+  // event_enable_debug_mode();
 
-    S3Router *router = new S3Router(new S3APIHandlerFactory(),
-                                    new S3UriFactory());
+  if (evthread_make_base_notifiable(evbase)<0) {
+    s3_log(S3_LOG_ERROR, "Couldn't make base notifiable!");
+    return 1;
+  }
+  evhtp_t  * htp    = evhtp_new(evbase, NULL);
+  event_set_fatal_callback(fatal_libevent);
 
-    // So we can support queries like s3.com/bucketname?location or ?acl
-    evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
+  S3Router *router = new S3Router(new S3APIHandlerFactory(),
+                                  new S3UriFactory());
 
-    // Main request processing (processing headers & body) is done in hooks
-    evhtp_set_post_accept_cb(htp, set_s3_connection_handlers, router);
+  // So we can support queries like s3.com/bucketname?location or ?acl
+  evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
 
-    // This handler is just like complete the request processing & respond
-    evhtp_set_gencb(htp, s3_handler, router);
+  // Main request processing (processing headers & body) is done in hooks
+  evhtp_set_post_accept_cb(htp, set_s3_connection_handlers, router);
 
-    /* Initilise mero and Clovis */
-    rc = init_clovis(clovis_local_addr, clovis_ha_addr, clovis_confd_addr, clovis_prof, clovis_layout_id);
-    if (rc < 0) {
-        s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
-        return rc;
-    }
+  // This handler is just like complete the request processing & respond
+  evhtp_set_gencb(htp, s3_handler, router);
 
-    /* KD - setup for reading data */
-    /* set a callback to set per-connection hooks (via a post_accept cb) */
-    // evhtp_set_post_accept_cb(htp, set_my_connection_handlers, NULL);
+  clovis_local_addr = option_instance->get_clovis_local_addr().c_str();
+  clovis_confd_addr = option_instance->get_clovis_confd_addr().c_str();
+  clovis_ha_addr = option_instance->get_clovis_ha_addr().c_str();
+  clovis_prof = option_instance->get_clovis_prof().c_str();
+  clovis_layout_id = option_instance->get_clovis_layout();
+  bind_port = option_instance->get_s3_bind_port();
+  bind_addr = option_instance->get_bind_addr().c_str();
+
+  /* Initilise mero and Clovis */
+  rc = init_clovis(clovis_local_addr, clovis_ha_addr, clovis_confd_addr, clovis_prof, clovis_layout_id);
+  if (rc < 0) {
+      s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
+      return rc;
+  }
+
+  /* KD - setup for reading data */
+  /* set a callback to set per-connection hooks (via a post_accept cb) */
+  // evhtp_set_post_accept_cb(htp, set_my_connection_handlers, NULL);
 
 #if 0
 #ifndef EVHTP_DISABLE_EVTHR
     evhtp_use_threads(htp, NULL, 4, NULL);
 #endif
 #endif
-    evhtp_bind_socket(htp, bind_addr, bind_port, 1024);
+  evhtp_bind_socket(htp, bind_addr, bind_port, 1024);
 
-    rc = event_base_loop(evbase, 0);
-    if( rc == 0) {
-      s3_log(S3_LOG_DEBUG, "Event base loop exited normally\n");
-    } else {
-      s3_log(S3_LOG_ERROR, "Event base loop exited due to unhandled exception in libevent's backend\n");
-    }
+  rc = event_base_loop(evbase, 0);
+  if( rc == 0) {
+    s3_log(S3_LOG_DEBUG, "Event base loop exited normally\n");
+  } else {
+    s3_log(S3_LOG_ERROR, "Event base loop exited due to unhandled exception in libevent's backend\n");
+  }
 
-    evhtp_unbind_socket(htp);
-    evhtp_free(htp);
-    event_base_free(evbase);
+  evhtp_unbind_socket(htp);
+  evhtp_free(htp);
+  event_base_free(evbase);
 
-    /* Clean-up */
-    fini_clovis();
-#ifdef S3_ENABLE_PERF
+  /* Clean-up */
+  fini_clovis();
+  if(option_instance->s3_performance_enabled()) {
     S3PerfLogger::finalize();
-#endif
+  }
 
-    delete router;
-    if(fp_log != NULL && fp_log != stdout) {
-      std::fclose(fp_log);
-    }
-    return 0;
+  delete router;
+  if(fp_log != NULL && fp_log != stdout) {
+    std::fclose(fp_log);
+  }
+  return 0;
 }

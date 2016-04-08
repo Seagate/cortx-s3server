@@ -19,7 +19,7 @@
  */
 
 #include "s3_put_multiobject_action.h"
-#include "s3_clovis_config.h"
+#include "s3_option.h"
 #include "s3_error_codes.h"
 #include "s3_perf_logger.h"
 #include "s3_log.h"
@@ -157,7 +157,7 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
           std::bind(&S3PutMultiObjectAction::consume_incoming_content, this),
-          S3ClovisConfig::get_instance()->get_clovis_write_payload_size()
+          S3Option::get_instance()->get_clovis_write_payload_size()
         );
     }
   }

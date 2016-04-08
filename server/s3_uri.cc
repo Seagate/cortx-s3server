@@ -20,7 +20,7 @@
 #include <string>
 
 #include "s3_uri.h"
-#include "s3_server_config.h"
+#include "s3_option.h"
 #include "s3_log.h"
 
 S3URI::S3URI(std::shared_ptr<S3RequestObject> req) : request(req),
@@ -123,10 +123,10 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> re
 
 void S3VirtualHostStyleURI::setup_bucket_name() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (host_header.find(S3Config::get_instance()->get_default_endpoint()) != std::string::npos) {
-    bucket_name = host_header.substr(0, (host_header.length() - S3Config::get_instance()->get_default_endpoint().length() - 1));
+  if (host_header.find(S3Option::get_instance()->get_default_endpoint()) != std::string::npos) {
+    bucket_name = host_header.substr(0, (host_header.length() - S3Option::get_instance()->get_default_endpoint().length() - 1));
   }
-  for (std::set<std::string>::iterator it = S3Config::get_instance()->get_region_endpoints().begin(); it != S3Config::get_instance()->get_region_endpoints().end(); ++it) {
+  for (std::set<std::string>::iterator it = S3Option::get_instance()->get_region_endpoints().begin(); it != S3Option::get_instance()->get_region_endpoints().end(); ++it) {
     if (host_header.find(*it) != std::string::npos) {
       bucket_name = host_header.substr(0, (host_header.length() - (*it).length() - 1));
     }

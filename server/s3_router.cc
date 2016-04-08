@@ -24,7 +24,7 @@
 #include "s3_router.h"
 #include "s3_uri.h"
 #include "s3_api_handler.h"
-#include "s3_server_config.h"
+#include "s3_option.h"
 #include "s3_log.h"
 
 S3Router::S3Router(S3APIHandlerFactory *api_creator, S3UriFactory *uri_creator) :
@@ -39,22 +39,22 @@ S3Router::~S3Router() {
 }
 
 bool S3Router::is_default_endpoint(std::string& endpoint) {
-  return S3Config::get_instance()->get_default_endpoint() == endpoint;
+  return S3Option::get_instance()->get_default_endpoint() == endpoint;
 }
 
 bool S3Router::is_exact_valid_endpoint(std::string& endpoint) {
-  if (endpoint == S3Config::get_instance()->get_default_endpoint()) {
+  if (endpoint == S3Option::get_instance()->get_default_endpoint()) {
     return true;
   }
-  return S3Config::get_instance()->get_region_endpoints().find(endpoint) != S3Config::get_instance()->get_region_endpoints().end();
+  return S3Option::get_instance()->get_region_endpoints().find(endpoint) != S3Option::get_instance()->get_region_endpoints().end();
 }
 
 bool S3Router::is_subdomain_match(std::string& endpoint) {
   // todo check if given endpoint is subdomain or default or region.
-  if (endpoint.find(S3Config::get_instance()->get_default_endpoint()) != std::string::npos) {
+  if (endpoint.find(S3Option::get_instance()->get_default_endpoint()) != std::string::npos) {
     return true;
   }
-  for (std::set<std::string>::iterator it = S3Config::get_instance()->get_region_endpoints().begin(); it != S3Config::get_instance()->get_region_endpoints().end(); ++it) {
+  for (std::set<std::string>::iterator it = S3Option::get_instance()->get_region_endpoints().begin(); it != S3Option::get_instance()->get_region_endpoints().end(); ++it) {
     if (endpoint.find(*it) != std::string::npos) {
       return true;
     }

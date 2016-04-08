@@ -10,6 +10,7 @@ cd third_party
 ./setup_gtest.sh
 ./setup_gmock.sh
 ./setup_lustre_headers.sh
+./setup_yamlcpp.sh
 
 cd $S3_SRC_FOLDER
 
