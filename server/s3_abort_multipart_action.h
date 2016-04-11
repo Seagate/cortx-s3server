@@ -54,8 +54,8 @@ public:
   void setup_steps();
 
   void fetch_bucket_info();
-  void fetch_parts_info();
-  void fetch_parts_failed();
+  void check_if_any_parts_present();
+  void check_if_any_parts_present_failed();
   void delete_multipart_failed();
   void delete_parts();
   void delete_parts_failed();
