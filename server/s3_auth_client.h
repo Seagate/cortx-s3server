@@ -199,12 +199,15 @@ public:
   void chunk_auth_failed();
 
   FRIEND_TEST(S3AuthClientTest, Constructor);
-  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBody);
-  FRIEND_TEST(S3AuthClientCheckTest, CheckGetAuth);
-  FRIEND_TEST(S3AuthClientCheckTest, CheckPutAuth);
-  FRIEND_TEST(S3AuthClientCheckTest, CheckDelAuth);
-  FRIEND_TEST(S3AuthClientCheckTest, CheckHeadAuth);
-  FRIEND_TEST(S3AuthClientCheckTest, CheckPostAuth);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyGet);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyHead);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyPut);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyPost);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyDelete);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1);
+  FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2);
 };
 
 #endif

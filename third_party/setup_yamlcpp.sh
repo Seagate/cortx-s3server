@@ -9,9 +9,13 @@ cd yaml-cpp
 git checkout 7d2873ce9f2202ea21b6a8c5ecbc9fe38032c229
 mkdir build
 
+INSTALL_DIR=`pwd`/s3_dist
+mkdir $INSTALL_DIR
+
 cd build
-CFLAGS=-fPIC CXXFLAGS=-fPIC cmake -DBUILD_SHARED_LIBS=ON ..
+CFLAGS=-fPIC CXXFLAGS=-fPIC cmake -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR -DBUILD_SHARED_LIBS=ON ..
 make
-sudo make install
+make install
+
 cd ..
 cd ..

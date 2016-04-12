@@ -74,8 +74,7 @@ class S3AuthClientOpContextTest : public testing::Test {
     S3AuthClientOpContextTest() {
       evbase_t *evbase = event_base_new();
       evhtp_request_t *req = evhtp_request_new(NULL, evbase);
-      EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
+      ptr_mock_request = std::make_shared<MockS3RequestObject> (req, new EvhtpWrapper());
       EXPECT_CALL(*ptr_mock_request, get_evbase())
         .WillRepeatedly(Return(evbase));
       success_callback = NULL;
@@ -91,6 +90,35 @@ class S3AuthClientOpContextTest : public testing::Test {
   std::function<void()> success_callback;
   std::function<void()> failed_callback;
   S3AuthClientOpContext *p_authopctx;
+};
+
+class S3AuthClientTest : public testing::Test {
+  protected:
+    S3AuthClientTest() {
+      evbase_t *evbase = event_base_new();
+      ev_req = evhtp_request_new(NULL, evbase);
+      ptr_mock_request = std::make_shared<MockS3RequestObject> (ev_req, new EvhtpWrapper());
+      p_authclienttest = new S3AuthClient(ptr_mock_request);
+      auth_client_op_context = (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
+      auth_client_op_context->evbase = event_base_new();
+      auth_client_op_context->authrequest = evhtp_request_new(dummy_request_cb, auth_client_op_context->evbase);
+    }
+
+    ~S3AuthClientTest() {
+       event_base_free(auth_client_op_context->evbase);
+       free(auth_client_op_context);
+       delete p_authclienttest;
+    }
+
+    void fake_in_header(std::string key, std::string val) {
+      evhtp_headers_add_header(ev_req->headers_in,
+                               evhtp_header_new(key.c_str(), val.c_str(), 0, 0));
+    }
+
+    evhtp_request_t *ev_req;
+    S3AuthClient *p_authclienttest;
+    std::shared_ptr<MockS3RequestObject> ptr_mock_request;
+    struct s3_auth_op_context *auth_client_op_context;
 };
 
 TEST_F(S3AuthClientOpContextTest, Constructor) {
@@ -156,4 +184,194 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthErrorResponse) {
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
   EXPECT_FALSE(p_authopctx->get_error_res_obj()->isOK());
+}
+
+TEST_F(S3AuthClientTest, Constructor) {
+  EXPECT_TRUE(p_authclienttest->get_state() == S3AuthClientOpState::init);
+  EXPECT_FALSE(p_authclienttest->is_chunked_auth);
+  EXPECT_FALSE(p_authclienttest->last_chunk_added);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=GET&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return(""));
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=PUT&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::PUT));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return(""));
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=HEAD&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::HEAD));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return(""));
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=DELETE&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::DELETE));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return(""));
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=POST&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::POST));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return(""));
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+
+  p_authclienttest->is_chunked_auth = true;
+  p_authclienttest->prev_chunk_signature_from_auth = "";
+  p_authclienttest->current_chunk_signature_from_auth = "ABCD";
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+
+  p_authclienttest->is_chunked_auth = true;
+  p_authclienttest->prev_chunk_signature_from_auth = "ABCD";
+  p_authclienttest->current_chunk_signature_from_auth = "";
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
+}
+
+TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
+  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08&current-signature-sha256=cur-XYZ&previous-signature-sha256=prev-ABCD&x-amz-content-sha256=sha256-abcd";
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+              .WillRepeatedly(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
+              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+
+  p_authclienttest->is_chunked_auth = true;
+  p_authclienttest->prev_chunk_signature_from_auth = "prev-ABCD";
+  p_authclienttest->current_chunk_signature_from_auth = "cur-XYZ";
+  p_authclienttest->hash_sha256_current_chunk = "sha256-abcd";
+
+  p_authclienttest->setup_auth_request_body();
+  int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
+  char *mybuff = (char *)calloc(1, len + 1);
+  evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
+
+  EXPECT_STREQ(expectedbody, mybuff);
+
+  free(mybuff);
 }

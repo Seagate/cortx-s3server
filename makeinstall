@@ -25,8 +25,8 @@ cp ../../extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATIO
 echo "Copying s3 library dependencies to install location..."
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
 cp -R third_party/libxml2/s3_dist/lib/* $S3_INSTALL_LOCATION/libxml2/
-cp third_party/yaml-cpp/build/libyaml-cpp.so $S3_INSTALL_LOCATION/libyaml-cpp/lib
-cp third_party/yaml-cpp/build/libyaml-cpp.so.0.5 $S3_INSTALL_LOCATION/libyaml-cpp/lib
+cp -R third_party/yaml-cpp/s3_dist/lib/libyaml-cpp.so* $S3_INSTALL_LOCATION/libyaml-cpp/lib/
+
 # Copy the s3 server
 echo "Copying s3 server to install location..."
 cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
