@@ -46,10 +46,6 @@ public:
   static void finalize();
 };
 
-#ifdef S3_ENABLE_PERF
-#define LOG_PERF(perf_text, elapsed_time)    S3PerfLogger::get_instance()->write(perf_text, elapsed_time)
-#else
-#define LOG_PERF(perf_text, elapsed_time)
-#endif
+#define LOG_PERF(perf_text, elapsed_time) S3PerfLogger::get_instance()->write(perf_text, elapsed_time);
 
 #endif

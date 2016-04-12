@@ -42,6 +42,7 @@ bool S3Option::load_section(std::string section_name, bool selective_load=false)
       s3config_log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
       s3config_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       s3config_performance_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
+      s3config_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
         s3config_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
       }
@@ -72,9 +73,11 @@ bool S3Option::load_section(std::string section_name, bool selective_load=false)
       if (!(s3command_option & S3_OPTION_BIND_ADDR)) {
         s3config_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       }
+      s3config_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
         s3config_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
       }
+      s3config_performance_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(s3command_option & S3_OPTION_AUTH_PORT)) {
         s3config_auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -106,12 +109,28 @@ bool S3Option::load_section(std::string section_name, bool selective_load=false)
 
 bool S3Option::load_all_sections(bool selective_load=false) {
   std::string s3_section;
-  YAML::Node root_node = YAML::LoadFile(option_file);
-  if (root_node.IsNull()) {
-     return false; //File Not Found?
-  }
-  for (unsigned short i = 0; i < root_node["S3Config_Sections"].size(); ++i) {
-    load_section(root_node["S3Config_Sections"][i].as<std::string>(), selective_load);
+  try {
+    YAML::Node root_node = YAML::LoadFile(option_file);
+    if (root_node.IsNull()) {
+       return false; //File Not Found?
+    }
+    for (unsigned short i = 0; i < root_node["S3Config_Sections"].size(); ++i) {
+      load_section(root_node["S3Config_Sections"][i].as<std::string>(), selective_load);
+    }
+  } catch (const YAML::RepresentationException &e) {
+    s3_log(S3_LOG_ERROR, "YAML::RepresentationException caught: %s\n", e.what());
+    s3_log(S3_LOG_ERROR, "Yaml file %s is incorrect\n", option_file.c_str());
+    return false;
+  } catch (const YAML::ParserException &e) {
+    s3_log(S3_LOG_ERROR, "YAML::ParserException caught: %s\n", e.what());
+    s3_log(S3_LOG_ERROR, "Parsing Error in yaml file %s\n", option_file.c_str());
+    return false;
+  } catch (const YAML::EmitterException &e) {
+    s3_log(S3_LOG_ERROR, "YAML::EmitterException caught: %s\n", e.what());
+    return false;
+  } catch (YAML::Exception& e) {
+    s3_log(S3_LOG_ERROR, "YAML::Exception caught: %s\n", e.what());
+    return false;
   }
   return true;
 }
@@ -179,6 +198,10 @@ unsigned short S3Option::get_clovis_layout() {
 
 std::string S3Option::get_option_file() {
   return option_file;
+}
+
+void S3Option::set_option_file(std::string filename) {
+  option_file = filename;
 }
 
 std::string S3Option::get_log_filename() {

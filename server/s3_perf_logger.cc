@@ -18,6 +18,7 @@
  */
 
 #include "s3_perf_logger.h"
+#include "s3_option.h"
 
 S3PerfLogger* S3PerfLogger::instance = NULL;
 
@@ -43,8 +44,10 @@ S3PerfLogger* S3PerfLogger::get_instance() {
 }
 
 void S3PerfLogger::write(const char* perf_text, size_t elapsed_time){
-  if (elapsed_time != -1) {
-    perf_file << perf_text << ":" << elapsed_time << std::endl;  // endl flushes.
+  if (instance && S3Option::get_instance()->s3_performance_enabled()) {
+    if (elapsed_time != -1) {
+      perf_file << perf_text << ":" << elapsed_time << std::endl;  // endl flushes.
+    }
   }
 }
 

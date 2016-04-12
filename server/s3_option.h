@@ -62,6 +62,9 @@ public:
     s3config_log_level = "INFO";
     s3config_bind_addr = "0.0.0.0";
     s3config_default_endpoint = "s3.seagate.com";
+    s3config_region_endpoints.insert("s3-us.seagate.com");
+    s3config_region_endpoints.insert("s3-europe.seagate.com");
+    s3config_region_endpoints.insert("s3-asia.seagate.com");
     s3config_auth_ip_addr = "127.0.0.1";
     s3config_clovis_layout = 9;
     s3config_clovis_local_addr = s3config_clovis_confd_addr = "<ipaddress>@tcp:12345:33:100";
@@ -83,6 +86,7 @@ public:
   unsigned short get_auth_port();
   unsigned short get_clovis_layout();
   std::string get_option_file();
+  void set_option_file(std::string filename);
   std::string get_log_filename();
   std::string get_log_level();
   std::string get_bind_addr();
@@ -108,6 +112,13 @@ public:
       option_instance = new S3Option();
     }
     return option_instance;
+  }
+
+  static void destroy_instance() {
+    if (option_instance) {
+      delete option_instance;
+      option_instance = NULL;
+    }
   }
 };
 #endif
