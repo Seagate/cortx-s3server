@@ -67,6 +67,9 @@ bool S3Option::load_section(std::string section_name, bool selective_load=false)
       if (!(s3command_option & S3_OPTION_LOG_FILE)) {
         s3config_log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
       }
+      if (!(s3command_option & S3_OPTION_PERF_LOG_FILE)) {
+        s3config_perf_log_filename = s3_option_node["S3_PERF_LOG_FILENAME"].as<std::string>();
+      }
       if (!(s3command_option & S3_OPTION_LOG_MODE)) {
         s3config_log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
       }
@@ -154,6 +157,8 @@ void S3Option::set_cmdline_option(int option_flag, char *optarg) {
     s3config_clovis_layout = atoi(optarg);
   } else if (option_flag & S3_OPTION_LOG_FILE) {
     s3config_log_filename = optarg;
+  } else if (option_flag & S3_OPTION_PERF_LOG_FILE) {
+    s3config_perf_log_filename = optarg;
   } else if (option_flag & S3_OPTION_LOG_MODE) {
     s3config_log_level = optarg;
   }
@@ -171,6 +176,7 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3config_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3config_bind_port);
   s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", s3config_performance_enabled);
+  s3_log(S3_LOG_INFO, "S3_PERF_LOG_FILENAME = %s\n", s3config_perf_log_filename.c_str());
   s3_log(S3_LOG_INFO, "S3_AUTH_IP_ADDR = %s\n", s3config_auth_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_AUTH_PORT = %d\n", s3config_auth_port);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_LOCAL_ADDR = %s\n", s3config_clovis_local_addr.c_str());
@@ -210,6 +216,14 @@ std::string S3Option::get_log_filename() {
 
 std::string S3Option::get_log_level() {
   return s3config_log_level;
+}
+
+std::string S3Option::get_perf_log_filename() {
+  if (s3config_perf_log_filename.empty()) {
+    return "/var/log/seagate/s3_perf.log";
+  } else {
+    return s3config_perf_log_filename;
+  }
 }
 
 std::string S3Option::get_bind_addr() {

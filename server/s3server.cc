@@ -170,7 +170,7 @@ set_s3_connection_handlers(evhtp_connection_t * conn, void * arg) {
     return EVHTP_RES_OK;
 }
 
-const char * optstr = "a:p:l:b:c:s:m:o:d:h:i";
+const char * optstr = "a:p:l:b:c:s:m:o:r:d:h:i";
 
 const char * help   =
     "Options: \n"
@@ -184,6 +184,7 @@ const char * help   =
     "  -d <int> : Auth Service port        (default: 8085)\n"
     "  -i <int> : Clovis layout id         (default: 9 (1MB))\n"
     "  -o <str> : S3 Log file              (default: stdout)\n"
+    "  -r <str> : S3 Log file              (default: /var/log/seagate/s3_perf.log)\n"
     "  -m <str> : S3 Log Level             (DEBUG | INFO | WARN | ERROR | FATAL  default is : INFO)\n";
 
 int
@@ -225,6 +226,9 @@ parse_args(int argc, char ** argv) {
                 break;
             case 'o':
                 option_instance->set_cmdline_option(S3_OPTION_LOG_FILE, optarg);
+                break;
+            case 'r':
+                option_instance->set_cmdline_option(S3_OPTION_PERF_LOG_FILE, optarg);
                 break;
             case 'm':
                 option_instance->set_cmdline_option(S3_OPTION_LOG_MODE, optarg);
@@ -292,7 +296,7 @@ main(int argc, char ** argv) {
   option_instance->dump_options();
     // Initilise loggers
   if(option_instance->s3_performance_enabled()) {
-    S3PerfLogger::initialize();
+    S3PerfLogger::initialize(option_instance->get_perf_log_filename());
   }
 
   // Call this function before creating event base

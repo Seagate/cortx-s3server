@@ -31,6 +31,7 @@
 #define S3_CLOVIS_LAYOUT_ID 0x0080
 #define S3_OPTION_LOG_FILE 0x0100
 #define S3_OPTION_LOG_MODE 0x0200
+#define S3_OPTION_PERF_LOG_FILE 0x0400
 
 #include <string>
 #include <set>
@@ -48,6 +49,7 @@ class S3Option {
   int s3config_clovis_idx_fetch_count;
   std::string option_file;
   std::string s3config_log_filename;
+  std::string s3config_perf_log_filename;
   std::string s3config_log_level;
   std::string s3config_bind_addr;
   std::string s3config_clovis_local_addr;
@@ -73,7 +75,7 @@ public:
     s3config_bind_port = 8081;
     s3config_auth_port = 8085;
     s3command_option = 0;
-    option_file = "/opt/seagate/s3conf/s3config.yaml";
+    option_file = "/opt/seagate/s3/conf/s3config.yaml";
     s3config_performance_enabled = 0;
     s3config_clovis_block_size = 1048576; // One MB
     s3config_factor = 1;
@@ -89,6 +91,7 @@ public:
   void set_option_file(std::string filename);
   std::string get_log_filename();
   std::string get_log_level();
+  std::string get_perf_log_filename();
   std::string get_bind_addr();
   std::string get_default_endpoint();
   std::set<std::string>& get_region_endpoints();

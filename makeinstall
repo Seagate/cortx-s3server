@@ -4,7 +4,7 @@
 
 S3_INSTALL_LOCATION=/opt/seagate/s3
 AUTH_INSTALL_LOCATION=/opt/seagate/auth
-S3_CONFIG_FILE_LOCATION=/opt/seagate/s3conf
+S3_CONFIG_FILE_LOCATION=/opt/seagate/s3/conf
 
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p /var/log/seagate/s3/
