@@ -49,9 +49,14 @@ Install build to /opt
 sudo ./makeinstall
 ```
 
-## How to run s3 server (this current assumes all dependencies are on same local VM)
+## How to run s3 server daemon(this current assumes all dependencies are on same local VM)
 ```sh
 sudo /opt/seagate/s3/starts3.sh
+```
+
+## How to stop s3 server daemon
+```sh
+sudo /opt/seagate/s3/stops3.sh
 ```
 
 ## How to run auth server (this current assumes all dependencies are on same local VM)

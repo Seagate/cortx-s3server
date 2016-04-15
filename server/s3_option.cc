@@ -26,7 +26,7 @@
 
 S3Option* S3Option::option_instance = NULL;
 
-bool S3Option::load_section(std::string section_name, bool selective_load=false) {
+bool S3Option::load_section(std::string section_name, bool force_override_from_config=false) {
   YAML::Node root_node = YAML::LoadFile(option_file);
   if (root_node.IsNull()) {
     return false; //File Not Found?
@@ -35,8 +35,10 @@ bool S3Option::load_section(std::string section_name, bool selective_load=false)
   if (s3_option_node.IsNull()) {
     return false;
   }
-  if (!selective_load) {
+  if (!force_override_from_config) {
     if (section_name == "S3_SERVER_CONFIG") {
+      s3config_s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
+      s3config_s3daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3config_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       s3config_log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
       s3config_log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
@@ -76,6 +78,8 @@ bool S3Option::load_section(std::string section_name, bool selective_load=false)
       if (!(s3command_option & S3_OPTION_BIND_ADDR)) {
         s3config_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       }
+      s3config_s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
+      s3config_s3daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3config_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
         s3config_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
@@ -107,10 +111,10 @@ bool S3Option::load_section(std::string section_name, bool selective_load=false)
       s3config_clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
     }
   }
- return true;
+  return true;
 }
 
-bool S3Option::load_all_sections(bool selective_load=false) {
+bool S3Option::load_all_sections(bool force_override_from_config=false) {
   std::string s3_section;
   try {
     YAML::Node root_node = YAML::LoadFile(option_file);
@@ -118,7 +122,7 @@ bool S3Option::load_all_sections(bool selective_load=false) {
        return false; //File Not Found?
     }
     for (unsigned short i = 0; i < root_node["S3Config_Sections"].size(); ++i) {
-      load_section(root_node["S3Config_Sections"][i].as<std::string>(), selective_load);
+      load_section(root_node["S3Config_Sections"][i].as<std::string>(), force_override_from_config);
     }
   } catch (const YAML::RepresentationException &e) {
     s3_log(S3_LOG_ERROR, "YAML::RepresentationException caught: %s\n", e.what());
@@ -171,6 +175,8 @@ int S3Option::get_s3command_option() {
 }
 
 void S3Option::dump_options() {
+  s3_log(S3_LOG_INFO, "S3_DAEMON_WORKING_DIR = %s\n", s3config_s3_daemon_dir.c_str());
+  s3_log(S3_LOG_INFO, "S3_DAEMON_DO_REDIRECTION = %d\n", s3config_s3daemon_redirect);
   s3_log(S3_LOG_INFO, "S3_LOG_FILENAME = %s\n", s3config_log_filename.c_str());
   s3_log(S3_LOG_INFO, "S3_LOG_MODE = %s\n", s3config_log_level.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3config_bind_addr.c_str());
@@ -206,8 +212,24 @@ std::string S3Option::get_option_file() {
   return option_file;
 }
 
+std::string S3Option::get_daemon_dir() {
+  return s3config_s3_daemon_dir;
+}
+
+unsigned short S3Option::do_redirection() {
+  return s3config_s3daemon_redirect;
+}
+
 void S3Option::set_option_file(std::string filename) {
   option_file = filename;
+}
+
+void S3Option::set_daemon_dir(std::string path) {
+  s3config_s3_daemon_dir = path;
+}
+
+void S3Option::set_redirection(unsigned short redirect) {
+  s3config_s3daemon_redirect = redirect;
 }
 
 std::string S3Option::get_log_filename() {

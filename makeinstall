@@ -43,6 +43,10 @@ cp s3config.yaml $S3_CONFIG_FILE_LOCATION
 echo "Copying s3 startup script to install location..."
 cp starts3.sh $S3_INSTALL_LOCATION/
 
+# Copy the s3 server daemon shutdown script.
+echo "Copying s3 shutdown script to install location..."
+cp stops3.sh $S3_INSTALL_LOCATION/
+
 # Copy Auth server jar to install location
 echo "Copying Auth server jar to install location..."
 cp -f auth/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION
@@ -57,5 +61,6 @@ cp startauth.sh $AUTH_INSTALL_LOCATION/
 
 echo "S3 server and Auth server are setup."
 echo "Setup nginx using configuration similar to nginx.conf.sample."
-echo "Run /opt/seagate/s3/starts3.sh to start the Seagate S3 server."
+echo "Run /opt/seagate/s3/starts3.sh to start the Seagate S3 server daemon."
 echo "Run /opt/seagate/auth/startauth.sh to start the Seagate Auth server."
+echo "Run /opt/seagate/s3/stops3.sh to shutdown the Seagate S3 server daemon."

@@ -38,6 +38,8 @@
 
 class S3Option {
   int s3command_option;
+  std::string s3config_s3_daemon_dir;
+  unsigned short s3config_s3daemon_redirect;
   unsigned short s3config_bind_port;
   unsigned short s3config_auth_port;
   std::string s3config_default_endpoint;
@@ -76,19 +78,25 @@ public:
     s3config_auth_port = 8085;
     s3command_option = 0;
     option_file = "/opt/seagate/s3/conf/s3config.yaml";
+    s3config_s3_daemon_dir = "/";
+    s3config_s3daemon_redirect = 1;
     s3config_performance_enabled = 0;
     s3config_clovis_block_size = 1048576; // One MB
     s3config_factor = 1;
     s3config_clovis_idx_fetch_count = 100;
   }
 
-  bool load_section(std::string section_name, bool selective_load);
-  bool load_all_sections(bool selective_load);
+  bool load_section(std::string section_name, bool force_override_from_config);
+  bool load_all_sections(bool force_override_from_config);
   unsigned short get_s3_bind_port();
   unsigned short get_auth_port();
   unsigned short get_clovis_layout();
   std::string get_option_file();
+  std::string get_daemon_dir();
+  unsigned short do_redirection();
   void set_option_file(std::string filename);
+  void set_daemon_dir(std::string path);
+  void set_redirection(unsigned short redirect);
   std::string get_log_filename();
   std::string get_log_level();
   std::string get_perf_log_filename();

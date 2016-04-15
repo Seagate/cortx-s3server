@@ -1,5 +1,7 @@
 S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_CLOVIS_CONFIG]
 S3_SERVER_CONFIG:                                     # Section for S3 Server
+   S3_DAEMON_WORKING_DIR: "/"                           # S3 Daemon will run in the specified directory, / is recommended
+   S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_FILENAME: "/var/log/seagate/s3/s3server.log"  # S3 Log file name, for output to stdout have value as ""
    S3_LOG_MODE: INFO                                    # logging levels, levels can be INFO, DEBUG, ERROR, WARN, FATAL, default is INFO
    S3_SERVER_BIND_ADDR: 0.0.0.0                         # S3 Server bind address, 0.0.0.0 is default
@@ -7,7 +9,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_SERVER_REGION_ENDPOINTS: [s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
    S3_ENABLE_PERF: 0                                    # S3 Performance metric collection, to enable have value 1, default is 0 (disabled)
-   S3_PERF_LOG_FILENAME: "/var/log/seagate/s3_perf.log"  # S3 Perf Log file name
+   S3_PERF_LOG_FILENAME: "/var/log/seagate/s3_perf.log" # S3 Perf Log file name
 S3_AUTH_CONFIG:                                       # Section for S3 Auth Service
    S3_AUTH_IP_ADDR: 127.0.0.1                           # Auth server IP address
    S3_AUTH_PORT: 8085                                   # Auth server port

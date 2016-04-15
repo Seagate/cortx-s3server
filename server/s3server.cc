@@ -35,6 +35,7 @@
 #include "s3_timer.h"
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_daemonize_server.h"
 
 #define WEBSTORE "/home/seagate/webstore"
 
@@ -45,6 +46,7 @@ const char *log_level_str[S3_LOG_DEBUG] = {"FATAL", "ERROR", "WARN", "INFO", "DE
 
 FILE *fp_log;
 int s3log_level = S3_LOG_INFO;
+evbase_t * global_evbase_handle;
 
 /* MD5 helper */
 /* KD xxx - needed? intention? convert 16bytes to 32bytes readable string */
@@ -299,19 +301,23 @@ main(int argc, char ** argv) {
     S3PerfLogger::initialize(option_instance->get_perf_log_filename());
   }
 
+  S3Daemonize s3daemon;
+  s3daemon.daemonize();
+  s3daemon.register_signals();
+
   // Call this function before creating event base
   evthread_use_pthreads();
 
-  evbase_t * evbase = event_base_new();
+  global_evbase_handle = event_base_new();
 
   // Uncomment below api if we want to run libevent in debug mode
   // event_enable_debug_mode();
 
-  if (evthread_make_base_notifiable(evbase)<0) {
+  if (evthread_make_base_notifiable(global_evbase_handle)<0) {
     s3_log(S3_LOG_ERROR, "Couldn't make base notifiable!");
     return 1;
   }
-  evhtp_t  * htp    = evhtp_new(evbase, NULL);
+  evhtp_t  * htp    = evhtp_new(global_evbase_handle, NULL);
   event_set_fatal_callback(fatal_libevent);
 
   S3Router *router = new S3Router(new S3APIHandlerFactory(),
@@ -338,6 +344,7 @@ main(int argc, char ** argv) {
   rc = init_clovis(clovis_local_addr, clovis_ha_addr, clovis_confd_addr, clovis_prof, clovis_layout_id);
   if (rc < 0) {
       s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
+      s3daemon.delete_pidfile();
       return rc;
   }
 
@@ -351,17 +358,15 @@ main(int argc, char ** argv) {
 #endif
 #endif
   evhtp_bind_socket(htp, bind_addr, bind_port, 1024);
-
-  rc = event_base_loop(evbase, 0);
+  rc = event_base_loop(global_evbase_handle, 0);
   if( rc == 0) {
     s3_log(S3_LOG_DEBUG, "Event base loop exited normally\n");
   } else {
     s3_log(S3_LOG_ERROR, "Event base loop exited due to unhandled exception in libevent's backend\n");
   }
-
   evhtp_unbind_socket(htp);
   evhtp_free(htp);
-  event_base_free(evbase);
+  event_base_free(global_evbase_handle);
 
   /* Clean-up */
   fini_clovis();
@@ -370,6 +375,8 @@ main(int argc, char ** argv) {
   }
 
   delete router;
+  s3_log(S3_LOG_DEBUG, "S3server exiting...\n");
+  s3daemon.delete_pidfile();
   if(fp_log != NULL && fp_log != stdout) {
     std::fclose(fp_log);
   }
