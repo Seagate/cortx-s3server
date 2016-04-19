@@ -8,6 +8,7 @@ S3_CONFIG_FILE_LOCATION=/opt/seagate/s3/conf
 
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p /var/log/seagate/s3/
+mkdir -p /var/log/seagate/auth/
 mkdir -p $S3_INSTALL_LOCATION/lib
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/libxml2
