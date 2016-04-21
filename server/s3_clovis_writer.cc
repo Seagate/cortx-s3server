@@ -24,11 +24,18 @@
 #include "s3_clovis_rw_common.h"
 #include "s3_option.h"
 #include "s3_clovis_writer.h"
-#include "s3_uri_to_mero_oid.h"
 #include "s3_timer.h"
 #include "s3_perf_logger.h"
+#include "s3_uri_to_mero_oid.h"
 
 extern struct m0_clovis_realm     clovis_uber_realm;
+
+S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req, struct m0_uint128 object_id, uint64_t offset) : request(req), oid(object_id), state(S3ClovisWriterOpState::start) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  last_index = offset;
+  total_written = 0;
+  ops_count = 0;
+}
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset) : request(req), state(S3ClovisWriterOpState::start) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");

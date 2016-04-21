@@ -35,6 +35,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(std::shared_ptr<S3RequestObject> 
 void S3AbortMultipartAction::setup_steps(){
   s3_log(S3_LOG_DEBUG, "Setup the action\n");
   add_task(std::bind( &S3AbortMultipartAction::fetch_bucket_info, this ));
+  add_task(std::bind( &S3AbortMultipartAction::get_multipart_metadata, this ));
   add_task(std::bind( &S3AbortMultipartAction::delete_multipart_metadata, this));
   add_task(std::bind( &S3AbortMultipartAction::check_if_any_parts_present, this ));
   add_task(std::bind( &S3AbortMultipartAction::delete_parts, this));
@@ -67,14 +68,25 @@ void S3AbortMultipartAction::check_if_any_parts_present_failed() {
 
 void S3AbortMultipartAction::delete_parts() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  clovis_writer = std::make_shared<S3ClovisWriter>(request);
-  clovis_writer->delete_object(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
+  const struct m0_uint128 id = object_multipart_metadata->get_oid();
+  if (id.u_hi != M0_CLOVIS_ID_APP.u_hi || id.u_lo != M0_CLOVIS_ID_APP.u_lo) {
+    clovis_writer = std::make_shared<S3ClovisWriter>(request, object_multipart_metadata->get_oid());
+    clovis_writer->delete_object(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3AbortMultipartAction::get_multipart_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
+  object_multipart_metadata->load(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AbortMultipartAction::delete_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
   object_multipart_metadata->remove(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

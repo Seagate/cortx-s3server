@@ -21,16 +21,21 @@
 #include "s3_option.h"
 #include "s3_error_codes.h"
 #include "s3_perf_logger.h"
+#include "s3_uri_to_mero_oid.h"
 #include "s3_log.h"
+
+#define MAX_COLLISION_TRY 20
 
 S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_data_to_stream(0), write_in_progress(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
+  tried_count = 0;
+  salt = "uri_salt_";
   setup_steps();
 }
 
 void S3PutObjectAction::setup_steps(){
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
-
   add_task(std::bind( &S3PutObjectAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3PutObjectAction::create_object, this ));
   add_task(std::bind( &S3PutObjectAction::initiate_data_streaming, this ));
@@ -53,7 +58,7 @@ void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     create_object_timer.start();
-    clovis_writer = std::make_shared<S3ClovisWriter>(request);
+    clovis_writer = std::make_shared<S3ClovisWriter>(request, oid);
     clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
   } else {
     s3_log(S3_LOG_WARN, "Bucket [%s] not found\n", request->get_bucket_name().c_str());
@@ -66,9 +71,15 @@ void S3PutObjectAction::create_object() {
 void S3PutObjectAction::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
-    // If object exists, S3 overwrites it.
-    s3_log(S3_LOG_INFO, "Existing object: Overwrite it.\n");
-    next();
+    // If object exists, it may be due to the actual existance of object or due to oid collision
+    if (tried_count) { // No need of lookup of metadata in case if it was oid collision before
+      collision_detected();
+    } else {
+       object_metadata = std::make_shared<S3ObjectMetadata>(request);
+       // Lookup metadata, if the object doesn't exist then its collision, do collision resolution
+       // If object exist in metadata then we overwrite it
+       object_metadata->load(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::collision_detected, this));
+    }
   } else {
     create_object_timer.stop();
     LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
@@ -80,6 +91,33 @@ void S3PutObjectAction::create_object_failed() {
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
+
+void S3PutObjectAction::collision_detected() {
+  if(object_metadata->get_state() == S3ObjectMetadataState::missing && tried_count < MAX_COLLISION_TRY) {
+    s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n", request->get_object_uri().c_str());
+    // Handle Collision
+    create_new_oid();
+    tried_count++;
+    if (tried_count > 5) {
+      s3_log(S3_LOG_INFO, "Object ID collision happened %d times for uri %s\n", tried_count, request->get_object_uri().c_str());
+    }
+    create_object();
+  } else {
+    if (tried_count > MAX_COLLISION_TRY) {
+      s3_log(S3_LOG_ERROR, "Failed to resolve object id collision %d times for uri %s\n",
+             tried_count, request->get_object_uri().c_str());
+    }
+    request->resume();
+    send_response_to_s3_client();
+  }
+}
+
+void S3PutObjectAction::create_new_oid() {
+  std::string salted_uri = request->get_object_uri() + salt + std::to_string(tried_count);
+  S3UriToMeroOID(salted_uri.c_str(), &oid);
+  return;
+}
+
 
 void S3PutObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_DEBUG, "Entering\n");

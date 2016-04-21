@@ -114,6 +114,7 @@ private:
 
 public:
   //struct m0_uint128 id;
+  S3ClovisWriter(std::shared_ptr<S3RequestObject> req, struct m0_uint128 object_id, uint64_t offset = 0);
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0);
 
   S3ClovisWriterOpState get_state() {

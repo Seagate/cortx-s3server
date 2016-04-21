@@ -23,7 +23,7 @@
 #define __MERO_FE_S3_SERVER_S3_PUT_OBJECT_ACTION_H__
 
 #include <memory>
-
+#include <string>
 #include "s3_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
@@ -31,7 +31,13 @@
 #include "s3_clovis_writer.h"
 #include "s3_timer.h"
 
+
 class S3PutObjectAction : public S3Action {
+  struct m0_uint128 oid;
+  // Maximum retry count for collision resolution
+  unsigned short tried_count;
+  // string used for salting the uri
+  std::string salt;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
@@ -49,6 +55,8 @@ public:
   void fetch_bucket_info();
   void create_object();
   void create_object_failed();
+  void create_new_oid();
+  void collision_detected();
 
   void initiate_data_streaming();
   void consume_incoming_content();

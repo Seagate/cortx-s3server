@@ -73,8 +73,7 @@ void S3GetObjectAction::read_object() {
       /* Count Data blocks from data size */
       total_blocks_in_object = (object_metadata->get_content_length() + (clovis_block_size - 1)) / clovis_block_size;
 
-      clovis_reader = std::make_shared<S3ClovisReader>(request, std::make_shared<ConcreteClovisAPI>());
-      clovis_reader->set_oid(object_metadata->get_oid());
+      clovis_reader = std::make_shared<S3ClovisReader>(request, std::make_shared<ConcreteClovisAPI>(), object_metadata->get_oid());
       read_object_data();
     }
   } else {

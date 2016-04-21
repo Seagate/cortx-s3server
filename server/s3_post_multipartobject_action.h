@@ -33,8 +33,12 @@
 #include "s3_timer.h"
 
 class S3PostMultipartObjectAction : public S3Action {
+  struct m0_uint128 oid;
+  unsigned short tried_count;
+  std::string salt;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
+  std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::string  upload_id;
@@ -49,6 +53,8 @@ public:
   void check_upload_is_inprogress();
   void create_object();
   void create_object_failed();
+  void collision_occured();
+  void create_new_oid();
   void save_upload_metadata();
   void save_upload_metadata_failed();
   void create_part_meta_index();

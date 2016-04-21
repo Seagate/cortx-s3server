@@ -206,6 +206,16 @@ class S3cmdTest(PyCliTest):
         self.with_cli("s3cmd -c " + self.s3cfg + " get " + "s3://" + self.bucket_name + "/" + self.filename)
         return self
 
+    def get_keyval_test(self):
+        cqlsh_cmd = "cqlsh.py -e " + '"' + "select blobAsText(key) from clovis_index_keyspace.clovis_cass_v150915_0;" + '"'
+        self.with_cli(cqlsh_cmd)
+        return self
+
+    def delete_metadata_test(self):
+        cqlsh_cmd = "cqlsh.py -e " + '"' + "truncate clovis_index_keyspace.clovis_cass_v150915_0;" + '"';
+        self.with_cli(cqlsh_cmd)
+        return self
+
     def delete_test(self, bucket_name, filename):
         self.filename = filename
         self.bucket_name = bucket_name

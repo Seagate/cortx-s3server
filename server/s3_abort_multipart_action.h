@@ -54,6 +54,7 @@ public:
   void setup_steps();
 
   void fetch_bucket_info();
+  void get_multipart_metadata();
   void check_if_any_parts_present();
   void check_if_any_parts_present_failed();
   void delete_multipart_failed();

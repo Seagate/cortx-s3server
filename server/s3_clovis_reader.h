@@ -129,8 +129,10 @@ private:
 
 public:
   //struct m0_uint128 id;
+  //object id for object is generated within this constructor
   S3ClovisReader(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api);
-
+  //object id is generated at upper level and passed to this constructor
+  S3ClovisReader(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api, struct m0_uint128 id);
   S3ClovisReaderOpState get_state() {
     return state;
   }

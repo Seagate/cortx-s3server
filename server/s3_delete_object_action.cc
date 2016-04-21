@@ -57,8 +57,7 @@ void S3DeleteObjectAction::fetch_object_info() {
 void S3DeleteObjectAction::delete_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    clovis_writer = std::make_shared<S3ClovisWriter>(request);
-    clovis_writer->set_oid(object_metadata->get_oid());
+    clovis_writer = std::make_shared<S3ClovisWriter>(request, object_metadata->get_oid());
     clovis_writer->delete_object(std::bind( &S3DeleteObjectAction::next, this), std::bind( &S3DeleteObjectAction::delete_object_failed, this));
   } else {
     send_response_to_s3_client();

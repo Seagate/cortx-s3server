@@ -206,7 +206,7 @@ void S3PostCompleteAction::delete_part_index_failed() {
 void S3PostCompleteAction::delete_parts() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if(is_abort_multipart()) {
-    clovis_writer = std::make_shared<S3ClovisWriter>(request);
+    clovis_writer = std::make_shared<S3ClovisWriter>(request, object_metadata->get_oid());
     clovis_writer->delete_object(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::delete_parts_failed, this));
   } else {
     next();
