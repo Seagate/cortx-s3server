@@ -88,9 +88,8 @@ public class AuthServerConfig {
         return authServerConfig.getProperty("s3KeyPassword");
     }
 
-    public static Boolean isHttpsEnabled() {
-        return authServerConfig.getProperty("https")
-                .compareToIgnoreCase("true") == 0;
+    public static boolean isHttpsEnabled() {
+        return Boolean.valueOf(authServerConfig.getProperty("https"));
     }
 
     public static String getDataSource() {
@@ -106,11 +105,11 @@ public class AuthServerConfig {
     }
 
     public static int getLdapMaxConnections() {
-        return Integer.parseInt(authServerConfig.getProperty("maxCons"));
+        return Integer.parseInt(authServerConfig.getProperty("ldapMaxCons"));
     }
 
     public static int getLdapMaxSharedConnections() {
-        return Integer.parseInt(authServerConfig.getProperty("maxSharedCons"));
+        return Integer.parseInt(authServerConfig.getProperty("ldapMaxSharedCons"));
     }
 
     public static String getLdapLoginDN() {
@@ -131,6 +130,29 @@ public class AuthServerConfig {
 
     public static String getLogLevel() {
         return authServerConfig.getProperty("logLevel");
+    }
+
+    public static int getBossGroupThreads() {
+        return Integer.parseInt(
+                authServerConfig.getProperty("nettyBossGroupThreads"));
+    }
+
+    public static int getWorkerGroupThreads() {
+        return Integer.parseInt(
+                authServerConfig.getProperty("nettyWorkerGroupThreads"));
+    }
+
+    public static boolean isPerfEnabled() {
+        return Boolean.valueOf(authServerConfig.getProperty("perfEnabled"));
+    }
+
+    public static String getPerfLogFile() {
+        return authServerConfig.getProperty("perfLogFile");
+    }
+
+    public static int getEventExecutorThreads() {
+        return Integer.parseInt(
+                authServerConfig.getProperty("nettyEventExecutorThreads"));
     }
 
     /**

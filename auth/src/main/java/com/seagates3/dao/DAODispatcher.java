@@ -32,7 +32,7 @@ public class DAODispatcher {
     private static final Logger LOGGER
             = LogManager.getLogger(SSLContextProvider.class.getName());
 
-    public static void Init() throws ServerInitialisationException {
+    public static void init() throws ServerInitialisationException {
         String dataSource = AuthServerConfig.getDataSource();
         DAODispatcher.provider = DAOProvider.valueOf(dataSource.toUpperCase());
 

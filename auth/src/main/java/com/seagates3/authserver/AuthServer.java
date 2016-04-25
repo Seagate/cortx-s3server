@@ -20,6 +20,7 @@ package com.seagates3.authserver;
 
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.exception.ServerInitialisationException;
+import com.seagates3.perf.S3Perf;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -28,6 +29,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -99,26 +102,38 @@ public class AuthServer {
         Logger logger = LoggerFactory.getLogger(AuthServer.class.getName());
 
         SSLContextProvider.init();
-        DAODispatcher.Init();
+        DAODispatcher.init();
+        S3Perf.init();
 
         // Configure the server.
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-        logger.info("Created boss event loop group");
+        EventLoopGroup bossGroup = new NioEventLoopGroup(
+                AuthServerConfig.getBossGroupThreads());
+        logger.info("Created boss event loop group with "
+                + AuthServerConfig.getBossGroupThreads() + " threads");
 
-        EventLoopGroup workerGroup = new NioEventLoopGroup(4);
-        logger.info("Created worker event loop group");
+        EventLoopGroup workerGroup = new NioEventLoopGroup(
+                AuthServerConfig.getWorkerGroupThreads());
+        logger.info("Created worker event loop group with "
+                + AuthServerConfig.getWorkerGroupThreads() + " threads");
+
+        EventExecutorGroup executorGroup = new DefaultEventExecutorGroup(
+                AuthServerConfig.getEventExecutorThreads());
+        logger.info("Created event executor with "
+                + AuthServerConfig.getEventExecutorThreads() + " threads");
 
         ArrayList<Channel> serverChannels = new ArrayList<>();
         int httpPort = AuthServerConfig.getHttpPort();
         Channel serverChannel = httpServerBootstrap(bossGroup, workerGroup,
-                httpPort);
+                executorGroup, httpPort
+        );
         serverChannels.add(serverChannel);
         logger.info("Auth server is listening on port " + httpPort);
 
         if (AuthServerConfig.isHttpsEnabled()) {
             int httpsPort = AuthServerConfig.getHttpsPort();
             serverChannel = httpsServerBootstrap(bossGroup, workerGroup,
-                    httpsPort);
+                    executorGroup, httpsPort
+            );
             serverChannels.add(serverChannel);
             logger.info("Auth server is listening on port " + httpsPort);
         }
@@ -131,29 +146,31 @@ public class AuthServer {
     /**
      * Create a new ServerBootstrap for HTTP protocol.
      *
-     * @param port Http port.
+     * @param port HTTP port.
      */
     private static Channel httpServerBootstrap(EventLoopGroup bossGroup,
-            EventLoopGroup workerGroup, int port) throws InterruptedException {
+            EventLoopGroup workerGroup, EventExecutorGroup executorGroup,
+            int port) throws InterruptedException {
         ServerBootstrap b = new ServerBootstrap();
         b.option(ChannelOption.SO_BACKLOG, 1024);
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .handler(new LoggingHandler(LogLevel.INFO))
-                .childHandler(new AuthServerHTTPInitializer());
+                .childHandler(new AuthServerHTTPInitializer(executorGroup));
 
         Channel serverChannel = b.bind(port).sync().channel();
         return serverChannel;
     }
 
     private static Channel httpsServerBootstrap(EventLoopGroup bossGroup,
-            EventLoopGroup workerGroup, int port) throws InterruptedException {
+            EventLoopGroup workerGroup, EventExecutorGroup executorGroup,
+            int port) throws InterruptedException {
         ServerBootstrap b = new ServerBootstrap();
         b.option(ChannelOption.SO_BACKLOG, 1024);
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .handler(new LoggingHandler(LogLevel.INFO))
-                .childHandler(new AuthServerHTTPSInitializer());
+                .childHandler(new AuthServerHTTPSInitializer(executorGroup));
 
         Channel serverChannel = b.bind(port).sync().channel();
         return serverChannel;

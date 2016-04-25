@@ -25,8 +25,15 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 public class AuthServerHTTPInitializer extends ChannelInitializer<SocketChannel> {
+
+    private final EventExecutorGroup EXECUTOR_GROUP;
+
+    public AuthServerHTTPInitializer(EventExecutorGroup executorGroup) {
+        EXECUTOR_GROUP = executorGroup;
+    }
 
     @Override
     public void initChannel(SocketChannel ch) {
@@ -36,6 +43,6 @@ public class AuthServerHTTPInitializer extends ChannelInitializer<SocketChannel>
         p.addLast("decoder", new HttpRequestDecoder());
         p.addLast("aggregator", new HttpObjectAggregator(1048576));
         p.addLast(new ChunkedWriteHandler());
-        p.addLast(new AuthServerHandler());
+        p.addLast(EXECUTOR_GROUP, new AuthServerHandler());
     }
 }

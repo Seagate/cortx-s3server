@@ -18,6 +18,7 @@
  */
 package com.seagates3.authserver;
 
+import com.seagates3.perf.S3Perf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -55,6 +56,8 @@ public class AuthServerHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        S3Perf perf = new S3Perf();
+        perf.startClock();
         if (msg instanceof FullHttpRequest) {
             FullHttpRequest httpRequest = (FullHttpRequest) msg;
 
@@ -67,7 +70,10 @@ public class AuthServerHandler extends ChannelInboundHandlerAdapter {
             } else if (httpRequest.getMethod().equals(HttpMethod.GET)) {
                 new AuthServerGetHandler(ctx, httpRequest).run();
             }
+
         }
+        perf.endClock();
+        perf.printTime("AuthServerHandler");
     }
 
     @Override

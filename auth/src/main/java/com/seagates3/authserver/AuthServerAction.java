@@ -28,6 +28,7 @@ import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
+import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.util.DateUtil;
@@ -50,10 +51,13 @@ public class AuthServerAction {
     private final String VALIDATOR_PACKAGE = "com.seagates3.parameter.validator";
     private final String CONTROLLER_PACKAGE = "com.seagates3.controller";
 
+    private S3Perf perf;
+
     AuthenticationResponseGenerator responseGenerator;
 
     public AuthServerAction() {
         responseGenerator = new AuthenticationResponseGenerator();
+        perf = new S3Perf();
     }
 
     /*
@@ -85,7 +89,10 @@ public class AuthServerAction {
                     .getResourceDAO(DAOResource.ACCESS_KEY);
             AccessKey accessKey;
             try {
+                perf.startClock();
                 accessKey = accessKeyDAO.find(clientRequestToken.getAccessKeyId());
+                perf.endClock();
+                perf.printTime("Fetch access key");
             } catch (DataAccessException ex) {
                 LOGGER.error("Error occured while searching for requestor's "
                         + "access key id.\n" + ex.getMessage());
@@ -105,7 +112,10 @@ public class AuthServerAction {
             RequestorDAO requestorDAO = (RequestorDAO) DAODispatcher
                     .getResourceDAO(DAOResource.REQUESTOR);
             try {
+                perf.startClock();
                 requestor = requestorDAO.find(accessKey);
+                perf.endClock();
+                perf.printTime("Fetch requestor");
             } catch (DataAccessException ex) {
                 return responseGenerator.internalServerError();
             }
@@ -121,8 +131,11 @@ public class AuthServerAction {
             LOGGER.debug("Requestor is valid.");
             LOGGER.debug("Calling signature validator.");
 
+            perf.startClock();
             serverResponse = new SignatureValidator().validate(
                     clientRequestToken, requestor);
+            perf.endClock();
+            perf.printTime("Request validation");
 
             if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
                 LOGGER.debug("Incorrect signature.Request not authenticated");

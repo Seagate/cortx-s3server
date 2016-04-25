@@ -21,14 +21,32 @@ package com.seagates3.authserver;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(AuthServerConfig.class)
+@PowerMockIgnore({"javax.management.*"})
 public class AuthServerActionTest {
 
     AuthServerAction authServerAction;
 
     public AuthServerActionTest() {
         authServerAction = new AuthServerAction();
+    }
+
+    @BeforeClass
+    public static void setUp() throws Exception {
+        PowerMockito.mockStatic(AuthServerConfig.class);
+        PowerMockito.doReturn(false).when(AuthServerConfig.class,
+                "isPerfEnabled");
+        PowerMockito.doReturn("/tmp/perf.log").when(AuthServerConfig.class,
+                "getPerfLogFile");
     }
 
     /**

@@ -22,24 +22,35 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.powermock.api.mockito.PowerMockito;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(AuthServerHandler.class)
+@PrepareForTest({AuthServerHandler.class, AuthServerConfig.class})
 @PowerMockIgnore({"javax.management.*"})
 public class AuthServerHandlerTest {
 
     AuthServerHandler testHandler;
     ChannelHandlerContext ctx;
     FullHttpRequest msg;
+
+    @BeforeClass
+    public static void setUpStatic() throws Exception {
+        PowerMockito.mockStatic(AuthServerConfig.class);
+        PowerMockito.doReturn(false).when(AuthServerConfig.class,
+                "isPerfEnabled");
+        PowerMockito.doReturn("/tmp/perf.log").when(AuthServerConfig.class,
+                "getPerfLogFile");
+    }
 
     @Before
     public void setUp() {
