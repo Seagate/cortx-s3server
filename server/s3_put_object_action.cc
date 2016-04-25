@@ -23,7 +23,7 @@
 #include "s3_perf_logger.h"
 #include "s3_log.h"
 
-S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_data_to_stream(0) {
+S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_data_to_stream(0), write_in_progress(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
@@ -110,38 +110,49 @@ void S3PutObjectAction::initiate_data_streaming() {
 void S3PutObjectAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   // Resuming the action since we have data.
-  write_object(request->get_buffered_input());
+  if (!write_in_progress) {
+    if (request->get_buffered_input().is_freezed() ||
+        request->get_buffered_input().length() > S3Option::get_instance()->get_clovis_write_payload_size()) {
+      write_object(request->get_buffered_input());
+    }
+  }
+  if (!request->get_buffered_input().is_freezed() &&
+      request->get_buffered_input().length() >=
+      (S3Option::get_instance()->get_clovis_write_payload_size() * S3Option::get_instance()->get_read_ahead_multiple())) {
+    s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n", request->get_buffered_input().length());
+    request->pause();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutObjectAction::write_object(S3AsyncBufferContainer& buffer) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (buffer.is_freezed()) {
-    // This is last one, no more data ahead.
-    s3_log(S3_LOG_DEBUG, "This is last one, no more data ahead, write it.\n");
-    clovis_writer->write_content(std::bind( &S3PutObjectAction::write_object_successful, this), std::bind( &S3PutObjectAction::write_object_failed, this), buffer);
-  } else {
-    request->pause();  // Pause till write to clovis is complete
-    s3_log(S3_LOG_DEBUG, "We will still be expecting more data, write what we have and pause to wait for more data\n");
-    // We will still be expecting more data, so write and pause to wait for more data
-    clovis_writer->write_content(std::bind( &S3RequestObject::resume, request), std::bind( &S3PutObjectAction::write_object_failed, this), buffer);
-  }
+
+  clovis_writer->write_content(std::bind( &S3PutObjectAction::write_object_successful, this), std::bind( &S3PutObjectAction::write_object_failed, this), buffer);
+
+  write_in_progress = true;
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutObjectAction::write_object_successful() {
-  s3_log(S3_LOG_INFO, "Write to clovis successful\n");
-  if (request->get_buffered_input().length() > 0) {
-    // We still have more data to write.
+  s3_log(S3_LOG_DEBUG, "Write to clovis successful\n");
+  write_in_progress = false;
+  if (/* buffered data len is at least equal to max we can write to clovis in one write */
+      request->get_buffered_input().length() > S3Option::get_instance()->get_clovis_write_payload_size()
+      || /* we have all the data buffered and ready to write */
+      (request->get_buffered_input().is_freezed() && request->get_buffered_input().length() > 0)) {
     write_object(request->get_buffered_input());
-  } else {
+  } else if (request->get_buffered_input().is_freezed() && request->get_buffered_input().length() == 0) {
     next();
-  }
+  } // else we wait for more incoming data
+  request->resume();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutObjectAction::write_object_failed() {
   s3_log(S3_LOG_WARN, "Failed writing to clovis.\n");
+  write_in_progress = false;
+  request->resume();
   send_response_to_s3_client();
 }
 

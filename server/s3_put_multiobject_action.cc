@@ -166,8 +166,15 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
 
 void S3PutMultiObjectAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Resuming the action since we have data.
-  write_object(request->get_buffered_input());
+  if (!clovis_write_in_progress) {
+    write_object(request->get_buffered_input());
+  }
+  if (!request->get_buffered_input().is_freezed() &&
+      request->get_buffered_input().length() >=
+      (S3Option::get_instance()->get_clovis_write_payload_size() * S3Option::get_instance()->get_read_ahead_multiple())) {
+    s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n", request->get_buffered_input().length());
+    request->pause();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -188,51 +195,47 @@ void S3PutMultiObjectAction::write_object(S3AsyncBufferContainer& buffer) {
       }
       auth_in_progress = true;  // this triggers auth
     }
-    clovis_write_in_progress = true;
   }
+  clovis_write_in_progress = true;
 
-  if (buffer.is_freezed()) {
-    // This is last one, no more data ahead.
-    s3_log(S3_LOG_DEBUG, "This is last one, no more data ahead, write it.\n");
-    clovis_writer->write_content(std::bind( &S3PutMultiObjectAction::write_object_successful, this), std::bind( &S3PutMultiObjectAction::write_object_failed, this), buffer);
-  } else {
-    request->pause();  // Pause till write to clovis is complete
-    s3_log(S3_LOG_DEBUG, "We will still be expecting more data, so write it and pause to wait for more data\n");
-    // We will still be expecting more data, so write and pause to wait for more data
-    clovis_writer->write_content(std::bind( &S3RequestObject::resume, request), std::bind( &S3PutMultiObjectAction::write_object_failed, this), buffer);
-  }
+  clovis_writer->write_content(std::bind( &S3PutMultiObjectAction::write_object_successful, this), std::bind( &S3PutMultiObjectAction::write_object_failed, this), buffer);
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutMultiObjectAction::write_object_successful() {
   s3_log(S3_LOG_DEBUG, "Write successful\n");
+  clovis_write_in_progress = false;
   if (request->is_chunked()) {
-    clovis_write_in_progress = false;
     if (auth_failed) {
       // TODO - rollback = deleteobject
       send_response_to_s3_client();
       return;
     }
   }
-
-  if (request->get_buffered_input().length() > 0) {
-    // We still have more data to write.
+  request->resume();
+  if (/* buffered data len is at least equal max we can write to clovis in one write */
+      request->get_buffered_input().length() > S3Option::get_instance()->get_clovis_write_payload_size()
+      || /* we have all the data buffered and ready to write */
+      (request->get_buffered_input().is_freezed() && request->get_buffered_input().length() > 0)) {
     write_object(request->get_buffered_input());
-  } else {
+  } else if (request->get_buffered_input().is_freezed() && request->get_buffered_input().length() == 0) {
+    clovis_write_completed = true;
     if (request->is_chunked()) {
       if (auth_completed) {
         next();
-      }
+      }  // else wait for auth to complete
     } else {
       next();
     }
-  }
+  } // else we wait for more incoming data
 }
 
 void S3PutMultiObjectAction::write_object_failed() {
   s3_log(S3_LOG_ERROR, "Write to clovis failed\n");
+  clovis_write_in_progress = false;
+  clovis_write_completed = true;
   if (request->is_chunked()) {
-    clovis_write_in_progress = false;
     write_failed = true;
     if (!auth_in_progress) {
       send_response_to_s3_client();

@@ -44,6 +44,7 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       s3config_log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
       s3config_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       s3config_performance_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
+      s3config_read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       s3config_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
         s3config_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
@@ -57,7 +58,7 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       s3config_clovis_ha_addr = s3_option_node["S3_CLOVIS_HA_ADDR"].as<std::string>();
       s3config_clovis_prof = s3_option_node["S3_CLOVIS_PROF"].as<std::string>();
       s3config_clovis_layout = s3_option_node["S3_CLOVIS_LAYOUT_ID"].as<unsigned short>();
-      s3config_clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<int>();
+      s3config_clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
       s3config_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
       s3config_clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
     }
@@ -85,6 +86,7 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
         s3config_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
       }
       s3config_performance_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
+      s3config_read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(s3command_option & S3_OPTION_AUTH_PORT)) {
         s3config_auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -106,7 +108,7 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
         s3config_clovis_layout = s3_option_node["S3_CLOVIS_LAYOUT_ID"].as<unsigned short>();
       }
       s3config_clovis_prof = s3_option_node["S3_CLOVIS_PROF"].as<std::string>();
-      s3config_clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<int>();
+      s3config_clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
       s3config_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
       s3config_clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
     }
@@ -182,6 +184,7 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3config_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3config_bind_port);
   s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", s3config_performance_enabled);
+  s3_log(S3_LOG_INFO, "S3_READ_AHEAD_MULTIPLE = %d\n", s3config_read_ahead_multiple);
   s3_log(S3_LOG_INFO, "S3_PERF_LOG_FILENAME = %s\n", s3config_perf_log_filename.c_str());
   s3_log(S3_LOG_INFO, "S3_AUTH_IP_ADDR = %s\n", s3config_auth_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_AUTH_PORT = %d\n", s3config_auth_port);
@@ -241,11 +244,11 @@ std::string S3Option::get_log_level() {
 }
 
 std::string S3Option::get_perf_log_filename() {
-  if (s3config_perf_log_filename.empty()) {
-    return "/var/log/seagate/s3_perf.log";
-  } else {
-    return s3config_perf_log_filename;
-  }
+  return s3config_perf_log_filename;
+}
+
+int S3Option::get_read_ahead_multiple() {
+  return s3config_read_ahead_multiple;
 }
 
 std::string S3Option::get_bind_addr() {
@@ -276,7 +279,7 @@ std::string S3Option::get_clovis_prof() {
   return s3config_clovis_prof;
 }
 
-int S3Option::get_clovis_block_size() {
+unsigned int S3Option::get_clovis_block_size() {
   return s3config_clovis_block_size;
 }
 
@@ -288,11 +291,11 @@ int S3Option::get_clovis_idx_fetch_count() {
   return s3config_clovis_idx_fetch_count;
 }
 
-int S3Option::get_clovis_write_payload_size() {
+unsigned int S3Option::get_clovis_write_payload_size() {
   return s3config_clovis_block_size * s3config_factor;
 }
 
-int S3Option::get_clovis_read_payload_size() {
+unsigned int S3Option::get_clovis_read_payload_size() {
   return s3config_clovis_block_size * s3config_factor;
 }
 

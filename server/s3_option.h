@@ -47,11 +47,12 @@ class S3Option {
   unsigned short s3config_clovis_layout;
   unsigned short s3config_performance_enabled;
   unsigned short s3config_factor;
-  int s3config_clovis_block_size;
+  unsigned int s3config_clovis_block_size;
   int s3config_clovis_idx_fetch_count;
   std::string option_file;
   std::string s3config_log_filename;
   std::string s3config_perf_log_filename;
+  int s3config_read_ahead_multiple;
   std::string s3config_log_level;
   std::string s3config_bind_addr;
   std::string s3config_clovis_local_addr;
@@ -81,6 +82,8 @@ public:
     s3config_s3_daemon_dir = "/";
     s3config_s3daemon_redirect = 1;
     s3config_performance_enabled = 0;
+    s3config_perf_log_filename = "/var/log/seagate/s3/perf.log";
+    s3config_read_ahead_multiple = 1;
     s3config_clovis_block_size = 1048576; // One MB
     s3config_factor = 1;
     s3config_clovis_idx_fetch_count = 100;
@@ -100,6 +103,7 @@ public:
   std::string get_log_filename();
   std::string get_log_level();
   std::string get_perf_log_filename();
+  int get_read_ahead_multiple();
   std::string get_bind_addr();
   std::string get_default_endpoint();
   std::set<std::string>& get_region_endpoints();
@@ -107,10 +111,10 @@ public:
   std::string get_clovis_confd_addr();
   std::string get_clovis_ha_addr();
   std::string get_clovis_prof();
-  int get_clovis_block_size();
+  unsigned int get_clovis_block_size();
   unsigned short get_clovis_factor();
-  int get_clovis_write_payload_size();
-  int get_clovis_read_payload_size();
+  unsigned int get_clovis_write_payload_size();
+  unsigned int get_clovis_read_payload_size();
   int get_clovis_idx_fetch_count();
   std::string get_auth_ip_addr();
   unsigned short s3_performance_enabled();

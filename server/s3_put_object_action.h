@@ -39,6 +39,7 @@ class S3PutObjectAction : public S3Action {
   size_t total_data_to_stream;
   S3Timer create_object_timer;
   S3Timer write_content_timer;
+  bool write_in_progress;
 public:
   S3PutObjectAction(std::shared_ptr<S3RequestObject> req);
 

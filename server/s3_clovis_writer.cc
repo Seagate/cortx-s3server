@@ -92,7 +92,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   this->handler_on_failed  = on_failed;
 
   size_t clovis_block_size = S3Option::get_instance()->get_clovis_block_size();
-  int clovis_write_payload_size = S3Option::get_instance()->get_clovis_write_payload_size();
+  size_t clovis_write_payload_size = S3Option::get_instance()->get_clovis_write_payload_size();
 
   size_t estimated_write_length = 0;
   if (buffer.is_freezed() && buffer.length() < clovis_write_payload_size) {
