@@ -48,6 +48,32 @@ import org.slf4j.LoggerFactory;
 
 public class AuthServer {
 
+    private static EventLoopGroup bossGroup, workerGroup;
+    private static EventExecutorGroup executorGroup;
+
+    private static Logger logger;
+
+    private static void attachShutDownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                S3Perf.clean();
+                shutdownExecutors();
+            }
+        });
+    }
+
+    private static void shutdownExecutors() {
+        bossGroup.shutdownGracefully();
+        logger.info("Boss group shutdown");
+
+        workerGroup.shutdownGracefully();
+        logger.info("Worker group shutdown");
+
+        executorGroup.shutdownGracefully();
+        logger.info("Executor group shutdown");
+    }
+
     /**
      * Read the properties file.
      */
@@ -99,24 +125,26 @@ public class AuthServer {
         readConfig();
         logInit();
 
-        Logger logger = LoggerFactory.getLogger(AuthServer.class.getName());
+        logger = LoggerFactory.getLogger(AuthServer.class.getName());
 
         SSLContextProvider.init();
         DAODispatcher.init();
         S3Perf.init();
 
+        AuthServer.attachShutDownHook();
+
         // Configure the server.
-        EventLoopGroup bossGroup = new NioEventLoopGroup(
+        bossGroup = new NioEventLoopGroup(
                 AuthServerConfig.getBossGroupThreads());
         logger.info("Created boss event loop group with "
                 + AuthServerConfig.getBossGroupThreads() + " threads");
 
-        EventLoopGroup workerGroup = new NioEventLoopGroup(
+        workerGroup = new NioEventLoopGroup(
                 AuthServerConfig.getWorkerGroupThreads());
         logger.info("Created worker event loop group with "
                 + AuthServerConfig.getWorkerGroupThreads() + " threads");
 
-        EventExecutorGroup executorGroup = new DefaultEventExecutorGroup(
+        executorGroup = new DefaultEventExecutorGroup(
                 AuthServerConfig.getEventExecutorThreads());
         logger.info("Created event executor with "
                 + AuthServerConfig.getEventExecutorThreads() + " threads");
@@ -141,6 +169,7 @@ public class AuthServer {
         for (Channel ch : serverChannels) {
             ch.closeFuture().sync();
         }
+
     }
 
     /**

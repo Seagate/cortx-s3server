@@ -45,11 +45,13 @@ public class S3Perf {
             = LoggerFactory.getLogger(S3Perf.class.getName());
 
     private static synchronized void writeToFile(String msg) {
-        try {
-            bw.write(msg);
-            bw.flush();
-        } catch (Exception ex) {
-            logger.error(ex.getMessage());
+        if (bw != null) {
+            try {
+                bw.write(msg);
+                bw.flush();
+            } catch (Exception ex) {
+                logger.error(ex.getMessage());
+            }
         }
     }
 
@@ -73,8 +75,13 @@ public class S3Perf {
         }
     }
 
-    public static void clean() throws IOException {
-        bw.close();
+    public static synchronized void clean() {
+        try {
+            if (bw != null) {
+                bw.close();
+            }
+        } catch (IOException ex) {
+        }
     }
 
     public void startClock() {

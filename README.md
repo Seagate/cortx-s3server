@@ -49,6 +49,11 @@ Install build to /opt
 sudo ./makeinstall
 ```
 
+```sh
+sudo cp auth/authserver.service /lib/systemd/system
+sudo systemctl daemon-reload
+```
+
 ## How to run s3 server daemon(this current assumes all dependencies are on same local VM)
 ```sh
 sudo /opt/seagate/s3/starts3.sh
@@ -61,7 +66,12 @@ sudo /opt/seagate/s3/stops3.sh
 
 ## How to run auth server (this current assumes all dependencies are on same local VM)
 ```sh
-sudo /opt/seagate/s3/startauth.sh
+sudo systemctl start authserver
+```
+
+## How to stop auth server (this current assumes all dependencies are on same local VM)
+```sh
+sudo systemctl stop authserver
 ```
 
 

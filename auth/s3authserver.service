@@ -1,0 +1,12 @@
+[Unit]
+Description=Mero-S3 Auth Server
+After=syslog.target
+
+[Service]
+Type=simple
+ExecStart=/opt/seagate/auth/startauth.sh
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target
