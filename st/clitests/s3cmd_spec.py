@@ -3,6 +3,8 @@
 from framework import Config
 from framework import PyCliTest
 from s3cmd import S3cmdTest
+from jclient import JClientTest
+from s3client_config import S3ClientConfig
 
 # Helps debugging
 # Config.log_enabled = True
@@ -22,6 +24,11 @@ from s3cmd import S3cmdTest
 # Run before all to setup the test environment.
 print("Configuring LDAP")
 PyCliTest('Before_all').before_all()
+
+# Set pathstyle =false to run jclient for partial multipart upload
+S3ClientConfig.pathstyle = False
+S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+S3ClientConfig.secret_key = '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'
 
 # Path style tests.
 Config.config_file = "pathstyle.s3cfg"
@@ -140,15 +147,31 @@ S3cmdTest('s3cmd can download 18MB file').download_test("seagatebucket", "18MBfi
 
 S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
-S3cmdTest('s3cmd can list multipart upload 18MB file').multipartupload_list_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+#################################################
 
-S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
 
-S3cmdTest('s3cmd can abort multipart upload of 18MB file').multipartupload_abort_test("seagatebucket", "18MBfile", 18000000).execute_test(True).command_should_fail()
+result = S3cmdTest('s3cmd can list multipart uploads in progress').list_multipart_uploads("seagatebucket").execute_test()
+result.command_response_should_have('18MBfile')
 
-S3cmdTest('s3cmd can list parts of multipart upload 18MB file').multipartupload_partlist_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
 
-S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+result = S3cmdTest('S3cmd can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+assert len(result.status.stdout.split('\n')) == 4
+
+S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can test the multipart was aborted.').list_multipart_uploads('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+
+############################################
+
+# S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+#
+# S3cmdTest('s3cmd can abort multipart upload of 18MB file').multipartupload_abort_test("seagatebucket", "18MBfile", 18000000).execute_test(True).command_should_fail()
+#
+# S3cmdTest('s3cmd can list parts of multipart upload 18MB file').multipartupload_partlist_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+#
+# S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
 # ************ Multiple Delete bucket TEST ************
 file_name = "3kfile"

@@ -67,137 +67,24 @@ class S3cmdTest(PyCliTest):
         self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
         return self
 
-    def list_multipart(self):
-        my_bucket = "s3://" + self.bucket_name
-        my_object = "s3://" + self.bucket_name + "/" + self.filename
-        popenobj = subprocess.Popen(["s3cmd", "-c", self.s3cfg, "multipart", my_bucket], stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-        while not popenobj.poll():
-           data = popenobj.stdout.readline()
-           stdoutdata = data.decode('utf-8')
-           if stdoutdata:
-             objecturl = " " + my_object + " "
-             if( stdoutdata.find(my_object) >= 0):
-               sys.stdout.write(stdoutdata)
-               upload_id = stdoutdata[-37:-1]
-           else:
-             break
-        return self
-
-    def abort_multipart(self):
-        my_bucket = "s3://" + self.bucket_name
-        my_object = "s3://" + self.bucket_name + "/" + self.filename
-        popenobj = subprocess.Popen(["s3cmd", "-c", self.s3cfg, "multipart", my_bucket], stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-        total_output = ""
-        upload_id = ""
-        while not popenobj.poll():
-           data = popenobj.stdout.readline()
-           stdoutdata = data.decode('utf-8')
-           if stdoutdata:
-             if( stdoutdata.find(my_object) >= 0):
-               upload_id = stdoutdata[-37:-1]
-               sys.stdout.write(stdoutdata)
-               break
-           else:
-             break
-
-        if upload_id:
-          popenabort = subprocess.Popen(["s3cmd", "-c", self.s3cfg, "abortmp", my_object, upload_id],
-                                       stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-          time.sleep(2)
-          retry = 0
-          while 1:
-            popenlist_twice = subprocess.Popen(["s3cmd", "-c", self.s3cfg, "listmp", my_object, upload_id],
-                                       stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-            counter = 0
-            while not popenlist_twice.poll():
-               listdata_twice = popenlist_twice.stdout.readline()
-               stdoutdatalist_twice = listdata_twice.decode('utf-8')
-               counter += 1
-               if stdoutdatalist_twice:
-                 total_output = stdoutdatalist_twice
-               else:
-                 break
-
-            if(counter > 2 or retry > 6):
-              print(total_output)
-              if(counter > 2):
-                popenabort_twice = subprocess.Popen(["s3cmd", "-c", self.s3cfg, "abortmp", my_object, upload_id],
-                                       stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-
-              break
-            retry += 1
-            time.sleep(2)
-
-        return self
-
-    def partlist_multipart(self):
-        my_bucket = "s3://" + self.bucket_name
-        my_object = "s3://" + self.bucket_name + "/" + self.filename
-        popenobj = subprocess.Popen(["s3cmd", "-c", self.s3cfg, "multipart",my_bucket], stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-        total_output = ""
-        upload_id = ""
-        while not popenobj.poll():
-           data = popenobj.stdout.readline()
-           stdoutdata = data.decode('utf-8')
-           total_output += stdoutdata
-           if stdoutdata:
-             if( stdoutdata.find(my_object) >= 0):
-               upload_id = stdoutdata[-37:-1]
-               break
-           else:
-             break
-        if upload_id:
-          retry = 0
-          while 1:
-            popenlist = subprocess.Popen(["s3cmd", "-c", self.s3cfg,"listmp", my_object, upload_id],
-                                       stdout=subprocess.PIPE, stderr= subprocess.PIPE)
-            counter = 0
-            while not popenlist.poll():
-               listdata = popenlist.stdout.readline()
-               stdoutdatalist = listdata.decode('utf-8')
-               counter += 1
-               if stdoutdatalist:
-                 total_output = stdoutdatalist
-               else:
-                 break
-
-            if(counter > 2 or retry > 8):
-              if(counter > 2):
-                print(total_output)
-              else:
-                raise RuntimeError("listing of parts failed")
-              break
-            retry += 1
-            time.sleep(2)
-        else:
-          raise RuntimeError("listing of parts failed, upload id not found")
-        return self
-
-    def multipartupload_list_test(self, bucket_name, filename, filesize):
-        self.filename = filename
-        self.filesize = filesize
+    def list_multipart_uploads(self, bucket_name):
         self.bucket_name = bucket_name
-        t = Timer(4, self.list_multipart)
-        t.start()
-        self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
+        self.with_cli("s3cmd -c " + self.s3cfg + " multipart s3://" + self.bucket_name)
         return self
 
-    def multipartupload_abort_test(self, bucket_name, filename, filesize):
+    def abort_multipart(self, bucket_name, filename, upload_id):
         self.filename = filename
-        self.filesize = filesize
         self.bucket_name = bucket_name
-        t = Timer(4, self.abort_multipart)
-        t.start()
-        self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
+        self.with_cli("s3cmd -c " + self.s3cfg + " abortmp s3://" + self.bucket_name + "/" + self.filename + " " + upload_id)
         return self
 
-    def multipartupload_partlist_test(self, bucket_name, filename, filesize):
+    def list_parts(self, bucket_name, filename, upload_id):
         self.filename = filename
-        self.filesize = filesize
         self.bucket_name = bucket_name
-        t = Timer(4, self.partlist_multipart)
-        t.start()
-        self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
+        cmd = "s3cmd -c %s listmp s3://%s/%s %s" % (self.s3cfg, bucket_name,
+            filename, upload_id)
+
+        self.with_cli(cmd)
         return self
 
     def download_test(self, bucket_name, filename):
