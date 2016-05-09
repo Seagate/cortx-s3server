@@ -36,7 +36,7 @@ EXTERN_C_BLOCK_BEGIN
 struct s3_clovis_op_context {
   struct m0_clovis_obj *obj;
   struct m0_clovis_op **ops;
-  struct m0_clovis_op_cbs  *cbs;
+  struct m0_clovis_op_ops  *cbs;
   size_t op_count;
 };
 
@@ -49,7 +49,7 @@ struct s3_clovis_rw_op_context {
 struct s3_clovis_idx_op_context {
   struct m0_clovis_idx    *idx;
   struct m0_clovis_op **ops;
-  struct m0_clovis_op_cbs  *cbs;
+  struct m0_clovis_op_ops  *cbs;
   size_t idx_count;
 };
 

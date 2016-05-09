@@ -66,13 +66,13 @@ TEST_F(S3ClovisKvsWritterTest, Constructor) {
 
 TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessCallback) {
   pthread_t tid;
-  m0_clovis_op_cbs cbs;
-  m0_clovis_op op;
+  // m0_clovis_op_ops cbs;
+  // m0_clovis_op op;
   S3CallBack s3cloviskvscallbackobj;
   struct s3_clovis_idx_op_context * idx_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_create(_, _));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_create(_, _)).WillOnce(Return(0));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _));
   EXPECT_CALL(*ptr_mock_request, get_evbase())
@@ -82,16 +82,16 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessCallback) {
                                           std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
                                           std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
-  ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  // ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) != 0);
 
-  cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
-  op.op_cbs = &cbs;
-  idx_ctx->ops[0] = &op;
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+  // cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
+  // op.op_cbs = &cbs;
+  // idx_ctx->ops[0] = &op;
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->ops[0]->op_datum;
 
   S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
   EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
@@ -104,8 +104,8 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessCallback) {
 
 TEST_F(S3ClovisKvsWritterTest, CreateIndexFailCallback) {
   pthread_t tid;
-  m0_clovis_op_cbs cbs;
-  m0_clovis_op op;
+  // m0_clovis_op_ops cbs;
+  // m0_clovis_op op;
   S3CallBack s3cloviskvscallbackobj;
   struct s3_clovis_idx_op_context * idx_ctx;
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
@@ -120,15 +120,15 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFailCallback) {
                                           std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
   ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) != 0);
 
-  cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
-  op.op_cbs = &cbs;
-  idx_ctx->ops[0] = &op;
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+  // cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
+  // op.op_cbs = &cbs;
+  // idx_ctx->ops[0] = &op;
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->ops[0]->op_datum;
 
   S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
 
@@ -151,9 +151,9 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFailEmpty) {
                                           std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
   ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) == 0);
 
   idx_ctx->idx_count = 0;
@@ -192,8 +192,8 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFail) {
 
 TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
   pthread_t tid;
-  m0_clovis_op_cbs cbs;
-  m0_clovis_op op;
+  // m0_clovis_op_ops cbs;
+  // m0_clovis_op op;
   S3CallBack s3cloviskvscallbackobj;
   struct s3_clovis_idx_op_context * idx_ctx;
   struct s3_clovis_kvs_op_context *kvs_ctx;
@@ -212,9 +212,9 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
                                         std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
   kvs_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) != 0);
   std::string key_str((char *)kvs_ctx->keys->ov_buf[0], kvs_ctx->keys->ov_vec.v_count[0]);
   EXPECT_STREQ("3kfile", key_str.c_str());
@@ -222,10 +222,10 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
   EXPECT_STREQ("{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}",
                value_str.c_str());
 
-  cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
-  op.op_cbs = &cbs;
-  idx_ctx->ops[0] = &op;
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+  // cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
+  // op.op_cbs = &cbs;
+  // idx_ctx->ops[0] = &op;
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->ops[0]->op_datum;
 
   S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
 
@@ -238,8 +238,8 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
 
 TEST_F(S3ClovisKvsWritterTest, PutKeyValFailCallback) {
   pthread_t tid;
-  m0_clovis_op_cbs cbs;
-  m0_clovis_op op;
+  // m0_clovis_op_ops cbs;
+  // m0_clovis_op op;
   S3CallBack s3cloviskvscallbackobj;
   struct s3_clovis_idx_op_context * idx_ctx;
 
@@ -257,16 +257,16 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailCallback) {
                                         std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
   ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) != 0);
 
-  cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
-  op.op_cbs = &cbs;
-  idx_ctx->ops[0] = &op;
+  // cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
+  // op.op_cbs = &cbs;
+  // idx_ctx->ops[0] = &op;
 
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->ops[0]->op_datum;
 
   S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
 
@@ -291,9 +291,9 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailEmpty) {
                                         std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
                                         std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) == 0);
 
   idx_ctx->idx_count = 0;
@@ -337,8 +337,8 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFail) {
 
 TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccessCallback) {
   pthread_t tid;
-  m0_clovis_op_cbs cbs;
-  m0_clovis_op op;
+  // m0_clovis_op_ops cbs;
+  // m0_clovis_op op;
   S3CallBack s3cloviskvscallbackobj;
   struct s3_clovis_idx_op_context * idx_ctx;
   struct s3_clovis_kvs_op_context *kvs_ctx;
@@ -356,18 +356,18 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccessCallback) {
                                         std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
   kvs_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) != 0);
   EXPECT_STREQ("3kfile", (char *)kvs_ctx->keys->ov_buf[0]);
 
+  //
+  // cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
+  // op.op_cbs = &cbs;
+  // idx_ctx->ops[0] = &op;
 
-  cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
-  op.op_cbs = &cbs;
-  idx_ctx->ops[0] = &op;
-
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->ops[0]->op_datum;
 
   S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
 
@@ -380,8 +380,8 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccessCallback) {
 
 TEST_F(S3ClovisKvsWritterTest, DelKeyValFailCallback) {
   pthread_t tid;
-  m0_clovis_op_cbs cbs;
-  m0_clovis_op op;
+  // m0_clovis_op_ops cbs;
+  // m0_clovis_op op;
   S3CallBack s3cloviskvscallbackobj;
   struct s3_clovis_idx_op_context * idx_ctx;
 
@@ -397,16 +397,16 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailCallback) {
                                            std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
                                            std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) != 0);
 
-  cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
-  op.op_cbs = &cbs;
-  idx_ctx->ops[0] = &op;
+  // cbs.ocb_arg = (void *)idx_ctx->cbs->ocb_arg;
+  // op.op_cbs = &cbs;
+  // idx_ctx->ops[0] = &op;
 
-  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->cbs->ocb_arg;
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)idx_ctx->ops[0]->op_datum;
 
   S3AsyncOpContextBase *ctx = (S3AsyncOpContextBase*)op_ctx->application_context;
 
@@ -432,9 +432,9 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailEmpty) {
                                            std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
   idx_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_idx_op_ctx();
   kvs_ctx = ptr_mock_cloviskvs_writer->writer_context->get_clovis_kvs_op_ctx();
-  EXPECT_TRUE(idx_ctx->cbs->ocb_arg != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_stable != NULL);
-  EXPECT_TRUE(idx_ctx->cbs->ocb_failed != NULL);
+  EXPECT_TRUE(idx_ctx->ops[0]->op_datum != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_stable != NULL);
+  EXPECT_TRUE(idx_ctx->cbs->oop_failed != NULL);
   EXPECT_TRUE((ptr_mock_cloviskvs_writer->id.u_lo | ptr_mock_cloviskvs_writer->id.u_hi) == 0);
   EXPECT_STREQ("", (char *)kvs_ctx->keys->ov_buf[0]);
 

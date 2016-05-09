@@ -56,7 +56,7 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "Return code = %d\n", op->op_sm.sm_rc);
 
-  struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op->op_cbs->ocb_arg;
+  struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase*)ctx->application_context;
   s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);
@@ -78,7 +78,7 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "Error code = %d\n", op->op_sm.sm_rc);
 
-  struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op->op_cbs->ocb_arg;
+  struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase*)ctx->application_context;
   s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);

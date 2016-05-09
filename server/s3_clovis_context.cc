@@ -30,7 +30,7 @@ struct s3_clovis_op_context* create_basic_op_ctx(size_t op_count) {
 
   ctx->ops = (struct m0_clovis_op **)calloc(op_count, sizeof(struct m0_clovis_op *));
 
-  ctx->cbs = (struct m0_clovis_op_cbs *)calloc(op_count, sizeof(struct m0_clovis_op_cbs));
+  ctx->cbs = (struct m0_clovis_op_ops *)calloc(op_count, sizeof(struct m0_clovis_op_ops));
 
   ctx->obj = (struct m0_clovis_obj *)calloc(op_count, sizeof(struct m0_clovis_obj));
   ctx->op_count = op_count;
@@ -126,7 +126,7 @@ struct s3_clovis_idx_op_context* create_basic_idx_op_ctx(int idx_count) {
 
   ctx->idx = (struct m0_clovis_idx *)calloc(idx_count, sizeof(struct m0_clovis_idx));
   ctx->ops = (struct m0_clovis_op **)calloc(idx_count, sizeof(struct m0_clovis_op *));
-  ctx->cbs = (struct m0_clovis_op_cbs *)calloc(idx_count, sizeof(struct m0_clovis_op_cbs));
+  ctx->cbs = (struct m0_clovis_op_ops *)calloc(idx_count, sizeof(struct m0_clovis_op_ops));
 
   ctx->idx_count = idx_count;
   s3_log(S3_LOG_DEBUG, "Exiting\n");

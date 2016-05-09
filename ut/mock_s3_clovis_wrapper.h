@@ -41,7 +41,7 @@ public:
   MOCK_METHOD2(clovis_entity_delete, int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
   MOCK_METHOD5(init_clovis_api, int(const char *clovis_local_addr, const char *clovis_ha_addr, const char *clovis_confd_addr,
                                     const char *clovis_prof, short layout_id));
-  MOCK_METHOD3(clovis_op_setup, void(struct m0_clovis_op *op, const struct m0_clovis_op_cbs *ops, m0_time_t linger));
+  MOCK_METHOD3(clovis_op_setup, void(struct m0_clovis_op *op, const struct m0_clovis_op_ops *ops, m0_time_t linger));
   MOCK_METHOD5(clovis_idx_op, int(struct m0_clovis_idx *idx,
                                   enum m0_clovis_idx_opcode opcode,
                                   struct m0_bufvec * keys,

@@ -46,7 +46,7 @@ class ClovisAPI {
 
     virtual int  clovis_entity_delete(struct m0_clovis_entity *entity, struct m0_clovis_op **op) = 0;
 
-    virtual void clovis_op_setup(struct m0_clovis_op *op, const struct m0_clovis_op_cbs *ops, m0_time_t linger) = 0;
+    virtual void clovis_op_setup(struct m0_clovis_op *op, const struct m0_clovis_op_ops *ops, m0_time_t linger) = 0;
 
     virtual int  clovis_idx_op(struct m0_clovis_idx *idx,
                                enum m0_clovis_idx_opcode opcode,
@@ -93,7 +93,7 @@ class ConcreteClovisAPI : public ClovisAPI {
       return m0_clovis_entity_delete(entity, op);
     }
 
-    void clovis_op_setup(struct m0_clovis_op *op, const struct m0_clovis_op_cbs *ops, m0_time_t linger)
+    void clovis_op_setup(struct m0_clovis_op *op, const struct m0_clovis_op_ops *ops, m0_time_t linger)
     {
       m0_clovis_op_setup(op, ops, linger);
     }

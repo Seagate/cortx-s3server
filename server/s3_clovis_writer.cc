@@ -59,15 +59,15 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success, std::fu
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  ctx->cbs[0].ocb_arg = (void*)op_ctx;
-  ctx->cbs[0].ocb_executed = NULL;
-  ctx->cbs[0].ocb_stable = s3_clovis_op_stable;
-  ctx->cbs[0].ocb_failed = s3_clovis_op_failed;
+  ctx->cbs[0].oop_executed = NULL;
+  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
+  ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   m0_clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
 
   m0_clovis_entity_create(&(ctx->obj[0].ob_entity), &(ctx->ops[0]));
 
+  ctx->ops[0]->op_datum = (void *)op_ctx;
   m0_clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
   m0_clovis_op_launch(ctx->ops, 1);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -130,10 +130,9 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  ctx->cbs[0].ocb_arg = (void*)op_ctx;
-  ctx->cbs[0].ocb_executed = NULL;
-  ctx->cbs[0].ocb_stable = s3_clovis_op_stable;
-  ctx->cbs[0].ocb_failed = s3_clovis_op_failed;
+  ctx->cbs[0].oop_executed = NULL;
+  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
+  ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   S3Timer copy_timer;
   size_t last_w_cnt = total_written;
@@ -152,6 +151,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   m0_clovis_obj_op(&ctx->obj[0], M0_CLOVIS_OC_WRITE,
        rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
 
+  ctx->ops[0]->op_datum = (void *)op_ctx;
   m0_clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
   writer_context->start_timer_for("write_to_clovis_op_" + std::to_string(total_written - last_w_cnt) + "_bytes");
   m0_clovis_op_launch(ctx->ops, 1);
@@ -187,15 +187,15 @@ void S3ClovisWriter::delete_object(std::function<void(void)> on_success, std::fu
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  ctx->cbs[0].ocb_arg = (void*)op_ctx;
-  ctx->cbs[0].ocb_executed = NULL;
-  ctx->cbs[0].ocb_stable = s3_clovis_op_stable;
-  ctx->cbs[0].ocb_failed = s3_clovis_op_failed;
+  ctx->cbs[0].oop_executed = NULL;
+  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
+  ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   m0_clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
 
   m0_clovis_entity_delete(&(ctx->obj[0].ob_entity), &(ctx->ops[0]));
 
+  ctx->ops[0]->op_datum = (void *)op_ctx;
   m0_clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   writer_context->start_timer_for("delete_object_from_clovis");
@@ -241,15 +241,15 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids, std::fu
     op_ctx->op_index_in_launch = i;
     op_ctx->application_context = (void *)writer_context.get();
 
-    ctx->cbs[i].ocb_arg = (void*)op_ctx;
-    ctx->cbs[i].ocb_executed = NULL;
-    ctx->cbs[i].ocb_stable = s3_clovis_op_stable;
-    ctx->cbs[i].ocb_failed = s3_clovis_op_failed;
+    ctx->cbs[i].oop_executed = NULL;
+    ctx->cbs[i].oop_stable = s3_clovis_op_stable;
+    ctx->cbs[i].oop_failed = s3_clovis_op_failed;
 
     m0_clovis_obj_init(&ctx->obj[i], &clovis_uber_realm, &id);
 
     m0_clovis_entity_delete(&(ctx->obj[i].ob_entity), &(ctx->ops[i]));
 
+    ctx->ops[i]->op_datum = (void *)op_ctx;
     m0_clovis_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
   }
 

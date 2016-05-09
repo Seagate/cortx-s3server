@@ -72,10 +72,9 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)reader_context.get();
 
-  ctx->cbs[0].ocb_arg = (void *)op_ctx;
-  ctx->cbs[0].ocb_executed = NULL;
-  ctx->cbs[0].ocb_stable = s3_clovis_op_stable;
-  ctx->cbs[0].ocb_failed = s3_clovis_op_failed;
+  ctx->cbs[0].oop_executed = NULL;
+  ctx->cbs[0].oop_stable = s3_clovis_op_stable;
+  ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   /* Read the requisite number of blocks from the entity */
   s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
@@ -83,6 +82,7 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
   /* Create the read request */
   s3_clovis_api->clovis_obj_op(&ctx->obj[0], M0_CLOVIS_OC_READ, rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0, &ctx->ops[0]);
 
+  ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
   reader_context->start_timer_for("read_object_data_" + std::to_string(num_of_blocks_read * clovis_block_size) + "_bytes");
