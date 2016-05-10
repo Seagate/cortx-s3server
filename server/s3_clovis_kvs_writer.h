@@ -137,13 +137,19 @@ public:
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisKvsWritterTest, Constructor);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexSuccess);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexSuccessCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFail);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFailCallback);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFailEmpty);
+  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValSuccess);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValSuccessCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFail);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailCallback);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailEmpty);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValSuccess);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValSuccessCallback);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFail);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailCallback);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailEmpty);
 };
