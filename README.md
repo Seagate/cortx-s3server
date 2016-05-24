@@ -50,7 +50,7 @@ sudo ./makeinstall
 ```
 
 ```sh
-sudo cp auth/authserver.service /lib/systemd/system
+sudo cp auth/s3authserver.service /lib/systemd/system
 sudo systemctl daemon-reload
 ```
 

@@ -12,6 +12,10 @@ class Account:
             print("Account name is required for Account creation")
             return
 
+        if(self.cli_args.email is None):
+            print("Email Id of the user is required to create an Account")
+            return
+
         try:
             auth_endpoint = self.iam_client._endpoint.host
         except Exception as ex:
@@ -21,7 +25,8 @@ class Account:
 
         auth_server_name = urllib.parse.urlparse(auth_endpoint).netloc
         account_params = urllib.parse.urlencode({'Action' : 'CreateAccount',
-                                           'AccountName' : self.cli_args.name})
+                                           'AccountName' : self.cli_args.name,
+                                           'Email' : self.cli_args.email})
 
         headers = {"Content-type": "application/x-www-form-urlencoded",
                     "Accept": "text/plain"}
@@ -36,8 +41,8 @@ class Account:
             account_response = json.loads(json.dumps(xmltodict.parse(data)))
             account = account_response['CreateAccountResponse']['CreateAccountResult']['Account']
 
-            print("AccountId = %s, RootUserName = %s, AccessKeyId = %s, SecretKey = %s" %
-                    (account['AccountId'], account['RootUserName'], account['AccessKeyId'], account['RootSecretKeyId']))
+            print("AccountId = %s, CanonicalId = %s, RootUserName = %s, AccessKeyId = %s, SecretKey = %s" %
+                    (account['AccountId'], account['CanonicalId'], account['RootUserName'], account['AccessKeyId'], account['RootSecretKeyId']))
         else:
             print("Account wasn't created.")
             print(response.reason)

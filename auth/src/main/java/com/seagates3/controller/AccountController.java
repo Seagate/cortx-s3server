@@ -14,7 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 package com.seagates3.controller;
 
@@ -66,7 +66,9 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.entityAlreadyExists();
         }
 
-        account.setId(KeyGenUtil.userId());
+        account.setId(KeyGenUtil.createUserId());
+        account.setCanonicalId(KeyGenUtil.createId());
+        account.setEmail(requestBody.get("Email"));
 
         try {
             accountDao.save(account);
@@ -102,7 +104,7 @@ public class AccountController extends AbstractController {
         user.setPath("/");
         user.setUserType(User.UserType.IAM_USER);
 
-        user.setId(KeyGenUtil.userId());
+        user.setId(KeyGenUtil.createUserId());
 
         userDAO.save(user);
         return user;
@@ -117,8 +119,8 @@ public class AccountController extends AbstractController {
         String strToEncode = root.getId() + System.currentTimeMillis();
 
         accessKey.setUserId(root.getId());
-        accessKey.setId(KeyGenUtil.userAccessKeyId());
-        accessKey.setSecretKey(KeyGenUtil.userSercretKey(strToEncode));
+        accessKey.setId(KeyGenUtil.createUserAccessKeyId());
+        accessKey.setSecretKey(KeyGenUtil.createUserSecretKey(strToEncode));
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
         accessKeyDAO.save(accessKey);

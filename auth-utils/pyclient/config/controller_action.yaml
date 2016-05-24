@@ -17,6 +17,14 @@ createaccesskey:
   action :  create
   service : iam
   module : access_key
+creategroup:
+  controller : Group
+  action :  create
+  service : iam
+createpolicy:
+  controller : Policy
+  action :  create
+  service : iam
 createrole:
   controller : Role
   action :  create

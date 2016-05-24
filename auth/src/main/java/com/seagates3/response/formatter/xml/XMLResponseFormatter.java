@@ -197,8 +197,11 @@ public class XMLResponseFormatter extends AbstractResponseFormatter {
         } catch (TransformerException ex) {
         }
 
-        ServerResponse serverResponse = new ServerResponse();
-        return serverResponse;
+        /**
+         * TODO - Return a failed exception. Otherwise the client will not know
+         * the reason for the failure.
+         */
+        return null;
     }
 
     private ServerResponse success(String operation) {

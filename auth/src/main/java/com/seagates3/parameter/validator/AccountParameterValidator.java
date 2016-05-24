@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2015
  */
-
 package com.seagates3.parameter.validator;
 
 import java.util.Map;
@@ -27,18 +26,23 @@ import java.util.Map;
 public class AccountParameterValidator extends AbstractParameterValidator {
     /*
      * TODO
-     * Find out maximum account name length.
+     * Find out maximum length of account name.
      */
 
     /**
-     * Validate the input parameters for create account request.
-     * Account name is required.
+     * Validate the input parameters for isValidCreateParams account request. Account name is
+     * required.
      *
      * @param requestBody TreeMap of input parameters.
      * @return true if input is valid.
      */
     @Override
-    public Boolean create(Map<String, String> requestBody) {
-        return S3ParameterValidatorUtil.isValidName(requestBody.get("AccountName"));
+    public Boolean isValidCreateParams(Map<String, String> requestBody) {
+        if (!S3ParameterValidatorUtil.isValidEmail(requestBody.get("Email"))) {
+            return false;
+        }
+
+        return S3ParameterValidatorUtil.isValidName(
+                requestBody.get("AccountName"));
     }
 }

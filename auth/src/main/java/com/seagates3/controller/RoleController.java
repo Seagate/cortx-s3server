@@ -26,7 +26,9 @@ import com.seagates3.model.Requestor;
 import com.seagates3.model.Role;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.RoleResponseGenerator;
+import com.seagates3.util.ARNUtil;
 import com.seagates3.util.DateUtil;
+import com.seagates3.util.KeyGenUtil;
 import java.util.Map;
 import org.joda.time.DateTime;
 
@@ -62,6 +64,7 @@ public class RoleController extends AbstractController {
             return responseGenerator.entityAlreadyExists();
         }
 
+        role.setRoleId(KeyGenUtil.createId());
         role.setRolePolicyDoc(requestBody.get("AssumeRolePolicyDocument"));
 
         if (requestBody.containsKey("path")) {
@@ -71,6 +74,9 @@ public class RoleController extends AbstractController {
         }
 
         role.setCreateDate(DateUtil.toServerResponseFormat(DateTime.now()));
+        String arn = ARNUtil.createARN(requestor.getAccount().getId(), "role",
+                role.getRoleId());
+        role.setARN(arn);
 
         try {
             roleDAO.save(role);

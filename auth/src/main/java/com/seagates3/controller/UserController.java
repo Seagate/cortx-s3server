@@ -14,7 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 package com.seagates3.controller;
 
@@ -69,7 +69,7 @@ public class UserController extends AbstractController {
         }
 
         user.setUserType(User.UserType.IAM_USER);
-        user.setId(KeyGenUtil.userId());
+        user.setId(KeyGenUtil.createUserId());
 
         try {
             userDAO.save(user);

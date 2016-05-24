@@ -20,6 +20,7 @@ package com.seagates3.parameter.validator;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.validator.routines.EmailValidator;
 
 /**
  * Util class containing common validation rules for S3 APIs.
@@ -30,7 +31,11 @@ public class S3ParameterValidatorUtil {
     final static int MAX_ACCESS_KEY_ID_LENGTH = 32;
     final static int MAX_ACCESS_KEY_USER_NAME_LENGTH = 128;
     final static int MAX_ASSUME_ROLE_POLICY_DOC_LENGTH = 2048;
+    final static int MAX_DESCRIPTION_LENGTH = 1000;
+    final static int MAX_GROUP_NAME_LENGTH = 128;
     final static int MAX_ITEMS = 1000;
+    final static int MAX_POLICY_DOC_LENGTH = 5120;
+    final static int MAX_POLICY_NAME_LENGTH = 128;
     final static int MAX_MARKER_LENGTH = 320;
     final static int MAX_NAME_LENGTH = 64;
     final static int MAX_PATH_LENGTH = 512;
@@ -45,6 +50,8 @@ public class S3ParameterValidatorUtil {
      */
     final static String ACCESS_KEY_ID_PATTERN = "[\\w-]+";
     final static String ASSUME_ROLE_POLICY_DOC_PATTERN
+            = "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+";
+    final static String POLICY_DOC_PATTERN
             = "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+";
     final static String MARKER_PATTERN = "[\\u0020-\\u00FF]+";
     final static String NAME_PATTERN = "[\\w+=,.@-]+";
@@ -211,7 +218,8 @@ public class S3ParameterValidatorUtil {
             return false;
         }
 
-        return !(policyDoc.length() < 1 || policyDoc.length() > MAX_ASSUME_ROLE_POLICY_DOC_LENGTH);
+        return !(policyDoc.length() < 1
+                || policyDoc.length() > MAX_ASSUME_ROLE_POLICY_DOC_LENGTH);
     }
 
     /**
@@ -231,7 +239,8 @@ public class S3ParameterValidatorUtil {
             return false;
         }
 
-        return !(name.length() < 1 || name.length() > MAX_SAML_PROVIDER_NAME_LENGTH);
+        return !(name.length() < 1
+                || name.length() > MAX_SAML_PROVIDER_NAME_LENGTH);
     }
 
     /**
@@ -271,5 +280,93 @@ public class S3ParameterValidatorUtil {
 
         return !(arn.length() < MIN_ARN_LENGTH
                 || arn.length() > MAX_ARN_LENGTH);
+    }
+
+    /**
+     * Validate the email address.
+     *
+     * @param email
+     * @return True if valid email.
+     */
+    public static Boolean isValidEmail(String email) {
+        EmailValidator ev = EmailValidator.getInstance();
+        return ev.isValid(email);
+    }
+
+    /**
+     * Validate the description of an entity. Description length should be
+     * between 0 and 1000 characters.
+     *
+     * @param description
+     * @return True if description is valid.
+     */
+    public static Boolean isValidDescription(String description) {
+        if (description == null) {
+            return false;
+        }
+
+        return !(description.length() < 1
+                || description.length() > MAX_DESCRIPTION_LENGTH);
+    }
+
+    /**
+     * Validate policy document. Length of the document should be between 1 and
+     * 5120 characters. It should match the patten
+     * "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+".
+     *
+     * @param policyDoc access key id to be validated.
+     * @return true policy doc is valid.
+     */
+    public static Boolean isValidPolicyDocument(String policyDoc) {
+        if (policyDoc == null) {
+            return false;
+        }
+
+        if (!policyDoc.matches(POLICY_DOC_PATTERN)) {
+            return false;
+        }
+
+        return !(policyDoc.length() < 1
+                || policyDoc.length() > MAX_POLICY_DOC_LENGTH);
+    }
+
+    /**
+     * Validate the policy name. Length of the name should be between 1 and 128
+     * characters. It should match the patten "[\\w+=,.@-]+".
+     *
+     * @param policyName name to be validated.
+     * @return true if name is valid.
+     */
+    public static Boolean isValidPolicyName(String policyName) {
+        if (policyName == null) {
+            return false;
+        }
+
+        if (!policyName.matches(NAME_PATTERN)) {
+            return false;
+        }
+
+        return !(policyName.length() < 1
+                || policyName.length() > MAX_POLICY_NAME_LENGTH);
+    }
+
+    /**
+     * Validate the group name. Length of the name should be between 1 and 128
+     * characters. It should match the patten "[\\w+=,.@-]+".
+     *
+     * @param groupName name to be validated.
+     * @return true if name is valid.
+     */
+    public static Boolean isValidGroupName(String groupName) {
+        if (groupName == null) {
+            return false;
+        }
+
+        if (!groupName.matches(NAME_PATTERN)) {
+            return false;
+        }
+
+        return !(groupName.length() < 1
+                || groupName.length() > MAX_GROUP_NAME_LENGTH);
     }
 }

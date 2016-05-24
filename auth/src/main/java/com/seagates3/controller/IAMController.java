@@ -14,16 +14,19 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
-package com.seagates3.authserver;
+package com.seagates3.controller;
 
+import com.seagates3.authserver.IAMResourceMapper;
+import com.seagates3.authserver.ResourceMap;
 import com.seagates3.aws.request.ClientRequestParser;
 import com.seagates3.aws.sign.SignatureValidator;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.RequestorDAO;
+import com.seagates3.exception.AuthResourceNotFoundException;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.ClientRequestToken;
@@ -37,32 +40,29 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AuthServerAction {
+public class IAMController {
 
-    private final Logger LOGGER = LoggerFactory.getLogger(
-            AuthServerAction.class.getName());
-
-    private final String VALIDATOR_PACKAGE = "com.seagates3.parameter.validator";
-    private final String CONTROLLER_PACKAGE = "com.seagates3.controller";
-
-    private S3Perf perf;
-
+    private final Logger LOGGER = LoggerFactory.getLogger(IAMController.class.getName());
+    private final S3Perf perf;
     AuthenticationResponseGenerator responseGenerator;
 
-    public AuthServerAction() {
+    public IAMController() {
         responseGenerator = new AuthenticationResponseGenerator();
         perf = new S3Perf();
     }
 
-    /*
-     * Authenticate the requestor first.
-     * If the requestor is authenticated, then perform the requested action.
+    /**
+     * Authenticate the requestor first. If the requestor is authenticated, then
+     * perform the requested action.
+     *
+     * @param httpRequest
+     * @param requestBody
+     * @return
      */
     public ServerResponse serve(FullHttpRequest httpRequest,
             Map<String, String> requestBody) {
@@ -155,19 +155,22 @@ public class AuthServerAction {
             requestor = new Requestor();
         }
 
-        Map<String, String> controllerAction = getControllerAction(requestAction);
-        String controllerName = controllerAction.get("ControllerName");
-        String action = controllerAction.get("Action");
+        ResourceMap resourceMap;
+        try {
+            resourceMap = IAMResourceMapper.getResourceMap(requestAction);
+        } catch (AuthResourceNotFoundException ex) {
+            return responseGenerator.operationNotSupported();
+        }
 
-        LOGGER.debug("Controller name -" + controllerName);
-        LOGGER.debug("Action name - " + action);
+        LOGGER.debug("Controller class -" + resourceMap.getControllerClass());
+        LOGGER.debug("Action name - " + resourceMap.getControllerAction());
 
-        if (!validateRequest(controllerName, action, requestBody)) {
-            LOGGER.debug("Input parameters are not valid." + action);
+        if (!validateRequest(resourceMap, requestBody)) {
+            LOGGER.debug("Input parameters are not valid.");
             return responseGenerator.invalidParametervalue();
         }
 
-        return performAction(controllerName, action, requestBody, requestor);
+        return performAction(resourceMap, requestBody, requestor);
     }
 
     /**
@@ -192,12 +195,11 @@ public class AuthServerAction {
         return responseGenerator.ok();
     }
 
-    /*
+    /**
      * Validate the requestor.
      *
-     * Check
-     *   if requestor exists.
-     *   if the requestor is a federated user, check if the access key is valid.
+     * Check if requestor exists. if the requestor is a federated user, check if
+     * the access key is valid.
      */
     private ServerResponse validateRequestor(Requestor requestor,
             ClientRequestToken clientRequestToken) {
@@ -242,22 +244,28 @@ public class AuthServerAction {
         return responseGenerator.ok();
     }
 
-    /*
-     * Validate request parameters.
+    /**
+     * Validate the request parameters.
+     *
+     * @param resourceMap
+     * @param requestBody
+     * @return
      */
-    private Boolean validateRequest(String controllerName, String action,
+    private Boolean validateRequest(ResourceMap resourceMap,
             Map<String, String> requestBody) {
         Boolean isValidrequest = false;
         Class<?> validator;
         Method method;
         Object obj;
-        String validatorClass = toValidatorClassName(controllerName);
+        String validatorClass = resourceMap.getParamValidatorClass();
 
         try {
-            LOGGER.debug("Calling " + action + " validator.");
+            LOGGER.debug("Calling " + resourceMap.getControllerAction()
+                    + " validator.");
             validator = Class.forName(validatorClass);
             obj = validator.newInstance();
-            method = validator.getMethod(action, Map.class);
+            method = validator.getMethod(resourceMap.getParamValidatorMethod(),
+                    Map.class);
             isValidrequest = (Boolean) method.invoke(obj, requestBody);
         } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
             System.out.println(ex);
@@ -269,25 +277,27 @@ public class AuthServerAction {
         return isValidrequest;
     }
 
-    /*
+    /**
      * Perform action requested by user.
      */
-    private ServerResponse performAction(String controllerName, String action,
+    private ServerResponse performAction(ResourceMap resourceMap,
             Map<String, String> requestBody, Requestor requestor) {
 
-        String controllerClassName = toControllerClassName(controllerName);
+        String controllerClassName = resourceMap.getControllerClass();
         Class<?> controller;
         Constructor<?> controllerConstructor;
         Method method;
         Object obj;
 
         try {
-            LOGGER.debug("Calling " + action + " controller.");
+            LOGGER.debug("Calling " + resourceMap.getControllerAction()
+                    + " controller.");
             controller = Class.forName(controllerClassName);
-            controllerConstructor = controller.getConstructor(Requestor.class, Map.class);
+            controllerConstructor = controller.getConstructor(
+                    Requestor.class, Map.class);
             obj = controllerConstructor.newInstance(requestor, requestBody);
 
-            method = controller.getMethod(action);
+            method = controller.getMethod(resourceMap.getControllerAction());
             return (ServerResponse) method.invoke(obj);
 
         } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
@@ -298,60 +308,5 @@ public class AuthServerAction {
         }
 
         return null;
-    }
-
-    /*
-     * Break the request action into the corresponding controller and action.
-     */
-    private Map<String, String> getControllerAction(String requestAction) {
-        String pattern = "(?<=[a-z])(?=[A-Z])";
-        String[] tokens = requestAction.split(pattern, 2);
-
-        tokens[0] = tokens[0].toLowerCase();
-
-        Map<String, String> controllerAction = new HashMap<>();
-
-        /*
-         * TODO
-         * replace this entire logic with a mapper class.
-         * ex -
-         * createuser -> action = create, Controller = com.seagates3.controller.user
-         */
-        if ("assumerolewithsaml".equals(requestAction.toLowerCase())) {
-            controllerAction.put("Action", "create");
-            controllerAction.put("ControllerName", requestAction);
-            return controllerAction;
-        }
-
-        if ("get".equals(tokens[0])) {
-            controllerAction.put("Action", "create");
-        } else {
-            controllerAction.put("Action", tokens[0]);
-        }
-
-        if ((tokens[0].compareTo("list") == 0) && (tokens[1].endsWith("s"))) {
-            controllerAction.put("ControllerName", tokens[1].substring(0, tokens[1].length() - 1));
-        } else if (tokens[0].compareTo("authenticate") == 0) {
-            controllerAction.put("ControllerName", "requestor");
-        } else {
-            controllerAction.put("ControllerName", tokens[1]);
-        }
-
-        return controllerAction;
-    }
-
-    /**
-     * Return the full name of the controller class.
-     */
-    private String toControllerClassName(String controllerName) {
-        return String.format("%s.%sController", CONTROLLER_PACKAGE, controllerName);
-    }
-
-    /**
-     * Return the full name of the validator class.
-     */
-    private String toValidatorClassName(String controllerName) {
-        return String.format("%s.%sParameterValidator", VALIDATOR_PACKAGE,
-                controllerName);
     }
 }

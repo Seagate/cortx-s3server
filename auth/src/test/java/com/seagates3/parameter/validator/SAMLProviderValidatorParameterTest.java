@@ -41,26 +41,26 @@ public class SAMLProviderValidatorParameterTest {
     }
 
     /**
-     * Test SAMLProvider#create. Case - Provider name is null (also tests
+     * Test SAMLProvider#isValidCreateParams. Case - Provider name is null (also tests
      * invalid name).
      */
     @Test
     public void Create_NameNull_False() {
-        assertFalse(validator.create(requestBody));
+        assertFalse(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#create. Case - SAML Metadata is null (also tests for
+     * Test SAMLProvider#isValidCreateParams. Case - SAML Metadata is null (also tests for
      * invalid metadata).
      */
     @Test
     public void Create_SAMLMetadataNull_False() {
         requestBody.put("Name", "Test");
-        assertFalse(validator.create(requestBody));
+        assertFalse(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#create. Case - Valid inputs.
+     * Test SAMLProvider#isValidCreateParams. Case - Valid inputs.
      */
     @Test
     public void Create_ValidInputs_True() {
@@ -68,56 +68,56 @@ public class SAMLProviderValidatorParameterTest {
         String metadataDoc = new String(new char[1010]).replace('\0', 'a');
         requestBody.put("SAMLMetadataDocument", metadataDoc);
 
-        assertTrue(validator.create(requestBody));
+        assertTrue(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#delete. Case - SAML Provider ARN is not provided (also
+     * Test SAMLProvider#isValidDeleteParams. Case - SAML Provider ARN is not provided (also
      * tests for invalid ARN).
      */
     @Test
     public void Delete_SAMLProviderARNNull_False() {
-        assertFalse(validator.delete(requestBody));
+        assertFalse(validator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#delete. Case - Valid inputs
+     * Test SAMLProvider#isValidDeleteParams. Case - Valid inputs
      */
     @Test
     public void Delete_ValidInputs_True() {
         requestBody.put("SAMLProviderArn", "arn:seagate:iam:::saml-provider/Test");
-        assertTrue(validator.delete(requestBody));
+        assertTrue(validator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#list. Case - Empty input.
+     * Test SAMLProvider#isValidListParams. Case - Empty input.
      */
     @Test
     public void List_NoInput_True() {
-        assertTrue(validator.list(requestBody));
+        assertTrue(validator.isValidListParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#update. Case - SAML Provider ARN is null (also tests
+     * Test SAMLProvider#isValidUpdateParams. Case - SAML Provider ARN is null (also tests
      * invalid name).
      */
     @Test
     public void Update_SAMLProviderARNNull_False() {
-        assertFalse(validator.update(requestBody));
+        assertFalse(validator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#update. Case - SAML Metadata is null (also tests for
+     * Test SAMLProvider#isValidUpdateParams. Case - SAML Metadata is null (also tests for
      * invalid metadata).
      */
     @Test
     public void Update_SAMLMetadataNull_False() {
         requestBody.put("SAMLProviderArn", "arn:seagate:iam:::saml-provider/Test");
-        assertFalse(validator.update(requestBody));
+        assertFalse(validator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test SAMLProvider#update. Case - Valid inputs.
+     * Test SAMLProvider#isValidUpdateParams. Case - Valid inputs.
      */
     @Test
     public void Update_ValidInputs_True() {
@@ -125,6 +125,6 @@ public class SAMLProviderValidatorParameterTest {
         String metadataDoc = new String(new char[1010]).replace('\0', 'a');
         requestBody.put("SAMLMetadataDocument", metadataDoc);
 
-        assertTrue(validator.update(requestBody));
+        assertTrue(validator.isValidUpdateParams(requestBody));
     }
 }

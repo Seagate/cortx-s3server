@@ -18,7 +18,6 @@
  */
 package com.seagates3.parameter.validator;
 
-import com.seagates3.parameter.validator.AccountParameterValidator;
 import java.util.Map;
 import java.util.TreeMap;
 import static org.junit.Assert.assertFalse;
@@ -27,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class AccountParameterValidatorTest {
+
     AccountParameterValidator accountValidator;
     Map requestBody;
 
@@ -40,21 +40,40 @@ public class AccountParameterValidatorTest {
     }
 
     /**
-     * Test Account#create.
-     * Case - Account name is not provided.
+     * Test Account#isValidCreateParams. Case - Account name is not provided.
      */
     @Test
     public void Create_AccountNameNull_False() {
-        assertFalse(accountValidator.create(requestBody));
+        assertFalse(accountValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Account#create.
-     * Case - Account name is valid.
+     * Test Account#isValidCreateParams. Case - Email is valid.
      */
     @Test
-    public void Create_ValidAccountName_True() {
+    public void Create_InvalidEmail_False() {
         requestBody.put("AccountName", "seagate");
-        assertTrue(accountValidator.create(requestBody));
+        requestBody.put("Email", "testuser");
+        assertFalse(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Email is valid.
+     */
+    @Test
+    public void Create_InvalidAccountName_False() {
+        requestBody.put("AccountName", "arj-123");
+        requestBody.put("Email", "testuser");
+        assertFalse(accountValidator.isValidCreateParams(requestBody));
+    }
+
+    /**
+     * Test Account#isValidCreateParams. Case - Account name is valid.
+     */
+    @Test
+    public void Create_ValidInputParams_True() {
+        requestBody.put("AccountName", "seagate");
+        requestBody.put("Email", "testuser@seagate.com");
+        assertTrue(accountValidator.isValidCreateParams(requestBody));
     }
 }

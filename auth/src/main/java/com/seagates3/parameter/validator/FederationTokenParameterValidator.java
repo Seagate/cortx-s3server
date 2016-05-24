@@ -36,7 +36,7 @@ public class FederationTokenParameterValidator extends AbstractParameterValidato
      * @return true if input is valid.
      */
     @Override
-    public Boolean create(Map<String, String> requestBody) {
+    public Boolean isValidCreateParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("DurationSeconds")) {
             if (!STSParameterValidatorUtil.isValidDurationSeconds(requestBody.get("DurationSeconds"))) {
                 return false;

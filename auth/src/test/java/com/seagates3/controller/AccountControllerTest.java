@@ -61,6 +61,7 @@ public class AccountControllerTest {
         Requestor requestor = mock(Requestor.class);
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("AccountName", "s3test");
+        requestBody.put("Email", "testuser@seagate.com");
 
         accountDAO = Mockito.mock(AccountDAO.class);
         userDAO = Mockito.mock(UserDAO.class);
@@ -87,7 +88,10 @@ public class AccountControllerTest {
         PowerMockito.mockStatic(KeyGenUtil.class);
 
         PowerMockito.doReturn("987654test").when(KeyGenUtil.class,
-                "userId"
+                "createUserId"
+        );
+        PowerMockito.doReturn("C1234").when(KeyGenUtil.class,
+                "createId"
         );
     }
 
@@ -221,11 +225,11 @@ public class AccountControllerTest {
         account.setName("s3test");
 
         PowerMockito.doReturn("AKIASIAS").when(KeyGenUtil.class,
-                "userAccessKeyId"
+                "createUserAccessKeyId"
         );
 
         PowerMockito.doReturn("htuspscae/123").when(KeyGenUtil.class,
-                "userSercretKey", any(String.class)
+                "createUserSecretKey", any(String.class)
         );
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
@@ -240,6 +244,7 @@ public class AccountControllerTest {
                 + "<CreateAccountResult>"
                 + "<Account>"
                 + "<AccountId>987654test</AccountId>"
+                + "<CanonicalId>C1234</CanonicalId>"
                 + "<AccountName>s3test</AccountName>"
                 + "<RootUserName>root</RootUserName>"
                 + "<AccessKeyId>AKIASIAS</AccessKeyId>"

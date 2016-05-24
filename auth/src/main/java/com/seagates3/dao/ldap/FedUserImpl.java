@@ -14,9 +14,8 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
-
 package com.seagates3.dao.ldap;
 
 import com.novell.ldap.LDAPAttribute;
@@ -25,12 +24,11 @@ import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
-
 import com.seagates3.dao.FedUserDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.User;
 
-public class FedUserImpl implements FedUserDAO{
+public class FedUserImpl implements FedUserDAO {
 
     /*
      * Get the federated user details from LDAP.
@@ -56,7 +54,7 @@ public class FedUserImpl implements FedUserDAO{
         } catch (LDAPException ex) {
             throw new DataAccessException("Failed to find federated user details.\n" + ex);
         }
-        if(ldapResults.hasMore()) {
+        if (ldapResults.hasMore()) {
             LDAPEntry entry;
             try {
                 entry = ldapResults.next();
@@ -75,10 +73,10 @@ public class FedUserImpl implements FedUserDAO{
     @Override
     public void save(User user) throws DataAccessException {
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
-        attributeSet.add( new LDAPAttribute("objectclass", "iamFedUser"));
-        attributeSet.add( new LDAPAttribute("cn", user.getName()));
-        attributeSet.add( new LDAPAttribute("ou", user.getAccountName()));
-        attributeSet.add( new LDAPAttribute("path", user.getPath()));
+        attributeSet.add(new LDAPAttribute("objectclass", "iamFedUser"));
+        attributeSet.add(new LDAPAttribute("cn", user.getName()));
+        attributeSet.add(new LDAPAttribute("ou", user.getAccountName()));
+        attributeSet.add(new LDAPAttribute("path", user.getPath()));
         attributeSet.add(new LDAPAttribute("id", user.getId()));
 
         String dn = String.format("id=%s,ou=users,o=%s,ou=accounts,%s",

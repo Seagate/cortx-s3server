@@ -22,8 +22,8 @@ class AuthTest(PyCliTest):
         return os.path.join(os.path.dirname(__file__), '../../', 'auth-utils', 'pyclient', 'pyclient')
 
     def create_account(self, **account_args):
-        self.with_cli("python %s createaccount -n %s" % (self.get_pyclient_dir(),
-                        account_args['AccountName']))
+        self.with_cli("python %s createaccount -n %s -e %s" % (self.get_pyclient_dir(),
+                        account_args['AccountName'], account_args['Email']))
         return self
 
     def create_user(self, **user_args):

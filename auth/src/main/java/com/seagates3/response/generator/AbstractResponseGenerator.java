@@ -129,6 +129,13 @@ public abstract class AbstractResponseGenerator {
                 errorMessage);
     }
 
+    public ServerResponse operationNotSupported() {
+        String errorMessage = "The requested operation is not supported.";
+
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                "OperationNotSupported", errorMessage);
+    }
+
     /**
      * Use this method for internal purpose.
      *

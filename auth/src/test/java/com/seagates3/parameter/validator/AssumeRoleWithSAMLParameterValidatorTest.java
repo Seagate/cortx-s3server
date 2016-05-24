@@ -41,56 +41,56 @@ public class AssumeRoleWithSAMLParameterValidatorTest {
     }
 
     /**
-     * Test AssumeRoleWithSAML#create. Case - Principal ARN is not provided
+     * Test AssumeRoleWithSAML#isValidCreateParams. Case - Principal ARN is not provided
      * (also covers invalid Principal ARN).
      */
     @Test
     public void Create_PrincipalArnNull_False() {
-        assertFalse(validator.create(requestBody));
+        assertFalse(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AssumeRoleWithSAML#create. Case - Role ARN is not provided (also
+     * Test AssumeRoleWithSAML#isValidCreateParams. Case - Role ARN is not provided (also
      * covers invalid Role ARN).
      */
     @Test
     public void Create_RoleArnNull_False() {
         requestBody.put("PrincipalArn", "arn:seagate:iam::myorg:test");
-        assertFalse(validator.create(requestBody));
+        assertFalse(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AssumeRoleWithSAML#create. Case - SAML Assertion is not
+     * Test AssumeRoleWithSAML#isValidCreateParams. Case - SAML Assertion is not
      * provided(also covers invalid SAML Assertion).
      */
     @Test
     public void Create_SAMLAssertionNull_False() {
         requestBody.put("PrincipalArn", "arn:seagate:iam::myorg:test");
         requestBody.put("RoleArn", "arn:seagate:iam::role/test");
-        assertFalse(validator.create(requestBody));
+        assertFalse(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AssumeRoleWithSAML#create. Case - Duration Seconds is invalid.
+     * Test AssumeRoleWithSAML#isValidCreateParams. Case - Duration Seconds is invalid.
      */
     @Test
     public void Create_InvalidDurationSeconds_False() {
         requestBody.put("DurationSeconds", "800");
-        assertFalse(validator.create(requestBody));
+        assertFalse(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AssumeRoleWithSAML#create. Case - Invalid policy
+     * Test AssumeRoleWithSAML#isValidCreateParams. Case - Invalid policy
      */
     @Test
     public void Create_InvalidPolicy_False() {
         requestBody.put("DurationSeconds", "900");
         requestBody.put("Policy", "");
-        assertFalse(validator.create(requestBody));
+        assertFalse(validator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AssumeRoleWithSAML#create. Case - Valid inputs.
+     * Test AssumeRoleWithSAML#isValidCreateParams. Case - Valid inputs.
      */
     @Test
     public void Create_ValidInputs_False() {
@@ -100,6 +100,6 @@ public class AssumeRoleWithSAMLParameterValidatorTest {
         requestBody.put("RoleArn", "arn:seagate:iam::role:test");
         requestBody.put("SAMLAssertion", "c2VhZ2F0ZSB0ZXN0IGFzc2VydGlvbg==");
 
-        assertTrue(validator.create(requestBody));
+        assertTrue(validator.isValidCreateParams(requestBody));
     }
 }

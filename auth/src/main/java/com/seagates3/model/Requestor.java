@@ -20,11 +20,9 @@ package com.seagates3.model;
 
 public class Requestor {
 
-    String id;
-    String name;
-
-    Account account;
-    AccessKey accessKey;
+    private String id, name;
+    private Account account;
+    private AccessKey accessKey;
 
     /*
      * Return the requestor id.

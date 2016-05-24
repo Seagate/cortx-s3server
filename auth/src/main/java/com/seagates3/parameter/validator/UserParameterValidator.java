@@ -22,12 +22,12 @@ package com.seagates3.parameter.validator;
 import java.util.Map;
 
 /**
- * Validate the input for User APIs - Create, Delete, List and update.
+ * Validate the input for User APIs - Create, Delete, List and isValidUpdateParams.
  */
 public class UserParameterValidator extends AbstractParameterValidator {
 
     /**
-     * Validate the input parameters for create user request.
+     * Validate the input parameters for isValidCreateParams user request.
      * User name is required.
      * Path is optional.
      *
@@ -35,7 +35,7 @@ public class UserParameterValidator extends AbstractParameterValidator {
      * @return true if input is valid.
      */
     @Override
-    public Boolean create(Map<String, String> requestBody) {
+    public Boolean isValidCreateParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("Path")) {
             return S3ParameterValidatorUtil.isValidPath(requestBody.get("Path"));
         }
@@ -44,19 +44,19 @@ public class UserParameterValidator extends AbstractParameterValidator {
     }
 
     /**
-     * Validate the input parameters for delete user request.
+     * Validate the input parameters for isValidDeleteParams user request.
      * User name is required.
      *
      * @param requestBody TreeMap of input parameters.
      * @return true if input is valid.
      */
     @Override
-    public Boolean delete(Map<String, String> requestBody) {
+    public Boolean isValidDeleteParams(Map<String, String> requestBody) {
         return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
     }
 
     /**
-     * Validate the input parameters for update user request.
+     * Validate the input parameters for isValidUpdateParams user request.
      * User name is required.
      * New User name is optional.
      * New Path is optional.
@@ -65,7 +65,7 @@ public class UserParameterValidator extends AbstractParameterValidator {
      * @return true if input is valid.
      */
     @Override
-    public Boolean update(Map<String, String> requestBody) {
+    public Boolean isValidUpdateParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("NewUserName")) {
             if (!S3ParameterValidatorUtil.isValidName(requestBody.get("NewUserName"))) {
                 return false;

@@ -45,7 +45,7 @@ public class UserService {
         User user = userDAO.find(account.getName(), userRoleName);
 
         if (!user.exists()) {
-            user.setId(KeyGenUtil.userId());
+            user.setId(KeyGenUtil.createUserId());
             user.setRoleName(userRoleName);
             user.setUserType(User.UserType.ROLE_USER);
             userDAO.save(user);
@@ -68,7 +68,7 @@ public class UserService {
         User user = userDAO.find(account.getName(), userName);
 
         if (!user.exists()) {
-            user.setId(KeyGenUtil.userId());
+            user.setId(KeyGenUtil.createUserId());
             user.setName(userName);
             user.setUserType(User.UserType.IAM_FED_USER);
             userDAO.save(user);

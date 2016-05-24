@@ -6,8 +6,10 @@ rm -rf rpmsandbox
 rm -rf s3server*.rpm
 
 mkdir -p rpmsandbox/opt/seagate
+mkdir -p rpmsandbox/lib/systemd/system
 
 cp -R /opt/seagate/s3 rpmsandbox/opt/seagate/
 cp -R /opt/seagate/auth rpmsandbox/opt/seagate/
+cp auth/s3authserver.service rpmsandbox/lib/systemd/system/
 
 fpm -s dir -t rpm -C rpmsandbox --name s3server --version 0.1 --description "Seagate S3 Server - Mero"

@@ -40,11 +40,11 @@ public class AccessKeyService {
         String strToEncode = user.getId() + System.currentTimeMillis();
 
         accessKey.setUserId(user.getId());
-        accessKey.setId(KeyGenUtil.userAccessKeyId());
-        accessKey.setSecretKey(KeyGenUtil.userSercretKey(strToEncode));
+        accessKey.setId(KeyGenUtil.createUserAccessKeyId());
+        accessKey.setSecretKey(KeyGenUtil.createUserSecretKey(strToEncode));
 
         strToEncode = strToEncode + System.currentTimeMillis();
-        accessKey.setToken(KeyGenUtil.userSercretKey(strToEncode));
+        accessKey.setToken(KeyGenUtil.createUserSecretKey(strToEncode));
         accessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
 
         long currentTime = DateUtil.getCurrentTime();

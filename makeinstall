@@ -60,6 +60,11 @@ cp -ru auth/resources/ /opt/seagate/auth/
 echo "Copying auth server startup script to install location..."
 cp startauth.sh $AUTH_INSTALL_LOCATION/
 
+echo "Creating systemd service file for S3AuthServer"
+cp auth/s3authserver.service /lib/systemd/system
+systemctl daemon-reload
+
+
 echo "S3 server and Auth server are setup."
 echo "Setup nginx using configuration similar to nginx.conf.sample."
 echo "Run /opt/seagate/s3/starts3.sh to start the Seagate S3 server daemon."

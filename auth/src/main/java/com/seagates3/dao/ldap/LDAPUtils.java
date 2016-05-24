@@ -14,7 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 package com.seagates3.dao.ldap;
 
@@ -33,20 +33,37 @@ public class LDAPUtils {
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_OBJECT_CLASS = "account";
     public static final String ACCOUNT_OU = "accounts";
-    public static final String Certificate = "cacertificate;binary";
+    public static final String CANONICAL_ID = "canonicalId";
+    public static final String CERTIFICATE = "cacertificate;binary";
     public static final String COMMON_NAME = "cn";
     public static final String CREATE_TIMESTAMP = "createtimestamp";
+    public static final String DESCRIPTION = "description";
+    public static final String DEFAULT_VERSION_ID = "defaultVersionId";
+    public static final String EMAIL = "mail";
     public static final String EXPIRY = "exp";
     public static final String FED_ACCESS_KEY_OBJECT_CLASS = "fedaccessKey";
+    public static final String GROUP_ID = "groupId";
+    public static final String GROUP_NAME = "groupName";
+    public static final String GROUP_OBJECT_CLASS = "group";
+    public static final String GROUP_OU = "groups";
     public static final String IAMUSER_OBJECT_CLASS = "iamuser";
     public static final String IDP_OU = "idp";
     public static final String ISSUER = "issuer";
+    public static final String IS_POLICY_ATTACHABLE = "isPolicyAttachable";
+    public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
     public static final String NAME = "name";
     public static final String OBJECT_CLASS = "objectclass";
     public static final String ORGANIZATIONAL_NAME = "o";
+    public static final String ORGANIZATIONAL_UNIT_CLASS = "organizationalunit";
     public static final String ORGANIZATIONAL_UNIT_NAME = "ou";
     public static final String PATH = "path";
+    public static final String POLICY_DOC = "policyDoc";
+    public static final String POLICY_ID = "policyId";
+    public static final String POLICY_NAME = "policyName";
+    public static final String POLICY_OBJECT_CLASS = "policy";
+    public static final String POLICY_OU = "policies";
     public static final String ROLE_NAME = "rolename";
+    public static final String ROLE_ID = "roleId";
     public static final String ROLE_OBJECT_CLASS = "role";
     public static final String ROLE_OU = "roles";
     public static final String ROLE_POLICY_DOC = "rolepolicydoc";

@@ -186,7 +186,7 @@ public class UserControllerTest {
         PowerMockito.mockStatic(KeyGenUtil.class);
 
         PowerMockito.doReturn("987654").when(KeyGenUtil.class,
-                "userId"
+                "createUserId"
         );
     }
 

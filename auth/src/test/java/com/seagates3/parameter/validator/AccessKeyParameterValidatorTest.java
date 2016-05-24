@@ -40,46 +40,46 @@ public class AccessKeyParameterValidatorTest {
     }
 
     /**
-     * Test AccessKey#create.
+     * Test AccessKey#isValidCreateParams.
      * Case - User name is not provided.
      */
     @Test
     public void Create_UserNameNull_True() {
-        assertTrue(accessKeyValidator.create(requestBody));
+        assertTrue(accessKeyValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AccessKey#create.
+     * Test AccessKey#isValidCreateParams.
      * Case - User name is valid.
      */
     @Test
     public void Create_ValidUserName_True() {
         requestBody.put("UserName", "root");
-        assertTrue(accessKeyValidator.create(requestBody));
+        assertTrue(accessKeyValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AccessKey#delete.
+     * Test AccessKey#isValidDeleteParams.
      * Case - Access key id is not provided.
      */
     @Test
     public void Delete_AccessKeyIdNull_False() {
-        assertFalse(accessKeyValidator.delete(requestBody));
+        assertFalse(accessKeyValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test AccessKey#delete.
+     * Test AccessKey#isValidDeleteParams.
      * Case - Access key id is valid.
      *   User name is empty.
      */
     @Test
     public void Delete_ValidAccessKeyIdEmptyUserName_True() {
         requestBody.put("AccessKeyId", "ABCDEFGHIJKLMN123456");
-        assertTrue(accessKeyValidator.delete(requestBody));
+        assertTrue(accessKeyValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test AccessKey#delete.
+     * Test AccessKey#isValidDeleteParams.
      * Case - Access key id is valid.
      *   User name is valid.
      */
@@ -87,62 +87,62 @@ public class AccessKeyParameterValidatorTest {
     public void Delete_ValidAccessKeyIdAndUserName_True() {
         requestBody.put("AccessKeyId", "ABCDEFGHIJKLMN123456");
         requestBody.put("UserName", "root");
-        assertTrue(accessKeyValidator.delete(requestBody));
+        assertTrue(accessKeyValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test AccessKey#delete.
+     * Test AccessKey#isValidDeleteParams.
      * Case - Access key id is invalid.
      */
     @Test
     public void Delete_InValidAccessKeyId_False() {
         requestBody.put("AccessKeyId", "ABCDEFGHIJKLMN 123456");
-        assertFalse(accessKeyValidator.delete(requestBody));
+        assertFalse(accessKeyValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test AccessKey#delete.
+     * Test AccessKey#isValidDeleteParams.
      * Case - User name id is invalid.
      */
     @Test
     public void Delete_InValidAccessKeyIdAndUserName_False() {
         requestBody.put("AccessKeyId", "ABCDEFGHIJKLMN 123456");
         requestBody.put("UserName", "root*^");
-        assertFalse(accessKeyValidator.delete(requestBody));
+        assertFalse(accessKeyValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test AccessKey#list.
+     * Test AccessKey#isValidListParams.
      * Case - Empty input.
      */
     @Test
     public void List_EmptyInput_True() {
-        assertTrue(accessKeyValidator.list(requestBody));
+        assertTrue(accessKeyValidator.isValidListParams(requestBody));
     }
 
     /**
-     * Test AccessKey#list.
+     * Test AccessKey#isValidListParams.
      * Case - Invalid user name.
      */
     @Test
     public void List_InvalidPathPrefix_False() {
         requestBody.put("UserName", "root$^");
-        assertFalse(accessKeyValidator.list(requestBody));
+        assertFalse(accessKeyValidator.isValidListParams(requestBody));
     }
 
     /**
-     * Test AccessKey#list.
+     * Test AccessKey#isValidListParams.
      * Case - Invalid Max Items.
      */
     @Test
     public void List_InvalidMaxItems_False() {
         requestBody.put("UserName", "root");
         requestBody.put("MaxItems", "0");
-        assertFalse(accessKeyValidator.list(requestBody));
+        assertFalse(accessKeyValidator.isValidListParams(requestBody));
     }
 
     /**
-     * Test AccessKey#list.
+     * Test AccessKey#isValidListParams.
      * Case - Invalid Marker.
      */
     @Test
@@ -154,11 +154,11 @@ public class AccessKeyParameterValidatorTest {
         String marker = String.valueOf(c);
 
         requestBody.put("Marker", marker);
-        assertFalse(accessKeyValidator.list(requestBody));
+        assertFalse(accessKeyValidator.isValidListParams(requestBody));
     }
 
     /**
-     * Test AccessKey#list.
+     * Test AccessKey#isValidListParams.
      * Case - Valid inputs.
      */
     @Test
@@ -166,32 +166,32 @@ public class AccessKeyParameterValidatorTest {
         requestBody.put("UserName", "root");
         requestBody.put("MaxItems", "100");
         requestBody.put("Marker", "abc");
-        assertTrue(accessKeyValidator.list(requestBody));
+        assertTrue(accessKeyValidator.isValidListParams(requestBody));
     }
 
     /**
-     * Test AccessKey#update.
+     * Test AccessKey#isValidUpdateParams.
      * Case - status is invalid.
      */
     @Test
     public void Update_InvalidAccessKeyStatus_False() {
         requestBody.put("Status", "active");
-        assertFalse(accessKeyValidator.update(requestBody));
+        assertFalse(accessKeyValidator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test AccessKey#update.
+     * Test AccessKey#isValidUpdateParams.
      * Case - User name is invalid.
      */
     @Test
     public void Update_InvalidUserName_False() {
         requestBody.put("Status", "Active");
         requestBody.put("UserName", "root$^");
-        assertFalse(accessKeyValidator.update(requestBody));
+        assertFalse(accessKeyValidator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test AccessKey#update.
+     * Test AccessKey#isValidUpdateParams.
      * Case - Access key id is invalid.
      */
     @Test
@@ -199,11 +199,11 @@ public class AccessKeyParameterValidatorTest {
         requestBody.put("Status", "Active");
         requestBody.put("UserName", "root");
         requestBody.put("AccessKeyId", "ABCDE");
-        assertFalse(accessKeyValidator.update(requestBody));
+        assertFalse(accessKeyValidator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test AccessKey#update.
+     * Test AccessKey#isValidUpdateParams.
      * Case - Valid inputs.
      */
     @Test
@@ -211,6 +211,6 @@ public class AccessKeyParameterValidatorTest {
         requestBody.put("Status", "Active");
         requestBody.put("UserName", "root");
         requestBody.put("AccessKeyId", "ABCDEFGHIJKLMN123456");
-        assertTrue(accessKeyValidator.update(requestBody));
+        assertTrue(accessKeyValidator.isValidUpdateParams(requestBody));
     }
 }

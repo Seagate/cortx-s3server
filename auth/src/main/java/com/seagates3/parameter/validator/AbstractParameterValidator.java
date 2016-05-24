@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2015
  */
-
 package com.seagates3.parameter.validator;
 
 import java.util.Map;
@@ -32,7 +31,7 @@ public abstract class AbstractParameterValidator {
      * @param requestBody TreeMap of input parameters.
      * @return true
      */
-    public Boolean create(Map<String, String> requestBody) {
+    public Boolean isValidCreateParams(Map<String, String> requestBody) {
         return true;
     }
 
@@ -42,39 +41,40 @@ public abstract class AbstractParameterValidator {
      * @param requestBody TreeMap of input parameters.
      * @return true
      */
-    public Boolean delete(Map<String, String> requestBody) {
+    public Boolean isValidDeleteParams(Map<String, String> requestBody) {
         return true;
     }
 
     /**
-     * Abstract implementation to check delete request parameters.
-     * Validate the input parameters for list requests.
+     * Abstract implementation to check list request parameters. Validate the
+     * input parameters for isValidListParams requests.
      *
-     * List operation is used only on IAM resources i.e roles, user etc.
-     * Hence default implementation is specific to IAM APIs.
+     * List operation is used only on IAM resources i.e roles, user etc. Hence
+     * default implementation is specific to IAM APIs.
      *
-     * Path prefix is optional.
-     * Max Items is optional.
-     * Marker is optional.
+     * Path prefix is optional. Max Items is optional. Marker is optional.
      *
      * @param requestBody TreeMap of input parameters.
      * @return true if input is valid.
      */
-    public Boolean list(Map<String, String> requestBody) {
+    public Boolean isValidListParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("PathPrefix")) {
-            if (!S3ParameterValidatorUtil.isValidPathPrefix(requestBody.get("PathPrefix"))) {
+            if (!S3ParameterValidatorUtil.isValidPathPrefix(
+                    requestBody.get("PathPrefix"))) {
                 return false;
             }
         }
 
         if (requestBody.containsKey("MaxItems")) {
-            if (!S3ParameterValidatorUtil.isValidMaxItems(requestBody.get("MaxItems"))) {
+            if (!S3ParameterValidatorUtil.isValidMaxItems(
+                    requestBody.get("MaxItems"))) {
                 return false;
             }
         }
 
         if (requestBody.containsKey("Marker")) {
-            return S3ParameterValidatorUtil.isValidMarker(requestBody.get("Marker"));
+            return S3ParameterValidatorUtil.isValidMarker(
+                    requestBody.get("Marker"));
         }
 
         return true;
@@ -86,7 +86,7 @@ public abstract class AbstractParameterValidator {
      * @param requestBody TreeMap of input parameters.
      * @return true
      */
-    public Boolean update(Map<String, String> requestBody) {
+    public Boolean isValidUpdateParams(Map<String, String> requestBody) {
         return true;
     }
 }

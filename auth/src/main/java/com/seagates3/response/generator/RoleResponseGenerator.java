@@ -29,15 +29,11 @@ public class RoleResponseGenerator extends AbstractResponseGenerator {
     public ServerResponse generateCreateResponse(Role role) {
         LinkedHashMap responseElements = new LinkedHashMap();
         responseElements.put("Path", role.getPath());
-
-        String arnValue = String.format("arn:seagate:iam::%s:%s",
-                role.getAccount().getName(), role.getName());
-        responseElements.put("Arn", arnValue);
-
+        responseElements.put("Arn", role.getARN());
         responseElements.put("RoleName", role.getName());
         responseElements.put("AssumeRolePolicyDocument", role.getRolePolicyDoc());
         responseElements.put("CreateDate", role.getCreateDate());
-        responseElements.put("RoleId", role.getName());
+        responseElements.put("RoleId", role.getRoleId());
 
         return new XMLResponseFormatter().formatCreateResponse("CreateRole",
                 "Role", responseElements, "0000");

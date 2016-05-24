@@ -44,7 +44,7 @@ public class AccountImplTest {
 
     private final String BASE_DN = "dc=s3,dc=seagate,dc=com";
     private final String FIND_FILTER = "(&(o=s3test)(objectclass=account))";
-    private final String[] FIND_ATTRS = {"accountid"};
+    private final String[] FIND_ATTRS = {"accountid", "canonicalId"};
 
     private final String ACCOUNT_DN
             = "o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com";
@@ -56,7 +56,7 @@ public class AccountImplTest {
     private final AccountImpl accountImpl;
     private final LDAPSearchResults ldapResults;
     private final LDAPEntry entry;
-    private final LDAPAttribute attr;
+    private final LDAPAttribute accountIdAttr, canonicalIdAttr;
 
     private final LDAPEntry accountEntry;
     private final LDAPEntry userEntry;
@@ -69,11 +69,15 @@ public class AccountImplTest {
         accountImpl = new AccountImpl();
         ldapResults = Mockito.mock(LDAPSearchResults.class);
         entry = Mockito.mock(LDAPEntry.class);
-        attr = Mockito.mock(LDAPAttribute.class);
+        accountIdAttr = Mockito.mock(LDAPAttribute.class);
+        canonicalIdAttr = Mockito.mock(LDAPAttribute.class);
 
         LDAPAttributeSet accountAttributeSet = new LDAPAttributeSet();
         accountAttributeSet.add(new LDAPAttribute("objectclass", "Account"));
         accountAttributeSet.add(new LDAPAttribute("accountid", "98765test"));
+        accountAttributeSet.add(new LDAPAttribute("canonicalId", "C12345"));
+        accountAttributeSet.add(new LDAPAttribute(
+                "mail", "testuser@seagate.com"));
         accountAttributeSet.add(new LDAPAttribute("o", "s3test"));
         accountEntry = new LDAPEntry(ACCOUNT_DN, accountAttributeSet);
 
@@ -94,8 +98,11 @@ public class AccountImplTest {
     public void setUp() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
         Mockito.when(ldapResults.next()).thenReturn(entry);
-        Mockito.when(entry.getAttribute("accountid")).thenReturn(attr);
-        Mockito.when(attr.getStringValue()).thenReturn("12345");
+        Mockito.when(entry.getAttribute("accountid")).thenReturn(accountIdAttr);
+        Mockito.when(entry.getAttribute("canonicalId")).thenReturn(
+                canonicalIdAttr);
+        Mockito.when(accountIdAttr.getStringValue()).thenReturn("12345");
+        Mockito.when(canonicalIdAttr.getStringValue()).thenReturn("C12345");
     }
 
     /**
@@ -108,6 +115,7 @@ public class AccountImplTest {
         Account expectedAccount = new Account();
         expectedAccount.setName("s3test");
         expectedAccount.setId("12345");
+        expectedAccount.setCanonicalId("C12345");
 
         PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
                 BASE_DN, 2, FIND_FILTER, FIND_ATTRS
@@ -153,6 +161,8 @@ public class AccountImplTest {
         Account account = new Account();
         account.setId("98765test");
         account.setName("s3test");
+        account.setCanonicalId("C12345");
+        account.setEmail("testuser@seagate.com");
 
         accountImpl.save(account);
 
@@ -176,6 +186,8 @@ public class AccountImplTest {
         Account account = new Account();
         account.setId("98765test");
         account.setName("s3test");
+        account.setCanonicalId("C12345");
+        account.setEmail("testuser@seagate.com");
 
         PowerMockito.doThrow(new LDAPException()).when(
                 LDAPUtils.class, "add", Mockito.refEq(accountEntry));
@@ -194,6 +206,8 @@ public class AccountImplTest {
         Account account = new Account();
         account.setId("98765test");
         account.setName("s3test");
+        account.setCanonicalId("C12345");
+        account.setEmail("testuser@seagate.com");
 
         PowerMockito.doThrow(new LDAPException()).when(
                 LDAPUtils.class, "add", Mockito.refEq(userEntry));
@@ -215,6 +229,8 @@ public class AccountImplTest {
         Account account = new Account();
         account.setId("98765test");
         account.setName("s3test");
+        account.setCanonicalId("C12345");
+        account.setEmail("testuser@seagate.com");
 
         PowerMockito.doThrow(new LDAPException()).when(
                 LDAPUtils.class, "add", Mockito.refEq(roleEntry));

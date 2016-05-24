@@ -33,6 +33,7 @@ public class AccountResponseGeneratorTest {
         Account account = new Account();
         account.setName("s3test");
         account.setId("98765");
+        account.setCanonicalId("C12345");
 
         User root = new User();
         root.setName("root");
@@ -49,6 +50,7 @@ public class AccountResponseGeneratorTest {
                 + "<CreateAccountResult>"
                 + "<Account>"
                 + "<AccountId>98765</AccountId>"
+                + "<CanonicalId>C12345</CanonicalId>"
                 + "<AccountName>s3test</AccountName>"
                 + "<RootUserName>root</RootUserName>"
                 + "<AccessKeyId>1234</AccessKeyId>"

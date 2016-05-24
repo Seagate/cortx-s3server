@@ -32,6 +32,7 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
             AccessKey rootAccessKey) {
         LinkedHashMap responseElements = new LinkedHashMap();
         responseElements.put("AccountId", account.getId());
+        responseElements.put("CanonicalId", account.getCanonicalId());
         responseElements.put("AccountName", account.getName());
         responseElements.put("RootUserName", root.getName());
         responseElements.put("AccessKeyId", rootAccessKey.getId());

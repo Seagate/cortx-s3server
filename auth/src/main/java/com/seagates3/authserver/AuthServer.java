@@ -14,7 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 package com.seagates3.authserver;
 
@@ -128,6 +128,7 @@ public class AuthServer {
         logger = LoggerFactory.getLogger(AuthServer.class.getName());
 
         SSLContextProvider.init();
+        IAMResourceMapper.init();
         DAODispatcher.init();
         S3Perf.init();
 

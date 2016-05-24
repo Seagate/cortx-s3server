@@ -1,0 +1,23 @@
+{
+    "CreateAccount": "Account#create",
+    "CreateAccessKey": "AccessKey#create",
+    "CreateGroup": "Group#create",
+    "CreatePolicy": "Policy#create",
+    "CreateRole": "Role#create",
+    "CreateSAMLProvider": "SAMLProvider#create",
+    "CreateUser": "User#create",
+    "DeleteAccessKey": "AccessKey#delete",
+    "DeleteGroup": "Group#delete",
+    "DeletePolicy": "Policy#delete",
+    "DeleteRole": "Role#delete",
+    "DeleteSAMLProvider": "SAMLProvider#delete",
+    "DeleteUser": "User#delete",
+    "GetFederationToken": "FederationToken#create",
+    "ListAccessKeys": "AccessKey#list",
+    "ListRoles": "Role#list",
+    "ListSAMLProviders": "SAMLProvider#list",
+    "ListUsers": "User#list",
+    "UpdateAccessKey": "AccessKey#update",
+    "UpdateSAMLProvider": "SAMLProvider#update",
+    "UpdateUser": "User#update"
+}

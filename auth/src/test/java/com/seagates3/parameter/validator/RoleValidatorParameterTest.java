@@ -49,37 +49,37 @@ public class RoleValidatorParameterTest {
     }
 
     /**
-     * Test Role#create.
+     * Test Role#isValidCreateParams.
      * Case - Role name is not provided.
      */
     @Test
     public void Create_RoleNameNull_False() {
-        assertFalse(roleValidator.create(requestBody));
+        assertFalse(roleValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Role#create.
+     * Test Role#isValidCreateParams.
      * Case - Assume role policy document is not provided.
      */
     @Test
     public void Create_AssumeRolePolicyDocNull_False() {
         requestBody.put("RoleName", "admin");
-        assertFalse(roleValidator.create(requestBody));
+        assertFalse(roleValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Role#create.
+     * Test Role#isValidCreateParams.
      * Case - Role name and Assume role policy doc are valid, Path is not provided.
      */
     @Test
     public void Create_ValidRoleNamePolicyDocAndPathEmpty_True() {
         requestBody.put("RoleName", "admin");
         requestBody.put("AssumeRolePolicyDocument", assumeRolePolicyDoc);
-        assertTrue(roleValidator.create(requestBody));
+        assertTrue(roleValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Role#create.
+     * Test Role#isValidCreateParams.
      * Case - Role name and path are valid.
      */
     @Test
@@ -87,21 +87,21 @@ public class RoleValidatorParameterTest {
         requestBody.put("RoleName", "admin");
         requestBody.put("AssumeRolePolicyDocument", assumeRolePolicyDoc);
         requestBody.put("Path", "/seagate/test/");
-        assertTrue(roleValidator.create(requestBody));
+        assertTrue(roleValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Role#create.
+     * Test Role#isValidCreateParams.
      * Case - Role name is invalid.
      */
     @Test
     public void Create_InvalidRoleName_False() {
         requestBody.put("RoleName", "admin$^");
-        assertFalse(roleValidator.create(requestBody));
+        assertFalse(roleValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Role#create.
+     * Test Role#isValidCreateParams.
      * Case - Role name is invalid.
      */
     @Test
@@ -111,11 +111,11 @@ public class RoleValidatorParameterTest {
 
         requestBody.put("RoleName", "admin");
         requestBody.put("AssumeRolePolicyDocument", policyDoc);
-        assertFalse(roleValidator.create(requestBody));
+        assertFalse(roleValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Role#create.
+     * Test Role#isValidCreateParams.
      * Case - Role name and role policy are valid, path is invalid.
      */
     @Test
@@ -123,35 +123,35 @@ public class RoleValidatorParameterTest {
         requestBody.put("RoleName", "admin");
         requestBody.put("AssumeRolePolicyDocument", assumeRolePolicyDoc);
         requestBody.put("Path", "seagate/test/");
-        assertFalse(roleValidator.create(requestBody));
+        assertFalse(roleValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test Role#delete.
+     * Test Role#isValidDeleteParams.
      * Case - Role name is not provided.
      */
     @Test
     public void Delete_RoleNameNull_False() {
-        assertFalse(roleValidator.delete(requestBody));
+        assertFalse(roleValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test Role#delete.
+     * Test Role#isValidDeleteParams.
      * Case - Role name is valid.
      */
     @Test
     public void Delete_ValidRoleName_True() {
         requestBody.put("RoleName", "admin");
-        assertTrue(roleValidator.delete(requestBody));
+        assertTrue(roleValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test Role#delete.
+     * Test Role#isValidDeleteParams.
      * Case - Role name is invalid.
      */
     @Test
     public void Delete_InValidRoleName_False() {
         requestBody.put("RoleName", "admin$^");
-        assertFalse(roleValidator.delete(requestBody));
+        assertFalse(roleValidator.isValidDeleteParams(requestBody));
     }
 }

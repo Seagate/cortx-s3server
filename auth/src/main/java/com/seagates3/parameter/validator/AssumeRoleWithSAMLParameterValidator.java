@@ -34,7 +34,7 @@ public class AssumeRoleWithSAMLParameterValidator extends AbstractParameterValid
      * @return true if input is valid.
      */
     @Override
-    public Boolean create(Map<String, String> requestBody) {
+    public Boolean isValidCreateParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("DurationSeconds")) {
             if (!STSParameterValidatorUtil.isValidAssumeRoleDuration(
                     requestBody.get("DurationSeconds"))) {

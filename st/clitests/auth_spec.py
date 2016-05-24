@@ -36,9 +36,10 @@ def before_all():
 def account_tests():
     account_args = {}
     account_args['AccountName'] = 's3test'
+    account_args['Email'] = 'test@seagate.com'
 
     test_msg = "Create account s3test"
-    account_response_pattern = "AccountId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w-]*$"
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w-]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
 
@@ -182,7 +183,7 @@ def role_tests():
     role_args = {}
     role_args['RoleName'] = 'S3Test'
     role_args['AssumeRolePolicyDocument'] = policy_doc_full_path
-    role_response_pattern = "RoleId = S3Test, RoleName = S3Test, ARN = [\S]*, Path = /$"
+    role_response_pattern = "RoleId = [\w-]*, RoleName = S3Test, ARN = [\S]*, Path = /$"
     result = AuthTest(test_msg).create_role(**role_args).execute_test()
     result.command_should_match_pattern(role_response_pattern)
 
@@ -192,13 +193,13 @@ def role_tests():
 
     test_msg = 'Create role (Path is /test/)'
     role_args['Path'] = '/test/'
-    role_response_pattern = "RoleId = S3Test, RoleName = S3Test, ARN = [\S]*, Path = /test/$"
+    role_response_pattern = "RoleId = [\w-]*, RoleName = S3Test, ARN = [\S]*, Path = /test/$"
     result = AuthTest(test_msg).create_role(**role_args).execute_test()
     result.command_should_match_pattern(role_response_pattern)
 
     test_msg = 'List role (Path is not given)'
     role_args = {}
-    role_response_pattern = "RoleId = S3Test, RoleName = S3Test, ARN = [\S]*, Path = /test/$"
+    role_response_pattern = "RoleId = [\w-]*, RoleName = S3Test, ARN = [\S]*, Path = /test/$"
     result = AuthTest(test_msg).list_roles(**role_args).execute_test()
     result.command_should_match_pattern(role_response_pattern)
 

@@ -22,6 +22,8 @@ public class Account {
 
     private String id;
     private String name;
+    private String canonicalId;
+    private String email;
 
     public String getId() {
         return id;
@@ -31,12 +33,28 @@ public class Account {
         return name;
     }
 
+    public String getCanonicalId() {
+        return canonicalId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setCanonicalId(String canonicalId) {
+        this.canonicalId = canonicalId;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public Boolean exists() {

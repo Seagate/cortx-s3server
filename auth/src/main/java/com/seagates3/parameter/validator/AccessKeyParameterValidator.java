@@ -22,19 +22,19 @@ package com.seagates3.parameter.validator;
 import java.util.Map;
 
 /**
- * Validate the input for Access Key APIs - Create, Delete, List and update.
+ * Validate the input for Access Key APIs - Create, Delete, List and isValidUpdateParams.
  */
 public class AccessKeyParameterValidator extends AbstractParameterValidator {
 
     /**
-     * Validate the input parameters for create access key request.
+     * Validate the input parameters for isValidCreateParams access key request.
      * User name is optional.
      *
      * @param requestBody TreeMap of input parameters.
      * @return true if input is valid.
      */
     @Override
-    public Boolean create(Map<String, String> requestBody) {
+    public Boolean isValidCreateParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("UserName")) {
             return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
         }
@@ -43,7 +43,7 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
     }
 
     /**
-     * Validate the input parameters for delete access key request.
+     * Validate the input parameters for isValidDeleteParams access key request.
      * Access key id is required.
      * User name is optional.
      *
@@ -51,7 +51,7 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
      * @return true if input is valid.
      */
     @Override
-    public Boolean delete(Map<String, String> requestBody) {
+    public Boolean isValidDeleteParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("UserName")) {
             return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
         }
@@ -60,7 +60,7 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
     }
 
     /**
-     * Validate the input parameters for list access keys request.
+     * Validate the input parameters for isValidListParams access keys request.
      * Path prefix is optional.
      * Max Items is optional.
      * Marker is optional.
@@ -69,7 +69,7 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
      * @return true if input is valid.
      */
     @Override
-    public Boolean list(Map<String, String> requestBody) {
+    public Boolean isValidListParams(Map<String, String> requestBody) {
         if (requestBody.containsKey("UserName")) {
             if (!S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"))) {
                 return false;
@@ -90,7 +90,7 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
     }
 
     /**
-     * Validate the input parameters for update access key request.
+     * Validate the input parameters for isValidUpdateParams access key request.
      * Access key id is required.
      * Status is required.
      * User Name is optional.
@@ -99,7 +99,7 @@ public class AccessKeyParameterValidator extends AbstractParameterValidator {
      * @return true if input is valid.
      */
     @Override
-    public Boolean update(Map<String, String> requestBody) {
+    public Boolean isValidUpdateParams(Map<String, String> requestBody) {
         if (!S3ParameterValidatorUtil.isValidAccessKeyStatus(requestBody.get("Status"))) {
             return false;
         }

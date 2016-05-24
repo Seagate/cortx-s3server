@@ -18,6 +18,7 @@
  */
 package com.seagates3.authserver;
 
+import com.seagates3.controller.IAMController;
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
 import io.netty.buffer.Unpooled;
@@ -81,8 +82,8 @@ public class AuthServerPostHandler {
         } else {
             LOGGER.debug("Requested Action - " + requestBody.get("Action"));
 
-            AuthServerAction authserverAction = new AuthServerAction();
-            serverResponse = authserverAction.serve(httpRequest, requestBody);
+            IAMController iamController = new IAMController();
+            serverResponse = iamController.serve(httpRequest, requestBody);
             returnHTTPResponse(serverResponse);
         }
     }

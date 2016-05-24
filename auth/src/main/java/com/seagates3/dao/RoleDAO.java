@@ -26,6 +26,11 @@ public interface RoleDAO {
 
     /**
      * Get role from the database.
+     *
+     * @param account
+     * @param roleName
+     * @return
+     * @throws com.seagates3.exception.DataAccessException
      */
     public Role find(Account account, String roleName)
             throws DataAccessException;
@@ -33,6 +38,11 @@ public interface RoleDAO {
     /**
      * Get the details of all the roles with the given path prefix from an
      * account.
+     *
+     * @param account
+     * @param pathPrefix
+     * @return
+     * @throws com.seagates3.exception.DataAccessException
      */
     public Role[] findAll(Account account, String pathPrefix)
             throws DataAccessException;

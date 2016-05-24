@@ -40,6 +40,8 @@ dn: o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
 o: s3_test
 accountid: 12345
 objectclass: Account
+mail: test@seagate.com
+canonicalId: C12345
 
 dn: ou=users,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
 ou: users

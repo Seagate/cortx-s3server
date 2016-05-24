@@ -44,6 +44,8 @@ public class RoleResponseGeneratorTest {
         account.setName("s3test");
 
         Role role = new Role();
+        role.setRoleId("1234");
+        role.setARN("arn:seagate:iam::s3test:role/1234");
         role.setPath("/");
         role.setAccount(account);
         role.setName("s3role");
@@ -57,7 +59,7 @@ public class RoleResponseGeneratorTest {
                 + "<CreateRoleResult>"
                 + "<Role>"
                 + "<Path>/</Path>"
-                + "<Arn>arn:seagate:iam::s3test:s3role</Arn>"
+                + "<Arn>arn:seagate:iam::s3test:role/1234</Arn>"
                 + "<RoleName>s3role</RoleName>"
                 + "<AssumeRolePolicyDocument>{\n"
                 + "  \"Version\": \"2012-10-17\",\n"
@@ -68,7 +70,7 @@ public class RoleResponseGeneratorTest {
                 + "  }\n"
                 + "}</AssumeRolePolicyDocument>"
                 + "<CreateDate>2015-12-19T07:20:29.000+0530</CreateDate>"
-                + "<RoleId>s3role</RoleId>"
+                + "<RoleId>1234</RoleId>"
                 + "</Role>"
                 + "</CreateRoleResult>"
                 + "<ResponseMetadata>"

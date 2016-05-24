@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-
 package com.seagates3.dao;
 
 /*
@@ -24,15 +23,17 @@ package com.seagates3.dao;
  * Rename the enum name
  */
 public enum DAOResource {
+
     ACCESS_KEY("AccessKey"),
     ACCOUNT("Account"),
     FED_USER("FedUser"),
+    GROUP("Group"),
+    POLICY("Policy"),
     REQUESTEE("Requestee"),
     REQUESTOR("Requestor"),
     ROLE("Role"),
     SAML_PROVIDER("SAMLProvider"),
     USER("User");
-
 
     private final String className;
 

@@ -41,54 +41,54 @@ public class AbstractParameterValidatorTest extends AbstractParameterValidator {
     }
 
     /**
-     * Test AbstractValidator#create.
+     * Test AbstractValidator#isValidCreateParams.
      */
     @Test
     public void Create_EmptyInput_True() {
-        assertTrue(create(requestBody));
+        assertTrue(isValidCreateParams(requestBody));
     }
 
     /**
-     * Test AbstractValidator#delete.
+     * Test AbstractValidator#isValidDeleteParams.
      */
     @Test
     public void Delete_EmptyInput_True() {
-        assertTrue(delete(requestBody));
+        assertTrue(isValidDeleteParams(requestBody));
     }
 
 
     /**
-     * Test AbstractValidator#list.
+     * Test AbstractValidator#isValidListParams.
      * Case - Empty input.
      */
     @Test
     public void List_EmptyInput_True() {
-        assertTrue(list(requestBody));
+        assertTrue(isValidListParams(requestBody));
     }
 
     /**
-     * Test AbstractValidator#list.
+     * Test AbstractValidator#isValidListParams.
      * Case - Invalid Path Prefix.
      */
     @Test
     public void List_InvalidPathPrefix_False() {
         requestBody.put("PathPrefix", "segate/");
-        assertFalse(list(requestBody));
+        assertFalse(isValidListParams(requestBody));
     }
 
     /**
-     * Test AbstractValidator#list.
+     * Test AbstractValidator#isValidListParams.
      * Case - Invalid Max Items.
      */
     @Test
     public void List_InvalidMaxItems_False() {
         requestBody.put("PathPrefix", "/segate/");
         requestBody.put("MaxItems", "0");
-        assertFalse(list(requestBody));
+        assertFalse(isValidListParams(requestBody));
     }
 
     /**
-     * Test AbstractValidator#list.
+     * Test AbstractValidator#isValidListParams.
      * Case - Invalid Marker.
      */
     @Test
@@ -100,11 +100,11 @@ public class AbstractParameterValidatorTest extends AbstractParameterValidator {
         String marker = String.valueOf(c);
 
         requestBody.put("Marker", marker);
-        assertFalse(list(requestBody));
+        assertFalse(isValidListParams(requestBody));
     }
 
     /**
-     * Test AbstractValidator#list.
+     * Test AbstractValidator#isValidListParams.
      * Case - Valid inputs.
      */
     @Test
@@ -112,14 +112,14 @@ public class AbstractParameterValidatorTest extends AbstractParameterValidator {
         requestBody.put("PathPrefix", "/segate/");
         requestBody.put("MaxItems", "100");
         requestBody.put("Marker", "abc");
-        assertTrue(list(requestBody));
+        assertTrue(isValidListParams(requestBody));
     }
 
     /**
-     * Test AbstractValidator#update.
+     * Test AbstractValidator#isValidUpdateParams.
      */
     @Test
     public void Update_EmptyInput_True() {
-        assertTrue(update(requestBody));
+        assertTrue(isValidUpdateParams(requestBody));
     }
 }

@@ -13,9 +13,13 @@ def iam_usage():
     AssumeRoleWithSAML --saml_principal_arn <SAML IDP ARN> --saml_role_arn <Role ARN> \
     --saml_assertion <File containing SAML Assertion>
         -f <Policy Document> -d <Duration in seconds>
-    CreateAccount -n <Account Name>
+    CreateAccount -n <Account Name> -e <Email Id>
     CreateAccessKey
         -n <User Name>
+    CreateGroup -n <Group Name>
+        -p <Path>
+    CreatePolicy -n <Policy Name> -f <Path of the policy document>
+        -p <Path> --description <Description of the policy>
     CreateRole -n <Role Name> -f <Path of role policy document>
         -p <Path>
     CreateSAMLProvider -n <Name of saml provider> -f <Path of metadata file>
@@ -75,6 +79,7 @@ def get_client(session, service):
 parser = argparse.ArgumentParser(usage = iam_usage())
 parser.add_argument("action", help="Action to be performed.")
 parser.add_argument("-n", "--name", help="Name.")
+parser.add_argument("-e", "--email", help="Email id.")
 parser.add_argument("-p", "--path", help="Path or Path Prefix.")
 parser.add_argument("-f", "--file", help="File Path.")
 parser.add_argument("-d", "--duration", help="Access Key Duration.", type = int)
@@ -84,6 +89,7 @@ parser.add_argument("--access_key", help="Access Key Id.")
 parser.add_argument("--secret_key", help="Secret Key.")
 parser.add_argument("--session_token", help="Session Token.")
 parser.add_argument("--arn", help="ARN.")
+parser.add_argument("--description", help="Description of the entity.")
 parser.add_argument("--saml_principal_arn", help="SAML Principal ARN.")
 parser.add_argument("--saml_role_arn", help="SAML Role ARN.")
 parser.add_argument("--saml_assertion", help="File conataining SAML assertion.")

@@ -14,7 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original creation date: 17-Sep-2015
  */
 package com.seagates3.dao.ldap;
 
@@ -35,7 +35,8 @@ public class AccountImpl implements AccountDAO {
         Account account = new Account();
         account.setId(accountID);
 
-        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME};
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+            LDAPUtils.CANONICAL_ID};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ACCOUNT_ID, accountID, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -52,8 +53,10 @@ public class AccountImpl implements AccountDAO {
         if (ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
-                account.setName(entry.getAttribute(LDAPUtils.ORGANIZATIONAL_NAME)
-                        .getStringValue());
+                account.setName(entry.getAttribute(
+                        LDAPUtils.ORGANIZATIONAL_NAME).getStringValue());
+                account.setCanonicalId(entry.getAttribute(
+                        LDAPUtils.CANONICAL_ID).getStringValue());
             } catch (LDAPException ex) {
                 throw new DataAccessException("Failed to find account details.\n" + ex);
             }
@@ -74,7 +77,7 @@ public class AccountImpl implements AccountDAO {
         Account account = new Account();
         account.setName(name);
 
-        String[] attrs = {LDAPUtils.ACCOUNT_ID};
+        String[] attrs = {LDAPUtils.ACCOUNT_ID, LDAPUtils.CANONICAL_ID};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ORGANIZATIONAL_NAME, name, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -93,6 +96,8 @@ public class AccountImpl implements AccountDAO {
                 LDAPEntry entry = ldapResults.next();
                 account.setId(entry.getAttribute(LDAPUtils.ACCOUNT_ID).
                         getStringValue());
+                account.setCanonicalId(entry.getAttribute(
+                        LDAPUtils.CANONICAL_ID).getStringValue());
             } catch (LDAPException ex) {
                 throw new DataAccessException("Failed to find account details.\n" + ex);
             }
@@ -105,8 +110,8 @@ public class AccountImpl implements AccountDAO {
      * Create a new entry under ou=accounts in openldap. Example dn:
      * o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
      *
-     * Create sub entries ou=user and ou=roles under the new account. Example
-     * dn: ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com dn:
+     * Create sub entries ou=user and ou=roles under the new account. dn:
+     * ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com dn:
      * ou=roles,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
      *
      * @param account Account
@@ -120,17 +125,25 @@ public class AccountImpl implements AccountDAO {
 
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS, "Account"));
-        attributeSet.add(new LDAPAttribute(LDAPUtils.ACCOUNT_ID, account.getId()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.ACCOUNT_ID,
+                account.getId()));
         attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_NAME,
                 account.getName()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.EMAIL,
+                account.getEmail()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.CANONICAL_ID,
+                account.getCanonicalId()));
 
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
             throw new DataAccessException("failed to add new account.\n" + ex);
         }
+
         createUserOU(account.getName());
         createRoleOU(account.getName());
+        createGroupsOU(account.getName());
+        createPolicyOU(account.getName());
     }
 
     /**
@@ -139,15 +152,18 @@ public class AccountImpl implements AccountDAO {
      * ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
      */
     private void createUserOU(String accountName) throws DataAccessException {
-        String dn = String.format("%s=users,%s=%s,%s=accounts,%s",
-                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ORGANIZATIONAL_NAME,
-                accountName, LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.BASE_DN);
+        String dn = String.format("%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.USER_OU,
+                LDAPUtils.ORGANIZATIONAL_NAME, accountName,
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN
+        );
 
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
-                "organizationalunit"));
+                LDAPUtils.ORGANIZATIONAL_UNIT_CLASS));
         attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
-                "users"));
+                LDAPUtils.USER_OU));
 
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
@@ -171,13 +187,65 @@ public class AccountImpl implements AccountDAO {
 
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
-                "organizationalunit"));
+                LDAPUtils.ORGANIZATIONAL_UNIT_CLASS));
         attributeSet.add(new LDAPAttribute("ou", "roles"));
 
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
             throw new DataAccessException("failed to create role ou.\n" + ex);
+        }
+    }
+
+    /**
+     * Create sub entry ou=policies for the account. The dn should be in the
+     * following format dn:
+     * ou=policies,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
+     */
+    private void createPolicyOU(String accountName) throws DataAccessException {
+        String dn = String.format("%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.POLICY_OU,
+                LDAPUtils.ORGANIZATIONAL_NAME, accountName,
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN
+        );
+
+        LDAPAttributeSet attributeSet = new LDAPAttributeSet();
+        attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ORGANIZATIONAL_UNIT_CLASS));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                LDAPUtils.POLICY_OU));
+
+        try {
+            LDAPUtils.add(new LDAPEntry(dn, attributeSet));
+        } catch (LDAPException ex) {
+            throw new DataAccessException("failed to create policy ou.\n" + ex);
+        }
+    }
+
+    /**
+     * Create sub entry ou=groups for the account. The dn should be in the
+     * following format dn:
+     * ou=groups,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
+     */
+    private void createGroupsOU(String accountName) throws DataAccessException {
+        String dn = String.format("%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.GROUP_OU,
+                LDAPUtils.ORGANIZATIONAL_NAME, accountName,
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN
+        );
+
+        LDAPAttributeSet attributeSet = new LDAPAttributeSet();
+        attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ORGANIZATIONAL_UNIT_CLASS));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                LDAPUtils.GROUP_OU));
+
+        try {
+            LDAPUtils.add(new LDAPEntry(dn, attributeSet));
+        } catch (LDAPException ex) {
+            throw new DataAccessException("failed to create groups ou.\n" + ex);
         }
     }
 }

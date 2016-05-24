@@ -50,7 +50,7 @@ public class RoleImpl implements RoleDAO {
         role.setAccount(account);
         role.setName(roleName);
 
-        String[] attrs = {LDAPUtils.ROLE_POLICY_DOC,
+        String[] attrs = {LDAPUtils.ROLE_POLICY_DOC, LDAPUtils.ROLE_ID,
             LDAPUtils.PATH, LDAPUtils.CREATE_TIMESTAMP};
 
         String ldapBase = String.format("%s=%s,%s=%s,%s=%s,%s",
@@ -73,7 +73,10 @@ public class RoleImpl implements RoleDAO {
         if (ldapResults.hasMore()) {
             try {
                 LDAPEntry entry = ldapResults.next();
-                role.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
+                role.setRoleId(entry.getAttribute(
+                        LDAPUtils.ROLE_ID).getStringValue());
+                role.setPath(entry.getAttribute(
+                        LDAPUtils.PATH).getStringValue());
                 role.setRolePolicyDoc(entry.getAttribute(
                         LDAPUtils.ROLE_POLICY_DOC).getStringValue());
 
@@ -83,7 +86,8 @@ public class RoleImpl implements RoleDAO {
                         createTimeStamp);
                 role.setCreateDate(createTime);
             } catch (LDAPException ex) {
-                throw new DataAccessException("Failed to find user details.\n" + ex);
+                throw new DataAccessException("Failed to find user details.\n"
+                        + ex);
             }
         }
 
@@ -105,7 +109,7 @@ public class RoleImpl implements RoleDAO {
         Role role;
 
         String[] attrs = {LDAPUtils.ROLE_NAME, LDAPUtils.ROLE_POLICY_DOC,
-            LDAPUtils.PATH, LDAPUtils.CREATE_TIMESTAMP};
+            LDAPUtils.ROLE_ID, LDAPUtils.PATH, LDAPUtils.CREATE_TIMESTAMP};
 
         String ldapBase = String.format("%s=%s,%s=%s,%s=%s,%s",
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ROLE_OU,
@@ -135,6 +139,8 @@ public class RoleImpl implements RoleDAO {
             role.setAccount(account);
             role.setName(entry.getAttribute(LDAPUtils.ROLE_NAME)
                     .getStringValue());
+            role.setRoleId(entry.getAttribute(
+                    LDAPUtils.ROLE_ID).getStringValue());
             role.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
             role.setRolePolicyDoc(entry.getAttribute(LDAPUtils.ROLE_POLICY_DOC)
                     .getStringValue());
@@ -186,6 +192,7 @@ public class RoleImpl implements RoleDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ROLE_OBJECT_CLASS));
         attributeSet.add(new LDAPAttribute(LDAPUtils.ROLE_NAME, role.getName()));
+        attributeSet.add(new LDAPAttribute(LDAPUtils.ROLE_ID, role.getRoleId()));
         attributeSet.add(new LDAPAttribute(LDAPUtils.ROLE_POLICY_DOC,
                 role.getRolePolicyDoc()));
         attributeSet.add(new LDAPAttribute(LDAPUtils.PATH, role.getPath()));

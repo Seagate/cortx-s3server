@@ -16,7 +16,6 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 31-Oct-2015
  */
-
 package com.seagates3.parameter.validator;
 
 import java.util.Map;
@@ -25,24 +24,24 @@ import java.util.Map;
  * Validate the input for role APIs - Create, Delete and List.
  */
 public class RoleParameterValidator extends AbstractParameterValidator {
+
     /**
-     * Validate the input parameters for create role request.
-     * Role name is required.
-     * AssumeRolePolicyDocument is required.
-     * Path is optional.
+     * Validate the input parameters for isValidCreateParams role request. Role name is
+     * required. AssumeRolePolicyDocument is required. Path is optional.
      *
      * @param requestBody TreeMap of input parameters.
      * @return true if input is valid.
      */
     @Override
-    public Boolean create(Map<String, String> requestBody) {
-        if(requestBody.containsKey("Path")) {
-            if(! S3ParameterValidatorUtil.isValidPath(requestBody.get("Path"))) {
+    public Boolean isValidCreateParams(Map<String, String> requestBody) {
+        if (requestBody.containsKey("Path")) {
+            if (!S3ParameterValidatorUtil.isValidPath(
+                    requestBody.get("Path"))) {
                 return false;
             }
         }
 
-        if(!S3ParameterValidatorUtil.isValidName(requestBody.get("RoleName"))) {
+        if (!S3ParameterValidatorUtil.isValidName(requestBody.get("RoleName"))) {
             return false;
         }
 
@@ -51,14 +50,14 @@ public class RoleParameterValidator extends AbstractParameterValidator {
     }
 
     /**
-     * Validate the input parameters for delete role request.
-     * Role name is required.
+     * Validate the input parameters for isValidDeleteParams role request. Role name is
+     * required.
      *
      * @param requestBody TreeMap of input parameters.
      * @return true if input is valid.
      */
     @Override
-    public Boolean delete(Map<String, String> requestBody) {
+    public Boolean isValidDeleteParams(Map<String, String> requestBody) {
         return S3ParameterValidatorUtil.isValidName(requestBody.get("RoleName"));
     }
 }

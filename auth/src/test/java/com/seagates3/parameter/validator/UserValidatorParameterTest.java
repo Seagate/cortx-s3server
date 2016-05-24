@@ -40,108 +40,108 @@ public class UserValidatorParameterTest {
     }
 
     /**
-     * Test User#create.
+     * Test User#isValidCreateParams.
      * Case - User name is not provided.
      */
     @Test
     public void Create_UserNameNull_False() {
-        assertFalse(userValidator.create(requestBody));
+        assertFalse(userValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test User#create.
+     * Test User#isValidCreateParams.
      * Case - User name is valid , Path is not provided.
      */
     @Test
     public void Create_ValidUserNameAndPathEmpty_True() {
         requestBody.put("UserName", "root");
-        assertTrue(userValidator.create(requestBody));
+        assertTrue(userValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test User#create.
+     * Test User#isValidCreateParams.
      * Case - User name and path are valid.
      */
     @Test
     public void Create_ValidUserNameAndPath_True() {
         requestBody.put("UserName", "root");
         requestBody.put("Path", "/seagate/test/");
-        assertTrue(userValidator.create(requestBody));
+        assertTrue(userValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test User#create.
+     * Test User#isValidCreateParams.
      * Case - User name is invalid.
      */
     @Test
     public void Create_InValidUserName_False() {
         requestBody.put("UserName", "root$^");
-        assertFalse(userValidator.create(requestBody));
+        assertFalse(userValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test User#create.
+     * Test User#isValidCreateParams.
      * Case - User name is valid, path is invalid.
      */
     @Test
     public void Create_ValidUserNameAndInvalidPath_False() {
         requestBody.put("UserName", "root");
         requestBody.put("Path", "/seagate/test");
-        assertFalse(userValidator.create(requestBody));
+        assertFalse(userValidator.isValidCreateParams(requestBody));
     }
 
     /**
-     * Test User#delete.
+     * Test User#isValidDeleteParams.
      * Case - User name is not provided.
      */
     @Test
     public void Delete_UserNameNull_False() {
-        assertFalse(userValidator.delete(requestBody));
+        assertFalse(userValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test User#delete.
+     * Test User#isValidDeleteParams.
      * Case - User name is valid.
      */
     @Test
     public void Delete_ValidUserName_True() {
         requestBody.put("UserName", "root");
-        assertTrue(userValidator.delete(requestBody));
+        assertTrue(userValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test User#delete.
+     * Test User#isValidDeleteParams.
      * Case - User name is invalid.
      */
     @Test
     public void Delete_InValidUserName_False() {
         requestBody.put("UserName", "root$^");
-        assertFalse(userValidator.delete(requestBody));
+        assertFalse(userValidator.isValidDeleteParams(requestBody));
     }
 
     /**
-     * Test User#update.
+     * Test User#isValidUpdateParams.
      * Case - User name is invalid.
      */
     @Test
     public void Update_InvalidUserName_False() {
         requestBody.put("UserName", "root$^");
-        assertFalse(userValidator.update(requestBody));
+        assertFalse(userValidator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test User#update.
+     * Test User#isValidUpdateParams.
      * Case - New user name is invalid.
      */
     @Test
     public void Update_InvalidNewUserName_False() {
         requestBody.put("UserName", "root");
         requestBody.put("NewUserName", "root$^");
-        assertFalse(userValidator.update(requestBody));
+        assertFalse(userValidator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test User#update.
+     * Test User#isValidUpdateParams.
      * Case - User name is valid, new user name is valid and new path is invalid.
      */
     @Test
@@ -149,11 +149,11 @@ public class UserValidatorParameterTest {
         requestBody.put("UserName", "root");
         requestBody.put("NewUserName", "root123");
         requestBody.put("NewPath", "seagate/test");
-        assertFalse(userValidator.update(requestBody));
+        assertFalse(userValidator.isValidUpdateParams(requestBody));
     }
 
     /**
-     * Test User#update.
+     * Test User#isValidUpdateParams.
      * Case - valid inputs.
      */
     @Test
@@ -161,6 +161,6 @@ public class UserValidatorParameterTest {
         requestBody.put("UserName", "root");
         requestBody.put("NewUserName", "root123");
         requestBody.put("NewPath", "/seagate/test/");
-        assertTrue(userValidator.update(requestBody));
+        assertTrue(userValidator.isValidUpdateParams(requestBody));
     }
 }
