@@ -18,30 +18,27 @@
  */
 package com.seagates3.controller;
 
+import com.seagates3.authentication.ClientRequestParser;
+import com.seagates3.authentication.ClientRequestToken;
+import com.seagates3.authentication.SignatureValidator;
+import com.seagates3.authorization.Authorizer;
 import com.seagates3.authserver.IAMResourceMapper;
 import com.seagates3.authserver.ResourceMap;
-import com.seagates3.aws.request.ClientRequestParser;
-import com.seagates3.aws.sign.SignatureValidator;
-import com.seagates3.dao.AccessKeyDAO;
-import com.seagates3.dao.DAODispatcher;
-import com.seagates3.dao.DAOResource;
-import com.seagates3.dao.RequestorDAO;
 import com.seagates3.exception.AuthResourceNotFoundException;
-import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.AccessKey;
-import com.seagates3.model.ClientRequestToken;
+import com.seagates3.exception.InternalServerException;
+import com.seagates3.exception.InvalidAccessKeyException;
+import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
-import com.seagates3.util.DateUtil;
+import com.seagates3.service.RequestorService;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,50 +82,26 @@ public class IAMController {
                 return responseGenerator.badRequest();
             }
 
-            AccessKeyDAO accessKeyDAO = (AccessKeyDAO) DAODispatcher
-                    .getResourceDAO(DAOResource.ACCESS_KEY);
-            AccessKey accessKey;
             try {
-                perf.startClock();
-                accessKey = accessKeyDAO.find(clientRequestToken.getAccessKeyId());
-                perf.endClock();
-                perf.printTime("Fetch access key");
-            } catch (DataAccessException ex) {
-                LOGGER.error("Error occured while searching for requestor's "
-                        + "access key id.\n" + ex.getMessage());
-                return responseGenerator.internalServerError();
-            }
-
-            serverResponse = validateAccessKey(accessKey);
-            if (serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
-                LOGGER.debug("Access key is invalid.\n"
-                        + serverResponse.getResponseBody());
-
-                return serverResponse;
-            }
-
-            LOGGER.debug("Access Key is valid");
-
-            RequestorDAO requestorDAO = (RequestorDAO) DAODispatcher
-                    .getResourceDAO(DAOResource.REQUESTOR);
-            try {
-                perf.startClock();
-                requestor = requestorDAO.find(accessKey);
-                perf.endClock();
-                perf.printTime("Fetch requestor");
-            } catch (DataAccessException ex) {
-                return responseGenerator.internalServerError();
-            }
-
-            serverResponse = validateRequestor(requestor, clientRequestToken);
-            if (serverResponse.getResponseStatus() != HttpResponseStatus.OK) {
-                LOGGER.debug("Invalid requestor.\n"
-                        + serverResponse.getResponseBody());
-
-                return serverResponse;
+                requestor = RequestorService.getRequestor(clientRequestToken);
+            } catch (InvalidAccessKeyException ex) {
+                LOGGER.debug(ex.getServerResponse().getResponseBody());
+                return ex.getServerResponse();
+            } catch (InternalServerException ex) {
+                LOGGER.debug(ex.getServerResponse().getResponseBody());
+                return ex.getServerResponse();
+            } catch (InvalidRequestorException ex) {
+                LOGGER.debug(ex.getServerResponse().getResponseBody());
+                return ex.getServerResponse();
             }
 
             LOGGER.debug("Requestor is valid.");
+
+            if (requestAction.equals("AuthorizeUser")) {
+                serverResponse = new Authorizer().authorize(requestor);
+                return serverResponse;
+            }
+
             LOGGER.debug("Calling signature validator.");
 
             perf.startClock();
@@ -171,77 +144,6 @@ public class IAMController {
         }
 
         return performAction(resourceMap, requestBody, requestor);
-    }
-
-    /**
-     * Validate access Key.
-     *
-     * Check if access key exists. if access key is active.
-     */
-    private ServerResponse validateAccessKey(AccessKey accessKey) {
-        /*
-         * Return exit message if access key doesnt exist.
-         */
-        if (!accessKey.exists()) {
-            LOGGER.debug("Access key doesn't exist.");
-            return responseGenerator.invalidAccessKey();
-        }
-
-        if (!accessKey.isAccessKeyActive()) {
-            LOGGER.debug("Access key in not active.");
-            return responseGenerator.inactiveAccessKey();
-        }
-
-        return responseGenerator.ok();
-    }
-
-    /**
-     * Validate the requestor.
-     *
-     * Check if requestor exists. if the requestor is a federated user, check if
-     * the access key is valid.
-     */
-    private ServerResponse validateRequestor(Requestor requestor,
-            ClientRequestToken clientRequestToken) {
-        /*
-         * Return internal server error if requestor doesn't exist.
-         *
-         * Ideally, an access key will be associated with a requestor.
-         * It is a server error if the access key doesn't belong to a user.
-         */
-
-        /**
-         * TODO - AWS supports an error message called "TokenRefreshRequired".
-         * Use case - If the creds gets expired in the middle of a huge file
-         * upload, this token can be issued.
-         *
-         */
-        if (!requestor.exists()) {
-            LOGGER.debug("Requestor doesn't exist.");
-            return responseGenerator.internalServerError();
-        }
-
-        AccessKey accessKey = requestor.getAccesskey();
-        if (requestor.isFederatedUser()) {
-            LOGGER.debug("Requestor is using federated credentials.");
-
-            String sessionToken = clientRequestToken.getRequestHeaders()
-                    .get("X-Amz-Security-Token");
-            if (!accessKey.getToken().equals(sessionToken)) {
-                LOGGER.debug("Invalid clientt token ID.");
-                return responseGenerator.invalidClientTokenId();
-            }
-
-            DateTime currentDate = DateUtil.getCurrentDateTime();
-            DateTime expiryDate = DateUtil.toDateTime(accessKey.getExpiry());
-
-            if (currentDate.isAfter(expiryDate)) {
-                LOGGER.debug("Federated credentials have expired.");
-                return responseGenerator.expiredCredential();
-            }
-        }
-
-        return responseGenerator.ok();
     }
 
     /**

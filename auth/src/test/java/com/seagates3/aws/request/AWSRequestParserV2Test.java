@@ -18,9 +18,10 @@
  */
 package com.seagates3.aws.request;
 
+import com.seagates3.authentication.AWSRequestParserV2;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.aws.AWSV2RequestHelper;
-import com.seagates3.model.ClientRequestToken;
+import com.seagates3.authentication.ClientRequestToken;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.Before;

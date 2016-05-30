@@ -18,9 +18,10 @@
  */
 package com.seagates3.aws.request;
 
+import com.seagates3.authentication.AWSRequestParserV4;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.aws.AWSV4RequestHelper;
-import com.seagates3.model.ClientRequestToken;
+import com.seagates3.authentication.ClientRequestToken;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;

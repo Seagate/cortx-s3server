@@ -19,7 +19,7 @@
 package com.seagates3.response.generator;
 
 import com.seagates3.model.Account;
-import com.seagates3.model.ClientRequestToken;
+import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;

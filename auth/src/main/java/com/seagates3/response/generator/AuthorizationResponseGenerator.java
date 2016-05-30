@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -14,28 +14,26 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 13-Dec-2015
+ * Original creation date: 27-May-2016
  */
 package com.seagates3.response.generator;
 
-import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.response.formatter.xml.AuthenticationResponseFormatter;
+import com.seagates3.response.formatter.xml.AuthorizationResponseFormatter;
 import java.util.LinkedHashMap;
 
-public class AuthenticationResponseGenerator extends AbstractResponseGenerator {
+public class AuthorizationResponseGenerator extends AbstractResponseGenerator {
 
-    public ServerResponse generateAuthenticatedResponse(Requestor requestor,
-            ClientRequestToken requestToken) {
+    public ServerResponse generateAuthorizationResponse(Requestor requestor) {
         LinkedHashMap responseElements = new LinkedHashMap();
         responseElements.put("UserId", requestor.getId());
         responseElements.put("UserName", requestor.getName());
         responseElements.put("AccountId", requestor.getAccount().getId());
         responseElements.put("AccountName", requestor.getAccount().getName());
-        responseElements.put("SignatureSHA256", requestToken.getSignature());
 
-        return (ServerResponse) new AuthenticationResponseFormatter()
-                .formatAuthenticatedResponse(responseElements, "0000");
+        return (ServerResponse) new AuthorizationResponseFormatter()
+                .authorized(responseElements, "0000");
     }
+
 }

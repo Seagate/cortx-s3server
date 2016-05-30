@@ -18,8 +18,9 @@
  */
 package com.seagates3.aws.sign;
 
+import com.seagates3.authentication.AWSV4Sign;
 import com.seagates3.aws.AWSV4RequestHelper;
-import com.seagates3.model.ClientRequestToken;
+import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import org.junit.Assert;
 import org.junit.Test;

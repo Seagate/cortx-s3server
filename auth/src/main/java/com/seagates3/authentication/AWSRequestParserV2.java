@@ -16,17 +16,13 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
+package com.seagates3.authentication;
 
-package com.seagates3.aws.request;
-
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import java.util.Map;
 
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.FullHttpRequest;
-
-import com.seagates3.model.ClientRequestToken;
-
-public class AWSRequestParserV2 extends AWSRequestParser{
+public class AWSRequestParserV2 extends AWSRequestParser {
 
     @Override
     public ClientRequestToken parse(FullHttpRequest httpRequest) {

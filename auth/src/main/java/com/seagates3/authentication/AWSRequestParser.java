@@ -16,10 +16,9 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
-package com.seagates3.aws.request;
+package com.seagates3.authentication;
 
 import com.seagates3.authserver.AuthServerConfig;
-import com.seagates3.model.ClientRequestToken;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import java.util.ArrayList;

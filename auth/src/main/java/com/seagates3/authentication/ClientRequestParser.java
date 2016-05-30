@@ -16,16 +16,15 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
-package com.seagates3.aws.request;
+package com.seagates3.authentication;
 
-import com.seagates3.model.ClientRequestToken;
 import io.netty.handler.codec.http.FullHttpRequest;
 import java.util.Map;
 
 public class ClientRequestParser {
 
     private static final String REQUEST_PARSER_PACKAGE
-            = "com.seagates3.aws.request";
+            = "com.seagates3.authentication";
     private static final String AWS_V2_AUTHRORIAZATION_PATTERN
             = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
 
@@ -35,7 +34,8 @@ public class ClientRequestParser {
         String authorizationHeader;
         ClientRequestToken.AWSSigningVersion awsSigningVersion;
 
-        if (requestAction.equals("AuthenticateUser")) {
+        if (requestAction.equals("AuthenticateUser")
+                || requestAction.equals("AuthorizeUser")) {
             authorizationHeader = requestBody.get("authorization");
         } else {
             authorizationHeader = httpRequest.headers().get("authorization");
@@ -52,7 +52,8 @@ public class ClientRequestParser {
         }
 
         AWSRequestParser awsRequestParser = getAWSRequestParser(awsSigningVersion);
-        if (requestAction.equals("AuthenticateUser")) {
+        if (requestAction.equals("AuthenticateUser")
+                || requestAction.equals("AuthorizeUser")) {
             return awsRequestParser.parse(requestBody);
         } else {
             return awsRequestParser.parse(httpRequest);

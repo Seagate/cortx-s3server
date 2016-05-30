@@ -19,7 +19,7 @@
 package com.seagates3.aws;
 
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.ClientRequestToken;
+import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;

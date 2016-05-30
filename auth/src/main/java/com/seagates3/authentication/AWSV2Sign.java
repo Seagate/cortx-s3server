@@ -16,9 +16,8 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
-package com.seagates3.aws.sign;
+package com.seagates3.authentication;
 
-import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.BinaryUtil;
 import java.io.UnsupportedEncodingException;

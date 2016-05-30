@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -55,7 +55,13 @@ public class UserService {
     }
 
     /**
-     * Search for the role user. If the user doesn't exist, create a new user
+     * Search for the federation user. If the user doesn't exist, create a new
+     * user
+     *
+     * TODO - Create a new class for federation user. Federation user should
+     * contain a reference to the details of the permanent user whose
+     * credentials were used at the time of creation. Federation user will
+     * derive the policy settings of the permanent user.
      *
      * @param account User Name.
      * @param userName User name
@@ -64,7 +70,8 @@ public class UserService {
      */
     public static User createFederationUser(Account account, String userName)
             throws DataAccessException {
-        UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
+        UserDAO userDAO = (UserDAO) DAODispatcher.getResourceDAO(
+                DAOResource.USER);
         User user = userDAO.find(account.getName(), userName);
 
         if (!user.exists()) {

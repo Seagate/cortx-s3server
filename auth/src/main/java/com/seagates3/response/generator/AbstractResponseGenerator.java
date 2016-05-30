@@ -81,6 +81,14 @@ public abstract class AbstractResponseGenerator {
                 "SignatureDoesNotMatch", errorMessage);
     }
 
+    public ServerResponse unauthorizedOperation() {
+        String errorMessage = "You are not authorized to perform this operation."
+                + " Check your IAM policies, and ensure that you are using the "
+                + "correct access keys. ";
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                "UnauthorizedOperation", errorMessage);
+    }
+
     public ServerResponse internalServerError() {
         String errorMessage = "The request processing has failed because of an "
                 + "unknown error, exception or failure.";

@@ -17,7 +17,7 @@
  * Original creation date: 22-Oct-2015
  */
 
-package com.seagates3.model;
+package com.seagates3.authentication;
 
 import java.util.Map;
 

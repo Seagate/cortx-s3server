@@ -16,13 +16,12 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
-package com.seagates3.aws.sign;
+package com.seagates3.authentication;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 
 public interface AWSSign {

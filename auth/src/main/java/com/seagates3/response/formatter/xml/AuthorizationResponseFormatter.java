@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -14,7 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 16-Dec-2015
+ * Original creation date: 27-May-2016
  */
 package com.seagates3.response.formatter.xml;
 
@@ -29,7 +29,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class AuthenticationResponseFormatter extends XMLResponseFormatter {
+public class AuthorizationResponseFormatter extends XMLResponseFormatter {
 
     @Override
     public ServerResponse formatCreateResponse(String operation,
@@ -55,8 +55,9 @@ public class AuthenticationResponseFormatter extends XMLResponseFormatter {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public ServerResponse formatAuthenticatedResponse(
+    public ServerResponse authorized(
             LinkedHashMap<String, String> responseElements, String requestId) {
+
         Document doc;
         try {
             doc = createNewDoc();
@@ -64,13 +65,13 @@ public class AuthenticationResponseFormatter extends XMLResponseFormatter {
             return null;
         }
 
-        Element responseElement = doc.createElement("AuthenticateUserResponse");
+        Element responseElement = doc.createElement("AuthorizeUserResponse");
         Attr attr = doc.createAttribute("xmlns");
         attr.setValue(IAM_XMLNS);
         responseElement.setAttributeNode(attr);
         doc.appendChild(responseElement);
 
-        Element resultElement = doc.createElement("AuthenticateUserResult");
+        Element resultElement = doc.createElement("AuthorizeUserResult");
         responseElement.appendChild(resultElement);
 
         for (Map.Entry<String, String> entry : responseElements.entrySet()) {
@@ -98,4 +99,5 @@ public class AuthenticationResponseFormatter extends XMLResponseFormatter {
 
         return null;
     }
+
 }

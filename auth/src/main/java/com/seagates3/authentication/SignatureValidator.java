@@ -16,9 +16,8 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 17-Sep-2014
  */
-package com.seagates3.aws.sign;
+package com.seagates3.authentication;
 
-import com.seagates3.model.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
@@ -30,16 +29,18 @@ public class SignatureValidator {
     private final Logger LOGGER = LoggerFactory.getLogger(
             SignatureValidator.class.getName());
 
-    private final String SIGNER_PACKAGE = "com.seagates3.aws.sign";
+    private final String SIGNER_PACKAGE = "com.seagates3.authentication";
 
-    public ServerResponse validate(ClientRequestToken clientRequestToken, Requestor requestor) {
+    public ServerResponse validate(ClientRequestToken clientRequestToken,
+            Requestor requestor) {
 
         AuthenticationResponseGenerator responseGenerator
                 = new AuthenticationResponseGenerator();
 
         AWSSign awsSign = getSigner(clientRequestToken);
 
-        Boolean isRequestorAuthenticated = awsSign.authenticate(clientRequestToken, requestor);
+        Boolean isRequestorAuthenticated = awsSign.authenticate(
+                clientRequestToken, requestor);
         if (!isRequestorAuthenticated) {
             LOGGER.debug("Requestor is not authenticated.");
             return responseGenerator.signatureDoesNotMatch();
