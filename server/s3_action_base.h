@@ -50,12 +50,19 @@ class S3Action {
 protected:
   std::shared_ptr<S3RequestObject> request;
   bool invalid_request;
+  // Allow class object instiantiation without support for authentication
+  bool disable_auth;
   // Any action specific state should be managed by derived classes.
 private:
   // Holds the member functions that will process the request.
   // member function signature should be void fn();
   std::vector<std::function<void()>> task_list;
   size_t task_iteration_index;
+
+  // Hold member functions that will rollback
+  // changes in event of error
+  std::deque<std::function<void()>> rollback_list;
+  size_t rollback_index;
 
   std::shared_ptr<S3Action> self_ref;
   std::shared_ptr<S3AuthClient> auth_client;
@@ -64,9 +71,10 @@ private:
 
   std::string error_message;
   S3ActionState state;
+  S3ActionState rollback_state;
 
 public:
-  S3Action(std::shared_ptr<S3RequestObject> req);
+  S3Action(std::shared_ptr<S3RequestObject> req, bool disable_auth = false);
   virtual ~S3Action();
 
   void get_error_message(std::string& message);
@@ -83,6 +91,19 @@ protected:
   std::shared_ptr<S3AuthClient>& get_auth_client() {
     return auth_client;
   }
+
+  // Add tasks to list after each successful operation that needs rollback.
+  // This list can be used to rollback changes in the event of error
+  // during any stage of operation.
+  void add_task_rollback(std::function<void()> task) {
+    // Insert task at start of list for rollback
+    rollback_list.push_front(task);
+  }
+
+  void clear_tasks_rollback() {
+    rollback_list.clear();
+  }
+
 
 public:
   // Self destructing object.
@@ -114,6 +135,14 @@ public:
   void resume();
   void abort();
 
+  // rollback async steps.
+  void rollback_start();
+  void rollback_next();
+  void rollback_done();
+  // Default will call the last task in task_list after exhausting all tasks in
+  // rollback_list. It expects last task in task_list to be send_response_to_s3_client;
+  virtual void rollback_exit();
+
   // Common steps for all Actions like Authenticate.
   void check_authentication();
   void check_authentication_successful();
@@ -129,7 +158,13 @@ public:
   void fetch_acl_bucket_policies_failed();
   void fetch_acl_object_policies_failed();
 
-  void send_response_to_s3_client();
+  virtual void send_response_to_s3_client() = 0;
+
+  FRIEND_TEST(S3ActionTest, Constructor);
+  FRIEND_TEST(S3ActionTest, AddTask);
+  FRIEND_TEST(S3ActionTest, AddTaskRollback);
+  FRIEND_TEST(S3ActionTest, TasklistRun);
+  FRIEND_TEST(S3ActionTest, RollbacklistRun);
 };
 
 #endif

@@ -20,11 +20,13 @@
 #include "s3_action_base.h"
 #include "s3_error_codes.h"
 
-S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req), invalid_request(false) {
+S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool disable_auth) : request(req), invalid_request(false), disable_auth(disable_auth) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   task_iteration_index = 0;
+  rollback_index = 0;
   error_message = "";
   state = S3ActionState::start;
+  rollback_state = S3ActionState::start;
   setup_steps();
 }
 
@@ -36,22 +38,25 @@ void S3Action::get_error_message(std::string& message) {
 
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setup the action\n");
-  add_task(std::bind( &S3Action::check_authentication, this ));
-  add_task(std::bind( &S3Action::fetch_acl_policies, this ));
-  add_task(std::bind( &S3Action::check_authorization, this ));
+
+  if (!disable_auth) {
+    add_task(std::bind( &S3Action::check_authentication, this ));
+    add_task(std::bind( &S3Action::fetch_acl_policies, this ));
+    add_task(std::bind( &S3Action::check_authorization, this ));
+  }
 }
 
 void S3Action::start() {
   task_iteration_index = 0;
   state = S3ActionState::running;
-  task_list[0]();
+  task_list[task_iteration_index++]();
 }
 // Step to next async step.
 void S3Action::next() {
   resume();
   if (task_iteration_index < task_list.size()) {
     if (request->client_connected()) {
-      task_list[++task_iteration_index]();  // Call the next step
+      task_list[task_iteration_index++]();
     } else {
       i_am_done();
     }
@@ -79,6 +84,37 @@ void S3Action::abort() {
   // Mark state as Aborted.
   task_iteration_index = 0;
   state = S3ActionState::stopped;
+}
+
+// rollback async steps
+void S3Action::rollback_start() {
+  rollback_index = 0;
+  rollback_state = S3ActionState::running;
+  if (rollback_list.size())
+    rollback_list[rollback_index++]();
+  else {
+    s3_log(S3_LOG_ERROR, "Rollback triggered on empty list\n");
+    rollback_done();
+  }
+}
+
+void S3Action::rollback_next() {
+  if (rollback_index < rollback_list.size()) {
+      // Call step and move index to next
+      rollback_list[rollback_index++]();
+  } else {
+    rollback_done();
+  }
+}
+
+void S3Action::rollback_done() {
+  rollback_index = 0;
+  rollback_state = S3ActionState::complete;
+  rollback_exit();
+}
+
+void S3Action::rollback_exit() {
+  send_response_to_s3_client();
 }
 
 void S3Action::fetch_acl_policies() {

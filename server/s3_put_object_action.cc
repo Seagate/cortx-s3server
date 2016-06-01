@@ -42,6 +42,7 @@ void S3PutObjectAction::setup_steps(){
   add_task(std::bind( &S3PutObjectAction::save_metadata, this ));
   add_task(std::bind( &S3PutObjectAction::send_response_to_s3_client, this ));
   // ...
+
 }
 
 void S3PutObjectAction::fetch_bucket_info() {
@@ -62,7 +63,6 @@ void S3PutObjectAction::create_object() {
     clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
   } else {
     s3_log(S3_LOG_WARN, "Bucket [%s] not found\n", request->get_bucket_name().c_str());
-    request->resume();
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -85,7 +85,6 @@ void S3PutObjectAction::create_object_failed() {
     LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
     s3_log(S3_LOG_WARN, "Create object failed.\n");
 
-    request->resume();
     // Any other error report failure.
     send_response_to_s3_client();
   }
@@ -107,7 +106,6 @@ void S3PutObjectAction::collision_detected() {
       s3_log(S3_LOG_ERROR, "Failed to resolve object id collision %d times for uri %s\n",
              tried_count, request->get_object_uri().c_str());
     }
-    request->resume();
     send_response_to_s3_client();
   }
 }
@@ -119,10 +117,32 @@ void S3PutObjectAction::create_new_oid() {
 }
 
 
+void S3PutObjectAction::rollback_create() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  clovis_writer->delete_object(std::bind( &S3PutObjectAction::rollback_next, this),
+                                std::bind( &S3PutObjectAction::rollback_create_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PutObjectAction::rollback_create_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
+    rollback_next();
+  } else {
+    // Log rollback failure.
+    s3_log(S3_LOG_WARN, "Deletion of object failed\n");
+    rollback_done();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 void S3PutObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   create_object_timer.stop();
   LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
+
+  // mark rollback point
+  add_task_rollback(std::bind( &S3PutObjectAction::rollback_create, this ));
 
   total_data_to_stream = request->get_content_length();
   request->resume();
@@ -190,8 +210,9 @@ void S3PutObjectAction::write_object_successful() {
 void S3PutObjectAction::write_object_failed() {
   s3_log(S3_LOG_WARN, "Failed writing to clovis.\n");
   write_in_progress = false;
-  request->resume();
-  send_response_to_s3_client();
+
+  // Trigger rollback to undo changes done and report error
+  rollback_start();
 }
 
 void S3PutObjectAction::save_metadata() {
@@ -208,12 +229,14 @@ void S3PutObjectAction::save_metadata() {
       object_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
-  object_metadata->save(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::next, this));
+  object_metadata->save(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::rollback_start, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  request->resume();
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
