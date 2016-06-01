@@ -98,6 +98,38 @@ class S3cmdTest(PyCliTest):
         self.with_cli(cqlsh_cmd)
         return self
 
+    def get_metadata(self):
+        cqlsh_cmd = "cqlsh.py -e " + '"' + "select blobAsText(key), blobAsText(value) from clovis_index_keyspace.clovis_cass_v150915_0;" + '"'
+        self.with_cli(cqlsh_cmd)
+        return self
+
+    def setacl_bucket(self, bucket_name, acl_perm):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " setacl " + "s3://" + self.bucket_name + " --acl-grant=" + acl_perm)
+        return self
+
+    def setpolicy_bucket(self, bucket_name, policyfile):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " setpolicy " + self.working_dir + "/../" + policyfile + " s3://" + self.bucket_name)
+        return self
+
+    def setacl_object(self, bucket_name, filename, acl_perm):
+        self.filename = filename
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " setacl " + "s3://" + self.bucket_name + "/" + self.filename + " --acl-grant=" + acl_perm)
+        return self
+
+    def revoke_acl_bucket(self, bucket_name, acl_perm):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " setacl " + "s3://" + self.bucket_name + " --acl-revoke=" + acl_perm)
+        return self
+
+    def revoke_acl_object(self, bucket_name, filename, acl_perm):
+        self.filename = filename
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " setacl " + "s3://" + self.bucket_name + "/" + self.filename + " --acl-revoke=" + acl_perm)
+        return self
+
     def delete_metadata_test(self):
         cqlsh_cmd = "cqlsh.py -e " + '"' + "truncate clovis_index_keyspace.clovis_cass_v150915_0;" + '"';
         self.with_cli(cqlsh_cmd)

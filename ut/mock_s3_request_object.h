@@ -39,6 +39,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
   MOCK_METHOD1(set_bucket_name, void(const std::string& name));
   MOCK_METHOD1(set_object_name, void(const std::string& name));
+  MOCK_METHOD1(set_api_type, void(S3ApiType));
 };
 
 #endif

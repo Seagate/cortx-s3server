@@ -286,6 +286,14 @@ void S3RequestObject::send_reply_end() {
   evbuffer_free(reply_buffer);
 }
 
+void S3RequestObject::set_api_type(S3ApiType api_type) {
+  s3_api_type = api_type;
+}
+
+S3ApiType S3RequestObject::get_api_type() {
+  return s3_api_type;
+}
+
 void S3RequestObject::respond_unsupported_api() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 

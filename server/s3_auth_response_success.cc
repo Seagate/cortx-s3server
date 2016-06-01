@@ -123,13 +123,35 @@ bool S3AuthResponseSuccess::parse_and_validate() {
           key = NULL;
         }
       }  // for
-    }  // if
+    } else if ((!xmlStrcmp(child->name, (const xmlChar *)"AuthorizeUserResult"))) {
+      for (xmlNode *child_node = child->children; child_node != NULL; child_node = child_node->next) {
+        key = xmlNodeGetContent(child_node);
+        if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
+          s3_log(S3_LOG_DEBUG, "UserId = %s\n", (const char*)key);
+          user_id = (const char*)key;
+        } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserName"))) {
+          s3_log(S3_LOG_DEBUG, "UserName = %s\n", (const char*)key);
+          user_name = (const char*)key;
+        } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountName"))) {
+          s3_log(S3_LOG_DEBUG, "AccountName = %s\n", (const char*)key);
+          account_name = (const char*)key;
+        } else if((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountId"))) {
+          s3_log(S3_LOG_DEBUG, "AccountId =%s\n", (const char*)key);
+          account_id = (const char*)key;
+        }
+
+        if(key != NULL) {
+          xmlFree(key);
+          key = NULL;
+        }
+      }
+    }
     child = child->next;
   }
   xmlFreeDoc(document);
-  if (user_name.empty() || user_id.empty() || account_name.empty() || account_id.empty() || signature_SHA256.empty()) {
+  if (user_name.empty() || user_id.empty() || account_name.empty() || account_id.empty()) {
     // We dont have enough user info from auth server.
-    s3_log(S3_LOG_FATAL, "Auth server returned partial User info.\n");
+    s3_log(S3_LOG_FATAL, "Auth server returned partial User info for authorization result.\n");
     is_valid = false;
   } else {
     s3_log(S3_LOG_DEBUG, "Auth server returned complete User info.\n");

@@ -192,9 +192,6 @@ const char * help   =
 int
 parse_args(int argc, char ** argv) {
     extern char * optarg;
-    extern int    optind;
-    extern int    opterr;
-    extern int    optopt;
     int           c;
     S3Option  *option_instance = S3Option::get_instance();
     while ((c = getopt(argc, argv, optstr)) != -1) {

@@ -86,6 +86,7 @@ class S3RequestObject {
 
   bool is_chunked_upload;
   S3ChunkPayloadParser chunk_parser;
+  S3ApiType s3_api_type;
 
 public:
   S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr);
@@ -108,6 +109,8 @@ public:
   virtual const char* c_get_full_path();
 
   char * c_get_file_name();
+  void set_api_type(S3ApiType apitype);
+  S3ApiType get_api_type();
 private:
   std::map<std::string, std::string> in_headers_copy;
   bool in_headers_copied;

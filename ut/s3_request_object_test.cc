@@ -214,6 +214,12 @@ TEST_F(S3RequestObjectTest, SetsObjectName) {
   EXPECT_EQ(std::string("Makefile"), request->get_object_name());
 }
 
+TEST_F(S3RequestObjectTest, SetsApiName) {
+  S3ApiType apitype = S3ApiType::bucket;
+  request->set_api_type(apitype);
+  EXPECT_EQ(S3ApiType::bucket, request->get_api_type());
+}
+
 TEST_F(S3RequestObjectTest, SetsUserName) {
   std::string user = "kaustubh";
   request->set_user_name(user);

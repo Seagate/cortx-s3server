@@ -32,7 +32,8 @@ EXTERN_C_BLOCK_BEGIN
 struct s3_auth_op_context {
   evbase_t                * evbase;
   evhtp_connection_t      * conn;
-  evhtp_request_t         * authrequest;
+  evhtp_request_t         * authrequest; // for Authentication
+  evhtp_request_t         * authorization_request; // For Authorization
   // evhtp_hook                auth_callback;
   // bool                      isfirstpass;
 };

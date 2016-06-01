@@ -28,6 +28,8 @@
 #include "s3_delete_object_action.h"
 #include "s3_get_multipart_part_action.h"
 #include "s3_abort_multipart_action.h"
+#include "s3_get_object_acl_action.h"
+#include "s3_put_object_acl_action.h"
 #include "s3_log.h"
 
 void S3ObjectAPIHandler::dispatch() {
@@ -38,10 +40,10 @@ void S3ObjectAPIHandler::dispatch() {
     case S3OperationCode::acl:
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
-          // action = std::make_shared<S3GetObjectACLAction>(request);
+          action = std::make_shared<S3GetObjectACLAction>(request);
           break;
         case S3HttpVerb::PUT:
-          // action = std::make_shared<S3PutObjectACLAction>(request);
+          action = std::make_shared<S3PutObjectACLAction>(request);
           break;
         default:
           // should never be here.

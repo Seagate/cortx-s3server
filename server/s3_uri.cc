@@ -49,6 +49,8 @@ S3OperationCode S3URI::get_operation_code() {
 void S3URI::setup_operation_code() {
   if (request->has_query_param_key("acl")) {
     operation_code = S3OperationCode::acl;
+  } else if (request->has_query_param_key("policy")) {
+    operation_code = S3OperationCode::policy;
   } else if (request->has_query_param_key("location")) {
     operation_code = S3OperationCode::location;
   } else if (request->has_query_param_key("uploads") || request->has_query_param_key("uploadid")) {
@@ -99,6 +101,7 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req
       }
     }
   }
+  request->set_api_type(s3_api_type);
 }
 
 S3VirtualHostStyleURI::S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req) {
@@ -112,8 +115,10 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> re
     std::string full_path(full_uri, 0, qparam_start);
     if (full_path.compare("/") == 0) {
       s3_api_type = S3ApiType::bucket;
+      request->set_api_type(s3_api_type);
     } else {
       s3_api_type = S3ApiType::object;
+      request->set_api_type(s3_api_type);
       object_name = std::string(full_path.c_str() + 1);  // ignore first slash
       if (object_name.back() == '/') {
         object_name.pop_back();  // ignore last slash

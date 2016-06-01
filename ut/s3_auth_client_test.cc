@@ -157,6 +157,27 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthSuccessResponse) {
   EXPECT_STREQ("12345", p_authopctx->get_request()->get_account_id().c_str());
 }
 
+TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationSuccessResponse) {
+  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthorizeUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthorizeUserResult><UserId>123</UserId><UserName>tester</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName></AuthorizeUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthorizeUserResponse>";
+
+  p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
+
+  EXPECT_TRUE(p_authopctx->is_auth_successful);
+  EXPECT_STREQ("tester", p_authopctx->get_request()->get_user_name().c_str());
+  EXPECT_STREQ("123", p_authopctx->get_request()->get_user_id().c_str());
+  EXPECT_STREQ("s3_test", p_authopctx->get_request()->get_account_name().c_str());
+  EXPECT_STREQ("12345", p_authopctx->get_request()->get_account_id().c_str());
+}
+
+TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeSuccessResponse) {
+  // Missing AccountId
+  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthenticateUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthorizeUserResult><UserId>123</UserId><UserName>tester</UserName><AccountName>s3_test</AccountName><SignatureSHA256>BSewvoSw/0og+hWR4I77NcWea24=</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthorizeUserResponse>";
+
+  p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
+
+  EXPECT_FALSE(p_authopctx->is_auth_successful);
+}
+
 TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthSuccessResponse) {
   // Missing AccountId
   std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthenticateUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</UserName><AccountName>s3_test</AccountName><SignatureSHA256>BSewvoSw/0og+hWR4I77NcWea24=</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>";
@@ -177,9 +198,30 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
   EXPECT_STREQ("0000", p_authopctx->get_error_res_obj()->get_request_id().c_str());
 }
 
+TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse) {
+  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Code>UnauthorizedOperation</Code><Message>You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.</Message><RequestId>0000</RequestId></Error>";
+
+  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+
+  EXPECT_FALSE(p_authopctx->is_auth_successful);
+  EXPECT_STREQ("UnauthorizedOperation", p_authopctx->get_error_res_obj()->get_code().c_str());
+  EXPECT_STREQ("You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.", p_authopctx->get_error_res_obj()->get_message().c_str());
+  EXPECT_STREQ("0000", p_authopctx->get_error_res_obj()->get_request_id().c_str());
+}
+
+
 TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthErrorResponse) {
   // Missing code
   std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>";
+
+  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+
+  EXPECT_FALSE(p_authopctx->get_error_res_obj()->isOK());
+}
+
+TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeErrorResponse) {
+  // Missing code
+  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Message>You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.</Message><RequestId>0000</RequestId></Error>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
@@ -201,7 +243,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -220,7 +262,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -239,7 +281,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -258,7 +300,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -277,7 +319,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -296,7 +338,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return("delimiter=/&prefix=test"));
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -319,7 +361,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
   p_authclienttest->prev_chunk_signature_from_auth = "";
   p_authclienttest->current_chunk_signature_from_auth = "ABCD";
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -342,7 +384,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
   p_authclienttest->prev_chunk_signature_from_auth = "ABCD";
   p_authclienttest->current_chunk_signature_from_auth = "";
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -366,7 +408,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
   p_authclienttest->current_chunk_signature_from_auth = "cur-XYZ";
   p_authclienttest->hash_sha256_current_chunk = "sha256-abcd";
 
-  p_authclienttest->setup_auth_request_body();
+  p_authclienttest->setup_auth_request_body(false);
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);

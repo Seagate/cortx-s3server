@@ -14,10 +14,18 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
+ * Original author:  Rajesh Nambiar <rajesh.nambiar@seagate.com>
  * Original creation date: 1-Oct-2015
  */
 
 #include "s3_bucket_acl.h"
+#include "s3_log.h"
+#include <json/json.h>
+#include "base64.h"
+#include <assert.h>
+#include <string.h>
+
+S3BucketACL::S3BucketACL(): acl_xml_str(""), acl_metadata("") {}
 
 void S3BucketACL::set_owner_id(std::string id) {
   owner_id = id;
@@ -27,45 +35,51 @@ void S3BucketACL::set_owner_name(std::string name) {
   owner_name = name;
 }
 
-std::string S3BucketACL::to_json() {
-  // TODO
-  return "";
+std::string S3BucketACL::get_owner_name() {
+  return owner_name;
 }
 
-void S3BucketACL::from_json(std::string content) {
-  // TODO
+void S3BucketACL::from_json(std::string acl_json_str) {
+  s3_log(S3_LOG_DEBUG, "Called\n");
+  acl_metadata = acl_json_str;
+  acl_xml_str = base64_decode(acl_metadata);
 }
 
-std::string& S3BucketACL::get_xml_response() {
-  response_xml =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-         "<AccessControlPolicy xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
-         "  <Owner>\n"
-         "    <ID>" + owner_id + "</ID>\n"
-         "      <DisplayName>" + owner_name + "</DisplayName>\n"
-         "  </Owner>\n"
-        //  TODO everything below is hardcoded till we support actual ACL
-         "  <AccessControlList>\n"
-         "    <Grant>\n"
-         "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"Group\">\n"
-         "        <URI>http://acs.seagate.com/groups/global/AuthenticatedUsers</URI>\n"
-         "      </Grantee>\n"
-         "      <Permission>READ</Permission>\n"
-         "    </Grant>\n"
-         "    <Grant>\n"
-         "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"Group\">\n"
-         "        <URI>http://acs.seagate.com/groups/global/AuthenticatedUsers</URI>"
-         "      </Grantee>\n"
-         "      <Permission>WRITE</Permission>\n"
-         "    </Grant>\n"
-         "    <Grant>\n"
-         "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"Group\">\n"
-         "        <URI>http://acs.seagate.com/groups/global/AuthenticatedUsers</URI>\n"
-         "      </Grantee>\n"
-         "      <Permission>READ_ACP</Permission>\n"
-         "    </Grant>\n"
-         "  </AccessControlList>\n"
-         "</AccessControlPolicy>\n";
+std::string& S3BucketACL::get_xml_str() {
+  return acl_xml_str;
+}
 
-  return response_xml;
+std::string& S3BucketACL::get_acl_metadata() {
+  return acl_metadata;
+}
+
+std::string S3BucketACL::insert_display_name(std::string acl_str) {
+  char *acl = (char *)acl_str.c_str();
+  char *partial_acl_str = (char *)malloc(acl_str.length());
+  char *partial_acl;
+  std::string final_acl;
+  while((partial_acl = strstr(acl, "</ID>"))) {
+    memset(partial_acl_str, '\0', acl_str.length());
+    // Get DisplayName by querying the auth server
+    if (partial_acl[5] == '\n') {
+      partial_acl = partial_acl + 5;
+      strncpy(partial_acl_str, acl, partial_acl - acl + 1);
+      final_acl += partial_acl_str;
+      final_acl += "\n<DisplayName>s3_test</DisplayName>\n";
+    } else {
+      partial_acl = partial_acl + 4;
+      strncpy(partial_acl_str, acl, partial_acl - acl + 1);
+      final_acl += partial_acl_str;
+      final_acl += "<DisplayName>s3_test</DisplayName>";
+    }
+    acl = partial_acl;
+  }
+  final_acl += acl;
+  free(partial_acl_str);
+  return final_acl;
+}
+
+void S3BucketACL::set_acl_xml_metadata(std::string acl_str) {
+  acl_xml_str = acl_str;
+  return;
 }

@@ -52,7 +52,7 @@ private:
   // The name for a Bucket
   // http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
   std::string bucket_name;
-
+  std::string bucket_policy;
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
 
@@ -92,7 +92,9 @@ public:
   std::string get_location_constraint();
   std::string get_owner_id();
   std::string get_owner_name();
-
+  std::string& get_encoded_bucket_acl();
+  std::string& get_policy_as_json();
+  std::string& get_acl_as_xml();
   void set_location_constraint(std::string location);
 
   // Load attributes
@@ -110,7 +112,8 @@ public:
   void load_user_bucket_failed();
 
   void save(std::function<void(void)> on_success, std::function<void(void)> on_failed);
-
+  void save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  std::string create_default_acl();
   void create_account_bucket_index();
   void create_account_bucket_index_successful();
   void create_account_bucket_index_failed();
@@ -124,7 +127,9 @@ public:
   void save_user_bucket();
   void save_user_bucket_successful();
   void save_user_bucket_failed();
-
+  void setpolicy(std::string & policy_str);
+  void deletepolicy();
+  void setacl(std::string & acl_str);
   void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
 
   void remove_account_bucket();

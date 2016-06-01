@@ -25,6 +25,12 @@ at_least_one_success(false) {
   ops_response.resize(ops_count);
 }
 
+void S3AsyncOpContextBase::reset_callbacks(std::function<void(void)> success, std::function<void(void)> failed) {
+  on_success =  success;
+  on_failed = failed;
+  return;
+}
+
 std::shared_ptr<S3RequestObject> S3AsyncOpContextBase::get_request() {
   return request;
 }

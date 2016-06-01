@@ -28,19 +28,19 @@
 struct s3_auth_op_context *
 create_basic_auth_op_ctx(struct event_base* eventbase) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
- S3Option *option_instance = S3Option::get_instance();
- struct s3_auth_op_context *ctx = (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
+  S3Option *option_instance = S3Option::get_instance();
+  struct s3_auth_op_context *ctx = (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
 
- ctx->evbase = eventbase;
- // TODO do we really need this?
- // if (evthread_make_base_notifiable(ctx->evbase) < 0)
- //   s3_log(S3_LOG_ERROR, "evthread_make_base_notifiable failed\n");
+  ctx->evbase = eventbase;
+  // TODO do we really need this?
+  // if (evthread_make_base_notifiable(ctx->evbase) < 0)
+  //   s3_log(S3_LOG_ERROR, "evthread_make_base_notifiable failed\n");
 
- ctx->conn = evhtp_connection_new(ctx->evbase, option_instance->get_auth_ip_addr().c_str(), option_instance->get_auth_port());
- ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
- // ctx->isfirstpass = true;
- s3_log(S3_LOG_DEBUG, "Exiting\n");
- return ctx;
+  ctx->conn = evhtp_connection_new(ctx->evbase, option_instance->get_auth_ip_addr().c_str(), option_instance->get_auth_port());
+  ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
+  ctx->authorization_request = NULL;
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  return ctx;
 }
 
 

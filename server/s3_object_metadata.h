@@ -84,6 +84,7 @@ private:
 public:
   S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool ismultipart = false, std::string uploadid = "");
 
+  std::string create_default_acl();
   std::string get_bucket_index_name() {
     return "BUCKET/" + bucket_name;
   }
@@ -116,6 +117,8 @@ public:
   std::string get_last_modified_iso();
   std::string get_storage_class();
   std::string get_upload_id();
+  std::string& get_encoded_object_acl();
+  std::string& get_acl_as_xml();
 
   // Load attributes
   std::string get_system_attribute(std::string key);
@@ -137,6 +140,7 @@ public:
   void save_metadata();
   void save_metadata_successful();
   void save_metadata_failed();
+  void save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed);
 
   void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void remove_successful();
@@ -158,6 +162,7 @@ public:
   std::string to_json();
 
   void from_json(std::string content);
+  void setacl(std::string & input_acl_str);
 };
 
 #endif

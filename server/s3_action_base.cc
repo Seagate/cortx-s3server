@@ -37,6 +37,8 @@ void S3Action::get_error_message(std::string& message) {
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setup the action\n");
   add_task(std::bind( &S3Action::check_authentication, this ));
+  add_task(std::bind( &S3Action::fetch_acl_policies, this ));
+  add_task(std::bind( &S3Action::check_authorization, this ));
 }
 
 void S3Action::start() {
@@ -77,6 +79,81 @@ void S3Action::abort() {
   // Mark state as Aborted.
   task_iteration_index = 0;
   state = S3ActionState::stopped;
+}
+
+void S3Action::fetch_acl_policies() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (request->get_api_type() == S3ApiType::object) {
+    object_metadata = std::make_shared<S3ObjectMetadata>(request);
+    object_metadata->load(std::bind( &S3Action::next, this), std::bind( &S3Action::fetch_acl_object_policies_failed, this));
+  } else if (request->get_api_type() == S3ApiType::bucket) {
+    bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+    bucket_metadata->load(std::bind( &S3Action::next, this), std::bind( &S3Action::fetch_acl_bucket_policies_failed, this));
+  } else {
+    next();
+  }
+}
+
+void S3Action::fetch_acl_object_policies_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (object_metadata->get_state() != S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_ERROR, "Authorization failure: failed to load acl/policies from object\n");
+    request->send_response(S3HttpFailed400);
+    done();
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    i_am_done();
+  } else {
+    next();
+  }
+}
+
+void S3Action::fetch_acl_bucket_policies_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (bucket_metadata->get_state() != S3BucketMetadataState::missing) {
+    s3_log(S3_LOG_ERROR, "Authorization failure: failed to load acl/policies from bucket\n");
+    request->send_response(S3HttpFailed400);
+    done();
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    i_am_done();
+  } else {
+    next();
+  }
+}
+
+void S3Action::check_authorization() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (request->get_api_type() == S3ApiType::bucket) {
+    auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(), bucket_metadata->get_policy_as_json());
+  } else if (request->get_api_type() == S3ApiType::object) {
+    auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(), "");
+  }
+  auth_client->check_authorization(std::bind( &S3Action::check_authorization_successful, this), std::bind( &S3Action::check_authorization_failed, this));
+}
+
+void S3Action::check_authorization_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  next();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3Action::check_authorization_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (request->client_connected()) {
+    std::string error_code = auth_client->get_error_code();
+    s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", error_code.c_str());
+
+    S3Error error(error_code, request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
+    s3_log(S3_LOG_ERROR, "Authorization failure (http status): %d\n", error.get_http_status_code());
+    s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", response_xml.c_str());
+  }
+  done();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  i_am_done();
 }
 
 void S3Action::check_authentication() {

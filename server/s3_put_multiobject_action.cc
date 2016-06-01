@@ -131,7 +131,7 @@ void S3PutMultiObjectAction::compute_part_offset() {
     s3_log(S3_LOG_DEBUG, "Offset for clovis write = %zu\n", offset);
   }
   // Create writer to write from given offset as per the partnumber
-  clovis_writer = std::make_shared<S3ClovisWriter>(request, offset);
+  clovis_writer = std::make_shared<S3ClovisWriter>(request, object_multipart_metadata->get_oid(), offset);
   next();
 
   s3_log(S3_LOG_DEBUG, "Exiting\n");

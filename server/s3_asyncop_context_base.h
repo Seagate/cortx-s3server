@@ -69,6 +69,7 @@ public:
 
   std::function<void(void)> on_success_handler();
   std::function<void(void)> on_failed_handler();
+  void reset_callbacks(std::function<void(void)> success, std::function<void(void)> failed);
 
   S3AsyncOpStatus get_op_status_for(int op_idx);
   int get_errno_for(int op_idx);

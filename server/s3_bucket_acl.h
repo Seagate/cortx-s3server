@@ -23,22 +23,28 @@
 #define __MERO_FE_S3_SERVER_S3_BUCKET_ACL_H__
 
 #include <string>
-// #include <json.h>
+//#include "s3_acl.h"
+#include <json/json.h>
 
 class S3BucketACL {
   std::string owner_id;
   std::string owner_name;
-
+  std::string acl_xml_str;
+  std::string acl_metadata;
   std::string response_xml;
 public:
-
+  S3BucketACL();
   void set_owner_id(std::string id);
   void set_owner_name(std::string name);
+  std::string get_owner_name();
   std::string to_json();
 
-  void from_json(std::string content);
+  void from_json(std::string acl_json_str);
 
-  std::string& get_xml_response();
+  std::string& get_xml_str();
+  std::string& get_acl_metadata();
+  std::string insert_display_name(std::string acl_str);
+  void set_acl_xml_metadata(std::string acl_str);
 };
 
 #endif

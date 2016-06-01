@@ -232,6 +232,16 @@ void S3ObjectMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  std::string index_name;
+  std::string key;
+  this->handler_on_success = on_success;
+  this->handler_on_failed  = on_failed;
+  save_metadata();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 void S3ObjectMetadata::save_metadata_successful() {
   s3_log(S3_LOG_DEBUG, "Object metadata saved for Object [%s].\n", object_name.c_str());
   state = S3ObjectMetadataState::saved;
@@ -274,6 +284,28 @@ void S3ObjectMetadata::remove_failed() {
   this->handler_on_failed();
 }
 
+std::string S3ObjectMetadata::create_default_acl() {
+  std::string acl_str;
+  acl_str =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+         "<AccessControlPolicy xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
+         "  <Owner>\n"
+         "    <ID>" + request->get_account_id() + "</ID>\n"
+         "      <DisplayName>" + request->get_account_name() + "</DisplayName>\n"
+         "  </Owner>\n"
+         "  <AccessControlList>\n"
+         "    <Grant>\n"
+         "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"CanonicalUser\">\n"
+         "        <ID>" + request->get_account_id() + "</ID>\n"
+         "        <DisplayName>" + request->get_account_name() + "</DisplayName>\n"
+         "      </Grantee>\n"
+         "      <Permission>FULL_CONTROL</Permission>\n"
+         "    </Grant>\n"
+         "  </AccessControlList>\n"
+         "</AccessControlPolicy>\n";
+  return acl_str;
+}
+
 // Streaming to json
 std::string S3ObjectMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, "Called\n");
@@ -295,7 +327,12 @@ std::string S3ObjectMetadata::to_json() {
   for (auto uit: user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
-  root["ACL"] = object_ACL.to_json();
+  //root["ACL"] = object_ACL.to_json();
+  std::string xml_acl = object_ACL.get_xml_str();
+  if (xml_acl == "") {
+    xml_acl = create_default_acl();
+  }
+  root["ACL"] = base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);;
@@ -335,4 +372,19 @@ void S3ObjectMetadata::from_json(std::string content) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString().c_str();
   }
   object_ACL.from_json(newroot["ACL"].asString());
+}
+
+std::string& S3ObjectMetadata::get_encoded_object_acl() {
+  // base64 encoded acl
+  return object_ACL.get_acl_metadata();
+}
+
+void S3ObjectMetadata::setacl(std::string & input_acl_str) {
+  std::string input_acl = input_acl_str;
+  input_acl = object_ACL.insert_display_name(input_acl);
+  object_ACL.set_acl_xml_metadata(input_acl);
+}
+
+std::string& S3ObjectMetadata::get_acl_as_xml() {
+  return object_ACL.get_xml_str();
 }

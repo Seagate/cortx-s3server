@@ -18,9 +18,10 @@
  */
 
 #include <json/json.h>
-
+#include <string>
 #include "s3_bucket_metadata.h"
 #include "s3_datetime.h"
+#include "base64.h"
 
 S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
   s3_log(S3_LOG_DEBUG, "Constructor");
@@ -29,6 +30,7 @@ S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : reque
   bucket_name = request->get_bucket_name();
   state = S3BucketMetadataState::empty;
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  bucket_policy = "";
 
   // Set the defaults
   S3DateTime current_time;
@@ -63,6 +65,22 @@ std::string S3BucketMetadata::get_owner_name() {
 
 void S3BucketMetadata::set_location_constraint(std::string location) {
   system_defined_attribute["LocationConstraint"] = location;
+}
+
+void S3BucketMetadata::setpolicy(std::string & policy_str) {
+  bucket_policy = policy_str;
+}
+
+void S3BucketMetadata::deletepolicy() {
+  bucket_policy = "";
+}
+
+
+void S3BucketMetadata::setacl(std::string &acl_str) {
+  std::string input_acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  input_acl += acl_str;
+  input_acl = bucket_ACL.insert_display_name(input_acl);
+  bucket_ACL.set_acl_xml_metadata(input_acl);
 }
 
 void S3BucketMetadata::add_system_attribute(std::string key, std::string val) {
@@ -164,6 +182,16 @@ void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<
 
   // TODO create only if it does not exists.
   create_account_bucket_index();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3BucketMetadata::save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed  = on_failed;
+
+  save_account_bucket();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -340,6 +368,27 @@ void S3BucketMetadata::remove_user_bucket_failed() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+std::string S3BucketMetadata::create_default_acl() {
+  std::string acl_str;
+  acl_str =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+         "<AccessControlPolicy xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
+         "  <Owner>\n"
+         "    <ID>" + request->get_account_id() + "</ID>\n"
+         "  </Owner>\n"
+         "  <AccessControlList>\n"
+         "    <Grant>\n"
+         "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"CanonicalUser\">\n"
+         "        <ID>" + request->get_account_id() + "</ID>\n"
+         "        <DisplayName>" + request->get_account_name() + "</DisplayName>\n"
+         "      </Grantee>\n"
+         "      <Permission>FULL_CONTROL</Permission>\n"
+         "    </Grant>\n"
+         "  </AccessControlList>\n"
+         "</AccessControlPolicy>\n";
+  return acl_str;
+}
+
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, "Called\n");
@@ -352,10 +401,15 @@ std::string S3BucketMetadata::to_json() {
   for (auto uit: user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
-  root["ACL"] = bucket_ACL.to_json();
+  std::string xml_acl = bucket_ACL.get_xml_str();
+  if (xml_acl == "") {
+    xml_acl = create_default_acl();
+  }
+  root["ACL"] = base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
+  root["Policy"] = bucket_policy;
 
   Json::FastWriter fastWriter;
-  return fastWriter.write(root);;
+  return fastWriter.write(root);
 }
 
 void S3BucketMetadata::from_json(std::string content) {
@@ -382,5 +436,19 @@ void S3BucketMetadata::from_json(std::string content) {
   user_name = system_defined_attribute["Owner-User"];
   account_name = system_defined_attribute["Owner-Account"];
 
-  bucket_ACL.from_json(newroot["ACL"].asString());
+  bucket_ACL.from_json((newroot["ACL"]).asString());
+  bucket_policy = newroot["Policy"].asString();
+}
+
+std::string& S3BucketMetadata::get_encoded_bucket_acl() {
+  //base64 acl encoded
+  return bucket_ACL.get_acl_metadata();
+}
+
+std::string& S3BucketMetadata::get_acl_as_xml() {
+  return bucket_ACL.get_xml_str();
+}
+
+std::string& S3BucketMetadata::get_policy_as_json() {
+  return bucket_policy;
 }

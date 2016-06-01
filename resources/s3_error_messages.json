@@ -47,6 +47,10 @@
     "Description": "The specified bucket does not exist.",
     "httpcode": 404
   },
+  "NoSuchBucketPolicy": {
+    "Description": "The specified bucket does not have a bucket policy.",
+    "httpcode": 404
+  },
   "NoSuchKey": {
     "Description": "The specified key does not exist.",
     "httpcode": 404

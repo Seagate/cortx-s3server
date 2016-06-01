@@ -13,6 +13,7 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
+ * Original author:  Rajesh Nambiar  <rajesh.nambiar@seagate.com>
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
  * Original creation date: 1-Oct-2015
  */
@@ -23,15 +24,27 @@
 #define __MERO_FE_S3_SERVER_S3_OBJECT_ACL_H__
 
 #include <string>
-// #include <json.h>
+#include <json/json.h>
 
 class S3ObjectACL {
-  // TODO
-
+  std::string owner_id;
+  std::string owner_name;
+  std::string acl_xml_str;
+  std::string acl_metadata;
+  std::string response_xml;
 public:
+  S3ObjectACL();
+  void set_owner_id(std::string id);
+  void set_owner_name(std::string name);
+  std::string get_owner_name();
   std::string to_json();
 
-  void from_json(std::string content);
+  void from_json(std::string acl_jsoni_str);
+
+  std::string& get_xml_str();
+  std::string& get_acl_metadata();
+  std::string insert_display_name(std::string acl_str);
+  void set_acl_xml_metadata(std::string acl_str);
 };
 
 #endif

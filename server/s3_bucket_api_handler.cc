@@ -20,6 +20,7 @@
 #include "s3_api_handler.h"
 #include "s3_get_bucket_location_action.h"
 #include "s3_get_bucket_acl_action.h"
+#include "s3_put_bucket_acl_action.h"
 #include "s3_delete_multiple_objects_action.h"
 #include "s3_head_bucket_action.h"
 #include "s3_get_bucket_action.h"
@@ -27,7 +28,8 @@
 #include "s3_put_bucket_action.h"
 #include "s3_delete_bucket_action.h"
 #include "s3_log.h"
-
+#include "s3_put_bucket_policy_action.h"
+#include "s3_delete_bucket_policy_action.h"
 void S3BucketAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
   s3_log(S3_LOG_DEBUG, "Entering\n");
@@ -62,7 +64,7 @@ void S3BucketAPIHandler::dispatch() {
           action = std::make_shared<S3GetBucketACLAction>(request);
           break;
         case S3HttpVerb::PUT:
-          // action = std::make_shared<S3PutBucketACLAction>(request);
+          action = std::make_shared<S3PutBucketACLAction>(request);
           break;
         default:
           // should never be here.
@@ -78,6 +80,25 @@ void S3BucketAPIHandler::dispatch() {
           action = std::make_shared<S3GetMultipartBucketAction>(request);
           break;
       default:
+          request->respond_unsupported_api();
+          i_am_done();
+          return;
+      };
+      break;
+    case S3OperationCode::policy:
+      // Policy operations.
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          action = std::make_shared<S3GetBucketACLAction>(request);
+          break;
+        case S3HttpVerb::PUT:
+          action = std::make_shared<S3PutBucketPolicyAction>(request);
+          break;
+        case S3HttpVerb::DELETE:
+          action = std::make_shared<S3DeleteBucketPolicyAction>(request);
+          break;
+        default:
+          // should never be here.
           request->respond_unsupported_api();
           i_am_done();
           return;

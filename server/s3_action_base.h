@@ -29,6 +29,8 @@
 #include "s3_auth_client.h"
 #include "s3_request_object.h"
 #include "s3_log.h"
+#include "s3_bucket_metadata.h"
+#include "s3_object_metadata.h"
 
 enum class S3ActionState {
   start,
@@ -57,6 +59,8 @@ private:
 
   std::shared_ptr<S3Action> self_ref;
   std::shared_ptr<S3AuthClient> auth_client;
+  std::shared_ptr<S3ObjectMetadata> object_metadata;
+  std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
   std::string error_message;
   S3ActionState state;
@@ -85,6 +89,11 @@ public:
   void manage_self(std::shared_ptr<S3Action> ref) {
       self_ref = ref;
   }
+
+  int number_of_tasks() {
+    return task_list.size();
+  }
+
   // This *MUST* be the last thing on object. Called @ end of dispatch.
   void i_am_done() {
     self_ref.reset();
@@ -110,6 +119,15 @@ public:
   void check_authentication_successful();
   void check_authentication_failed();
   void start_chunk_authentication();
+
+  // Common steps for all Actions like Authorization.
+  void check_authorization();
+  void check_authorization_successful();
+  void check_authorization_failed();
+
+  void fetch_acl_policies();
+  void fetch_acl_bucket_policies_failed();
+  void fetch_acl_object_policies_failed();
 
   void send_response_to_s3_client();
 };
