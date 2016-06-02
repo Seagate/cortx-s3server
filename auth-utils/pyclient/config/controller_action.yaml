@@ -10,7 +10,11 @@ assumerolewithsaml:
   module : assume_role_with_saml
 createaccount:
   controller : Account
-  action :  create
+  action : create
+  service : iam
+listaccounts:
+  controller : Account
+  action :  list
   service : iam
 createaccesskey:
   controller : AccessKey

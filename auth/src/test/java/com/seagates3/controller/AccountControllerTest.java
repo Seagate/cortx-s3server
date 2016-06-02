@@ -96,6 +96,89 @@ public class AccountControllerTest {
     }
 
     @Test
+    public void ListAccounts_AccountsSearchFailed_ReturnInternalServerError()
+            throws Exception {
+        Mockito.when(accountDAO.findAll()).thenThrow(
+                new DataAccessException("Failed to fetch accounts.\n"));
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Code>InternalFailure</Code>"
+                + "<Message>The request processing has failed because of an "
+                + "unknown error, exception or failure.</Message>"
+                + "<RequestId>0000</RequestId>"
+                + "</Error>";
+
+        ServerResponse response = accountController.list();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                response.getResponseStatus());
+    }
+
+    @Test
+    public void ListAccounts_AccountsListEmpty_ReturnListAccountsResponse()
+            throws Exception {
+        Account[] expectedAccountList = new Account[0];
+
+        Mockito.doReturn(expectedAccountList).when(accountDAO).findAll();
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ListAccountsResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<ListAccountsResult>"
+                + "<Accounts/>"
+                + "<IsTruncated>false</IsTruncated>"
+                + "</ListAccountsResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>0000</RequestId>"
+                + "</ResponseMetadata>"
+                + "</ListAccountsResponse>";
+
+        ServerResponse response = accountController.list();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    }
+
+    @Test
+    public void ListAccounts_AccountsSearchSuccess_ReturnListAccountsResponse()
+            throws Exception {
+        Account expectedAccount = new Account();
+        expectedAccount.setName("s3test");
+        expectedAccount.setId("123456");
+        expectedAccount.setCanonicalId("canonicalid");
+        expectedAccount.setEmail("user.name@seagate.com");
+        Account[] expectedAccountList = new Account[]{expectedAccount};
+
+        Mockito.doReturn(expectedAccountList).when(accountDAO).findAll();
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ListAccountsResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<ListAccountsResult>"
+                + "<Accounts>"
+                + "<member>"
+                + "<AccountName>s3test</AccountName>"
+                + "<AccountId>123456</AccountId>"
+                + "<CanonicalId>canonicalid</CanonicalId>"
+                + "<Email>user.name@seagate.com</Email>"
+                + "</member>"
+                + "</Accounts>"
+                + "<IsTruncated>false</IsTruncated>"
+                + "</ListAccountsResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>0000</RequestId>"
+                + "</ResponseMetadata>"
+                + "</ListAccountsResponse>";
+
+        ServerResponse response = accountController.list();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    }
+
+    @Test
     public void CreateAccount_AccountSearchFailed_ReturnInternalServerError()
             throws Exception {
         Mockito.when(accountDAO.find("s3test")).thenThrow(

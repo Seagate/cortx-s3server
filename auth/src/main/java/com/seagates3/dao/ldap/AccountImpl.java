@@ -27,6 +27,7 @@ import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
+import java.util.ArrayList;
 
 public class AccountImpl implements AccountDAO {
 
@@ -104,6 +105,59 @@ public class AccountImpl implements AccountDAO {
         }
 
         return account;
+    }
+
+    /*
+     * fetch all accounts from database
+     */
+    public Account[] findAll() throws DataAccessException {
+        ArrayList accounts = new ArrayList();
+        Account account;
+        LDAPSearchResults ldapResults;
+        /*
+         * search base: the starting point for search
+         * example: 'ou=accounts,dc=s3,dc=seagate,dc=com'
+         */
+        String baseDn = String.format("%s=%s,%s",
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN);
+        /*
+         * search filter: '(objectClass=account)'
+         */
+        String accountFilter = String.format("(%s=%s)",
+                LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+        String[] attr = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                LDAPUtils.EMAIL, LDAPUtils.CANONICAL_ID};
+
+        try {
+            ldapResults = LDAPUtils.search(baseDn, LDAPConnection.SCOPE_SUB,
+                    accountFilter, attr);
+        } catch (LDAPException ex) {
+            throw new DataAccessException("Failed to fetch accounts.\n" + ex);
+        }
+        while (ldapResults.hasMore()) {
+            LDAPEntry ldapEntry;
+            account = new Account();
+            try {
+                ldapEntry = ldapResults.next();
+            } catch (LDAPException ldapException) {
+                throw new DataAccessException("Failed to read ldapEntry.\n"
+                        + ldapException);
+            }
+            account.setName(ldapEntry.getAttribute(LDAPUtils.
+                    ORGANIZATIONAL_NAME).getStringValue());
+            account.setId(ldapEntry.getAttribute(LDAPUtils.
+                    ACCOUNT_ID).getStringValue());
+            account.setEmail(ldapEntry.getAttribute(LDAPUtils.
+                    EMAIL).getStringValue());
+            account.setCanonicalId(ldapEntry.getAttribute(LDAPUtils.
+                    CANONICAL_ID).getStringValue());
+            accounts.add(account);
+        }
+        Account[] accountList = new Account[accounts.size()];
+
+        return (Account[]) accounts.toArray(accountList);
     }
 
     /**

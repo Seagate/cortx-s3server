@@ -24,6 +24,7 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 public class AccountResponseGenerator extends AbstractResponseGenerator {
@@ -41,6 +42,25 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
 
         return (ServerResponse) new XMLResponseFormatter().formatCreateResponse("CreateAccount",
                 "Account", responseElements, "0000");
+    }
+
+    public ServerResponse generateListResponse(Object[] responseObjects) {
+        Account[] accounts = (Account[]) responseObjects;
+
+        ArrayList<LinkedHashMap<String, String>> accountMembers = new ArrayList<>();
+        LinkedHashMap responseElements;
+
+        for (Account account : accounts) {
+            responseElements = new LinkedHashMap();
+            responseElements.put("AccountName", account.getName());
+            responseElements.put("AccountId", account.getId());
+            responseElements.put("CanonicalId", account.getCanonicalId());
+            responseElements.put("Email", account.getEmail());
+            accountMembers.add(responseElements);
+        }
+
+        return new XMLResponseFormatter().formatListResponse("ListAccounts",
+                "Accounts", accountMembers, false, "0000");
     }
 
     @Override

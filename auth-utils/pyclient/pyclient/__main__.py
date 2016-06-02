@@ -14,6 +14,7 @@ def iam_usage():
     --saml_assertion <File containing SAML Assertion>
         -f <Policy Document> -d <Duration in seconds>
     CreateAccount -n <Account Name> -e <Email Id>
+    ListAccounts
     CreateAccessKey
         -n <User Name>
     CreateGroup -n <Group Name>
@@ -111,7 +112,7 @@ except Exception as ex:
     print(str(ex))
     sys.exit()
 
-if(cli_args.action.lower() != "createaccount"):
+if(cli_args.action.lower() not in ["createaccount", "listaccounts"] ):
     if(cli_args.access_key is None):
         print("Provide access key")
         sys.exit()

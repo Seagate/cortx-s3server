@@ -54,13 +54,15 @@ public class AccountImplTest {
             = "ou=roles,o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com";
 
     private final AccountImpl accountImpl;
-    private final LDAPSearchResults ldapResults;
+    private final LDAPAttribute accountNameAttr;
+    private final LDAPAttribute accountIdAttr;
+    private final LDAPAttribute canonicalIdAttr;
+    private final LDAPAttribute emailAttr;
     private final LDAPEntry entry;
-    private final LDAPAttribute accountIdAttr, canonicalIdAttr;
-
     private final LDAPEntry accountEntry;
     private final LDAPEntry userEntry;
     private final LDAPEntry roleEntry;
+    private final LDAPSearchResults ldapResults;
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -69,16 +71,17 @@ public class AccountImplTest {
         accountImpl = new AccountImpl();
         ldapResults = Mockito.mock(LDAPSearchResults.class);
         entry = Mockito.mock(LDAPEntry.class);
+        accountNameAttr = Mockito.mock(LDAPAttribute.class);
         accountIdAttr = Mockito.mock(LDAPAttribute.class);
         canonicalIdAttr = Mockito.mock(LDAPAttribute.class);
+        emailAttr = Mockito.mock(LDAPAttribute.class);
 
         LDAPAttributeSet accountAttributeSet = new LDAPAttributeSet();
         accountAttributeSet.add(new LDAPAttribute("objectclass", "Account"));
+        accountAttributeSet.add(new LDAPAttribute("o", "s3test"));
         accountAttributeSet.add(new LDAPAttribute("accountid", "98765test"));
         accountAttributeSet.add(new LDAPAttribute("canonicalId", "C12345"));
-        accountAttributeSet.add(new LDAPAttribute(
-                "mail", "testuser@seagate.com"));
-        accountAttributeSet.add(new LDAPAttribute("o", "s3test"));
+        accountAttributeSet.add(new LDAPAttribute("mail", "test@seagate.com"));
         accountEntry = new LDAPEntry(ACCOUNT_DN, accountAttributeSet);
 
         LDAPAttributeSet userAttributeSet = new LDAPAttributeSet();
@@ -98,11 +101,16 @@ public class AccountImplTest {
     public void setUp() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
         Mockito.when(ldapResults.next()).thenReturn(entry);
+
+        Mockito.when(entry.getAttribute("o")).thenReturn(accountIdAttr);
         Mockito.when(entry.getAttribute("accountid")).thenReturn(accountIdAttr);
-        Mockito.when(entry.getAttribute("canonicalId")).thenReturn(
-                canonicalIdAttr);
-        Mockito.when(accountIdAttr.getStringValue()).thenReturn("12345");
+        Mockito.when(entry.getAttribute("canonicalId")).thenReturn(canonicalIdAttr);
+        Mockito.when(entry.getAttribute("mail")).thenReturn(emailAttr);
+
+        Mockito.when(accountNameAttr.getStringValue()).thenReturn("s3test");
+        Mockito.when(accountIdAttr.getStringValue()).thenReturn("98765test");
         Mockito.when(canonicalIdAttr.getStringValue()).thenReturn("C12345");
+        Mockito.when(emailAttr.getStringValue()).thenReturn("test@seagate.com");
     }
 
     /**
@@ -114,8 +122,9 @@ public class AccountImplTest {
     public void FindAccount_AccountExists_ReturnAccountObject() throws Exception {
         Account expectedAccount = new Account();
         expectedAccount.setName("s3test");
-        expectedAccount.setId("12345");
+        expectedAccount.setId("98765test");
         expectedAccount.setCanonicalId("C12345");
+        expectedAccount.setEmail("test@seagate.com");
 
         PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
                 BASE_DN, 2, FIND_FILTER, FIND_ATTRS
@@ -124,7 +133,7 @@ public class AccountImplTest {
         Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
 
         Account account = accountImpl.find("s3test");
-        Assert.assertThat(expectedAccount, new ReflectionEquals(account));
+        Assert.assertThat(account, new ReflectionEquals(account));
     }
 
     @Test
@@ -243,5 +252,59 @@ public class AccountImplTest {
 
         PowerMockito.verifyStatic(Mockito.times(1));
         LDAPUtils.add(Matchers.refEq(userEntry));
+    }
+
+    @Test
+    public void FindAll_LDAPSearchFailed_ThrowException() throws Exception {
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class,
+                "search", Matchers.anyString(), Matchers.anyInt(),
+                Mockito.anyString(), Matchers.any(String[].class));
+
+        exception.expect(DataAccessException.class);
+        accountImpl.findAll();
+    }
+
+    @Test
+    public void FindAll_NoAccountsFound_ReturnNoAccounts() throws Exception {
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                Matchers.anyString(), Matchers.anyInt(), Matchers.anyString(),
+                Matchers.any(String[].class));
+       Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.FALSE);
+
+        Account[] actualAccounts = accountImpl.findAll();
+        Assert.assertEquals(actualAccounts.length, 0);
+    }
+
+    @Test
+    public void FindAll_ReadLdapEntryFailed_ThrowException() throws Exception {
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                Matchers.anyString(), Matchers.anyInt(), Matchers.anyString(),
+                Matchers.any(String[].class));
+       Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE).
+                thenReturn(Boolean.FALSE);
+       Mockito.when(ldapResults.next()).thenThrow(LDAPException.class);
+
+        exception.expect(DataAccessException.class);
+        accountImpl.findAll();
+    }
+
+    @Test
+    public void FindAll_FetchAccounts_ReturnListOfAccounts() throws Exception {
+        Account expectedAccount = new Account();
+        expectedAccount.setName("s3test");
+        expectedAccount.setId("98765test");
+        expectedAccount.setCanonicalId("C12345");
+        expectedAccount.setEmail("test@seagate.com");
+        Account[] expectedAccounts = {expectedAccount};
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                Matchers.anyString(), Matchers.anyInt(), Matchers.anyString(),
+                Matchers.any(String[].class));
+       Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE).
+                thenReturn(Boolean.FALSE);
+       Mockito.when(ldapResults.next()).thenReturn(entry);
+
+        Account[] accounts = accountImpl.findAll();
+        Assert.assertThat(expectedAccounts, new ReflectionEquals(accounts));
     }
 }

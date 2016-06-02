@@ -33,6 +33,8 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
 import com.seagates3.util.KeyGenUtil;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AccountController extends AbstractController {
 
@@ -50,6 +52,21 @@ public class AccountController extends AbstractController {
         accessKeyDAO = (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
         userDAO = (UserDAO) DAODispatcher.getResourceDAO(DAOResource.USER);
 
+    }
+
+    /*
+     * fetch all accounts from database
+     */
+    public ServerResponse list() {
+        Account[] accounts;
+
+        try {
+            accounts = accountDao.findAll();
+        } catch (DataAccessException ex) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        return accountResponseGenerator.generateListResponse(accounts);
     }
 
     @Override

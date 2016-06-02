@@ -26,6 +26,10 @@ class AuthTest(PyCliTest):
                         account_args['AccountName'], account_args['Email']))
         return self
 
+    def list_account(self):
+        self.with_cli("python %s listaccounts" % (self.get_pyclient_dir()))
+        return self
+
     def create_user(self, **user_args):
         cmd = "python %s createuser --access_key '%s' --secret_key '%s' -n %s" % (
                 self.get_pyclient_dir(), S3ClientConfig.access_key_id,

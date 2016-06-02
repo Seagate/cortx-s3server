@@ -1,5 +1,6 @@
 {
     "CreateAccount": "Account#create",
+    "ListAccounts": "Account#list",
     "CreateAccessKey": "AccessKey#create",
     "CreateGroup": "Group#create",
     "CreatePolicy": "Policy#create",

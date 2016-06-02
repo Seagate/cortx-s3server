@@ -70,6 +70,7 @@ public class IAMController {
         ServerResponse serverResponse;
 
         if (!requestAction.equals("CreateAccount")
+                && !requestAction.equals("ListAccounts")
                 && !requestAction.equals("AssumeRoleWithSAML")) {
             LOGGER.debug("Parsing Client Request");
             clientRequestToken = ClientRequestParser.parse(httpRequest,

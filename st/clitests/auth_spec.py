@@ -52,6 +52,11 @@ def account_tests():
     # Add the access key id for clean up
     access_key_id.append(account_response_elements['AccessKeyId'])
 
+    test_msg = "List accounts"
+    accounts_response_pattern = "AccountName = [\w-]*, AccountId = [\w-]*, CanonicalId = [\w-]*, Email = [\w.@]*"
+    result = AuthTest(test_msg).list_account().execute_test()
+    result.command_should_match_pattern(accounts_response_pattern)
+
 # Test create user API
 # Case 1 - Path not given (take default value).
 # Case 2 - Path given

@@ -42,4 +42,9 @@ public interface AccountDAO {
      * Add a new entry for the account in the database.
      */
     public void save(Account account) throws DataAccessException;
+
+    /*
+     * fetch all accounts from the database
+     */
+    public Account[] findAll() throws DataAccessException;
 }
