@@ -150,7 +150,7 @@ void S3PutObjectAction::consume_incoming_content() {
   // Resuming the action since we have data.
   if (!write_in_progress) {
     if (request->get_buffered_input().is_freezed() ||
-        request->get_buffered_input().length() > S3Option::get_instance()->get_clovis_write_payload_size()) {
+        request->get_buffered_input().length() >= S3Option::get_instance()->get_clovis_write_payload_size()) {
       write_object(request->get_buffered_input());
     }
   }
