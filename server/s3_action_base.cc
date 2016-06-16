@@ -19,8 +19,9 @@
 
 #include "s3_action_base.h"
 #include "s3_error_codes.h"
+#include "s3_option.h"
 
-S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool disable_auth) : request(req), invalid_request(false), disable_auth(disable_auth) {
+S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req), invalid_request(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   task_iteration_index = 0;
   rollback_index = 0;
@@ -39,7 +40,7 @@ void S3Action::get_error_message(std::string& message) {
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setup the action\n");
 
-  if (!disable_auth) {
+  if (!S3Option::get_instance()->is_auth_disabled()) {
     add_task(std::bind( &S3Action::check_authentication, this ));
     add_task(std::bind( &S3Action::fetch_acl_policies, this ));
     add_task(std::bind( &S3Action::check_authorization, this ));

@@ -314,7 +314,6 @@ void S3AuthClient::setup_auth_request_headers(bool is_authorization_request) {
 }
 
 void S3AuthClient::execute_authconnect_request(struct s3_auth_op_context* auth_ctx, bool is_authorization_request) {
-  // evhtp_send_reply_body(auth_ctx->authrequest, auth_ctx->authrequest->buffer_out);
   if (is_authorization_request) {
     //Free http request used for authentication, when we make request via
     //evhtp_make_request in the connnection data structure, the http request of auth will be replaced with

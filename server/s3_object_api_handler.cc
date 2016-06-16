@@ -33,9 +33,10 @@
 #include "s3_log.h"
 
 void S3ObjectAPIHandler::dispatch() {
+  std::shared_ptr<S3Action> action;
+
   s3_log(S3_LOG_DEBUG, "Operation code = %d\n", operation_code);
 
-  std::shared_ptr<S3Action> action;
   switch(operation_code) {
     case S3OperationCode::acl:
       switch (request->http_verb()) {

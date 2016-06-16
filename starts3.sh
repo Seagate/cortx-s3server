@@ -14,4 +14,4 @@ LOCAL_EP=$LOCAL_NID:12345:33:100
 HA_EP=$LOCAL_NID:12345:34:1
 CONFD_EP=$LOCAL_NID:12345:33:100
 PROF_OPT='<0x7000000000000001:0>'
-s3server -l $LOCAL_EP -b $HA_EP -c $CONFD_EP -p 8081 -s 127.0.0.1 -o /var/log/seagate/s3/s3server.log -m INFO  -d 8085
+s3server --clovislocal $LOCAL_EP --clovisha $HA_EP --clovisconfd $CONFD_EP --s3port 8081 --authhost 127.0.0.1 --authport 8085 --s3logfile /var/log/seagate/s3/s3server.log --s3loglevel INFO

@@ -28,6 +28,7 @@
 
 #include "s3_request_object.h"
 #include "s3_clovis_context.h"
+#include "s3_clovis_wrapper.h"
 #include "s3_asyncop_context_base.h"
 #include "s3_md5_hash.h"
 #include "s3_log.h"
@@ -90,14 +91,15 @@ enum class S3ClovisWriterOpState {
 
 class S3ClovisWriter {
 private:
-  struct m0_uint128 oid;
-
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisWriterContext> writer_context;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
+
+  struct m0_uint128 oid;
 
   S3ClovisWriterOpState state;
 
@@ -112,6 +114,8 @@ private:
 
   int ops_count;
 
+  // helper to set mock clovis apis, only used in tests.
+  void reset_clovis_api(std::shared_ptr<ClovisAPI> api);
 public:
   //struct m0_uint128 id;
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req, struct m0_uint128 object_id, uint64_t offset = 0);

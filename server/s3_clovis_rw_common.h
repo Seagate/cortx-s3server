@@ -38,6 +38,9 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_dat
 void s3_clovis_op_stable(struct m0_clovis_op *op);
 
 void s3_clovis_op_failed(struct m0_clovis_op *op);
+
+void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data);
+
 EXTERN_C_BLOCK_END
 
 // Clovis operation context from application perspective.

@@ -35,6 +35,7 @@ const char *clovis_indices = "./indices";
 
 int init_clovis(const char *clovis_local_addr, const char *clovis_ha_addr, const char *clovis_confd_addr, const char *clovis_prof, short layout_id)
 {
+  s3_log(S3_LOG_INFO, "Entering!\n");
   int rc;
   /* CLOVIS_DEFAULT_EP, CLOVIS_DEFAULT_HA_ADDR*/
   clovis_conf.cc_is_oostore            = false;
@@ -85,5 +86,6 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_ha_addr, const
 
 void fini_clovis(void)
 {
+  s3_log(S3_LOG_INFO, "Entering!\n");
   m0_clovis_fini(&clovis_instance, true);
 }

@@ -30,8 +30,10 @@
 #include "s3_log.h"
 #include "s3_put_bucket_policy_action.h"
 #include "s3_delete_bucket_policy_action.h"
+
 void S3BucketAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
+
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_INFO, "Action operation code = %d\n", operation_code);
 

@@ -1,6 +1,7 @@
 
 #user  nobody;
-worker_processes  1;
+#s3
+worker_processes  5;
 
 error_log /var/log/nginx/nginx_error.log  debug;
 
@@ -13,6 +14,8 @@ error_log /var/log/nginx/nginx_error.log  debug;
 
 events {
     worker_connections  1024;
+    #s3
+    use                 epoll;
 }
 
 
@@ -43,7 +46,9 @@ http {
     }
 
     server {
-        listen       80;
+        #listen       80;
+        #s3
+        listen       80 reuseport;
         server_name  localhost;
 
         #charset koi8-r;
@@ -57,9 +62,20 @@ http {
 
         # S3 Configurations
         location / {
+            #s3
             proxy_pass  http://s3server;
             proxy_set_header Host            $host;
             proxy_pass_request_headers      on;
+            proxy_send_timeout  300;
+            proxy_read_timeout  300;
+            proxy_connect_timeout 300;
+            proxy_request_buffering off;
+            proxy_buffering off;
+            #proxy_max_temp_file_size 0;
+            #proxy_buffer_size 16k;
+            #proxy_busy_buffers_size 16k;
+            #proxy_http_version 1.1;
+            #proxy_set_header Connection "";
         }
 
         #error_page  404              /404.html;

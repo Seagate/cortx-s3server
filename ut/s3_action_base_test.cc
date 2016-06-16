@@ -30,10 +30,12 @@ using ::testing::Mock;
 using ::testing::Return;
 using ::testing::Eq;
 
+// Before you create an object of this class, ensure
+// auth is disabled for unit tests.
 class S3ActionTestbase : public S3Action {
 public:
   // Instantiate S3Action with authentication disabled
-  S3ActionTestbase(std::shared_ptr<S3RequestObject> req) : S3Action(req, true) {
+  S3ActionTestbase(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
     response_called = 0;
   };
 
@@ -56,6 +58,7 @@ class S3ActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_evbase())
       .WillRepeatedly(Return(evbase));
     call_count_one = call_count_two = 0;
+    S3Option::get_instance()->disable_auth();
     ptr_s3Actionobject = new S3ActionTestbase(ptr_mock_request);
   };
 
@@ -128,4 +131,3 @@ TEST_F(S3ActionTest, RollbacklistRun) {
   ptr_s3Actionobject->rollback_next();
   EXPECT_EQ(1, ptr_s3Actionobject->response_called);
 }
-

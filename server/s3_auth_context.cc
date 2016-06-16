@@ -39,6 +39,7 @@ create_basic_auth_op_ctx(struct event_base* eventbase) {
   ctx->conn = evhtp_connection_new(ctx->evbase, option_instance->get_auth_ip_addr().c_str(), option_instance->get_auth_port());
   ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
   ctx->authorization_request = NULL;
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
   return ctx;
 }

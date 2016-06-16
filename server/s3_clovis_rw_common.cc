@@ -95,3 +95,15 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
+
+void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  struct user_event_context * user_context = (struct user_event_context *)user_data;
+  struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
+  op->op_sm.sm_rc = 0;  // fake success
+
+  free(user_data);
+  // Free user event
+  event_free((struct event *)user_context->user_event);
+  s3_clovis_op_stable(op);
+}

@@ -11,7 +11,8 @@ cc_binary(
 
     includes = ["third_party/libevent/s3_dist/include/",
                 "third_party/googletest/include/",
-                "third_party/libevhtp/s3_dist/include",
+                "third_party/gflags/s3_dist/include/",
+                "third_party/libevhtp/s3_dist/include/evhtp",
                 "third_party/jsoncpp/dist",
                 "third_party/yaml-cpp/include/",
                 "third_party/libxml2/s3_dist/include/libxml2"],
@@ -21,7 +22,7 @@ cc_binary(
                 "-Lthird_party/libevent/s3_dist/lib/",
                 "-Lthird_party/libevhtp/s3_dist/lib",
                 "-Lthird_party/yaml-cpp/s3_dist/lib",
-                "-Lthird_party/libxml2/s3_dist/lib third_party/libevhtp/s3_dist/lib/libevhtp.a",
+                "-Lthird_party/libxml2/s3_dist/lib third_party/libevhtp/s3_dist/lib/libevhtp.a third_party/gflags/s3_dist/lib/libgflags.a",
                 "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
                 "-lpthread -ldl -lrt",
                 "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
@@ -42,8 +43,9 @@ cc_test(
 
     includes = ["third_party/googletest/include",
                 "third_party/googlemock/include",
+                "third_party/gflags/s3_dist/include/",
                 "third_party/libevent/s3_dist/include/",
-                "third_party/libevhtp/s3_dist/include",
+                "third_party/libevhtp/s3_dist/include/evhtp",
                 "third_party/jsoncpp/dist",
                 "third_party/yaml-cpp/include/",
                 "third_party/libxml2/s3_dist/include/libxml2",
@@ -54,7 +56,7 @@ cc_test(
                 "-Lthird_party/libevent/s3_dist/lib/",
                 "-Lthird_party/libevhtp/s3_dist/lib",
                 "-Lthird_party/yaml-cpp/s3_dist/lib",
-                "-Lthird_party/libxml2/s3_dist/lib third_party/libevhtp/s3_dist/lib/libevhtp.a",
+                "-Lthird_party/libxml2/s3_dist/lib third_party/libevhtp/s3_dist/lib/libevhtp.a third_party/gflags/s3_dist/lib/libgflags.a",
                 "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
                 "-lpthread -ldl -lrt",
                 "-lmero -lgf_complete -lm -lpthread -laio -lrt ",
@@ -63,4 +65,26 @@ cc_test(
                 "-Wl,-rpath,/usr/local/lib64,-rpath,$(MERO_SRC)/mero/.libs,-rpath,$(MERO_SRC)/extra-libs/gf-complete/src/.libs,-rpath,third_party/libevent/s3_dist/lib,-rpath,third_party/libxml2/s3_dist/lib,-rpath,third_party/yaml-cpp/s3_dist/lib"],
 
     data = ["resources"],
+)
+
+cc_binary(
+    # How to run build
+    # bazel build //:s3perfclient
+
+    name = "s3perfclient",
+
+    srcs = glob(["perf/*.cc"]),
+
+    copts = ["-std=c++11 -fPIC -DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -O3"],
+
+    includes = ["third_party/libevent/s3_dist/include/",
+                "third_party/libevhtp/s3_dist/include/evhtp",
+                "third_party/gflags/s3_dist/include/",
+                "server/"],
+
+    linkopts = ["-Lthird_party/libevent/s3_dist/lib/",
+                "-Lthird_party/libevhtp/s3_dist/lib third_party/libevhtp/s3_dist/lib/libevhtp.a third_party/gflags/s3_dist/lib/libgflags.a",
+                "-levent -levent_pthreads -levent_openssl -lssl -lcrypto",
+                "-lpthread -ldl -lrt",
+                "-Wl,-rpath,/opt/seagate/s3/lib,-rpath,/opt/seagate/s3/libevent"],
 )

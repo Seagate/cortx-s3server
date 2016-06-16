@@ -172,75 +172,6 @@ set_s3_connection_handlers(evhtp_connection_t * conn, void * arg) {
     return EVHTP_RES_OK;
 }
 
-const char * optstr = "a:p:l:b:c:s:m:o:r:d:h:i";
-
-const char * help   =
-    "Options: \n"
-    "  -h       : This help text\n"
-    "  -a <str> : Bind Address             (default: 0.0.0.0)\n"
-    "  -p <int> : Bind Port                (default: 8081)\n"
-    "  -l <str> : clovis local address     (default: localhost@tcp:12345:33:100)\n"
-    "  -b <str> : clovis ha address        (default: CLOVIS_DEFAULT_HA_ADDR)\n"
-    "  -c <str> : clovis confd address     (default: localhost@tcp:12345:33:100)\n"
-    "  -s <str> : Auth Service address     (default: 127.0.0.1)\n"
-    "  -d <int> : Auth Service port        (default: 8085)\n"
-    "  -i <int> : Clovis layout id         (default: 9 (1MB))\n"
-    "  -o <str> : S3 Log file              (default: stdout)\n"
-    "  -r <str> : S3 Log file              (default: /var/log/seagate/s3_perf.log)\n"
-    "  -m <str> : S3 Log Level             (DEBUG | INFO | WARN | ERROR | FATAL  default is : INFO)\n";
-
-int
-parse_args(int argc, char ** argv) {
-    extern char * optarg;
-    int           c;
-    S3Option  *option_instance = S3Option::get_instance();
-    while ((c = getopt(argc, argv, optstr)) != -1) {
-        switch (c) {
-            case 'h':
-                printf("Usage: %s [opts]\n%s", argv[0], help);
-                return -1;
-            case 'a':
-                option_instance->set_cmdline_option(S3_OPTION_BIND_ADDR, optarg);
-                break;
-            case 'p':
-                option_instance->set_cmdline_option(S3_OPTION_BIND_PORT, optarg);
-                break;
-            case 'l':
-                option_instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, optarg);
-                break;
-            case 'b':
-                option_instance->set_cmdline_option(S3_OPTION_CLOVIS_HA_ADDR, optarg);
-                break;
-            case 'c':
-                option_instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, optarg);
-                break;
-            case 's':
-                option_instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, optarg);
-                break;
-            case 'd':
-                option_instance->set_cmdline_option(S3_OPTION_AUTH_PORT, optarg);
-                break;
-            case 'i':
-                option_instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, optarg);
-                break;
-            case 'o':
-                option_instance->set_cmdline_option(S3_OPTION_LOG_FILE, optarg);
-                break;
-            case 'r':
-                option_instance->set_cmdline_option(S3_OPTION_PERF_LOG_FILE, optarg);
-                break;
-            case 'm':
-                option_instance->set_cmdline_option(S3_OPTION_LOG_MODE, optarg);
-                break;
-            default:
-                printf("Unknown opt %s\n", optarg);
-                return -1;
-        } /* switch */
-    }
-
-    return 0;
-} /* parse_args */
-
 void fatal_libevent(int err) {
   s3_log(S3_LOG_ERROR, "Fatal error occured in libevent, error = %d\n", err);
 }
@@ -257,15 +188,14 @@ main(int argc, char ** argv) {
   uint16_t     bind_port;
   short        clovis_layout_id;
 
-  S3Option * option_instance = S3Option::get_instance();
-  if (parse_args(argc, argv) < 0) {
+  if (parse_and_load_config_options(argc, argv) < 0) {
       exit(1);
   }
 
   // Load Any configs.
   S3ErrorMessages::init_messages();
-  // Load options from S3Config.yaml file, will ignore options provided at command line
-  option_instance->load_all_sections(true);
+
+  S3Option * option_instance = S3Option::get_instance();
   if(option_instance->get_log_level() != "") {
     if(option_instance->get_log_level() == "INFO") {
       s3log_level = S3_LOG_INFO;
@@ -294,7 +224,7 @@ main(int argc, char ** argv) {
 
   option_instance->dump_options();
     // Initilise loggers
-  if(option_instance->s3_performance_enabled()) {
+  if (option_instance->s3_performance_enabled()) {
     S3PerfLogger::initialize(option_instance->get_perf_log_filename());
   }
 
@@ -333,7 +263,7 @@ main(int argc, char ** argv) {
   clovis_confd_addr = option_instance->get_clovis_confd_addr().c_str();
   clovis_ha_addr = option_instance->get_clovis_ha_addr().c_str();
   clovis_prof = option_instance->get_clovis_prof().c_str();
-  clovis_layout_id = option_instance->get_clovis_layout();
+  clovis_layout_id = option_instance->get_clovis_layout_id();
   bind_port = option_instance->get_s3_bind_port();
   bind_addr = option_instance->get_bind_addr().c_str();
 
@@ -354,6 +284,7 @@ main(int argc, char ** argv) {
     evhtp_use_threads(htp, NULL, 4, NULL);
 #endif
 #endif
+  s3_log(S3_LOG_INFO, "Starting S3 listener on host = %s and port = %d!\n", bind_addr, bind_port);
   evhtp_bind_socket(htp, bind_addr, bind_port, 1024);
   rc = event_base_loop(global_evbase_handle, 0);
   if( rc == 0) {

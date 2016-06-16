@@ -27,7 +27,7 @@
 // TODO - Remove such globals by implementing config file.
 // S3 Auth service
 const char *auth_ip_addr = "127.0.0.1";
-uint16_t auth_port = 8085;
+uint16_t auth_port = 8095;
 
 const char *log_level_str[S3_LOG_DEBUG] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG"};
 

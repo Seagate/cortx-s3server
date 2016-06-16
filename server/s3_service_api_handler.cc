@@ -22,6 +22,7 @@
 
 void S3ServiceAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
+
   s3_log(S3_LOG_DEBUG, "Action operation code = %d\n", operation_code);
   switch(operation_code) {
     case S3OperationCode::none:

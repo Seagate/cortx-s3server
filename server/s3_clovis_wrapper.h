@@ -26,7 +26,23 @@
 #include <functional>
 #include <iostream>
 #include "s3_clovis_rw_common.h"
+#include "s3_post_to_main_loop.h"
+
 #include "clovis_helpers.h"
+#include "s3_option.h"
+#include "s3_log.h"
+
+enum class ClovisOpType {
+  unknown,
+  createobj,
+  writeobj,
+  deleteobj,
+  createidx,
+  deleteidx,
+  getkv,
+  putkv,
+  deletekv,
+};
 
 class ClovisAPI {
   public:
@@ -62,10 +78,24 @@ class ClovisAPI {
                                uint64_t                    mask,
                                struct m0_clovis_op       **op) = 0;
 
-    virtual void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr) = 0;
+    virtual void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr, ClovisOpType type = ClovisOpType::unknown) = 0;
+
 };
 
 class ConcreteClovisAPI : public ClovisAPI {
+  private:
+    // xxx This currently assumes only one fake operation is invoked.
+    void clovis_fake_op_launch(struct m0_clovis_op **op, uint32_t nr) {
+      s3_log(S3_LOG_DEBUG, "Called\n");
+      struct user_event_context *user_ctx = (struct user_event_context *)calloc(1, sizeof(struct user_event_context));
+      user_ctx->app_ctx = op[0];
+
+      struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op[0]->op_datum;
+      S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase*)ctx->application_context;
+
+      S3PostToMainLoop(app_ctx->get_request(), user_ctx)(s3_clovis_dummy_op_stable);
+    }
+
   public:
     int init_clovis_api(const char *clovis_local_addr,
                         const char *clovis_ha_addr,
@@ -116,8 +146,22 @@ class ConcreteClovisAPI : public ClovisAPI {
        return m0_clovis_obj_op(obj, opcode, ext, data, attr, mask, op);
     }
 
-    void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr) {
-      m0_clovis_op_launch(op, nr);
+    void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr, ClovisOpType type = ClovisOpType::unknown) {
+      S3Option* config = S3Option::get_instance();
+      if ((config->is_fake_clovis_createobj() && type == ClovisOpType::createobj)
+          || (config->is_fake_clovis_writeobj() && type == ClovisOpType::writeobj)
+          || (config->is_fake_clovis_deleteobj() && type == ClovisOpType::deleteobj)
+          || (config->is_fake_clovis_createidx() && type == ClovisOpType::createidx)
+          || (config->is_fake_clovis_deleteidx() && type == ClovisOpType::deleteidx)
+          || (config->is_fake_clovis_getkv() && type == ClovisOpType::getkv)
+          || (config->is_fake_clovis_putkv() && type == ClovisOpType::putkv)
+          || (config->is_fake_clovis_deletekv() && type == ClovisOpType::deletekv))
+      {
+        clovis_fake_op_launch(op, nr);
+      } else {
+        m0_clovis_op_launch(op, nr);
+      }
     }
+
 };
 #endif

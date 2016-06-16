@@ -74,7 +74,7 @@ private:
   S3ActionState rollback_state;
 
 public:
-  S3Action(std::shared_ptr<S3RequestObject> req, bool disable_auth = false);
+  S3Action(std::shared_ptr<S3RequestObject> req);
   virtual ~S3Action();
 
   void get_error_message(std::string& message);

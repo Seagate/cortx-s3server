@@ -54,6 +54,6 @@ public:
                                    struct m0_bufvec           *attr,
                                    uint64_t                    mask,
                                    struct m0_clovis_op       **op));
-  MOCK_METHOD2(clovis_op_launch, void(struct m0_clovis_op **, uint32_t));
+  MOCK_METHOD3(clovis_op_launch, void(struct m0_clovis_op **, uint32_t, ClovisOpType));
 };
 #endif

@@ -26,7 +26,7 @@
 
 S3Option* S3Option::option_instance = NULL;
 
-bool S3Option::load_section(std::string section_name, bool force_override_from_config=false) {
+bool S3Option::load_section(std::string section_name, bool force_override_from_config = false) {
   YAML::Node root_node = YAML::LoadFile(option_file);
   if (root_node.IsNull()) {
     return false; //File Not Found?
@@ -37,80 +37,80 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
   }
   if (!force_override_from_config) {
     if (section_name == "S3_SERVER_CONFIG") {
-      s3config_s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
-      s3config_s3daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
-      s3config_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
-      s3config_log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
-      s3config_log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
-      s3config_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
-      s3config_performance_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
-      s3config_read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
-      s3config_region_endpoints.clear();
+      s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
+      s3_daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
+      s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
+      log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
+      log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+      s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
+      perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
+      read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      s3_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
-        s3config_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
+        s3_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
       }
     } else if (section_name == "S3_AUTH_CONFIG") {
-      s3config_auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
-      s3config_auth_ip_addr = s3_option_node["S3_AUTH_IP_ADDR"].as<std::string>();
+      auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
+      auth_ip_addr = s3_option_node["S3_AUTH_IP_ADDR"].as<std::string>();
     } else if (section_name == "S3_CLOVIS_CONFIG") {
-      s3config_clovis_local_addr = s3_option_node["S3_CLOVIS_LOCAL_ADDR"].as<std::string>();
-      s3config_clovis_confd_addr = s3_option_node["S3_CLOVIS_CONFD_ADDR"].as<std::string>();
-      s3config_clovis_ha_addr = s3_option_node["S3_CLOVIS_HA_ADDR"].as<std::string>();
-      s3config_clovis_prof = s3_option_node["S3_CLOVIS_PROF"].as<std::string>();
-      s3config_clovis_layout = s3_option_node["S3_CLOVIS_LAYOUT_ID"].as<unsigned short>();
-      s3config_clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
-      s3config_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
-      s3config_clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
+      clovis_local_addr = s3_option_node["S3_CLOVIS_LOCAL_ADDR"].as<std::string>();
+      clovis_confd_addr = s3_option_node["S3_CLOVIS_CONFD_ADDR"].as<std::string>();
+      clovis_ha_addr = s3_option_node["S3_CLOVIS_HA_ADDR"].as<std::string>();
+      clovis_profile = s3_option_node["S3_CLOVIS_PROF"].as<std::string>();
+      clovis_layout_id = s3_option_node["S3_CLOVIS_LAYOUT_ID"].as<unsigned short>();
+      clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
+      clovis_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
+      clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
     }
   } else {
     if (section_name == "S3_SERVER_CONFIG") {
-      if (!(s3command_option & S3_OPTION_BIND_PORT)) {
-        s3config_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
+      if (!(cmd_opt_flag & S3_OPTION_BIND_PORT)) {
+        s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       }
-      if (!(s3command_option & S3_OPTION_LOG_FILE)) {
-        s3config_log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_LOG_FILE)) {
+        log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
       }
-      if (!(s3command_option & S3_OPTION_PERF_LOG_FILE)) {
-        s3config_perf_log_filename = s3_option_node["S3_PERF_LOG_FILENAME"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_PERF_LOG_FILE)) {
+        perf_log_file = s3_option_node["S3_PERF_LOG_FILENAME"].as<std::string>();
       }
-      if (!(s3command_option & S3_OPTION_LOG_MODE)) {
-        s3config_log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_LOG_MODE)) {
+        log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
       }
-      if (!(s3command_option & S3_OPTION_BIND_ADDR)) {
-        s3config_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_BIND_ADDR)) {
+        s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       }
-      s3config_s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
-      s3config_s3daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
-      s3config_region_endpoints.clear();
+      s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
+      s3_daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
+      s3_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
-        s3config_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
+        s3_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
       }
-      s3config_performance_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
-      s3config_read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
+      read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
     } else if (section_name == "S3_AUTH_CONFIG") {
-      if (!(s3command_option & S3_OPTION_AUTH_PORT)) {
-        s3config_auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
+      if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
+        auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
       }
-      if (!(s3command_option & S3_OPTION_AUTH_IP_ADDR)) {
-        s3config_auth_ip_addr = s3_option_node["S3_AUTH_IP_ADDR"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_AUTH_IP_ADDR)) {
+        auth_ip_addr = s3_option_node["S3_AUTH_IP_ADDR"].as<std::string>();
       }
     } else if (section_name == "S3_CLOVIS_CONFIG") {
-      if (!(s3command_option & S3_OPTION_CLOVIS_LOCAL_ADDR)) {
-        s3config_clovis_local_addr = s3_option_node["S3_CLOVIS_LOCAL_ADDR"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_CLOVIS_LOCAL_ADDR)) {
+        clovis_local_addr = s3_option_node["S3_CLOVIS_LOCAL_ADDR"].as<std::string>();
       }
-      if (!(s3command_option & S3_OPTION_CLOVIS_CONFD_ADDR)) {
-        s3config_clovis_confd_addr = s3_option_node["S3_CLOVIS_CONFD_ADDR"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_CLOVIS_CONFD_ADDR)) {
+        clovis_confd_addr = s3_option_node["S3_CLOVIS_CONFD_ADDR"].as<std::string>();
       }
-      if (!(s3command_option & S3_OPTION_CLOVIS_HA_ADDR)) {
-        s3config_clovis_ha_addr = s3_option_node["S3_CLOVIS_HA_ADDR"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_CLOVIS_HA_ADDR)) {
+        clovis_ha_addr = s3_option_node["S3_CLOVIS_HA_ADDR"].as<std::string>();
       }
-      if (!(s3command_option & S3_CLOVIS_LAYOUT_ID)) {
-        s3config_clovis_layout = s3_option_node["S3_CLOVIS_LAYOUT_ID"].as<unsigned short>();
+      if (!(cmd_opt_flag & S3_CLOVIS_LAYOUT_ID)) {
+        clovis_layout_id = s3_option_node["S3_CLOVIS_LAYOUT_ID"].as<unsigned short>();
       }
-      s3config_clovis_prof = s3_option_node["S3_CLOVIS_PROF"].as<std::string>();
-      s3config_clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
-      s3config_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
-      s3config_clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
+      clovis_profile = s3_option_node["S3_CLOVIS_PROF"].as<std::string>();
+      clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
+      clovis_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
+      clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
     }
   }
   return true;
@@ -144,71 +144,80 @@ bool S3Option::load_all_sections(bool force_override_from_config=false) {
   return true;
 }
 
-void S3Option::set_cmdline_option(int option_flag, char *optarg) {
+void S3Option::set_cmdline_option(int option_flag, const char *optarg) {
   if (option_flag & S3_OPTION_BIND_ADDR) {
-    s3config_bind_addr = optarg;
+    s3_bind_addr = optarg;
   } else if (option_flag & S3_OPTION_BIND_PORT) {
-    s3config_bind_port = atoi(optarg);
+    s3_bind_port = atoi(optarg);
   } else if (option_flag & S3_OPTION_CLOVIS_LOCAL_ADDR) {
-    s3config_clovis_local_addr = optarg;
+    clovis_local_addr = optarg;
   } else if (option_flag & S3_OPTION_CLOVIS_CONFD_ADDR) {
-    s3config_clovis_confd_addr = optarg;
+    clovis_confd_addr = optarg;
   } else if (option_flag & S3_OPTION_CLOVIS_HA_ADDR) {
-    s3config_clovis_ha_addr = optarg;
+    clovis_ha_addr = optarg;
   } else if (option_flag & S3_OPTION_AUTH_IP_ADDR) {
-    s3config_auth_ip_addr = optarg;
+    auth_ip_addr = optarg;
   } else if (option_flag & S3_OPTION_AUTH_PORT) {
-    s3config_auth_port = atoi(optarg);
+    auth_port = atoi(optarg);
   } else if (option_flag & S3_CLOVIS_LAYOUT_ID) {
-    s3config_clovis_layout = atoi(optarg);
+    clovis_layout_id = atoi(optarg);
   } else if (option_flag & S3_OPTION_LOG_FILE) {
-    s3config_log_filename = optarg;
+    log_filename = optarg;
   } else if (option_flag & S3_OPTION_PERF_LOG_FILE) {
-    s3config_perf_log_filename = optarg;
+    perf_log_file = optarg;
   } else if (option_flag & S3_OPTION_LOG_MODE) {
-    s3config_log_level = optarg;
+    log_level = optarg;
   }
-  s3command_option |= option_flag;
+  cmd_opt_flag |= option_flag;
   return;
 }
 
-int S3Option::get_s3command_option() {
-  return s3command_option;
+int S3Option::get_cmd_opt_flag() {
+  return cmd_opt_flag;
 }
 
 void S3Option::dump_options() {
-  s3_log(S3_LOG_INFO, "S3_DAEMON_WORKING_DIR = %s\n", s3config_s3_daemon_dir.c_str());
-  s3_log(S3_LOG_INFO, "S3_DAEMON_DO_REDIRECTION = %d\n", s3config_s3daemon_redirect);
-  s3_log(S3_LOG_INFO, "S3_LOG_FILENAME = %s\n", s3config_log_filename.c_str());
-  s3_log(S3_LOG_INFO, "S3_LOG_MODE = %s\n", s3config_log_level.c_str());
-  s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3config_bind_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3config_bind_port);
-  s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", s3config_performance_enabled);
-  s3_log(S3_LOG_INFO, "S3_READ_AHEAD_MULTIPLE = %d\n", s3config_read_ahead_multiple);
-  s3_log(S3_LOG_INFO, "S3_PERF_LOG_FILENAME = %s\n", s3config_perf_log_filename.c_str());
-  s3_log(S3_LOG_INFO, "S3_AUTH_IP_ADDR = %s\n", s3config_auth_ip_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_AUTH_PORT = %d\n", s3config_auth_port);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_LOCAL_ADDR = %s\n", s3config_clovis_local_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_CONFD_ADDR = %s\n", s3config_clovis_confd_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_HA_ADDR =  %s\n", s3config_clovis_ha_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_PROF = %s\n", s3config_clovis_prof.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_LAYOUT_ID = %d\n", s3config_clovis_layout);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_BLOCK_SIZE = %d\n", s3config_clovis_block_size);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_BLOCKS_PER_REQUEST = %d\n", s3config_factor);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n", s3config_clovis_idx_fetch_count);
+  s3_log(S3_LOG_INFO, "S3_DAEMON_WORKING_DIR = %s\n", s3_daemon_dir.c_str());
+  s3_log(S3_LOG_INFO, "S3_DAEMON_DO_REDIRECTION = %d\n", s3_daemon_redirect);
+  s3_log(S3_LOG_INFO, "S3_LOG_FILENAME = %s\n", log_filename.c_str());
+  s3_log(S3_LOG_INFO, "S3_LOG_MODE = %s\n", log_level.c_str());
+  s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3_bind_addr.c_str());
+  s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
+  s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", perf_enabled);
+  s3_log(S3_LOG_INFO, "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
+  s3_log(S3_LOG_INFO, "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
+  s3_log(S3_LOG_INFO, "S3_AUTH_IP_ADDR = %s\n", auth_ip_addr.c_str());
+  s3_log(S3_LOG_INFO, "S3_AUTH_PORT = %d\n", auth_port);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_LOCAL_ADDR = %s\n", clovis_local_addr.c_str());
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_CONFD_ADDR = %s\n", clovis_confd_addr.c_str());
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_HA_ADDR =  %s\n", clovis_ha_addr.c_str());
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_PROF = %s\n", clovis_profile.c_str());
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_LAYOUT_ID = %d\n", clovis_layout_id);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_BLOCK_SIZE = %d\n", clovis_block_size);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_BLOCKS_PER_REQUEST = %d\n", clovis_factor);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n", clovis_idx_fetch_count);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n", FLAGS_fake_clovis_createobj);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n", FLAGS_fake_clovis_writeobj);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteobj = %d\n", FLAGS_fake_clovis_deleteobj);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createidx = %d\n", FLAGS_fake_clovis_createidx);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteidx = %d\n", FLAGS_fake_clovis_deleteidx);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_getkv = %d\n", FLAGS_fake_clovis_getkv);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_putkv = %d\n", FLAGS_fake_clovis_putkv);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deletekv = %d\n", FLAGS_fake_clovis_deletekv);
+  s3_log(S3_LOG_INFO, "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
   return;
 }
 
 unsigned short S3Option::get_s3_bind_port() {
-  return s3config_bind_port;
+  return s3_bind_port;
 }
 
 unsigned short S3Option::get_auth_port() {
-  return s3config_auth_port;
+  return auth_port;
 }
 
-unsigned short S3Option::get_clovis_layout() {
-  return s3config_clovis_layout;
+unsigned short S3Option::get_clovis_layout_id() {
+  return clovis_layout_id;
 }
 
 std::string S3Option::get_option_file() {
@@ -216,11 +225,11 @@ std::string S3Option::get_option_file() {
 }
 
 std::string S3Option::get_daemon_dir() {
-  return s3config_s3_daemon_dir;
+  return s3_daemon_dir;
 }
 
 unsigned short S3Option::do_redirection() {
-  return s3config_s3daemon_redirect;
+  return s3_daemon_redirect;
 }
 
 void S3Option::set_option_file(std::string filename) {
@@ -228,81 +237,121 @@ void S3Option::set_option_file(std::string filename) {
 }
 
 void S3Option::set_daemon_dir(std::string path) {
-  s3config_s3_daemon_dir = path;
+  s3_daemon_dir = path;
 }
 
 void S3Option::set_redirection(unsigned short redirect) {
-  s3config_s3daemon_redirect = redirect;
+  s3_daemon_redirect = redirect;
 }
 
 std::string S3Option::get_log_filename() {
-  return s3config_log_filename;
+  return log_filename;
 }
 
 std::string S3Option::get_log_level() {
-  return s3config_log_level;
+  return log_level;
 }
 
 std::string S3Option::get_perf_log_filename() {
-  return s3config_perf_log_filename;
+  return perf_log_file;
 }
 
 int S3Option::get_read_ahead_multiple() {
-  return s3config_read_ahead_multiple;
+  return read_ahead_multiple;
 }
 
 std::string S3Option::get_bind_addr() {
-  return s3config_bind_addr;
+  return s3_bind_addr;
 }
 
 std::string S3Option::get_default_endpoint() {
-    return s3config_default_endpoint;
+    return s3_default_endpoint;
 }
 
 std::set<std::string>& S3Option::get_region_endpoints() {
-    return s3config_region_endpoints;
+    return s3_region_endpoints;
 }
 
 std::string S3Option::get_clovis_local_addr() {
-  return s3config_clovis_local_addr;
+  return clovis_local_addr;
 }
 
 std::string S3Option::get_clovis_confd_addr() {
-  return s3config_clovis_confd_addr;
+  return clovis_confd_addr;
 }
 
 std::string S3Option::get_clovis_ha_addr() {
-  return s3config_clovis_ha_addr;
+  return clovis_ha_addr;
 }
 
 std::string S3Option::get_clovis_prof() {
-  return s3config_clovis_prof;
+  return clovis_profile;
 }
 
 unsigned int S3Option::get_clovis_block_size() {
-  return s3config_clovis_block_size;
+  return clovis_block_size;
 }
 
 unsigned short S3Option::get_clovis_factor() {
-  return s3config_factor;
+  return clovis_factor;
 }
 
 int S3Option::get_clovis_idx_fetch_count() {
-  return s3config_clovis_idx_fetch_count;
+  return clovis_idx_fetch_count;
 }
 
 unsigned int S3Option::get_clovis_write_payload_size() {
-  return s3config_clovis_block_size * s3config_factor;
+  return clovis_block_size * clovis_factor;
 }
 
 unsigned int S3Option::get_clovis_read_payload_size() {
-  return s3config_clovis_block_size * s3config_factor;
+  return clovis_block_size * clovis_factor;
 }
 
 std::string S3Option::get_auth_ip_addr() {
-  return s3config_auth_ip_addr;
+  return auth_ip_addr;
+}
+
+void S3Option::disable_auth() {
+  FLAGS_disable_auth = true;
+}
+
+bool S3Option::is_auth_disabled() {
+  return FLAGS_disable_auth;
 }
 
 unsigned short S3Option::s3_performance_enabled() {
-  return s3config_performance_enabled;
+  return perf_enabled;
+}
+
+bool S3Option::is_fake_clovis_createobj() {
+  return FLAGS_fake_clovis_createobj;
+}
+
+bool S3Option::is_fake_clovis_writeobj() {
+  return FLAGS_fake_clovis_writeobj;
+}
+
+bool S3Option::is_fake_clovis_deleteobj() {
+  return FLAGS_fake_clovis_deleteobj;
+}
+
+bool S3Option::is_fake_clovis_createidx() {
+  return FLAGS_fake_clovis_createidx;
+}
+
+bool S3Option::is_fake_clovis_deleteidx() {
+  return FLAGS_fake_clovis_deleteidx;
+}
+
+bool S3Option::is_fake_clovis_getkv() {
+  return FLAGS_fake_clovis_getkv;
+}
+
+bool S3Option::is_fake_clovis_putkv() {
+  return FLAGS_fake_clovis_putkv;
+}
+
+bool S3Option::is_fake_clovis_deletekv() {
+  return FLAGS_fake_clovis_deletekv;
 }
