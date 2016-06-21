@@ -50,6 +50,7 @@ DEFINE_bool(fake_clovis_deleteidx, false, "Fake out clovis delete index");
 DEFINE_bool(fake_clovis_getkv, false, "Fake out clovis get key-val");
 DEFINE_bool(fake_clovis_putkv, false, "Fake out clovis put key-val");
 DEFINE_bool(fake_clovis_deletekv, false, "Fake out clovis delete key-val");
+DEFINE_bool(fault_injection, false, "Enable fault Injection flag for testing");
 
 int parse_and_load_config_options(int argc, char ** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);

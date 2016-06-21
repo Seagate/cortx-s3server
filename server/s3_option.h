@@ -206,6 +206,10 @@ class S3Option {
   void set_eventbase(evbase_t* base);
   evbase_t* get_eventbase();
 
+  // Fault injection Option
+  void enable_fault_injection();
+  bool is_fi_enabled();
+
   void dump_options();
 
   static S3Option *get_instance()  {

@@ -79,7 +79,13 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req
   std::string full_path(full_uri, 0, qparam_start);
   // Regex is better, but lets live with raw parsing. regex = >gcc 4.9.0
   if (full_path.compare("/") == 0) {
-    s3_api_type = S3ApiType::service;
+    // FaultInjection request check
+    std::string header_value =
+        request->get_header_value("x-seagate-faultinjection");
+    if (S3Option::get_instance()->is_fi_enabled() && !header_value.empty())
+      s3_api_type = S3ApiType::faultinjection;
+    else
+      s3_api_type = S3ApiType::service;
   } else {
     // Find the second forward slash.
     std::size_t pos = full_path.find("/", 1);  // ignoring the first forward slash

@@ -85,7 +85,11 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
 
   app_ctx->set_op_errno_for(ctx->op_index_in_launch, op->op_sm.sm_rc);
   app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::failed, "Operation Failed.");
-
+  // If we faked failure reset clovis internal code.
+  if (ctx->is_fake_failure) {
+    op->op_sm.sm_rc = 0;
+    ctx->is_fake_failure = 0;
+  }
   free(ctx);
   if(app_ctx->incr_response_count() == app_ctx->get_ops_count()) {
     struct user_event_context *user_ctx = (struct user_event_context *)calloc(1,sizeof(struct user_event_context));
@@ -106,4 +110,20 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   // Free user event
   event_free((struct event *)user_context->user_event);
   s3_clovis_op_stable(op);
+}
+
+void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  struct user_event_context *user_context =
+      (struct user_event_context *)user_data;
+  struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
+  struct s3_clovis_context_obj *ctx =
+      (struct s3_clovis_context_obj *)op->op_datum;
+
+  op->op_sm.sm_rc = -ETIMEDOUT;  // fake network failure
+  ctx->is_fake_failure = 1;
+  free(user_data);
+  // Free user event
+  event_free((struct event *)user_context->user_event);
+  s3_clovis_op_failed(op);
 }

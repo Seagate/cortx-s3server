@@ -54,6 +54,7 @@ DECLARE_bool(fake_clovis_deleteidx);
 DECLARE_bool(fake_clovis_getkv);
 DECLARE_bool(fake_clovis_putkv);
 DECLARE_bool(fake_clovis_deletekv);
+DECLARE_bool(fault_injection);
 
 // Loads config and also processes the command line options.
 // options specified on cli overrides the option specified in config file.

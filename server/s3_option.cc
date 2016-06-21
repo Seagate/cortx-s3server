@@ -463,3 +463,7 @@ void S3Option::set_eventbase(evbase_t* base) {
 evbase_t* S3Option::get_eventbase() {
   return eventbase;
 }
+
+void S3Option::enable_fault_injection() { FLAGS_fault_injection = true; }
+
+bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }

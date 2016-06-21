@@ -41,6 +41,8 @@ void s3_clovis_op_failed(struct m0_clovis_op *op);
 
 void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data);
 
+void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data);
+
 EXTERN_C_BLOCK_END
 
 // Clovis operation context from application perspective.
@@ -50,6 +52,7 @@ EXTERN_C_BLOCK_END
 struct s3_clovis_context_obj {
   int op_index_in_launch;
   void *application_context;
+  int is_fake_failure;  // 0 = false, 1 = true
 };
 
 #endif

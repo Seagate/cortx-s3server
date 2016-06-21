@@ -3,3 +3,4 @@ class S3ClientConfig:
     secret_key = ""
     token = ""
     pathstyle = False
+    s3_uri = "http://s3.seagate.com"

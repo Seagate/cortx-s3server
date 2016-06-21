@@ -90,5 +90,9 @@
   "MaxMessageLengthExceeded": {
     "Description": "Your request was too big.",
     "httpcode": 400
+  },
+  "MalformedFICmd": {
+    "Description": "The fault injection command token is invalid.",
+    "httpcode": 400
   }
 }

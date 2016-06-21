@@ -39,7 +39,8 @@ enum class S3ApiType {
   service,
   bucket,
   object,
-  unsupported  // Invalid or Unsupported API
+  faultinjection,  // Non S3 Apitype used internally for system tests
+  unsupported      // Invalid or Unsupported API
 };
 
 enum class S3OperationCode {

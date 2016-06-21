@@ -29,6 +29,7 @@
 #include "s3_post_to_main_loop.h"
 
 #include "clovis_helpers.h"
+#include "s3_fi_common.h"
 #include "s3_option.h"
 #include "s3_log.h"
 
@@ -92,6 +93,15 @@ class ConcreteClovisAPI : public ClovisAPI {
       S3PostToMainLoop((void*)user_ctx)(s3_clovis_dummy_op_stable);
     }
 
+    void clovis_fi_op_launch(struct m0_clovis_op **op, uint32_t nr) {
+      s3_log(S3_LOG_DEBUG, "Called\n");
+      struct user_event_context *user_ctx = (struct user_event_context *)calloc(
+          1, sizeof(struct user_event_context));
+      user_ctx->app_ctx = op[0];
+
+      S3PostToMainLoop((void *)user_ctx)(s3_clovis_dummy_op_failed);
+    }
+
   public:
    int init_clovis_api() { return init_clovis(); }
 
@@ -150,6 +160,9 @@ class ConcreteClovisAPI : public ClovisAPI {
           || (config->is_fake_clovis_deletekv() && type == ClovisOpType::deletekv))
       {
         clovis_fake_op_launch(op, nr);
+      } else if (type == ClovisOpType::writeobj &&
+                 s3_fi_is_enabled("clovis_obj_write_fail")) {
+        clovis_fi_op_launch(op, nr);
       } else {
         m0_clovis_op_launch(op, nr);
       }

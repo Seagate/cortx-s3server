@@ -72,6 +72,15 @@ public:
   virtual void dispatch();
 };
 
+class S3FaultinjectionAPIHandler : public S3APIHandler {
+ public:
+  S3FaultinjectionAPIHandler(std::shared_ptr<S3RequestObject> req,
+                             S3OperationCode op_code)
+      : S3APIHandler(req, op_code) {}
+
+  virtual void dispatch();
+};
+
 class S3APIHandlerFactory {
 public:
   virtual ~S3APIHandlerFactory() {}
