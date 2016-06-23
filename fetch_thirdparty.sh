@@ -11,6 +11,7 @@ cd third_party
 ./setup_gmock.sh
 ./setup_lustre_headers.sh
 ./setup_yamlcpp.sh
+./setup_gflags.sh
 
 cd $S3_SRC_FOLDER
 

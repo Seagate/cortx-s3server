@@ -28,7 +28,7 @@ class S3OptionsTest : public testing::Test {
   protected:
     S3OptionsTest() {
       instance = S3Option::get_instance();
-      instance->set_option_file("s3config.yaml");
+      instance->set_option_file("s3config-test.yaml");
     }
 
   ~S3OptionsTest() {
@@ -60,7 +60,7 @@ TEST_F(S3OptionsTest, SingletonCheck) {
 
 TEST_F(S3OptionsTest, GetOptionsfromFile) {
   instance->load_all_sections(false);
-  EXPECT_EQ(std::string("s3config.yaml"), instance->get_option_file());
+  EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
   EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
@@ -86,7 +86,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
 
   instance->load_all_sections(true);
-  EXPECT_EQ(std::string("s3config.yaml"), instance->get_option_file());
+  EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
   EXPECT_EQ(std::string("/tmp/log.txt"), instance->get_log_filename());
   EXPECT_EQ(std::string("debug"), instance->get_log_level());
   EXPECT_EQ(std::string("198.1.1.1"), instance->get_bind_addr());
@@ -227,14 +227,14 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
 
 TEST_F(S3OptionsTest, GetDefaultEndPoint) {
   instance->load_all_sections(false);
-  EXPECT_EQ(std::string("s3.seagate.com"), instance->get_default_endpoint());
+  EXPECT_EQ(std::string("s3.seagate-test.com"), instance->get_default_endpoint());
 }
 
 TEST_F(S3OptionsTest, GetRegionEndPoints) {
   instance->load_all_sections(false);
   std::set<std::string> region_eps = instance->get_region_endpoints();
-  EXPECT_TRUE(region_eps.find("s3-asia.seagate.com") != region_eps.end());
-  EXPECT_TRUE(region_eps.find("s3-us.seagate.com") != region_eps.end());
-  EXPECT_TRUE(region_eps.find("s3-europe.seagate.com") != region_eps.end());
+  EXPECT_TRUE(region_eps.find("s3-asia.seagate-test.com") != region_eps.end());
+  EXPECT_TRUE(region_eps.find("s3-us.seagate-test.com") != region_eps.end());
+  EXPECT_TRUE(region_eps.find("s3-europe.seagate-test.com") != region_eps.end());
   EXPECT_FALSE(region_eps.find("invalid-region.seagate.com") != region_eps.end());
 }

@@ -4,15 +4,15 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
    S3_LOG_FILENAME: "/var/log/seagate/s3/s3server.log"  # S3 Log file name, for output to stdout have value as ""
    S3_LOG_MODE: INFO                                    # logging levels, levels can be INFO, DEBUG, ERROR, WARN, FATAL, default is INFO
-   S3_SERVER_BIND_ADDR: 0.0.0.0                         # S3 Server bind address, 0.0.0.0 is default
-   S3_SERVER_BIND_PORT: 8081                            # S3 Server port number
-   S3_SERVER_REGION_ENDPOINTS: [s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
-   S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
+   S3_SERVER_BIND_ADDR: 10.10.1.1                         # S3 Server bind address, 0.0.0.0 is default
+   S3_SERVER_BIND_PORT: 9081                            # S3 Server port number
+   S3_SERVER_REGION_ENDPOINTS: [s3-us.seagate-test.com, s3-europe.seagate-test.com, s3-asia.seagate-test.com]
+   S3_SERVER_DEFAULT_ENDPOINT: s3.seagate-test.com
    S3_ENABLE_PERF: 0                                    # S3 Performance metric collection, to enable have value 1, default is 0 (disabled)
    S3_PERF_LOG_FILENAME: "/var/log/seagate/s3/perf.log" # S3 Perf Log file name
    S3_READ_AHEAD_MULTIPLE: 1                            # Maximum blocks of size (S3_CLOVIS_BLOCK_SIZE * S3_CLOVIS_MAX_BLOCKS_PER_REQUEST) to read ahead or buffer in-memory
 S3_AUTH_CONFIG:                                       # Section for S3 Auth Service
-   S3_AUTH_IP_ADDR: 127.0.0.1                           # Auth server IP address
+   S3_AUTH_IP_ADDR: 10.10.1.2                           # Auth server IP address
    S3_AUTH_PORT: 8095                                   # Auth server port
 S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_LOCAL_ADDR: <ipaddress>@tcp:12345:33:100   # Clovis end points, replace <ipaddress> with host's ip address

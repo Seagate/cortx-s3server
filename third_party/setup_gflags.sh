@@ -10,7 +10,7 @@ mkdir $INSTALL_DIR
 
 mkdir build && cd build
 
-CFLAGS=-fPIC cmake .. -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR
+CFLAGS=-fPIC CXXFLAGS=-fPIC cmake .. -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR
 make
 make install
 

@@ -45,6 +45,7 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      s3_default_endpoint = s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
       s3_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
         s3_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
@@ -81,6 +82,7 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       }
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       s3_daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
+      s3_default_endpoint = s3_option_node["S3_SERVER_DEFAULT_ENDPOINT"].as<std::string>();
       s3_region_endpoints.clear();
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
         s3_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
@@ -186,8 +188,14 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
   s3_log(S3_LOG_INFO, "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
+  s3_log(S3_LOG_INFO, "S3_SERVER_DEFAULT_ENDPOINT = %s\n", s3_default_endpoint.c_str());
+  for (auto endpoint : s3_region_endpoints) {
+    s3_log(S3_LOG_INFO, "S3 Server region endpoint = %s\n", endpoint.c_str());
+  }
+
   s3_log(S3_LOG_INFO, "S3_AUTH_IP_ADDR = %s\n", auth_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_AUTH_PORT = %d\n", auth_port);
+
   s3_log(S3_LOG_INFO, "S3_CLOVIS_LOCAL_ADDR = %s\n", clovis_local_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_CLOVIS_CONFD_ADDR = %s\n", clovis_confd_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_CLOVIS_HA_ADDR =  %s\n", clovis_ha_addr.c_str());
@@ -196,6 +204,7 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_CLOVIS_BLOCK_SIZE = %d\n", clovis_block_size);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_BLOCKS_PER_REQUEST = %d\n", clovis_factor);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n", clovis_idx_fetch_count);
+
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n", FLAGS_fake_clovis_createobj);
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n", FLAGS_fake_clovis_writeobj);
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteobj = %d\n", FLAGS_fake_clovis_deleteobj);

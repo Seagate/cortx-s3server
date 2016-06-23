@@ -48,61 +48,6 @@ FILE *fp_log;
 int s3log_level = S3_LOG_INFO;
 evbase_t * global_evbase_handle;
 
-/* MD5 helper */
-/* KD xxx - needed? intention? convert 16bytes to 32bytes readable string */
-void buf_to_hex(unsigned char *md5_digest, int in_len, char *md5_digest_chars, int out_len)
-{
-  /* TODO FIXME */
-  int i = 0;
-  if (in_len * 2 != out_len)
-  {
-    memcpy(md5_digest_chars, "error computing md5",  out_len);
-    return;
-  }
-  for (i = 0; i < in_len; i++)
-  {
-    sprintf((char *)(&md5_digest_chars[i*2]), "%02x", (int)md5_digest[i]);
-  }
-}
-
-void get_oid_using_hash(const char* url, struct m0_uint128 *object_id)
-{
-    /* MurMur Hash */
-    size_t len = 0;
-    uint64_t hash128_64[2];
-
-    s3_log(S3_LOG_INFO, "URI = %s\n", url);
-    len = strlen(url);
-    MurmurHash3_x64_128(url, len, 0, &hash128_64);
-
-    /* Truncate higher 32 bits as they are used by mero/clovis */
-    // hash128_64[0] = hash128_64[0] & 0x0000ffff;
-    hash128_64[1] = hash128_64[1] & 0xffff0000;
-
-    *object_id = M0_CLOVIS_ID_APP;
-    object_id->u_hi = hash128_64[0];
-    object_id->u_lo = object_id->u_lo & hash128_64[1];
-    return;
-}
-
-// static int
-// output_header(evhtp_header_t * header, void * arg) {
-//     evbuf_t * buf = arg;
-
-//     evbuffer_add_printf(buf, "print_kvs() key = '%s', val = '%s'\n",
-//                         header->key, header->val);
-//     return 0;
-// }
-
-
-// static evhtp_res
-// print_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
-//     static int i = 1;
-//     evbuffer_add_printf(req->buffer_out, "Called i = %d\n", i++);
-//     // evbuffer_add_buffer(req->buffer_out, buf);
-//     // evbuffer_drain(buf, -1);
-//     return EVHTP_RES_OK;
-// }
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
@@ -122,9 +67,22 @@ extern "C" void on_client_conn_err_callback(evhtp_request_t * req, evhtp_error_f
   return;
 }
 
+extern "C" int
+s3_log_header(evhtp_header_t * header, void * arg) {
+
+    s3_log(S3_LOG_DEBUG, "http header(key = '%s', val = '%s')\n",
+                        header->key, header->val);
+    return 0;
+}
+
 extern "C" evhtp_res
 dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
-    s3_log(S3_LOG_INFO, "RECEIVED Request headers.\n");
+    s3_log(S3_LOG_INFO, "Received Request with uri [%s].\n", req->uri->path->full);
+    if (req->uri->query_raw) {
+      s3_log(S3_LOG_DEBUG, "Received Request with query params [%s].\n", req->uri->query_raw);
+    }
+    // Log http headers
+    evhtp_headers_for_each(hdrs, s3_log_header, NULL);
 
     S3Router *router = (S3Router*)arg;
 
@@ -142,7 +100,7 @@ dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
 
 extern "C" evhtp_res
 process_request_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
-  s3_log(S3_LOG_DEBUG, "RECEIVED Request body for sock = %d\n", req->conn->sock);
+  s3_log(S3_LOG_DEBUG, "Received Request body for sock = %d\n", req->conn->sock);
   S3RequestObject* request = (S3RequestObject*)req->cbarg;
 
   if (request) {
