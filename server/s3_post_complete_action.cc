@@ -41,6 +41,7 @@ S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req)
 void S3PostCompleteAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
 
+  add_task(std::bind( &S3PostCompleteAction::load_and_validate_request, this ));
   add_task(std::bind( &S3PostCompleteAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3PostCompleteAction::fetch_multipart_info, this ));
   add_task(std::bind( &S3PostCompleteAction::fetch_parts_info, this ));
@@ -52,10 +53,45 @@ void S3PostCompleteAction::setup_steps() {
   // ...
 }
 
+void S3PostCompleteAction::load_and_validate_request() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (request->get_content_length() > 0) {
+    if (request->has_all_body_content()) {
+      if (validate_request_body(request->get_full_body_content_as_string())) {
+        next();
+      } else {
+        send_response_to_s3_client();
+      }
+    } else {
+      request->listen_for_incoming_data(
+          std::bind(&S3PostCompleteAction::consume_incoming_content, this),
+          request->get_content_length()
+        );
+    }
+  } else {
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostCompleteAction::consume_incoming_content() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (request->has_all_body_content()) {
+    if (validate_request_body(request->get_full_body_content_as_string())) {
+      next();
+    } else {
+      send_response_to_s3_client();
+    }
+  } else {
+    // else just wait till entire body arrives. rare.
+    request->resume();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 void S3PostCompleteAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string input_str = request->get_full_body_content_as_string();
-  parse_xml_str(input_str);
+
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -219,7 +255,7 @@ void S3PostCompleteAction::delete_parts_failed() {
   send_response_to_s3_client();
 }
 
-void S3PostCompleteAction::parse_xml_str(std::string &xml_str) {
+bool S3PostCompleteAction::validate_request_body(std::string &xml_str) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   xmlNode *child_node;
@@ -235,7 +271,7 @@ void S3PostCompleteAction::parse_xml_str(std::string &xml_str) {
   if (document == NULL ) {
     xmlFreeDoc(document);
     s3_log(S3_LOG_ERROR, "The xml string %s is invalid\n", xml_str.c_str());
-    send_response_to_s3_client();
+    return false;
   }
 
   /*Get the root element node */
@@ -278,20 +314,20 @@ void S3PostCompleteAction::parse_xml_str(std::string &xml_str) {
           request->set_request_error(S3RequestError::InvalidPartOrder);
           xmlFreeDoc(document);
           s3_log(S3_LOG_DEBUG, "The XML string doesn't contain parts in ascending order\n");
-          send_response_to_s3_client();
+          return false;
         }
         prev_partnumber = partnumber;
       } else {
           s3_log(S3_LOG_DEBUG, "Error: Part number/Etag missing for a part\n");
           xmlFreeDoc(document);
-          send_response_to_s3_client();
+          return false;
         }
      }
     child = child->next;
   }
   total_parts = partnumber;
   xmlFreeDoc(document);
-  return;
+  return true;
 }
 
 void S3PostCompleteAction::send_response_to_s3_client() {
@@ -301,57 +337,65 @@ void S3PostCompleteAction::send_response_to_s3_client() {
   if (part_metadata) {
     part_state = part_metadata->get_state();
   }
-  if ( bucket_metadata && (bucket_metadata->get_state() == S3BucketMetadataState::missing)) {
+  if (invalid_request) {
+    S3Error error("MalformedXML", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
+  }
+  else if ( bucket_metadata && (bucket_metadata->get_state() == S3BucketMetadataState::missing)) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->send_response(error.get_http_status_code(), response_xml);
-    }else if(req_state == S3RequestError::InvalidPartOrder) {
-      S3Error error("InvalidPartOrder", request->get_request_id(), request->get_object_uri());
-      std::string& response_xml = error.to_xml();
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->send_response(error.get_http_status_code(), response_xml);
-    }else if(req_state == S3RequestError::EntityTooSmall) {
-      S3Error error("EntityTooSmall", request->get_request_id(), request->get_object_uri());
-      std::string& response_xml = error.to_xml();
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->send_response(error.get_http_status_code(), response_xml);
-    }else if(is_abort_multipart()) {
-      S3Error error("InvalidObjectState", request->get_request_id(), request->get_object_uri());
-      std::string& response_xml = error.to_xml();
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->send_response(error.get_http_status_code(), response_xml);
-    }else if(part_state == S3PartMetadataState::missing_partially) {
-      S3Error error("InvalidPart", request->get_request_id(), request->get_object_uri());
-      std::string& response_xml = error.to_xml();
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->send_response(error.get_http_status_code(), response_xml);
-    } else if(part_state == S3PartMetadataState::missing) {
-      S3Error error("InvalidPartOrder", request->get_request_id(), request->get_object_uri());
-      std::string& response_xml = error.to_xml();
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->send_response(error.get_http_status_code(), response_xml);
-    } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
-      std::string response;
-      std::string object_name = request->get_object_name();
-      std::string bucket_name = request->get_bucket_name();
-      std::string object_uri = request->get_object_uri();
-      response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-      response += "<CompleteMultipartUploadResult xmlns=\"http://s3\">\n";
-      response += "<Location>" + object_uri + "</Location>";
-      response += "<Bucket>" + bucket_name + "</Bucket>\n";
-      response += "<Key>" + object_name + "</Key>\n";
-      response += "<ETag>" + etag + "</ETag>";
-      response += "</CompleteMultipartUploadResult>";
-      request->send_response(S3HttpSuccess200, response);
-    } else {
-      S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
-      std::string& response_xml = error.to_xml();
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
-      request->send_response(error.get_http_status_code(), response_xml);
-    }
+  } else if (req_state == S3RequestError::InvalidPartOrder) {
+    S3Error error("InvalidPartOrder", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (req_state == S3RequestError::EntityTooSmall) {
+    S3Error error("EntityTooSmall", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (is_abort_multipart()) {
+    S3Error error("InvalidObjectState", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (part_state == S3PartMetadataState::missing_partially) {
+    S3Error error("InvalidPart", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (part_state == S3PartMetadataState::missing) {
+    S3Error error("InvalidPartOrder", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
+    std::string response;
+    std::string object_name = request->get_object_name();
+    std::string bucket_name = request->get_bucket_name();
+    std::string object_uri = request->get_object_uri();
+    response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    response += "<CompleteMultipartUploadResult xmlns=\"http://s3\">\n";
+    response += "<Location>" + object_uri + "</Location>";
+    response += "<Bucket>" + bucket_name + "</Bucket>\n";
+    response += "<Key>" + object_name + "</Key>\n";
+    response += "<ETag>" + etag + "</ETag>";
+    response += "</CompleteMultipartUploadResult>";
+    request->send_response(S3HttpSuccess200, response);
+  } else {
+    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
+  }
+  request->resume();
   done();
   i_am_done();  // self delete
   s3_log(S3_LOG_DEBUG, "Exiting\n");

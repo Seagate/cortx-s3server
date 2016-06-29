@@ -32,10 +32,13 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(std::shared_ptr<S3RequestObject> 
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
-  if (request->is_chunked()) {
+  if (request->is_chunked() && !S3Option::get_instance()->is_auth_disabled()) {
     clear_tasks(); // remove default auth
     // Add chunk style auth
     add_task(std::bind( &S3Action::start_chunk_authentication, this ));
+  } else {
+    // auth is disabled, so assume its done.
+    auth_completed = true;
   }
   setup_steps();
 }
@@ -76,9 +79,6 @@ void S3PutMultiObjectAction::chunk_auth_failed() {
 
 void S3PutMultiObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (!request->get_buffered_input().is_freezed()) {
-    request->pause();  // Pause reading till we are ready to consume data.
-  }
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PutMultiObjectAction::next, this), std::bind( &S3PutMultiObjectAction::fetch_bucket_info_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -86,7 +86,6 @@ void S3PutMultiObjectAction::fetch_bucket_info() {
 
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, "Bucket does not exists\n");
-  request->resume();
   send_response_to_s3_client();
 }
 
@@ -100,15 +99,11 @@ void S3PutMultiObjectAction::fetch_multipart_metadata() {
 void S3PutMultiObjectAction::fetch_multipart_failed() {
   //Log error
   s3_log(S3_LOG_ERROR, "Failed to retrieve multipart upload metadata\n");
-  request->resume();
   send_response_to_s3_client();
 }
 
 void S3PutMultiObjectAction::fetch_firstpart_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (!request->get_buffered_input().is_freezed()) {
-    request->pause();  // Pause reading till we are ready to consume data.
-  }
   part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 1);
   part_metadata->load(std::bind( &S3PutMultiObjectAction::next, this), std::bind( &S3PutMultiObjectAction::fetch_firstpart_info_failed, this), 1);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -116,7 +111,6 @@ void S3PutMultiObjectAction::fetch_firstpart_info() {
 
 void S3PutMultiObjectAction::fetch_firstpart_info_failed() {
   s3_log(S3_LOG_WARN, "Part 1 metadata doesn't exist, cannot determine \"consistent\" part size\n");
-  request->resume();
   send_response_to_s3_client();
 }
 
@@ -141,9 +135,9 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   total_data_to_stream = request->get_data_length();
-  request->resume();
+  // request->resume();
 
-  if (request->is_chunked()) {
+  if (request->is_chunked() && !S3Option::get_instance()->is_auth_disabled()) {
     get_auth_client()->init_chunk_auth_cycle(std::bind( &S3PutMultiObjectAction::chunk_auth_successful, this), std::bind( &S3PutMultiObjectAction::chunk_auth_failed, this));
   }
 
@@ -187,13 +181,15 @@ void S3PutMultiObjectAction::write_object(S3AsyncBufferContainer& buffer) {
       S3ChunkDetail detail = request->pop_chunk_detail();
       s3_log(S3_LOG_DEBUG, "Using chunk details for auth:\n");
       detail.debug_dump();
-      if (detail.get_size() == 0) {
-        // Last chunk is size 0
-        get_auth_client()->add_last_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
-      } else {
-        get_auth_client()->add_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+      if (!S3Option::get_instance()->is_auth_disabled()) {
+        if (detail.get_size() == 0) {
+          // Last chunk is size 0
+          get_auth_client()->add_last_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+        } else {
+          get_auth_client()->add_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+        }
+        auth_in_progress = true;  // this triggers auth
       }
-      auth_in_progress = true;  // this triggers auth
     }
   }
   clovis_write_in_progress = true;
@@ -213,7 +209,6 @@ void S3PutMultiObjectAction::write_object_successful() {
       return;
     }
   }
-  request->resume();
   if (/* buffered data len is at least equal max we can write to clovis in one write */
       request->get_buffered_input().length() > S3Option::get_instance()->get_clovis_write_payload_size()
       || /* we have all the data buffered and ready to write */
@@ -228,7 +223,10 @@ void S3PutMultiObjectAction::write_object_successful() {
     } else {
       next();
     }
-  } // else we wait for more incoming data
+  } else if (!request->get_buffered_input().is_freezed()) {
+    // else we wait for more incoming data
+    request->resume();
+  }
 }
 
 void S3PutMultiObjectAction::write_object_failed() {

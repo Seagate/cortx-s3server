@@ -41,7 +41,7 @@ void S3PutBucketAction::setup_steps(){
 
 void S3PutBucketAction::validate_request() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  request->resume();
+
   if (request->get_content_length() > 0) {
     if (request->has_all_body_content()) {
       validate_request_body(request->get_full_body_content_as_string());
@@ -55,6 +55,7 @@ void S3PutBucketAction::validate_request() {
   } else {
     validate_request_body("");
   }
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -62,7 +63,10 @@ void S3PutBucketAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "Consume data\n");
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
-  } // else just wait till entire body arrives. rare.
+  } else {
+    // else just wait till entire body arrives. rare.
+    request->resume();
+  }
 }
 
 void S3PutBucketAction::validate_request_body(std::string content) {

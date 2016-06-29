@@ -30,8 +30,13 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(std::shared_ptr<S3Req
     auth_in_progress(false), auth_completed(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   clear_tasks(); // remove default auth
-  // Add chunk style auth
-  add_task(std::bind( &S3Action::start_chunk_authentication, this ));
+  if (!S3Option::get_instance()->is_auth_disabled()) {
+    // Add chunk style auth
+    add_task(std::bind( &S3Action::start_chunk_authentication, this ));
+  } else {
+    // auth is disabled, so assume its done.
+    auth_completed = true;
+  }
   setup_steps();
 }
 
@@ -67,9 +72,6 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
 
 void S3PutChunkUploadObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (!request->get_buffered_input().is_freezed()) {
-    request->pause();  // Pause reading till we are ready to consume data.
-  }
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PutChunkUploadObjectAction::next, this), std::bind( &S3PutChunkUploadObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -113,9 +115,9 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
   LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
 
   total_data_to_stream = request->get_data_length();
-  get_auth_client()->init_chunk_auth_cycle(std::bind( &S3PutChunkUploadObjectAction::chunk_auth_successful, this), std::bind( &S3PutChunkUploadObjectAction::chunk_auth_failed, this));
-
-  request->resume();
+  if (!S3Option::get_instance()->is_auth_disabled()) {
+    get_auth_client()->init_chunk_auth_cycle(std::bind( &S3PutChunkUploadObjectAction::chunk_auth_successful, this), std::bind( &S3PutChunkUploadObjectAction::chunk_auth_failed, this));
+  }
 
   if (total_data_to_stream == 0) {
     save_metadata();  // Zero size object.
@@ -156,13 +158,15 @@ void S3PutChunkUploadObjectAction::write_object(S3AsyncBufferContainer& buffer) 
     S3ChunkDetail detail = request->pop_chunk_detail();
     s3_log(S3_LOG_DEBUG, "Using chunk details for auth:\n");
     detail.debug_dump();
-    if (detail.get_size() == 0) {
-      // Last chunk is size 0
-      get_auth_client()->add_last_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
-    } else {
-      get_auth_client()->add_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+    if (!S3Option::get_instance()->is_auth_disabled()) {
+      if (detail.get_size() == 0) {
+        // Last chunk is size 0
+        get_auth_client()->add_last_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+      } else {
+        get_auth_client()->add_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+      }
+      auth_in_progress = true;  // this triggers auth
     }
-    auth_in_progress = true;  // this triggers auth
   }
   clovis_write_in_progress = true;
 
@@ -179,7 +183,7 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     send_response_to_s3_client();
     return;
   }
-  request->resume();
+
   if (/* buffered data len is at least equal max we can write to clovis in one write */
       request->get_buffered_input().length() > S3Option::get_instance()->get_clovis_write_payload_size()
       || /* we have all the data buffered and ready to write */
@@ -194,7 +198,10 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     } else {
       next();
     }
-  } // else we wait for more incoming data
+  } if (!request->get_buffered_input().is_freezed()) {
+    // else we wait for more incoming data
+    request->resume();
+  }
 }
 
 void S3PutChunkUploadObjectAction::write_object_failed() {

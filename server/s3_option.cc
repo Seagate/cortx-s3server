@@ -376,3 +376,11 @@ unsigned short S3Option::get_max_retry_count() {
 unsigned short S3Option::get_retry_interval_in_millisec() {
   return retry_interval_millisec;
 }
+
+void S3Option::set_eventbase(evbase_t* base) {
+  eventbase = base;
+}
+
+evbase_t* S3Option::get_eventbase() {
+  return eventbase;
+}

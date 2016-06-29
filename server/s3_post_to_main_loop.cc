@@ -19,12 +19,14 @@
  */
 
 #include "s3_post_to_main_loop.h"
+#include "s3_option.h"
 
 void S3PostToMainLoop::operator()(user_event_on_main_loop callback) {
   struct event *ev_user = NULL;
   struct user_event_context *user_context = (struct user_event_context *)context;
-  struct event_base* base = request->get_evbase();
-  if(base == NULL) {
+  struct event_base* base = S3Option::get_instance()->get_eventbase();
+
+  if (base == NULL) {
     s3_log(S3_LOG_FATAL, "ERROR: event base is NULL\n");
     return;
   }

@@ -39,6 +39,7 @@
 #include "s3_perf_logger.h"
 #include "s3_uuid.h"
 #include "s3_log.h"
+#include "s3_option.h"
 
 enum class S3HttpVerb {
   HEAD = htp_method_HEAD,
@@ -94,14 +95,6 @@ public:
 
   // Broken into helper function primarily to allow initialisations after faking data.
   void initialise();
-
-  virtual struct event_base* get_evbase() {
-    if(this->ev_req != NULL && this->ev_req->htp != NULL) {
-      return this->ev_req->htp->evbase;
-    } else {
-      return NULL;
-    }
-  }
 
   virtual const char * c_get_uri_query();
   virtual S3HttpVerb http_verb();
@@ -226,6 +219,7 @@ public:
     std::function<void()> callback, size_t notify_on_size) {
       notify_read_watermark = notify_on_size;
       incoming_data_callback = callback;
+      resume();  // resume reading if it was paused
   }
 
   void notify_incoming_data(evbuf_t * buf);

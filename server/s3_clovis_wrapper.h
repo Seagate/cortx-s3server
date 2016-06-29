@@ -90,10 +90,7 @@ class ConcreteClovisAPI : public ClovisAPI {
       struct user_event_context *user_ctx = (struct user_event_context *)calloc(1, sizeof(struct user_event_context));
       user_ctx->app_ctx = op[0];
 
-      struct s3_clovis_context_obj* ctx = (struct s3_clovis_context_obj*)op[0]->op_datum;
-      S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase*)ctx->application_context;
-
-      S3PostToMainLoop(app_ctx->get_request(), user_ctx)(s3_clovis_dummy_op_stable);
+      S3PostToMainLoop((void*)user_ctx)(s3_clovis_dummy_op_stable);
     }
 
   public:

@@ -124,6 +124,13 @@ std::string S3ObjectMetadata::get_md5() {
   return system_defined_attribute["Content-MD5"];
 }
 
+void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
+  oid = id;
+
+  mero_oid_u_hi_str = base64_encode((unsigned char const*)&oid.u_hi, sizeof(oid.u_hi));
+  mero_oid_u_lo_str = base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
+}
+
 void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
   system_defined_attribute[key] = val;
 }
@@ -317,9 +324,8 @@ std::string S3ObjectMetadata::to_json() {
     root["Upload-ID"] = upload_id;
   }
 
-  root["mero_oid_u_hi"] = base64_encode((unsigned char const*)&oid.u_hi, sizeof(oid.u_hi));
-  root["mero_oid_u_lo"] = base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
-  // root["mero_oid"] = base64_encode((unsigned char const*)&oid, sizeof(struct m0_uint128));
+  root["mero_oid_u_hi"] = mero_oid_u_hi_str;
+  root["mero_oid_u_lo"] = mero_oid_u_lo_str;
 
   for (auto sit: system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -353,11 +359,12 @@ void S3ObjectMetadata::from_json(std::string content) {
   object_name = newroot["Object-Name"].asString();
   object_key_uri = newroot["Object-URI"].asString();
   upload_id = newroot["Upload-ID"].asString();
-  std::string oid_u_hi_str = newroot["mero_oid_u_hi"].asString();
-  std::string oid_u_lo_str = newroot["mero_oid_u_lo"].asString();
 
-  std::string dec_oid_u_hi_str = base64_decode(oid_u_hi_str);
-  std::string dec_oid_u_lo_str = base64_decode(oid_u_lo_str);
+  mero_oid_u_hi_str = newroot["mero_oid_u_hi"].asString();
+  mero_oid_u_lo_str = newroot["mero_oid_u_lo"].asString();
+
+  std::string dec_oid_u_hi_str = base64_decode(mero_oid_u_hi_str);
+  std::string dec_oid_u_lo_str = base64_decode(mero_oid_u_lo_str);
 
   // std::string decoded_oid_str = base64_decode(oid_str);
   memcpy((void*)&oid.u_hi, dec_oid_u_hi_str.c_str(), dec_oid_u_hi_str.length());

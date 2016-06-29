@@ -20,6 +20,7 @@
 #include "gtest/gtest.h"
 #include <functional>
 #include "s3_auth_client.h"
+#include "s3_option.h"
 #include <iostream>
 #include <memory>
 #include "mock_s3_asyncop_context_base.h"
@@ -75,8 +76,7 @@ class S3AuthClientOpContextTest : public testing::Test {
       evbase_t *evbase = event_base_new();
       evhtp_request_t *req = evhtp_request_new(NULL, evbase);
       ptr_mock_request = std::make_shared<MockS3RequestObject> (req, new EvhtpWrapper());
-      EXPECT_CALL(*ptr_mock_request, get_evbase())
-        .WillRepeatedly(Return(evbase));
+      S3Option::get_instance()->set_eventbase(evbase);
       success_callback = NULL;
       failed_callback = NULL;
       p_authopctx = new S3AuthClientOpContext(ptr_mock_request, success_callback, failed_callback);
@@ -128,8 +128,7 @@ TEST_F(S3AuthClientOpContextTest, Constructor) {
 
 TEST_F(S3AuthClientOpContextTest, InitAuthCtxNull) {
   evbase_t *evbase = NULL;
-  EXPECT_CALL(*ptr_mock_request, get_evbase())
-    .WillRepeatedly(Return(evbase));
+  S3Option::get_instance()->set_eventbase(evbase);
   bool ret = p_authopctx->init_auth_op_ctx();
   EXPECT_EQ(false, ret);
 }

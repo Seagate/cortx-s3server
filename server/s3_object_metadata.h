@@ -60,6 +60,8 @@ private:
   std::string object_key_uri;
 
   struct m0_uint128 oid;
+  std::string mero_oid_u_hi_str;
+  std::string mero_oid_u_lo_str;
 
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
@@ -100,12 +102,17 @@ public:
   void set_md5(std::string md5);
   std::string get_md5();
 
-  void set_oid(struct m0_uint128 id) {
-    oid = id;
-  }
-
+  void set_oid(struct m0_uint128 id);
   struct m0_uint128 get_oid() {
     return oid;
+  }
+
+  // returns base64 encoded strings
+  std::string get_oid_u_hi_str() {
+    return mero_oid_u_hi_str;
+  }
+  std::string get_oid_u_lo_str() {
+    return mero_oid_u_lo_str;
   }
 
   std::string get_object_name();

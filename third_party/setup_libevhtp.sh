@@ -14,7 +14,7 @@ git checkout a89d9b3f9fdf2ebef41893b3d5e4466f4b0ecfda
 INSTALL_DIR=`pwd`/s3_dist
 mkdir $INSTALL_DIR
 
-CFLAGS=-fPIC cmake . -DCMAKE_PREFIX_PATH=`pwd`/../libevent/s3_dist -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR $TESTFLAGS
+CFLAGS='-fPIC -DEVHTP_DISABLE_EVTHR' cmake . -DCMAKE_PREFIX_PATH=`pwd`/../libevent/s3_dist -DCMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR $TESTFLAGS
 make
 make install
 

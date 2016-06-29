@@ -55,6 +55,9 @@ public:
 
   void setup_steps();
 
+  void load_and_validate_request();
+  void consume_incoming_content();
+  bool validate_request_body(std::string &xml_str);
   void fetch_bucket_info();
   void fetch_multipart_info();
   void fetch_multipart_info_failed();

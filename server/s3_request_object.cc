@@ -31,14 +31,22 @@ extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg) {
 }
 
 S3RequestObject::S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr) :
-    ev_req(req), is_client_connected(true), is_chunked_upload(false), in_headers_copied(false) {
+    ev_req(req), is_paused(false), notify_read_watermark(0), total_bytes_received(0),
+    is_client_connected(true), is_chunked_upload(false), in_headers_copied(false), reply_buffer(NULL) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   request_timer.start();
   bucket_name = object_name = user_name = user_id = account_name = account_id = "";
+  // For auth disabled, use some dummy user.
+  if (S3Option::get_instance()->is_auth_disabled()) {
+    account_name = "s3_test";
+    account_id = "12345";
+    user_name = "tester";
+    user_id = "123";
+  }
+
   S3Uuid uuid;
   request_id = uuid.get_string_uuid();
-  is_paused = false;
   request_error = S3RequestError::None;
   evhtp_obj.reset(evhtp_obj_ptr);
   initialise();
@@ -257,6 +265,11 @@ void S3RequestObject::notify_incoming_data(evbuf_t * buf) {
     s3_log(S3_LOG_DEBUG, "Sending data to be consumed...\n");
     incoming_data_callback();
   }
+  // Pause if we have read enough in buffers for this request,
+  // and let the handlers resume when required.
+  if (!incoming_data_callback && !buffered_input.is_freezed() && buffered_input.length() >= (notify_read_watermark * S3Option::get_instance()->get_read_ahead_multiple())) {
+    pause();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -268,6 +281,7 @@ void S3RequestObject::send_response(int code, std::string body) {
   }
   set_out_header_value("x-amzn-RequestId", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
+  resume(); // attempt resume just in case some one forgot
 }
 
 void S3RequestObject::send_reply_start(int code) {
@@ -284,6 +298,7 @@ void S3RequestObject::send_reply_body(char *data, int length) {
 void S3RequestObject::send_reply_end() {
   evhtp_obj->http_send_reply_end(ev_req);
   evbuffer_free(reply_buffer);
+  reply_buffer = NULL;
 }
 
 void S3RequestObject::set_api_type(S3ApiType api_type) {

@@ -52,6 +52,7 @@ evbase_t * global_evbase_handle;
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
   // placeholder, required to complete the request processing.
+  s3_log(S3_LOG_DEBUG, "Request Completed.\n");
 }
 
 extern "C" void on_client_conn_err_callback(evhtp_request_t * req, evhtp_error_flags errtype, void * arg) {
@@ -78,6 +79,7 @@ s3_log_header(evhtp_header_t * header, void * arg) {
 extern "C" evhtp_res
 dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
     s3_log(S3_LOG_INFO, "Received Request with uri [%s].\n", req->uri->path->full);
+
     if (req->uri->query_raw) {
       s3_log(S3_LOG_DEBUG, "Received Request with query params [%s].\n", req->uri->query_raw);
     }
@@ -101,6 +103,7 @@ dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
 extern "C" evhtp_res
 process_request_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
   s3_log(S3_LOG_DEBUG, "Received Request body for sock = %d\n", req->conn->sock);
+
   S3RequestObject* request = (S3RequestObject*)req->cbarg;
 
   if (request) {
@@ -194,6 +197,7 @@ main(int argc, char ** argv) {
   evthread_use_pthreads();
 
   global_evbase_handle = event_base_new();
+  option_instance->set_eventbase(global_evbase_handle);
 
   // Uncomment below api if we want to run libevent in debug mode
   // event_enable_debug_mode();

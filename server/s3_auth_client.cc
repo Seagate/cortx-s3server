@@ -193,7 +193,7 @@ void S3AuthClient::set_event_with_retry_interval() {
   // Will be freed in callback
   struct event_auth_timeout_arg *arg = (struct event_auth_timeout_arg *)calloc(1,sizeof(struct event_auth_timeout_arg));
   arg->auth_client = this;
-  ev = event_new(request->get_evbase(), -1, 0, timeout_cb_auth_retry, (void *)arg);
+  ev = event_new(option_instance->get_eventbase(), -1, 0, timeout_cb_auth_retry, (void *)arg);
   arg->event = ev; // Will be freed in callback
   event_add(ev, &s_tv);
 }

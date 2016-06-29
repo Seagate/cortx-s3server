@@ -34,6 +34,7 @@
 #include "s3_auth_response_success.h"
 #include "s3_auth_response_error.h"
 #include "s3_log.h"
+#include "s3_option.h"
 
 extern "C" evhtp_res on_auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg);
 
@@ -109,7 +110,7 @@ public:
 
   // Call this when you want to do auth op.
   virtual bool init_auth_op_ctx() {
-    struct event_base *eventbase = get_request()->get_evbase();
+    struct event_base *eventbase = S3Option::get_instance()->get_eventbase();
     if (eventbase == NULL) {
       return false;
     }

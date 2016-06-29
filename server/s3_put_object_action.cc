@@ -47,9 +47,6 @@ void S3PutObjectAction::setup_steps(){
 
 void S3PutObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (!request->get_buffered_input().is_freezed()) {
-    request->pause();  // Pause reading till we are ready to consume data.
-  }
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -145,7 +142,6 @@ void S3PutObjectAction::initiate_data_streaming() {
   add_task_rollback(std::bind( &S3PutObjectAction::rollback_create, this ));
 
   total_data_to_stream = request->get_content_length();
-  request->resume();
 
   if (total_data_to_stream == 0) {
     save_metadata();  // Zero size object.
@@ -202,8 +198,10 @@ void S3PutObjectAction::write_object_successful() {
     write_object(request->get_buffered_input());
   } else if (request->get_buffered_input().is_freezed() && request->get_buffered_input().length() == 0) {
     next();
-  } // else we wait for more incoming data
-  request->resume();
+  } else if (!request->get_buffered_input().is_freezed()) {
+    // else we wait for more incoming data
+    request->resume();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -235,8 +233,6 @@ void S3PutObjectAction::save_metadata() {
 
 void S3PutObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-
-  request->resume();
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name

@@ -55,8 +55,6 @@ class S3ActionTest : public testing::Test {
     evbase_t *evbase = event_base_new();
     evhtp_request_t *req = evhtp_request_new(NULL, evbase);
     ptr_mock_request = std::make_shared<MockS3RequestObject> (req, new EvhtpWrapper());
-    EXPECT_CALL(*ptr_mock_request, get_evbase())
-      .WillRepeatedly(Return(evbase));
     call_count_one = call_count_two = 0;
     S3Option::get_instance()->disable_auth();
     ptr_s3Actionobject = new S3ActionTestbase(ptr_mock_request);

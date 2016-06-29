@@ -69,7 +69,7 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
     struct user_event_context *user_ctx = (struct user_event_context *)calloc(1, sizeof(struct user_event_context));
     user_ctx->app_ctx = app_ctx;
     app_ctx->stop_timer();
-    S3PostToMainLoop(app_ctx->get_request(), user_ctx)(clovis_op_done_on_main_thread);
+    S3PostToMainLoop((void*)user_ctx)(clovis_op_done_on_main_thread);
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -91,7 +91,7 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
     struct user_event_context *user_ctx = (struct user_event_context *)calloc(1,sizeof(struct user_event_context));
     user_ctx->app_ctx = app_ctx;
     app_ctx->stop_timer(false);
-    S3PostToMainLoop(app_ctx->get_request(), user_ctx)(clovis_op_done_on_main_thread);
+    S3PostToMainLoop((void*)user_ctx)(clovis_op_done_on_main_thread);
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

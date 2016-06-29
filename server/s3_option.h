@@ -36,6 +36,7 @@
 #include <string>
 #include <set>
 
+#include "evhtp_wrapper.h"
 #include "s3_cli_options.h"
 
 class S3Option {
@@ -71,6 +72,8 @@ class S3Option {
 
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
+
+  evbase_t *eventbase;
 
   static S3Option* option_instance;
 
@@ -111,8 +114,11 @@ public:
     clovis_block_size = 1048576; // One MB
     clovis_factor = 1;
     clovis_idx_fetch_count = 100;
+
     retry_interval_millisec = 0;
     max_retry_count = 0;
+
+    eventbase = NULL;
   }
 
   bool load_section(std::string section_name, bool force_override_from_config);
@@ -169,6 +175,9 @@ public:
   bool is_fake_clovis_getkv();
   bool is_fake_clovis_putkv();
   bool is_fake_clovis_deletekv();
+
+  void set_eventbase(evbase_t* base);
+  evbase_t* get_eventbase();
 
   void dump_options();
 

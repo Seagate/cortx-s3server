@@ -58,9 +58,9 @@ public:
   void check_if_any_parts_present();
   void check_if_any_parts_present_failed();
   void delete_multipart_failed();
-  void delete_parts();
-  void delete_parts_failed();
-  void delete_part_index();
+  void delete_object();
+  void delete_object_failed();
+  void delete_part_index_with_parts();
   void delete_multipart_metadata();
   void send_response_to_s3_client();
 };
