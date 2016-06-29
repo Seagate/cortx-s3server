@@ -133,18 +133,18 @@ bool S3Option::load_all_sections(bool force_override_from_config=false) {
       load_section(root_node["S3Config_Sections"][i].as<std::string>(), force_override_from_config);
     }
   } catch (const YAML::RepresentationException &e) {
-    s3_log(S3_LOG_ERROR, "YAML::RepresentationException caught: %s\n", e.what());
-    s3_log(S3_LOG_ERROR, "Yaml file %s is incorrect\n", option_file.c_str());
+    s3_log(S3_LOG_FATAL, "YAML::RepresentationException caught: %s\n", e.what());
+    s3_log(S3_LOG_FATAL, "Yaml file %s is incorrect\n", option_file.c_str());
     return false;
   } catch (const YAML::ParserException &e) {
-    s3_log(S3_LOG_ERROR, "YAML::ParserException caught: %s\n", e.what());
-    s3_log(S3_LOG_ERROR, "Parsing Error in yaml file %s\n", option_file.c_str());
+    s3_log(S3_LOG_FATAL, "YAML::ParserException caught: %s\n", e.what());
+    s3_log(S3_LOG_FATAL, "Parsing Error in yaml file %s\n", option_file.c_str());
     return false;
   } catch (const YAML::EmitterException &e) {
-    s3_log(S3_LOG_ERROR, "YAML::EmitterException caught: %s\n", e.what());
+    s3_log(S3_LOG_FATAL, "YAML::EmitterException caught: %s\n", e.what());
     return false;
   } catch (YAML::Exception& e) {
-    s3_log(S3_LOG_ERROR, "YAML::Exception caught: %s\n", e.what());
+    s3_log(S3_LOG_FATAL, "YAML::Exception caught: %s\n", e.what());
     return false;
   }
   return true;

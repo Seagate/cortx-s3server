@@ -43,12 +43,11 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   bool has_clovis_kvs_op_context;
 
 public:
-  S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+  S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback, int ops_count = 1) : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count) {
     s3_log(S3_LOG_DEBUG, "Constructor\n");
     // Create or write, we need op context
-    clovis_idx_op_context = create_basic_idx_op_ctx(1);
+    clovis_idx_op_context = create_basic_idx_op_ctx(ops_count);
     has_clovis_idx_op_context = true;
-
     clovis_kvs_op_context = NULL;
     has_clovis_kvs_op_context = false;
   }
@@ -97,6 +96,8 @@ private:
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::unique_ptr<S3ClovisKVSWriterContext> writer_context;
 
+  int ops_count;
+
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
@@ -121,6 +122,11 @@ public:
   void delete_index_successful();
   void delete_index_failed();
 
+  void delete_indexes(std::vector<struct m0_uint128> oids, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_indexes_successful();
+  void delete_indexes_failed();
+
+
   // Async save operation.
   void put_keyval(std::string index_name, std::string key, std::string val, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void put_keyval_successful();
@@ -134,6 +140,11 @@ public:
   void delete_keyval_failed();
 
   void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx, std::string key, std::string val);
+
+  int get_op_ret_code_for(int index) {
+    return writer_context->get_errno_for(index);
+  }
+
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisKvsWritterTest, Constructor);

@@ -20,9 +20,11 @@
 #include "s3_delete_bucket_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
+#include "s3_uri_to_mero_oid.h"
 
 S3DeleteBucketAction::S3DeleteBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), is_bucket_empty(false), delete_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   setup_steps();
 }
 
@@ -30,6 +32,9 @@ void S3DeleteBucketAction::setup_steps(){
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind( &S3DeleteBucketAction::fetch_bucket_metadata, this ));
   add_task(std::bind( &S3DeleteBucketAction::fetch_first_object_metadata, this ));
+  add_task(std::bind( &S3DeleteBucketAction::fetch_multipart_objects, this ));
+  add_task(std::bind( &S3DeleteBucketAction::remove_part_indexes, this ));
+  add_task(std::bind( &S3DeleteBucketAction::remove_multipart_index, this ));
   add_task(std::bind( &S3DeleteBucketAction::delete_bucket, this ));
   add_task(std::bind( &S3DeleteBucketAction::send_response_to_s3_client, this ));
   // ...
@@ -75,6 +80,90 @@ void S3DeleteBucketAction::fetch_first_object_metadata_failed() {
     s3_log(S3_LOG_ERROR, "Failed to retrieve object metadata\n");
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3DeleteBucketAction::fetch_multipart_objects() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader->next_keyval(get_multipart_bucket_index_name(), last_key, count, std::bind( &S3DeleteBucketAction::fetch_multipart_objects_successful, this), std::bind( &S3DeleteBucketAction::next, this));
+}
+
+void S3DeleteBucketAction::fetch_multipart_objects_successful() {
+  s3_log(S3_LOG_DEBUG, "Found multipart uploads listing\n");
+  short return_list_size = 0;
+  auto& kvps = clovis_kv_reader->get_key_values();
+  size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  size_t length = kvps.size();
+  for (auto& kv : kvps) {
+    s3_log(S3_LOG_DEBUG, "Parsing Multipart object metadata = %s\n", kv.first.c_str());
+    auto object = std::make_shared<S3ObjectMetadata>(request, true);
+
+    object->from_json(kv.second);
+    multipart_objects[kv.first] = object->get_upload_id();
+
+    return_list_size++;
+
+    if (--length == 0 || return_list_size == count_we_requested) {
+      // this is the last element returned or we reached limit requested
+      last_key = kv.first;
+      break;
+    }
+  }
+  if (kvps.size() < count_we_requested) {
+    next();
+  } else {
+    fetch_multipart_objects();
+  }
+}
+
+void S3DeleteBucketAction::remove_part_indexes() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  std::vector<struct m0_uint128> oids;
+  struct m0_uint128 oid;
+  if (multipart_objects.size() != 0) {
+    std::string pre_index_name = get_bucket_index_name() + "/";
+    for (multipart_kv = multipart_objects.begin(); multipart_kv != multipart_objects.end(); multipart_kv++) {
+      std::string index_name = pre_index_name + multipart_kv->first + "/" + multipart_kv->second;
+      // TODO - Handle Collision resolution, read oid from multipart metadata
+      S3UriToMeroOID(index_name.c_str(), &oid);
+      oids.push_back(oid);
+    }
+    clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+    clovis_kv_writer->delete_indexes(oids, std::bind( &S3DeleteBucketAction::remove_part_indexes_successful, this), std::bind( &S3DeleteBucketAction::remove_part_indexes_failed, this));
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3DeleteBucketAction::remove_part_indexes_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  int i;
+  bool partial_failure = false;
+  for (multipart_kv = multipart_objects.begin(), i = 0; multipart_kv != multipart_objects.end(); multipart_kv++, i++) {
+    if (clovis_kv_writer->get_op_ret_code_for(i) != 0 &&
+        clovis_kv_writer->get_op_ret_code_for(i) != -ENOENT) {
+      partial_failure = true;
+    }
+  }
+  if (partial_failure) {
+    s3_log(S3_LOG_WARN, "Failed to delete some of the multipart part metadata\n");
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  next();
+}
+
+void S3DeleteBucketAction::remove_part_indexes_failed() {
+  s3_log(S3_LOG_WARN, "Failed to delete multipart part metadata\n");
+  next();
+}
+
+void S3DeleteBucketAction::remove_multipart_index() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  clovis_kv_writer->delete_index(get_multipart_bucket_index_name(), std::bind( &S3DeleteBucketAction::next, this), std::bind( &S3DeleteBucketAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

@@ -32,6 +32,7 @@ extern struct m0_clovis_container clovis_container;
 
 S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> s3clovis_api) : request(req), s3_clovis_api(s3clovis_api), state(S3ClovisKVSWriterOpState::start) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  ops_count = 0;
 }
 
 S3ClovisKVSWriter::~S3ClovisKVSWriter() {
@@ -153,6 +154,61 @@ void S3ClovisKVSWriter::delete_index_failed() {
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
+
+void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed  = on_failed;
+
+  writer_context.reset(new S3ClovisKVSWriterContext(request, std::bind( &S3ClovisKVSWriter::delete_indexes_successful, this), std::bind( &S3ClovisKVSWriter::delete_indexes_failed, this), oids.size()));
+
+  struct s3_clovis_idx_op_context *idx_ctx = writer_context->get_clovis_idx_op_ctx();
+
+
+  ops_count = oids.size();
+  struct m0_uint128 id;
+  for (int i = 0; i < ops_count; ++i) {
+    id = oids[i];
+    struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj*)calloc(1, sizeof(struct s3_clovis_context_obj));
+
+    op_ctx->op_index_in_launch = i;
+    op_ctx->application_context = (void *)writer_context.get();
+
+    idx_ctx->cbs[i].oop_executed = NULL;
+    idx_ctx->cbs[i].oop_stable = s3_clovis_op_stable;
+    idx_ctx->cbs[i].oop_failed = s3_clovis_op_failed;
+
+    s3_clovis_api->clovis_idx_init(&idx_ctx->idx[i], &clovis_uber_realm, &id);
+
+    s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[i].in_entity), &(idx_ctx->ops[i]));
+
+    idx_ctx->ops[i]->op_datum = (void *)op_ctx;
+    s3_clovis_api->clovis_op_setup(idx_ctx->ops[i], &idx_ctx->cbs[i], 0);
+  }
+
+
+  writer_context->start_timer_for("delete_index_op");
+
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, oids.size());
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3ClovisKVSWriter::delete_indexes_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  state = S3ClovisKVSWriterOpState::deleted;
+  this->handler_on_success();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3ClovisKVSWriter::delete_indexes_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Deletion of Index failed\n");
+  state = S3ClovisKVSWriterOpState::failed;
+  this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 
 void S3ClovisKVSWriter::put_keyval(std::string index_name, std::string key, std::string  val, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
