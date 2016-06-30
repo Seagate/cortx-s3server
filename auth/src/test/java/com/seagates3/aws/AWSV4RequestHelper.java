@@ -286,6 +286,7 @@ public class AWSV4RequestHelper {
         requestToken.setRequestPayload("");
         requestToken.setVirtualHost(Boolean.TRUE);
         requestToken.setRequestHeaders(getRequestHeadersVirtualHostStyle());
+        requestToken.setBucketName("seagatebucket123");
 
         return requestToken;
     }
@@ -352,6 +353,7 @@ public class AWSV4RequestHelper {
         requestToken.setRequestPayload("");
         requestToken.setVirtualHost(Boolean.TRUE);
         requestToken.setRequestHeaders(requestBody);
+        requestToken.setBucketName("seagatebucket123");
 
         return requestToken;
     }
@@ -395,6 +397,7 @@ public class AWSV4RequestHelper {
         requestToken.setRequestPayload("");
         requestToken.setVirtualHost(Boolean.TRUE);
         requestToken.setRequestHeaders(requestBody);
+        requestToken.setBucketName("seagatebucket123");
 
         return requestToken;
     }

@@ -111,6 +111,10 @@ public class ClientRequestToken {
      */
     String requestPayload;
 
+    /*
+     * Bucket name, currently used only for virtual hosted-style requests
+     */
+    String bucketName;
 
     /*
      * Return the Access Key Id of the requestor.
@@ -226,6 +230,10 @@ public class ClientRequestToken {
         return virtualHost;
     }
 
+    public String getBucketName() {
+        return bucketName;
+    }
+
     /*
      * Set the access key id.
      */
@@ -335,5 +343,9 @@ public class ClientRequestToken {
      */
     public void setRequestPayload(String requestPayload) {
         this.requestPayload = requestPayload;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
     }
 }

@@ -75,8 +75,7 @@ public abstract class AWSRequestParser {
         clientRequestToken.setHttpMethod(httpRequest.getMethod().toString());
 
         String host = httpHeaders.get("host");
-        Boolean virtualHost = isVirtualHost(host);
-        clientRequestToken.setVirtualHost(virtualHost);
+        parseHostHeader(clientRequestToken, host);
 
         String[] tokens = httpRequest.getUri().split("\\?", -1);
         clientRequestToken.setUri(tokens[0]);
@@ -102,8 +101,7 @@ public abstract class AWSRequestParser {
         clientRequestToken.setHttpMethod(requestBody.get("Method"));
 
         String host = requestBody.get("host");
-        Boolean virtualHost = isVirtualHost(host);
-        clientRequestToken.setVirtualHost(virtualHost);
+        parseHostHeader(clientRequestToken, host);
 
         clientRequestToken.setUri(requestBody.get("ClientAbsoluteUri"));
         clientRequestToken.setQuery(requestBody.get("ClientQueryParams"));
@@ -111,42 +109,30 @@ public abstract class AWSRequestParser {
         clientRequestToken.setRequestHeaders(requestBody);
     }
 
-    /**
-     * Return true if request is using virtual host format.
-     *
-     * @param host
-     * @return
+    /*
+     * Parse host header, and identify if request is virtual hosted-style and
+     * set bucket name if it is.
      */
-    protected Boolean isVirtualHost(String host) {
-        List<String> s3Endpoints = Arrays.asList(AuthServerConfig.getEndpoints());
+    private void parseHostHeader(ClientRequestToken clientRequestToken, String host) {
         List<String> uriEndpoints = new ArrayList<>();
-        uriEndpoints.add(AuthServerConfig.getDefaultEndpoint());
-        uriEndpoints.addAll(s3Endpoints);
-
-        String patternToMatch;
+        List<String> s3Endpoints = Arrays.asList(AuthServerConfig.getEndpoints());
+        String patternString;
         Pattern pattern;
         Matcher matcher;
 
-        /*
-         * Iterate over the endpoints to check if the request is using
-         * virtual host format.
-         */
-        for (String endPoint : uriEndpoints) {
-            patternToMatch = String.format("(^[\\w]*).%s[:\\d]*$", endPoint);
-            pattern = Pattern.compile(patternToMatch);
-            matcher = pattern.matcher(host);
+        uriEndpoints.add(AuthServerConfig.getDefaultEndpoint());
+        uriEndpoints.addAll(s3Endpoints);
 
+        for (String endPoint : uriEndpoints) {
+            patternString = String.format("(^.*)(\\.)(%s)([\\d:]*$)", endPoint);
+            pattern = Pattern.compile(patternString);
+            matcher = pattern.matcher(host);
             if (matcher.matches()) {
-                /*
-                 * It is virtual host format.
-                 */
-                return true;
+                clientRequestToken.setVirtualHost(Boolean.TRUE);
+                clientRequestToken.setBucketName(matcher.group(1));
+                return;
             }
         }
-
-        /*
-         * Request is not using virtual host format.
-         */
-        return false;
+        clientRequestToken.setVirtualHost(Boolean.FALSE);
     }
 }

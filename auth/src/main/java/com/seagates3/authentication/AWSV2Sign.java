@@ -190,9 +190,7 @@ public class AWSV2Sign implements AWSSign {
         String canonicalResource = "";
 
         if (clientRequestToken.isVirtualHost()) {
-            String bucketName = clientRequestToken.getRequestHeaders()
-                    .get("host").split("\\.")[0];
-            canonicalResource += "/" + bucketName;
+                canonicalResource += "/" + clientRequestToken.getBucketName();
         }
 
         canonicalResource += clientRequestToken.getUri();
