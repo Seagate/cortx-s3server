@@ -19,7 +19,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_CONFD_ADDR: <ipaddress>@tcp:12345:33:100   # Clovis end points, replace <ipaddress> with host's ip address
    S3_CLOVIS_HA_ADDR: <ipaddress>@tcp:12345:34:1        # Clovis end point, replace <ipaddress> with host's ip address
    S3_CLOVIS_PROF: <0x7000000000000001:0>               # Clovis end point
-   S3_CLOVIS_LAYOUT_ID: 1                               # Clovis will select a Unit size of a layout according to the
+   S3_CLOVIS_LAYOUT_ID: 9                               # Clovis will select a Unit size of a layout according to the
                                                         # layout id set in the configuration file, mapping is as follows:
                                                         # 1->4K, 2->8K, 3->16K, 4->32K, 5->64K, 6->128K, 7->256K, 8->512K, 9->1024K,
                                                         # 10->2048K, 11->4096K, 12->8192K, 13->16384K, 14->32768K, default is layout id 9 (1 MB)
