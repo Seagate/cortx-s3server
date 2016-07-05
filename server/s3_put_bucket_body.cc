@@ -42,7 +42,7 @@ bool S3PutBucketBody::parse_and_validate() {
 
   if (xml_content.empty()) {
     // Default location intended.
-    location_constraint = "US";
+    location_constraint = "us-west-2";
     is_valid = true;
     return true;
   }

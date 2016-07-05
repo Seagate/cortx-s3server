@@ -50,6 +50,7 @@ http {
         #s3
         listen       80 reuseport;
         server_name  localhost;
+        ignore_invalid_headers off;
 
         #charset koi8-r;
 
