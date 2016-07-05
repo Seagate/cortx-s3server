@@ -242,8 +242,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
               .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -261,8 +261,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
               .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -280,8 +280,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
               .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -299,8 +299,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
               .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -318,8 +318,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
               .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -337,8 +337,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
               .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return("delimiter=/&prefix=test"));
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -360,8 +360,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
   p_authclienttest->is_chunked_auth = true;
   p_authclienttest->prev_chunk_signature_from_auth = "";
   p_authclienttest->current_chunk_signature_from_auth = "ABCD";
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -383,8 +383,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
   p_authclienttest->is_chunked_auth = true;
   p_authclienttest->prev_chunk_signature_from_auth = "ABCD";
   p_authclienttest->current_chunk_signature_from_auth = "";
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);
@@ -407,8 +407,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
   p_authclienttest->prev_chunk_signature_from_auth = "prev-ABCD";
   p_authclienttest->current_chunk_signature_from_auth = "cur-XYZ";
   p_authclienttest->hash_sha256_current_chunk = "sha256-abcd";
-
-  p_authclienttest->setup_auth_request_body(false);
+  p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
+  p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
   char *mybuff = (char *)calloc(1, len + 1);
   evbuffer_copyout(p_authclienttest->req_body_buffer, mybuff, len);

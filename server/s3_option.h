@@ -43,6 +43,8 @@ class S3Option {
 
   std::string s3_bind_addr;
   unsigned short s3_bind_port;
+  unsigned short max_retry_count;
+  unsigned short retry_interval_millisec;
 
   std::string auth_ip_addr;
   unsigned short auth_port;
@@ -109,6 +111,8 @@ public:
     clovis_block_size = 1048576; // One MB
     clovis_factor = 1;
     clovis_idx_fetch_count = 100;
+    retry_interval_millisec = 0;
+    max_retry_count = 0;
   }
 
   bool load_section(std::string section_name, bool force_override_from_config);
@@ -150,6 +154,8 @@ public:
   unsigned int get_clovis_write_payload_size();
   unsigned int get_clovis_read_payload_size();
   int get_clovis_idx_fetch_count();
+  unsigned short get_max_retry_count();
+  unsigned short get_retry_interval_in_millisec();
 
   void set_cmdline_option(int option_flag, const char *option);
   int get_cmd_opt_flag();

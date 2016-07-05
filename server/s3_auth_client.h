@@ -145,7 +145,13 @@ enum class S3AuthClientOpState {
   authenticated,
   unauthenticated,
   authorized,
-  unauthorized
+  unauthorized,
+  connection_error
+};
+
+enum class S3AuthClientOpType {
+  authentication,
+  authorization
 };
 
 class S3AuthClient {
@@ -159,16 +165,15 @@ private:
   std::function<void()> handler_on_failed;
 
   S3AuthClientOpState state;
+  S3AuthClientOpType op_type;
+
+  short retry_count;
 
   // Key=val pairs to be sent in auth request body
   std::map<std::string, std::string> data_key_val;
 
   struct evbuffer* req_body_buffer;
 
-  // Helper
-  void setup_auth_request_headers(bool is_authorization_request);
-  void setup_auth_request_body(bool is_authorization_request);
-  virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx, bool is_authorization_request);
 
   // Holds tuple (signature-received-in-current-chunk, sha256-chunk-data)
   // indexed in chunk order
@@ -182,6 +187,7 @@ private:
   bool last_chunk_added;
 
   void trigger_authentication(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void trigger_authentication();
   void remember_auth_details_in_request();
 
 public:
@@ -194,18 +200,37 @@ public:
     return state;
   }
 
+  S3AuthClientOpType get_op_type() {
+    return op_type;
+  }
+
+  void set_state(S3AuthClientOpState auth_state) {
+    state = auth_state;
+  }
+
+  void set_op_type(S3AuthClientOpType type) {
+    op_type = type;
+  }
+
   // Returns AccessDenied | InvalidAccessKeyId | SignatureDoesNotMatch
   // auth InactiveAccessKey maps to InvalidAccessKeyId in S3
   std::string get_error_code();
   std::string get_signature_from_response();
 
+  void setup_auth_request_headers();
+  void setup_auth_request_body();
+  virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx);
+
+
   void add_key_val_to_body(std::string key, std::string val);
 
   // Non-aws-chunk auth
+  void check_authentication();
   void check_authentication(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void check_authentication_successful();
   void check_authentication_failed();
 
+  void check_authorization();
   void check_authorization(std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void check_authorization_successful();
   void check_authorization_failed();
@@ -221,6 +246,7 @@ public:
   void chunk_auth_successful();
   void chunk_auth_failed();
   void set_acl_and_policy(std::string acl, std::string policy);
+  void set_event_with_retry_interval();
 
   FRIEND_TEST(S3AuthClientTest, Constructor);
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyGet);
@@ -232,6 +258,11 @@ public:
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth);
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1);
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2);
+};
+
+struct event_auth_timeout_arg {
+  S3AuthClient *auth_client;
+  struct event *event;
 };
 
 #endif

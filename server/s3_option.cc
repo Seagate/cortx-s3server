@@ -50,6 +50,8 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       for (unsigned short i = 0; i < s3_option_node["S3_SERVER_REGION_ENDPOINTS"].size(); ++i) {
         s3_region_endpoints.insert(s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
       }
+      max_retry_count = s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
+      retry_interval_millisec = s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
       auth_ip_addr = s3_option_node["S3_AUTH_IP_ADDR"].as<std::string>();
@@ -89,6 +91,8 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       }
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
+      max_retry_count = s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
+      retry_interval_millisec = s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -363,4 +367,12 @@ bool S3Option::is_fake_clovis_putkv() {
 
 bool S3Option::is_fake_clovis_deletekv() {
   return FLAGS_fake_clovis_deletekv;
+}
+
+unsigned short S3Option::get_max_retry_count() {
+  return max_retry_count;
+}
+
+unsigned short S3Option::get_retry_interval_in_millisec() {
+  return retry_interval_millisec;
 }

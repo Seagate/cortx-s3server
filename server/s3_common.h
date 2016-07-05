@@ -73,7 +73,8 @@ enum class S3AsyncOpStatus {
   unknown,
   inprogress,
   success,
-  failed
+  failed,
+  connection_failed
 };
 
 enum class S3IOOpStatus {
