@@ -33,12 +33,11 @@ public class Authorizer {
          * TODO - This is a temporary solution. Write the logic to authorize the
          * user.
          */
-        File f = new File("/tmp/user_authorized");
-        if (f.exists()) {
-            return responseGenerator.generateAuthorizationResponse(requestor);
-        }
+        File f = new File("/tmp/seagate_s3_user_unauthorized");
+        if (f.exists())
+            return responseGenerator.unauthorizedOperation();
 
-        return responseGenerator.unauthorizedOperation();
+        return responseGenerator.generateAuthorizationResponse(requestor);
     }
 
 }
