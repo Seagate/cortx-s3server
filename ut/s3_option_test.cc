@@ -84,16 +84,38 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE, "/tmp/log.txt");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
-
+  // load from Config file, overriding the command options
   instance->load_all_sections(true);
+  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("INFO"), instance->get_log_level());
+  EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
+  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
+  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_confd_addr());
+  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
+  EXPECT_EQ(9081, instance->get_s3_bind_port());
+  EXPECT_EQ(8095, instance->get_auth_port());
+  EXPECT_EQ(1, instance->get_clovis_layout_id());
+}
+
+TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
+  instance->set_cmdline_option(S3_OPTION_BIND_ADDR, "198.1.1.1");
+  instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
+  instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
+  instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, "localhost@test");
+  instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.168.15.131");
+  instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
+  instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
+  instance->set_cmdline_option(S3_OPTION_LOG_FILE, "/tmp/log.txt");
+  instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
+  instance->load_all_sections(false);
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
   EXPECT_EQ(std::string("/tmp/log.txt"), instance->get_log_filename());
   EXPECT_EQ(std::string("debug"), instance->get_log_level());
   EXPECT_EQ(std::string("198.1.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_confd_addr());
-  EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
-  EXPECT_EQ(std::string("192.192.191"), instance->get_auth_ip_addr());
+  EXPECT_EQ(std::string("192.168.15.131"), instance->get_auth_ip_addr());
   EXPECT_EQ(1, instance->get_s3_bind_port());
   EXPECT_EQ(2, instance->get_auth_port());
   EXPECT_EQ(123, instance->get_clovis_layout_id());
@@ -125,10 +147,10 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->load_section("S3_SERVER_CONFIG", true);
 
-  EXPECT_EQ(std::string("/tmp/log.txt"), instance->get_log_filename());
-  EXPECT_EQ(std::string("debug"), instance->get_log_level());
-  EXPECT_EQ(std::string("198.1.1.1"), instance->get_bind_addr());
-  EXPECT_EQ(1, instance->get_s3_bind_port());
+  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("INFO"), instance->get_log_level());
+  EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
+  EXPECT_EQ(9081, instance->get_s3_bind_port());
 
   // These should be default values
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -162,8 +184,8 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->load_section("S3_AUTH_CONFIG", true);
 
-  EXPECT_EQ(std::string("192.192.191.1"), instance->get_auth_ip_addr());
-  EXPECT_EQ(2, instance->get_auth_port());
+  EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
+  EXPECT_EQ(8095, instance->get_auth_port());
 
   // Others should not be loaded
   EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
@@ -195,8 +217,8 @@ TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, "localhost@test");
   instance->load_section("S3_CLOVIS_CONFIG", true);
 
-  EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_confd_addr());
+  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
+  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
 
   // Others should not be loaded

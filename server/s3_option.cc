@@ -35,7 +35,7 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
   if (s3_option_node.IsNull()) {
     return false;
   }
-  if (!force_override_from_config) {
+  if (force_override_from_config) {
     if (section_name == "S3_SERVER_CONFIG") {
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       s3_daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
