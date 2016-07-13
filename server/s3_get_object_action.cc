@@ -61,6 +61,9 @@ void S3GetObjectAction::read_object() {
     request->set_out_header_value("ETag", object_metadata->get_md5());
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value("Content-Length", object_metadata->get_content_length_str());
+    for ( auto it: object_metadata->get_user_attributes() ) {
+      request->set_out_header_value(it.first, it.second);
+    }
     request->send_reply_start(S3HttpSuccess200);
 
     if (object_metadata->get_content_length() == 0) {
