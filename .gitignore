@@ -1,2 +1,23 @@
 # Python byte-compiled / optimized / DLL files
 __pycache__/
+auth-utils/jclient/dependency-reduced-pom.xml
+auth-utils/jclient/target/
+auth-utils/jcloudclient/dependency-reduced-pom.xml
+auth-utils/jcloudclient/target/
+auth/dependency-reduced-pom.xml
+auth/target/
+bazel-*
+server/jsoncpp.cc
+st/clitests/jclient.jar
+st/clitests/jcloudclient.jar
+st/clitests/mero_st/
+third_party/cpp-driver/
+third_party/gflags/
+third_party/googlemock/
+third_party/googletest/
+third_party/jsoncpp/
+third_party/libevent/
+third_party/libevhtp/
+third_party/libxml2/
+third_party/lustre-2.5.1-headers/
+third_party/yaml-cpp/
