@@ -22,6 +22,8 @@
 #ifndef __MERO_FE_S3_SERVER_S3_COMMON_H__
 #define __MERO_FE_S3_SERVER_S3_COMMON_H__
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
 #define EXTERN_C_BLOCK_BEGIN    extern "C" {
 #define EXTERN_C_BLOCK_END      }
@@ -80,6 +82,13 @@ enum class S3AsyncOpStatus {
 enum class S3IOOpStatus {
   saved,
   failed
+};
+
+// returns 'true' if numeric value of string 'x' is less than that of 'y'
+struct S3NumStrComparator {
+  bool operator()(const std::string &x, const std::string &y) const {
+    return strtoul(x.c_str(), NULL, 0) < strtoul(y.c_str(), NULL, 0);
+  }
 };
 
 #endif

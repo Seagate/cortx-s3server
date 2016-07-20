@@ -44,7 +44,7 @@ class S3PostCompleteAction : public S3Action {
   std::string object_name;
   std::string total_parts;
   std::string etag;
-  std::map <std::string, std::string> parts;
+  std::map<std::string, std::string, S3NumStrComparator> parts;
   uint64_t object_size;
   bool delete_multipart_object;
 

@@ -149,37 +149,46 @@ void S3PostCompleteAction::get_parts_successful() {
   std::map<std::string, std::string>::iterator part_kv;
   std::map<std::string, std::string>::iterator store_kv;
 
-  for (part_kv = parts.begin(), store_kv = kvps.begin(); part_kv != parts.end(); part_kv++, store_kv++) {
-    if(part_kv->first != store_kv->first) {
+  for (part_kv = parts.begin(); part_kv != parts.end(); part_kv++) {
+    store_kv = kvps.find(part_kv->first);
+    if (store_kv == kvps.end()) {
       part_metadata->set_state(S3PartMetadataState::missing);
       send_response_to_s3_client();
     } else {
-        s3_log(S3_LOG_DEBUG, "Metadata for key [%s] -> [%s]\n", store_kv->first.c_str(), store_kv->second.c_str());
-        part_metadata->from_json(store_kv->second);
-        curr_size = part_metadata->get_content_length();
-        if(store_kv != kvps.begin()) {
-          if(prev_size != curr_size) {
-            if(store_kv->first == total_parts) {
-              // This is the last part, ignore it after size calculation
-              object_size += part_metadata->get_content_length();
-              continue;
-            }
-            s3_log(S3_LOG_ERROR, "The part %s size(%zu) seems to be different from previous part size(%zu), Will be destroying the parts\n",
-                   store_kv->first.c_str(),
-                   curr_size, prev_size);
-            // Will be deleting complete object along with the part index and multipart kv
-            set_abort_multipart(true);
-            break;
-          } else {
-             prev_size = curr_size;
-            }
+      s3_log(S3_LOG_DEBUG, "Metadata for key [%s] -> [%s]\n",
+             store_kv->first.c_str(), store_kv->second.c_str());
+      part_metadata->from_json(store_kv->second);
+      s3_log(S3_LOG_DEBUG, "Processing Part [%s]\n",
+             part_metadata->get_part_number().c_str());
+
+      curr_size = part_metadata->get_content_length();
+      if (store_kv->first != parts.begin()->first) {
+        if (prev_size != curr_size) {
+          if (store_kv->first == total_parts) {
+            // This is the last part, ignore it after size calculation
+            object_size += part_metadata->get_content_length();
+            awsetag.add_part_etag(part_metadata->get_md5());
+            continue;
+          }
+          s3_log(S3_LOG_ERROR,
+                 "The part %s size(%zu) seems to be different "
+                 "from previous part size(%zu), Will be "
+                 "destroying the parts\n",
+                 store_kv->first.c_str(), curr_size, prev_size);
+          // Will be deleting complete object along with the part index and
+          // multipart kv
+          set_abort_multipart(true);
+          break;
         } else {
           prev_size = curr_size;
-          }
-        object_size += part_metadata->get_content_length();
-        awsetag.add_part_etag(part_metadata->get_md5());
+        }
+      } else {
+        prev_size = curr_size;
       }
-   }
+      object_size += part_metadata->get_content_length();
+      awsetag.add_part_etag(part_metadata->get_md5());
+    }
+  }
   if(!is_abort_multipart()) {
     etag = awsetag.finalize();
   }
