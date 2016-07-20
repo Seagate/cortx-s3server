@@ -2,6 +2,34 @@
 
 # Updation to nginx.conf.sample -- Added client_max_body_size to have max body size as 5GB
 
+## How to install clang-format
+Install clang-format for code formatting.
+```sh
+cd ~/Downloads/
+wget http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz
+tar -xvJf clang+llvm-3.8.0-linux-x86_64-centos6.tar.xz
+sudo ln -s ~/Downloads/clang+llvm-3.8.0-linux-x86_64-centos6/bin/clang-format /bin/clang-format
+```
+
+## How to install git-clang-format
+Install git-clang-format to run clang-format only on new changes.
+```sh
+cd ~/Downloads/
+wget https://raw.githubusercontent.com/llvm-mirror/clang/master/tools/clang-format/git-clang-format
+chmod +x git-clang-format
+sudo cp git-clang-format /usr/bin
+git config --global clangFormat.style 'Google'
+```
+
+## How to use git clang-format
+Once you are ready with your changes to be committed, use below sequence of commands:
+```sh
+git clang-format --diff <files>   //prints the changes clang-format would make in next command
+git clang-format -f <files>       //makes formatting changes in specified files
+git add <files>
+git commit
+```
+
 ## How to Build S3 server?
 
 Fetch the third party dependencies.
