@@ -23,6 +23,7 @@
 #define __MERO_FE_S3_SERVER_S3_COMMON_H__
 
 #include <stdlib.h>
+#include <string>
 
 #ifdef __cplusplus
 #define EXTERN_C_BLOCK_BEGIN    extern "C" {
