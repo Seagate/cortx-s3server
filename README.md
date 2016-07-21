@@ -30,6 +30,20 @@ git add <files>
 git commit
 ```
 
+## How to inform clang-format to ignore code for formatting
+If you don't want clang-format to work on a section of code then surround it with `// clang-format off` and `// clang-format on`
+```cpp
+
+#include <iostream>
+int main() {
+// clang-format off
+  std::cout << "Hello world!";
+  return 0;
+// clang-format on
+}
+
+```
+
 ## How to Build S3 server?
 
 Fetch the third party dependencies.
