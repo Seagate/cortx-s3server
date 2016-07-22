@@ -121,6 +121,7 @@ public class JCloudClient {
                 .addOption("m", "multi-part-chunk-size", true,
                         "Size of chunk in MB.")
                 .addOption("a", "aws", false, "Run operation on AWS S3.")
+                .addOption("e", "etag-enable", true, "{True|False}")
                 .addOption("h", "help", false, "Show usage");
 
         return options;
@@ -161,8 +162,9 @@ public class JCloudClient {
                 + "  Delete Objects inside a bucket directory without deleting the bucket\n"
                 + "      java -jar jcloudclient.jar clrbdir s3://BUCKET DIR/\n"
                 + "  Multipart upload\n"
-                + "      java -jar jcloudclient.jar put FILE s3://BUCKET[/PREFIX] "
-                + "-m [size of each part in MB]\n";
+                + "      java -jar jcloudclient.jar put FILE s3://BUCKET[/PREFIX]\n"
+                + "-m [size of each part in MB]\n"
+                + "-e, --etag-enable        {True|False}.\n";
         HelpFormatter s3HelpFormatter = new HelpFormatter();
 
         s3HelpFormatter.printHelp(usage, s3Options);

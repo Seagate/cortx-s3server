@@ -177,8 +177,10 @@ public class S3JcloudAPI {
                     .payload(payload)
                     .contentLength(file.length())
                     .build();
+
             if (cmd.hasOption("m")) {
-                blobStore.putBlob(bucketName, blob, multipart());
+                String eTag = blobStore.putBlob(bucketName, blob, multipart());
+                verifyEtag(file, eTag);
             } else {
                 blobStore.putBlob(bucketName, blob);
             }
@@ -189,6 +191,19 @@ public class S3JcloudAPI {
         } finally {
             context.close();
         }
+    }
+
+    protected void verifyEtag(File file, String eTag) {
+        if (cmd.hasOption("e") &&
+                cmd.getOptionValue("e").equalsIgnoreCase("False"))
+            return;
+
+        EtagGenerator generator = new EtagGenerator(file, Long.parseLong(
+                cmd.getOptionValue("m")));
+        String expectedEtag = generator.getEtag();
+        if (!eTag.equals(expectedEtag))
+            printError("The two ETags (" + expectedEtag + ", " + eTag +
+                    ") do not match.");
     }
 
     public void getObject() {
