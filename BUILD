@@ -5,7 +5,7 @@ cc_binary(
 
     name = "s3server",
 
-    srcs = glob(["server/*.cc", "server/*.c"]),
+    srcs = glob(["server/*.cc", "server/*.c", "server/*.h"]),
 
     copts = [" -std=c++11 -DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -DGCC_VERSION=4002 -DHAVE_CONFIG_H -DM0_TARGET=ClovisTest -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL= -DM0_EXTERN=extern -iquote $(MERO_SRC) -iquote . -include config.h -Ithird_party/lustre-2.5.1-headers/libcfs/include -I third_party/lustre-2.5.1-headers/lnet/include -Ithird_party/lustre-2.5.1-headers/lustre/include -fno-common -Wall -Wno-attributes -fno-strict-aliasing -fno-omit-frame-pointer  -ggdb3 -O3 -DNDEBUG"],
 
@@ -36,7 +36,7 @@ cc_test(
 
     name = "s3ut",
 
-    srcs = glob(["ut/*.cc", "server/*.cc", "server/*.c"],
+    srcs = glob(["ut/*.cc", "ut/*.h", "server/*.cc", "server/*.c", "server/*.h"],
                 exclude = ["server/s3server.cc"]),
 
     copts = ["-DEVHTP_DISABLE_REGEX  -std=c++11 -DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -DGCC_VERSION=4002 -DHAVE_CONFIG_H -DM0_TARGET=ClovisTest -D_REENTRANT -D_GNU_SOURCE -DM0_INTERNAL= -DM0_EXTERN=extern -iquote $(MERO_SRC) -pie"],
