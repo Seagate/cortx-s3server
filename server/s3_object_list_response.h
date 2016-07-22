@@ -35,7 +35,7 @@ class S3ObjectListResponse {
   std::string object_name, user_name, user_id, storage_class, upload_id;
   std::string account_name, account_id;
   std::vector<std::shared_ptr<S3ObjectMetadata>> object_list;
-  std::vector<std::shared_ptr<S3PartMetadata>> part_list;
+  std::map<int, std::shared_ptr<S3PartMetadata>> part_list;
 
   // We use unordered for performance as the keys are already
   // in sorted order as stored in clovis-kv (cassandra)

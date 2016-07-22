@@ -83,7 +83,7 @@ void S3ObjectListResponse::add_object(std::shared_ptr<S3ObjectMetadata> object) 
 }
 
 void S3ObjectListResponse::add_part(std::shared_ptr<S3PartMetadata> part) {
-  part_list.push_back(part);
+  part_list[strtoul(part->get_part_number().c_str(), NULL, 0)] = part;
 }
 
 void S3ObjectListResponse::add_common_prefix(std::string common_prefix) {
@@ -214,6 +214,7 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
 }
 
 std::string& S3ObjectListResponse::get_multipart_xml() {
+  // clang-format off
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   response_xml += "<ListPartsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
   response_xml += "  <Bucket>" + bucket_name + "</Bucket>\n"
@@ -235,14 +236,15 @@ std::string& S3ObjectListResponse::get_multipart_xml() {
 
   for (auto&& part : part_list) {
     response_xml += "  <Part>\n"
-                    "  <PartNumber>" + part->get_part_number() + "</PartNumber>\n"
-                    "  <LastModified>" + part->get_last_modified_iso() + "</LastModified>\n"
-                    "  <ETag>" + part->get_md5() + "</ETag>\n"
-                    "  <Size>" + part->get_content_length_str() + "</Size>\n"
+                    "  <PartNumber>" + part.second->get_part_number() + "</PartNumber>\n"
+                    "  <LastModified>" + part.second->get_last_modified_iso() + "</LastModified>\n"
+                    "  <ETag>" + part.second->get_md5() + "</ETag>\n"
+                    "  <Size>" + part.second->get_content_length_str() + "</Size>\n"
                     "  </Part>\n";
   }
 
   response_xml += "</ListPartsResult>\n";
+  // clang-format on
 
   return response_xml;
 }
