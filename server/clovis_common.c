@@ -44,6 +44,7 @@ int init_clovis(const char *clovis_local_addr, const char *clovis_ha_addr, const
   clovis_conf.cc_ha_addr               = clovis_ha_addr;
   clovis_conf.cc_confd                 = clovis_confd_addr;
   clovis_conf.cc_profile               = clovis_prof;
+  clovis_conf.cc_process_fid = "<0x7200000000000000:0>";
   clovis_conf.cc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
   clovis_conf.cc_max_rpc_msg_size      = M0_RPC_DEF_MAX_RPC_MSG_SIZE;
   clovis_conf.cc_layout_id = layout_id;
