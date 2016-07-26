@@ -82,6 +82,10 @@ void S3ObjectListResponse::add_object(std::shared_ptr<S3ObjectMetadata> object) 
   object_list.push_back(object);
 }
 
+unsigned int S3ObjectListResponse::size() {
+  return object_list.size();
+}
+
 void S3ObjectListResponse::add_part(std::shared_ptr<S3PartMetadata> part) {
   part_list[strtoul(part->get_part_number().c_str(), NULL, 0)] = part;
 }

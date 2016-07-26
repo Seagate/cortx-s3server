@@ -34,7 +34,6 @@ class S3GetBucketAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::string last_key;  // last key during each iteration
   S3ObjectListResponse object_list;
-  size_t return_list_size;
 
   bool fetch_successful;
 

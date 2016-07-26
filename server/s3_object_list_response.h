@@ -81,6 +81,7 @@ public:
   void add_object(std::shared_ptr<S3ObjectMetadata> object);
   void add_part(std::shared_ptr<S3PartMetadata> part);
   void add_common_prefix(std::string);
+  unsigned int size();
 
   std::string& get_xml();
   std::string& get_multipart_xml();

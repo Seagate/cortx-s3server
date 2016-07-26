@@ -25,7 +25,7 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), return_list_size(0), fetch_successful(false) {
+S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
   object_list.set_bucket_name(request->get_bucket_name());
@@ -121,8 +121,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       } // else no prefix match, filter it out
     }
 
-    return_list_size++;
-    if (--length == 0 || return_list_size == max_keys) {
+    if (--length == 0 || object_list.size() == max_keys) {
       // this is the last element returned or we reached limit requested
       last_key = kv.first;
       break;
@@ -131,9 +130,9 @@ void S3GetBucketAction::get_next_objects_successful() {
   // We ask for more if there is any.
   size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  if ((return_list_size == max_keys) || (kvps.size() < count_we_requested)) {
+  if ((object_list.size() == max_keys) || (kvps.size() < count_we_requested)) {
     // Go ahead and respond.
-    if (return_list_size == max_keys) {
+    if (object_list.size() == max_keys) {
       object_list.set_response_is_truncated(true);
     }
     object_list.set_next_marker_key(last_key);
