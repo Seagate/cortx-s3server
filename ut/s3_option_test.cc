@@ -49,6 +49,15 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ(8081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(false, instance->get_clovis_is_read_verify());
+  EXPECT_EQ(2, instance->get_clovis_tm_recv_queue_min_len());
+  EXPECT_EQ(131072, instance->get_clovis_max_rpc_msg_size());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
+  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
+  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ("clovis_index_keyspace", instance->get_clovis_cass_keyspace());
+  EXPECT_EQ(1, instance->get_clovis_cass_max_column_family_num());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
@@ -72,6 +81,10 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(8095, instance->get_auth_port());
   EXPECT_EQ(1, instance->get_clovis_layout_id());
   EXPECT_EQ(0, instance->s3_performance_enabled());
+  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(true, instance->get_clovis_is_read_verify());
 }
 
 TEST_F(S3OptionsTest, TestOverrideOptions) {
@@ -96,6 +109,10 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
   EXPECT_EQ(1, instance->get_clovis_layout_id());
+  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(true, instance->get_clovis_is_read_verify());
 }
 
 TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
@@ -119,6 +136,10 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(1, instance->get_s3_bind_port());
   EXPECT_EQ(2, instance->get_auth_port());
   EXPECT_EQ(123, instance->get_clovis_layout_id());
+  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(true, instance->get_clovis_is_read_verify());
 }
 
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
@@ -136,7 +157,10 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ(9, instance->get_clovis_layout_id());
   EXPECT_EQ(std::string("127.0.0.1"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
-
+  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(false, instance->get_clovis_is_read_verify());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
@@ -159,6 +183,10 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ(9, instance->get_clovis_layout_id());
   EXPECT_EQ(std::string("127.0.0.1"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
+  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(false, instance->get_clovis_is_read_verify());
 }
 
 TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
@@ -176,6 +204,10 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
+  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(false, instance->get_clovis_is_read_verify());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
@@ -196,6 +228,10 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
+  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(false, instance->get_clovis_is_read_verify());
 }
 
 TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
@@ -204,6 +240,10 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(true, instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
   EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
@@ -220,6 +260,10 @@ TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
+  EXPECT_EQ(false, instance->get_clovis_is_oostore());
+  EXPECT_EQ(true, instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
   EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());

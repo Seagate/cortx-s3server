@@ -142,12 +142,7 @@ int
 main(int argc, char ** argv) {
   int rc = 0;
   const char  *bind_addr;
-  const char  *clovis_local_addr;
-  const char  *clovis_confd_addr;
-  const char  *clovis_ha_addr;
-  const char  *clovis_prof;
   uint16_t     bind_port;
-  short        clovis_layout_id;
 
   if (parse_and_load_config_options(argc, argv) < 0) {
       exit(1);
@@ -221,16 +216,11 @@ main(int argc, char ** argv) {
   // This handler is just like complete the request processing & respond
   evhtp_set_gencb(htp, s3_handler, router);
 
-  clovis_local_addr = option_instance->get_clovis_local_addr().c_str();
-  clovis_confd_addr = option_instance->get_clovis_confd_addr().c_str();
-  clovis_ha_addr = option_instance->get_clovis_ha_addr().c_str();
-  clovis_prof = option_instance->get_clovis_prof().c_str();
-  clovis_layout_id = option_instance->get_clovis_layout_id();
   bind_port = option_instance->get_s3_bind_port();
   bind_addr = option_instance->get_bind_addr().c_str();
 
   /* Initilise mero and Clovis */
-  rc = init_clovis(clovis_local_addr, clovis_ha_addr, clovis_confd_addr, clovis_prof, clovis_layout_id);
+  rc = init_clovis();
   if (rc < 0) {
       s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
       s3daemon.delete_pidfile();

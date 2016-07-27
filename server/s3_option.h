@@ -69,6 +69,15 @@ class S3Option {
   std::string clovis_confd_addr;
   std::string clovis_ha_addr;
   std::string clovis_profile;
+  bool clovis_is_oostore;
+  bool clovis_is_read_verify;
+  unsigned int clovis_tm_recv_queue_min_len;
+  unsigned int clovis_max_rpc_msg_size;
+  std::string clovis_process_fid;
+  int clovis_idx_service_id;
+  std::string clovis_cass_cluster_ep;
+  std::string clovis_cass_keyspace;
+  int clovis_cass_max_column_family_num;
 
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
@@ -77,7 +86,6 @@ class S3Option {
 
   static S3Option* option_instance;
 
-public:
   S3Option() {
     cmd_opt_flag = 0;
 
@@ -99,6 +107,15 @@ public:
     clovis_confd_addr = FLAGS_clovisconfd;
     clovis_ha_addr = FLAGS_clovisha;
     clovis_profile = FLAGS_clovisprofile;
+    clovis_is_oostore = false;
+    clovis_is_read_verify = false;
+    clovis_tm_recv_queue_min_len = 2;
+    clovis_max_rpc_msg_size = 131072;
+    clovis_process_fid = "<0x7200000000000000:0>";
+    clovis_idx_service_id = 2;
+    clovis_cass_cluster_ep = "127.0.0.1";
+    clovis_cass_keyspace = "clovis_index_keyspace";
+    clovis_cass_max_column_family_num = 1;
 
     auth_ip_addr = FLAGS_authhost;
     auth_port = FLAGS_authport;
@@ -121,6 +138,7 @@ public:
     eventbase = NULL;
   }
 
+ public:
   bool load_section(std::string section_name, bool force_override_from_config);
   bool load_all_sections(bool force_override_from_config);
 
@@ -162,6 +180,15 @@ public:
   int get_clovis_idx_fetch_count();
   unsigned short get_max_retry_count();
   unsigned short get_retry_interval_in_millisec();
+  bool get_clovis_is_oostore();
+  bool get_clovis_is_read_verify();
+  unsigned int get_clovis_tm_recv_queue_min_len();
+  unsigned int get_clovis_max_rpc_msg_size();
+  std::string get_clovis_process_fid();
+  int get_clovis_idx_service_id();
+  std::string get_clovis_cass_cluster_ep();
+  std::string get_clovis_cass_keyspace();
+  int get_clovis_cass_max_column_family_num();
 
   void set_cmdline_option(int option_flag, const char *option);
   int get_cmd_opt_flag();

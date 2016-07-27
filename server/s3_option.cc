@@ -64,6 +64,23 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
       clovis_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
       clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
+      clovis_is_oostore = s3_option_node["S3_CLOVIS_IS_OOSTORE"].as<bool>();
+      clovis_is_read_verify =
+          s3_option_node["S3_CLOVIS_IS_READ_VERIFY"].as<bool>();
+      clovis_tm_recv_queue_min_len =
+          s3_option_node["S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN"].as<unsigned int>();
+      clovis_max_rpc_msg_size =
+          s3_option_node["S3_CLOVIS_MAX_RPC_MSG_SIZE"].as<unsigned int>();
+      clovis_process_fid =
+          s3_option_node["S3_CLOVIS_PROCESS_FID"].as<std::string>();
+      clovis_idx_service_id =
+          s3_option_node["S3_CLOVIS_IDX_SERVICE_ID"].as<int>();
+      clovis_cass_cluster_ep =
+          s3_option_node["S3_CLOVIS_CASS_CLUSTER_EP"].as<std::string>();
+      clovis_cass_keyspace =
+          s3_option_node["S3_CLOVIS_CASS_KEYSPACE"].as<std::string>();
+      clovis_cass_max_column_family_num =
+          s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
     }
   } else {
     if (section_name == "S3_SERVER_CONFIG") {
@@ -117,6 +134,23 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       clovis_block_size = s3_option_node["S3_CLOVIS_BLOCK_SIZE"].as<unsigned int>();
       clovis_factor = s3_option_node["S3_CLOVIS_MAX_BLOCKS_PER_REQUEST"].as<unsigned short>();
       clovis_idx_fetch_count = s3_option_node["S3_CLOVIS_MAX_IDX_FETCH_COUNT"].as<int>();
+      clovis_is_oostore = s3_option_node["S3_CLOVIS_IS_OOSTORE"].as<bool>();
+      clovis_is_read_verify =
+          s3_option_node["S3_CLOVIS_IS_READ_VERIFY"].as<bool>();
+      clovis_tm_recv_queue_min_len =
+          s3_option_node["S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN"].as<unsigned int>();
+      clovis_max_rpc_msg_size =
+          s3_option_node["S3_CLOVIS_MAX_RPC_MSG_SIZE"].as<unsigned int>();
+      clovis_process_fid =
+          s3_option_node["S3_CLOVIS_PROCESS_FID"].as<std::string>();
+      clovis_idx_service_id =
+          s3_option_node["S3_CLOVIS_IDX_SERVICE_ID"].as<int>();
+      clovis_cass_cluster_ep =
+          s3_option_node["S3_CLOVIS_CASS_CLUSTER_EP"].as<std::string>();
+      clovis_cass_keyspace =
+          s3_option_node["S3_CLOVIS_CASS_KEYSPACE"].as<std::string>();
+      clovis_cass_max_column_family_num =
+          s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
     }
   }
   return true;
@@ -208,6 +242,23 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_CLOVIS_BLOCK_SIZE = %d\n", clovis_block_size);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_BLOCKS_PER_REQUEST = %d\n", clovis_factor);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n", clovis_idx_fetch_count);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_IS_OOSTORE = %s\n",
+         (clovis_is_oostore ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_IS_READ_VERIFY = %s\n",
+         (clovis_is_read_verify ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN = %d\n",
+         clovis_tm_recv_queue_min_len);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_RPC_MSG_SIZE = %d\n",
+         clovis_max_rpc_msg_size);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_PROCESS_FID = %s\n",
+         clovis_process_fid.c_str());
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_IDX_SERVICE_ID = %d\n", clovis_idx_service_id);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_CLUSTER_EP = %s\n",
+         clovis_cass_cluster_ep.c_str());
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_KEYSPACE = %s\n",
+         clovis_cass_keyspace.c_str());
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM = %d\n",
+         clovis_cass_max_column_family_num);
 
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n", FLAGS_fake_clovis_createobj);
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n", FLAGS_fake_clovis_writeobj);
@@ -319,6 +370,34 @@ unsigned int S3Option::get_clovis_write_payload_size() {
 
 unsigned int S3Option::get_clovis_read_payload_size() {
   return clovis_block_size * clovis_factor;
+}
+
+bool S3Option::get_clovis_is_oostore() { return clovis_is_oostore; }
+
+bool S3Option::get_clovis_is_read_verify() { return clovis_is_read_verify; }
+
+unsigned int S3Option::get_clovis_tm_recv_queue_min_len() {
+  return clovis_tm_recv_queue_min_len;
+}
+
+unsigned int S3Option::get_clovis_max_rpc_msg_size() {
+  return clovis_max_rpc_msg_size;
+}
+
+std::string S3Option::get_clovis_process_fid() { return clovis_process_fid; }
+
+int S3Option::get_clovis_idx_service_id() { return clovis_idx_service_id; }
+
+std::string S3Option::get_clovis_cass_cluster_ep() {
+  return clovis_cass_cluster_ep;
+}
+
+std::string S3Option::get_clovis_cass_keyspace() {
+  return clovis_cass_keyspace;
+}
+
+int S3Option::get_clovis_cass_max_column_family_num() {
+  return clovis_cass_max_column_family_num;
 }
 
 std::string S3Option::get_auth_ip_addr() {

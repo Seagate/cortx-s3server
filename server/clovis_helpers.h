@@ -51,9 +51,9 @@ EXTERN_C_BLOCK_BEGIN
 /* For htonl */
 #include <arpa/inet.h>
 
-int init_clovis(const char *clovis_local_addr, const char *clovis_ha_addr, const char *clovis_confd_addr, const char *clovis_prof, short clovis_layout_id);
-void fini_clovis(void);
-
 EXTERN_C_BLOCK_END
+
+int init_clovis(void);
+void fini_clovis(void);
 
 #endif

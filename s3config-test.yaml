@@ -28,3 +28,12 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_BLOCK_SIZE: 1048576                        # Clovis Block size for an IO operation
    S3_CLOVIS_MAX_BLOCKS_PER_REQUEST: 1                  # Maximum blocks of size S3_CLOVIS_BLOCK_SIZE per read/write request to clovis
    S3_CLOVIS_MAX_IDX_FETCH_COUNT: 100                   # Clovis will read from index(If not specified) at a time maximim of this many key values
+   S3_CLOVIS_IS_OOSTORE: false                          # Clovis oostore mode is set when this flag is true, default is false (oostore mode is not set)
+   S3_CLOVIS_IS_READ_VERIFY: true                       # Clovis Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
+   S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN: 2                   # Minimum length of the 'tm' receive queue for clovis, default is 2
+   S3_CLOVIS_MAX_RPC_MSG_SIZE: 131072                   # Maximum rpc message size for clovis, default is 131072 (128k)
+   S3_CLOVIS_PROCESS_FID: <0x7200000000000000:0>        # FID of the Resource manager for Clovis
+   S3_CLOVIS_IDX_SERVICE_ID: 1                          # Types of index services supported by Clovis, mapping is: 0->Mock KVS, 1->Mero KVS, 2->Cassandra KVS, default is 2 (Cassandra KVS)
+   S3_CLOVIS_CASS_CLUSTER_EP: 10.10.1.3                 # Cassandra cluster end point
+   S3_CLOVIS_CASS_KEYSPACE: "clovis_index_keyspace"     # Cassandra keyspace
+   S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM: 1                 # Cassandra max column family number, default is 1
