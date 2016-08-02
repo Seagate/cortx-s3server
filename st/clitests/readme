@@ -75,8 +75,13 @@ How to run?
   127.0.0.1 iam.seagate.com sts.seagate.com
 - Ensure you have sourced mero_st (python version 3.5) with virtualenv.
 - cd to clitests directory
-- run $ python s3cmd_spec.py
-- run $ python auth_spec.py
+- To verify setup and execute standard systests (auth, s3cmd, jclient and jcloud )
+- run runallsystest.sh
+- To execute system tests as standalone
+- run $python auth_spec.py
+- run $python s3cmd_spec.py
+- run $python jclient_spec.py
+- run $python jcloud_spec.py
 
 Note - To get execution time in milli seconds (parsable format), make the
 following change in the test script (ex - s3cmd_spec.py) before running the tests

@@ -71,7 +71,7 @@ cd ..
 bazel build //:s3ut  --define MERO_SRC=`pwd`/../..
 ```
 
-## How to run S3 server tests?
+## How to run S3 server Unit tests?
 ```sh
 bazel test //:s3ut  --define MERO_SRC=`pwd`/../..
 ```
@@ -80,9 +80,21 @@ or
 bazel-bin/s3ut
 ```
 
+## How to run S3 server System tests?
+```sh
+cd st/clitests/
+cat readme
+```
+
 ## How to run Auth server tests?
 ```sh
 mvn test
+```
+
+## How to run S3 server standard (ST + UT) tests?
+Read above steps to setup and build ST + UT
+```sh
+./runalltest.sh
 ```
 
 ## How to install S3 server and Auth server
