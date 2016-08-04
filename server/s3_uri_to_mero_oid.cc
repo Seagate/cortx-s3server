@@ -31,17 +31,28 @@ void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
   timer.start();
   size_t len = 0;
   uint64_t hash128_64[2];
+  struct m0_uint128 tmp_uint128;
 
   len = strlen(name);
   MurmurHash3_x64_128(name, len, 0, &hash128_64);
 
-  /* Truncate higher 32 bits as they are used by mero/clovis */
-  // hash128_64[0] = hash128_64[0] & 0x0000ffff;
-  hash128_64[1] = hash128_64[1] & 0xffff0000;
-
-  *object_id = M0_CLOVIS_ID_APP;
-  object_id->u_hi = hash128_64[0];
-  object_id->u_lo = object_id->u_lo & hash128_64[1];
+  // Reset the higher 8 bits, will be used by Mero
+  hash128_64[0] = hash128_64[0] & 0x00ffffffffffffff;
+  tmp_uint128.u_hi = hash128_64[0];
+  tmp_uint128.u_lo = hash128_64[1];
+  int rc = m0_uint128_cmp(&M0_CLOVIS_ID_APP, &tmp_uint128);
+  if (rc >= 0) {
+    struct m0_uint128 res;
+    // ID should be more than M0_CLOVIS_ID_APP
+    s3_log(S3_LOG_DEBUG,
+           "Id from Murmur hash algorithm less than M0_CLOVIS_ID_APP\n");
+    m0_uint128_add(&res, &M0_CLOVIS_ID_APP, &tmp_uint128);
+    tmp_uint128.u_hi = res.u_hi;
+    tmp_uint128.u_lo = res.u_lo;
+    tmp_uint128.u_hi = tmp_uint128.u_hi & 0x00ffffffffffffff;
+  }
+  *object_id = tmp_uint128;
+  s3_log(S3_LOG_DEBUG, "ID for %s is %llu %llu\n", name, object_id->u_hi, object_id->u_lo);
 
   timer.stop();
   LOG_PERF("S3UriToMeroOID_ns", timer.elapsed_time_in_nanosec());
