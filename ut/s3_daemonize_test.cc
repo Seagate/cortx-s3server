@@ -42,7 +42,6 @@ TEST_F(S3DaemonizeTest, DefaultCons) {
 }
 
 TEST_F(S3DaemonizeTest, SetOptionsCons) {
-  option_instance->set_daemon_dir("/home/seagate");
   option_instance->set_redirection(0);
   S3Daemonize s3daemon;
   EXPECT_EQ(1, s3daemon.get_s3daemon_redirection());
