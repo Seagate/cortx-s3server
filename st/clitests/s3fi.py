@@ -39,7 +39,7 @@ class S3fiTest(PyCliTest):
         self.opcode = opcode
         self.tag = tag
         self.prob = prob
-        command = curl_cmd + self.opcode + ",random, " + self.tag +  "," + self.prob + "\ " + "-X PUT " + S3ClientConfig.s3_uri
+        command = curl_cmd + self.opcode + ",random," + self.tag +  "," + self.prob + "\" " + "-X PUT " + S3ClientConfig.s3_uri
         self.with_cli(command)
         return self
 
@@ -48,7 +48,7 @@ class S3fiTest(PyCliTest):
         self.opcode = opcode
         self.tag = tag
         self.ntime = ntime
-        command = curl_cmd + self.opcode + ",enablen, " + self.tag +  "," + self.ntime + "\ " + "-X PUT " + S3ClientConfig.s3_uri
+        command = curl_cmd + self.opcode + ",enablen," + self.tag +  "," + self.ntime + "\" " + "-X PUT " + S3ClientConfig.s3_uri
         self.with_cli(command)
         return self
 
@@ -58,7 +58,7 @@ class S3fiTest(PyCliTest):
         self.tag = tag
         self.ntime = ntime
         self.mtime = mtime
-        command = curl_cmd + self.opcode + ",offnonm, " + self.tag +  "," + self.ntime +  "," + self.mtime + "\ " + "-X PUT " + S3ClientConfig.s3_uri
+        command = curl_cmd + self.opcode + ",offnonm," + self.tag +  "," + self.ntime +  "," + self.mtime + "\" " + "-X PUT " + S3ClientConfig.s3_uri
         self.with_cli(command)
         return self
 

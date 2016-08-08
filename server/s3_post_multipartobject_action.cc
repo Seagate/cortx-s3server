@@ -134,10 +134,34 @@ void S3PostMultipartObjectAction::create_new_oid() {
   return;
 }
 
+void S3PostMultipartObjectAction::rollback_create() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  clovis_writer->delete_object(
+      std::bind(&S3PostMultipartObjectAction::rollback_next, this),
+      std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::rollback_create_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
+    rollback_next();
+  } else {
+    // Log rollback failure.
+    s3_log(S3_LOG_WARN, "Deletion of object failed\n");
+    rollback_done();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 void S3PostMultipartObjectAction::save_upload_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   create_object_timer.stop();
   LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
+
+  // mark rollback point
+  add_task_rollback(
+      std::bind(&S3PostMultipartObjectAction::rollback_create, this));
 
   for (auto it: request->get_in_headers_copy()) {
     if(it.first.find("x-amz-meta-") != std::string::npos) {
@@ -152,15 +176,43 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
 
 void S3PostMultipartObjectAction::save_upload_metadata_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // TODO rollback
-  send_response_to_s3_client();
+  // Trigger rollback to undo changes done and report error
+  rollback_start();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::rollback_upload_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  object_multipart_metadata->remove(
+      std::bind(&S3PostMultipartObjectAction::rollback_next, this),
+      std::bind(&S3PostMultipartObjectAction::rollback_upload_metadata_failed,
+                this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::rollback_upload_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (object_multipart_metadata->get_state() ==
+      S3ObjectMetadataState::missing) {
+    rollback_next();
+  } else {
+    // Log rollback failure.
+    s3_log(S3_LOG_WARN, "Deletion of multipart metadata failed\n");
+    rollback_done();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostMultipartObjectAction::create_part_meta_index() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  // mark rollback point
+  add_task_rollback(
+      std::bind(&S3PostMultipartObjectAction::rollback_upload_metadata, this));
+
   part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 0);
-  part_metadata->create_index(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
+  part_metadata->create_index(
+      std::bind(&S3PostMultipartObjectAction::next, this),
+      std::bind(&S3PostMultipartObjectAction::rollback_start, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

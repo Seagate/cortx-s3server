@@ -73,7 +73,7 @@ void S3ClovisKVSWriter::create_index(std::string index_name, std::function<void(
 
   writer_context->start_timer_for("create_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1);
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::createidx);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

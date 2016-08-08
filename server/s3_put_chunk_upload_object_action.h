@@ -69,6 +69,10 @@ public:
   void write_object_failed();
   void save_metadata();
   void send_response_to_s3_client();
+
+  // rollback functions
+  void rollback_create();
+  void rollback_create_failed();
 };
 
 #endif

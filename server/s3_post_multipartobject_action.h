@@ -60,6 +60,12 @@ public:
   void create_part_meta_index();
   void send_response_to_s3_client();
 
+  // rollback functions
+  void rollback_create();
+  void rollback_create_failed();
+  void rollback_upload_metadata();
+  void rollback_upload_metadata_failed();
+
   std::shared_ptr<S3RequestObject> get_request() {
     return request;
   }

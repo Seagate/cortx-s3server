@@ -160,8 +160,10 @@ class ConcreteClovisAPI : public ClovisAPI {
           || (config->is_fake_clovis_deletekv() && type == ClovisOpType::deletekv))
       {
         clovis_fake_op_launch(op, nr);
-      } else if (type == ClovisOpType::writeobj &&
-                 s3_fi_is_enabled("clovis_obj_write_fail")) {
+      } else if ((type == ClovisOpType::writeobj &&
+                  s3_fi_is_enabled("clovis_obj_write_fail")) ||
+                 (type == ClovisOpType::createidx &&
+                  s3_fi_is_enabled("clovis_idx_create_fail"))) {
         clovis_fi_op_launch(op, nr);
       } else {
         m0_clovis_op_launch(op, nr);

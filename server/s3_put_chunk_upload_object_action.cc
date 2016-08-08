@@ -53,7 +53,10 @@ void S3PutChunkUploadObjectAction::setup_steps(){
 
 void S3PutChunkUploadObjectAction::chunk_auth_successful() {
   if (clovis_write_completed) {
-    next();
+    if (write_failed)
+      rollback_start();
+    else
+      next();
   } else {
     // wait for write to complete. do nothing here.
     auth_completed = true;
@@ -65,8 +68,10 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
   if (clovis_write_in_progress) {
     // Do nothing, handle after write returns
   } else {
-    // TODO rollback
-    send_response_to_s3_client();
+    if (write_failed)
+      rollback_start();
+    else
+      send_response_to_s3_client();
   }
 }
 
@@ -109,8 +114,33 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+void S3PutChunkUploadObjectAction::rollback_create() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  clovis_writer->delete_object(
+      std::bind(&S3PutChunkUploadObjectAction::rollback_next, this),
+      std::bind(&S3PutChunkUploadObjectAction::rollback_create_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::rollback_create_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
+    rollback_next();
+  } else {
+    // Log rollback failure.
+    s3_log(S3_LOG_WARN, "Deletion of object failed\n");
+    rollback_done();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 void S3PutChunkUploadObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  // mark rollback point
+  add_task_rollback(
+      std::bind(&S3PutChunkUploadObjectAction::rollback_create, this));
+
   create_object_timer.stop();
   LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
 
@@ -179,8 +209,8 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
   s3_log(S3_LOG_DEBUG, "Write to clovis successful\n");
   clovis_write_in_progress = false;
   if (auth_failed) {
-    // TODO - rollback = deleteobject
-    send_response_to_s3_client();
+    // Trigger rollback to undo changes done and report error
+    rollback_start();
     return;
   }
 
@@ -210,7 +240,8 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   write_failed = true;
   clovis_write_completed = true;
   if (!auth_in_progress) {
-    send_response_to_s3_client();
+    // Trigger rollback to undo changes done and report error
+    rollback_start();
   }
 }
 
@@ -228,7 +259,9 @@ void S3PutChunkUploadObjectAction::save_metadata() {
       object_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
-  object_metadata->save(std::bind( &S3PutChunkUploadObjectAction::next, this), std::bind( &S3PutChunkUploadObjectAction::next, this));
+  object_metadata->save(
+      std::bind(&S3PutChunkUploadObjectAction::next, this),
+      std::bind(&S3PutChunkUploadObjectAction::rollback_start, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
