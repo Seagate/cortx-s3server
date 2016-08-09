@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_FI_COMMON_H_
-#define __MERO_FE_S3_SERVER_FI_COMMON_H_
+#ifndef __MERO_FE_S3_SERVER_S3_FI_COMMON_H__
+#define __MERO_FE_S3_SERVER_S3_FI_COMMON_H__
 
 #ifdef __cplusplus
 #define EXTERN_C_BLOCK_BEGIN extern "C" {
@@ -142,4 +142,4 @@ inline void s3_fi_disable(const char *fp_tag) {}
 
 EXTERN_C_BLOCK_END
 
-#endif /*  __MERO_FE_S3_SERVER_FI_COMMON_H_ */
+#endif /*  __MERO_FE_S3_SERVER_S3_FI_COMMON_H__ */
