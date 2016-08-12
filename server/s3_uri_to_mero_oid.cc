@@ -34,14 +34,14 @@ void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
   struct m0_uint128 tmp_uint128;
   object_id->u_hi = object_id->u_lo = 0;
   if (name == NULL) {
-    s3_log(S3_LOG_FATAL, "The input parameter 'name' is NULL\n");
+    s3_log(S3_LOG_ERROR, "The input parameter 'name' is NULL\n");
     return;
   }
 
   len = strlen(name);
   if (len == 0) {
     // oid should not be 0
-    s3_log(S3_LOG_FATAL, "The input parameter 'name' is empty string\n");
+    s3_log(S3_LOG_ERROR, "The input parameter 'name' is empty string\n");
     return;
   }
   MurmurHash3_x64_128(name, len, 0, &hash128_64);

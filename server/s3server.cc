@@ -42,12 +42,7 @@
 /* Program options */
 #include <unistd.h>
 
-const char *log_level_str[S3_LOG_DEBUG] = {"FATAL", "ERROR", "WARN", "INFO", "DEBUG"};
-
-FILE *fp_log;
-int s3log_level = S3_LOG_INFO;
 evbase_t * global_evbase_handle;
-
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
@@ -137,49 +132,31 @@ void fatal_libevent(int err) {
   s3_log(S3_LOG_ERROR, "Fatal error occured in libevent, error = %d\n", err);
 }
 
-
 int
 main(int argc, char ** argv) {
   int rc = 0;
   const char  *bind_addr;
   uint16_t     bind_port;
 
-  if (parse_and_load_config_options(argc, argv) < 0) {
-      exit(1);
-  }
-
   // Load Any configs.
+  if (parse_and_load_config_options(argc, argv) < 0) {
+    fprintf(stderr, "%s:%d:parse_and_load_config_options failed\n", __FILE__,
+            __LINE__);
+    exit(1);
+  }
+
+  // Init general purpose logger here but don't use it for non-FATAL logs
+  // until we daemonize.
+  rc = init_log(argv[0]);
+  if (rc < 0) {
+    fprintf(stderr, "%s:%d:init_log failed\n", __FILE__, __LINE__);
+    exit(1);
+  }
+
   S3ErrorMessages::init_messages();
+  S3Option *option_instance = S3Option::get_instance();
 
-  S3Option * option_instance = S3Option::get_instance();
-  if(option_instance->get_log_level() != "") {
-    if(option_instance->get_log_level() == "INFO") {
-      s3log_level = S3_LOG_INFO;
-    } else if(option_instance->get_log_level() == "DEBUG") {
-      s3log_level = S3_LOG_DEBUG;
-    } else if(option_instance->get_log_level() == "ERROR") {
-      s3log_level = S3_LOG_ERROR;
-    } else if(option_instance->get_log_level() == "FATAL") {
-      s3log_level = S3_LOG_FATAL;
-    } else if(option_instance->get_log_level() == "WARN") {
-      s3log_level = S3_LOG_WARN;
-    }
-  } else {
-    s3log_level = S3_LOG_INFO;
-  }
-
-  if(option_instance->get_log_filename() != "") {
-    fp_log = std::fopen(option_instance->get_log_filename().c_str(), "a");
-    if(fp_log == NULL) {
-      printf("File opening of log %s failed\n", option_instance->get_log_filename().c_str());
-      return -1;
-    }
-  } else {
-    fp_log = stdout;
-  }
-
-  option_instance->dump_options();
-    // Initilise loggers
+  // Init perf logger
   if (option_instance->s3_performance_enabled()) {
     S3PerfLogger::initialize(option_instance->get_perf_log_filename());
   }
@@ -187,6 +164,9 @@ main(int argc, char ** argv) {
   S3Daemonize s3daemon;
   s3daemon.daemonize();
   s3daemon.register_signals();
+
+  // dump the config
+  option_instance->dump_options();
 
   // Call this function before creating event base
   evthread_use_pthreads();
@@ -257,8 +237,6 @@ main(int argc, char ** argv) {
   delete router;
   s3_log(S3_LOG_DEBUG, "S3server exiting...\n");
   s3daemon.delete_pidfile();
-  if(fp_log != NULL && fp_log != stdout) {
-    std::fclose(fp_log);
-  }
+  fini_log();
   return 0;
 }

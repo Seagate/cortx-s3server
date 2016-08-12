@@ -23,6 +23,7 @@
 #define __MERO_FE_S3_SERVER_S3_CLOVIS_CONTEXT_H__
 
 #include "s3_common.h"
+#include "s3_log.h"
 
 EXTERN_C_BLOCK_BEGIN
 
@@ -30,7 +31,6 @@ EXTERN_C_BLOCK_BEGIN
 #include "mero/init.h"
 
 #include "clovis/clovis.h"
-#include "s3_log.h"
 
 // To create a basic clovis operation
 struct s3_clovis_op_context {

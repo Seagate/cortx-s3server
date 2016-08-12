@@ -152,7 +152,7 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
         }
         switch (parser_state) {
           case ChunkParserState::c_error: {
-            s3_log(S3_LOG_ERROR, "ChunkParserState::c_error.")
+            s3_log(S3_LOG_ERROR, "ChunkParserState::c_error.\n");
             free(vec_in);
             return return_val;
           }
@@ -313,7 +313,7 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
               }
             } else {
               // This can be last chunk with size 0
-              s3_log(S3_LOG_DEBUG, "Last chunk of size 0\n")
+              s3_log(S3_LOG_DEBUG, "Last chunk of size 0\n");
               reset_parsing = true;
               parser_state = ChunkParserState::c_start;
               current_chunk_detail.update_hash(NULL);
@@ -349,9 +349,7 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
             }
             break;
           }
-          default: {
-            s3_log(S3_LOG_FATAL, "Invalid ChunkParserState.")
-          }
+          default: { s3_log(S3_LOG_ERROR, "Invalid ChunkParserState.\n"); }
         };  // switch
         if (reset_parsing) {
           break;

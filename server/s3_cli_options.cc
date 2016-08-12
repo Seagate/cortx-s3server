@@ -24,7 +24,6 @@ DEFINE_string(s3host, "0.0.0.0", "S3 server bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
 
 DEFINE_string(s3loglevel, "INFO", "options: DEBUG | INFO | WARN | ERROR | FATAL");
-DEFINE_string(s3logfile, "/var/log/seagate/s3/s3server.log", "Log file path");
 
 DEFINE_bool(perfenable, false, "Enable performance log");
 DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log", "Performance log path");
@@ -60,7 +59,9 @@ int parse_and_load_config_options(int argc, char ** argv) {
 
   // load the configurations from config file.
   bool force_override_from_config = true;
-  option_instance->load_all_sections(force_override_from_config);
+  if (!option_instance->load_all_sections(force_override_from_config)) {
+    return -1;
+  }
 
   // Override with options set on command line
   gflags::CommandLineFlagInfo flag_info;
@@ -90,14 +91,21 @@ int parse_and_load_config_options(int argc, char ** argv) {
     option_instance->set_cmdline_option(S3_OPTION_PERF_LOG_FILE, flag_info.current_value.c_str());
   }
 
-  gflags::GetCommandLineFlagInfo("s3logfile", &flag_info);
+  gflags::GetCommandLineFlagInfo("log_dir", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_LOG_FILE, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_LOG_DIR,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("s3loglevel", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_OPTION_LOG_MODE, flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("max_log_size", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("clovislocal", &flag_info);

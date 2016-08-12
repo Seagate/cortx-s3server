@@ -90,7 +90,7 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t * req, evbuf_t * 
     context->set_op_status_for(0, S3AsyncOpStatus::failed, "Authorization failed:Method Not Allowed");
     context->set_authorization_response(auth_response_body, false);
   } else {
-    s3_log(S3_LOG_FATAL, "Something is wrong with Auth server\n");
+    s3_log(S3_LOG_ERROR, "Something is wrong with Auth server\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed, "Something is wrong with Auth server");
     context->set_authorization_response("", false);
   }
@@ -138,7 +138,7 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t * req, evbuf_t * buf, void
     context->set_op_status_for(0, S3AsyncOpStatus::failed, "Authentication failed");
     context->set_auth_response_xml(auth_response_body, false);
   } else {
-    s3_log(S3_LOG_FATAL, "Something is wrong with Auth server\n");
+    s3_log(S3_LOG_ERROR, "Something is wrong with Auth server\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed, "Something is wrong with Auth server");
     context->set_auth_response_xml("", false);
   }
@@ -487,7 +487,9 @@ void S3AuthClient::check_authorization_failed() {
       set_event_with_retry_interval();
       retry_count++;
     } else {
-      s3_log(S3_LOG_FATAL, "Cannot connect to Auth server (Retry count = %d).\n", retry_count);
+      s3_log(S3_LOG_ERROR,
+             "Cannot connect to Auth server (Retry count = %d).\n",
+             retry_count);
       this->handler_on_failed();
     }
   } else {
@@ -534,7 +536,9 @@ void S3AuthClient::check_authentication_failed() {
       set_event_with_retry_interval();
       retry_count++;
     } else {
-      s3_log(S3_LOG_FATAL, "Cannot connect to Auth server (Retry count = %d).\n", retry_count);
+      s3_log(S3_LOG_ERROR,
+             "Cannot connect to Auth server (Retry count = %d).\n",
+             retry_count);
       this->handler_on_failed();
     }
   } else {

@@ -15,6 +15,7 @@
  *
  * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
+ * Original author:  Vinayak Kale <vinayak.kale@seagate.com>
  * Original creation date: 2-March-2016
  */
 
@@ -23,41 +24,48 @@
 #ifndef __MERO_FE_S3_SERVER_LOG_H__
 #define __MERO_FE_S3_SERVER_LOG_H__
 
-#include <stdio.h>
-#include <sys/time.h>
+#include <glog/logging.h>
+#include <memory>
 
-#define S3_LOG_FATAL 1
-#define S3_LOG_ERROR 2
-#define S3_LOG_WARN  3
-#define S3_LOG_INFO  4
-#define S3_LOG_DEBUG 5
-
-
-
-extern const char *log_level_str[S3_LOG_DEBUG];
-
-extern FILE *fp_log;
+#define S3_LOG_FATAL google::GLOG_FATAL
+#define S3_LOG_ERROR google::GLOG_ERROR
+#define S3_LOG_WARN google::GLOG_WARNING
+#define S3_LOG_INFO google::GLOG_INFO
+#define S3_LOG_DEBUG (S3_LOG_FATAL + 1)
 
 extern int s3log_level;
 
-//++
-// Log format:
-//   Log level:[HH:MM:SS,MilliSec Month:Date:Year] "<filename>":[line#] <function name>: <Log description>
-// Example:
-//   DEBUG:[15:46:17,091 02:02:2016] "server/s3server.cc":[219]  main: S3 Server running...
-// --
+// Note:
+// 1. Google glog doesn't have a separate severity level for DEBUG logs.
+//    So we map our DEBUG logs to INFO level. This level promotion happens
+//    only if S3 log level is set to DEBUG.
+// 2. Logging a FATAL message terminates the program (after the message is
+//    logged).
+#define s3_log(loglevel, fmt, ...)                                     \
+  do {                                                                 \
+    int glog_level = loglevel;                                         \
+    if ((loglevel == S3_LOG_DEBUG) && (s3log_level == S3_LOG_DEBUG)) { \
+      glog_level = S3_LOG_INFO;                                        \
+    }                                                                  \
+    if (glog_level != S3_LOG_DEBUG) {                                  \
+      int log_buf_len = snprintf(NULL, 0, fmt "\n", ##__VA_ARGS__);    \
+      log_buf_len++;                                                   \
+      std::unique_ptr<char> log_buf(new char[log_buf_len]);            \
+      snprintf(log_buf.get(), log_buf_len, fmt "\n", ##__VA_ARGS__);   \
+      if (glog_level == S3_LOG_INFO) {                                 \
+        LOG(INFO) << log_buf.get();                                    \
+      } else if (glog_level == S3_LOG_WARN) {                          \
+        LOG(WARNING) << log_buf.get();                                 \
+      } else if (glog_level == S3_LOG_ERROR) {                         \
+        LOG(ERROR) << log_buf.get();                                   \
+      } else if (glog_level == S3_LOG_FATAL) {                         \
+        LOG(FATAL) << log_buf.get();                                   \
+      }                                                                \
+    }                                                                  \
+  } while (0)
 
-#define __S3QUOTE(x) # x
-#define  _S3QUOTE(x)  __S3QUOTE(x)
-#define s3_debug_strlen(x)     strlen(x)
-#define s3_log(loglevel,fmt, ...)  \
-        if(loglevel <= s3log_level) {  \
-          struct timeval tval;  \
-          gettimeofday(&tval,NULL);   \
-          unsigned int nMillisec = tval.tv_usec / 1000;  \
-          struct tm * dm = localtime(&tval.tv_sec);      \
-          fprintf(fp_log, "%s:[%02d:%02d:%02d,%03d %02d:%02d:%04d] " _S3QUOTE(__FILE__) ":[" _S3QUOTE(__LINE__) "]  %s: " \
-          fmt "\n", log_level_str[loglevel-1], dm->tm_hour, dm->tm_min, dm->tm_sec,nMillisec, dm->tm_mon, dm->tm_mday,dm->tm_year + 1900, __func__, ## __VA_ARGS__); \
-          fflush(fp_log);  \
-        }
-#endif
+int init_log(char *process_name);
+void fini_log();
+void flushall_log();
+
+#endif  // __MERO_FE_S3_SERVER_LOG_H__

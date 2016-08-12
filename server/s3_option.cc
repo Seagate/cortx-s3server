@@ -40,8 +40,13 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       s3_daemon_redirect = s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
-      log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
+      log_dir = s3_option_node["S3_LOG_DIR"].as<std::string>();
       log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+      log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
+      log_buffering_enable =
+          s3_option_node["S3_LOG_ENABLE_BUFFERING"].as<bool>();
+      log_flush_frequency_sec =
+          s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
       s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
@@ -87,14 +92,17 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       if (!(cmd_opt_flag & S3_OPTION_BIND_PORT)) {
         s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       }
-      if (!(cmd_opt_flag & S3_OPTION_LOG_FILE)) {
-        log_filename = s3_option_node["S3_LOG_FILENAME"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_LOG_DIR)) {
+        log_dir = s3_option_node["S3_LOG_DIR"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_OPTION_PERF_LOG_FILE)) {
         perf_log_file = s3_option_node["S3_PERF_LOG_FILENAME"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_OPTION_LOG_MODE)) {
         log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+      }
+      if (!(cmd_opt_flag & S3_OPTION_LOG_FILE_MAX_SIZE)) {
+        log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
       }
       if (!(cmd_opt_flag & S3_OPTION_BIND_ADDR)) {
         s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
@@ -110,6 +118,10 @@ bool S3Option::load_section(std::string section_name, bool force_override_from_c
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       max_retry_count = s3_option_node["S3_MAX_RETRY_COUNT"].as<unsigned short>();
       retry_interval_millisec = s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
+      log_buffering_enable =
+          s3_option_node["S3_LOG_ENABLE_BUFFERING"].as<bool>();
+      log_flush_frequency_sec =
+          s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -167,18 +179,24 @@ bool S3Option::load_all_sections(bool force_override_from_config=false) {
       load_section(root_node["S3Config_Sections"][i].as<std::string>(), force_override_from_config);
     }
   } catch (const YAML::RepresentationException &e) {
-    s3_log(S3_LOG_FATAL, "YAML::RepresentationException caught: %s\n", e.what());
-    s3_log(S3_LOG_FATAL, "Yaml file %s is incorrect\n", option_file.c_str());
+    fprintf(stderr, "%s:%d:YAML::RepresentationException caught: %s\n",
+            __FILE__, __LINE__, e.what());
+    fprintf(stderr, "%s:%d:Yaml file %s is incorrect\n", __FILE__, __LINE__,
+            option_file.c_str());
     return false;
   } catch (const YAML::ParserException &e) {
-    s3_log(S3_LOG_FATAL, "YAML::ParserException caught: %s\n", e.what());
-    s3_log(S3_LOG_FATAL, "Parsing Error in yaml file %s\n", option_file.c_str());
+    fprintf(stderr, "%s:%d:YAML::ParserException caught: %s\n", __FILE__,
+            __LINE__, e.what());
+    fprintf(stderr, "%s:%d:Parsing Error in yaml file %s\n", __FILE__, __LINE__,
+            option_file.c_str());
     return false;
   } catch (const YAML::EmitterException &e) {
-    s3_log(S3_LOG_FATAL, "YAML::EmitterException caught: %s\n", e.what());
+    fprintf(stderr, "%s:%d:YAML::EmitterException caught: %s\n", __FILE__,
+            __LINE__, e.what());
     return false;
   } catch (YAML::Exception& e) {
-    s3_log(S3_LOG_FATAL, "YAML::Exception caught: %s\n", e.what());
+    fprintf(stderr, "%s:%d:YAML::Exception caught: %s\n", __FILE__, __LINE__,
+            e.what());
     return false;
   }
   return true;
@@ -201,12 +219,14 @@ void S3Option::set_cmdline_option(int option_flag, const char *optarg) {
     auth_port = atoi(optarg);
   } else if (option_flag & S3_CLOVIS_LAYOUT_ID) {
     clovis_layout_id = atoi(optarg);
-  } else if (option_flag & S3_OPTION_LOG_FILE) {
-    log_filename = optarg;
+  } else if (option_flag & S3_OPTION_LOG_DIR) {
+    log_dir = optarg;
   } else if (option_flag & S3_OPTION_PERF_LOG_FILE) {
     perf_log_file = optarg;
   } else if (option_flag & S3_OPTION_LOG_MODE) {
     log_level = optarg;
+  } else if (option_flag & S3_OPTION_LOG_FILE_MAX_SIZE) {
+    log_file_max_size_mb = atoi(optarg);
   }
   cmd_opt_flag |= option_flag;
   return;
@@ -219,8 +239,12 @@ int S3Option::get_cmd_opt_flag() {
 void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_DAEMON_WORKING_DIR = %s\n", s3_daemon_dir.c_str());
   s3_log(S3_LOG_INFO, "S3_DAEMON_DO_REDIRECTION = %d\n", s3_daemon_redirect);
-  s3_log(S3_LOG_INFO, "S3_LOG_FILENAME = %s\n", log_filename.c_str());
+  s3_log(S3_LOG_INFO, "S3_LOG_DIR = %s\n", log_dir.c_str());
   s3_log(S3_LOG_INFO, "S3_LOG_MODE = %s\n", log_level.c_str());
+  s3_log(S3_LOG_INFO, "S3_LOG_FILE_MAX_SIZE = %d\n", log_file_max_size_mb);
+  s3_log(S3_LOG_INFO, "S3_LOG_ENABLE_BUFFERING = %s\n",
+         (log_buffering_enable ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "S3_LOG_FLUSH_FREQUENCY = %d\n", log_flush_frequency_sec);
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
   s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", perf_enabled);
@@ -308,13 +332,19 @@ void S3Option::set_redirection(unsigned short redirect) {
   s3_daemon_redirect = redirect;
 }
 
-std::string S3Option::get_log_filename() {
-  return log_filename;
-}
+std::string S3Option::get_log_dir() { return log_dir; }
 
 std::string S3Option::get_log_level() {
   return log_level;
 }
+
+int S3Option::get_log_file_max_size_in_mb() { return log_file_max_size_mb; }
+
+int S3Option::get_log_flush_frequency_in_sec() {
+  return log_flush_frequency_sec;
+}
+
+bool S3Option::is_log_buffering_enabled() { return log_buffering_enable; }
 
 std::string S3Option::get_perf_log_filename() {
   return perf_log_file;

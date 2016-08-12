@@ -29,9 +29,10 @@
 #define S3_OPTION_AUTH_IP_ADDR 0x0020
 #define S3_OPTION_AUTH_PORT 0x0040
 #define S3_CLOVIS_LAYOUT_ID 0x0080
-#define S3_OPTION_LOG_FILE 0x0100
+#define S3_OPTION_LOG_DIR 0x0100
 #define S3_OPTION_LOG_MODE 0x0200
 #define S3_OPTION_PERF_LOG_FILE 0x0400
+#define S3_OPTION_LOG_FILE_MAX_SIZE 0x0800
 
 #include <string>
 #include <set>
@@ -57,9 +58,12 @@ class S3Option {
   std::string perf_log_file;
 
   std::string option_file;
-  std::string log_filename;
+  std::string log_dir;
   int read_ahead_multiple;
   std::string log_level;
+  int log_file_max_size_mb;
+  bool log_buffering_enable;
+  int log_flush_frequency_sec;
 
   unsigned short clovis_layout_id;
   unsigned short clovis_factor;
@@ -99,8 +103,11 @@ class S3Option {
     s3_region_endpoints.insert("s3-europe.seagate.com");
     s3_region_endpoints.insert("s3-asia.seagate.com");
 
-    log_filename = FLAGS_s3logfile;
+    log_dir = "/var/log/seagate/s3";
     log_level = FLAGS_s3loglevel;
+    log_file_max_size_mb = 100;  // 100 MB
+    log_buffering_enable = true;
+    log_flush_frequency_sec = 30;  // 30 seconds
 
     clovis_layout_id = FLAGS_clovislayoutid;
     clovis_local_addr = FLAGS_clovislocal;
@@ -162,8 +169,11 @@ class S3Option {
   void set_daemon_dir(std::string path);
   void set_redirection(unsigned short redirect);
 
-  std::string get_log_filename();
+  std::string get_log_dir();
   std::string get_log_level();
+  int get_log_file_max_size_in_mb();
+  bool is_log_buffering_enabled();
+  int get_log_flush_frequency_in_sec();
 
   unsigned short s3_performance_enabled();
   std::string get_perf_log_filename();

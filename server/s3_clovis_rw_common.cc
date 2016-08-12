@@ -26,17 +26,17 @@
 void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_data) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (user_data == NULL) {
-    s3_log(S3_LOG_FATAL, "Input argument user_data is NULL\n");
+    s3_log(S3_LOG_ERROR, "Input argument user_data is NULL\n");
   }
 
   struct user_event_context * user_context = (struct user_event_context *)user_data;
   S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
   if (context == NULL) {
-    s3_log(S3_LOG_FATAL, "context pointer is NULL\n");
+    s3_log(S3_LOG_ERROR, "context pointer is NULL\n");
   }
   struct event * s3user_event = (struct event *)user_context->user_event;
   if (s3user_event == NULL) {
-    s3_log(S3_LOG_FATAL, "User event is NULL\n");
+    s3_log(S3_LOG_ERROR, "User event is NULL\n");
   }
   context->log_timer();
 

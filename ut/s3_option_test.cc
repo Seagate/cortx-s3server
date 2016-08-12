@@ -39,7 +39,7 @@ class S3OptionsTest : public testing::Test {
 };
 
 TEST_F(S3OptionsTest, Constructor) {
-  EXPECT_STREQ("/var/log/seagate/s3/s3server.log", instance->get_log_filename().c_str());
+  EXPECT_STREQ("/var/log/seagate/s3", instance->get_log_dir().c_str());
   EXPECT_STREQ("INFO", instance->get_log_level().c_str());
   EXPECT_STREQ("0.0.0.0", instance->get_bind_addr().c_str());
   EXPECT_STREQ("localhost@tcp:12345:33:100", instance->get_clovis_local_addr().c_str());
@@ -58,6 +58,9 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ("clovis_index_keyspace", instance->get_clovis_cass_keyspace());
   EXPECT_EQ(1, instance->get_clovis_cass_max_column_family_num());
+  EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(true, instance->is_log_buffering_enabled());
+  EXPECT_EQ(30, instance->get_log_flush_frequency_in_sec());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
@@ -70,7 +73,7 @@ TEST_F(S3OptionsTest, SingletonCheck) {
 TEST_F(S3OptionsTest, GetOptionsfromFile) {
   instance->load_all_sections(false);
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -85,6 +88,9 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_EQ(false, instance->get_clovis_is_oostore());
   EXPECT_EQ(true, instance->get_clovis_is_read_verify());
+  EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(false, instance->is_log_buffering_enabled());
+  EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
 }
 
 TEST_F(S3OptionsTest, TestOverrideOptions) {
@@ -95,11 +101,12 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
-  instance->set_cmdline_option(S3_OPTION_LOG_FILE, "/tmp/log.txt");
+  instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
+  instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   // load from Config file, overriding the command options
   instance->load_all_sections(true);
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -113,6 +120,9 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_EQ(false, instance->get_clovis_is_oostore());
   EXPECT_EQ(true, instance->get_clovis_is_read_verify());
+  EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(false, instance->is_log_buffering_enabled());
+  EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
 }
 
 TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
@@ -123,11 +133,12 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.168.15.131");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
-  instance->set_cmdline_option(S3_OPTION_LOG_FILE, "/tmp/log.txt");
+  instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
+  instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   instance->load_all_sections(false);
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
-  EXPECT_EQ(std::string("/tmp/log.txt"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/tmp/"), instance->get_log_dir());
   EXPECT_EQ(std::string("debug"), instance->get_log_level());
   EXPECT_EQ(std::string("198.1.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_local_addr());
@@ -140,15 +151,18 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_EQ(false, instance->get_clovis_is_oostore());
   EXPECT_EQ(true, instance->get_clovis_is_read_verify());
+  EXPECT_EQ(1, instance->get_log_file_max_size_in_mb());
 }
 
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   instance->load_section("S3_SERVER_CONFIG", false);
 
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(9081, instance->get_s3_bind_port());
+  EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(false, instance->is_log_buffering_enabled());
 
   // These will come with default values.
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -167,14 +181,17 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
 
   instance->set_cmdline_option(S3_OPTION_BIND_ADDR, "198.1.1.1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
-  instance->set_cmdline_option(S3_OPTION_LOG_FILE, "/tmp/log.txt");
+  instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
+  instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   instance->load_section("S3_SERVER_CONFIG", true);
 
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(9081, instance->get_s3_bind_port());
+  EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(false, instance->is_log_buffering_enabled());
 
   // These should be default values
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -196,7 +213,7 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(8095, instance->get_auth_port());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("0.0.0.0"), instance->get_bind_addr());
   EXPECT_EQ(8081, instance->get_s3_bind_port());
@@ -208,6 +225,8 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
   EXPECT_EQ(false, instance->get_clovis_is_oostore());
   EXPECT_EQ(false, instance->get_clovis_is_read_verify());
+  EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(true, instance->is_log_buffering_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
@@ -220,7 +239,7 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(8095, instance->get_auth_port());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("0.0.0.0"), instance->get_bind_addr());
   EXPECT_EQ(8081, instance->get_s3_bind_port());
@@ -232,6 +251,8 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
   EXPECT_EQ(false, instance->get_clovis_is_oostore());
   EXPECT_EQ(false, instance->get_clovis_is_read_verify());
+  EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(true, instance->is_log_buffering_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
@@ -246,10 +267,12 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_EQ(true, instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("0.0.0.0"), instance->get_bind_addr());
   EXPECT_EQ(8081, instance->get_s3_bind_port());
+  EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(true, instance->is_log_buffering_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
@@ -266,10 +289,12 @@ TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   EXPECT_EQ(true, instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
-  EXPECT_EQ(std::string("/var/log/seagate/s3/s3server.log"), instance->get_log_filename());
+  EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("0.0.0.0"), instance->get_bind_addr());
   EXPECT_EQ(8081, instance->get_s3_bind_port());
+  EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(true, instance->is_log_buffering_enabled());
 }
 
 TEST_F(S3OptionsTest, SetCmdOptionFlag) {
@@ -281,12 +306,14 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
-  instance->set_cmdline_option(S3_OPTION_LOG_FILE, "/tmp/log.txt");
+  instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
+  instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
 
-  flag = S3_OPTION_BIND_ADDR | S3_OPTION_BIND_PORT | S3_OPTION_CLOVIS_LOCAL_ADDR |
-         S3_OPTION_CLOVIS_CONFD_ADDR | S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT |
-         S3_CLOVIS_LAYOUT_ID | S3_OPTION_LOG_FILE | S3_OPTION_LOG_MODE;
+  flag = S3_OPTION_BIND_ADDR | S3_OPTION_BIND_PORT |
+         S3_OPTION_CLOVIS_LOCAL_ADDR | S3_OPTION_CLOVIS_CONFD_ADDR |
+         S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT | S3_CLOVIS_LAYOUT_ID |
+         S3_OPTION_LOG_DIR | S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE;
 
   EXPECT_EQ(flag, instance->get_cmd_opt_flag());
 }

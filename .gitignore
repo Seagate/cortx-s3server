@@ -7,12 +7,14 @@ auth-utils/jcloudclient/target/
 auth/dependency-reduced-pom.xml
 auth/target/
 bazel-*
+s3ut.*
 server/jsoncpp.cc
 st/clitests/jclient.jar
 st/clitests/jcloudclient.jar
 st/clitests/mero_st/
 third_party/cpp-driver/
 third_party/gflags/
+third_party/glog/
 third_party/googlemock/
 third_party/googletest/
 third_party/jsoncpp/

@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "s3_log.h"
 #include "s3_fi_common.h"
 
 #ifdef ENABLE_FAULT_INJECTION

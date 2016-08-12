@@ -23,11 +23,11 @@
 #define __MERO_FE_S3_SERVER_S3_CLI_OPTIONS_H__
 
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
 DECLARE_string(s3host);
 DECLARE_int32(s3port);
 
-DECLARE_string(s3logfile);
 DECLARE_string(s3loglevel);
 
 DECLARE_bool(perfenable);

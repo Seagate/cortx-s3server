@@ -248,7 +248,7 @@ void S3RequestObject::notify_incoming_data(evbuf_t * buf) {
   s3_log(S3_LOG_DEBUG, "Buffering data to be consumed: %zu\n", data_bytes_received);
 
   if (data_bytes_received > pending_in_flight) {
-    s3_log(S3_LOG_FATAL, "Received too much unexpected data\n")
+    s3_log(S3_LOG_ERROR, "Received too much unexpected data\n");
   }
   pending_in_flight -= data_bytes_received;
   s3_log(S3_LOG_DEBUG, "pending_in_flight (after): %zu\n", pending_in_flight);

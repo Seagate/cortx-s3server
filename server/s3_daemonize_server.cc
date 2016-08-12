@@ -58,7 +58,7 @@ void s3_terminate_fatal_handler(int signum) {
   for(int i = 0; i < rc; i++) {
     bt_str += buf[i] + newline_str;
   }
-  s3_log(S3_LOG_FATAL, "Backtrace:\n%s\n",bt_str.c_str());
+  s3_log(S3_LOG_ERROR, "Backtrace:\n%s\n", bt_str.c_str());
   free(buf);
   S3Daemonize s3daemon;
   s3daemon.delete_pidfile();
@@ -81,7 +81,7 @@ void S3Daemonize::daemonize() {
   s3hup_act.sa_handler = SIG_IGN;
   rc = daemon(1, noclose);
   if (rc) {
-    s3_log(S3_LOG_ERROR, "Failed to daemonize s3 server, errno = %d\n",errno);
+    s3_log(S3_LOG_FATAL, "Failed to daemonize s3 server, errno = %d\n", errno);
     exit(1);
   }
   sigaction(SIGHUP, &s3hup_act, NULL);

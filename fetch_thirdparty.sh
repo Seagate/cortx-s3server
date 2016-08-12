@@ -12,6 +12,7 @@ cd third_party
 ./setup_lustre_headers.sh
 ./setup_yamlcpp.sh
 ./setup_gflags.sh
+./setup_glog.sh
 
 cd $S3_SRC_FOLDER
 

@@ -151,7 +151,9 @@ bool S3AuthResponseSuccess::parse_and_validate() {
   xmlFreeDoc(document);
   if (user_name.empty() || user_id.empty() || account_name.empty() || account_id.empty()) {
     // We dont have enough user info from auth server.
-    s3_log(S3_LOG_FATAL, "Auth server returned partial User info for authorization result.\n");
+    s3_log(
+        S3_LOG_ERROR,
+        "Auth server returned partial User info for authorization result.\n");
     is_valid = false;
   } else {
     s3_log(S3_LOG_DEBUG, "Auth server returned complete User info.\n");
