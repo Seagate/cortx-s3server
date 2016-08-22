@@ -16,10 +16,15 @@ trap 'abort' 0
 
 sh ./prechecksystest.sh
 
+source mero_st/bin/activate
+
 python auth_spec.py
 python s3cmd_spec.py
 python jclient_spec.py
 python jcloud_spec.py
+
+# undo the virtualenv
+deactivate
 
 echo >&2 '
 **************************

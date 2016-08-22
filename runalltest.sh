@@ -23,12 +23,6 @@ printf "OK \n"
 
 $UT_BIN 2>&1
 
-echo >&2 '
-*******************************************
-*** Note: Check UT runs output Visually ***
-*******************************************
-'
-
 CLITEST_SRC=`pwd`/st/clitests
 cd $CLITEST_SRC
 

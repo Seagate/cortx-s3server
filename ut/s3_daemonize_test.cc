@@ -47,6 +47,7 @@ TEST_F(S3DaemonizeTest, SetOptionsCons) {
   EXPECT_EQ(1, s3daemon.get_s3daemon_redirection());
 }
 
+#if 0
 TEST_F(S3DaemonizeTest, Daemonize) {
   char cwd[256];
   S3Daemonize s3daemon;
@@ -65,4 +66,4 @@ TEST_F(S3DaemonizeTest, Daemonize) {
 
   chdir(cwd);
 }
-
+#endif
