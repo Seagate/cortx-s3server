@@ -19,6 +19,7 @@
  */
 
 #include <string>
+#include <evhttp.h>
 #include "s3_request_object.h"
 #include "s3_error_codes.h"
 
@@ -49,6 +50,24 @@ S3RequestObject::S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj
   request_id = uuid.get_string_uuid();
   request_error = S3RequestError::None;
   evhtp_obj.reset(evhtp_obj_ptr);
+  if (ev_req != NULL && ev_req->uri != NULL) {
+    if (ev_req->uri->path != NULL) {
+      char *decoded_str = evhttp_decode_uri(ev_req->uri->path->full);
+      full_path_decoded_uri = decoded_str;
+      free(decoded_str);
+    }
+    if (ev_req->uri->path->file != NULL) {
+      char *decoded_str = evhttp_decode_uri(ev_req->uri->path->file);
+      file_path_decoded_uri = decoded_str;
+      free(decoded_str);
+    }
+    if (ev_req->uri->query_raw != NULL) {
+      char *decoded_str = evhttp_decode_uri((const char*)ev_req->uri->query_raw);
+      query_raw_decoded_uri = decoded_str;
+      free(decoded_str);
+    }
+  }
+
   initialise();
 }
 
@@ -73,16 +92,32 @@ S3HttpVerb S3RequestObject::http_verb() {
   return (S3HttpVerb)ev_req->method;
 }
 
+void S3RequestObject::set_full_path(char *full_path) {
+  full_path_decoded_uri = full_path;
+}
+
 const char* S3RequestObject::c_get_full_path() {
+  return full_path_decoded_uri.c_str();
+}
+
+const char* S3RequestObject::c_get_full_encoded_path() {
   return ev_req->uri->path->full;
 }
 
-char * S3RequestObject::c_get_file_name() {
-  return ev_req->uri->path->file;
+void S3RequestObject::set_file_name(char *file_name) {
+  file_path_decoded_uri = file_name;
+}
+
+const char * S3RequestObject::c_get_file_name() {
+  return file_path_decoded_uri.c_str();
+}
+
+void S3RequestObject::set_query_params(char *query_params) {
+  query_raw_decoded_uri = query_params;
 }
 
 const char* S3RequestObject::c_get_uri_query() {
-  return (const char *)ev_req->uri->query_raw;
+  return query_raw_decoded_uri.c_str();
 }
 
 std::map<std::string, std::string>& S3RequestObject::get_in_headers_copy(){
@@ -157,7 +192,10 @@ std::string S3RequestObject::get_query_string_value(std::string key) {
   const char *value = evhtp_obj->http_kv_find(ev_req->uri->query, key.c_str());
   std::string val_str = "";
   if (value) {
-    val_str = value;
+    char *decoded_value;
+    decoded_value = evhttp_decode_uri(value);
+    val_str = decoded_value;
+    free(decoded_value);
   }
   return val_str;
 }

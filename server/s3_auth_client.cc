@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <string>
 #include <event2/event.h>
+#include <evhttp.h>
 
 #include "s3_common.h"
 #include "s3_error_codes.h"
@@ -252,8 +253,7 @@ void S3AuthClient::setup_auth_request_body() {
   }
   add_key_val_to_body("Method", method);
 
-
-  const char *full_path = request->c_get_full_path();
+  const char *full_path = request->c_get_full_encoded_path();
   if (full_path != NULL) {
     add_key_val_to_body("ClientAbsoluteUri", full_path);
   } else {

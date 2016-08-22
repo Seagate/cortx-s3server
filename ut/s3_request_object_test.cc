@@ -102,15 +102,14 @@ class S3RequestObjectTest : public testing::Test {
 };
 
 TEST_F(S3RequestObjectTest, ReturnsValidRawQuery) {
-  fake_query_params("location=US&policy=test");
-
+  request->set_query_params("location=US&policy=test");
   EXPECT_STREQ("location=US&policy=test", (char*)request->c_get_uri_query());
 }
 
 TEST_F(S3RequestObjectTest, ReturnsValidUriPaths) {
-  fake_uri_path("/bucket_name/object_name", "/bucket_name/", "object_name");
-
+  request->set_full_path("/bucket_name/object_name");
   EXPECT_STREQ("/bucket_name/object_name", request->c_get_full_path());
+  request->set_file_name("object_name");
   EXPECT_STREQ("object_name", request->c_get_file_name());
 }
 

@@ -237,8 +237,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::GET));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -256,8 +256,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=PUT&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::PUT));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -275,8 +275,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=HEAD&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::HEAD));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -294,8 +294,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=DELETE&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::DELETE));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -313,8 +313,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=POST&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::POST));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -332,8 +332,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::GET));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return("delimiter=/&prefix=test"));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -351,8 +351,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::GET));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return("delimiter=/&prefix=test"));
 
@@ -374,8 +374,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::GET));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
-              .WillRepeatedly(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return("delimiter=/&prefix=test"));
 
@@ -397,7 +397,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
   char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08&current-signature-sha256=cur-XYZ&previous-signature-sha256=prev-ABCD&x-amz-content-sha256=sha256-abcd";
   EXPECT_CALL(*ptr_mock_request, http_verb())
               .WillRepeatedly(Return(S3HttpVerb::GET));
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
               .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
               .WillRepeatedly(Return("delimiter=/&prefix=test"));

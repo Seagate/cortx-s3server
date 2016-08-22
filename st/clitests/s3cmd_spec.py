@@ -44,6 +44,12 @@ S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 300
 
 S3cmdTest('s3cmd can download 3k file').download_test("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
+# ************ 3k FILE TEST ************
+S3cmdTest('s3cmd can upload 3k file with special chars in filename.').upload_test("seagatebucket/2016-04:32:21/3kfile", "3kfile", 3000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can download 3k file with special chars in filename.').download_test("seagatebucket/2016-04:32:21", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
+
+
 # ************ 8k FILE TEST ************
 S3cmdTest('s3cmd can upload 8k file').upload_test("seagatebucket", "8kfile", 8192).execute_test().command_is_successful()
 
@@ -56,6 +62,9 @@ S3cmdTest('s3cmd can list specific objects').list_specific_objects('seagatebucke
 
 # ************ DELETE OBJECT TEST ************
 S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket/2016-04:32:21", "3kfile").execute_test().command_is_successful()
+
 
 S3cmdTest('s3cmd can delete 8k file').delete_test("seagatebucket", "8kfile").execute_test().command_is_successful()
 

@@ -89,7 +89,11 @@ class S3RequestObject {
   S3ChunkPayloadParser chunk_parser;
   S3ApiType s3_api_type;
 
-public:
+  virtual void set_full_path(char* full_path);
+  virtual void set_file_name(char* file_name);
+  virtual void set_query_params(char* query_params);
+
+ public:
   S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr);
   virtual ~S3RequestObject();
 
@@ -98,16 +102,18 @@ public:
 
   virtual const char * c_get_uri_query();
   virtual S3HttpVerb http_verb();
-
   virtual const char* c_get_full_path();
-
-  char * c_get_file_name();
+  virtual const char* c_get_full_encoded_path();
+  const char * c_get_file_name();
   void set_api_type(S3ApiType apitype);
   S3ApiType get_api_type();
 private:
   std::map<std::string, std::string> in_headers_copy;
   bool in_headers_copied;
   std::string full_request_body;
+  std::string full_path_decoded_uri;
+  std::string file_path_decoded_uri;
+  std::string query_raw_decoded_uri;
   S3RequestError request_error;
 public:
   std::map<std::string, std::string>& get_in_headers_copy();
@@ -121,7 +127,6 @@ public:
   size_t get_data_length();
   size_t get_content_length();
   std::string& get_full_body_content_as_string();
-
   std::string get_query_string_value(std::string key);
 
   virtual bool has_query_param_key(std::string key);
@@ -245,6 +250,8 @@ public:
   void respond_unsupported_api();
 
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
+  FRIEND_TEST(S3RequestObjectTest, ReturnsValidUriPaths);
+  FRIEND_TEST(S3RequestObjectTest, ReturnsValidRawQuery);
 };
 
 #endif
