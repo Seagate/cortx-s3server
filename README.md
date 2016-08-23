@@ -186,3 +186,38 @@ cd ..
 # Above should generate a rpm file in current folder
 
 ```
+### How to get unit test code coverage for Authserver?
+```sh
+cd mero/fe/s3/auth
+
+mvn clean package -Djacoco.skip=false
+```
+### How to get system test code coverage for Authserver?
+```sh
+cd mero/fe/s3/auth
+
+mvn clean package
+
+# Run authserver with jacoco agent
+java -javaagent:/path/to/jacocoagent.jar=destfile=target/coverage-reports/jacoco.exec,append=false \
+-jar /path/to/AuthServer-1.0-0.jar
+
+# Example:
+# Note: This example uses the jacocoagent jar file downloaded by maven in local repo
+# Maven local repo path: ${HOME}/.m2/repository
+java \
+-javaagent:${HOME}/.m2/repository/org/jacoco/org.jacoco.agent/0.7.7.201606060606/\
+org.jacoco.agent-0.7.7.201606060606-runtime.jar=destfile=target/coverage-reports/\
+jacoco.exec,append=false -jar /root/mero/fe/s3/auth/target/AuthServer-1.0-0.jar
+
+# Activate python test virtualenv
+source mero_st/bin/activate
+
+# Run system test
+python auth_spec.py
+
+# Stop auth server [ Ctrl + c ].
+
+# Generate coverage report site from coverage data file generated in above step
+$ mvn jacoco:report -Djacoco.skip=false
+```
