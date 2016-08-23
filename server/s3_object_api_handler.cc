@@ -65,8 +65,13 @@ void S3ObjectAPIHandler::dispatch() {
            }
           break;
         case S3HttpVerb::PUT:
-          // Multipart part uploads
-          action = std::make_shared<S3PutMultiObjectAction>(request);
+          if (!request->get_header_value("x-amz-copy-source").empty()) {
+            // Copy Object in part upload not yet supported.
+            // Do nothing = unsupported API
+          } else {
+            // Multipart part uploads
+            action = std::make_shared<S3PutMultiObjectAction>(request);
+          }
           break;
         case S3HttpVerb::GET:
           // Multipart part listing
@@ -88,6 +93,9 @@ void S3ObjectAPIHandler::dispatch() {
           if (request->get_header_value("x-amz-content-sha256") == "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
             // chunk upload
             action = std::make_shared<S3PutChunkUploadObjectAction>(request);
+          } else if (!request->get_header_value("x-amz-copy-source").empty()) {
+            // Copy Object not yet supported.
+            // Do nothing = unsupported API
           } else {
             // single chunk upload
             action = std::make_shared<S3PutObjectAction>(request);

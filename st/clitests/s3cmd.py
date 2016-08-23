@@ -67,6 +67,21 @@ class S3cmdTest(PyCliTest):
         self.with_cli("s3cmd -c " + self.s3cfg + " put " + self.filename + " s3://" + self.bucket_name)
         return self
 
+    def upload_copy_test(self, bucket_name, srcfile, destfile):
+        self.srcfile = srcfile
+        self.destfile = destfile
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " cp s3://" + self.bucket_name + "/" + self.srcfile + " s3://" + self.bucket_name + "/" + self.destfile)
+        return self
+
+    def upload_move_test(self, src_bucket, srcfile, dest_bucket, destfile):
+        self.srcfile = srcfile
+        self.destfile = destfile
+        self.src_bucket = src_bucket
+        self.dest_bucket = dest_bucket
+        self.with_cli("s3cmd -c " + self.s3cfg + " cp s3://" + self.src_bucket + "/" + self.srcfile + " s3://" + self.dest_bucket + "/" + self.destfile)
+        return self
+
     def list_multipart_uploads(self, bucket_name):
         self.bucket_name = bucket_name
         self.with_cli("s3cmd -c " + self.s3cfg + " multipart s3://" + self.bucket_name)
