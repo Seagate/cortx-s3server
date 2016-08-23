@@ -43,7 +43,9 @@ void S3Action::setup_steps() {
   if (!S3Option::get_instance()->is_auth_disabled()) {
     add_task(std::bind( &S3Action::check_authentication, this ));
     add_task(std::bind( &S3Action::fetch_acl_policies, this ));
-    add_task(std::bind( &S3Action::check_authorization, this ));
+    // Commented till we implement Authorization feature completely.
+    // Current authorisation implementation in AuthServer is partial
+    // add_task(std::bind( &S3Action::check_authorization, this ));
   }
 }
 
