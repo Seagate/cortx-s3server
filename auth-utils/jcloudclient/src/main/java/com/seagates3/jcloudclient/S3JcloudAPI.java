@@ -82,6 +82,8 @@ public class S3JcloudAPI {
         Properties properties = new Properties();
         if (cmd.hasOption("p")) {
             properties.setProperty("jclouds.s3.virtual-host-buckets", "false");
+        } else {
+            properties.setProperty("jclouds.s3.virtual-host-buckets", "true");
         }
 
         if (cmd.hasOption("m")) {
