@@ -106,8 +106,6 @@ enum class S3ClovisReaderOpState {
 
 class S3ClovisReader {
 private:
-  struct m0_uint128 oid;
-
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisReaderContext> reader_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -115,6 +113,8 @@ private:
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
+
+  struct m0_uint128 oid;
 
   S3ClovisReaderOpState state;
 

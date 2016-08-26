@@ -30,7 +30,9 @@
 
 extern struct m0_clovis_realm     clovis_uber_realm;
 
-S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req, struct m0_uint128 object_id, uint64_t offset) : oid(object_id), request(req), state(S3ClovisWriterOpState::start) {
+S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
+                               struct m0_uint128 object_id, uint64_t offset)
+    : request(req), oid(object_id), state(S3ClovisWriterOpState::start) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   last_index = offset;
   total_written = 0;

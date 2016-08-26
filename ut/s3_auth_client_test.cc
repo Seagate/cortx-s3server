@@ -192,9 +192,8 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
   EXPECT_FALSE(p_authopctx->is_auth_successful);
-  EXPECT_STREQ("SignatureDoesNotMatch", p_authopctx->get_error_res_obj()->get_code().c_str());
-  EXPECT_STREQ("The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.", p_authopctx->get_error_res_obj()->get_message().c_str());
-  EXPECT_STREQ("0000", p_authopctx->get_error_res_obj()->get_request_id().c_str());
+  EXPECT_STREQ("SignatureDoesNotMatch", p_authopctx->get_error_code().c_str());
+  EXPECT_STREQ("The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.", p_authopctx->get_error_message().c_str());
 }
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse) {
@@ -203,9 +202,8 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse) {
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
   EXPECT_FALSE(p_authopctx->is_auth_successful);
-  EXPECT_STREQ("UnauthorizedOperation", p_authopctx->get_error_res_obj()->get_code().c_str());
-  EXPECT_STREQ("You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.", p_authopctx->get_error_res_obj()->get_message().c_str());
-  EXPECT_STREQ("0000", p_authopctx->get_error_res_obj()->get_request_id().c_str());
+  EXPECT_STREQ("UnauthorizedOperation", p_authopctx->get_error_code().c_str());
+  EXPECT_STREQ("You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.", p_authopctx->get_error_message().c_str());
 }
 
 
@@ -215,7 +213,7 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthErrorResponse) {
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
-  EXPECT_FALSE(p_authopctx->get_error_res_obj()->isOK());
+  EXPECT_FALSE(p_authopctx->error_resp_is_OK());
 }
 
 TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeErrorResponse) {
@@ -224,7 +222,7 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeErrorResponse) {
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
-  EXPECT_FALSE(p_authopctx->get_error_res_obj()->isOK());
+  EXPECT_FALSE(p_authopctx->error_resp_is_OK());
 }
 
 TEST_F(S3AuthClientTest, Constructor) {

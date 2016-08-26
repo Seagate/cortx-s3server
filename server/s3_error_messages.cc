@@ -44,6 +44,11 @@ S3ErrorMessages::S3ErrorMessages(std::string config_file) {
   }
 }
 
+S3ErrorMessages::~S3ErrorMessages() {
+  // To keep jsoncpp happy in clean up.
+  error_list.clear();
+}
+
 S3ErrorDetails& S3ErrorMessages::get_details(std::string code){
   return error_list[code];
 }
@@ -51,6 +56,12 @@ S3ErrorDetails& S3ErrorMessages::get_details(std::string code){
 void S3ErrorMessages::init_messages(std::string config_file) {
   if(!instance){
     instance = new S3ErrorMessages(config_file);
+  }
+}
+
+void S3ErrorMessages::finalize() {
+  if (!instance) {
+    delete instance;
   }
 }
 

@@ -23,10 +23,11 @@
 #ifndef __MERO_FE_S3_SERVER_S3_AUTH_CLIENT_H__
 #define __MERO_FE_S3_SERVER_S3_AUTH_CLIENT_H__
 
-#include <memory>
-#include <functional>
-#include <queue>
 #include <gtest/gtest_prod.h>
+#include <functional>
+#include <memory>
+#include <queue>
+#include <string>
 
 #include "s3_request_object.h"
 #include "s3_auth_context.h"
@@ -44,20 +45,24 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
 
   bool is_auth_successful;
   bool is_authorization_successful;
-  S3AuthResponseSuccess *success_obj;
-  S3AuthResponseError *error_obj;
+
+  std::unique_ptr<S3AuthResponseSuccess> success_obj;
+  std::unique_ptr<S3AuthResponseError> error_obj;
 
   std::string auth_response_xml;
   std::string authorization_response;
+
 public:
-  S3AuthClientOpContext(std::shared_ptr<S3RequestObject> req,
-                        std::function<void()> success_callback,
-                        std::function<void()> failed_callback)
-                      : S3AsyncOpContextBase(req, success_callback, failed_callback),
-                        auth_op_context(NULL), has_auth_op_context(false),
-                        is_auth_successful(false), is_authorization_successful(false), success_obj(NULL), error_obj(NULL),
-                        auth_response_xml("") {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
+ S3AuthClientOpContext(std::shared_ptr<S3RequestObject> req,
+                       std::function<void()> success_callback,
+                       std::function<void()> failed_callback)
+     : S3AsyncOpContextBase(req, success_callback, failed_callback),
+       auth_op_context(NULL),
+       has_auth_op_context(false),
+       is_auth_successful(false),
+       is_authorization_successful(false),
+       auth_response_xml("") {
+   s3_log(S3_LOG_DEBUG, "Constructor\n");
   }
 
   ~S3AuthClientOpContext() {
@@ -66,12 +71,6 @@ public:
       free_basic_auth_client_op_ctx(auth_op_context);
       auth_op_context = NULL;
     }
-    if (success_obj != NULL) {
-      delete success_obj;
-    }
-    if (error_obj != NULL) {
-      delete error_obj;
-    }
   }
 
   void set_auth_response_xml(const char* xml, bool success = true) {
@@ -79,7 +78,7 @@ public:
     auth_response_xml = xml;
     is_auth_successful = success;
     if (is_auth_successful) {
-      success_obj = new S3AuthResponseSuccess(auth_response_xml);
+      success_obj.reset(new S3AuthResponseSuccess(auth_response_xml));
       if (success_obj->isOK()) {
         get_request()->set_user_name(success_obj->get_user_name());
         get_request()->set_user_id(success_obj->get_user_id());
@@ -89,7 +88,7 @@ public:
         is_auth_successful = false; // since auth response details are bad
       }
     } else {
-      error_obj = new S3AuthResponseError(auth_response_xml);
+      error_obj.reset(new S3AuthResponseError(auth_response_xml));
     }
     s3_log(S3_LOG_DEBUG, "Exiting\n");
   }
@@ -100,12 +99,55 @@ public:
     is_authorization_successful = success;
   }
 
-  S3AuthResponseError* get_error_res_obj() {
-    return error_obj;
+  bool auth_successful() { return is_auth_successful; }
+
+  std::string get_user_id() {
+    if (is_auth_successful) {
+      return success_obj->get_user_id();
+    }
+    return "";
   }
 
-  S3AuthResponseSuccess* get_success_res_obj() {
-    return success_obj;
+  std::string get_user_name() {
+    if (is_auth_successful) {
+      return success_obj->get_user_name();
+    }
+    return "";
+  }
+
+  std::string get_account_id() {
+    if (is_auth_successful) {
+      return success_obj->get_account_id();
+    }
+    return "";
+  }
+
+  std::string get_account_name() {
+    if (is_auth_successful) {
+      return success_obj->get_account_name();
+    }
+    return "";
+  }
+
+  std::string get_signature_sha256() {
+    if (is_auth_successful) {
+      return success_obj->get_signature_sha256();
+    }
+    return "";
+  }
+
+  std::string get_error_code() {
+    if (!is_auth_successful) {
+      return error_obj->get_code();
+    }
+    return "";
+  }
+
+  std::string get_error_message() {
+    if (!is_auth_successful) {
+      return error_obj->get_message();
+    }
+    return "";
   }
 
   // Call this when you want to do auth op.
@@ -113,6 +155,11 @@ public:
     struct event_base *eventbase = S3Option::get_instance()->get_eventbase();
     if (eventbase == NULL) {
       return false;
+    }
+    if (has_auth_op_context) {
+      free_basic_auth_client_op_ctx(auth_op_context);
+      auth_op_context = NULL;
+      has_auth_op_context = false;
     }
     auth_op_context = create_basic_auth_op_ctx(eventbase);
     if (auth_op_context == NULL) {
@@ -133,11 +180,29 @@ public:
   FRIEND_TEST(S3AuthClientOpContextTest, Constructor);
   FRIEND_TEST(S3AuthClientOpContextTest, CanParseAuthSuccessResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanHandleParseErrorInAuthSuccessResponse);
+  FRIEND_TEST(S3AuthClientOpContextTest,
+              CanHandleParseErrorInAuthErrorResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanParseAuthErrorResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanParseAuthorizationSuccessResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeSuccessResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeErrorResponse);
+
+  // For UT.
+ private:
+  bool error_resp_is_OK() {
+    if (!is_auth_successful) {
+      return error_obj->isOK();
+    }
+    return false;
+  }
+
+  bool success_resp_is_OK() {
+    if (is_auth_successful) {
+      return success_obj->isOK();
+    }
+    return false;
+  }
 };
 
 enum class S3AuthClientOpState {

@@ -50,7 +50,7 @@ extern int s3log_level;
     if (glog_level != S3_LOG_DEBUG) {                                  \
       int log_buf_len = snprintf(NULL, 0, fmt "\n", ##__VA_ARGS__);    \
       log_buf_len++;                                                   \
-      std::unique_ptr<char> log_buf(new char[log_buf_len]);            \
+      std::unique_ptr<char[]> log_buf(new char[log_buf_len]);          \
       snprintf(log_buf.get(), log_buf_len, fmt "\n", ##__VA_ARGS__);   \
       if (glog_level == S3_LOG_INFO) {                                 \
         LOG(INFO) << log_buf.get();                                    \

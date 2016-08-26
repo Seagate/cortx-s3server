@@ -28,12 +28,19 @@
 
 extern struct m0_clovis_realm     clovis_uber_realm;
 
-S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-      struct m0_uint128 id) : request(req), oid(id), s3_clovis_api(clovis_api),
-      state(S3ClovisReaderOpState::start), clovis_rw_op_context(NULL),
-      iteration_index(0), clovis_block_size(0), num_of_blocks_read(0),
+S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
+                               std::shared_ptr<ClovisAPI> clovis_api,
+                               struct m0_uint128 id)
+    : request(req),
+      s3_clovis_api(clovis_api),
+      oid(id),
+      state(S3ClovisReaderOpState::start),
+      clovis_rw_op_context(NULL),
+      iteration_index(0),
+      clovis_block_size(0),
+      num_of_blocks_read(0),
       last_index(0) {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
 }
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,

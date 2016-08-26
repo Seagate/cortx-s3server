@@ -54,11 +54,15 @@ class S3ErrorMessages {
 private:
   static S3ErrorMessages* instance;
   S3ErrorMessages(std::string config_file);
+  ~S3ErrorMessages();
 
   std::map<std::string, S3ErrorDetails> error_list;
 public:
   // Loads messages and creates singleton
   static void init_messages(std::string config_file = "/opt/seagate/s3/resources/s3_error_messages.json");
+
+  // Cleans up the singleton instance
+  static void finalize();
 
   static S3ErrorMessages* get_instance();
 

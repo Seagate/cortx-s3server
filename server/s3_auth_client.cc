@@ -200,26 +200,26 @@ void S3AuthClient::set_event_with_retry_interval() {
 }
 
 std::string S3AuthClient::get_signature_from_response() {
-  if (auth_context->get_success_res_obj()) {
-    return auth_context->get_success_res_obj()->get_signature_sha256();
+  if (auth_context->auth_successful()) {
+    return auth_context->get_signature_sha256();
   }
   return "";
 }
 
 void S3AuthClient::remember_auth_details_in_request() {
-  if (auth_context->get_success_res_obj()) {
-    request->set_user_id(auth_context->get_success_res_obj()->get_user_id());
-    request->set_user_name(auth_context->get_success_res_obj()->get_user_name());
-    request->set_account_id(auth_context->get_success_res_obj()->get_account_id());
-    request->set_account_name(auth_context->get_success_res_obj()->get_account_name());
+  if (auth_context->auth_successful()) {
+    request->set_user_id(auth_context->get_user_id());
+    request->set_user_name(auth_context->get_user_name());
+    request->set_account_id(auth_context->get_account_id());
+    request->set_account_name(auth_context->get_account_name());
   }
 }
 
 // Returns AccessDenied | InvalidAccessKeyId | SignatureDoesNotMatch
 // auth InactiveAccessKey maps to InvalidAccessKeyId in S3
 std::string S3AuthClient::get_error_code() {
-  if (auth_context->get_error_res_obj()) {
-    std::string code = auth_context->get_error_res_obj()->get_code();
+  if (!auth_context->auth_successful()) {
+    std::string code = auth_context->get_error_code();
     if (code == "InactiveAccessKey") {
       return "InvalidAccessKeyId";
     } else if (code == "ExpiredCredential") {

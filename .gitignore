@@ -23,3 +23,6 @@ third_party/libevhtp/
 third_party/libxml2/
 third_party/lustre-2.5.1-headers/
 third_party/yaml-cpp/
+rpmsandbox/
+*.rpm
+m0trace.*
