@@ -17,6 +17,7 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include "s3_common.h"
 #include "s3_uri_to_mero_oid.h"
 #include "murmur3_hash.h"
 #include "s3_timer.h"
@@ -50,13 +51,21 @@ void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
   hash128_64[0] = hash128_64[0] & 0x00ffffffffffffff;
   tmp_uint128.u_hi = hash128_64[0];
   tmp_uint128.u_lo = hash128_64[1];
-  int rc = m0_uint128_cmp(&M0_CLOVIS_ID_APP, &tmp_uint128);
+
+  // Ensure OID does not fall in clovis and S3 reserved range.
+  struct m0_uint128 s3_range = { 0ULL, 0ULL };
+  s3_range.u_lo = S3_OID_RESERVED_COUNT;
+
+  struct m0_uint128 reserved_range = { 0ULL, 0ULL };
+  m0_uint128_add(&reserved_range, &M0_CLOVIS_ID_APP, &s3_range);
+
+  int rc = m0_uint128_cmp(&reserved_range, &tmp_uint128);
   if (rc >= 0) {
     struct m0_uint128 res;
     // ID should be more than M0_CLOVIS_ID_APP
     s3_log(S3_LOG_DEBUG,
            "Id from Murmur hash algorithm less than M0_CLOVIS_ID_APP\n");
-    m0_uint128_add(&res, &M0_CLOVIS_ID_APP, &tmp_uint128);
+    m0_uint128_add(&res, &reserved_range, &tmp_uint128);
     tmp_uint128.u_hi = res.u_hi;
     tmp_uint128.u_lo = res.u_lo;
     tmp_uint128.u_hi = tmp_uint128.u_hi & 0x00ffffffffffffff;

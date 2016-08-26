@@ -39,6 +39,8 @@ void S3PostMultipartObjectAction::setup_steps(){
   add_task(std::bind( &S3PostMultipartObjectAction::create_object, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::save_upload_metadata, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::create_part_meta_index, this ));
+  add_task(
+      std::bind(&S3PostMultipartObjectAction::save_multipart_metadata, this));
   add_task(std::bind( &S3PostMultipartObjectAction::send_response_to_s3_client, this ));
   // ...
 }
@@ -56,7 +58,9 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     S3Uuid uuid;
     upload_id = uuid.get_string_uuid();
-    object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
+    multipart_index_oid = bucket_metadata->get_multipart_index_oid();
+    object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
+        request, multipart_index_oid, true, upload_id);
     object_multipart_metadata->load(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
   } else {
     s3_log(S3_LOG_WARN, "Missing bucket [%s]\n", request->get_bucket_name().c_str());
@@ -95,10 +99,14 @@ void S3PostMultipartObjectAction::create_object_failed() {
     if (tried_count) { // No need of lookup of metadata in case if it was oid collision before
       collision_occured();
     } else {
-       object_metadata = std::make_shared<S3ObjectMetadata>(request);
-       // Lookup object metadata, if the object doesn't exist then its collision, do collision resolution
-       // If object exist in metadata then we overwrite it
-       object_metadata->load(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::collision_occured, this));
+      object_metadata =
+          std::make_shared<S3ObjectMetadata>(request, multipart_index_oid);
+      // Lookup object metadata, if the object doesn't exist then its collision,
+      // do collision resolution
+      // If object exist in metadata then we overwrite it
+      object_metadata->load(
+          std::bind(&S3PostMultipartObjectAction::next, this),
+          std::bind(&S3PostMultipartObjectAction::collision_occured, this));
     }
   } else {
     s3_log(S3_LOG_WARN, "Create object failed.\n");
@@ -213,6 +221,30 @@ void S3PostMultipartObjectAction::create_part_meta_index() {
   part_metadata->create_index(
       std::bind(&S3PostMultipartObjectAction::next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_start, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::save_multipart_metadata() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (multipart_index_oid.u_lo == 0 && multipart_index_oid.u_hi == 0) {
+    // multipart index created, set it
+    bucket_metadata->set_multipart_index_oid(
+        object_multipart_metadata->get_index_oid());
+    // Rollback -- TODO
+    bucket_metadata->save(
+        std::bind(&S3PostMultipartObjectAction::next, this),
+        std::bind(&S3PostMultipartObjectAction::save_multipart_metadata_failed,
+                  this));
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::save_multipart_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Failed to save multipart index oid metadata\n");
+  next();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

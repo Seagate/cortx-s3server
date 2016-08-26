@@ -19,18 +19,28 @@
 
 #include <json/json.h>
 #include <string>
+#include "base64.h"
 #include "s3_bucket_metadata.h"
 #include "s3_datetime.h"
-#include "base64.h"
+#include "s3_uri_to_mero_oid.h"
 
 S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
   s3_log(S3_LOG_DEBUG, "Constructor");
   account_name = request->get_account_name();
   user_name = request->get_user_name();
   bucket_name = request->get_bucket_name();
+  salted_index_name = get_account_user_index_name();
+
   state = S3BucketMetadataState::empty;
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   bucket_policy = "";
+
+  collision_salt = "index_salt_";
+  collision_attempt_count = 0;
+
+  bucket_list_index_oid = {0ULL, 0ULL};
+  object_list_index_oid = {0ULL, 0ULL};  // Object List index default id
+  multipart_index_oid = {0ULL, 0ULL};  // Multipart index default id
 
   // Set the defaults
   S3DateTime current_time;
@@ -63,6 +73,30 @@ std::string S3BucketMetadata::get_owner_name() {
   return system_defined_attribute["Owner-User-id"];
 }
 
+struct m0_uint128 S3BucketMetadata::get_bucket_list_index_oid() {
+  return bucket_list_index_oid;
+}
+
+struct m0_uint128 S3BucketMetadata::get_multipart_index_oid() {
+  return multipart_index_oid;
+}
+
+struct m0_uint128 S3BucketMetadata::get_object_list_index_oid() {
+  return object_list_index_oid;
+}
+
+void S3BucketMetadata::set_bucket_list_index_oid(struct m0_uint128 oid) {
+  bucket_list_index_oid = oid;
+}
+
+void S3BucketMetadata::set_multipart_index_oid(struct m0_uint128 oid) {
+  multipart_index_oid = oid;
+}
+
+void S3BucketMetadata::set_object_list_index_oid(struct m0_uint128 oid) {
+  object_list_index_oid = oid;
+}
+
 void S3BucketMetadata::set_location_constraint(std::string location) {
   system_defined_attribute["LocationConstraint"] = location;
 }
@@ -74,7 +108,6 @@ void S3BucketMetadata::setpolicy(std::string & policy_str) {
 void S3BucketMetadata::deletepolicy() {
   bucket_policy = "";
 }
-
 
 void S3BucketMetadata::setacl(std::string &acl_str) {
   std::string input_acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -107,21 +140,69 @@ void S3BucketMetadata::load(std::function<void(void)> on_success, std::function<
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  load_account_bucket();
+  state = S3BucketMetadataState::fetching;
+  fetch_bucket_list_index_oid();
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::load_account_bucket() {
+void S3BucketMetadata::fetch_bucket_list_index_oid() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Mark missing as we initiate fetch, in case it fails to load due to missing.
-  state = S3BucketMetadataState::missing;
+
+  account_user_index_metadata = std::make_shared<S3AccountUserIdxMetadata>(request);
+  account_user_index_metadata->load(
+      std::bind(&S3BucketMetadata::fetch_bucket_list_index_oid_success, this),
+      std::bind(&S3BucketMetadata::fetch_bucket_list_index_oid_failed, this));
+
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3BucketMetadata::fetch_bucket_list_index_oid_success() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  bucket_list_index_oid = account_user_index_metadata->get_bucket_list_index_oid();
+  if (state == S3BucketMetadataState::saving) {
+    save_bucket_info();
+  } else if (state == S3BucketMetadataState::fetching) {
+    load_bucket_info();
+  } else if (state == S3BucketMetadataState::deleting) {
+    remove_bucket_info();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  if (account_user_index_metadata->get_state() == S3AccountUserIdxMetadataState::missing) {
+    if (state == S3BucketMetadataState::saving) {
+      create_bucket_list_index();
+    } else {
+      state = S3BucketMetadataState::missing;
+      this->handler_on_failed();
+    }
+  } else {
+    s3_log(S3_LOG_FATAL,
+           "Failed to fetch Bucket List index oid from Account User index. Please "
+           "retry after some time\n");
+    state = S3BucketMetadataState::failed;
+    this->handler_on_failed();
+  }
+
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3BucketMetadata::load_bucket_info() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->get_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_account_bucket_successful, this), std::bind( &S3BucketMetadata::load_account_bucket_failed, this));
+  clovis_kv_reader->get_keyval(bucket_list_index_oid, bucket_name,
+      std::bind( &S3BucketMetadata::load_bucket_info_successful, this),
+      std::bind( &S3BucketMetadata::load_bucket_info_failed, this));
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::load_account_bucket_successful() {
+void S3BucketMetadata::load_bucket_info_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   this->from_json(clovis_kv_reader->get_value());
   state = S3BucketMetadataState::present;
@@ -129,48 +210,18 @@ void S3BucketMetadata::load_account_bucket_successful() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::load_account_bucket_failed() {
-  // TODO - do anything more for failure?
+void S3BucketMetadata::load_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, "Account bucket metadata is missing\n");
+    s3_log(S3_LOG_DEBUG, "Bucket metadata is missing\n");
     state = S3BucketMetadataState::missing;
   } else {
-    s3_log(S3_LOG_ERROR, "Loading of account bucket metadata failed\n");
+    s3_log(S3_LOG_ERROR, "Loading of bucket metadata failed\n");
     state = S3BucketMetadataState::failed;
   }
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
 
-void S3BucketMetadata::load_user_bucket() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-
-  // Mark missing as we initiate fetch, in case it fails to load due to missing.
-  state = S3BucketMetadataState::missing;
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->get_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::load_user_bucket_successful, this), std::bind( &S3BucketMetadata::load_user_bucket_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::load_user_bucket_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  this->from_json(clovis_kv_reader->get_value());
-  state = S3BucketMetadataState::present;
-  this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::load_user_bucket_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, "User bucket metadata missing\n");
-    state = S3BucketMetadataState::missing;
-  } else {
-    s3_log(S3_LOG_ERROR, "Loading of user bucket metadata failed\n");
-    state = S3BucketMetadataState::failed;
-  }
-  this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -179,85 +230,101 @@ void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
+  state = S3BucketMetadataState::saving;
 
-  // TODO create only if it does not exists.
-  create_account_bucket_index();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  fetch_bucket_list_index_oid();
 }
 
-void S3BucketMetadata::save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+void S3BucketMetadata::create_bucket_list_index() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  this->handler_on_success = on_success;
-  this->handler_on_failed  = on_failed;
-
-  save_account_bucket();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::create_account_bucket_index() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Mark missing as we initiate write, in case it fails to write.
   state = S3BucketMetadataState::missing;
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->create_index(get_account_index_name(), std::bind( &S3BucketMetadata::create_account_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_bucket_index_failed, this));
+  clovis_kv_writer->create_index(
+      salted_index_name,
+      std::bind(&S3BucketMetadata::create_bucket_list_index_successful,
+                this),
+      std::bind(&S3BucketMetadata::create_bucket_list_index_failed, this));
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::create_account_bucket_index_successful() {
+void S3BucketMetadata::create_bucket_list_index_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  create_account_user_bucket_index();
+  bucket_list_index_oid = clovis_kv_writer->get_oid();
+  save_bucket_list_index_oid();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::create_account_bucket_index_failed() {
+
+void S3BucketMetadata::create_bucket_list_index_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
-    s3_log(S3_LOG_DEBUG, "Account bucket index already exists\n");
-    // We need to create index only once.
-    create_account_user_bucket_index();
+    // create_bucket_list_index is called when there is no id for that index,
+    // Hence if clovis returned its present then its due to collision.
+    handle_collision();
   } else {
-    s3_log(S3_LOG_ERROR, "Index creation failed\n");
+    s3_log(S3_LOG_ERROR, "Index creation failed.\n");
     state = S3BucketMetadataState::failed;
     this->handler_on_failed();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::create_account_user_bucket_index() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Mark missing as we initiate write, in case it fails to write.
-  state = S3BucketMetadataState::missing;
-
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->create_index(get_account_user_index_name(), std::bind( &S3BucketMetadata::create_account_user_bucket_index_successful, this), std::bind( &S3BucketMetadata::create_account_user_bucket_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::create_account_user_bucket_index_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  save_account_bucket();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::create_account_user_bucket_index_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
-    s3_log(S3_LOG_DEBUG, "Account user bucket index already exists\n");
-    // We need to create index only once.
-    save_account_bucket();
+void S3BucketMetadata::handle_collision() {
+  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists &&
+      collision_attempt_count < MAX_COLLISION_TRY) {
+    s3_log(S3_LOG_INFO, "Index ID collision happened for index %s\n",
+           salted_index_name.c_str());
+    // Handle Collision
+    regenerate_new_oid();
+    collision_attempt_count++;
+    if (collision_attempt_count > 5) {
+      s3_log(S3_LOG_INFO, "Index ID collision happened %d times for index %s\n",
+             collision_attempt_count, salted_index_name.c_str());
+    }
+    create_bucket_list_index();
   } else {
-    s3_log(S3_LOG_ERROR, "Creation of Account user bucket index failed\n");
+    s3_log(S3_LOG_ERROR,
+           "Failed to resolve index id collision %d times for index %s\n",
+           collision_attempt_count, salted_index_name.c_str());
     state = S3BucketMetadataState::failed;
     this->handler_on_failed();
   }
+}
+
+void S3BucketMetadata::regenerate_new_oid() {
+  salted_index_name = get_account_user_index_name() + collision_salt + std::to_string(collision_attempt_count);
+}
+
+void S3BucketMetadata::save_bucket_list_index_oid() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  account_user_index_metadata = std::make_shared<S3AccountUserIdxMetadata>(request);
+  account_user_index_metadata->set_bucket_list_index_oid(bucket_list_index_oid);
+
+  account_user_index_metadata->save(
+        std::bind(&S3BucketMetadata::save_bucket_list_index_oid_successful, this),
+        std::bind(&S3BucketMetadata::save_bucket_list_index_oid_failed, this));
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::save_account_bucket() {
+void S3BucketMetadata::save_bucket_list_index_oid_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Mark missing as we initiate write, in case it fails to write.
-  state = S3BucketMetadataState::missing;
+  save_bucket_info();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3BucketMetadata::save_bucket_list_index_oid_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Saving of Bucket list index oid metadata failed\n");
+  state = S3BucketMetadataState::failed;
+  this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3BucketMetadata::save_bucket_info() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
 
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
@@ -266,46 +333,24 @@ void S3BucketMetadata::save_account_bucket() {
   system_defined_attribute["Owner-Account-id"] = request->get_account_id();
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->put_keyval(get_account_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_account_bucket_successful, this), std::bind( &S3BucketMetadata::save_account_bucket_failed, this));
+  clovis_kv_writer->put_keyval(bucket_list_index_oid,
+      bucket_name, this->to_json(),
+      std::bind( &S3BucketMetadata::save_bucket_info_successful, this),
+      std::bind( &S3BucketMetadata::save_bucket_info_failed, this));
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::save_account_bucket_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  save_user_bucket();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::save_account_bucket_failed() {
-  // TODO - do anything more for failure?
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Saving of account bucket metadata failed\n");
-  state = S3BucketMetadataState::failed;
-  this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::save_user_bucket() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Mark missing as we initiate write, in case it fails to write.
-  state = S3BucketMetadataState::missing;
-
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->put_keyval(get_account_user_index_name(), bucket_name, this->to_json(), std::bind( &S3BucketMetadata::save_user_bucket_successful, this), std::bind( &S3BucketMetadata::save_user_bucket_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::save_user_bucket_successful() {
+void S3BucketMetadata::save_bucket_info_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3BucketMetadataState::saved;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::save_user_bucket_failed() {
-  // TODO - do anything more for failure?
+void S3BucketMetadata::save_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Saving of user bucket metadata failed\n");
+  s3_log(S3_LOG_ERROR, "Saving of Bucket metadata failed\n");
   state = S3BucketMetadataState::failed;
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -317,52 +362,36 @@ void S3BucketMetadata::remove(std::function<void(void)> on_success, std::functio
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  remove_account_bucket();
+  if (state == S3BucketMetadataState::present) {
+    remove_bucket_info();
+  } else {
+    state = S3BucketMetadataState::deleting;
+    fetch_bucket_list_index_oid();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::remove_account_bucket() {
+void S3BucketMetadata::remove_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->delete_keyval(get_account_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_account_bucket_successful, this), std::bind( &S3BucketMetadata::remove_account_bucket_failed, this));
+  clovis_kv_writer->delete_keyval(bucket_list_index_oid, bucket_name,
+      std::bind( &S3BucketMetadata::remove_bucket_info_successful, this),
+      std::bind( &S3BucketMetadata::remove_bucket_info_failed, this));
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::remove_account_bucket_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  remove_user_bucket();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::remove_account_bucket_failed() {
-  // TODO - do anything more for failure?
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Removal of account bucket metadata failed\n");
-  state = S3BucketMetadataState::failed;
-  this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::remove_user_bucket() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->delete_keyval(get_account_user_index_name(), bucket_name, std::bind( &S3BucketMetadata::remove_user_bucket_successful, this), std::bind( &S3BucketMetadata::remove_user_bucket_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3BucketMetadata::remove_user_bucket_successful() {
+void S3BucketMetadata::remove_bucket_info_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3BucketMetadataState::deleted;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3BucketMetadata::remove_user_bucket_failed() {
-  // TODO - do anything more for failure?
+void S3BucketMetadata::remove_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Removal of user bucket metadata failed\n");
+  s3_log(S3_LOG_ERROR, "Removal of Bucket metadata failed\n");
   state = S3BucketMetadataState::failed;
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -408,6 +437,20 @@ std::string S3BucketMetadata::to_json() {
   root["ACL"] = base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
   root["Policy"] = bucket_policy;
 
+  root["mero_object_list_index_oid_u_hi"] =
+      base64_encode((unsigned char const*)&object_list_index_oid.u_hi,
+                    sizeof(object_list_index_oid.u_hi));
+  root["mero_object_list_index_oid_u_lo"] =
+      base64_encode((unsigned char const*)&object_list_index_oid.u_lo,
+                    sizeof(object_list_index_oid.u_lo));
+
+  root["mero_multipart_index_oid_u_hi"] =
+      base64_encode((unsigned char const*)&multipart_index_oid.u_hi,
+                    sizeof(multipart_index_oid.u_hi));
+  root["mero_multipart_index_oid_u_lo"] =
+      base64_encode((unsigned char const*)&multipart_index_oid.u_lo,
+                    sizeof(multipart_index_oid.u_lo));
+
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
 }
@@ -435,6 +478,26 @@ void S3BucketMetadata::from_json(std::string content) {
   }
   user_name = system_defined_attribute["Owner-User"];
   account_name = system_defined_attribute["Owner-Account"];
+
+  std::string dec_object_list_index_oid_u_hi_str =
+      base64_decode(newroot["mero_object_list_index_oid_u_hi"].asString());
+  std::string dec_object_list_index_oid_u_lo_str =
+      base64_decode(newroot["mero_object_list_index_oid_u_lo"].asString());
+
+  std::string dec_multipart_index_oid_u_hi_str =
+      base64_decode(newroot["mero_multipart_index_oid_u_hi"].asString());
+  std::string dec_multipart_index_oid_u_lo_str =
+      base64_decode(newroot["mero_multipart_index_oid_u_lo"].asString());
+
+  memcpy((void*)&object_list_index_oid.u_hi, dec_object_list_index_oid_u_hi_str.c_str(),
+         dec_object_list_index_oid_u_hi_str.length());
+  memcpy((void*)&object_list_index_oid.u_lo, dec_object_list_index_oid_u_lo_str.c_str(),
+         dec_object_list_index_oid_u_lo_str.length());
+
+  memcpy((void*)&multipart_index_oid.u_hi, dec_multipart_index_oid_u_hi_str.c_str(),
+         dec_multipart_index_oid_u_hi_str.length());
+  memcpy((void*)&multipart_index_oid.u_lo, dec_multipart_index_oid_u_lo_str.c_str(),
+         dec_multipart_index_oid_u_lo_str.length());
 
   bucket_ACL.from_json((newroot["ACL"]).asString());
   bucket_policy = newroot["Policy"].asString();

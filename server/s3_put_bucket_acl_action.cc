@@ -46,7 +46,7 @@ void S3PutBucketACLAction::setacl() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string acl_str = request->get_full_body_content_as_string();
     bucket_metadata->setacl(acl_str);
-    bucket_metadata->save_metadata(std::bind( &S3PutBucketACLAction::next, this), std::bind( &S3PutBucketACLAction::next, this));
+    bucket_metadata->save(std::bind( &S3PutBucketACLAction::next, this), std::bind( &S3PutBucketACLAction::next, this));
   } else {
     send_response_to_s3_client();
   }

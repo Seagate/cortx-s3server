@@ -46,7 +46,7 @@ void S3PutBucketPolicyAction::set_policy() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string policy_str = request->get_full_body_content_as_string();
     bucket_metadata->setpolicy(policy_str);
-    bucket_metadata->save_metadata(std::bind( &S3PutBucketPolicyAction::next, this), std::bind( &S3PutBucketPolicyAction::next, this));
+    bucket_metadata->save(std::bind( &S3PutBucketPolicyAction::next, this), std::bind( &S3PutBucketPolicyAction::next, this));
   } else {
     send_response_to_s3_client();
   }

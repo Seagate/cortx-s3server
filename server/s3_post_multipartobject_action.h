@@ -34,6 +34,7 @@
 
 class S3PostMultipartObjectAction : public S3Action {
   struct m0_uint128 oid;
+  struct m0_uint128 multipart_index_oid;
   unsigned short tried_count;
   std::string salt;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -58,6 +59,8 @@ public:
   void save_upload_metadata();
   void save_upload_metadata_failed();
   void create_part_meta_index();
+  void save_multipart_metadata();
+  void save_multipart_metadata_failed();
   void send_response_to_s3_client();
 
   // rollback functions

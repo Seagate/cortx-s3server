@@ -18,9 +18,10 @@
  * Original creation date: 9-Nov-2015
  */
 
-#include "clovis_helpers.h"
 #include <openssl/md5.h>
+#include "clovis_helpers.h"
 #include "murmur3_hash.h"
+#include "s3_uri_to_mero_oid.h"
 
 #include <tuple>
 #include <vector>
@@ -43,6 +44,7 @@
 #include <unistd.h>
 
 evbase_t * global_evbase_handle;
+extern struct m0_clovis_realm clovis_uber_realm;
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
@@ -132,6 +134,34 @@ void fatal_libevent(int err) {
   s3_log(S3_LOG_ERROR, "Fatal error occured in libevent, error = %d\n", err);
 }
 
+// This index will be holding the ids for the Account, User index
+int create_s3_user_index(std::string index_name) {
+  int rc;
+  struct m0_clovis_op *ops[1] = {NULL};
+  struct m0_clovis_idx idx;
+
+  memset(&idx, 0, sizeof(idx));
+  ops[0] = NULL;
+  struct m0_uint128 id;
+  S3UriToMeroOID(index_name.c_str(), &id);
+  m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
+  m0_clovis_entity_create(&idx.in_entity, &ops[0]);
+  m0_clovis_op_launch(ops, 1);
+
+  rc = m0_clovis_op_wait(
+      ops[0], M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE), M0_TIME_NEVER);
+  if (rc < 0) {
+    if (rc != -EEXIST) {
+      m0_clovis_op_fini(ops[0]);
+      m0_clovis_op_free(ops[0]);
+      return rc;
+    }
+  }
+  m0_clovis_op_fini(ops[0]);
+  m0_clovis_op_free(ops[0]);
+  return 0;
+}
+
 int
 main(int argc, char ** argv) {
   int rc = 0;
@@ -205,6 +235,12 @@ main(int argc, char ** argv) {
       s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
       s3daemon.delete_pidfile();
       return rc;
+  }
+
+  rc = create_s3_user_index(ACCOUNT_USER_INDEX_NAME);
+  if (rc < 0) {
+    s3_log(S3_LOG_FATAL, "Failed to create a KVS index\n");
+    return rc;
   }
 
   /* KD - setup for reading data */

@@ -32,12 +32,17 @@
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_log.h"
+#include "s3_request_object.h"
+#include "s3_account_user_index_metadata.h"
 
 enum class S3BucketMetadataState {
   empty,    // Initial state, no lookup done
+  fetching, // Loading in progress
   present,  // Metadata exists and was read successfully
-  missing,   // Metadata not present in store.
+  missing,  // Metadata not present in store.
+  saving,   // Save is in progress
   saved,    // Metadata saved to store.
+  deleting,
   deleted,  // Metadata deleted from store
   failed
 };
@@ -48,6 +53,11 @@ class S3BucketMetadata {
 private:
   std::string account_name;
   std::string user_name;
+  std::string salted_index_name;
+
+  // Maximum retry count for collision resolution
+  unsigned short collision_attempt_count;
+  std::string collision_salt;
 
   // The name for a Bucket
   // http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
@@ -57,6 +67,11 @@ private:
   std::map<std::string, std::string> user_defined_attribute;
 
   S3BucketACL bucket_ACL;
+
+  struct m0_uint128 bucket_list_index_oid;
+
+  struct m0_uint128 multipart_index_oid;
+  struct m0_uint128 object_list_index_oid;
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -69,14 +84,38 @@ private:
 
   S3BucketMetadataState state;
 
-private:
-  std::string get_account_index_name() {
-    return "ACCOUNT/" + account_name;
-  }
+  std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
 
+private:
   std::string get_account_user_index_name() {
     return "ACCOUNTUSER/" + account_name + "/" + user_name;
   }
+
+  void fetch_bucket_list_index_oid();
+  void fetch_bucket_list_index_oid_success();
+  void fetch_bucket_list_index_oid_failed();
+
+  void load_bucket_info();
+  void load_bucket_info_successful();
+  void load_bucket_info_failed();
+
+  void create_bucket_list_index();
+  void create_bucket_list_index_successful();
+  void create_bucket_list_index_failed();
+
+  void save_bucket_list_index_oid();
+  void save_bucket_list_index_oid_successful();
+  void save_bucket_list_index_oid_failed();
+
+  std::string create_default_acl();
+
+  void save_bucket_info();
+  void save_bucket_info_successful();
+  void save_bucket_info_failed();
+
+  void remove_bucket_info();
+  void remove_bucket_info_successful();
+  void remove_bucket_info_failed();
 
   // AWS recommends that all bucket names comply with DNS naming convention
   // See Bucket naming restrictions in above link.
@@ -84,7 +123,10 @@ private:
 
   // Any other validations we want to do on metadata
   void validate();
-public:
+  void handle_collision();
+  void regenerate_new_oid();
+
+ public:
   S3BucketMetadata(std::shared_ptr<S3RequestObject> req);
 
   std::string get_bucket_name();
@@ -92,9 +134,18 @@ public:
   std::string get_location_constraint();
   std::string get_owner_id();
   std::string get_owner_name();
+
   std::string& get_encoded_bucket_acl();
   std::string& get_policy_as_json();
   std::string& get_acl_as_xml();
+
+  struct m0_uint128 get_bucket_list_index_oid();
+  struct m0_uint128 get_multipart_index_oid();
+  struct m0_uint128 get_object_list_index_oid();
+  void set_bucket_list_index_oid(struct m0_uint128 id);
+  void set_multipart_index_oid(struct m0_uint128 id);
+  void set_object_list_index_oid(struct m0_uint128 id);
+
   void set_location_constraint(std::string location);
 
   // Load attributes
@@ -102,43 +153,24 @@ public:
   void add_user_defined_attribute(std::string key, std::string val);
 
   void load(std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void load_account_bucket();
-  void load_account_bucket_successful();
-  void load_account_bucket_failed();
-  // load_user_bucket is going to be efficient in terms of cassandra
-  // as there will be less data in user row
-  void load_user_bucket();
-  void load_user_bucket_successful();
-  void load_user_bucket_failed();
+  void load_successful();
+  void load_failed();
 
   void save(std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  std::string create_default_acl();
-  void create_account_bucket_index();
-  void create_account_bucket_index_successful();
-  void create_account_bucket_index_failed();
-  void create_account_user_bucket_index();
-  void create_account_user_bucket_index_successful();
-  void create_account_user_bucket_index_failed();
+  void save_successful();
+  void save_failed();
 
-  void save_account_bucket();
-  void save_account_bucket_successful();
-  void save_account_bucket_failed();
-  void save_user_bucket();
-  void save_user_bucket_successful();
-  void save_user_bucket_failed();
   void setpolicy(std::string & policy_str);
   void deletepolicy();
   void setacl(std::string & acl_str);
+
   void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void remove_successful();
+  void remove_failed();
 
-  void remove_account_bucket();
-  void remove_account_bucket_successful();
-  void remove_account_bucket_failed();
-  void remove_user_bucket();
-  void remove_user_bucket_successful();
-  void remove_user_bucket_failed();
-
+  // void save_idx_metadata();
+  // void save_idx_metadata_successful();
+  // void save_idx_metadata_failed();
 
   S3BucketMetadataState get_state() {
     return state;

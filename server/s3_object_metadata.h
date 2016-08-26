@@ -55,11 +55,15 @@ private:
   std::string object_name;
 
   std::string upload_id;
+  // Maximum retry count for collision resolution
+  unsigned short tried_count;
+  std::string salt;
 
   // The name for a key is a sequence of Unicode characters whose UTF-8 encoding is at most 1024 bytes long. http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
   std::string object_key_uri;
 
   struct m0_uint128 oid;
+  struct m0_uint128 index_oid;
   std::string mero_oid_u_hi_str;
   std::string mero_oid_u_lo_str;
 
@@ -79,14 +83,22 @@ private:
   std::function<void()> handler_on_failed;
 
   S3ObjectMetadataState state;
+  void initialize(bool is_multipart, std::string uploadid);
+  void collision_detected();
+  void create_new_oid();
 
-private:
   // Any validations we want to do on metadata
   void validate();
-public:
+  std::string index_name;
+
+ public:
   S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool ismultipart = false, std::string uploadid = "");
+  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
+                   struct m0_uint128 bucket_idx_id, bool ismultipart = false,
+                   std::string uploadid = "");
 
   std::string create_default_acl();
+  struct m0_uint128 get_index_oid();
   std::string get_bucket_index_name() {
     return "BUCKET/" + bucket_name;
   }
@@ -164,6 +176,7 @@ public:
 
   void mark_as_non_multipart() {
     is_multipart = false;
+    index_name = get_bucket_index_name();
   }
 
   std::string to_json();

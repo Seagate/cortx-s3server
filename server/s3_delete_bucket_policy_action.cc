@@ -47,7 +47,7 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     bucket_metadata->deletepolicy();
-    bucket_metadata->save_metadata(std::bind( &S3DeleteBucketPolicyAction::delete_bucket_policy_successful, this), std::bind( &S3DeleteBucketPolicyAction::delete_bucket_policy_failed, this));
+    bucket_metadata->save(std::bind( &S3DeleteBucketPolicyAction::delete_bucket_policy_successful, this), std::bind( &S3DeleteBucketPolicyAction::delete_bucket_policy_failed, this));
   } else {
     send_response_to_s3_client();
   }

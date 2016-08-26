@@ -42,12 +42,27 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std:
   get_keyval(index_name, keys, on_success, on_failed);
 }
 
+void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  std::vector<std::string> keys;
+  keys.push_back(key);
+
+  get_keyval(oid, keys, on_success, on_failed);
+}
+
 void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
+  S3UriToMeroOID(index_name.c_str(), &id);
+  get_keyval(id, keys, on_success, on_failed);
+}
+
+void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   for(auto key : keys) {
     s3_log(S3_LOG_DEBUG, "key = %s\n", key.c_str());
   }
+
+  id = oid;
 
   int rc = 0;
   last_result_keys_values.clear();
@@ -74,8 +89,6 @@ void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::stri
   idx_ctx->cbs->oop_executed = NULL;
   idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
   idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
-
-  S3UriToMeroOID(index_name.c_str(), &id);
 
   int i = 0;
   for(auto key : keys) {

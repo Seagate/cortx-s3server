@@ -21,13 +21,12 @@
 #include <json/json.h>
 #include "base64.h"
 
-#include "s3_object_metadata.h"
 #include "s3_datetime.h"
 #include "s3_log.h"
+#include "s3_object_metadata.h"
+#include "s3_uri_to_mero_oid.h"
 
-S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool ismultipart, std::string uploadid) : request(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
-
+void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
@@ -38,7 +37,7 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool is
   is_multipart = ismultipart;
   upload_id = uploadid;
   oid = M0_CLOVIS_ID_APP;
-
+  tried_count = 0;
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
   object_key_uri = bucket_name + "\\" + object_name;
@@ -63,10 +62,40 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool is
   system_defined_attribute["x-amz-server-side-encryption-customer-algorithm"] = "";
   system_defined_attribute["x-amz-server-side-encryption-customer-key"] = "";
   system_defined_attribute["x-amz-server-side-encryption-customer-key-MD5"] = "";
+  if (is_multipart) {
+    index_name = get_multipart_index_name();
+    system_defined_attribute["Upload-ID"] = upload_id;
+  } else {
+    index_name = get_bucket_index_name();
+  }
+
+  index_oid = {0ULL, 0ULL};
+}
+
+S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
+                                   bool ismultipart, std::string uploadid)
+    : request(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  initialize(ismultipart, uploadid);
+}
+
+S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
+                                   m0_uint128 bucket_idx_oid, bool ismultipart,
+                                   std::string uploadid)
+    : request(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+
+  initialize(ismultipart, uploadid);
+  index_oid.u_hi = bucket_idx_oid.u_hi;
+  index_oid.u_lo = bucket_idx_oid.u_lo;
 }
 
 std::string S3ObjectMetadata::get_object_name() {
   return object_name;
+}
+
+struct m0_uint128 S3ObjectMetadata::get_index_oid() {
+  return index_oid;
 }
 
 std::string S3ObjectMetadata::get_user_id() {
@@ -181,23 +210,25 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success, std::function<
 
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
-
-  create_bucket_index();
+  if (index_oid.u_lo == 0 && index_oid.u_hi == 0) {
+    S3UriToMeroOID(index_name.c_str(), &index_oid);
+    // Index table doesn't exist so create it
+    create_bucket_index();
+  } else {
+    save_metadata();
+  }
 }
 
 void S3ObjectMetadata::create_bucket_index() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string index_name;
   // Mark missing as we initiate write, in case it fails to write.
   state = S3ObjectMetadataState::missing;
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  if(is_multipart) {
-    index_name = get_multipart_index_name();
-  } else {
-    index_name = get_bucket_index_name();
-  }
-  clovis_kv_writer->create_index(index_name, std::bind( &S3ObjectMetadata::create_bucket_index_successful, this), std::bind( &S3ObjectMetadata::create_bucket_index_failed, this));
+  clovis_kv_writer->create_index_with_oid(
+      index_oid,
+      std::bind(&S3ObjectMetadata::create_bucket_index_successful, this),
+      std::bind(&S3ObjectMetadata::create_bucket_index_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -209,8 +240,9 @@ void S3ObjectMetadata::create_bucket_index_successful() {
 void S3ObjectMetadata::create_bucket_index_failed() {
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
     s3_log(S3_LOG_DEBUG, "Object metadata bucket index present.\n");
-    // We need to create index only once.
-    save_metadata();
+    // create_bucket_index gets called when bucket index is not there, hence if
+    // state is "exists" then it will be due to collision, resolve it.
+    collision_detected();
   } else {
     s3_log(S3_LOG_DEBUG, "Object metadata create bucket index failed.\n");
     state = S3ObjectMetadataState::failed;  // todo Check error
@@ -218,22 +250,46 @@ void S3ObjectMetadata::create_bucket_index_failed() {
   }
 }
 
+void S3ObjectMetadata::collision_detected() {
+  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists &&
+      tried_count < MAX_COLLISION_TRY) {
+    s3_log(S3_LOG_INFO, "Object ID collision happened for index %s\n",
+           index_name.c_str());
+    // Handle Collision
+    create_new_oid();
+    tried_count++;
+    if (tried_count > 5) {
+      s3_log(S3_LOG_INFO,
+             "Object ID collision happened %d times for index %s\n",
+             tried_count, index_name.c_str());
+    }
+    create_bucket_index();
+  } else {
+    if (tried_count > MAX_COLLISION_TRY) {
+      s3_log(S3_LOG_ERROR,
+             "Failed to resolve object id collision %d times for index %s\n",
+             tried_count, index_name.c_str());
+    }
+    state = S3ObjectMetadataState::failed;
+    this->handler_on_failed();
+  }
+}
+
+void S3ObjectMetadata::create_new_oid() {
+  std::string salted_index_name =
+      index_name + salt + std::to_string(tried_count);
+  S3UriToMeroOID(salted_index_name.c_str(), &index_oid);
+  return;
+}
+
 void S3ObjectMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string index_name;
   std::string key;
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
   system_defined_attribute["Owner-User-id"] = user_id;
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
-  if( is_multipart ) {
-    system_defined_attribute["Upload-ID"] = upload_id;
-    index_name = get_multipart_index_name();
-  } else {
-    index_name = get_bucket_index_name();
-  }
-
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(index_name, object_name, this->to_json(), std::bind( &S3ObjectMetadata::save_metadata_successful, this), std::bind( &S3ObjectMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -241,7 +297,6 @@ void S3ObjectMetadata::save_metadata() {
 
 void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string index_name;
   std::string key;
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;

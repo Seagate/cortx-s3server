@@ -112,10 +112,18 @@ public:
     return state;
   }
 
+  struct m0_uint128 get_oid() {
+    return id;
+  }
+
   // async create
   void create_index(std::string index_name,std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void create_index_successful();
   void create_index_failed();
+
+  void create_index_with_oid(struct m0_uint128 idx_id,
+                             std::function<void(void)> on_success,
+                             std::function<void(void)> on_failed);
 
   // async delete
   void delete_index(std::string index_name,std::function<void(void)> on_success, std::function<void(void)> on_failed);
@@ -129,12 +137,16 @@ public:
 
   // Async save operation.
   void put_keyval(std::string index_name, std::string key, std::string val, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void put_keyval(struct m0_uint128 oid, std::string key, std::string  val, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void put_keyval_successful();
   void put_keyval_failed();
 
   // Async delete operation.
   void delete_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_keyval(struct m0_uint128 oid, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+
   void delete_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_keyval(struct m0_uint128 oid, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
 
   void delete_keyval_successful();
   void delete_keyval_failed();

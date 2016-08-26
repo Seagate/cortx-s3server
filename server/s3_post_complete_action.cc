@@ -100,7 +100,9 @@ void S3PostCompleteAction::fetch_bucket_info() {
 void S3PostCompleteAction::fetch_multipart_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    object_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
+    multipart_index_oid = bucket_metadata->get_multipart_index_oid();
+    object_metadata = std::make_shared<S3ObjectMetadata>(
+        request, multipart_index_oid, true, upload_id);
     object_metadata->load(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::fetch_multipart_info_failed, this));
   } else {
     s3_log(S3_LOG_ERROR, "Missing bucket [%s]\n", request->get_bucket_name().c_str());

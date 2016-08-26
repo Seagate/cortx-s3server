@@ -35,6 +35,16 @@
 #define EXTERN_C_FUNC
 #endif
 
+#define MAX_COLLISION_TRY 20
+
+#define ACCOUNT_USER_INDEX_NAME "ACCOUNTUSERINDEX"
+
+// We reserve 255 oids after M0_CLOVIS_ID_APP for S3 servers internal use.
+#define S3_OID_RESERVED_COUNT 255
+// First OID after M0_CLOVIS_ID_APP is reserved for S3 root AccountUserIndex.
+// see s3_user_account_index_metadata.h/cc
+#define S3_ROOT_ACC_USER_IDX_OFFSET 1
+
 enum class S3ApiType {
   service,
   bucket,

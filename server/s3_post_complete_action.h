@@ -46,6 +46,7 @@ class S3PostCompleteAction : public S3Action {
   std::string etag;
   std::map<std::string, std::string, S3NumStrComparator> parts;
   uint64_t object_size;
+  m0_uint128 multipart_index_oid;
   bool delete_multipart_object;
 
   void parse_xml_str(std::string &xml_str);
