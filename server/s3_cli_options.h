@@ -60,4 +60,7 @@ DECLARE_bool(fault_injection);
 // options specified on cli overrides the option specified in config file.
 int parse_and_load_config_options(int argc, char ** argv);
 
+// Cleanups related to options processing.
+void finalize_cli_options();
+
 #endif

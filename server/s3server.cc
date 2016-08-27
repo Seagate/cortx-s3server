@@ -240,5 +240,7 @@ main(int argc, char ** argv) {
   s3_log(S3_LOG_DEBUG, "S3server exiting...\n");
   s3daemon.delete_pidfile();
   fini_log();
+  finalize_cli_options();
+
   return 0;
 }

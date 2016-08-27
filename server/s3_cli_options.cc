@@ -130,3 +130,5 @@ int parse_and_load_config_options(int argc, char ** argv) {
 
   return 0;
 }
+
+void finalize_cli_options() { gflags::ShutDownCommandLineFlags(); }
