@@ -34,6 +34,15 @@
 #define S3_OPTION_PERF_LOG_FILE 0x0400
 #define S3_OPTION_LOG_FILE_MAX_SIZE 0x0800
 
+#define S3_OPTION_ASSERT_AND_RET(node, option)                              \
+  do {                                                                      \
+    if (!node[option]) {                                                    \
+      fprintf(stderr, "%s:%d:option [%s] is missing\n", __FILE__, __LINE__, \
+              option);                                                      \
+      return false;                                                         \
+    }                                                                       \
+  } while (0)
+
 #include <string>
 #include <set>
 

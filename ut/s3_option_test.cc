@@ -71,7 +71,7 @@ TEST_F(S3OptionsTest, SingletonCheck) {
 }
 
 TEST_F(S3OptionsTest, GetOptionsfromFile) {
-  instance->load_all_sections(false);
+  EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
@@ -105,7 +105,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   // load from Config file, overriding the command options
-  instance->load_all_sections(true);
+  EXPECT_TRUE(instance->load_all_sections(true));
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
@@ -136,7 +136,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
-  instance->load_all_sections(false);
+  EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
   EXPECT_EQ(std::string("/tmp/"), instance->get_log_dir());
   EXPECT_EQ(std::string("debug"), instance->get_log_level());
@@ -155,7 +155,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
 }
 
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
-  instance->load_section("S3_SERVER_CONFIG", false);
+  EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", false));
 
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
@@ -184,7 +184,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
-  instance->load_section("S3_SERVER_CONFIG", true);
+  EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", true));
 
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
@@ -207,7 +207,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
 }
 
 TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
-  instance->load_section("S3_AUTH_CONFIG", false);
+  EXPECT_TRUE(instance->load_section("S3_AUTH_CONFIG", false));
 
   EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
@@ -233,7 +233,7 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
 
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191.1");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
-  instance->load_section("S3_AUTH_CONFIG", true);
+  EXPECT_TRUE(instance->load_section("S3_AUTH_CONFIG", true));
 
   EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
@@ -256,7 +256,7 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
 }
 
 TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
-  instance->load_section("S3_CLOVIS_CONFIG", false);
+  EXPECT_TRUE(instance->load_section("S3_CLOVIS_CONFIG", false));
 
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_confd_addr());
@@ -278,7 +278,7 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
 TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, "localhost@test");
-  instance->load_section("S3_CLOVIS_CONFIG", true);
+  EXPECT_TRUE(instance->load_section("S3_CLOVIS_CONFIG", true));
 
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_confd_addr());
@@ -319,15 +319,46 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
 }
 
 TEST_F(S3OptionsTest, GetDefaultEndPoint) {
-  instance->load_all_sections(false);
+  EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3.seagate-test.com"), instance->get_default_endpoint());
 }
 
 TEST_F(S3OptionsTest, GetRegionEndPoints) {
-  instance->load_all_sections(false);
+  EXPECT_TRUE(instance->load_all_sections(false));
   std::set<std::string> region_eps = instance->get_region_endpoints();
   EXPECT_TRUE(region_eps.find("s3-asia.seagate-test.com") != region_eps.end());
   EXPECT_TRUE(region_eps.find("s3-us.seagate-test.com") != region_eps.end());
   EXPECT_TRUE(region_eps.find("s3-europe.seagate-test.com") != region_eps.end());
   EXPECT_FALSE(region_eps.find("invalid-region.seagate.com") != region_eps.end());
+}
+
+TEST_F(S3OptionsTest, MissingOptions) {
+  // create a temporary yaml file
+  std::ofstream cfg_file;
+  std::string config_file("s3config-temp-test.yaml");
+  cfg_file.open(config_file);
+  cfg_file << "S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, "
+              "S3_CLOVIS_CONFIG]\n";
+  cfg_file << "S3_SERVER_CONFIG:\n";
+  cfg_file << "   S3_LOG_MODE: INFO\n";
+  cfg_file << "S3_AUTH_CONFIG:\n";
+  cfg_file << "   S3_AUTH_PORT: 8095\n";
+  cfg_file << "S3_CLOVIS_CONFIG:\n";
+  cfg_file << "   S3_CLOVIS_MAX_BLOCKS_PER_REQUEST: 1\n";
+  cfg_file.close();
+
+  instance->set_option_file(config_file);
+  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", false));
+  EXPECT_FALSE(instance->load_section("S3_AUTH_CONFIG", false));
+  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", false));
+
+  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", true));
+  EXPECT_FALSE(instance->load_section("S3_AUTH_CONFIG", true));
+  EXPECT_FALSE(instance->load_section("S3_CLOVIS_CONFIG", true));
+
+  EXPECT_FALSE(instance->load_all_sections(false));
+  EXPECT_FALSE(instance->load_all_sections(true));
+
+  // delete the file
+  unlink(config_file.c_str());
 }
