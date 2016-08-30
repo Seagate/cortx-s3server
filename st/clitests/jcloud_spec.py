@@ -2,7 +2,7 @@
 
 import os
 from framework import Config
-from framework import PyCliTest
+from framework import S3PyCliTest
 from jcloud import JCloudTest
 from s3client_config import S3ClientConfig
 
@@ -24,7 +24,7 @@ from s3client_config import S3ClientConfig
 
 # Run before all to setup the test environment.
 print("Configuring LDAP")
-PyCliTest('Before_all').before_all()
+S3PyCliTest('Before_all').before_all()
 
 S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
 S3ClientConfig.secret_key = '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'

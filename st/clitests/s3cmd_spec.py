@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from framework import Config
-from framework import PyCliTest
+from framework import S3PyCliTest
 from s3cmd import S3cmdTest
 from jclient import JClientTest
 from s3client_config import S3ClientConfig
@@ -23,7 +23,7 @@ from s3client_config import S3ClientConfig
 
 # Run before all to setup the test environment.
 print("Configuring LDAP")
-PyCliTest('Before_all').before_all()
+S3PyCliTest('Before_all').before_all()
 
 # Set pathstyle =false to run jclient for partial multipart upload
 S3ClientConfig.pathstyle = False

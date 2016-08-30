@@ -3,15 +3,20 @@ import sys
 import shutil
 import time
 import re
+import yaml
 from scripttest import TestFileEnvironment
 from ldap_setup import LdapSetup
+from cloud_setup import CloudGatewaySetup
 
 class Config:
     log_enabled = False
     dummy_run = False
     config_file = 'pathstyle.s3cfg'
     time_readable_format = True
+    tmp_wd = ''
 
+class CloudConfig:
+    pass
 
 def logit(str):
     if Config.log_enabled:
@@ -20,21 +25,19 @@ def logit(str):
 class PyCliTest(object):
     'Base class for all test cases.'
 
-    def __init__(self, description):
+    def __init__(self, description, tmp_wd = 'tests-out', clear_base_dir = 'True'):
         self.description = description
         self.command = ''
         self.negative_case = False
+        self.tmp_wd = tmp_wd
         self._create_temp_working_dir()
-        self.env = TestFileEnvironment(base_path = self.working_dir)
+        self.env = TestFileEnvironment(base_path = self.working_dir, start_clear = clear_base_dir)
 
-    # Initialize LDAP
     def before_all(self):
-        ldap_setup = LdapSetup()
-        ldap_setup.ldap_delete_all()
-        ldap_setup.ldap_init()
+        raise NotImplementedError("before_all not implemented.")
 
     def _create_temp_working_dir(self):
-        self.working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests-out')
+        self.working_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.tmp_wd)
 
     def with_cli(self, command):
         self.command = command
@@ -167,3 +170,41 @@ class PyCliTest(object):
             assert bool(regex.match(self.status.stderr)), ("Expected output %s.\nActual output %s" % (pattern, self.status.stdout))
         print("Command was successful.")
         return self
+
+    # Get exit status for command
+    def get_exitstatus(self):
+        return self.status.returncode
+
+class S3PyCliTest(PyCliTest):
+
+    def before_all(self):
+        ldap_setup = LdapSetup()
+        ldap_setup.ldap_delete_all()
+        ldap_setup.ldap_init()
+
+
+class TCTPyCliTest(PyCliTest):
+
+    def __init__(self, description, clear_base_dir = 'True'):
+        super(TCTPyCliTest, self).__init__(description, tmp_wd = Config.tmp_wd, clear_base_dir = clear_base_dir)
+
+    def before_all(self):
+        cloud = CloudGatewaySetup()
+        if cloud.service_status() != 'Started':
+            rc = cloud.service_start()
+            if rc != 0:
+                raise AssertionError("Failed to start cloud gateway service.")
+            # wait for mmcloudgatway service to start properly
+            time.sleep(15)
+        rc = cloud.account_create()
+        if rc == 61:
+            raise AssertionError("Pre-configured cloud gateway account exists.")
+        elif rc != 0:
+            raise AssertionError("Failed to create cloud gateway account.")
+
+        # list configured cloud details
+        cloud.account_list()
+
+    def teardown(self):
+        CloudGatewaySetup().account_delete()
+        super(TCTPyCliTest, self).teardown()

@@ -1,6 +1,6 @@
 import os
 from framework import Config
-from framework import PyCliTest
+from framework import S3PyCliTest
 from auth import AuthTest
 from s3client_config import S3ClientConfig
 
@@ -30,7 +30,7 @@ def get_response_elements(response):
 # Run before all to setup the test environment.
 def before_all():
     print("Configuring LDAP")
-    PyCliTest('Before_all').before_all()
+    S3PyCliTest('Before_all').before_all()
 
 # Test create account API
 def account_tests():

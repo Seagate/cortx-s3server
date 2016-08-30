@@ -4,12 +4,12 @@ import sys
 import time
 from threading import Timer
 import subprocess
-from framework import PyCliTest
+from framework import S3PyCliTest
 from framework import Config
 from framework import logit
 from s3client_config import S3ClientConfig
 
-class JCloudTest(PyCliTest):
+class JCloudTest(S3PyCliTest):
     jcloud_cmd = "java -jar ../jcloudclient.jar"
 
     def __init__(self, description):

@@ -4,11 +4,11 @@ import sys
 import time
 from threading import Timer
 import subprocess
-from framework import PyCliTest
+from framework import S3PyCliTest
 from framework import Config
 from framework import logit
 
-class S3cmdTest(PyCliTest):
+class S3cmdTest(S3PyCliTest):
     def __init__(self, description):
         self.s3cfg = os.path.join(os.path.dirname(os.path.realpath(__file__)), Config.config_file)
         super(S3cmdTest, self).__init__(description)
