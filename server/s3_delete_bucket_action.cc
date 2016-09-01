@@ -138,7 +138,8 @@ void S3DeleteBucketAction::remove_part_indexes() {
     for (multipart_kv = multipart_objects.begin(); multipart_kv != multipart_objects.end(); multipart_kv++) {
       std::string index_name = pre_index_name + multipart_kv->first + "/" + multipart_kv->second;
       // TODO - Handle Collision resolution, read oid from multipart metadata
-      S3UriToMeroOID(index_name.c_str(), &oid);
+      S3UriToMeroOID(index_name.c_str(), &oid,
+                     S3ClovisEntityType::index);
       oids.push_back(oid);
     }
     clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);

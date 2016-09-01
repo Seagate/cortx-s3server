@@ -52,7 +52,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::string key, std::
 void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
-  S3UriToMeroOID(index_name.c_str(), &id);
+  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
   get_keyval(id, keys, on_success, on_failed);
 }
 
@@ -212,7 +212,7 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "Index_name = %s, key = %s and count = %zu\n", index_name.c_str(), key.c_str(), nr_kvp);
 
-  S3UriToMeroOID(index_name.c_str(), &id);
+  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
 
   next_keyval(id, key, nr_kvp, on_success, on_failed);
 

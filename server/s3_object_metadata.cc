@@ -211,7 +211,7 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success, std::function<
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
   if (index_oid.u_lo == 0 && index_oid.u_hi == 0) {
-    S3UriToMeroOID(index_name.c_str(), &index_oid);
+    S3UriToMeroOID(index_name.c_str(), &index_oid, S3ClovisEntityType::index);
     // Index table doesn't exist so create it
     create_bucket_index();
   } else {
@@ -278,7 +278,7 @@ void S3ObjectMetadata::collision_detected() {
 void S3ObjectMetadata::create_new_oid() {
   std::string salted_index_name =
       index_name + salt + std::to_string(tried_count);
-  S3UriToMeroOID(salted_index_name.c_str(), &index_oid);
+  S3UriToMeroOID(salted_index_name.c_str(), &index_oid, S3ClovisEntityType::index);
   return;
 }
 

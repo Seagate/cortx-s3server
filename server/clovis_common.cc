@@ -67,9 +67,11 @@ int init_clovis(void) {
       break;
 
     case 1:
-      s3_log(S3_LOG_FATAL, "KVS Index service Id [%d] not supported\n",
+      s3_log(S3_LOG_INFO,
+             "KVS Index service Id M0_CLOVIS_IDX_MERO[%d] selected\n",
              idx_service_id);
-      return -1;
+      clovis_conf.cc_idx_service_id = M0_CLOVIS_IDX_MERO;
+      clovis_conf.cc_idx_service_conf = NULL;
       break;
 
     case 2:

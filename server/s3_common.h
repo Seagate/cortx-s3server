@@ -96,6 +96,12 @@ enum class S3IOOpStatus {
   failed
 };
 
+enum class S3ClovisEntityType {
+  realm,
+  object,
+  index
+};
+
 // returns 'true' if numeric value of string 'x' is less than that of 'y'
 struct S3NumStrComparator {
   bool operator()(const std::string &x, const std::string &y) const {

@@ -23,8 +23,10 @@
 #include "s3_timer.h"
 #include "s3_perf_logger.h"
 #include "s3_log.h"
+#include "fid/fid.h"
 
-void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
+void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
+                    S3ClovisEntityType type) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   /* MurMur Hash */
@@ -33,6 +35,8 @@ void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
   size_t len = 0;
   uint64_t hash128_64[2];
   struct m0_uint128 tmp_uint128;
+  struct m0_fid index_fid;
+
   object_id->u_hi = object_id->u_lo = 0;
   if (name == NULL) {
     s3_log(S3_LOG_ERROR, "The input parameter 'name' is NULL\n");
@@ -70,6 +74,12 @@ void S3UriToMeroOID(const char* name, struct m0_uint128 *object_id) {
     tmp_uint128.u_lo = res.u_lo;
     tmp_uint128.u_hi = tmp_uint128.u_hi & 0x00ffffffffffffff;
   }
+  if (type == S3ClovisEntityType::index) {
+    index_fid = M0_FID_TINIT('i', tmp_uint128.u_hi, tmp_uint128.u_lo);
+    tmp_uint128.u_hi = index_fid.f_container;
+    tmp_uint128.u_lo = index_fid.f_key;
+  }
+
   *object_id = tmp_uint128;
   s3_log(S3_LOG_DEBUG, "ID for %s is %llu %llu\n", name, object_id->u_hi, object_id->u_lo);
 
