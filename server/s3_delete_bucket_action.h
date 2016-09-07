@@ -40,6 +40,7 @@ class S3DeleteBucketAction : public S3Action {
 
   bool is_bucket_empty;
   bool delete_successful;
+  bool multipart_present;
 
   // Helpers
   std::string get_bucket_index_name() {

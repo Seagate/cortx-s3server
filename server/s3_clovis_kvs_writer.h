@@ -126,6 +126,7 @@ public:
                              std::function<void(void)> on_failed);
 
   // async delete
+  void delete_index(struct m0_uint128 idx_oid, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void delete_index(std::string index_name,std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void delete_index_successful();
   void delete_index_failed();

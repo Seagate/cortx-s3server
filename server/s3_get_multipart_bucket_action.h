@@ -31,6 +31,7 @@
 
 class S3GetMultipartBucketAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::string last_key;  // last key during each iteration
   S3ObjectListResponse multipart_object_list;
   size_t return_list_size;
@@ -53,7 +54,7 @@ public:
   S3GetMultipartBucketAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
-
+  void fetch_bucket_info();
   void get_next_objects();
   void get_next_objects_successful();
   void get_next_objects_failed();

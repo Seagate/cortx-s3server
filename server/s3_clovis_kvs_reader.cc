@@ -152,10 +152,10 @@ void S3ClovisKVSReader::get_keyval_failed() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "Index_name = %s, key = %s and count = %zu\n", index_name.c_str(), key.c_str(), nr_kvp);
-
+  s3_log(S3_LOG_DEBUG, "key = %s and count = %zu\n", key.c_str(), nr_kvp);
+  id = idx_oid;
   int rc = 0;
   last_result_keys_values.clear();
 
@@ -181,8 +181,6 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
   idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
 
-  S3UriToMeroOID(index_name.c_str(), &id);
-
   if (key.empty()) {
     kvs_ctx->keys->ov_vec.v_count[0] = 0;
     kvs_ctx->keys->ov_buf[0] = NULL;
@@ -192,8 +190,7 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
     memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
   }
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
-
+  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &idx_oid);
   rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
   if(rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
@@ -208,6 +205,17 @@ void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, siz
   reader_context->start_timer_for("get_keyval");
 
   m0_clovis_op_launch(idx_ctx->ops, 1);
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "Index_name = %s, key = %s and count = %zu\n", index_name.c_str(), key.c_str(), nr_kvp);
+
+  S3UriToMeroOID(index_name.c_str(), &id);
+
+  next_keyval(id, key, nr_kvp, on_success, on_failed);
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

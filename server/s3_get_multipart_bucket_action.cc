@@ -67,6 +67,7 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(std::shared_ptr<S3Request
 
 void S3GetMultipartBucketAction::setup_steps(){
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  add_task(std::bind( &S3GetMultipartBucketAction::fetch_bucket_info, this ));
   if(!request_marker_uploadid.empty() && !request_marker_key.empty()) {
     add_task(std::bind( &S3GetMultipartBucketAction::get_key_object, this ));
   }
@@ -75,11 +76,30 @@ void S3GetMultipartBucketAction::setup_steps(){
   // ...
 }
 
+void S3GetMultipartBucketAction::fetch_bucket_info() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata->load(std::bind( &S3GetMultipartBucketAction::next, this), std::bind( &S3GetMultipartBucketAction::send_response_to_s3_client, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
 void S3GetMultipartBucketAction::get_key_object() {
   s3_log(S3_LOG_DEBUG, "Fetching multipart listing\n");
-
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->get_keyval(get_multipart_bucket_index_name(), last_key, std::bind( &S3GetMultipartBucketAction::get_key_object_successful, this), std::bind( &S3GetMultipartBucketAction::get_key_object_failed, this));
+  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    struct m0_uint128  empty_indx_oid = {0ULL, 0ULL};
+    struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
+    // If the index oid is 0 in metadata then it implies that there is no multipart index
+    if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
+      clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+      clovis_kv_reader->get_keyval(bucket_metadata->get_multipart_index_oid(), last_key, std::bind( &S3GetMultipartBucketAction::get_key_object_successful, this), std::bind( &S3GetMultipartBucketAction::get_key_object_failed, this));
+    } else {
+      fetch_successful = true; // list empty
+      send_response_to_s3_client();
+    }
+  } else {
+    s3_log(S3_LOG_ERROR, "bucket not found\n");
+    send_response_to_s3_client();
+  }
 }
 
 void S3GetMultipartBucketAction::get_key_object_successful() {
@@ -168,10 +188,21 @@ void S3GetMultipartBucketAction::get_key_object_failed() {
 
 void S3GetMultipartBucketAction::get_next_objects() {
   s3_log(S3_LOG_DEBUG, "Fetching next set of multipart uploads listing\n");
-  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->next_keyval(get_multipart_bucket_index_name(), last_key, count, std::bind( &S3GetMultipartBucketAction::get_next_objects_successful, this), std::bind( &S3GetMultipartBucketAction::get_next_objects_failed, this));
+  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    struct m0_uint128  empty_indx_oid = {0ULL, 0ULL};
+    struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
+    if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
+      size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+      clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+      clovis_kv_reader->next_keyval(bucket_metadata->get_multipart_index_oid(), last_key, count, std::bind( &S3GetMultipartBucketAction::get_next_objects_successful, this), std::bind( &S3GetMultipartBucketAction::get_next_objects_failed, this));
+    } else {
+      fetch_successful = true;
+      send_response_to_s3_client();
+    }
+  } else {
+    s3_log(S3_LOG_ERROR, "Bucket not found\n");
+    send_response_to_s3_client();
+  }
 }
 
 void S3GetMultipartBucketAction::get_next_objects_successful() {
@@ -265,6 +296,14 @@ void S3GetMultipartBucketAction::send_response_to_s3_client() {
     s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n", response_xml.c_str());
 
     request->send_response(S3HttpSuccess200, response_xml);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    // Invalid Bucket Name
+    S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else {
     S3Error error("InternalError", request->get_request_id(), request->get_bucket_name());
     std::string& response_xml = error.to_xml();

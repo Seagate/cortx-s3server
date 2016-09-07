@@ -25,6 +25,7 @@
 S3DeleteBucketAction::S3DeleteBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), is_bucket_empty(false), delete_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  multipart_present = false;
   setup_steps();
 }
 
@@ -85,9 +86,19 @@ void S3DeleteBucketAction::fetch_first_object_metadata_failed() {
 
 void S3DeleteBucketAction::fetch_multipart_objects() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
-  clovis_kv_reader->next_keyval(get_multipart_bucket_index_name(), last_key, count, std::bind( &S3DeleteBucketAction::fetch_multipart_objects_successful, this), std::bind( &S3DeleteBucketAction::next, this));
+  struct m0_uint128  empty_indx_oid = {0ULL, 0ULL};
+  struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
+  //If the index oid is 0 then it implies there is no multipart metadata
+  if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
+    multipart_present = true;
+    //There is an oid for index present, so read objects from it
+    size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+    clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+    clovis_kv_reader->next_keyval(indx_oid, last_key, count, std::bind( &S3DeleteBucketAction::fetch_multipart_objects_successful, this), std::bind( &S3DeleteBucketAction::next, this));
+  } else {
+    s3_log(S3_LOG_DEBUG, "Multipart index not present\n");
+    next();
+  }
 }
 
 void S3DeleteBucketAction::fetch_multipart_objects_successful() {
@@ -162,8 +173,12 @@ void S3DeleteBucketAction::remove_part_indexes_failed() {
 
 void S3DeleteBucketAction::remove_multipart_index() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->delete_index(get_multipart_bucket_index_name(), std::bind( &S3DeleteBucketAction::next, this), std::bind( &S3DeleteBucketAction::next, this));
+  if (multipart_present) {
+    clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+    clovis_kv_writer->delete_index(bucket_metadata->get_multipart_index_oid(), std::bind( &S3DeleteBucketAction::next, this), std::bind( &S3DeleteBucketAction::next, this));
+  } else {
+   next();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
