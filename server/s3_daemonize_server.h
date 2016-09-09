@@ -22,14 +22,17 @@
 #ifndef __MERO_FE_S3_SERVER_S3_DAEMONIZE_SERVER_H__
 #define __MERO_FE_S3_SERVER_S3_DAEMONIZE_SERVER_H__
 
-#include <string>
 #include <signal.h>
+#include <string>
+#include "s3_option.h"
 
 class S3Daemonize {
   int noclose;
-  static std::string pidfilename;
+  std::string pidfilename;
   int write_to_pidfile();
-public:
+  S3Option *option_instance;
+
+ public:
   S3Daemonize();
   void daemonize();
   void wait_for_termination();
@@ -37,7 +40,6 @@ public:
   void register_signals();
   int get_s3daemon_chdir();
   int get_s3daemon_redirection();
-  std::string get_s3_pid_filename();
 };
 
 #endif

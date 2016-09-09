@@ -27,6 +27,7 @@
 
 DECLARE_string(s3host);
 DECLARE_int32(s3port);
+DECLARE_string(s3pidfile);
 
 DECLARE_string(s3loglevel);
 

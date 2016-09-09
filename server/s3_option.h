@@ -33,6 +33,7 @@
 #define S3_OPTION_LOG_MODE 0x0200
 #define S3_OPTION_PERF_LOG_FILE 0x0400
 #define S3_OPTION_LOG_FILE_MAX_SIZE 0x0800
+#define S3_OPTION_PIDFILE 0x01000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -53,6 +54,7 @@ class S3Option {
   int cmd_opt_flag;
 
   std::string s3_bind_addr;
+  std::string s3_pidfile;
   unsigned short s3_bind_port;
   unsigned short max_retry_count;
   unsigned short retry_interval_millisec;
@@ -104,6 +106,7 @@ class S3Option {
 
     s3_bind_addr = FLAGS_s3host;
     s3_bind_port = FLAGS_s3port;
+    s3_pidfile = "/var/run/s3server.pid";
 
     read_ahead_multiple = 1;
 
@@ -159,6 +162,7 @@ class S3Option {
   bool load_all_sections(bool force_override_from_config);
 
   std::string get_bind_addr();
+  std::string get_s3_pidfile();
   unsigned short get_s3_bind_port();
 
   int get_read_ahead_multiple();

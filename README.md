@@ -108,14 +108,39 @@ sudo cp auth/s3authserver.service /lib/systemd/system
 sudo systemctl daemon-reload
 ```
 
-## How to run s3 server daemon(this current assumes all dependencies are on same local VM)
+## How to run single s3 service(this current assumes all dependencies are on same local VM)
 ```sh
 sudo /opt/seagate/s3/starts3.sh
 ```
 
-## How to stop s3 server daemon
+## How to run multiple instances of s3 service(this currently assumes all dependencies are on same local VM)
+```sh
+sudo /opt/seagate/s3/starts3.sh <Number of instances>
+```
+
+Example: To run three s3 service instances
+```sh
+sudo /opt/seagate/s3/starts3.sh 3
+```
+
+## How to run s3 server via systemctl
+```sh
+sudo systemctl start s3server
+```
+
+## How to stop all running s3 services ( This will stop even all multiple instances of s3 service, if its running )
 ```sh
 sudo /opt/seagate/s3/stops3.sh
+```
+
+## How to stop s3 server service via systemctl
+```sh
+sudo systemctl stop s3server
+```
+
+## How to see status of s3 service
+```sh
+sudo /opt/seagate/s3/statuss3.sh
 ```
 
 ## How to run auth server (this current assumes all dependencies are on same local VM)

@@ -1,0 +1,13 @@
+[Unit]
+Description=Mero-S3 Core Server
+
+[Service]
+Type=forking
+PIDFile=/run/s3server.pid
+ExecStartPre=rm -f $PIDFile
+ExecStart=/opt/seagate/s3/s3startsystem.sh
+ExecStop=/bin/kill -s TERM $MAINPID
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target

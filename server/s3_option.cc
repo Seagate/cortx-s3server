@@ -330,6 +330,8 @@ void S3Option::set_cmdline_option(int option_flag, const char *optarg) {
     log_level = optarg;
   } else if (option_flag & S3_OPTION_LOG_FILE_MAX_SIZE) {
     log_file_max_size_mb = atoi(optarg);
+  } else if (option_flag & S3_OPTION_PIDFILE) {
+    s3_pidfile = optarg;
   }
   cmd_opt_flag |= option_flag;
   return;
@@ -342,6 +344,7 @@ int S3Option::get_cmd_opt_flag() {
 void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_DAEMON_WORKING_DIR = %s\n", s3_daemon_dir.c_str());
   s3_log(S3_LOG_INFO, "S3_DAEMON_DO_REDIRECTION = %d\n", s3_daemon_redirect);
+  s3_log(S3_LOG_INFO, "S3_PIDFILENAME = %s\n", s3_pidfile.c_str());
   s3_log(S3_LOG_INFO, "S3_LOG_DIR = %s\n", log_dir.c_str());
   s3_log(S3_LOG_INFO, "S3_LOG_MODE = %s\n", log_level.c_str());
   s3_log(S3_LOG_INFO, "S3_LOG_FILE_MAX_SIZE = %d\n", log_file_max_size_mb);
@@ -401,6 +404,10 @@ void S3Option::dump_options() {
 
 unsigned short S3Option::get_s3_bind_port() {
   return s3_bind_port;
+}
+
+std::string S3Option::get_s3_pidfile() {
+  return s3_pidfile;
 }
 
 unsigned short S3Option::get_auth_port() {

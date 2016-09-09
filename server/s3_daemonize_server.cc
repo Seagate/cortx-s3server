@@ -66,12 +66,13 @@ void s3_terminate_fatal_handler(int signum) {
   raise(signum);
 }
 
-std::string S3Daemonize::pidfilename = "";
 
 S3Daemonize::S3Daemonize(): noclose(0) {
-    if (S3Option::get_instance()->do_redirection() == 0) {
-      noclose = 1;
-    }
+  option_instance = S3Option::get_instance();
+  if (option_instance->do_redirection() == 0) {
+    noclose = 1;
+  }
+  pidfilename = option_instance->get_s3_pidfile();
 }
 
 void S3Daemonize::daemonize() {
@@ -86,7 +87,7 @@ void S3Daemonize::daemonize() {
   }
   sigaction(SIGHUP, &s3hup_act, NULL);
 
-  daemon_wd = S3Option::get_instance()->get_daemon_dir();
+  daemon_wd = option_instance->get_daemon_dir();
   if(access(daemon_wd.c_str(), F_OK) != 0) {
     s3_log(S3_LOG_FATAL, "The directory %s doesn't exist, errno = %d\n",daemon_wd.c_str(), errno);
     exit(1);
@@ -103,15 +104,16 @@ int S3Daemonize::write_to_pidfile() {
   std::string pidstr;
   std::ofstream pidfile;
   pidstr = std::to_string(getpid());
-  S3Daemonize::pidfilename = "/var/run/s3server-" + pidstr + ".pid";
   pidfile.open(pidfilename);
   if (pidfile.fail()) {
-    s3_log(S3_LOG_ERROR, "Failed to open pid file %s\n errno = %d", S3Daemonize::pidfilename.c_str(), errno);
+    s3_log(S3_LOG_ERROR, "Failed to open pid file %s\n errno = %d",
+           pidfilename.c_str(), errno);
     goto FAIL;
   }
   if (!(pidfile << pidstr)) {
-     s3_log(S3_LOG_ERROR, "Failed to write to pid file %s errno = %d\n", S3Daemonize::pidfilename.c_str(), errno);
-     goto FAIL;
+    s3_log(S3_LOG_ERROR, "Failed to write to pid file %s errno = %d\n",
+           pidfilename.c_str(), errno);
+    goto FAIL;
   }
   pidfile.close();
   return 0;
@@ -124,27 +126,31 @@ int S3Daemonize::delete_pidfile() {
   int rc;
   std::ifstream pidfile_read;
   s3_log(S3_LOG_DEBUG, "Entering");
-  if(S3Daemonize::pidfilename == "") {
-    s3_log(S3_LOG_ERROR, "pid filename %s doesn't exist\n", S3Daemonize::pidfilename.c_str());
+  if (pidfilename == "") {
+    s3_log(S3_LOG_ERROR, "pid filename %s doesn't exist\n",
+           pidfilename.c_str());
     return 0;
   }
   pidfile_read.open(S3Daemonize::pidfilename);
   if (pidfile_read.fail()) {
-    s3_log(S3_LOG_ERROR, "Failed to open pid file %s errno = %d\n", S3Daemonize::pidfilename.c_str(), errno);
+    s3_log(S3_LOG_ERROR, "Failed to open pid file %s errno = %d\n",
+           pidfilename.c_str(), errno);
     return -1;
   }
   pidfile_read.getline (pidstr_read,100);
   if (strlen(pidstr_read) == 0) {
-    s3_log(S3_LOG_ERROR, "Pid doesn't exist within %s\n", S3Daemonize::pidfilename.c_str());
+    s3_log(S3_LOG_ERROR, "Pid doesn't exist within %s\n", pidfilename.c_str());
     return -1;
   }
   pidfile_read.close();
   if (pidstr_read != std::to_string(getpid())) {
-    s3_log(S3_LOG_WARN, "The pid(%d) of process does match to the pid(%s) in the pid file %s\n",
-           getpid(), pidstr_read, S3Daemonize::pidfilename.c_str());
+    s3_log(
+        S3_LOG_WARN,
+        "The pid(%d) of process does match to the pid(%s) in the pid file %s\n",
+        getpid(), pidstr_read, pidfilename.c_str());
     return -1;
   }
-  rc = ::unlink(S3Daemonize::pidfilename.c_str());
+  rc = ::unlink(pidfilename.c_str());
   if (rc) {
     return rc;
   }
@@ -176,8 +182,4 @@ void S3Daemonize::register_signals() {
 
 int S3Daemonize::get_s3daemon_redirection() {
   return noclose;
-}
-
-std::string S3Daemonize::get_s3_pid_filename() {
-  return S3Daemonize::pidfilename;
 }
