@@ -153,6 +153,8 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
         switch (parser_state) {
           case ChunkParserState::c_error: {
             s3_log(S3_LOG_ERROR, "ChunkParserState::c_error.\n");
+            evbuffer_drain(buf, -1);
+            evbuffer_free(buf);
             free(vec_in);
             return return_val;
           }
@@ -188,6 +190,8 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
                 parser_state = ChunkParserState::c_chunk_signature_value;
               } else {
                 parser_state = ChunkParserState::c_error;
+                evbuffer_drain(buf, -1);
+                evbuffer_free(buf);
                 free(vec_in);
                 return return_val;
               }
@@ -196,6 +200,8 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
                 chunk_sig_key_char_state.pop();
               } else {
                 parser_state = ChunkParserState::c_error;
+                evbuffer_drain(buf, -1);
+                evbuffer_free(buf);
                 free(vec_in);
                 return return_val;
               }
@@ -273,6 +279,7 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
                 current_chunk_detail.update_hash(current_buf);
                 chunk_data_size_to_read -= evbuffer_get_length(current_buf);
                 evbuffer_drain(buf, -1);  // remove CRLF
+                evbuffer_free(buf);
                 parser_state = ChunkParserState::c_start;
                 current_chunk_detail.fini_hash();
                 current_chunk_detail.debug_dump();
@@ -287,12 +294,15 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
                 current_chunk_detail.update_hash(current_buf);
                 chunk_data_size_to_read -= evbuffer_get_length(current_buf);
                 evbuffer_drain(buf, -1);  // remove CR
+                evbuffer_free(buf);
+
                 parser_state = ChunkParserState::c_chunk_data_end_cr;
                 free(vec_in);
                 return return_val;
               } else if (chunk_data_size_to_read <= remaining_to_parse) {
                 // we have all data + CRLF + some part of next chunk
                 evbuf_t *current_buf = evbuffer_new();
+
                 // copy/move data from buf to current_buf
                 s3_log(S3_LOG_DEBUG, "Before move evbuffer_get_length(buf) = %zu\n", evbuffer_get_length(buf));
                 evbuffer_remove_buffer(buf, current_buf, chunk_data_size_to_read);
@@ -320,6 +330,8 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
               current_chunk_detail.fini_hash();
               current_chunk_detail.debug_dump();
               chunk_details.push(current_chunk_detail);
+              evbuffer_drain(buf, -1);
+              evbuffer_free(buf);
 
               free(vec_in);
               return return_val;
@@ -364,6 +376,16 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
       break;
     } // else buf was rearranged, we need to continue parsing pending buf data.
   } // while true
+
+  if (parser_state < ChunkParserState::c_chunk_data) {
+    // Here we just have metadata in buf which is already parsed, so free it.
+    evbuffer_drain(buf, -1);
+    evbuffer_free(buf);
+  } else {
+    // We missed adding data to return_val
+    // logical error: should never be here.
+    s3_log(S3_LOG_ERROR, "Fatal Error: Invalid ChunkParserState.\n");
+  }
   return return_val;
 }
 
