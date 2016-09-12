@@ -19,7 +19,7 @@ clovis_local_port=100
 
 for i in {8080..8099}
 do
-  cmd="s3server -l $LOCAL_EP:${clovis_local_port} -b $HA_EP -c $CONFD_EP -p ${i} -s 127.0.0.1 -o /var/log/seagate/s3/s3server${i}.log -m INFO  -d 9085"
+  cmd="s3server --clovislocal $LOCAL_EP:${clovis_local_port} --clovisha $HA_EP --clovisconfd $CONFD_EP --s3port ${i} --authhost 127.0.0.1 --authport 9085 --log_dir /var/log/seagate/s3 --s3loglevel INFO"
   echo $cmd
   eval $cmd &
   ((clovis_local_port++))
