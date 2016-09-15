@@ -4,7 +4,7 @@ Description=Mero-S3 Core Server
 [Service]
 Type=forking
 PIDFile=/run/s3server.pid
-ExecStartPre=rm -f $PIDFile
+ExecStartPre=/usr/bin/rm -f /run/s3server.pid
 ExecStart=/opt/seagate/s3/s3startsystem.sh
 ExecStop=/bin/kill -s TERM $MAINPID
 TimeoutStopSec=300
