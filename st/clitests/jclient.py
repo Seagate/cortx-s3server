@@ -148,3 +148,17 @@ class JClientTest(PyCliTest):
 
         self.with_cli(cmd)
         return self
+
+    def check_bucket_exists(self, bucket_name):
+        cmd = "%s exists s3://%s %s" % (self.jclient_cmd, bucket_name,
+            self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def head_object(self, bucket_name, file_name):
+        cmd = "%s head s3://%s/%s %s" % (self.jclient_cmd, bucket_name,
+            file_name, self.get_test_config())
+
+        self.with_cli(cmd)
+        return self

@@ -34,14 +34,23 @@ pathstyle_values = [True, False]
 for i, val in enumerate(pathstyle_values):
     S3ClientConfig.pathstyle = val
     print("\nPath style = " + str(val) + "\n")
+
+    JClientTest('Jclient can verify bucket does not exist').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket does not exist')
+
     # ************ Create bucket ************
     JClientTest('Jclient can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JClientTest('Jclient can verify bucket existence').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket exists')
 
     # ************ List buckets ************
     JClientTest('Jclient can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('seagatebucket')
 
     # ************ 3k FILE TEST ************
+    JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
+
     JClientTest('Jclient can upload 3k file').put_object("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+
+    JClientTest('Jclient can verify object existence').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have("3kfile")
 
     JClientTest('Jclient can download 3k file').get_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 

@@ -24,6 +24,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
@@ -399,6 +400,11 @@ public class S3API {
 
                 System.out.println(metadata);
             }
+        } catch(AmazonS3Exception awsS3Exception) {
+            if (awsS3Exception.getStatusCode() == 404)
+                System.out.println("Object does not exist.");
+            else
+                printError(awsS3Exception.toString());
         } catch (Exception e) {
             printError(e.toString());
         }

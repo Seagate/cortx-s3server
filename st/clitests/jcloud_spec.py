@@ -34,19 +34,33 @@ pathstyle_values = [True, False]
 for i, val in enumerate(pathstyle_values):
     S3ClientConfig.pathstyle = val
     print("\nPath style = " + str(val) + "\n")
+
+    JCloudTest('Jcloud can verify bucket does not exist').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket does not exist')
+
     # ************ Create bucket ************
     JCloudTest('Jcloud can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JCloudTest('Jcloud can verify bucket existence').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket exists')
 
     # ************ List buckets ************
     JCloudTest('Jcloud can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('seagatebucket')
 
+
     # ************ 3k FILE TEST ************
+    JCloudTest('Jcloud can verify object does not exist').head_object("seagatebucket", "test/3kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
+
     JCloudTest('Jcloud can upload 3k file').put_object("seagatebucket/test/3kfile", "3kfile", 3000).execute_test().command_is_successful()
+
+    JCloudTest('Jcloud can verify object existence').head_object("seagatebucket", "test/3kfile").execute_test().command_is_successful().command_response_should_have('test/3kfile')
 
     JCloudTest('Jcloud can download 3k file').get_object("seagatebucket/test", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
     # ************ 8k FILE TEST ************
+    JCloudTest('Jcloud can verify object does not exist').head_object("seagatebucket", "8kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
+
     JCloudTest('Jcloud can upload 8k file').put_object("seagatebucket", "8kfile", 8192).execute_test().command_is_successful()
+
+    JCloudTest('Jcloud can verify object existence').head_object("seagatebucket", "8kfile").execute_test().command_is_successful().command_response_should_have('8kfile')
 
     JCloudTest('Jcloud can download 8k file').get_object("seagatebucket", "8kfile").execute_test().command_is_successful().command_created_file("8kfile")
 
