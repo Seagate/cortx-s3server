@@ -30,7 +30,13 @@
 extern struct m0_clovis_realm     clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
 
-S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req) : request(req), state(S3ClovisKVSReaderOpState::start), last_value(""), iteration_index(0) {
+S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
+                                     std::shared_ptr<ClovisAPI> s3clovis_api)
+    : request(req),
+      s3_clovis_api(s3clovis_api),
+      state(S3ClovisKVSReaderOpState::start),
+      last_value(""),
+      iteration_index(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   last_result_keys_values.clear();
 }
@@ -98,9 +104,11 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::vector<std::strin
     ++i;
   }
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
+  s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
 
-  rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_GET, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
+  rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_GET,
+                                    kvs_ctx->keys, kvs_ctx->values,
+                                    &(idx_ctx->ops[0]));
   if(rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   }
@@ -109,11 +117,11 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::vector<std::strin
   }
 
   idx_ctx->ops[0]->op_datum = (void *)op_ctx;
-  m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
 
   reader_context->start_timer_for("get_keyval");
 
-  m0_clovis_op_launch(idx_ctx->ops, 1);
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::getkv);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -190,8 +198,11 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key, 
     memcpy(kvs_ctx->keys->ov_buf[0], (void*)key.c_str(), key.length());
   }
 
-  m0_clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &idx_oid);
-  rc = m0_clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT, kvs_ctx->keys, kvs_ctx->values, &(idx_ctx->ops[0]));
+  s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm,
+                                 &idx_oid);
+  rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT,
+                                    kvs_ctx->keys, kvs_ctx->values,
+                                    &(idx_ctx->ops[0]));
   if(rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   }
@@ -200,11 +211,11 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key, 
   }
 
   idx_ctx->ops[0]->op_datum = (void *)op_ctx;
-  m0_clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
 
   reader_context->start_timer_for("get_keyval");
 
-  m0_clovis_op_launch(idx_ctx->ops, 1);
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::getkv);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

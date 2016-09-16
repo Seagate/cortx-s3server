@@ -71,7 +71,8 @@ void S3AccountUserIdxMetadata::load(std::function<void(void)> on_success, std::f
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3AccountUserIdxMetadataState::missing;
 
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->get_keyval(root_account_user_index_oid, get_account_user_index_name(), std::bind( &S3AccountUserIdxMetadata::load_successful, this), std::bind( &S3AccountUserIdxMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

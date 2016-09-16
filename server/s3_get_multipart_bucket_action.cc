@@ -29,6 +29,7 @@
 S3GetMultipartBucketAction::S3GetMultipartBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), return_list_size(0), fetch_successful(false), last_uploadid("") {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   request_marker_key = request->get_query_string_value("key-marker");
   if (!request_marker_key.empty()) {
     multipart_object_list.set_request_marker_key(request_marker_key);
@@ -90,7 +91,8 @@ void S3GetMultipartBucketAction::get_key_object() {
     struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
     // If the index oid is 0 in metadata then it implies that there is no multipart index
     if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
-      clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+      clovis_kv_reader =
+          std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
       clovis_kv_reader->get_keyval(bucket_metadata->get_multipart_index_oid(), last_key, std::bind( &S3GetMultipartBucketAction::get_key_object_successful, this), std::bind( &S3GetMultipartBucketAction::get_key_object_failed, this));
     } else {
       fetch_successful = true; // list empty
@@ -193,7 +195,8 @@ void S3GetMultipartBucketAction::get_next_objects() {
     struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
     if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
       size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-      clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+      clovis_kv_reader =
+          std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
       clovis_kv_reader->next_keyval(bucket_metadata->get_multipart_index_oid(), last_key, count, std::bind( &S3GetMultipartBucketAction::get_next_objects_successful, this), std::bind( &S3GetMultipartBucketAction::get_next_objects_failed, this));
     } else {
       fetch_successful = true;

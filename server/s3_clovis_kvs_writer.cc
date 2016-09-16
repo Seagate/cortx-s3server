@@ -275,7 +275,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key, std::
 
   writer_context->start_timer_for("put_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1);
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::putkv);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

@@ -29,6 +29,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(std::shared_ptr<S3RequestObject> 
   upload_id = request->get_query_string_value("uploadId");
   object_name = request->get_object_name();
   bucket_name = request->get_bucket_name();
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   setup_steps();
 }
 
@@ -71,7 +72,8 @@ void S3AbortMultipartAction::delete_multipart_metadata() {
 
 void S3AbortMultipartAction::check_if_any_parts_present() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->next_keyval(get_part_index_name(), "", 1, std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::check_if_any_parts_present_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

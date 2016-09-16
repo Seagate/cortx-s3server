@@ -181,7 +181,7 @@ void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
       this->handler_on_failed();
     }
   } else {
-    s3_log(S3_LOG_FATAL,
+    s3_log(S3_LOG_ERROR,
            "Failed to fetch Bucket List index oid from Account User index. Please "
            "retry after some time\n");
     state = S3BucketMetadataState::failed;
@@ -194,7 +194,8 @@ void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
 void S3BucketMetadata::load_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->get_keyval(bucket_list_index_oid, bucket_name,
       std::bind( &S3BucketMetadata::load_bucket_info_successful, this),
       std::bind( &S3BucketMetadata::load_bucket_info_failed, this));

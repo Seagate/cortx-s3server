@@ -122,7 +122,8 @@ void S3PartMetadata::load(std::function<void(void)> on_success, std::function<vo
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
 
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->get_keyval(get_part_index_name(), str_part_num, std::bind( &S3PartMetadata::load_successful, this),
                                    std::bind( &S3PartMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");

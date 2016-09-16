@@ -54,7 +54,8 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+    clovis_kv_reader =
+        std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
     // Try to fetch one object at least
     clovis_kv_reader->next_keyval(get_bucket_index_name(), last_key, 1, std::bind( &S3DeleteBucketAction::fetch_first_object_metadata_successful, this), std::bind( &S3DeleteBucketAction::fetch_first_object_metadata_failed, this));
   } else {
@@ -93,7 +94,8 @@ void S3DeleteBucketAction::fetch_multipart_objects() {
     multipart_present = true;
     //There is an oid for index present, so read objects from it
     size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-    clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+    clovis_kv_reader =
+        std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
     clovis_kv_reader->next_keyval(indx_oid, last_key, count, std::bind( &S3DeleteBucketAction::fetch_multipart_objects_successful, this), std::bind( &S3DeleteBucketAction::next, this));
   } else {
     s3_log(S3_LOG_DEBUG, "Multipart index not present\n");

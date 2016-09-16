@@ -30,6 +30,7 @@
 #include "s3_request_object.h"
 #include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_clovis_wrapper.h"
 #include "s3_log.h"
 
 class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
@@ -93,6 +94,7 @@ private:
 
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisKVSReaderContext> reader_context;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -107,7 +109,8 @@ private:
   size_t iteration_index;
 
 public:
-  S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req);
+ S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
+                   std::shared_ptr<ClovisAPI> s3_clovis_api);
 
   S3ClovisKVSReaderOpState get_state() {
     return state;

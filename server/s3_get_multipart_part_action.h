@@ -31,6 +31,7 @@
 
 class S3GetMultipartPartAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::string last_key;  // last key during each iteration
   S3ObjectListResponse multipart_part_list;
   size_t return_list_size;

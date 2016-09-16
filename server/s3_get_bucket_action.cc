@@ -27,6 +27,7 @@
 
 S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   setup_steps();
   object_list.set_bucket_name(request->get_bucket_name());
   request_prefix = request->get_query_string_value("prefix");
@@ -74,7 +75,8 @@ void S3GetBucketAction::get_next_objects() {
   s3_log(S3_LOG_DEBUG, "Fetching object listing\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->next_keyval(get_bucket_index_name(), last_key, count, std::bind( &S3GetBucketAction::get_next_objects_successful, this), std::bind( &S3GetBucketAction::get_next_objects_failed, this));
 }
 

@@ -30,6 +30,7 @@
 
 class S3GetServiceAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::string last_key;  // last key during each iteration
   S3ServiceListResponse bucket_list;
 

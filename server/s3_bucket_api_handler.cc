@@ -21,6 +21,7 @@
 #include "s3_get_bucket_location_action.h"
 #include "s3_get_bucket_acl_action.h"
 #include "s3_put_bucket_acl_action.h"
+#include "s3_get_bucket_policy_action.h"
 #include "s3_delete_multiple_objects_action.h"
 #include "s3_head_bucket_action.h"
 #include "s3_get_bucket_action.h"
@@ -91,7 +92,7 @@ void S3BucketAPIHandler::dispatch() {
       // Policy operations.
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
-          action = std::make_shared<S3GetBucketACLAction>(request);
+          action = std::make_shared<S3GetBucketPolicyAction>(request);
           break;
         case S3HttpVerb::PUT:
           action = std::make_shared<S3PutBucketPolicyAction>(request);

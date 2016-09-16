@@ -25,7 +25,8 @@
 S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), is_request_content_corrupt(false), is_request_too_large(false), delete_index(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   std::shared_ptr<ClovisAPI> s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_writer = std::make_shared<S3ClovisWriter>(request);
   setup_steps();

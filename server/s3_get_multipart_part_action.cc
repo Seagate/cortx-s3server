@@ -29,6 +29,7 @@
 S3GetMultipartPartAction::S3GetMultipartPartAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), return_list_size(0), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   request_marker_key = request->get_query_string_value("part-number-marker");
   if (request_marker_key.empty()) {
     request_marker_key = "0";
@@ -69,7 +70,8 @@ void S3GetMultipartPartAction::setup_steps(){
 void S3GetMultipartPartAction::get_key_object() {
   s3_log(S3_LOG_DEBUG, "Fetching part listing\n");
 
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->get_keyval(get_part_index_name(), last_key, std::bind( &S3GetMultipartPartAction::get_key_object_successful, this), std::bind( &S3GetMultipartPartAction::get_key_object_failed, this));
 }
 
@@ -117,7 +119,8 @@ void S3GetMultipartPartAction::get_next_objects() {
   s3_log(S3_LOG_DEBUG, "Fetching next part listing\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->next_keyval(get_part_index_name(), last_key, count, std::bind( &S3GetMultipartPartAction::get_next_objects_successful, this), std::bind( &S3GetMultipartPartAction::get_next_objects_failed, this));
 }
 

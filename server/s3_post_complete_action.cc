@@ -30,6 +30,7 @@
 S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   upload_id = request->get_query_string_value("uploadId");
   object_name = request->get_object_name();
   bucket_name = request->get_bucket_name();
@@ -118,7 +119,8 @@ void S3PostCompleteAction::fetch_multipart_info_failed() {
 
 void S3PostCompleteAction::fetch_parts_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->next_keyval(get_part_index_name(),
                                "",
                                parts.size(),

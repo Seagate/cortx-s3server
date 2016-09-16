@@ -64,6 +64,15 @@ S3cmdTest('s3cmd can list objects').list_objects('seagatebucket').execute_test()
 
 S3cmdTest('s3cmd can list specific objects').list_specific_objects('seagatebucket', '3k').execute_test().command_is_successful().command_response_should_have('s3://seagatebucket/3kfile').command_response_should_not_have('s3://seagatebucket/8kfile')
 
+S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket2").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can upload 8k file').upload_test("seagatebucket2", "8kfile", 8192).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can list all objects').list_all_objects().execute_test().command_is_successful().command_response_should_have('s3://seagatebucket/3kfile').command_response_should_have('s3://seagatebucket2/8kfile')
+
+# ************ Disk Usage TEST ************
+S3cmdTest('s3cmd can show disk usage').disk_usage_bucket("seagatebucket").execute_test().command_is_successful()
+
 # ************ DELETE OBJECT TEST ************
 S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
 
@@ -71,6 +80,8 @@ S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket/2016-04:32:21",
 
 
 S3cmdTest('s3cmd can delete 8k file').delete_test("seagatebucket", "8kfile").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete 8k file').delete_test("seagatebucket2", "8kfile").execute_test().command_is_successful()
 
 # ************ 700K FILE TEST ************
 S3cmdTest('s3cmd can upload 700K file').upload_test("seagatebucket", "700Kfile", 716800).execute_test().command_is_successful()
@@ -98,6 +109,7 @@ S3cmdTest('s3cmd should not have objects after multiple delete').list_objects('s
 
 # ************ Delete bucket TEST ************
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket2").execute_test().command_is_successful()
 
 # ************ Signing algorithm test ************
 S3cmdTest('s3cmd can create bucket nondnsbucket').create_bucket("nondnsbucket").execute_test().command_is_successful()
@@ -111,9 +123,10 @@ S3cmdTest('s3cmd can delete bucket seagate.bucket').delete_bucket("seagate.bucke
 
 # ************ Create bucket in region ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket", "eu-west-1").execute_test().command_is_successful()
-
 S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket").execute_test().command_is_successful().command_response_should_have('eu-west-1')
-
+S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+S3cmdTest('s3cmd can retrieve obj info').info_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('3kfile')
+S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
 
@@ -245,5 +258,5 @@ S3cmdTest('s3cmd can revoke acl on bucket').revoke_acl_bucket("seagatebucket","r
 S3cmdTest('s3cmd can revoke acl on object').revoke_acl_object("seagatebucket","3kfile","read:123").execute_test().command_is_successful()
 S3cmdTest('s3cmd can set policy on bucket').setpolicy_bucket("seagatebucket","policy.txt").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete 3kfile after setting acl').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
-
+S3cmdTest('s3cmd can set policy on bucket').delpolicy_bucket("seagatebucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket after setting policy/acl').delete_bucket("seagatebucket").execute_test().command_is_successful()

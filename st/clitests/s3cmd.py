@@ -44,6 +44,12 @@ class S3cmdTest(PyCliTest):
         self.with_cli("s3cmd -c " + self.s3cfg + " info " + " s3://" + self.bucket_name)
         return self
 
+    def info_object(self, bucket_name, filename):
+        self.bucket_name = bucket_name
+        self.filename = filename
+        self.with_cli("s3cmd -c " + self.s3cfg + " info " + " s3://" + self.bucket_name + "/" + self.filename)
+        return self
+
     def delete_bucket(self, bucket_name):
         self.bucket_name = bucket_name
         self.with_cli("s3cmd -c " + self.s3cfg + " rb " + " s3://" + self.bucket_name)
@@ -54,10 +60,19 @@ class S3cmdTest(PyCliTest):
         self.with_cli("s3cmd -c " + self.s3cfg + " ls " + " s3://" + self.bucket_name)
         return self
 
+    def list_all_objects(self):
+        self.with_cli("s3cmd -c " + self.s3cfg + " la ")
+        return self
+
     def list_specific_objects(self, bucket_name, object_pattern):
         self.bucket_name = bucket_name
         self.object_pattern = object_pattern
         self.with_cli("s3cmd -c " + self.s3cfg + " ls " + " s3://" + self.bucket_name + "/" + self.object_pattern)
+        return self
+
+    def disk_usage_bucket(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " du " + " s3://" + self.bucket_name)
         return self
 
     def upload_test(self, bucket_name, filename, filesize):
@@ -126,6 +141,21 @@ class S3cmdTest(PyCliTest):
     def setpolicy_bucket(self, bucket_name, policyfile):
         self.bucket_name = bucket_name
         self.with_cli("s3cmd -c " + self.s3cfg + " setpolicy " + self.working_dir + "/../" + policyfile + " s3://" + self.bucket_name)
+        return self
+
+    def delpolicy_bucket(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " delpolicy " + " s3://" + self.bucket_name)
+        return self
+
+    def accesslog_bucket(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " accesslog " + " s3://" + self.bucket_name)
+        return self
+
+    def fixbucket(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("s3cmd -c " + self.s3cfg + " fixbucket " + " s3://" + self.bucket_name)
         return self
 
     def setacl_object(self, bucket_name, filename, acl_perm):

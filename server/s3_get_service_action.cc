@@ -27,6 +27,7 @@
 
 S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   setup_steps();
   bucket_list.set_owner_name(request->get_user_name());
   bucket_list.set_owner_id(request->get_user_id());
@@ -43,7 +44,8 @@ void S3GetServiceAction::get_next_buckets() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket list from KV store\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-  clovis_kv_reader = std::make_shared<S3ClovisKVSReader>(request);
+  clovis_kv_reader =
+      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->next_keyval(get_account_user_index_name(), last_key, count, std::bind( &S3GetServiceAction::get_next_buckets_successful, this), std::bind( &S3GetServiceAction::get_next_buckets_failed, this));
 }
 
