@@ -59,6 +59,8 @@ private:
   std::string object_name;
   std::string upload_id;
   std::string part_number;
+  std::string index_name;
+  std::string salt;
 
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
@@ -70,21 +72,34 @@ private:
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   bool put_metadata;
+  struct m0_uint128 part_index_name_oid;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
   S3PartMetadataState state;
+  size_t collision_attempt_count;
 
-private:
+ private:
   // Any validations we want to do on metadata
   void validate();
-public:
-  S3PartMetadata(std::shared_ptr<S3RequestObject> req, std::string uploadid,  int part_num);
+  void initialize(std::string uploadid, int part);
+  void create_new_oid();
+  void handle_collision();
+  void regenerate_new_indexname();
 
+ public:
+  S3PartMetadata(std::shared_ptr<S3RequestObject> req, std::string uploadid,
+                 int part_num);
+  S3PartMetadata(std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
+                 std::string uploadid, int part_num);
   std::string get_part_index_name() {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;
+  }
+
+  struct m0_uint128 get_part_index_oid() {
+    return part_index_name_oid;
   }
 
   void set_content_length(std::string length);

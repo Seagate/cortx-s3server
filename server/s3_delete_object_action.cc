@@ -79,7 +79,8 @@ void S3DeleteObjectAction::delete_object_failed() {
 
 void S3DeleteObjectAction::delete_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_metadata = std::make_shared<S3ObjectMetadata>(request);
+  object_metadata = std::make_shared<S3ObjectMetadata>(
+      request, bucket_metadata->get_object_list_index_oid());
   object_metadata->remove(std::bind( &S3DeleteObjectAction::next, this), std::bind( &S3DeleteObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

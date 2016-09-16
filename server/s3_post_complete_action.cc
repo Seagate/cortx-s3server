@@ -145,7 +145,8 @@ void S3PostCompleteAction::get_parts_successful() {
   size_t prev_size = 0;
 
   auto& kvps = clovis_kv_reader->get_key_values();
-  part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 0);
+  part_metadata = std::make_shared<S3PartMetadata>(
+      request, object_metadata->get_part_index_oid(), upload_id, 0);
   if(parts.size() != kvps.size()) {
      part_metadata->set_state(S3PartMetadataState::missing_partially);
      send_response_to_s3_client();
@@ -221,7 +222,8 @@ void S3PostCompleteAction::save_metadata() {
 
 void S3PostCompleteAction::delete_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
+  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
+      request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
   object_multipart_metadata->remove(std::bind( &S3PostCompleteAction::delete_multipart_successful, this), std::bind( &S3PostCompleteAction::delete_multipart_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

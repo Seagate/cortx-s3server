@@ -23,17 +23,15 @@
 #include "s3_datetime.h"
 #include "base64.h"
 
+extern struct m0_uint128 root_account_user_index_oid;
+
 S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
   s3_log(S3_LOG_DEBUG, "Constructor");
 
   account_name = request->get_account_name();
-  account_name = request->get_account_id();
+  account_id = request->get_account_id();
   user_name = request->get_user_name();
-  user_name = request->get_user_id();
-
-  struct m0_uint128 temp = { 0ULL, 0ULL };
-  temp.u_lo = 1;
-  m0_uint128_add(&root_account_user_index_oid, &M0_CLOVIS_ID_APP, &temp);
+  user_id = request->get_user_id();
 
   state = S3AccountUserIdxMetadataState::empty;
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();

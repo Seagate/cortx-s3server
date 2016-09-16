@@ -21,6 +21,7 @@
 #include "gmock/gmock.h"
 
 #include "s3_error_messages.h"
+#include "clovis_helpers.h"
 #include "s3_log.h"
 
 // Some declarations from s3server that are required to get compiled.
@@ -29,6 +30,7 @@
 const char *auth_ip_addr = "127.0.0.1";
 uint16_t auth_port = 8095;
 extern int s3log_level;
+struct m0_uint128 root_account_user_index_oid;
 
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;

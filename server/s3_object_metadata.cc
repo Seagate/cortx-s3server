@@ -160,6 +160,14 @@ void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
   mero_oid_u_lo_str = base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
 }
 
+void S3ObjectMetadata::set_part_index_oid(struct m0_uint128 id) {
+  part_index_oid = id;
+  mero_part_oid_u_hi_str = base64_encode(
+      (unsigned char const*)&part_index_oid.u_hi, sizeof(part_index_oid.u_hi));
+  mero_part_oid_u_lo_str = base64_encode(
+      (unsigned char const*)&part_index_oid.u_lo, sizeof(part_index_oid.u_lo));
+}
+
 void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
   system_defined_attribute[key] = val;
 }
@@ -234,8 +242,27 @@ void S3ObjectMetadata::create_bucket_index() {
 }
 
 void S3ObjectMetadata::create_bucket_index_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "Object metadata bucket index created.\n");
+  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata->set_object_list_index_oid(index_oid);
+  bucket_metadata->save(
+      std::bind(&S3ObjectMetadata::save_object_list_index_oid_successful, this),
+      std::bind(&S3ObjectMetadata::save_object_list_index_oid_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3ObjectMetadata::save_object_list_index_oid_successful() {
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
   save_metadata();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3ObjectMetadata::save_object_list_index_oid_failed() {
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "Object metadata create bucket index failed.\n");
+  state = S3ObjectMetadataState::failed;  // todo Check error
+  this->handler_on_failed();
 }
 
 void S3ObjectMetadata::create_bucket_index_failed() {
@@ -332,7 +359,10 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::functio
   }
 
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->delete_keyval(index_name, object_name, std::bind( &S3ObjectMetadata::remove_successful, this), std::bind( &S3ObjectMetadata::remove_failed, this));
+  clovis_kv_writer->delete_keyval(
+      index_oid, object_name,
+      std::bind(&S3ObjectMetadata::remove_successful, this),
+      std::bind(&S3ObjectMetadata::remove_failed, this));
 }
 
 void S3ObjectMetadata::remove_successful() {
@@ -378,6 +408,8 @@ std::string S3ObjectMetadata::to_json() {
   root["Object-URI"] = object_key_uri;
   if(is_multipart) {
     root["Upload-ID"] = upload_id;
+    root["mero_part_oid_u_hi"] = mero_part_oid_u_hi_str;
+    root["mero_part_oid_u_lo"] = mero_part_oid_u_lo_str;
   }
 
   root["mero_oid_u_hi"] = mero_oid_u_hi_str;
@@ -415,6 +447,8 @@ void S3ObjectMetadata::from_json(std::string content) {
   object_name = newroot["Object-Name"].asString();
   object_key_uri = newroot["Object-URI"].asString();
   upload_id = newroot["Upload-ID"].asString();
+  mero_part_oid_u_hi_str = newroot["mero_part_oid_u_hi"].asString();
+  mero_part_oid_u_lo_str = newroot["mero_part_oid_u_lo"].asString();
 
   mero_oid_u_hi_str = newroot["mero_oid_u_hi"].asString();
   mero_oid_u_lo_str = newroot["mero_oid_u_lo"].asString();
@@ -425,6 +459,13 @@ void S3ObjectMetadata::from_json(std::string content) {
   // std::string decoded_oid_str = base64_decode(oid_str);
   memcpy((void*)&oid.u_hi, dec_oid_u_hi_str.c_str(), dec_oid_u_hi_str.length());
   memcpy((void*)&oid.u_lo, dec_oid_u_lo_str.c_str(), dec_oid_u_lo_str.length());
+
+  dec_oid_u_hi_str = base64_decode(mero_part_oid_u_hi_str);
+  dec_oid_u_lo_str = base64_decode(mero_part_oid_u_lo_str);
+  memcpy((void*)&part_index_oid.u_hi, dec_oid_u_hi_str.c_str(),
+         dec_oid_u_hi_str.length());
+  memcpy((void*)&part_index_oid.u_lo, dec_oid_u_lo_str.c_str(),
+         dec_oid_u_lo_str.length());
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for(auto it : members) {

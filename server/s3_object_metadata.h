@@ -27,10 +27,11 @@
 #include <memory>
 #include <functional>
 
+#include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
-#include "s3_request_object.h"
 #include "s3_object_acl.h"
+#include "s3_request_object.h"
 
 enum class S3ObjectMetadataState {
   empty,    // Initial state, no lookup done
@@ -64,8 +65,11 @@ private:
 
   struct m0_uint128 oid;
   struct m0_uint128 index_oid;
+  struct m0_uint128 part_index_oid;
   std::string mero_oid_u_hi_str;
   std::string mero_oid_u_lo_str;
+  std::string mero_part_oid_u_hi_str;
+  std::string mero_part_oid_u_lo_str;
 
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
@@ -77,6 +81,7 @@ private:
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -90,6 +95,8 @@ private:
   // Any validations we want to do on metadata
   void validate();
   std::string index_name;
+  void save_object_list_index_oid_successful();
+  void save_object_list_index_oid_failed();
 
  public:
   S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool ismultipart = false, std::string uploadid = "");
@@ -115,8 +122,13 @@ private:
   std::string get_md5();
 
   void set_oid(struct m0_uint128 id);
+  void set_part_index_oid(struct m0_uint128 id);
   struct m0_uint128 get_oid() {
     return oid;
+  }
+
+  struct m0_uint128 get_part_index_oid() {
+    return part_index_oid;
   }
 
   // returns base64 encoded strings

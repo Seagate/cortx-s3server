@@ -54,7 +54,8 @@ void S3AbortMultipartAction::fetch_bucket_info() {
 
 void S3AbortMultipartAction::get_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
+  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
+      request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
   object_multipart_metadata->load(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -116,7 +117,8 @@ void S3AbortMultipartAction::delete_object_failed() {
 
 void S3AbortMultipartAction::delete_part_index_with_parts() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 1);
+  part_metadata = std::make_shared<S3PartMetadata>(
+      request, object_multipart_metadata->get_part_index_oid(), upload_id, 1);
   part_metadata->remove_index(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

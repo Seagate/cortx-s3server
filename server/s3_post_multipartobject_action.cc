@@ -37,8 +37,8 @@ void S3PostMultipartObjectAction::setup_steps(){
   add_task(std::bind( &S3PostMultipartObjectAction::fetch_bucket_info, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::check_upload_is_inprogress, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::create_object, this ));
-  add_task(std::bind( &S3PostMultipartObjectAction::save_upload_metadata, this ));
   add_task(std::bind( &S3PostMultipartObjectAction::create_part_meta_index, this ));
+  add_task(std::bind(&S3PostMultipartObjectAction::save_upload_metadata, this));
   add_task(
       std::bind(&S3PostMultipartObjectAction::save_multipart_metadata, this));
   add_task(std::bind( &S3PostMultipartObjectAction::send_response_to_s3_client, this ));
@@ -177,6 +177,8 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
     }
   }
   object_multipart_metadata->set_oid(oid);
+  object_multipart_metadata->set_part_index_oid(
+      part_metadata->get_part_index_oid());
   object_multipart_metadata->save(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::save_upload_metadata_failed, this));
 
   s3_log(S3_LOG_DEBUG, "Exiting\n");

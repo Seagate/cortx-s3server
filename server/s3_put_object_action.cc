@@ -72,10 +72,14 @@ void S3PutObjectAction::create_object_failed() {
     if (tried_count) { // No need of lookup of metadata in case if it was oid collision before
       collision_detected();
     } else {
-       object_metadata = std::make_shared<S3ObjectMetadata>(request);
-       // Lookup metadata, if the object doesn't exist then its collision, do collision resolution
-       // If object exist in metadata then we overwrite it
-       object_metadata->load(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::collision_detected, this));
+      object_metadata = std::make_shared<S3ObjectMetadata>(
+          request, bucket_metadata->get_object_list_index_oid());
+      // Lookup metadata, if the object doesn't exist then its collision, do
+      // collision resolution
+      // If object exist in metadata then we overwrite it
+      object_metadata->load(
+          std::bind(&S3PutObjectAction::next, this),
+          std::bind(&S3PutObjectAction::collision_detected, this));
     }
   } else {
     create_object_timer.stop();
@@ -216,7 +220,8 @@ void S3PutObjectAction::write_object_failed() {
 void S3PutObjectAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   // xxx set attributes & save
-  object_metadata = std::make_shared<S3ObjectMetadata>(request);
+  object_metadata = std::make_shared<S3ObjectMetadata>(
+      request, bucket_metadata->get_object_list_index_oid());
   object_metadata->set_content_length(request->get_data_length_str());
   object_metadata->set_md5(clovis_writer->get_content_md5());
   object_metadata->set_oid(clovis_writer->get_oid());

@@ -174,7 +174,8 @@ void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (account_user_index_metadata->get_state() == S3AccountUserIdxMetadataState::missing) {
-    if (state == S3BucketMetadataState::saving) {
+    if (state == S3BucketMetadataState::saving ||
+        state == S3BucketMetadataState::fetching) {
       create_bucket_list_index();
     } else {
       state = S3BucketMetadataState::missing;
@@ -232,8 +233,13 @@ void S3BucketMetadata::save(std::function<void(void)> on_success, std::function<
   this->handler_on_success = on_success;
   this->handler_on_failed  = on_failed;
   state = S3BucketMetadataState::saving;
-
-  fetch_bucket_list_index_oid();
+  if (bucket_list_index_oid.u_lo == 0ULL ||
+      bucket_list_index_oid.u_hi == 0ULL) {
+    // If there is no index oid then read it
+    fetch_bucket_list_index_oid();
+  } else {
+    save_bucket_info();
+  }
 }
 
 void S3BucketMetadata::create_bucket_list_index() {
@@ -312,7 +318,11 @@ void S3BucketMetadata::save_bucket_list_index_oid() {
 
 void S3BucketMetadata::save_bucket_list_index_oid_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  save_bucket_info();
+  if (state == S3BucketMetadataState::saving) {
+    save_bucket_info();
+  } else {
+    this->handler_on_success();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

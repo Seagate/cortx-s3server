@@ -35,6 +35,7 @@ class S3DeleteBucketAction : public S3Action {
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::map<std::string, std::string>::iterator multipart_kv;
   std::map <std::string, std::string> multipart_objects;
+  std::vector<struct m0_uint128> part_oids;
 
   std::string last_key;  // last key during each iteration
 

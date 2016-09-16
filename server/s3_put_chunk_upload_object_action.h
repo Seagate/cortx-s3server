@@ -35,7 +35,11 @@ class S3PutChunkUploadObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
-
+  struct m0_uint128 oid;
+  // Maximum retry count for collision resolution
+  unsigned short tried_count;
+  // string used for salting the uri
+  std::string salt;
   size_t total_data_to_stream;
   S3Timer create_object_timer;
   S3Timer write_content_timer;
@@ -48,6 +52,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
   bool clovis_write_completed; // full object write
   bool auth_in_progress;
   bool auth_completed; // all chunk auth
+  void create_new_oid();
+  void collision_detected();
 
 public:
   S3PutChunkUploadObjectAction(std::shared_ptr<S3RequestObject> req);

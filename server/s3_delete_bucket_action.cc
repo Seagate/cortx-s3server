@@ -57,7 +57,20 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
     clovis_kv_reader =
         std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
     // Try to fetch one object at least
-    clovis_kv_reader->next_keyval(get_bucket_index_name(), last_key, 1, std::bind( &S3DeleteBucketAction::fetch_first_object_metadata_successful, this), std::bind( &S3DeleteBucketAction::fetch_first_object_metadata_failed, this));
+    struct m0_uint128 oid = bucket_metadata->get_object_list_index_oid();
+    // If no object list index oid then it means bucket is empty
+    if (oid.u_lo == 0ULL && oid.u_hi == 0ULL) {
+      is_bucket_empty = true;
+      next();
+    } else {
+      clovis_kv_reader->next_keyval(
+          bucket_metadata->get_object_list_index_oid(), last_key, 1,
+          std::bind(
+              &S3DeleteBucketAction::fetch_first_object_metadata_successful,
+              this),
+          std::bind(&S3DeleteBucketAction::fetch_first_object_metadata_failed,
+                    this));
+    }
   } else {
     send_response_to_s3_client();
   }
@@ -115,7 +128,7 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
 
     object->from_json(kv.second);
     multipart_objects[kv.first] = object->get_upload_id();
-
+    part_oids.push_back(object->get_part_index_oid());
     return_list_size++;
 
     if (--length == 0 || return_list_size == count_we_requested) {
@@ -133,19 +146,12 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
 
 void S3DeleteBucketAction::remove_part_indexes() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::vector<struct m0_uint128> oids;
-  struct m0_uint128 oid;
-  if (multipart_objects.size() != 0) {
-    std::string pre_index_name = get_bucket_index_name() + "/";
-    for (multipart_kv = multipart_objects.begin(); multipart_kv != multipart_objects.end(); multipart_kv++) {
-      std::string index_name = pre_index_name + multipart_kv->first + "/" + multipart_kv->second;
-      // TODO - Handle Collision resolution, read oid from multipart metadata
-      S3UriToMeroOID(index_name.c_str(), &oid,
-                     S3ClovisEntityType::index);
-      oids.push_back(oid);
-    }
+  if (part_oids.size() != 0) {
     clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-    clovis_kv_writer->delete_indexes(oids, std::bind( &S3DeleteBucketAction::remove_part_indexes_successful, this), std::bind( &S3DeleteBucketAction::remove_part_indexes_failed, this));
+    clovis_kv_writer->delete_indexes(
+        part_oids,
+        std::bind(&S3DeleteBucketAction::remove_part_indexes_successful, this),
+        std::bind(&S3DeleteBucketAction::remove_part_indexes_failed, this));
   } else {
     next();
   }

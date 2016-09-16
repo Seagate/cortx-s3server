@@ -37,6 +37,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_daemonize_server.h"
+#include "fid/fid.h"
 
 #define WEBSTORE "/home/seagate/webstore"
 
@@ -45,6 +46,7 @@
 
 evbase_t * global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
+struct m0_uint128 root_account_user_index_oid;
 
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
@@ -134,6 +136,18 @@ void fatal_libevent(int err) {
   s3_log(S3_LOG_ERROR, "Fatal error occured in libevent, error = %d\n", err);
 }
 
+// This function will initialize global variable, should not be removed
+void initialize_global_var() {
+  struct m0_uint128 temp = {0ULL, 0ULL};
+  temp.u_lo = 1;
+  // reserving an oid for root index -- M0_CLOVIS_ID_APP + 1
+  m0_uint128_add(&root_account_user_index_oid, &M0_CLOVIS_ID_APP, &temp);
+  struct m0_fid index_fid = M0_FID_TINIT('i', root_account_user_index_oid.u_hi,
+                                         root_account_user_index_oid.u_lo);
+  root_account_user_index_oid.u_hi = index_fid.f_container;
+  root_account_user_index_oid.u_lo = index_fid.f_key;
+}
+
 // This index will be holding the ids for the Account, User index
 int create_s3_user_index(std::string index_name) {
   int rc;
@@ -142,12 +156,9 @@ int create_s3_user_index(std::string index_name) {
 
   memset(&idx, 0, sizeof(idx));
   ops[0] = NULL;
-  struct m0_uint128 id;
-  struct m0_uint128 temp = { 0ULL, 0ULL };
-  temp.u_lo = 1;
   // reserving an oid for root index -- M0_CLOVIS_ID_APP + 1
-  m0_uint128_add(&id, &M0_CLOVIS_ID_APP, &temp);
-  m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
+  initialize_global_var();
+  m0_clovis_idx_init(&idx, &clovis_uber_realm, &root_account_user_index_oid);
   m0_clovis_entity_create(&idx.in_entity, &ops[0]);
   m0_clovis_op_launch(ops, 1);
 

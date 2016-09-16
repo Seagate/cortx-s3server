@@ -60,9 +60,6 @@ private:
   // The name for a AccountUserIndex
   std::string account_user_index_name;
 
-  // reserved value.
-  struct m0_uint128 root_account_user_index_oid;
-
   struct m0_uint128 bucket_list_index_oid;
 
   std::shared_ptr<S3RequestObject> request;
@@ -78,7 +75,7 @@ private:
 
 private:
   std::string get_account_user_index_name() {
-    return "ACCOUNTUSER/" + account_id + "/" + user_id;
+    return "ACCOUNTUSER/" + account_name + "/" + user_name;
   }
 
 public:
