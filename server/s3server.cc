@@ -143,7 +143,10 @@ int create_s3_user_index(std::string index_name) {
   memset(&idx, 0, sizeof(idx));
   ops[0] = NULL;
   struct m0_uint128 id;
-  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
+  struct m0_uint128 temp = { 0ULL, 0ULL };
+  temp.u_lo = 1;
+  // reserving an oid for root index -- M0_CLOVIS_ID_APP + 1
+  m0_uint128_add(&id, &M0_CLOVIS_ID_APP, &temp);
   m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
   m0_clovis_entity_create(&idx.in_entity, &ops[0]);
   m0_clovis_op_launch(ops, 1);
