@@ -89,9 +89,9 @@ class S3RequestObject {
   S3ChunkPayloadParser chunk_parser;
   S3ApiType s3_api_type;
 
-  virtual void set_full_path(char* full_path);
-  virtual void set_file_name(char* file_name);
-  virtual void set_query_params(char* query_params);
+  virtual void set_full_path(const char* full_path);
+  virtual void set_file_name(const char* file_name);
+  virtual void set_query_params(const char* query_params);
 
  public:
   S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr);

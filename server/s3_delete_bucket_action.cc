@@ -103,7 +103,7 @@ void S3DeleteBucketAction::fetch_multipart_objects() {
 
 void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   s3_log(S3_LOG_DEBUG, "Found multipart uploads listing\n");
-  short return_list_size = 0;
+  size_t return_list_size = 0;
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
   size_t length = kvps.size();

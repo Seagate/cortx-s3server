@@ -81,6 +81,8 @@ void S3ObjectAPIHandler::dispatch() {
           // Multipart abort
           action = std::make_shared<S3AbortMultipartAction>(request);
           break;
+        default:
+          break;
       };
       break;
     case S3OperationCode::none:

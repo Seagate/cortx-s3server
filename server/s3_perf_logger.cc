@@ -43,9 +43,9 @@ S3PerfLogger* S3PerfLogger::get_instance() {
   return instance;
 }
 
-void S3PerfLogger::write(const char* perf_text, size_t elapsed_time){
+void S3PerfLogger::write(const char* perf_text, size_t elapsed_time) {
   if (instance && S3Option::get_instance()->s3_performance_enabled()) {
-    if (elapsed_time != -1) {
+    if (elapsed_time != SIZE_MAX) {
       perf_file << perf_text << ":" << elapsed_time << std::endl;  // endl flushes.
     }
   }

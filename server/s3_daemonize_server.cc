@@ -31,7 +31,7 @@
 #include <evhtp.h>
 
 #define S3_BACKTRACE_DEPTH_MAX 256
-#define ARRAY_SIZE(a) ((sizeof(a))/(sizeof(a)[0]))
+#define S3_ARRAY_SIZE(a) ((sizeof(a)) / (sizeof(a)[0]))
 
 extern evbase_t * global_evbase_handle;
 
@@ -53,7 +53,7 @@ void s3_terminate_fatal_handler(int signum) {
   std::string newline_str("\n");
   char **buf;
   int rc;
-  rc = backtrace(trace, ARRAY_SIZE(trace));
+  rc = backtrace(trace, S3_ARRAY_SIZE(trace));
   buf = backtrace_symbols(trace, rc);
   for(int i = 0; i < rc; i++) {
     bt_str += buf[i] + newline_str;

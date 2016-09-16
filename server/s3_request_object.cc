@@ -92,7 +92,7 @@ S3HttpVerb S3RequestObject::http_verb() {
   return (S3HttpVerb)ev_req->method;
 }
 
-void S3RequestObject::set_full_path(char *full_path) {
+void S3RequestObject::set_full_path(const char* full_path) {
   full_path_decoded_uri = full_path;
 }
 
@@ -104,7 +104,7 @@ const char* S3RequestObject::c_get_full_encoded_path() {
   return ev_req->uri->path->full;
 }
 
-void S3RequestObject::set_file_name(char *file_name) {
+void S3RequestObject::set_file_name(const char* file_name) {
   file_path_decoded_uri = file_name;
 }
 
@@ -112,7 +112,7 @@ const char * S3RequestObject::c_get_file_name() {
   return file_path_decoded_uri.c_str();
 }
 
-void S3RequestObject::set_query_params(char *query_params) {
+void S3RequestObject::set_query_params(const char* query_params) {
   query_raw_decoded_uri = query_params;
 }
 
