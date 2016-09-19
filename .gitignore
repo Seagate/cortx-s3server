@@ -26,3 +26,4 @@ third_party/yaml-cpp/
 rpmsandbox/
 *.rpm
 m0trace.*
+ssl/ssl_sandbox/

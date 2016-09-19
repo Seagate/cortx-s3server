@@ -145,12 +145,12 @@ sudo /opt/seagate/s3/statuss3.sh
 
 ## How to run auth server (this current assumes all dependencies are on same local VM)
 ```sh
-sudo systemctl start authserver
+sudo systemctl start s3authserver
 ```
 
 ## How to stop auth server (this current assumes all dependencies are on same local VM)
 ```sh
-sudo systemctl stop authserver
+sudo systemctl stop s3authserver
 ```
 
 
@@ -213,13 +213,13 @@ cd ..
 ```
 ### How to get unit test code coverage for Authserver?
 ```sh
-cd mero/fe/s3/auth
+cd auth
 
 mvn clean package -Djacoco.skip=false
 ```
 ### How to get system test code coverage for Authserver?
 ```sh
-cd mero/fe/s3/auth
+cd auth
 
 mvn clean package
 
@@ -246,3 +246,14 @@ python auth_spec.py
 # Generate coverage report site from coverage data file generated in above step
 $ mvn jacoco:report -Djacoco.skip=false
 ```
+
+```
+### How to setup ssl
+```sh
+$ cd ssl
+
+# This script will generate ssl certificates and display information on ssl setup.
+$ ./setup.sh
+
+```
+
