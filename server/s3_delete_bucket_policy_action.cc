@@ -21,7 +21,9 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), delete_successful(false) {
+S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req, false), delete_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }

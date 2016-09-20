@@ -28,7 +28,7 @@
 #include "s3_fi_common.h"
 
 S3PutFiAction::S3PutFiAction(std::shared_ptr<S3RequestObject> req)
-    : S3Action(req) {
+    : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   clear_tasks();

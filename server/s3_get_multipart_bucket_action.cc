@@ -105,6 +105,11 @@ void S3GetMultipartBucketAction::get_key_object() {
 }
 
 void S3GetMultipartBucketAction::get_key_object_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Found list of multipart uploads\n");
   std::string key_name = last_key;
   if (!(clovis_kv_reader->get_value()).empty()) {
@@ -189,6 +194,11 @@ void S3GetMultipartBucketAction::get_key_object_failed() {
 }
 
 void S3GetMultipartBucketAction::get_next_objects() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Fetching next set of multipart uploads listing\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     struct m0_uint128  empty_indx_oid = {0ULL, 0ULL};
@@ -209,6 +219,11 @@ void S3GetMultipartBucketAction::get_next_objects() {
 }
 
 void S3GetMultipartBucketAction::get_next_objects_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Found multipart uploads listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -290,8 +305,13 @@ void S3GetMultipartBucketAction::get_next_objects_failed() {
 
 void S3GetMultipartBucketAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Trigger metadata read async operation with callback
-  if (fetch_successful) {
+
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (fetch_successful) {
     std::string& response_xml = multipart_object_list.get_multiupload_xml();
 
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));

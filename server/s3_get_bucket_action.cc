@@ -81,6 +81,11 @@ void S3GetBucketAction::get_next_objects() {
 }
 
 void S3GetBucketAction::get_next_objects_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Found Object listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -158,7 +163,13 @@ void S3GetBucketAction::get_next_objects_failed() {
 
 void S3GetBucketAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
+
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");

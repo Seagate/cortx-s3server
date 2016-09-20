@@ -11,6 +11,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_SERVER_BIND_PORT: 8081                            # S3 Server port number
    S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
+   S3_SERVER_SHUTDOWN_GRACE_PERIOD: 10                  # S3 server shutdown grace period in seconds, default is 10 seconds.
    S3_ENABLE_PERF: 0                                    # S3 Performance metric collection, to enable have value 1, default is 0 (disabled)
    S3_PERF_LOG_FILENAME: "/var/log/seagate/s3/perf.log" # S3 Perf Log file name
    S3_READ_AHEAD_MULTIPLE: 1                            # Maximum blocks of size (S3_CLOVIS_BLOCK_SIZE * S3_CLOVIS_MAX_BLOCKS_PER_REQUEST) to read ahead or buffer in-memory

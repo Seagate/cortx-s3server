@@ -64,6 +64,8 @@ class S3Option {
 
   std::string s3_default_endpoint;
   std::set<std::string> s3_region_endpoints;
+  unsigned short s3_grace_period_sec;
+  bool is_s3_shutting_down;
 
   unsigned short perf_enabled;
   std::string perf_log_file;
@@ -114,6 +116,8 @@ class S3Option {
     s3_region_endpoints.insert("s3-us.seagate.com");
     s3_region_endpoints.insert("s3-europe.seagate.com");
     s3_region_endpoints.insert("s3-asia.seagate.com");
+    s3_grace_period_sec = 10;  // 10 seconds
+    is_s3_shutting_down = false;
 
     log_dir = "/var/log/seagate/s3";
     log_level = FLAGS_s3loglevel;
@@ -168,6 +172,9 @@ class S3Option {
   int get_read_ahead_multiple();
   std::string get_default_endpoint();
   std::set<std::string>& get_region_endpoints();
+  unsigned short get_s3_grace_period_sec();
+  bool get_is_s3_shutting_down();
+  void set_is_s3_shutting_down(bool is_shutting_down);
 
   std::string get_auth_ip_addr();
   unsigned short get_auth_port();

@@ -27,7 +27,8 @@
 #include "s3_aws_etag.h"
 #include "s3_log.h"
 
-S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();

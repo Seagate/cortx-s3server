@@ -90,6 +90,17 @@ dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     std::shared_ptr<S3RequestObject> s3_request = std::make_shared<S3RequestObject> (req, evhtp_obj_ptr);
 
+    if (S3Option::get_instance()->get_is_s3_shutting_down()) {
+      // We are shutting down, so don't entertain new requests.
+      s3_request->pause();
+      evhtp_unset_all_hooks(&req->conn->hooks);
+      // Send response with 'Service Unavailable' code.
+      s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+      s3_request->set_out_header_value("Retry-After", "1");
+      s3_request->send_response(S3HttpFailed503);
+      return EVHTP_RES_OK;
+    }
+
     req->cbarg = s3_request.get();
 
     evhtp_set_hook(&req->hooks, evhtp_hook_on_error, (evhtp_hook)on_client_conn_err_callback, NULL);

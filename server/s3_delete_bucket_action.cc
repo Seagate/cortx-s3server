@@ -22,7 +22,11 @@
 #include "s3_log.h"
 #include "s3_uri_to_mero_oid.h"
 
-S3DeleteBucketAction::S3DeleteBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), is_bucket_empty(false), delete_successful(false) {
+S3DeleteBucketAction::S3DeleteBucketAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req, false),
+      last_key(""),
+      is_bucket_empty(false),
+      delete_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   multipart_present = false;

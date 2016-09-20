@@ -46,6 +46,8 @@ void S3PutBucketACLAction::setacl() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string acl_str = request->get_full_body_content_as_string();
     bucket_metadata->setacl(acl_str);
+    // bypass shutdown signal check for next task
+    check_shutdown_signal_for_next_task(false);
     bucket_metadata->save(std::bind( &S3PutBucketACLAction::next, this), std::bind( &S3PutBucketACLAction::next, this));
   } else {
     send_response_to_s3_client();
@@ -55,7 +57,12 @@ void S3PutBucketACLAction::setacl() {
 void S3PutBucketACLAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (bucket_metadata->get_state() == S3BucketMetadataState::saved) {
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::saved) {
     request->send_response(S3HttpSuccess200);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());

@@ -22,7 +22,12 @@
 #include "s3_error_codes.h"
 #include "s3_perf_logger.h"
 
-S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), is_request_content_corrupt(false), is_request_too_large(false), delete_index(0) {
+S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req, false),
+      is_request_content_corrupt(false),
+      is_request_too_large(false),
+      delete_index(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   std::shared_ptr<ClovisAPI> s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   clovis_kv_reader =

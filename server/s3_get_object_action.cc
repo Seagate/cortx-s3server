@@ -22,7 +22,12 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_blocks_in_object(0), blocks_already_read(0), data_sent_to_client(0) {
+S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req),
+      total_blocks_in_object(0),
+      blocks_already_read(0),
+      data_sent_to_client(0),
+      read_object_reply_started(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
@@ -65,6 +70,7 @@ void S3GetObjectAction::read_object() {
       request->set_out_header_value(it.first, it.second);
     }
     request->send_reply_start(S3HttpSuccess200);
+    read_object_reply_started = true;
 
     if (object_metadata->get_content_length() == 0) {
       s3_log(S3_LOG_DEBUG, "Found object of size %zu\n", object_metadata->get_content_length());
@@ -87,6 +93,10 @@ void S3GetObjectAction::read_object() {
 
 void S3GetObjectAction::read_object_data() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
 
   size_t max_blocks_in_one_read_op = S3Option::get_instance()->get_clovis_read_payload_size()/S3Option::get_instance()->get_clovis_block_size();
   size_t blocks_to_read = 0;
@@ -112,6 +122,10 @@ void S3GetObjectAction::read_object_data() {
 
 void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
 
   char *data = NULL;
   size_t length = 0;
@@ -145,8 +159,17 @@ void S3GetObjectAction::read_object_data_failed() {
 
 void S3GetObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Trigger metadata read async operation with callback
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+
+  if (reject_if_shutting_down()) {
+    if (read_object_reply_started) {
+      request->send_reply_end();
+    } else {
+      // Send response with 'Service Unavailable' code.
+      s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+      request->set_out_header_value("Retry-After", "1");
+      request->send_response(S3HttpFailed503);
+    }
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     S3Error error("InvalidBucketName", request->get_request_id(), request->get_bucket_name());
     std::string& response_xml = error.to_xml();

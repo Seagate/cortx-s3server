@@ -36,13 +36,21 @@ void S3GetBucketPolicyAction::setup_steps(){
 void S3GetBucketPolicyAction::get_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3GetBucketPolicyAction::next, this), std::bind( &S3GetBucketPolicyAction::next, this));
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
+  bucket_metadata->load(std::bind(&S3GetBucketPolicyAction::next, this),
+                        std::bind(&S3GetBucketPolicyAction::next, this));
 }
 
 void S3GetBucketPolicyAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");

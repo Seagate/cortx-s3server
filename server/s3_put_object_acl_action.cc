@@ -50,6 +50,8 @@ void S3PutObjectACLAction::get_object_metadata() {
 
 void S3PutObjectACLAction::setacl() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     object_metadata->setacl(request->get_full_body_content_as_string());
     object_metadata->save_metadata(std::bind( &S3PutObjectACLAction::next, this), std::bind( &S3PutObjectACLAction::next, this));
@@ -60,7 +62,13 @@ void S3PutObjectACLAction::setacl() {
 
 void S3PutObjectACLAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
+
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");

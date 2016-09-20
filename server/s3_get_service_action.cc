@@ -41,6 +41,11 @@ void S3GetServiceAction::setup_steps() {
 }
 
 void S3GetServiceAction::get_next_buckets() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Fetching bucket list from KV store\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
@@ -50,6 +55,11 @@ void S3GetServiceAction::get_next_buckets() {
 }
 
 void S3GetServiceAction::get_next_buckets_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Found buckets listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -87,8 +97,13 @@ void S3GetServiceAction::get_next_buckets_failed() {
 
 void S3GetServiceAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  // Trigger metadata read async operation with callback
-  if (fetch_successful) {
+
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (fetch_successful) {
     std::string& response_xml = bucket_list.get_xml();
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");

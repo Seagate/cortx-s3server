@@ -26,7 +26,8 @@
 
 #define MAX_COLLISION_TRY 20
 
-S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), total_data_to_stream(0), write_in_progress(false) {
+S3PutObjectAction::S3PutObjectAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req), total_data_to_stream(0), write_in_progress(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
   tried_count = 0;
@@ -67,6 +68,10 @@ void S3PutObjectAction::create_object() {
 
 void S3PutObjectAction::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
     // If object exists, it may be due to the actual existance of object or due to oid collision
     if (tried_count) { // No need of lookup of metadata in case if it was oid collision before
@@ -93,6 +98,10 @@ void S3PutObjectAction::create_object_failed() {
 }
 
 void S3PutObjectAction::collision_detected() {
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   if(object_metadata->get_state() == S3ObjectMetadataState::missing && tried_count < MAX_COLLISION_TRY) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n", request->get_object_uri().c_str());
     // Handle Collision
@@ -148,7 +157,7 @@ void S3PutObjectAction::initiate_data_streaming() {
   total_data_to_stream = request->get_content_length();
 
   if (total_data_to_stream == 0) {
-    save_metadata();  // Zero size object.
+    next();  // Zero size object.
   } else {
     if (request->has_all_body_content()) {
       s3_log(S3_LOG_DEBUG, "We have all the data, so just write it.\n");
@@ -167,6 +176,10 @@ void S3PutObjectAction::initiate_data_streaming() {
 
 void S3PutObjectAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   // Resuming the action since we have data.
   if (!write_in_progress) {
     if (request->get_buffered_input().is_freezed() ||
@@ -193,6 +206,11 @@ void S3PutObjectAction::write_object(S3AsyncBufferContainer& buffer) {
 }
 
 void S3PutObjectAction::write_object_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Write to clovis successful\n");
   write_in_progress = false;
   if (/* buffered data len is at least equal to max we can write to clovis in one write */
@@ -232,14 +250,22 @@ void S3PutObjectAction::save_metadata() {
       object_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
-  object_metadata->save(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::rollback_start, this));
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
+  object_metadata->save(std::bind(&S3PutObjectAction::next, this),
+                        std::bind(&S3PutObjectAction::rollback_start, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();

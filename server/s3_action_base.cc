@@ -21,7 +21,11 @@
 #include "s3_error_codes.h"
 #include "s3_option.h"
 
-S3Action::S3Action(std::shared_ptr<S3RequestObject> req) : request(req), invalid_request(false) {
+S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
+    : request(req),
+      invalid_request(false),
+      check_shutdown_signal(check_shutdown),
+      is_response_scheduled(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   task_iteration_index = 0;
   rollback_index = 0;
@@ -50,12 +54,20 @@ void S3Action::setup_steps() {
 }
 
 void S3Action::start() {
+  if (check_shutdown_signal && check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   task_iteration_index = 0;
   state = S3ActionState::running;
   task_list[task_iteration_index++]();
 }
 // Step to next async step.
 void S3Action::next() {
+  if (check_shutdown_signal && check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   resume();
   if (task_iteration_index < task_list.size()) {
     if (request->client_connected()) {
@@ -91,6 +103,7 @@ void S3Action::abort() {
 
 // rollback async steps
 void S3Action::rollback_start() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   rollback_index = 0;
   rollback_state = S3ActionState::running;
   if (rollback_list.size())
@@ -99,25 +112,32 @@ void S3Action::rollback_start() {
     s3_log(S3_LOG_ERROR, "Rollback triggered on empty list\n");
     rollback_done();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3Action::rollback_next() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   if (rollback_index < rollback_list.size()) {
       // Call step and move index to next
       rollback_list[rollback_index++]();
   } else {
     rollback_done();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3Action::rollback_done() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   rollback_index = 0;
   rollback_state = S3ActionState::complete;
   rollback_exit();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3Action::rollback_exit() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3Action::fetch_acl_policies() {
@@ -229,4 +249,21 @@ void S3Action::check_authentication_failed() {
 void S3Action::start_chunk_authentication() {
   auth_client = std::make_shared<S3AuthClient>(request);
   auth_client->check_chunk_auth(std::bind( &S3Action::check_authentication_successful, this), std::bind( &S3Action::check_authentication_failed, this));
+}
+
+bool S3Action::check_shutdown_and_rollback() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  bool is_s3_shutting_down =
+      S3Option::get_instance()->get_is_s3_shutting_down();
+  if (!is_response_scheduled && is_s3_shutting_down) {
+    s3_log(S3_LOG_DEBUG, "S3 server is about to shutdown\n");
+    is_response_scheduled = true;
+    if (number_of_rollback_tasks()) {
+      rollback_start();
+    } else {
+      send_response_to_s3_client();
+    }
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  return is_s3_shutting_down;
 }

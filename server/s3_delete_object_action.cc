@@ -20,7 +20,8 @@
 #include "s3_delete_object_action.h"
 #include "s3_error_codes.h"
 
-S3DeleteObjectAction::S3DeleteObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3DeleteObjectAction::S3DeleteObjectAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }

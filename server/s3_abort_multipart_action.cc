@@ -24,7 +24,9 @@
 #include "s3_abort_multipart_action.h"
 #include "s3_error_codes.h"
 
-S3AbortMultipartAction::S3AbortMultipartAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3AbortMultipartAction::S3AbortMultipartAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   upload_id = request->get_query_string_value("uploadId");
   object_name = request->get_object_name();

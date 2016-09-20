@@ -53,7 +53,7 @@ protected:
   // Allow class object instiantiation without support for authentication
   bool disable_auth;
   // Any action specific state should be managed by derived classes.
-private:
+ private:
   // Holds the member functions that will process the request.
   // member function signature should be void fn();
   std::vector<std::function<void()>> task_list;
@@ -73,11 +73,19 @@ private:
   S3ActionState state;
   S3ActionState rollback_state;
 
-public:
-  S3Action(std::shared_ptr<S3RequestObject> req);
-  virtual ~S3Action();
+  // If this flag is set then check_shutdown_and_rollback() is called
+  // from start() & next() methods.
+  bool check_shutdown_signal;
 
-  void get_error_message(std::string& message);
+  // In case of shutdown, this flag indicates that a error response
+  // is already scheduled.
+  bool is_response_scheduled;
+
+public:
+ S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true);
+ virtual ~S3Action();
+
+ void get_error_message(std::string& message);
 
 protected:
   void add_task(std::function<void()> task) {
@@ -104,8 +112,22 @@ protected:
     rollback_list.clear();
   }
 
+  int number_of_rollback_tasks() { return rollback_list.size(); }
 
-public:
+  // Checks whether S3 is shutting down. If yes then triggers rollback and
+  // schedules a response.
+  // Return value: true, in case of shutdown.
+  bool check_shutdown_and_rollback();
+
+  bool reject_if_shutting_down() { return is_response_scheduled; }
+
+  // If param 'check_signal' is true then check_shutdown_and_rollback() method
+  // will be invoked for next tasks in the queue.
+  void check_shutdown_signal_for_next_task(bool check_signal) {
+    check_shutdown_signal = check_signal;
+  }
+
+ public:
   // Self destructing object.
   void manage_self(std::shared_ptr<S3Action> ref) {
       self_ref = ref;

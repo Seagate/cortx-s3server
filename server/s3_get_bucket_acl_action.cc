@@ -37,13 +37,21 @@ void S3GetBucketACLAction::setup_steps(){
 void S3GetBucketACLAction::get_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3GetBucketACLAction::next, this), std::bind( &S3GetBucketACLAction::next, this));
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
+  bucket_metadata->load(std::bind(&S3GetBucketACLAction::next, this),
+                        std::bind(&S3GetBucketACLAction::next, this));
 }
 
 void S3GetBucketACLAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string response_xml = bucket_metadata->get_acl_as_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));

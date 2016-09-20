@@ -61,6 +61,8 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(true, instance->is_log_buffering_enabled());
   EXPECT_EQ(30, instance->get_log_flush_frequency_in_sec());
+  EXPECT_EQ(10, instance->get_s3_grace_period_sec());
+  EXPECT_EQ(false, instance->get_is_s3_shutting_down());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
@@ -91,6 +93,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(false, instance->is_log_buffering_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
+  EXPECT_EQ(4, instance->get_s3_grace_period_sec());
 }
 
 TEST_F(S3OptionsTest, TestOverrideOptions) {
@@ -123,6 +126,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(false, instance->is_log_buffering_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
+  EXPECT_EQ(4, instance->get_s3_grace_period_sec());
 }
 
 TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
@@ -136,6 +140,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
+  instance->set_is_s3_shutting_down(true);
   EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
   EXPECT_EQ(std::string("/tmp/"), instance->get_log_dir());
@@ -152,6 +157,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(false, instance->get_clovis_is_oostore());
   EXPECT_EQ(true, instance->get_clovis_is_read_verify());
   EXPECT_EQ(1, instance->get_log_file_max_size_in_mb());
+  EXPECT_EQ(true, instance->get_is_s3_shutting_down());
 }
 
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {

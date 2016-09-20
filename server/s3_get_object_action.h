@@ -39,7 +39,9 @@ class S3GetObjectAction : public S3Action {
   size_t blocks_already_read;
   size_t data_sent_to_client;
 
-public:
+  bool read_object_reply_started;
+
+ public:
   S3GetObjectAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

@@ -36,25 +36,45 @@
 extern evbase_t * global_evbase_handle;
 
 void s3_terminate_sig_handler(int signum) {
-  s3_log(S3_LOG_INFO, "Recieved signal %d, shutting down s3 server daemon...\n",signum);
   // When a daemon has been told to shutdown, there is a possibility of OS
-  // sending
-  // SIGTERM when s3server runs as service hence block SIGTERM
+  // sending SIGTERM when s3server runs as service hence ignore subsequent
+  // SIGTERM signal.
   struct sigaction sigterm_action;
   sigterm_action.sa_handler = SIG_IGN;
   sigterm_action.sa_flags = 0;
   sigaction(SIGTERM, &sigterm_action, NULL);
-  //++
-  //Exit event base loop immediately
-  //If the event_base is currently running callbacks for any active events, it will exit immediately
-  //after finishing the one it’s currently processing.
-  //--
-  event_base_loopbreak(global_evbase_handle);
-  // Handle inconsistency via rollbacks ... -- TODO
+
+  s3_log(S3_LOG_INFO, "Recieved signal %d, shutting down s3 server daemon\n",
+         signum);
+
+  S3Option *option_instance = S3Option::get_instance();
+  int grace_period_sec = option_instance->get_s3_grace_period_sec();
+  struct timeval loopexit_timeout = {.tv_sec = 0, .tv_usec = 0};
+
+  // trigger rollbacks & stop handling new requests
+  option_instance->set_is_s3_shutting_down(true);
+
+  // Reserve some time (3 sec) of grace period to serve active events
+  // after the event_base_loopexit() timeout.
+  if (grace_period_sec > 3) {
+    loopexit_timeout.tv_sec = grace_period_sec - 3;
+  }
+
+  // event_base_loopexit() will let event loop serve all events as usual
+  // till loopexit_timeout. After the timeout, all active events will be
+  // served and then the event loop breaks.
+  int rc = event_base_loopexit(global_evbase_handle, &loopexit_timeout);
+  if (rc == 0) {
+    s3_log(S3_LOG_DEBUG, "event_base_loopexit returns SUCCESS\n");
+  } else {
+    s3_log(S3_LOG_ERROR, "event_base_loopexit returns FAILURE\n");
+  }
+
   return;
 }
 
 void s3_terminate_fatal_handler(int signum) {
+  s3_log(S3_LOG_INFO, "Recieved signal %d\n", signum);
   void *trace[S3_BACKTRACE_DEPTH_MAX];
   std::string bt_str = "";
   std::string newline_str("\n");

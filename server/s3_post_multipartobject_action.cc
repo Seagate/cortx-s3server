@@ -91,6 +91,10 @@ void S3PostMultipartObjectAction::create_object() {
 
 void S3PostMultipartObjectAction::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   create_object_timer.stop();
   LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
 
@@ -110,7 +114,6 @@ void S3PostMultipartObjectAction::create_object_failed() {
     }
   } else {
     s3_log(S3_LOG_WARN, "Create object failed.\n");
-    // TODO - rollback
     // Any other error report failure.
     send_response_to_s3_client();
   }
@@ -118,6 +121,11 @@ void S3PostMultipartObjectAction::create_object_failed() {
 }
 
 void S3PostMultipartObjectAction::collision_occured() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   if(object_metadata->get_state() == S3ObjectMetadataState::missing && tried_count < MAX_COLLISION_RETRY) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n", request->get_object_uri().c_str());
     // Handle Collision
@@ -245,6 +253,8 @@ void S3PostMultipartObjectAction::create_part_meta_index() {
 
 void S3PostMultipartObjectAction::save_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
   if (multipart_index_oid.u_lo == 0 && multipart_index_oid.u_hi == 0) {
     // multipart index created, set it
     bucket_metadata->set_multipart_index_oid(
@@ -272,7 +282,13 @@ void S3PostMultipartObjectAction::save_multipart_metadata_failed() {
 
 void S3PostMultipartObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();

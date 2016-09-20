@@ -107,6 +107,11 @@ void S3GetMultipartPartAction::get_key_object() {
 }
 
 void S3GetMultipartPartAction::get_key_object_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Found part listing\n");
   std::string key_name = last_key;
   if (!(clovis_kv_reader->get_value()).empty()) {
@@ -147,6 +152,11 @@ void S3GetMultipartPartAction::get_key_object_failed() {
 }
 
 void S3GetMultipartPartAction::get_next_objects() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Fetching next part listing\n");
   if (object_multipart_metadata->get_state() ==
       S3ObjectMetadataState::present) {
@@ -164,6 +174,11 @@ void S3GetMultipartPartAction::get_next_objects() {
 }
 
 void S3GetMultipartPartAction::get_next_objects_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Found part listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
@@ -210,8 +225,14 @@ void S3GetMultipartPartAction::get_next_objects_failed() {
 
 void S3GetMultipartPartAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (bucket_metadata &&
-      (bucket_metadata->get_state() != S3BucketMetadataState::present)) {
+
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata &&
+             (bucket_metadata->get_state() != S3BucketMetadataState::present)) {
     S3Error error("NoSuchBucket", request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();

@@ -56,6 +56,12 @@ void S3PutChunkUploadObjectAction::setup_steps(){
 }
 
 void S3PutChunkUploadObjectAction::chunk_auth_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    auth_completed = true;
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   if (clovis_write_completed) {
     if (write_failed)
       rollback_start();
@@ -68,6 +74,12 @@ void S3PutChunkUploadObjectAction::chunk_auth_successful() {
 }
 
 void S3PutChunkUploadObjectAction::chunk_auth_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    auth_failed = true;
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   auth_failed = true;
   if (clovis_write_in_progress) {
     // Do nothing, handle after write returns
@@ -102,6 +114,10 @@ void S3PutChunkUploadObjectAction::create_object() {
 
 void S3PutChunkUploadObjectAction::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
     // If object exists, it may be due to the actual existance of object or due
     // to oid collision
@@ -131,6 +147,11 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
 }
 
 void S3PutChunkUploadObjectAction::collision_detected() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   if (object_metadata->get_state() == S3ObjectMetadataState::missing &&
       tried_count < MAX_COLLISION_TRY) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n",
@@ -196,7 +217,7 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
   }
 
   if (total_data_to_stream == 0) {
-    save_metadata();  // Zero size object.
+    next();  // Zero size object.
   } else {
     if (request->has_all_body_content()) {
       s3_log(S3_LOG_DEBUG, "We have all the data, so just write it.\n");
@@ -215,6 +236,10 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
 
 void S3PutChunkUploadObjectAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   if (!clovis_write_in_progress) {
     write_object(request->get_buffered_input());
   }
@@ -252,6 +277,12 @@ void S3PutChunkUploadObjectAction::write_object(S3AsyncBufferContainer& buffer) 
 }
 
 void S3PutChunkUploadObjectAction::write_object_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    clovis_write_in_progress = false;
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "Write to clovis successful\n");
   clovis_write_in_progress = false;
   if (auth_failed) {
@@ -281,6 +312,13 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
 }
 
 void S3PutChunkUploadObjectAction::write_object_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (check_shutdown_and_rollback()) {
+    clovis_write_in_progress = false;
+    write_failed = true;
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
   s3_log(S3_LOG_WARN, "Failed writing to clovis.\n");
   clovis_write_in_progress = false;
   write_failed = true;
@@ -306,6 +344,8 @@ void S3PutChunkUploadObjectAction::save_metadata() {
       object_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
   object_metadata->save(
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::rollback_start, this));
@@ -315,7 +355,12 @@ void S3PutChunkUploadObjectAction::save_metadata() {
 void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (auth_failed) {
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (auth_failed) {
     // Invalid Bucket Name
     S3Error error("SignatureDoesNotMatch", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();

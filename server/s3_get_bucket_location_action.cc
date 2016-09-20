@@ -36,13 +36,21 @@ void S3GetBucketlocationAction::setup_steps(){
 void S3GetBucketlocationAction::get_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3GetBucketlocationAction::next, this), std::bind( &S3GetBucketlocationAction::next, this));
+  // bypass shutdown signal check for next task
+  check_shutdown_signal_for_next_task(false);
+  bucket_metadata->load(std::bind(&S3GetBucketlocationAction::next, this),
+                        std::bind(&S3GetBucketlocationAction::next, this));
 }
 
 void S3GetBucketlocationAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+  if (reject_if_shutting_down()) {
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    request->set_out_header_value("Retry-After", "1");
+    request->send_response(S3HttpFailed503);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string response_xml;
     response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
     response_xml += "<LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
