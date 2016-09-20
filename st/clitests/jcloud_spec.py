@@ -4,6 +4,7 @@ import os
 from framework import Config
 from framework import S3PyCliTest
 from jcloud import JCloudTest
+from jclient import JClientTest
 from s3client_config import S3ClientConfig
 
 # Helps debugging
@@ -55,6 +56,11 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can download 3k file').get_object("seagatebucket/test", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
+    # ************ Special Char in file name TEST ************
+    JCloudTest('Jcloud can upload 3k file with special chars in filename.').put_object("seagatebucket/2016-04:32:21/3kfile", "3kfile", 3000).execute_test().command_is_successful()
+
+    JCloudTest('Jcloud can download 3k file with special chars in filename.').get_object("seagatebucket/2016-04:32:21", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
+
     # ************ 8k FILE TEST ************
     JCloudTest('Jcloud can verify object does not exist').head_object("seagatebucket", "8kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
 
@@ -86,21 +92,22 @@ for i, val in enumerate(pathstyle_values):
 
     # JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
     #
-    # result = JCloudTest('Jcloud can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
+    # result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
     # result.command_response_should_have('18MBfile')
     #
     # upload_id = result.status.stdout.split("id - ")[1]
     # print(upload_id)
     #
-    # result = JCloudTest('Jcloud can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test()
+    # result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test()
     # result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
     #
     # JCloudTest('Jcloud can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
     #
-    # JCloudTest('Jcloud can test the multipart was aborted.').list_multipart('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+    # JClientTest('Jclient can test the multipart was aborted.').list_multipart('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 
     # ************ DELETE OBJECT TEST ************
     JCloudTest('Jcloud can delete 3k file').delete_object("seagatebucket", "test/3kfile").execute_test().command_is_successful()
+    JCloudTest('Jcloud can delete 3k file').delete_object("seagatebucket", "2016-04:32:21/3kfile").execute_test().command_is_successful()
 
     # ************ DELETE MULTIPLE OBJECTS TEST ************
     JCloudTest('Jcloud can delete 8k, 700k, 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test().command_is_successful()
