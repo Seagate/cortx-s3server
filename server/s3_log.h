@@ -41,27 +41,29 @@ extern int s3log_level;
 //    only if S3 log level is set to DEBUG.
 // 2. Logging a FATAL message terminates the program (after the message is
 //    logged).
-#define s3_log(loglevel, fmt, ...)                                     \
-  do {                                                                 \
-    int glog_level = loglevel;                                         \
-    if ((loglevel == S3_LOG_DEBUG) && (s3log_level == S3_LOG_DEBUG)) { \
-      glog_level = S3_LOG_INFO;                                        \
-    }                                                                  \
-    if (glog_level != S3_LOG_DEBUG) {                                  \
-      int log_buf_len = snprintf(NULL, 0, fmt "\n", ##__VA_ARGS__);    \
-      log_buf_len++;                                                   \
-      std::unique_ptr<char[]> log_buf(new char[log_buf_len]);          \
-      snprintf(log_buf.get(), log_buf_len, fmt "\n", ##__VA_ARGS__);   \
-      if (glog_level == S3_LOG_INFO) {                                 \
-        LOG(INFO) << log_buf.get();                                    \
-      } else if (glog_level == S3_LOG_WARN) {                          \
-        LOG(WARNING) << log_buf.get();                                 \
-      } else if (glog_level == S3_LOG_ERROR) {                         \
-        LOG(ERROR) << log_buf.get();                                   \
-      } else if (glog_level == S3_LOG_FATAL) {                         \
-        LOG(FATAL) << log_buf.get();                                   \
-      }                                                                \
-    }                                                                  \
+#define s3_log(loglevel, fmt, ...)                                      \
+  do {                                                                  \
+    int glog_level = loglevel;                                          \
+    if ((loglevel == S3_LOG_DEBUG) && (s3log_level == S3_LOG_DEBUG)) {  \
+      glog_level = S3_LOG_INFO;                                         \
+    }                                                                   \
+    if (glog_level != S3_LOG_DEBUG) {                                   \
+      int log_buf_len =                                                 \
+          snprintf(NULL, 0, "[%s] " fmt "\n", __func__, ##__VA_ARGS__); \
+      log_buf_len++;                                                    \
+      std::unique_ptr<char[]> log_buf(new char[log_buf_len]);           \
+      snprintf(log_buf.get(), log_buf_len, "[%s] " fmt "\n", __func__,  \
+               ##__VA_ARGS__);                                          \
+      if (glog_level == S3_LOG_INFO) {                                  \
+        LOG(INFO) << log_buf.get();                                     \
+      } else if (glog_level == S3_LOG_WARN) {                           \
+        LOG(WARNING) << log_buf.get();                                  \
+      } else if (glog_level == S3_LOG_ERROR) {                          \
+        LOG(ERROR) << log_buf.get();                                    \
+      } else if (glog_level == S3_LOG_FATAL) {                          \
+        LOG(FATAL) << log_buf.get();                                    \
+      }                                                                 \
+    }                                                                   \
   } while (0)
 
 int init_log(char *process_name);
