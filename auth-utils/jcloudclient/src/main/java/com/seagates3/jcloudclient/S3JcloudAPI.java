@@ -37,15 +37,23 @@ import org.jclouds.blobstore.domain.BlobMetadata;
 import org.jclouds.blobstore.domain.PageSet;
 import org.jclouds.blobstore.domain.StorageMetadata;
 import org.jclouds.blobstore.options.ListContainerOptions;
-import static org.jclouds.blobstore.options.PutOptions.Builder.multipart;
+import org.jclouds.io.Payload;
+import org.jclouds.io.PayloadSlicer;
+import org.jclouds.io.internal.BasePayloadSlicer;
 import org.jclouds.io.payloads.FilePayload;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.s3.S3ApiMetadata;
+import org.jclouds.s3.S3Client;
+import org.jclouds.s3.domain.ObjectMetadata;
+import org.jclouds.s3.domain.ObjectMetadataBuilder;
+import static org.jclouds.blobstore.options.PutOptions.Builder.multipart;
 
 public class S3JcloudAPI {
 
     BlobStoreContext context;
     BlobStore blobStore;
+    S3Client s3client;
+
     private final CommandLine cmd;
     private String bucketName;
     private String keyName;
@@ -92,9 +100,9 @@ public class S3JcloudAPI {
         }
 
         builder.overrides(properties);
-
         context = builder.buildView(BlobStoreContext.class);
         blobStore = context.getBlobStore();
+        s3client = S3Client.class.cast(context.unwrapApi(S3Client.class));
     }
 
     public void makeBucket() {
@@ -544,6 +552,81 @@ public class S3JcloudAPI {
                 context.close();
             }
         }
+    }
+
+    public void uploadPart() {
+        checkCommandLength(4);
+        String fileName = cmd.getArgs()[1];
+        File file = new File(fileName);
+        if (!file.exists())
+            printError("Given file doesn't exist.");
+        getBucketObjectName(cmd.getArgs()[2]);
+        if (bucketName.isEmpty())
+            printError("Incorrect command. Bucket name is required.");
+        if (keyName.isEmpty())
+            keyName = file.getName();
+        else if (keyName.endsWith("/"))
+            keyName += file.getName();
+        int numOfParts = Integer.parseInt(cmd.getArgs()[3]);
+        long partSize;
+        if (cmd.getOptionValue('m') != null)
+            partSize = Integer.parseInt(cmd.getOptionValue('m')) * 1024L * 1024L;
+        else
+            partSize = 16L * 1024L * 1024L;
+
+        try {
+            ObjectMetadata objectMetadata = ObjectMetadataBuilder.create().key(keyName).build();
+            String uploadId = s3client.initiateMultipartUpload(bucketName, objectMetadata);
+            System.out.println("Upload id - " + uploadId);
+
+            int partNumber = 1;
+            FilePayload payload = new FilePayload(file);
+            PayloadSlicer slicer = new BasePayloadSlicer();
+            for (Payload partPayload: slicer.slice(payload, partSize)) {
+                String eTag;
+                do {
+                    System.out.println("Uploading part " + partNumber
+                            + " of size " + partSize / (1024 * 1024) + "MB");
+                    eTag = s3client.uploadPart(bucketName, keyName, partNumber, uploadId, partPayload);
+                } while (eTag == null);
+                if (partNumber++ == numOfParts)
+                    break;
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            context.close();
+        }
+    }
+
+    public void abortMultipartUpload() {
+        checkCommandLength(3);
+        getBucketObjectName(cmd.getArgs()[1]);
+        String uploadID = cmd.getArgs()[2];
+
+        if (bucketName.isEmpty())
+            printError("Incorrect command. Bucket name is required.");
+        if (keyName.isEmpty())
+            printError("Incorrect command. Object name is required.");
+        if (uploadID.isEmpty())
+            printError("Incorrect command. UploadId is required.");
+
+        try {
+            s3client.abortMultipartUpload(bucketName, keyName, uploadID);
+            System.out.println("Upload aborted successfully.");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            context.close();
+        }
+    }
+
+    public void listMultipartUploads() {
+        throw new UnsupportedOperationException("listMultipartUploads not Implemented");
+    }
+
+    public void listParts() {
+        throw new UnsupportedOperationException("listParts not Implemented");
     }
 
     private void getBucketObjectName(String url) {

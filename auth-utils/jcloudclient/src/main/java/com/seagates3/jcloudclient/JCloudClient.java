@@ -92,7 +92,7 @@ public class JCloudClient {
             System.out.println(ex);
         } catch (IllegalAccessException | IllegalArgumentException |
                 InvocationTargetException | InstantiationException ex) {
-            System.out.println(ex);
+            System.out.println(ex.getCause());
         }
 
     }

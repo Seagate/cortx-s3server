@@ -62,5 +62,21 @@
     "clrbdir": {
         "Class": "S3JcloudAPI",
         "Action": "clearBucketDirectory"
+    },
+    "partialput": {
+        "Class": "S3JcloudAPI",
+        "Action": "uploadPart"
+    },
+    "abortmp": {
+        "Class": "S3JcloudAPI",
+        "Action": "abortMultipartUpload"
+    },
+    "listmp": {
+        "Class": "S3JcloudAPI",
+        "Action": "listParts"
+    },
+    "multipart": {
+        "Class": "S3JcloudAPI",
+        "Action": "listMultipartUploads"
     }
 }

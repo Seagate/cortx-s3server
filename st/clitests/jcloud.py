@@ -169,3 +169,35 @@ class JCloudTest(S3PyCliTest):
 
         self.with_cli(cmd)
         return self
+
+    def partial_multipart_upload(self, bucket_name, filename, filesize,
+        size_of_part, no_of_parts):
+        self.filename = filename
+        self.filesize = filesize
+        cmd =  "%s partialput %s s3://%s %s -m %s %s" % (self.jcloud_cmd,
+            filename, bucket_name, str(no_of_parts), str(size_of_part),
+            self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def list_multipart(self, bucket_name):
+        cmd = "%s multipart s3://%s %s" % (self.jcloud_cmd, bucket_name,
+            self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def list_parts(self, bucket_name, file_name, upload_id):
+        cmd = "%s listmp s3://%s/%s %s %s" % (self.jcloud_cmd, bucket_name,
+            file_name, upload_id, self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def abort_multipart(self, bucket_name, file_name, upload_id):
+        cmd = "%s abortmp s3://%s/%s %s %s" % (self.jcloud_cmd, bucket_name,
+            file_name, upload_id, self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
