@@ -69,7 +69,7 @@ void S3PutObjectACLAction::send_response_to_s3_client() {
   } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
     request->send_response(S3HttpSuccess200);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    S3Error error("NoSuchObject", request->get_request_id(), request->get_object_uri());
+    S3Error error("NoSuchKey", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));

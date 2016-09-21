@@ -19,15 +19,19 @@
 package com.seagates3.javaclient;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
+import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.CanonicalGrantee;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.Grant;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
@@ -46,6 +50,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.UploadPartRequest;
+
 import static com.seagates3.javaclient.ClientConfig.getClientConfiguration;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -521,6 +526,56 @@ public class S3API {
                 System.out.println("Object does not exist.");
             }
         }
+    }
+
+    public void getAcl() {
+        checkCommandLength(2);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty())
+            printError("Bucket name cannot be empty");
+
+        if (keyName.isEmpty()) {
+            try {
+                AccessControlList bucketAcl = client.getBucketAcl(bucketName);
+                printGrants(bucketAcl.getGrantsAsList());
+            } catch (AmazonServiceException awsServiceException) {
+                printAwsServiceException(awsServiceException);
+            } catch (AmazonClientException awsClientException) {
+                printError(awsClientException.toString());
+            }
+        } else {
+            try {
+                AccessControlList objectAcl = client.getObjectAcl(bucketName, keyName);
+                printGrants(objectAcl.getGrantsAsList());
+            } catch (AmazonServiceException awsServiceException) {
+                printAwsServiceException(awsServiceException);
+            } catch (AmazonClientException awsClientException) {
+                printError(awsClientException.toString());
+            }
+        }
+    }
+
+    private void printGrants(List <Grant> grants) {
+        for (Grant grant : grants) {
+            if (grant.getGrantee() instanceof CanonicalGrantee) {
+                CanonicalGrantee canonicalGrantee = (CanonicalGrantee) grant.getGrantee();
+                System.out.println(canonicalGrantee.getDisplayName() + " "
+                        + canonicalGrantee.getTypeIdentifier() + ": "
+                        + canonicalGrantee.getIdentifier() + " "
+                        + "Permission: " + grant.getPermission()
+                );
+            }
+        }
+    }
+
+    private void printAwsServiceException(AmazonServiceException awsServiceException) {
+        if (awsServiceException.getErrorCode().equals("NoSuchBucket"))
+            System.out.println("No such bucket");
+        else if (awsServiceException.getErrorCode().equals("NoSuchKey"))
+            System.out.println("No such object");
+        else
+            printError(awsServiceException.toString());
     }
 
     private void getBucketObjectName(String url) {

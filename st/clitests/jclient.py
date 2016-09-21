@@ -162,3 +162,17 @@ class JClientTest(S3PyCliTest):
 
         self.with_cli(cmd)
         return self
+
+    def get_bucket_acl(self, bucket_name):
+        cmd = "%s getacl s3://%s %s" % (self.jclient_cmd, bucket_name,
+            self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def get_object_acl(self, bucket_name, file_name):
+        cmd = "%s getacl s3://%s/%s %s" % (self.jclient_cmd, bucket_name,
+            file_name, self.get_test_config())
+
+        self.with_cli(cmd)
+        return self

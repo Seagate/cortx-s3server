@@ -50,5 +50,9 @@
     "partialput": {
         "Class": "S3API",
         "Action": "partialPutObject"
+    },
+    "getacl": {
+        "Class": "S3API",
+        "Action": "getAcl"
     }
 }

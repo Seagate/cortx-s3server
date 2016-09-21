@@ -37,6 +37,9 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can verify bucket does not exist').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket does not exist')
 
+    # get-bucket-acl: no bucket exists
+    JClientTest('Jclient can (not) get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('No such bucket')
+
     # ************ Create bucket ************
     JClientTest('Jclient can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
@@ -45,12 +48,19 @@ for i, val in enumerate(pathstyle_values):
     # ************ List buckets ************
     JClientTest('Jclient can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('seagatebucket')
 
+    # get-bucket-acl
+    JClientTest('Jclient can get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('Permission:')
+
     # ************ 3k FILE TEST ************
     JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
+
+    JClientTest('Jclient can (not) get object acl').get_object_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('No such object')
 
     JClientTest('Jclient can upload 3k file').put_object("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
 
     JClientTest('Jclient can verify object existence').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have("3kfile")
+
+    JClientTest('Jclient can get object acl').get_object_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('Permission:')
 
     JClientTest('Jclient can download 3k file').get_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
