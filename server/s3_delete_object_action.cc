@@ -95,7 +95,8 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::deleted) {
+  } else if ((object_metadata->get_state() == S3ObjectMetadataState::missing) ||
+      (object_metadata->get_state() == S3ObjectMetadataState::deleted)) {
     request->send_response(S3HttpSuccess204);
   } else {
     S3Error error("InternalError", request->get_request_id(), request->get_object_uri());

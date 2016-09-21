@@ -44,9 +44,9 @@ S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 300
 
 S3cmdTest('s3cmd can download 3k file').download_test("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
-S3cmdTest('s3cmd cannot copy object 3k file').upload_copy_test("seagatebucket", "3kfile", "3kfile.copy").execute_test(True).command_should_fail()
+S3cmdTest('s3cmd cannot copy object 3k file').upload_copy_test("seagatebucket", "3kfile", "3kfile.copy").execute_test(negative_case=True).command_should_fail()
 
-S3cmdTest('s3cmd cannot move object 3k file').upload_move_test("seagatebucket", "3kfile", "seagatebucket", "3kfile.moved").execute_test(True).command_should_fail()
+S3cmdTest('s3cmd cannot move object 3k file').upload_move_test("seagatebucket", "3kfile", "seagatebucket", "3kfile.moved").execute_test(negative_case=True).command_should_fail()
 
 # ************ 3k FILE TEST ************
 S3cmdTest('s3cmd can upload 3k file with special chars in filename.').upload_test("seagatebucket/2016-04:32:21/3kfile", "3kfile", 3000).execute_test().command_is_successful()
@@ -193,7 +193,7 @@ S3cmdTest('s3cmd can test the multipart was aborted.').list_multipart_uploads('s
 
 # S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
 #
-# S3cmdTest('s3cmd can abort multipart upload of 18MB file').multipartupload_abort_test("seagatebucket", "18MBfile", 18000000).execute_test(True).command_should_fail()
+# S3cmdTest('s3cmd can abort multipart upload of 18MB file').multipartupload_abort_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail()
 #
 # S3cmdTest('s3cmd can list parts of multipart upload 18MB file').multipartupload_partlist_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
 #

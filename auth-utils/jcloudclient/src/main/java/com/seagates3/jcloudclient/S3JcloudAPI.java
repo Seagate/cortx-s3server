@@ -222,6 +222,9 @@ public class S3JcloudAPI {
 
         try {
             Blob blob = blobStore.getBlob(bucketName, keyName);
+            if (blob == null) {
+              printError("No such Object.");
+            }
             InputStream inputStream = blob.getPayload().openStream();
             File file = new File(cmd.getArgs()[2]);
 

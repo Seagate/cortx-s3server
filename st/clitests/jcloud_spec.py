@@ -52,9 +52,15 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can upload 3k file').put_object("seagatebucket/test/3kfile", "3kfile", 3000).execute_test().command_is_successful()
 
+    JCloudTest('Jcloud cannot upload file to nonexistent bucket').put_object("seagate-bucket/test/3kfile", "3kfile", 3000).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
     JCloudTest('Jcloud can verify object existence').head_object("seagatebucket", "test/3kfile").execute_test().command_is_successful().command_response_should_have('test/3kfile')
 
     JCloudTest('Jcloud can download 3k file').get_object("seagatebucket/test", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
+
+    JCloudTest('Jcloud cannot download nonexistent file').get_object("seagatebucket/test", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such Object")
+
+    JCloudTest('Jcloud cannot download file in nonexistent bucket').get_object("seagate-bucket/test", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket is not valid")
 
     # ************ Special Char in file name TEST ************
     JCloudTest('Jcloud can upload 3k file with special chars in filename.').put_object("seagatebucket/2016-04:32:21/3kfile", "3kfile", 3000).execute_test().command_is_successful()
@@ -72,6 +78,8 @@ for i, val in enumerate(pathstyle_values):
 
     # ************ OBJECT LISTING TEST ************
     JCloudTest('Jcloud can list objects').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_have('test').command_response_should_have('8kfile')
+
+    JCloudTest('Jcloud cannot list objects for nonexistent bucket').list_objects('seagate-bucket').execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     JCloudTest('Jcloud can list objects in a directory').list_specific_objects('seagatebucket', 'test').execute_test().command_is_successful().command_response_should_have('3kfile').command_response_should_not_have('8kfile')
 
@@ -107,6 +115,7 @@ for i, val in enumerate(pathstyle_values):
 
     # ************ DELETE OBJECT TEST ************
     JCloudTest('Jcloud can delete 3k file').delete_object("seagatebucket", "test/3kfile").execute_test().command_is_successful()
+
     JCloudTest('Jcloud can delete 3k file').delete_object("seagatebucket", "2016-04:32:21/3kfile").execute_test().command_is_successful()
 
     # ************ DELETE MULTIPLE OBJECTS TEST ************
