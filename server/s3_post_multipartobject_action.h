@@ -68,6 +68,8 @@ public:
   void rollback_create_failed();
   void rollback_upload_metadata();
   void rollback_upload_metadata_failed();
+  void rollback_create_part_meta_index();
+  void rollback_create_part_meta_index_failed();
 
   std::shared_ptr<S3RequestObject> get_request() {
     return request;
