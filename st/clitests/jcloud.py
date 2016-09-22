@@ -75,11 +75,18 @@ class JCloudTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def put_object(self, bucket_name, filename, filesize):
+    def put_object(self, bucket_name, filename, filesize, prefix=None):
         self.filename = filename
         self.filesize = filesize
-        cmd =  "%s put %s s3://%s %s" % (self.jcloud_cmd, filename,
-                bucket_name, self.get_test_config())
+        self.prefix = prefix
+        if prefix:
+            # s3://%s/%s/%s = s3://bucket/prefix/filename
+            cmd =  "%s put %s s3://%s/%s/%s %s" % (self.jcloud_cmd, filename,
+                    bucket_name, prefix, filename, self.get_test_config())
+        else:
+            cmd =  "%s put %s s3://%s %s" % (self.jcloud_cmd, filename,
+                    bucket_name, self.get_test_config())
+
         self.with_cli(cmd)
         return self
 
