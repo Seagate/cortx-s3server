@@ -556,6 +556,22 @@ public class S3API {
         }
     }
 
+    public void getBucketLocation() {
+        checkCommandLength(2);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty())
+            printError("Bucket name cannot be empty");
+
+        try {
+            System.out.println(client.getBucketLocation(bucketName));
+        } catch (AmazonServiceException awsServiceException) {
+            printAwsServiceException(awsServiceException);
+        } catch (AmazonClientException awsClientException) {
+            printError(awsClientException.toString());
+        }
+    }
+
     private void printGrants(List <Grant> grants) {
         for (Grant grant : grants) {
             if (grant.getGrantee() instanceof CanonicalGrantee) {

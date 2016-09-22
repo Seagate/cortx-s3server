@@ -54,5 +54,9 @@
     "getacl": {
         "Class": "S3API",
         "Action": "getAcl"
+    },
+    "location": {
+        "Class": "S3API",
+        "Action": "getBucketLocation"
     }
 }

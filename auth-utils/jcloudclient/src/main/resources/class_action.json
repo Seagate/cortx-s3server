@@ -78,5 +78,9 @@
     "multipart": {
         "Class": "S3JcloudAPI",
         "Action": "listMultipartUploads"
+    },
+    "location": {
+        "Class": "S3JcloudAPI",
+        "Action": "getBucketLocation"
     }
 }

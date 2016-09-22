@@ -629,6 +629,21 @@ public class S3JcloudAPI {
         throw new UnsupportedOperationException("listParts not Implemented");
     }
 
+    public void getBucketLocation() {
+        checkCommandLength(2);
+        getBucketObjectName(cmd.getArgs()[1]);
+        if (bucketName.isEmpty())
+            printError("Incorrect command. Bucket name is required.");
+
+        try {
+            System.out.println(s3client.getBucketLocation(bucketName));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            context.close();
+        }
+    }
+
     private void getBucketObjectName(String url) {
         Pattern pattern = Pattern.compile("s3://(.*?)$");
         Matcher matcher = pattern.matcher(url);

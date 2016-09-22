@@ -38,10 +38,14 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can verify bucket does not exist').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket does not exist')
 
+    JCloudTest('Jcloud can not get location of non existent bucket').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('bucket does not exist')
+
     # ************ Create bucket ************
     JCloudTest('Jcloud can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
     JCloudTest('Jcloud can verify bucket existence').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket exists')
+
+    JCloudTest('Jcloud can get bucket location').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('us-west-2')
 
     # ************ List buckets ************
     JCloudTest('Jcloud can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('seagatebucket')

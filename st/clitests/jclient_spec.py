@@ -37,11 +37,15 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can verify bucket does not exist').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket does not exist')
 
+    JClientTest('Jclient cannot get bucket location for nonexistent bucket').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('No such bucket')
+
     # get-bucket-acl: no bucket exists
     JClientTest('Jclient can (not) get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('No such bucket')
 
     # ************ Create bucket ************
     JClientTest('Jclient can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JClientTest('Jclient can get bucket location').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('us-west-2')
 
     JClientTest('Jclient can verify bucket existence').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket exists')
 

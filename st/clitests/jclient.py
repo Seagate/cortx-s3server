@@ -183,3 +183,10 @@ class JClientTest(S3PyCliTest):
 
         self.with_cli(cmd)
         return self
+
+    def get_bucket_location(self, bucket_name):
+        cmd = "%s location s3://%s %s" % (self.jclient_cmd, bucket_name,
+            self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
