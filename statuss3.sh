@@ -5,6 +5,6 @@ if [ "$out" != "" ]; then
   echo "======================="
   systemctl list-units | grep s3server[@]*[0-9]*.service
 else
-  echo "S3 service not present"
+  echo "S3 service is stopped"
 fi
 
