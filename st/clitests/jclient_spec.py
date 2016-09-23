@@ -43,7 +43,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can (not) get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('No such bucket')
 
     # ************ Create bucket ************
-    JClientTest('Jclient can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+    JClientTest('Jclient can create bucket').create_bucket("seagatebucket", "us-west-2").execute_test().command_is_successful()
 
     JClientTest('Jclient can get bucket location').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('us-west-2')
 
@@ -54,7 +54,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can call list objects on empty bucket').list_objects('seagatebucket').execute_test().command_is_successful()
 
     # get-bucket-acl
-    JClientTest('Jclient can get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('Permission:')
+    JClientTest('Jclient can get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
 
     # ************ 3k FILE TEST ************
     JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
@@ -69,7 +69,7 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can verify object existence').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have("3kfile")
 
-    JClientTest('Jclient can get object acl').get_object_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('Permission:')
+    JClientTest('Jclient can get object acl').get_object_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
 
     JClientTest('Jclient can download 3k file').get_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 

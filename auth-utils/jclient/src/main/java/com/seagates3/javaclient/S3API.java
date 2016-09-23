@@ -32,6 +32,7 @@ import com.amazonaws.services.s3.model.CanonicalGrantee;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.Grant;
+import com.amazonaws.services.s3.model.Grantee;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
@@ -46,6 +47,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PartListing;
 import com.amazonaws.services.s3.model.PartSummary;
+import com.amazonaws.services.s3.model.Permission;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -93,18 +95,32 @@ public class S3API {
             String endPoint;
             try {
                 endPoint = ClientConfig.getEndPoint(client.getClass());
+                /*
+                 * This tmp fix is to create bucket in location provided by user.
+                 * This is temporary solution and should be replaced with proper fix
+                 */
+                if (cmd.hasOption('l')) {
+                    Pattern pattern = Pattern.compile("(\\w*://s3)(\\.\\w*\\.\\w+)");
+                    Matcher matcher = pattern.matcher(endPoint);
+                    if (matcher.find()) {
+                        endPoint = matcher.group(1) + "-" + cmd.getOptionValue('l') + matcher.group(2);
+                    }
+                }
                 client.setEndpoint(endPoint);
             } catch (IOException ex) {
                 printError(ex.toString());
             }
         }
 
-        S3ClientOptions clientOptions = new S3ClientOptions();
-        if (cmd.hasOption("p")) {
-            clientOptions.withPathStyleAccess(true);
-        }
+        S3ClientOptions.Builder clientOptions = S3ClientOptions.builder();
 
-        client.setS3ClientOptions(clientOptions);
+        if (cmd.hasOption("p"))
+            clientOptions.setPathStyleAccess(true);
+        if (!cmd.hasOption("C"))
+            clientOptions.disableChunkedEncoding();
+
+        clientOptions.setPayloadSigningEnabled(true);
+        client.setS3ClientOptions(clientOptions.build());
     }
 
     public void makeBucket() {
@@ -538,6 +554,7 @@ public class S3API {
         if (keyName.isEmpty()) {
             try {
                 AccessControlList bucketAcl = client.getBucketAcl(bucketName);
+                System.out.println("Owner: " + bucketAcl.getOwner().getDisplayName());
                 printGrants(bucketAcl.getGrantsAsList());
             } catch (AmazonServiceException awsServiceException) {
                 printAwsServiceException(awsServiceException);
@@ -573,16 +590,38 @@ public class S3API {
     }
 
     private void printGrants(List <Grant> grants) {
+        System.out.println("ACL:");
         for (Grant grant : grants) {
             if (grant.getGrantee() instanceof CanonicalGrantee) {
                 CanonicalGrantee canonicalGrantee = (CanonicalGrantee) grant.getGrantee();
-                System.out.println(canonicalGrantee.getDisplayName() + " "
-                        + canonicalGrantee.getTypeIdentifier() + ": "
-                        + canonicalGrantee.getIdentifier() + " "
-                        + "Permission: " + grant.getPermission()
-                );
+                System.out.println(canonicalGrantee.getDisplayName()
+                        + ": " + grant.getPermission());
+            } else {
+                if (isAnnonRead(grant))
+                    System.out.println("*anon*: " + grant.getPermission());
             }
         }
+    }
+
+    private boolean isAllUsers(Grantee grantee) {
+        final String ALL_USERS_URI = "http://acs.amazonaws.com/groups/global/AllUsers";
+
+        if (grantee.getTypeIdentifier().equalsIgnoreCase("URI") &&
+                grantee.getIdentifier().equalsIgnoreCase(ALL_USERS_URI))
+            return true;
+
+        return false;
+    }
+
+    private boolean isAnnonRead(Grant grant) {
+        Permission permission = grant.getPermission();
+
+        if (isAllUsers(grant.getGrantee()) &&
+                (permission.equals(Permission.FullControl) ||
+                        permission.equals(Permission.Read)))
+            return true;
+
+        return false;
     }
 
     private void printAwsServiceException(AmazonServiceException awsServiceException) {

@@ -137,6 +137,7 @@ public class JavaClient {
                 .addOption("a", "aws", false, "Run operation on AWS S3 (only for debugging)")
                 .addOption("L", "log_level", true, "Log level (INFO, DEFAULT, "
                         + "ALL, WARN, ERROR, TRACE). Default ERROR.")
+                .addOption("C", "chunk", false, "Enable chunked upload")
                 .addOption("h", "help", false, "Show usage");
 
         return options;

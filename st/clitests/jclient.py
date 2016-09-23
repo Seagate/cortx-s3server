@@ -43,7 +43,7 @@ class JClientTest(S3PyCliTest):
     def create_bucket(self, bucket_name, region=None):
         if region:
             cmd =  "%s mb s3://%s -l %s %s" % (self.jclient_cmd,
-                    bucket_name, self.get_test_config())
+                    bucket_name, region, self.get_test_config())
         else:
             cmd =  "%s mb s3://%s %s" % (self.jclient_cmd,
                     bucket_name, self.get_test_config())
