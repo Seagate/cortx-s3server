@@ -64,6 +64,100 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can verify object existence').head_object("seagatebucket", "test/3kfile").execute_test().command_is_successful().command_response_should_have('test/3kfile')
 
+    # ACL Tests.
+    # Bucket ACL Tests.
+    JCloudTest('Jcloud can set public ACL on bucket').set_acl("seagatebucket", action="acl-public")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Public")
+
+    JCloudTest('Jcloud cannot set ACL on nonexistent bucket').set_acl("seagate-bucket", action="acl-public")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("The specified bucket does not exist")
+
+    JCloudTest('Jcloud can verify public ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have("*anon*: READ")
+
+    JCloudTest('Jcloud cannot verify ACL on nonexistent bucket').get_acl("seagate-bucket")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("The specified bucket does not exist")
+
+    JCloudTest('Jcloud can set private ACL on bucket').set_acl("seagatebucket", action="acl-private")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Private")
+
+    JCloudTest('Jcloud can verify private ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
+
+    JCloudTest('Jcloud can grant READ permission on bucket').set_acl("seagatebucket",
+        action="acl-grant", permission="READ:123:tester")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JCloudTest('Jcloud can verify READ ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_not_have("WRITE")
+
+    JCloudTest('Jcloud can grant WRITE permission on bucket').set_acl("seagatebucket",
+        action="acl-grant", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JCloudTest('Jcloud can verify WRITE ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_have("tester: WRITE")
+
+    JCloudTest('Jcloud can revoke WRITE permission on bucket').set_acl("seagatebucket",
+        action="acl-revoke", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+
+    JCloudTest('Jcloud can verify WRITE ACL is revoked on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_not_have("WRITE")
+
+    # Object ACL Tests.
+    JCloudTest('Jcloud can set public ACL on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-public")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Public")
+
+    JCloudTest('Jcloud cannot set ACL on nonexistent object').set_acl("seagatebucket", "abc",
+        action="acl-public")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("The specified key does not exist")
+
+    JCloudTest('Jcloud can verify public ACL on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("*anon*: READ")
+
+    JCloudTest('Jcloud cannot verify ACL on nonexistent object').get_acl("seagatebucket", "abc")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("The specified key does not exist")
+
+    JCloudTest('Jcloud can set private ACL on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-private")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Private")
+
+    JCloudTest('Jcloud can verify private ACL on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
+
+    JCloudTest('Jcloud can grant READ permission on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-grant", permission="READ:123:tester")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JCloudTest('Jcloud can verify READ ACL on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_not_have("WRITE")
+
+    JCloudTest('Jcloud can grant WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-grant", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JCloudTest('Jcloud can verify WRITE ACL on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_have("tester: WRITE")
+
+    JCloudTest('Jcloud can revoke WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-revoke", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+
+    JCloudTest('Jcloud can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_not_have("WRITE")
+
     # Current version of Jcloud does not report error in deleteContainer
     # JCloudTest('Jcloud cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotEmpty")
 

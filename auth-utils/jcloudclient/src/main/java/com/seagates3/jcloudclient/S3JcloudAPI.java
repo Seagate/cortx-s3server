@@ -25,6 +25,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +47,13 @@ import org.jclouds.io.payloads.FilePayload;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
 import org.jclouds.s3.S3ApiMetadata;
 import org.jclouds.s3.S3Client;
+import org.jclouds.s3.domain.AccessControlList;
+import org.jclouds.s3.domain.AccessControlList.CanonicalUserGrantee;
+import org.jclouds.s3.domain.AccessControlList.Grant;
+import org.jclouds.s3.domain.AccessControlList.Grantee;
+import org.jclouds.s3.domain.AccessControlList.GroupGrantee;
+import org.jclouds.s3.domain.AccessControlList.GroupGranteeURI;
+import org.jclouds.s3.domain.AccessControlList.Permission;
 import org.jclouds.s3.domain.ObjectMetadata;
 import org.jclouds.s3.domain.ObjectMetadataBuilder;
 import static org.jclouds.blobstore.options.PutOptions.Builder.multipart;
@@ -627,6 +637,253 @@ public class S3JcloudAPI {
 
     public void listParts() {
         throw new UnsupportedOperationException("listParts not Implemented");
+    }
+
+    public void setAcl() {
+        checkCommandLength(3);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty())
+            printError("Incorrect command. Bucket name is required.");
+
+        Map<String, String> requestMap = parseGrantRequesst(cmd.getArgs()[2]);
+        String permission = requestMap.get("permission");
+        if (permission != null && !permission.isEmpty())
+            permission = validateAndGetPermission(permission);
+
+        String action = requestMap.get("action");
+        if (action.equals("grant"))
+            grantAcl(requestMap.get("canonicalID"),requestMap.get("displayName"), permission);
+        else if (action.equals("revoke"))
+            revokeAcl(requestMap.get("canonicalID"), permission);
+        else if (action.equals("acl-private"))
+            setAclPrivate();
+        else if (action.equals("acl-public"))
+            setAclPublic();
+        else
+            printError("Unknown ACL action");
+    }
+
+    private String validateAndGetPermission(String permission) {
+        switch (permission.toUpperCase()) {
+            case "FULL_CONTROL": permission = Permission.FULL_CONTROL;
+                break;
+            case "READ": permission = Permission.READ;
+                break;
+            case "READ_ACP": permission = Permission.READ_ACP;
+                break;
+            case "WRITE": permission = Permission.WRITE;
+                break;
+            case "WRITE_ACP": permission =  Permission.WRITE_ACP;
+                break;
+            default:
+                printError("Unknown permission. Incorrect command.");
+        }
+
+        return permission;
+    }
+
+    private void grantAcl(String canonicalID, String displayName, String permission) {
+        try {
+            if (canonicalID == null || canonicalID.isEmpty()) {
+              printError("Invalid canonical id.");
+            }
+            CanonicalUserGrantee canonicalUserGrantee;
+            if (displayName == null || displayName.isEmpty()) {
+              canonicalUserGrantee = new CanonicalUserGrantee(canonicalID);
+            } else {
+              canonicalUserGrantee = new CanonicalUserGrantee(canonicalID, displayName);
+            }
+
+            if (keyName.isEmpty()) {
+                AccessControlList acl = s3client.getBucketACL(bucketName);
+                acl.addPermission(canonicalUserGrantee, permission);
+                s3client.putBucketACL(bucketName, acl);
+            } else {
+                AccessControlList acl = s3client.getObjectACL(bucketName, keyName);
+                acl.addPermission(canonicalUserGrantee, permission);
+                s3client.putObjectACL(bucketName, keyName, acl);
+            }
+            System.out.println("Grant ACL successful");
+        } catch (Exception e) {
+            printError(e.getMessage());
+        } finally {
+            context.close();
+        }
+    }
+
+    private void revokeAcl(String canonicalID, String permission) {
+        try {
+            if (canonicalID == null || canonicalID.isEmpty()) {
+              printError("Invalid canonical id.");
+            }
+            CanonicalUserGrantee canonicalUserGrantee = new CanonicalUserGrantee(canonicalID);
+            if (keyName.isEmpty()) {
+                AccessControlList acl = s3client.getBucketACL(bucketName);
+                acl.revokePermission(canonicalUserGrantee, permission);
+                s3client.putBucketACL(bucketName, acl);
+            } else {
+                AccessControlList acl = s3client.getObjectACL(bucketName, keyName);
+                acl.revokePermission(canonicalUserGrantee, permission);
+                s3client.putObjectACL(bucketName, keyName, acl);
+            }
+            System.out.println("Revoke ACL successful");
+        } catch (Exception e) {
+            printError(e.getMessage());
+        } finally {
+            context.close();
+        }
+    }
+
+    private void setAclPrivate() {
+        try {
+            if (keyName.isEmpty()) {
+                AccessControlList acl = s3client.getBucketACL(bucketName);
+                if (aclHasAnnonRead(acl)) {
+                    acl.revokePermission(GroupGranteeURI.ALL_USERS, Permission.FULL_CONTROL);
+                    acl.revokePermission(GroupGranteeURI.ALL_USERS, Permission.READ);
+                    s3client.putBucketACL(bucketName, acl);
+                } else {
+                    System.out.println("Already private. Skipping.");
+                    return;
+                }
+            } else {
+                AccessControlList acl = s3client.getObjectACL(bucketName, keyName);
+                if (aclHasAnnonRead(acl)) {
+                    acl.revokePermission(GroupGranteeURI.ALL_USERS, Permission.FULL_CONTROL);
+                    acl.revokePermission(GroupGranteeURI.ALL_USERS, Permission.READ);
+                    s3client.putObjectACL(bucketName, keyName, acl);
+                } else {
+                    System.out.println("Already private. Skipping.");
+                    return;
+                }
+            }
+            System.out.println("ACL set to Private.");
+        } catch (Exception e) {
+            printError(e.getMessage());
+        } finally {
+            context.close();
+        }
+    }
+
+    private void setAclPublic() {
+        try {
+            if (keyName.isEmpty()) {
+                AccessControlList acl = s3client.getBucketACL(bucketName);
+                if (!aclHasAnnonRead(acl)) {
+                    acl.addPermission(getAnnonGrantee(), Permission.READ);
+                    s3client.putBucketACL(bucketName, acl);
+                } else {
+                    System.out.println("Already public. Skipping.");
+                    return;
+                }
+            } else {
+                AccessControlList acl = s3client.getObjectACL(bucketName, keyName);
+                if (!aclHasAnnonRead(acl)) {
+                    acl.addPermission(getAnnonGrantee(), Permission.READ);
+                    s3client.putObjectACL(bucketName, keyName, acl);
+                } else {
+                    System.out.println("Already public. Skipping.");
+                    return;
+                }
+            }
+            System.out.println("ACL set to Public.");
+        } catch (Exception e) {
+            printError(e.getMessage());
+        } finally {
+            context.close();
+        }
+    }
+
+    public void getAcl() {
+        checkCommandLength(2);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty()) {
+            printError("Incorrect command. Bucket name is required.");
+        }
+        AccessControlList acl = new AccessControlList();
+        try {
+            if (keyName.isEmpty()) {
+                acl = s3client.getBucketACL(bucketName);
+            } else {
+                acl = s3client.getObjectACL(bucketName, keyName);
+            }
+        } catch (Exception e) {
+            printError(e.getMessage());
+        } finally {
+            context.close();
+        }
+
+        printAcl(acl.getGrants());
+    }
+
+    private void printAcl(List<Grant> grants) {
+        System.out.println("ACL:");
+        for (Grant grant: grants) {
+            if (grant.getGrantee() instanceof CanonicalUserGrantee) {
+                CanonicalUserGrantee canonicalGrantee = (CanonicalUserGrantee) grant.getGrantee();
+                System.out.println(canonicalGrantee.getDisplayName()
+                        + ": " + grant.getPermission());
+            } else {
+                if (isAnnonRead(grant)) {
+                    System.out.println("*anon*: " + grant.getPermission());
+                }
+            }
+        }
+    }
+
+    private boolean aclHasAnnonRead(AccessControlList acl) {
+        for (Grant grant: acl.getGrants()) {
+            if (isAnnonRead(grant))
+                return true;
+        }
+
+        return false;
+    }
+
+    private GroupGrantee getAnnonGrantee() {
+        return new GroupGrantee(GroupGranteeURI.ALL_USERS);
+    }
+
+    private boolean isAllUsers(Grantee grantee) {
+        if (grantee.equals(getAnnonGrantee()))
+            return true;
+
+        return false;
+    }
+
+    private boolean isAnnonRead(Grant grant) {
+        if (isAllUsers(grant.getGrantee()) &&
+                (grant.getPermission().equals(Permission.READ) ||
+                grant.getPermission().equals(Permission.FULL_CONTROL)))
+            return true;
+
+        return false;
+    }
+
+    private Map<String, String> parseGrantRequesst(String request) {
+        Map<String, String> requestMap = new HashMap<>();
+
+        if (!request.contains("=")) {
+            requestMap.put("action", request);
+            return requestMap;
+        }
+
+        Pattern pattern = Pattern.compile("acl-(\\w+)=(\\w+):([^:]+):?(.+)?");
+        Matcher matcher = pattern.matcher(request);
+        if (matcher.find() && matcher.groupCount() > 3) {
+            requestMap.put("action", matcher.group(1));
+            requestMap.put("permission", matcher.group(2));
+            requestMap.put("canonicalID", matcher.group(3));
+            if (matcher.group(4) != null) {
+                requestMap.put("displayName", matcher.group(4));
+            }
+        } else {
+            printError("Incorrect options");
+        }
+
+        return requestMap;
     }
 
     public void getBucketLocation() {

@@ -82,5 +82,13 @@
     "location": {
         "Class": "S3JcloudAPI",
         "Action": "getBucketLocation"
+    },
+    "setacl": {
+        "Class": "S3JcloudAPI",
+        "Action": "setAcl"
+    },
+    "getacl": {
+        "Class": "S3JcloudAPI",
+        "Action": "getAcl"
     }
 }
