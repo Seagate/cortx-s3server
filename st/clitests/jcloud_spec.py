@@ -38,10 +38,12 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can verify bucket does not exist').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket does not exist')
 
-    JCloudTest('Jcloud can not get location of non existent bucket').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('bucket does not exist')
+    JCloudTest('Jcloud can not get location of non existent bucket').get_bucket_location("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have('The specified bucket does not exist')
 
     # ************ Create bucket ************
     JCloudTest('Jcloud can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JCloudTest('Jcloud cannot create bucket if it exists').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("ResourceAlreadyExists")
 
     JCloudTest('Jcloud can verify bucket existence').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket exists')
 
@@ -105,6 +107,8 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can download 18MB file').get_object("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
 
+    JCloudTest('Jcloud cannot upload partial parts to nonexistent bucket.').partial_multipart_upload("seagate-bucket", "18MBfile", 18000000, 1, 2).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
     JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
 
     result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
@@ -115,6 +119,9 @@ for i, val in enumerate(pathstyle_values):
 
     result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test()
     result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+
+    # Current Jcloud version does not report error if abort failed due to invalid bucket name
+    # JCloudTest('Jcloud cannot abort multipart upload on invalid bucket').abort_multipart("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     JCloudTest('Jcloud can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
 

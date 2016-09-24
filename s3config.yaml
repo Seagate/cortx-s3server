@@ -9,7 +9,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_LOG_FLUSH_FREQUENCY: 30                           # Time in seconds, after which logs will be flushed. Valid only if S3_LOG_ENABLE_BUFFERING is true. Default is 30 seconds.
    S3_SERVER_BIND_ADDR: 0.0.0.0                         # S3 Server bind address, 0.0.0.0 is default
    S3_SERVER_BIND_PORT: 8081                            # S3 Server port number
-   S3_SERVER_REGION_ENDPOINTS: [s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
+   S3_SERVER_REGION_ENDPOINTS: [s3-us-west-2.seagate.com, s3-us.seagate.com, s3-europe.seagate.com, s3-asia.seagate.com]
    S3_SERVER_DEFAULT_ENDPOINT: s3.seagate.com
    S3_ENABLE_PERF: 0                                    # S3 Performance metric collection, to enable have value 1, default is 0 (disabled)
    S3_PERF_LOG_FILENAME: "/var/log/seagate/s3/perf.log" # S3 Perf Log file name

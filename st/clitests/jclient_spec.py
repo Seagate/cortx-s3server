@@ -45,6 +45,8 @@ for i, val in enumerate(pathstyle_values):
     # ************ Create bucket ************
     JClientTest('Jclient can create bucket').create_bucket("seagatebucket", "us-west-2").execute_test().command_is_successful()
 
+    JClientTest('Jclient cannot create bucket if it exists').create_bucket("seagatebucket", "us-west-2").execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyExists")
+
     JClientTest('Jclient can get bucket location').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('us-west-2')
 
     JClientTest('Jclient can verify bucket existence').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket exists')
@@ -104,7 +106,11 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can download 18MB file').get_object("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
 
+    JClientTest('Jclient cannot upload partial parts to nonexistent bucket.').partial_multipart_upload("seagate-bucket", "18MBfile", 18000000, 1, 2).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
     JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
+
+    JClientTest('Jclient cannot list all multipart uploads on nonexistent bucket.').list_multipart("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
     result.command_response_should_have('18MBfile')
@@ -112,8 +118,13 @@ for i, val in enumerate(pathstyle_values):
     upload_id = result.status.stdout.split("id - ")[1]
     print(upload_id)
 
+    # TODO - fix bug in part listing with invalid bucket
+    # JClientTest('Jclient cannot list parts of multipart upload on invalid bucket.').list_parts("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
     result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test()
     result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+
+    JClientTest('Jclient cannot abort multipart upload on invalid bucket').abort_multipart("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
 

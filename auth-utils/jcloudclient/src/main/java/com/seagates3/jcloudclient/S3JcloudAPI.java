@@ -593,7 +593,7 @@ public class S3JcloudAPI {
                     break;
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            printError(e.getMessage());
         } finally {
             context.close();
         }
@@ -615,7 +615,7 @@ public class S3JcloudAPI {
             s3client.abortMultipartUpload(bucketName, keyName, uploadID);
             System.out.println("Upload aborted successfully.");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            printError(e.getMessage());
         } finally {
             context.close();
         }
@@ -638,7 +638,7 @@ public class S3JcloudAPI {
         try {
             System.out.println(s3client.getBucketLocation(bucketName));
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            printError(e.getMessage());
         } finally {
             context.close();
         }

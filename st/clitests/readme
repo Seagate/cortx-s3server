@@ -72,6 +72,7 @@ How to run?
 - Update /etc/hosts file to add following entry for tests.
   127.0.0.1 seagatebucket.s3.seagate.com s3.seagate.com
   127.0.0.1 seagate-bucket.s3.seagate.com seagatebucket123.s3.seagate.com seagate.bucket.s3.seagate.com
+  127.0.0.1 s3-us-west-2.seagate.com seagatebucket.s3-us-west-2.seagate.com
   127.0.0.1 iam.seagate.com sts.seagate.com
 - Ensure you have sourced mero_st (python version 3.5) with virtualenv.
 - cd to clitests directory
