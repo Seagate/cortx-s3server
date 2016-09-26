@@ -43,13 +43,11 @@ class S3AbortMultipartAction : public S3Action {
   std::string upload_id;
   std::string bucket_name;
   std::string object_name;
+  m0_uint128 multipart_oid;
+  m0_uint128 part_index_oid;
+  bool abort_success;
 
-  std::string get_part_index_name() {
-    return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;
-  }
-
-
-public:
+ public:
   S3AbortMultipartAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

@@ -142,8 +142,9 @@ for i, val in enumerate(pathstyle_values):
     upload_id = result.status.stdout.split("id - ")[1]
     print(upload_id)
 
-    # TODO - fix bug in part listing with invalid bucket
-    # JClientTest('Jclient cannot list parts of multipart upload on invalid bucket.').list_parts("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    JClientTest('Jclient cannot list parts of multipart upload on invalid bucket.').list_parts("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
+    JClientTest('Jclient cannot abort multipart upload on invalid bucket.').abort_multipart("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test()
     result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")

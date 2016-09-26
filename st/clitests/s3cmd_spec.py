@@ -97,6 +97,27 @@ S3cmdTest('s3cmd can download 18MB file').download_test("seagatebucket", "18MBfi
 
 S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
+#################################################
+JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
+
+result = S3cmdTest('s3cmd can list multipart uploads in progress').list_multipart_uploads("seagatebucket").execute_test()
+result.command_response_should_have('18MBfile')
+
+upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
+
+result = S3cmdTest('S3cmd can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+assert len(result.status.stdout.split('\n')) == 4
+
+S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can test the multipart was aborted.').list_multipart_uploads('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+
+S3cmdTest('s3cmd cannot list parts from a nonexistent bucket').list_parts("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+S3cmdTest('s3cmd abort on nonexistent bucket should fail').abort_multipart("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+#################################################
+
 # ************ Multiple Delete bucket TEST ************
 file_name = "3kfile"
 for num in range(0, 4):
@@ -189,6 +210,11 @@ assert len(result.status.stdout.split('\n')) == 4
 S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can test the multipart was aborted.').list_multipart_uploads('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+
+S3cmdTest('s3cmd cannot list parts from a nonexistent bucket').list_parts("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
+S3cmdTest('s3cmd abort on nonexistent bucket should fail').abort_multipart("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+
 
 ############################################
 
