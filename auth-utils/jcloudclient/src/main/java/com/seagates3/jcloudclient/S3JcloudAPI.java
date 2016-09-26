@@ -305,7 +305,7 @@ public class S3JcloudAPI {
         try {
             BlobMetadata blobMetadata = blobStore.blobMetadata(bucketName, keyName);
             if (blobMetadata == null) {
-                System.out.println("Object does not exist.");
+                printError("Bucket or Object does not exist.");
             } else {
                 String metadata = "Bucket name- " + blobMetadata.getContainer();
                 metadata += "\nObject name - " + blobMetadata.getName();

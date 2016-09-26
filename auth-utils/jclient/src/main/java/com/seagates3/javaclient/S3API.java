@@ -411,7 +411,7 @@ public class S3API {
             ObjectMetadata objectMetadata = client.getObjectMetadata(
                     new GetObjectMetadataRequest(bucketName, keyName));
             if (objectMetadata == null) {
-                System.out.println("Object does not exist.");
+                printError("Bucket or Object does not exist.");
             } else {
                 String metadata = "Bucket name- " + bucketName;
                 metadata += "\nObject name - " + keyName;
@@ -423,7 +423,7 @@ public class S3API {
             }
         } catch(AmazonS3Exception awsS3Exception) {
             if (awsS3Exception.getStatusCode() == 404)
-                System.out.println("Object does not exist.");
+                printError("Bucket or Object does not exist.");
             else
                 printError(awsS3Exception.toString());
         } catch (Exception e) {

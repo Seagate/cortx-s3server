@@ -59,13 +59,19 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
 
     # ************ 3k FILE TEST ************
-    JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
+    JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have('Bucket or Object does not exist')
+
+    JClientTest('Jclient cannot verify object in nonexistent bucket').head_object("seagate-bucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have("Bucket or Object does not exist")
 
     JClientTest('Jclient can (not) get object acl').get_object_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('No such object')
 
     JClientTest('Jclient can upload 3k file').put_object("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
 
+    JClientTest('Jclient can upload 3k file in chunked mode').put_object("seagatebucket", "3kfilec", 3000, chunked=True).execute_test().command_is_successful()
+
     JClientTest('Jclient cannot upload file to nonexistent bucket').put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist.")
+
+    JClientTest('Jclient cannot upload chunked file to nonexistent bucket').put_object("seagate-bucket", "3kfilec", 3000, chunked=True).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist.")
 
     JClientTest('Jclient cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketNotEmpty")
 
@@ -75,6 +81,8 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can download 3k file').get_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
+    JClientTest('Jclient can download 3k file uploaded in chunked mode').get_object("seagatebucket", "3kfilec").execute_test().command_is_successful().command_created_file("3kfilec")
+
     JClientTest('Jclient cannot download nonexistent file').get_object("seagatebucket", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified key does not exist")
 
     JClientTest('Jclient cannot download file in nonexistent bucket').get_object("seagate-bucket", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket is not valid")
@@ -82,7 +90,11 @@ for i, val in enumerate(pathstyle_values):
     # ************ 8k FILE TEST ************
     JClientTest('Jclient can upload 8k file').put_object("seagatebucket", "8kfile", 8192).execute_test().command_is_successful()
 
+    JClientTest('Jclient can upload 8k file in chunked mode').put_object("seagatebucket", "8kfilec", 8192).execute_test().command_is_successful()
+
     JClientTest('Jclient can download 8k file').get_object("seagatebucket", "8kfile").execute_test().command_is_successful().command_created_file("8kfile")
+
+    JClientTest('Jclient can download 8k file uploaded in chunked mode').get_object("seagatebucket", "8kfilec").execute_test().command_is_successful().command_created_file("8kfilec")
 
     # ************ OBJECT LISTING TEST ************
     JClientTest('Jclient can list objects').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_have('3kfile').command_response_should_have('8kfile')
@@ -94,7 +106,11 @@ for i, val in enumerate(pathstyle_values):
     # ************ 700K FILE TEST ************
     JClientTest('Jclient can upload 700K file').put_object("seagatebucket", "700Kfile", 716800).execute_test().command_is_successful()
 
+    JClientTest('Jclient can upload 700K file in chunked mode').put_object("seagatebucket", "700Kfilec", 716800, chunked=True).execute_test().command_is_successful()
+
     JClientTest('Jclient can download 700K file').get_object("seagatebucket", "700Kfile").execute_test().command_is_successful().command_created_file("700Kfile")
+
+    JClientTest('Jclient can download 700K file uploaded in chunked mode').get_object("seagatebucket", "700Kfilec").execute_test().command_is_successful().command_created_file("700Kfilec")
 
     # ************ 18MB FILE TEST (Without multipart) ************
     JClientTest('Jclient can upload 18MB file').put_object("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
@@ -104,7 +120,15 @@ for i, val in enumerate(pathstyle_values):
     # ************ 18MB FILE Multipart Upload TEST ***********
     JClientTest('Jclient can upload 18MB file (multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15).execute_test().command_is_successful()
 
+    JClientTest('Jclient cannot upload 18MB file (multipart) to nonexistent bucket').put_object_multipart("seagate-bucket", "18MBfile", 18000000, 15).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
     JClientTest('Jclient can download 18MB file').get_object("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
+
+    JClientTest('Jclient cannot upload 18MB file (multipart) in chunked mode to nonexistent bucket').put_object_multipart("seagate-bucket", "18MBfilec", 18000000, 15, chunked=True).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
+    JClientTest('Jclient can upload 18MB file (multipart) in chunked mode').put_object_multipart("seagatebucket", "18MBfilec", 18000000, 15, chunked=True).execute_test().command_is_successful()
+
+    JClientTest('Jclient can download 18MB file uploaded in chunked mode').get_object("seagatebucket", "18MBfilec").execute_test().command_is_successful().command_created_file("18MBfilec")
 
     JClientTest('Jclient cannot upload partial parts to nonexistent bucket.').partial_multipart_upload("seagate-bucket", "18MBfile", 18000000, 1, 2).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
@@ -138,7 +162,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can delete nonexistent file').delete_object("seagatebucket", "3kfile").execute_test().command_is_successful()
 
     # ************ DELETE MULTIPLE OBJECTS TEST ************
-    JClientTest('Jclient can delete 8k, 700k and 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test().command_is_successful()
+    JClientTest('Jclient can delete 8k, 700k and 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile", "3kfilec", "8kfilec", "700Kfilec", "18MBfilec"]).execute_test().command_is_successful()
 
     JClientTest('Jclient cannot delete multiple files when bucket does not exists').delete_multiple_objects("seagate-bucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 

@@ -54,7 +54,9 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('Jcloud can call list objects on empty bucket').list_objects('seagatebucket').execute_test().command_is_successful()
 
     # ************ 3k FILE TEST ************
-    JCloudTest('Jcloud can verify object does not exist').head_object("seagatebucket", "test/3kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
+    JCloudTest('Jcloud can verify object does not exist').head_object("seagatebucket", "test/3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have('Bucket or Object does not exist')
+
+    JCloudTest('Jcloud cannot verify object in nonexistent bucket').head_object("seagate-bucket", "test/3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have("Bucket or Object does not exist")
 
     JCloudTest('Jcloud can upload 3k file').put_object("seagatebucket/test/3kfile", "3kfile", 3000).execute_test().command_is_successful()
 
@@ -77,7 +79,7 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('Jcloud can download 3k file with special chars in filename.').get_object("seagatebucket/2016-04:32:21", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
     # ************ 8k FILE TEST ************
-    JCloudTest('Jcloud can verify object does not exist').head_object("seagatebucket", "8kfile").execute_test().command_is_successful().command_response_should_have('Object does not exist')
+    JCloudTest('Jcloud can verify object does not exist').head_object("seagatebucket", "8kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have('Bucket or Object does not exist')
 
     JCloudTest('Jcloud can upload 8k file').put_object("seagatebucket", "8kfile", 8192).execute_test().command_is_successful()
 
@@ -144,18 +146,18 @@ for i, val in enumerate(pathstyle_values):
     # JCloudTest('Jcloud cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotPresent")
 
     # ************ Listing with prefix ************
-    JCloudTest('Jclient can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
-    JCloudTest('Jclient can upload a/3kfile file').put_object("seagatebucket", "3kfile", 3000, prefix="a").execute_test().command_is_successful()
-    JCloudTest('Jclient can upload b/3kfile file').put_object("seagatebucket", "3kfile", 3000, prefix="b").execute_test().command_is_successful()
-    JCloudTest('Jclient can list specific objects with prefix a/').list_specific_objects('seagatebucket', 'a/').execute_test().command_is_successful().command_response_should_have('a/3kfile').command_response_should_not_have('b/3kfile')
-    JCloudTest('Jclient can list specific objects with prefix b/').list_specific_objects('seagatebucket', 'b/').execute_test().command_is_successful().command_response_should_have('b/3kfile').command_response_should_not_have('a/3kfile')
-    JCloudTest('Jclient can delete a/3kfile, b/3kfile file').delete_multiple_objects("seagatebucket", ["a/3kfile", "b/3kfile"]).execute_test().command_is_successful()
-    JCloudTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+    JCloudTest('JCloud can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload a/3kfile file').put_object("seagatebucket", "3kfile", 3000, prefix="a").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload b/3kfile file').put_object("seagatebucket", "3kfile", 3000, prefix="b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list specific objects with prefix a/').list_specific_objects('seagatebucket', 'a/').execute_test().command_is_successful().command_response_should_have('a/3kfile').command_response_should_not_have('b/3kfile')
+    JCloudTest('JCloud can list specific objects with prefix b/').list_specific_objects('seagatebucket', 'b/').execute_test().command_is_successful().command_response_should_have('b/3kfile').command_response_should_not_have('a/3kfile')
+    JCloudTest('JCloud can delete a/3kfile, b/3kfile file').delete_multiple_objects("seagatebucket", ["a/3kfile", "b/3kfile"]).execute_test().command_is_successful()
+    JCloudTest('JCloud can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
     # ************ Delete bucket even if parts are present(multipart) ************
-    # JCloudTest('Jclient can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
-    # JCloudTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
-    # JCloudTest('Jclient can delete bucket even if parts are present').delete_bucket("seagatebucket").execute_test().command_is_successful()
+    JCloudTest('JCloud can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
+    JCloudTest('JCloud can delete bucket even if parts are present').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
     # ************ Signing algorithm test ************
     JCloudTest('Jcloud can create bucket seagate-bucket').create_bucket("seagate-bucket").execute_test().command_is_successful()

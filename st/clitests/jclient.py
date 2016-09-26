@@ -14,6 +14,7 @@ class JClientTest(S3PyCliTest):
 
     def __init__(self, description):
         self.s3cfg = os.path.join(os.path.dirname(os.path.realpath(__file__)), Config.config_file)
+        self.chunked = ""
         super(JClientTest, self).__init__(description)
 
     def setup(self):
@@ -24,13 +25,13 @@ class JClientTest(S3PyCliTest):
                 fout.write(os.urandom(self.filesize))
         super(JClientTest, self).setup()
 
-    # return the
+    # return the common params
     def get_test_config(self):
         if S3ClientConfig.pathstyle:
-            config = "-x '%s' -y '%s' -p" % (S3ClientConfig.access_key_id,
+            config = "%s -x '%s' -y '%s' -p" % (self.chunked, S3ClientConfig.access_key_id,
                         S3ClientConfig.secret_key)
         else:
-            config = "-x '%s' -y '%s'" % (S3ClientConfig.access_key_id,
+            config = "%s -x '%s' -y '%s'" % (self.chunked, S3ClientConfig.access_key_id,
                         S3ClientConfig.secret_key)
         return config
 
@@ -75,10 +76,14 @@ class JClientTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def put_object(self, bucket_name, filename, filesize, prefix=None):
+    def put_object(self, bucket_name, filename, filesize, prefix=None, chunked=False):
         self.filename = filename
         self.filesize = filesize
         self.prefix = prefix
+        if chunked:
+            self.chunked = "-C"
+        else:
+            self.chunked = ""
         if prefix:
             # s3://%s/%s/%s = s3://bucket/prefix/filename
             cmd = "%s put %s s3://%s/%s/%s %s" % (self.jclient_cmd, filename,
@@ -90,9 +95,13 @@ class JClientTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def put_object_multipart(self, bucket_name, filename, filesize, size_of_part):
+    def put_object_multipart(self, bucket_name, filename, filesize, size_of_part, chunked=False):
         self.filename = filename
         self.filesize = filesize
+        if chunked:
+            self.chunked = "-C"
+        else:
+            self.chunked = ""
 
         cmd =  "%s put %s s3://%s -m %s %s" % (self.jclient_cmd, filename,
                 bucket_name, str(size_of_part), self.get_test_config())
@@ -125,9 +134,14 @@ class JClientTest(S3PyCliTest):
         return self
 
     def partial_multipart_upload(self, bucket_name, filename, filesize,
-        size_of_part, no_of_parts):
+        size_of_part, no_of_parts, chunked=False):
         self.filename = filename
         self.filesize = filesize
+        if chunked:
+            self.chunked = "-C"
+        else:
+            self.chunked = ""
+
         cmd =  "%s partialput %s s3://%s %s -m %s %s" % (self.jclient_cmd,
             filename, bucket_name, str(no_of_parts), str(size_of_part),
             self.get_test_config())
