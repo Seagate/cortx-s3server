@@ -90,6 +90,14 @@ S3ObjectMetadata::S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
   index_oid.u_lo = bucket_idx_oid.u_lo;
 }
 
+std::string S3ObjectMetadata::get_owner_id() {
+  return system_defined_attribute["Owner-User-id"];
+}
+
+std::string S3ObjectMetadata::get_owner_name() {
+  return system_defined_attribute["Owner-User"];
+}
+
 std::string S3ObjectMetadata::get_object_name() {
   return object_name;
 }
@@ -380,22 +388,32 @@ void S3ObjectMetadata::remove_failed() {
 std::string S3ObjectMetadata::create_default_acl() {
   std::string acl_str;
   acl_str =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-         "<AccessControlPolicy xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
-         "  <Owner>\n"
-         "    <ID>" + request->get_account_id() + "</ID>\n"
-         "      <DisplayName>" + request->get_account_name() + "</DisplayName>\n"
-         "  </Owner>\n"
-         "  <AccessControlList>\n"
-         "    <Grant>\n"
-         "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"CanonicalUser\">\n"
-         "        <ID>" + request->get_account_id() + "</ID>\n"
-         "        <DisplayName>" + request->get_account_name() + "</DisplayName>\n"
-         "      </Grantee>\n"
-         "      <Permission>FULL_CONTROL</Permission>\n"
-         "    </Grant>\n"
-         "  </AccessControlList>\n"
-         "</AccessControlPolicy>\n";
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+      "<AccessControlPolicy "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
+      "  <Owner>\n"
+      "    <ID>" +
+      get_owner_id() +
+      "</ID>\n"
+      "      <DisplayName>" +
+      get_owner_name() +
+      "</DisplayName>\n"
+      "  </Owner>\n"
+      "  <AccessControlList>\n"
+      "    <Grant>\n"
+      "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+      "xsi:type=\"CanonicalUser\">\n"
+      "        <ID>" +
+      get_owner_id() +
+      "</ID>\n"
+      "        <DisplayName>" +
+      get_owner_name() +
+      "</DisplayName>\n"
+      "      </Grantee>\n"
+      "      <Permission>FULL_CONTROL</Permission>\n"
+      "    </Grant>\n"
+      "  </AccessControlList>\n"
+      "</AccessControlPolicy>\n";
   return acl_str;
 }
 
@@ -471,6 +489,11 @@ void S3ObjectMetadata::from_json(std::string content) {
   for(auto it : members) {
     system_defined_attribute[it.c_str()] = newroot["System-Defined"][it].asString().c_str();
   }
+  user_name = system_defined_attribute["Owner-User"];
+  user_id = system_defined_attribute["Owner-User-id"];
+  account_name = system_defined_attribute["Owner-Account"];
+  account_id = system_defined_attribute["Owner-Account-id"];
+
   members = newroot["User-Defined"].getMemberNames();
   for(auto it : members) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString().c_str();
@@ -485,6 +508,7 @@ std::string& S3ObjectMetadata::get_encoded_object_acl() {
 
 void S3ObjectMetadata::setacl(std::string & input_acl_str) {
   std::string input_acl = input_acl_str;
+  object_ACL.set_display_name(get_owner_name());
   input_acl = object_ACL.insert_display_name(input_acl);
   object_ACL.set_acl_xml_metadata(input_acl);
 }

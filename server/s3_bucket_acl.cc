@@ -35,6 +35,8 @@ void S3BucketACL::set_owner_name(std::string name) {
   owner_name = name;
 }
 
+void S3BucketACL::set_display_name(std::string name) { display_name = name; }
+
 std::string S3BucketACL::get_owner_name() {
   return owner_name;
 }
@@ -58,6 +60,7 @@ std::string S3BucketACL::insert_display_name(std::string acl_str) {
   char *partial_acl_str = (char *)malloc(acl_str.length());
   char *partial_acl;
   std::string final_acl;
+  // TODO -- XML parsing to be used when authorization supports "Display name"
   while((partial_acl = strstr(acl, "</ID>"))) {
     memset(partial_acl_str, '\0', acl_str.length());
     // Get DisplayName by querying the auth server
@@ -65,14 +68,14 @@ std::string S3BucketACL::insert_display_name(std::string acl_str) {
       partial_acl = partial_acl + 5;
       strncpy(partial_acl_str, acl, partial_acl - acl + 1);
       final_acl += partial_acl_str;
-      final_acl += "\n<DisplayName>s3_test</DisplayName>\n";
+      final_acl += "\n<DisplayName>" + display_name + "</DisplayName>\n";
     } else {
       partial_acl = partial_acl + 4;
       strncpy(partial_acl_str, acl, partial_acl - acl + 1);
       final_acl += partial_acl_str;
-      final_acl += "<DisplayName>s3_test</DisplayName>";
+      final_acl += "<DisplayName>" + display_name + "</DisplayName>";
     }
-    acl = partial_acl;
+    acl = partial_acl + 1;
   }
   final_acl += acl;
   free(partial_acl_str);

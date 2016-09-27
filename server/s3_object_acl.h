@@ -32,10 +32,13 @@ class S3ObjectACL {
   std::string acl_xml_str;
   std::string acl_metadata;
   std::string response_xml;
-public:
+  std::string display_name;
+
+ public:
   S3ObjectACL();
   void set_owner_id(std::string id);
   void set_owner_name(std::string name);
+  void set_display_name(std::string name);
   std::string get_owner_name();
   std::string to_json();
 

@@ -35,6 +35,8 @@ void S3ObjectACL::set_owner_name(std::string name) {
   owner_name = name;
 }
 
+void S3ObjectACL::set_display_name(std::string name) { display_name = name; }
+
 std::string S3ObjectACL::get_owner_name() {
   return owner_name;
 }
@@ -65,14 +67,14 @@ std::string S3ObjectACL::insert_display_name(std::string acl_str) {
       partial_acl = partial_acl + 5;
       strncpy(partial_acl_str, acl, partial_acl - acl + 1);
       final_acl += partial_acl_str;
-      final_acl += "\n<DisplayName>s3_test</DisplayName>\n";
+      final_acl += "\n<DisplayName>" + display_name + "</DisplayName>\n";
     } else {
       partial_acl = partial_acl + 4;
       strncpy(partial_acl_str, acl, partial_acl - acl + 1);
       final_acl += partial_acl_str;
-      final_acl += "<DisplayName>s3_test</DisplayName>";
+      final_acl += "<DisplayName>" + display_name + "</DisplayName>";
     }
-    acl = partial_acl;
+    acl = partial_acl + 1;
   }
   final_acl += acl;
   free(partial_acl_str);

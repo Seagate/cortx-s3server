@@ -66,11 +66,11 @@ std::string S3BucketMetadata::get_location_constraint() {
 }
 
 std::string S3BucketMetadata::get_owner_id() {
-  return system_defined_attribute["Owner-User"];
+  return system_defined_attribute["Owner-User-id"];
 }
 
 std::string S3BucketMetadata::get_owner_name() {
-  return system_defined_attribute["Owner-User-id"];
+  return system_defined_attribute["Owner-User"];
 }
 
 struct m0_uint128 S3BucketMetadata::get_bucket_list_index_oid() {
@@ -112,6 +112,7 @@ void S3BucketMetadata::deletepolicy() {
 void S3BucketMetadata::setacl(std::string &acl_str) {
   std::string input_acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   input_acl += acl_str;
+  bucket_ACL.set_display_name(get_owner_name());
   input_acl = bucket_ACL.insert_display_name(input_acl);
   bucket_ACL.set_acl_xml_metadata(input_acl);
 }
@@ -411,21 +412,32 @@ void S3BucketMetadata::remove_bucket_info_failed() {
 std::string S3BucketMetadata::create_default_acl() {
   std::string acl_str;
   acl_str =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-         "<AccessControlPolicy xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
-         "  <Owner>\n"
-         "    <ID>" + request->get_account_id() + "</ID>\n"
-         "  </Owner>\n"
-         "  <AccessControlList>\n"
-         "    <Grant>\n"
-         "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"CanonicalUser\">\n"
-         "        <ID>" + request->get_account_id() + "</ID>\n"
-         "        <DisplayName>" + request->get_account_name() + "</DisplayName>\n"
-         "      </Grantee>\n"
-         "      <Permission>FULL_CONTROL</Permission>\n"
-         "    </Grant>\n"
-         "  </AccessControlList>\n"
-         "</AccessControlPolicy>\n";
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+      "<AccessControlPolicy "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
+      "  <Owner>\n"
+      "    <ID>" +
+      get_owner_id() +
+      "</ID>\n"
+      "      <DisplayName>" +
+      get_owner_name() +
+      "</DisplayName>\n"
+      "  </Owner>\n"
+      "  <AccessControlList>\n"
+      "    <Grant>\n"
+      "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+      "xsi:type=\"CanonicalUser\">\n"
+      "        <ID>" +
+      get_owner_id() +
+      "</ID>\n"
+      "        <DisplayName>" +
+      get_owner_name() +
+      "</DisplayName>\n"
+      "      </Grantee>\n"
+      "      <Permission>FULL_CONTROL</Permission>\n"
+      "    </Grant>\n"
+      "  </AccessControlList>\n"
+      "</AccessControlPolicy>\n";
   return acl_str;
 }
 

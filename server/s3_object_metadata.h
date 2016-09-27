@@ -139,6 +139,8 @@ private:
     return mero_oid_u_lo_str;
   }
 
+  std::string get_owner_name();
+  std::string get_owner_id();
   std::string get_object_name();
   std::string get_user_id();
   std::string get_user_name();
