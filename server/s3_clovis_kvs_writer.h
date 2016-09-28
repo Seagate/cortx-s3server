@@ -95,6 +95,8 @@ private:
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::unique_ptr<S3ClovisKVSWriterContext> writer_context;
+  std::string kvs_key;
+  std::string kvs_value;
 
   int ops_count;
 
@@ -104,7 +106,17 @@ private:
 
   S3ClovisKVSWriterOpState state;
 
-public:
+  // These functions will be removed once Mero KVS Supports Metadata update in
+  // PUT
+  void del_put_keyval(std::string key, std::string val,
+                      std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
+  void del_put_keyval_successful();
+  void del_put_keyval_failed();
+  void create_keyval();
+  //--
+
+ public:
   S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> s3_clovis_api);
   virtual ~S3ClovisKVSWriter();
 

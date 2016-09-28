@@ -212,6 +212,7 @@ class S3Option {
   std::string get_clovis_cass_cluster_ep();
   std::string get_clovis_cass_keyspace();
   int get_clovis_cass_max_column_family_num();
+  bool delete_kv_before_put();
 
   void set_cmdline_option(int option_flag, const char *option);
   int get_cmd_opt_flag();

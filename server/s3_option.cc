@@ -528,6 +528,8 @@ std::string S3Option::get_clovis_process_fid() { return clovis_process_fid; }
 
 int S3Option::get_clovis_idx_service_id() { return clovis_idx_service_id; }
 
+bool S3Option::delete_kv_before_put() { return clovis_idx_service_id != 2; }
+
 std::string S3Option::get_clovis_cass_cluster_ep() {
   return clovis_cass_cluster_ep;
 }
