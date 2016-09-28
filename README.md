@@ -103,9 +103,9 @@ Install build to /opt
 sudo ./makeinstall
 ```
 
+## How to build & install S3 server and Auth server using helper script
 ```sh
-sudo cp auth/s3authserver.service /lib/systemd/system
-sudo systemctl daemon-reload
+./rebuildall.sh
 ```
 
 ## How to run single s3 service(this current assumes all dependencies are on same local VM)

@@ -1,6 +1,6 @@
 #!/bin/sh -x
-
-# Simple helper script to rebuild all s3 related binaries
+# Simple helper script to rebuild all s3 related binaries & install.
+set -e
 
 bazel clean
 bazel build //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
@@ -20,3 +20,5 @@ mvn clean package
 cd -
 cp auth-utils/jcloudclient/target/jcloudclient.jar st/clitests/
 
+# install with root privilege
+sudo ./makeinstall
