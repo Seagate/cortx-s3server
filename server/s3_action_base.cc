@@ -156,8 +156,13 @@ void S3Action::fetch_acl_policies() {
 void S3Action::fetch_acl_object_policies_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (object_metadata->get_state() != S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_ERROR, "Authorization failure: failed to load acl/policies from object\n");
-    request->send_response(S3HttpFailed400);
+    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies from object\n");
+    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
+
     done();
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     i_am_done();
@@ -169,8 +174,13 @@ void S3Action::fetch_acl_object_policies_failed() {
 void S3Action::fetch_acl_bucket_policies_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() != S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_ERROR, "Authorization failure: failed to load acl/policies from bucket\n");
-    request->send_response(S3HttpFailed400);
+    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies from bucket\n");
+    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
+
     done();
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     i_am_done();

@@ -168,6 +168,10 @@ class ConcreteClovisAPI : public ClovisAPI {
                   s3_fi_is_enabled("clovis_obj_delete_fail")) ||
                  (type == ClovisOpType::createidx &&
                   s3_fi_is_enabled("clovis_idx_create_fail")) ||
+                 (type == ClovisOpType::deleteidx &&
+                  s3_fi_is_enabled("clovis_idx_delete_fail")) ||
+                 (type == ClovisOpType::deletekv &&
+                  s3_fi_is_enabled("clovis_kv_delete_fail")) ||
                  (type == ClovisOpType::putkv &&
                   s3_fi_is_enabled("clovis_kv_put_fail")) ||
                  (type == ClovisOpType::getkv &&
