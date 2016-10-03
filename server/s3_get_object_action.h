@@ -33,7 +33,7 @@ class S3GetObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisReader> clovis_reader;
-
+  m0_uint128 object_list_oid;
   // Read state
   size_t total_blocks_in_object;
   size_t blocks_already_read;

@@ -103,9 +103,11 @@ void S3PostCompleteAction::fetch_multipart_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     multipart_index_oid = bucket_metadata->get_multipart_index_oid();
-    object_metadata = std::make_shared<S3ObjectMetadata>(
+    multipart_metadata = std::make_shared<S3ObjectMetadata>(
         request, multipart_index_oid, true, upload_id);
-    object_metadata->load(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::fetch_multipart_info_failed, this));
+    multipart_metadata->load(
+        std::bind(&S3PostCompleteAction::next, this),
+        std::bind(&S3PostCompleteAction::fetch_multipart_info_failed, this));
   } else {
     s3_log(S3_LOG_ERROR, "Missing bucket [%s]\n", request->get_bucket_name().c_str());
     send_response_to_s3_client();
@@ -147,7 +149,7 @@ void S3PostCompleteAction::get_parts_successful() {
 
   auto& kvps = clovis_kv_reader->get_key_values();
   part_metadata = std::make_shared<S3PartMetadata>(
-      request, object_metadata->get_part_index_oid(), upload_id, 0);
+      request, multipart_metadata->get_part_index_oid(), upload_id, 0);
   if(parts.size() != kvps.size()) {
      part_metadata->set_state(S3PartMetadataState::missing_partially);
      send_response_to_s3_client();
@@ -209,13 +211,16 @@ void S3PostCompleteAction::get_parts_failed() {
 
 void S3PostCompleteAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  object_metadata = std::make_shared<S3ObjectMetadata>(
+      request, bucket_metadata->get_object_list_index_oid());
   if (is_abort_multipart()) {
     next();
   } else {
     // Mark it as non-multipart, create final object metadata.
-    object_metadata->mark_as_non_multipart();
+    // object_metadata->mark_as_non_multipart();
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
+    object_metadata->set_oid(multipart_metadata->get_oid());
     object_metadata->save(std::bind( &S3PostCompleteAction::next, this), std::bind( &S3PostCompleteAction::send_response_to_s3_client, this));
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -223,9 +228,9 @@ void S3PostCompleteAction::save_metadata() {
 
 void S3PostCompleteAction::delete_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
-      request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
-  object_multipart_metadata->remove(std::bind( &S3PostCompleteAction::delete_multipart_successful, this), std::bind( &S3PostCompleteAction::delete_multipart_failed, this));
+  multipart_metadata->remove(
+      std::bind(&S3PostCompleteAction::delete_multipart_successful, this),
+      std::bind(&S3PostCompleteAction::delete_multipart_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

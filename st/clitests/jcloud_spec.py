@@ -198,6 +198,8 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can delete 18MB file').delete_object("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
+    JCloudTest('Jcloud should not list deleted object').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile ')
+
     # ************ 18MB FILE Multipart Upload TEST ***********
     JCloudTest('Jcloud can upload 18MB file (multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15).execute_test().command_is_successful()
 
@@ -228,13 +230,23 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can delete 3k file').delete_object("seagatebucket", "2016-04:32:21/3kfile").execute_test().command_is_successful()
 
+    JCloudTest('Jcloud should not list deleted object').list_objects('seagatebucket/test').execute_test().command_is_successful().command_response_should_not_have('3kfile ')
+
+    JCloudTest('Jcloud should not list deleted object').list_objects('seagatebucket/2016-04:32:21/').execute_test().command_is_successful().command_response_should_not_have('3kfile ')
+
     # ************ DELETE MULTIPLE OBJECTS TEST ************
     JCloudTest('Jcloud can delete 8k, 700k, 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test().command_is_successful()
+
+    JCloudTest('Jcloud should not list deleted objects').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('8kfile').command_response_should_not_have('700Kfile').command_response_should_not_have('18MBfile')
+
+    JCloudTest('Jcloud should succeed in multiple objects delete when bucket is empty').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test().command_is_successful()
 
     JCloudTest('Jcloud cannot delete multiple files when bucket does not exists').delete_multiple_objects("seagate-bucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     # ************ Delete bucket TEST ************
     JCloudTest('Jcloud can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JCloudTest('Jcloud should not list deleted bucket').list_buckets().execute_test().command_is_successful().command_response_should_not_have('seagatebucket')
 
     # Current version of Jcloud does not report error in deleteContainer
     # JCloudTest('Jcloud cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotPresent")
@@ -260,6 +272,7 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('Jcloud can delete bucket seagate-bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
     JCloudTest('Jcloud can delete bucket seagatebucket123').delete_bucket("seagatebucket123").execute_test().command_is_successful()
     JCloudTest('Jcloud can delete bucket seagate.bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
+    JCloudTest('Jcloud should not list deleted buckets').list_buckets().execute_test().command_is_successful().command_response_should_not_have('seagate-bucket').command_response_should_not_have('seagatebucket123').command_response_should_not_have('seagate.bucket')
 
 
 # Add tests which are specific to Path style APIs
@@ -270,3 +283,4 @@ S3ClientConfig.pathstyle = True
 # /etc/hosts should not contains nondnsbucket. This is to test the path style APIs.
 JCloudTest('Jcloud can create bucket nondnsbucket').create_bucket("nondnsbucket").execute_test().command_is_successful()
 JCloudTest('Jcloud can delete bucket nondnsbucket').delete_bucket("nondnsbucket").execute_test().command_is_successful()
+JCloudTest('Jcloud should not list deleted buckets').list_buckets().execute_test().command_is_successful().command_response_should_not_have('nondnsbucket')

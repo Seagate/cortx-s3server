@@ -117,6 +117,8 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can delete 18MB file').delete_object("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
+    JClientTest('Jclient should not have object after its delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+
     # ************ 18MB FILE Multipart Upload TEST ***********
     JClientTest('Jclient can upload 18MB file (multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15).execute_test().command_is_successful()
 
@@ -158,6 +160,8 @@ for i, val in enumerate(pathstyle_values):
     # ************ DELETE OBJECT TEST ************
     JClientTest('Jclient can delete 3k file').delete_object("seagatebucket", "3kfile").execute_test().command_is_successful()
 
+    JClientTest('Jclient should not have object after its deletion').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile ')
+
     JClientTest('Jclient cannot delete file in nonexistent bucket').delete_object("seagate-bucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     JClientTest('Jclient can delete nonexistent file').delete_object("seagatebucket", "3kfile").execute_test().command_is_successful()
@@ -165,10 +169,16 @@ for i, val in enumerate(pathstyle_values):
     # ************ DELETE MULTIPLE OBJECTS TEST ************
     JClientTest('Jclient can delete 8k, 700k and 18MB files and non existent 1MB file').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile", "3kfilec", "8kfilec", "700Kfilec", "18MBfilec"]).execute_test().command_is_successful()
 
+    JClientTest('Jclient should not list deleted objects').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('8kfile').command_response_should_not_have('700Kfile').command_response_should_not_have('18MBfile').command_response_should_not_have('3kfilec').command_response_should_not_have('8kfilec').command_response_should_not_have('700Kfilec').command_response_should_not_have('18MBfilec')
+
+    JClientTest('Jclient multiple delete should succeed when objects not present').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile"]).execute_test().command_is_successful()
+
     JClientTest('Jclient cannot delete multiple files when bucket does not exists').delete_multiple_objects("seagate-bucket", ["8kfile", "700Kfile", "18MBfile", "1MBfile"]).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     # ************ Delete bucket TEST ************
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JClientTest('Jclient should not have bucket after its deletion').list_buckets().execute_test().command_is_successful().command_response_should_not_have('seagatebucket')
 
     JClientTest('Jclient cannot delete nonexistent bucket').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
@@ -193,6 +203,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can delete bucket seagate-bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
     JClientTest('Jclient can delete bucket seagatebucket123').delete_bucket("seagatebucket123").execute_test().command_is_successful()
     JClientTest('Jclient can delete bucket seagate.bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
+    JClientTest('Jclient should not list bucket after its deletion').list_buckets().execute_test().command_is_successful().command_response_should_not_have('seagatebucket').command_response_should_not_have('seagatebucket123').command_response_should_not_have('seagate.bucket').command_response_should_not_have('seagate-bucket')
 
 
 # Add tests which are specific to Path style APIs

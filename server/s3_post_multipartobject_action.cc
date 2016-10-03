@@ -61,7 +61,14 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
     multipart_index_oid = bucket_metadata->get_multipart_index_oid();
     object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
         request, multipart_index_oid, true, upload_id);
-    object_multipart_metadata->load(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::next, this));
+    if (multipart_index_oid.u_lo == 0ULL && multipart_index_oid.u_hi == 0ULL) {
+      // There is no multipart in progress, move on
+      next();
+    } else {
+      object_multipart_metadata->load(
+          std::bind(&S3PostMultipartObjectAction::next, this),
+          std::bind(&S3PostMultipartObjectAction::next, this));
+    }
   } else {
     s3_log(S3_LOG_WARN, "Missing bucket [%s]\n", request->get_bucket_name().c_str());
     send_response_to_s3_client();
@@ -99,12 +106,17 @@ void S3PostMultipartObjectAction::create_object_failed() {
   LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
 
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
+    struct m0_uint128 object_list_indx_oid =
+        bucket_metadata->get_object_list_index_oid();
     // If object exists, it may be due to the actual existance of object or due to oid collision.
-    if (tried_count) { // No need of lookup of metadata in case if it was oid collision before
+    if (tried_count || (object_list_indx_oid.u_hi == 0ULL &&
+                        object_list_indx_oid.u_lo == 0ULL)) {
+      // No need of lookup of metadata in case if it was oid collision before or
+      // There is no object list index(no object metadata).
       collision_occured();
     } else {
       object_metadata =
-          std::make_shared<S3ObjectMetadata>(request, multipart_index_oid);
+          std::make_shared<S3ObjectMetadata>(request, object_list_indx_oid);
       // Lookup object metadata, if the object doesn't exist then its collision,
       // do collision resolution
       // If object exist in metadata then we overwrite it
@@ -126,7 +138,7 @@ void S3PostMultipartObjectAction::collision_occured() {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
-  if(object_metadata->get_state() == S3ObjectMetadataState::missing && tried_count < MAX_COLLISION_RETRY) {
+  if (tried_count < MAX_COLLISION_RETRY) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n", request->get_object_uri().c_str());
     // Handle Collision
     create_new_oid();

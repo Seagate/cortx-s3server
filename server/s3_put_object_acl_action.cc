@@ -24,6 +24,7 @@
 
 S3PutObjectACLAction::S3PutObjectACLAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  object_list_index_oid = {0ULL, 0ULL};
   setup_steps();
 }
 
@@ -44,8 +45,16 @@ void S3PutObjectACLAction::fetch_bucket_info() {
 
 void S3PutObjectACLAction::get_object_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching object metadata\n");
-  object_metadata = std::make_shared<S3ObjectMetadata>(request);
-  object_metadata->load(std::bind( &S3PutObjectACLAction::next, this), std::bind( &S3PutObjectACLAction::next, this));
+  object_list_index_oid = bucket_metadata->get_object_list_index_oid();
+  if (object_list_index_oid.u_lo == 0ULL &&
+      object_list_index_oid.u_hi == 0ULL) {
+    send_response_to_s3_client();
+  } else {
+    object_metadata =
+        std::make_shared<S3ObjectMetadata>(request, object_list_index_oid);
+    object_metadata->load(std::bind(&S3PutObjectACLAction::next, this),
+                          std::bind(&S3PutObjectACLAction::next, this));
+  }
 }
 
 void S3PutObjectACLAction::setacl() {
@@ -73,6 +82,15 @@ void S3PutObjectACLAction::send_response_to_s3_client() {
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (object_list_index_oid.u_lo == 0ULL &&
+             object_list_index_oid.u_hi == 0ULL) {
+    S3Error error("NoSuchKey", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
     request->send_response(S3HttpSuccess200);

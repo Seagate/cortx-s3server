@@ -45,6 +45,7 @@ class S3DeleteMultipleObjectsAction : public S3Action {
   // index within delete object list
   bool is_request_content_corrupt;
   bool is_request_too_large;
+  m0_uint128 object_list_index_oid;
   S3DeleteMultipleObjectsBody delete_request;
   int delete_index;
   std::vector<std::string> keys_to_delete;

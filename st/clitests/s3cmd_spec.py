@@ -76,8 +76,12 @@ S3cmdTest('s3cmd can show disk usage').disk_usage_bucket("seagatebucket").execut
 # ************ DELETE OBJECT TEST ************
 S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
 
+S3cmdTest('s3cmd should not have object after its delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile')
+
+
 S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket/2016-04:32:21", "3kfile").execute_test().command_is_successful()
 
+S3cmdTest('s3cmd should not have object after its delete').list_objects('seagatebucket/2016-04:32:21').execute_test().command_is_successful().command_response_should_not_have('3kfile')
 
 S3cmdTest('s3cmd can delete 8k file').delete_test("seagatebucket", "8kfile").execute_test().command_is_successful()
 
@@ -239,6 +243,19 @@ S3cmdTest('s3cmd should not have objects after multiple delete').list_objects('s
 # ************ Delete bucket TEST ************
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
+# ************ 18MB FILE Multipart Upload TEST ***********
+S3cmdTest('s3cmd can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+S3cmdTest('s3cmd can multipart upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can download 18MB file').download_test("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
+
+S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+S3cmdTest('s3cmd should not have object after its delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+S3cmdTest('s3cmd should not have bucket').list_buckets().execute_test().command_is_successful().command_response_should_not_have('s3://seagatebucket')
+
+# *******************************************************
+
 # ************ Signing algorithm test ************
 S3cmdTest('s3cmd can create bucket seagate-bucket').create_bucket("seagate-bucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can create bucket seagatebucket123').create_bucket("seagatebucket123").execute_test().command_is_successful()
@@ -246,6 +263,10 @@ S3cmdTest('s3cmd can create bucket seagate.bucket').create_bucket("seagate.bucke
 S3cmdTest('s3cmd can delete bucket seagate-bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket seagatebucket123').delete_bucket("seagatebucket123").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket seagate.bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
+S3cmdTest('s3cmd should not have bucket').list_buckets().execute_test().command_is_successful().command_response_should_not_have('s3://seagate-bucket')
+S3cmdTest('s3cmd should not have bucket').list_buckets().execute_test().command_is_successful().command_response_should_not_have('s3://seagatebucket123')
+S3cmdTest('s3cmd should not have bucket').list_buckets().execute_test().command_is_successful().command_response_should_not_have('s3://seagate.bucket')
+
 
 # ************ Create bucket in region ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket", "eu-west-1").execute_test().command_is_successful()
@@ -255,6 +276,8 @@ S3cmdTest('s3cmd created bucket in specific region').info_bucket("seagatebucket"
 S3cmdTest('s3cmd cannot fetch info for nonexistent bucket').info_bucket("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
 
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+S3cmdTest('s3cmd should not have bucket').list_buckets().execute_test().command_is_successful().command_response_should_not_have('s3://seagatebucket')
+
 
 # ************ Collision Resolution TEST ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()

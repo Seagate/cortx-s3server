@@ -34,8 +34,9 @@ class S3DeleteObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
+  m0_uint128 object_list_indx_oid;
 
-public:
+ public:
   S3DeleteObjectAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

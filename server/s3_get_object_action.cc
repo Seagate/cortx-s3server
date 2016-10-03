@@ -29,6 +29,7 @@ S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req)
       data_sent_to_client(0),
       read_object_reply_started(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  object_list_oid = {0ULL, 0ULL};
   setup_steps();
 }
 
@@ -50,9 +51,18 @@ void S3GetObjectAction::fetch_bucket_info() {
 void S3GetObjectAction::fetch_object_info() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     s3_log(S3_LOG_DEBUG, "Found bucket metadata\n");
-    object_metadata = std::make_shared<S3ObjectMetadata>(request);
+    object_list_oid = bucket_metadata->get_object_list_index_oid();
+    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+      // There is no object list index, hence object doesn't exist
+      s3_log(S3_LOG_DEBUG, "Object not found\n");
+      send_response_to_s3_client();
+    } else {
+      object_metadata =
+          std::make_shared<S3ObjectMetadata>(request, object_list_oid);
 
-    object_metadata->load(std::bind( &S3GetObjectAction::next, this), std::bind( &S3GetObjectAction::next, this));
+      object_metadata->load(std::bind(&S3GetObjectAction::next, this),
+                            std::bind(&S3GetObjectAction::next, this));
+    }
   } else {
     s3_log(S3_LOG_DEBUG, "Bucket not found\n");
     send_response_to_s3_client();
@@ -177,14 +187,25 @@ void S3GetObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+  } else if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+    S3Error error("NoSuchKey", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (object_metadata &&
+             object_metadata->get_state() == S3ObjectMetadataState::missing) {
     S3Error error("NoSuchKey", request->get_request_id(), request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if ((object_metadata->get_content_length() == 0) || (clovis_reader->get_state() == S3ClovisReaderOpState::success)) {
+  } else if (object_metadata &&
+             ((object_metadata->get_content_length() == 0) ||
+              (clovis_reader->get_state() == S3ClovisReaderOpState::success))) {
     request->send_reply_end();
   } else {
     // request->set_header_value(...)

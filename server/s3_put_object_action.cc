@@ -57,7 +57,11 @@ void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     create_object_timer.start();
-    clovis_writer = std::make_shared<S3ClovisWriter>(request, oid);
+    if (tried_count == 0) {
+      clovis_writer = std::make_shared<S3ClovisWriter>(request, oid);
+    } else {
+      clovis_writer->set_oid(oid);
+    }
     clovis_writer->create_object(std::bind( &S3PutObjectAction::next, this), std::bind( &S3PutObjectAction::create_object_failed, this));
   } else {
     s3_log(S3_LOG_WARN, "Bucket [%s] not found\n", request->get_bucket_name().c_str());
@@ -73,12 +77,21 @@ void S3PutObjectAction::create_object_failed() {
     return;
   }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
-    // If object exists, it may be due to the actual existance of object or due to oid collision
-    if (tried_count) { // No need of lookup of metadata in case if it was oid collision before
-      collision_detected();
-    } else {
+    m0_uint128 object_list_oid = bucket_metadata->get_object_list_index_oid();
+
+    if (tried_count == 0) {
       object_metadata = std::make_shared<S3ObjectMetadata>(
           request, bucket_metadata->get_object_list_index_oid());
+    }
+
+    // If object exists, it may be due to the actual existance of object or due to oid collision
+    if (tried_count ||
+        (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL)) {
+      // No need of lookup of metadata in case if it was oid collision before or
+      // in case
+      // if object list index doesn't exist
+      collision_detected();
+    } else {
       // Lookup metadata, if the object doesn't exist then its collision, do
       // collision resolution
       // If object exist in metadata then we overwrite it
@@ -102,7 +115,7 @@ void S3PutObjectAction::collision_detected() {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
-  if(object_metadata->get_state() == S3ObjectMetadataState::missing && tried_count < MAX_COLLISION_TRY) {
+  if (tried_count < MAX_COLLISION_TRY) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n", request->get_object_uri().c_str());
     // Handle Collision
     create_new_oid();

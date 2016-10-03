@@ -117,8 +117,11 @@ public:
   }
 
   // Async get operation.
-  void get_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void get_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  // Note -- get_keyval() is called with oid of index
+  // void get_keyval(std::string index_name, std::vector<std::string> keys,
+  // std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  // void get_keyval(std::string index_name, std::string key,
+  // std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void get_keyval(struct m0_uint128 oid, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
   void get_keyval(struct m0_uint128 oid, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
 

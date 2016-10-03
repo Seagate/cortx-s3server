@@ -41,12 +41,18 @@ S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
   last_result_keys_values.clear();
 }
 
-void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  std::vector<std::string> keys;
-  keys.push_back(key);
+//
+// Commenting this function
+// get_keyval will be issued with index's oid, at top level if the oid is 0 then
+// it will be
+// interpreted as there is no object available
+// void S3ClovisKVSReader::get_keyval(std::string index_name, std::string key,
+// std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+//  std::vector<std::string> keys;
+//  keys.push_back(key);
 
-  get_keyval(index_name, keys, on_success, on_failed);
-}
+//  get_keyval(index_name, keys, on_success, on_failed);
+//}
 
 void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   std::vector<std::string> keys;
@@ -55,12 +61,20 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::string key, std::
   get_keyval(oid, keys, on_success, on_failed);
 }
 
-void S3ClovisKVSReader::get_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
-  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
-  get_keyval(id, keys, on_success, on_failed);
-}
+//
+// Commenting this function
+// get_keyval will be issued with index's oid, at top level if the oid is 0 then
+// it will be
+// interpreted as there is no object available
+//
+// void S3ClovisKVSReader::get_keyval(std::string index_name,
+// std::vector<std::string> keys, std::function<void(void)> on_success,
+// std::function<void(void)> on_failed) {
+//  s3_log(S3_LOG_DEBUG, "Entering\n");
+//  s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
+//  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
+//  get_keyval(id, keys, on_success, on_failed);
+//}
 
 void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");

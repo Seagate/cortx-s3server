@@ -102,7 +102,8 @@ void S3PutMultiObjectAction::fetch_bucket_info_failed() {
 
 void S3PutMultiObjectAction::fetch_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(request, true, upload_id);
+  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
+      request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
   object_multipart_metadata->load(std::bind( &S3PutMultiObjectAction::next, this), std::bind( &S3PutMultiObjectAction::fetch_multipart_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

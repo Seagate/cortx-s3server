@@ -188,11 +188,6 @@ private:
     state = S3ObjectMetadataState::invalid;
   }
 
-  void mark_as_non_multipart() {
-    is_multipart = false;
-    index_name = get_bucket_index_name();
-  }
-
   std::string to_json();
 
   void from_json(std::string content);

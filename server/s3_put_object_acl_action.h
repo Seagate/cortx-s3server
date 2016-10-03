@@ -30,8 +30,9 @@
 class S3PutObjectACLAction : public S3Action {
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  m0_uint128 object_list_index_oid;
 
-public:
+ public:
   S3PutObjectACLAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

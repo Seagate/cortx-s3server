@@ -46,7 +46,7 @@ void S3Action::setup_steps() {
 
   if (!S3Option::get_instance()->is_auth_disabled()) {
     add_task(std::bind( &S3Action::check_authentication, this ));
-    add_task(std::bind( &S3Action::fetch_acl_policies, this ));
+    //add_task(std::bind( &S3Action::fetch_acl_policies, this ));
     // Commented till we implement Authorization feature completely.
     // Current authorisation implementation in AuthServer is partial
     // add_task(std::bind( &S3Action::check_authorization, this ));
@@ -140,54 +140,67 @@ void S3Action::rollback_exit() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3Action::fetch_acl_policies() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (request->get_api_type() == S3ApiType::object) {
-    object_metadata = std::make_shared<S3ObjectMetadata>(request);
-    object_metadata->load(std::bind( &S3Action::next, this), std::bind( &S3Action::fetch_acl_object_policies_failed, this));
-  } else if (request->get_api_type() == S3ApiType::bucket) {
-    bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-    bucket_metadata->load(std::bind( &S3Action::next, this), std::bind( &S3Action::fetch_acl_bucket_policies_failed, this));
-  } else {
-    next();
-  }
-}
+// TODO -- When this function is enabled, for object we need to
+// first fetch bucket details and then provide object list index oid to the
+// constructor
+// of S3Objectmetadata else load() will result in crash
+//
+// void S3Action::fetch_acl_policies() {
+//  s3_log(S3_LOG_DEBUG, "Entering\n");
+//  if (request->get_api_type() == S3ApiType::object) {
+//    object_metadata = std::make_shared<S3ObjectMetadata>(request);
+//    object_metadata->load(std::bind( &S3Action::next, this), std::bind(
+//    &S3Action::fetch_acl_object_policies_failed, this));
+//  } else if (request->get_api_type() == S3ApiType::bucket) {
+//    bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+//    bucket_metadata->load(std::bind( &S3Action::next, this), std::bind(
+//    &S3Action::fetch_acl_bucket_policies_failed, this));
+//  } else {
+//    next();
+//  }
+//}
 
-void S3Action::fetch_acl_object_policies_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (object_metadata->get_state() != S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies from object\n");
-    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
+// void S3Action::fetch_acl_object_policies_failed() {
+//  s3_log(S3_LOG_DEBUG, "Entering\n");
+//  if (object_metadata->get_state() != S3ObjectMetadataState::missing) {
+//    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies
+//    from object\n");
+//    S3Error error("InternalError", request->get_request_id(),
+//    request->get_object_uri());
+//    std::string& response_xml = error.to_xml();
+//    request->set_out_header_value("Content-Type", "application/xml");
+//    request->set_out_header_value("Content-Length",
+//    std::to_string(response_xml.length()));
+//    request->send_response(error.get_http_status_code(), response_xml);
 
-    done();
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
-    i_am_done();
-  } else {
-    next();
-  }
-}
+//    done();
+//    s3_log(S3_LOG_DEBUG, "Exiting\n");
+//    i_am_done();
+//  } else {
+//    next();
+//  }
+//}
 
-void S3Action::fetch_acl_bucket_policies_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (bucket_metadata->get_state() != S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies from bucket\n");
-    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
+// void S3Action::fetch_acl_bucket_policies_failed() {
+//  s3_log(S3_LOG_DEBUG, "Entering\n");
+//  if (bucket_metadata->get_state() != S3BucketMetadataState::missing) {
+//    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies
+//    from bucket\n");
+//    S3Error error("InternalError", request->get_request_id(),
+//    request->get_object_uri());
+//    std::string& response_xml = error.to_xml();
+//    request->set_out_header_value("Content-Type", "application/xml");
+//    request->set_out_header_value("Content-Length",
+//    std::to_string(response_xml.length()));
+//    request->send_response(error.get_http_status_code(), response_xml);
 
-    done();
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
-    i_am_done();
-  } else {
-    next();
-  }
-}
+//    done();
+//    s3_log(S3_LOG_DEBUG, "Exiting\n");
+//    i_am_done();
+//  } else {
+//    next();
+//  }
+//}
 
 void S3Action::check_authorization() {
   s3_log(S3_LOG_DEBUG, "Entering\n");

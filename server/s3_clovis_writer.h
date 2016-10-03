@@ -130,8 +130,7 @@ public:
   }
 
   void set_oid(struct m0_uint128 id) {
-    //TODO
-    // oid = id;
+    oid = id;
   }
 
   // This concludes the md5 calculation

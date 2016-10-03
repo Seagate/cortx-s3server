@@ -23,6 +23,7 @@
 S3DeleteObjectAction::S3DeleteObjectAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  object_list_indx_oid = {0ULL, 0ULL};
   setup_steps();
 }
 
@@ -46,9 +47,19 @@ void S3DeleteObjectAction::fetch_bucket_info() {
 void S3DeleteObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    object_metadata = std::make_shared<S3ObjectMetadata>(request);
+    object_list_indx_oid = bucket_metadata->get_object_list_index_oid();
+    if (object_list_indx_oid.u_hi == 0ULL &&
+        object_list_indx_oid.u_lo == 0ULL) {
+      // There is no object list index, hence object doesn't exist
+      s3_log(S3_LOG_DEBUG, "Object not found\n");
+      send_response_to_s3_client();
+    } else {
+      object_metadata =
+          std::make_shared<S3ObjectMetadata>(request, object_list_indx_oid);
 
-    object_metadata->load(std::bind( &S3DeleteObjectAction::next, this), std::bind( &S3DeleteObjectAction::next, this));
+      object_metadata->load(std::bind(&S3DeleteObjectAction::next, this),
+                            std::bind(&S3DeleteObjectAction::next, this));
+    }
   } else {
     send_response_to_s3_client();
   }
@@ -96,6 +107,8 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
+  } else if (object_list_indx_oid.u_hi == 0ULL && object_list_indx_oid.u_lo) {
+    request->send_response(S3HttpSuccess204);
   } else if ((object_metadata->get_state() == S3ObjectMetadataState::missing) ||
       (object_metadata->get_state() == S3ObjectMetadataState::deleted)) {
     request->send_response(S3HttpSuccess204);
