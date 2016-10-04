@@ -184,23 +184,45 @@ class JClientTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def get_bucket_acl(self, bucket_name):
-        cmd = "%s getacl s3://%s %s" % (self.jclient_cmd, bucket_name,
-            self.get_test_config())
-
-        self.with_cli(cmd)
-        return self
-
-    def get_object_acl(self, bucket_name, file_name):
-        cmd = "%s getacl s3://%s/%s %s" % (self.jclient_cmd, bucket_name,
-            file_name, self.get_test_config())
-
-        self.with_cli(cmd)
-        return self
-
     def get_bucket_location(self, bucket_name):
         cmd = "%s location s3://%s %s" % (self.jclient_cmd, bucket_name,
             self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    # acl_action = acl-public or acl-private
+    # acl_action = acl-grant, perm = PERM:UserCanonicalID[:DisplayName]
+    # acl_action = acl-revoke, perm = perm = PERM:UserCanonicalID
+    def set_acl(self, bucket_name, file_name=None, action="acl-public", permission=""):
+        assert action in ["acl-public", "acl-private", "acl-grant", "acl-revoke"]
+        self.bucket_name = bucket_name
+        self.file_name = file_name
+        acl_action = action
+
+        if action == "acl-grant" or action == "acl-revoke":
+            acl_action = action + "=" + permission
+
+        if file_name:
+            cmd = "%s setacl s3://%s/%s %s %s" % (self.jclient_cmd, bucket_name,
+                file_name, acl_action, self.get_test_config())
+        else:
+            cmd = "%s setacl s3://%s %s %s" % (self.jclient_cmd, bucket_name, acl_action,
+                self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def get_acl(self, bucket_name, file_name=None):
+        self.bucket_name = bucket_name
+        self.file_name = file_name
+
+        if file_name:
+            cmd = "%s getacl s3://%s/%s %s" % (self.jclient_cmd, bucket_name,
+                file_name, self.get_test_config())
+        else:
+            cmd = "%s getacl s3://%s %s" % (self.jclient_cmd, bucket_name,
+                self.get_test_config())
 
         self.with_cli(cmd)
         return self

@@ -18,6 +18,21 @@
  */
 package com.seagates3.javaclient;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.cli.CommandLine;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
@@ -35,6 +50,7 @@ import com.amazonaws.services.s3.model.Grant;
 import com.amazonaws.services.s3.model.Grantee;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.GroupGrantee;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListMultipartUploadsRequest;
@@ -54,18 +70,6 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.model.UploadPartRequest;
 
 import static com.seagates3.javaclient.ClientConfig.getClientConfiguration;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.apache.commons.cli.CommandLine;
 
 public class S3API {
 
@@ -548,8 +552,9 @@ public class S3API {
         checkCommandLength(2);
         getBucketObjectName(cmd.getArgs()[1]);
 
-        if (bucketName.isEmpty())
+        if (bucketName.isEmpty()) {
             printError("Bucket name cannot be empty");
+        }
 
         if (keyName.isEmpty()) {
             try {
@@ -573,12 +578,204 @@ public class S3API {
         }
     }
 
+    public void setAcl() {
+        checkCommandLength(3);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty()) {
+            printError("Incorrect command. Bucket name is required.");
+        }
+
+        Map<String, String> requestMap = parseGrantRequesst(cmd.getArgs()[2]);
+        Permission permission = validateAndGetPermission(requestMap.get("permission"));
+        String action = requestMap.get("action");
+
+        if (action.equals("grant")) {
+            grantAcl(requestMap.get("canonicalID"), requestMap.get("displayName"), permission);
+        } else if (action.equals("revoke")) {
+            revokeAcl(requestMap.get("canonicalID"), permission);
+        } else if (action.equals("acl-private")) {
+            setAclPrivate();
+        } else if (action.equals("acl-public")) {
+            setAclPublic();
+        } else {
+            printError("Unknown ACL action");
+        }
+    }
+
+    private Map<String, String> parseGrantRequesst(String request) {
+        Map<String, String> requestMap = new HashMap<>();
+
+        if (!request.contains("=")) {
+            requestMap.put("action", request);
+            return requestMap;
+        }
+
+        Pattern pattern = Pattern.compile("acl-(\\w+)=(\\w+):([^:]+):?(.+)?");
+        Matcher matcher = pattern.matcher(request);
+        if (matcher.find() && matcher.groupCount() > 3) {
+            requestMap.put("action", matcher.group(1));
+            requestMap.put("permission", matcher.group(2));
+            requestMap.put("canonicalID", matcher.group(3));
+            if (matcher.group(4) != null) {
+                requestMap.put("displayName", matcher.group(4));
+            }
+        } else {
+            printError("Incorrect options");
+        }
+
+        return requestMap;
+    }
+
+    private Permission validateAndGetPermission(String permission) {
+        if (permission == null) {
+            return null;
+        }
+
+        Permission parsedPermission = Permission.parsePermission(permission);
+        if (parsedPermission == null) {
+            printError("Unknown permission. Incorrect command.");
+        }
+
+        return parsedPermission;
+    }
+
+    private void grantAcl(String canonicalID, String displayName, Permission permission) {
+        try {
+            if (canonicalID == null || canonicalID.isEmpty()) {
+                printError("Invalid canonical id.");
+            }
+
+            CanonicalGrantee canonicalGrantee = new CanonicalGrantee(canonicalID);
+            if (displayName != null) {
+                canonicalGrantee.setDisplayName(displayName);
+            }
+
+            if (keyName.isEmpty()) {
+                AccessControlList acl = client.getBucketAcl(bucketName);
+                acl.grantPermission(canonicalGrantee, permission);
+                client.setBucketAcl(bucketName, acl);
+            } else {
+                AccessControlList acl = client.getObjectAcl(bucketName, keyName);
+                acl.grantPermission(canonicalGrantee, permission);
+                client.setObjectAcl(bucketName, keyName, acl);
+            }
+            System.out.println("Grant ACL successful");
+        } catch (Exception e) {
+            printError(e.getMessage());
+        }
+    }
+
+    private void revokeAcl(String canonicalID, Permission permission) {
+        try {
+            if (canonicalID == null || canonicalID.isEmpty()) {
+                printError("Invalid canonical id.");
+            }
+
+            CanonicalGrantee canonicalGrantee = new CanonicalGrantee(canonicalID);
+            if (keyName.isEmpty()) {
+                AccessControlList acl = client.getBucketAcl(bucketName);
+                acl.revokeAllPermissions(canonicalGrantee);
+                client.setBucketAcl(bucketName, acl);
+            } else {
+                AccessControlList acl = client.getObjectAcl(bucketName, keyName);
+                acl.revokeAllPermissions(canonicalGrantee);
+                client.setObjectAcl(bucketName, keyName, acl);
+            }
+            System.out.println("Revoke ACL successful");
+        } catch (Exception e) {
+            printError(e.getMessage());
+        }
+    }
+
+    private void setAclPrivate() {
+        try {
+            if (keyName.isEmpty()) {
+                AccessControlList acl = client.getBucketAcl(bucketName);
+                if (aclHasAnnonRead(acl)) {
+                    acl.revokeAllPermissions(GroupGrantee.AllUsers);
+                    client.setBucketAcl(bucketName, acl);
+                    System.out.println("ACL set to Private.");
+                } else {
+                    System.out.println("Already private. Skipping.");
+                }
+            } else {
+                AccessControlList acl = client.getObjectAcl(bucketName, keyName);
+                if (aclHasAnnonRead(acl)) {
+                    acl.revokeAllPermissions(GroupGrantee.AllUsers);
+                    client.setObjectAcl(bucketName, keyName, acl);
+                    System.out.println("ACL set to Private.");
+                } else {
+                    System.out.println("Already private. Skipping.");
+                }
+            }
+        } catch (Exception e) {
+            printError(e.getMessage());
+        }
+    }
+
+    private void setAclPublic() {
+        try {
+            if (keyName.isEmpty()) {
+                AccessControlList acl = client.getBucketAcl(bucketName);
+                if (!aclHasAnnonRead(acl)) {
+                    acl.grantPermission(GroupGrantee.AllUsers, Permission.Read);
+                    client.setBucketAcl(bucketName, acl);
+                    System.out.println("ACL set to Public.");
+                } else {
+                    System.out.println("Already public. Skipping.");
+                }
+            } else {
+                AccessControlList acl = client.getObjectAcl(bucketName, keyName);
+                if (!aclHasAnnonRead(acl)) {
+                    acl.grantPermission(GroupGrantee.AllUsers, Permission.Read);
+                    client.setObjectAcl(bucketName, keyName, acl);
+                    System.out.println("ACL set to Public.");
+                } else {
+                    System.out.println("Already public. Skipping.");
+                }
+            }
+        } catch (Exception e) {
+            printError(e.getMessage());
+        }
+    }
+
+    private boolean aclHasAnnonRead(AccessControlList acl) {
+        for (Grant grant: acl.getGrantsAsList()) {
+            if (isAnnonRead(grant)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isAnnonRead(Grant grant) {
+        Permission permission = grant.getPermission();
+
+        if (isAllUsers(grant.getGrantee()) && (permission.equals(Permission.FullControl) ||
+                permission.equals(Permission.Read))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isAllUsers(Grantee grantee) {
+        if (grantee.equals(GroupGrantee.AllUsers)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public void getBucketLocation() {
         checkCommandLength(2);
         getBucketObjectName(cmd.getArgs()[1]);
 
-        if (bucketName.isEmpty())
+        if (bucketName.isEmpty()) {
             printError("Bucket name cannot be empty");
+        }
 
         try {
             System.out.println(client.getBucketLocation(bucketName));
@@ -597,40 +794,21 @@ public class S3API {
                 System.out.println(canonicalGrantee.getDisplayName()
                         + ": " + grant.getPermission());
             } else {
-                if (isAnnonRead(grant))
+                if (isAnnonRead(grant)) {
                     System.out.println("*anon*: " + grant.getPermission());
+                }
             }
         }
     }
 
-    private boolean isAllUsers(Grantee grantee) {
-        final String ALL_USERS_URI = "http://acs.amazonaws.com/groups/global/AllUsers";
-
-        if (grantee.getTypeIdentifier().equalsIgnoreCase("URI") &&
-                grantee.getIdentifier().equalsIgnoreCase(ALL_USERS_URI))
-            return true;
-
-        return false;
-    }
-
-    private boolean isAnnonRead(Grant grant) {
-        Permission permission = grant.getPermission();
-
-        if (isAllUsers(grant.getGrantee()) &&
-                (permission.equals(Permission.FullControl) ||
-                        permission.equals(Permission.Read)))
-            return true;
-
-        return false;
-    }
-
     private void printAwsServiceException(AmazonServiceException awsServiceException) {
-        if (awsServiceException.getErrorCode().equals("NoSuchBucket"))
-            System.out.println("No such bucket");
-        else if (awsServiceException.getErrorCode().equals("NoSuchKey"))
-            System.out.println("No such object");
-        else
+        if (awsServiceException.getErrorCode().equals("NoSuchBucket")) {
+            printError("No such bucket");
+        } else if (awsServiceException.getErrorCode().equals("NoSuchKey"))
+            printError("No such object");
+        else {
             printError(awsServiceException.toString());
+        }
     }
 
     private void getBucketObjectName(String url) {

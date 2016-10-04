@@ -37,10 +37,10 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can verify bucket does not exist').check_bucket_exists("seagatebucket").execute_test().command_is_successful().command_response_should_have('Bucket seagatebucket does not exist')
 
-    JClientTest('Jclient cannot get bucket location for nonexistent bucket').get_bucket_location("seagatebucket").execute_test().command_is_successful().command_response_should_have('No such bucket')
+    JClientTest('Jclient cannot get bucket location for nonexistent bucket').get_bucket_location("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have('No such bucket')
 
     # get-bucket-acl: no bucket exists
-    JClientTest('Jclient can (not) get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('No such bucket')
+    JClientTest('Jclient can (not) get bucket ACL').get_acl("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have('No such bucket')
 
     # ************ Create bucket ************
     JClientTest('Jclient can create bucket').create_bucket("seagatebucket", "us-west-2").execute_test().command_is_successful()
@@ -56,14 +56,14 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can call list objects on empty bucket').list_objects('seagatebucket').execute_test().command_is_successful()
 
     # get-bucket-acl
-    JClientTest('Jclient can get bucket ACL').get_bucket_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('tester: FULL_CONTROL')
+    JClientTest('Jclient can get bucket ACL').get_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('tester: FULL_CONTROL')
 
     # ************ 3k FILE TEST ************
     JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have('Bucket or Object does not exist')
 
     JClientTest('Jclient cannot verify object in nonexistent bucket').head_object("seagate-bucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have("Bucket or Object does not exist")
 
-    JClientTest('Jclient can (not) get object acl').get_object_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('No such object')
+    JClientTest('Jclient can (not) get object acl').get_acl("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have('No such object')
 
     JClientTest('Jclient can upload 3k file').put_object("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
 
@@ -77,7 +77,99 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can verify object existence').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have("3kfile")
 
-    JClientTest('Jclient can get object acl').get_object_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('tester: FULL_CONTROL')
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('tester: FULL_CONTROL')
+
+    # ACL Tests.
+    # Bucket ACL Tests.
+    JClientTest('Jclient can set public ACL on bucket').set_acl("seagatebucket", action="acl-public")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Public")
+
+    JClientTest('Jclient cannot set ACL on nonexistent bucket').set_acl("seagate-bucket", action="acl-public")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("The specified bucket does not exist")
+
+    JClientTest('Jclient can verify public ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have("*anon*: READ")
+
+    JClientTest('Jclient cannot verify ACL on nonexistent bucket').get_acl("seagate-bucket")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("No such bucket")
+
+    JClientTest('Jclient can set private ACL on bucket').set_acl("seagatebucket", action="acl-private")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Private")
+
+    JClientTest('Jclient can verify private ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
+
+    JClientTest('Jclient can grant READ permission on bucket').set_acl("seagatebucket",
+        action="acl-grant", permission="READ:123:tester")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JClientTest('Jclient can verify READ ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_not_have("WRITE")
+
+    JClientTest('Jclient can grant WRITE permission on bucket').set_acl("seagatebucket",
+        action="acl-grant", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JClientTest('Jclient can verify WRITE ACL on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_have("tester: WRITE")
+
+    JClientTest('Jclient can revoke WRITE permission on bucket').set_acl("seagatebucket",
+        action="acl-revoke", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+
+    JClientTest('Jclient can verify WRITE ACL is revoked on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_not_have("WRITE")
+
+    # Object ACL Tests.
+    JClientTest('Jclient can set public ACL on object').set_acl("seagatebucket", "3kfile",
+        action="acl-public")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Public")
+
+    JClientTest('Jclient cannot set ACL on nonexistent object').set_acl("seagatebucket", "abc",
+        action="acl-public")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("The specified key does not exist")
+
+    JClientTest('Jclient can verify public ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("*anon*: READ")
+
+    JClientTest('Jclient cannot verify ACL on nonexistent object').get_acl("seagatebucket", "abc")\
+        .execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("No such object")
+
+    JClientTest('Jclient can set private ACL on object').set_acl("seagatebucket", "3kfile",
+        action="acl-private")\
+        .execute_test().command_is_successful().command_response_should_have("ACL set to Private")
+
+    JClientTest('Jclient can verify private ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
+
+    JClientTest('Jclient can grant READ permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-grant", permission="READ:123:tester")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JClientTest('Jclient can verify READ ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_not_have("WRITE")
+
+    JClientTest('Jclient can grant WRITE permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-grant", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JClientTest('Jclient can verify WRITE ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+        .command_response_should_have("tester: WRITE")
+
+    JClientTest('Jclient can revoke WRITE permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-revoke", permission="WRITE:123")\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+
+    JClientTest('Jclient can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_not_have("WRITE")
 
     JClientTest('Jclient can download 3k file').get_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
