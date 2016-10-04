@@ -29,15 +29,16 @@
 #include <event2/thread.h>
 
 #include "evhtp_wrapper.h"
-#include "s3_router.h"
-#include "s3_request_object.h"
+#include "fid/fid.h"
+#include "s3_daemonize_server.h"
 #include "s3_error_codes.h"
-#include "s3_perf_logger.h"
-#include "s3_timer.h"
+#include "s3_fi_common.h"
 #include "s3_log.h"
 #include "s3_option.h"
-#include "s3_daemonize_server.h"
-#include "fid/fid.h"
+#include "s3_perf_logger.h"
+#include "s3_request_object.h"
+#include "s3_router.h"
+#include "s3_timer.h"
 
 #define WEBSTORE "/home/seagate/webstore"
 
@@ -90,14 +91,21 @@ dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     std::shared_ptr<S3RequestObject> s3_request = std::make_shared<S3RequestObject> (req, evhtp_obj_ptr);
 
-    if (S3Option::get_instance()->get_is_s3_shutting_down()) {
+    if (S3Option::get_instance()->get_is_s3_shutting_down() &&
+        !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
       // We are shutting down, so don't entertain new requests.
       s3_request->pause();
       evhtp_unset_all_hooks(&req->conn->hooks);
       // Send response with 'Service Unavailable' code.
       s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+      S3Error error("ServiceUnavailable", s3_request->get_request_id(), "");
+      std::string &response_xml = error.to_xml();
+      s3_request->set_out_header_value("Content-Type", "application/xml");
+      s3_request->set_out_header_value("Content-Length",
+                                       std::to_string(response_xml.length()));
       s3_request->set_out_header_value("Retry-After", "1");
-      s3_request->send_response(S3HttpFailed503);
+
+      s3_request->send_response(error.get_http_status_code(), response_xml);
       return EVHTP_RES_OK;
     }
 

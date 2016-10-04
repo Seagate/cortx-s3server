@@ -46,6 +46,9 @@ void S3GetObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3GetObjectAction::next, this), std::bind( &S3GetObjectAction::next, this));
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "get_object_action_fetch_bucket_info_shutdown_fail");
 }
 
 void S3GetObjectAction::fetch_object_info() {
@@ -176,8 +179,15 @@ void S3GetObjectAction::send_response_to_s3_client() {
     } else {
       // Send response with 'Service Unavailable' code.
       s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+      S3Error error("ServiceUnavailable", request->get_request_id(),
+                    request->get_object_uri());
+      std::string& response_xml = error.to_xml();
+      request->set_out_header_value("Content-Type", "application/xml");
+      request->set_out_header_value("Content-Length",
+                                    std::to_string(response_xml.length()));
       request->set_out_header_value("Retry-After", "1");
-      request->send_response(S3HttpFailed503);
+
+      request->send_response(error.get_http_status_code(), response_xml);
     }
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
@@ -211,6 +221,7 @@ void S3GetObjectAction::send_response_to_s3_client() {
     // request->set_header_value(...)
     request->send_response(S3HttpFailed400);
   }
+  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   i_am_done();  // self delete
   s3_log(S3_LOG_DEBUG, "Exiting\n");

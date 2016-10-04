@@ -245,10 +245,9 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
 
 void S3PutChunkUploadObjectAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
-    return;
-  }
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_chunk_upload_object_action_consume_incoming_content_shutdown_fail");
   if (!clovis_write_in_progress) {
     write_object(request->get_buffered_input());
   }
@@ -367,8 +366,15 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    S3Error error("ServiceUnavailable", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
-    request->send_response(S3HttpFailed503);
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (auth_failed) {
     // Invalid Bucket Name
     S3Error error("SignatureDoesNotMatch", request->get_request_id(), request->get_object_uri());
@@ -404,6 +410,7 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   }
+  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   request->resume();
 
   done();

@@ -49,8 +49,15 @@ void S3GetBucketACLAction::send_response_to_s3_client() {
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    S3Error error("ServiceUnavailable", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
-    request->send_response(S3HttpFailed503);
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string response_xml = bucket_metadata->get_acl_as_xml();
     request->set_out_header_value("Content-Type", "application/xml");

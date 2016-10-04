@@ -25,7 +25,8 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
     : request(req),
       invalid_request(false),
       check_shutdown_signal(check_shutdown),
-      is_response_scheduled(false) {
+      is_response_scheduled(false),
+      is_fi_hit(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   task_iteration_index = 0;
   rollback_index = 0;

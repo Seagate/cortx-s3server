@@ -27,10 +27,38 @@
 #include <vector>
 
 #include "s3_auth_client.h"
-#include "s3_request_object.h"
-#include "s3_log.h"
 #include "s3_bucket_metadata.h"
+#include "s3_fi_common.h"
+#include "s3_log.h"
 #include "s3_object_metadata.h"
+#include "s3_request_object.h"
+
+#ifdef ENABLE_FAULT_INJECTION
+
+#define S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(tag)                    \
+  do {                                                              \
+    if (s3_fi_is_enabled(tag)) {                                    \
+      s3_log(S3_LOG_DEBUG, "set shutdown signal for testing...\n"); \
+      set_is_fi_hit(true);                                          \
+      S3Option::get_instance()->set_is_s3_shutting_down(true);      \
+    }                                                               \
+  } while (0)
+
+#define S3_RESET_SHUTDOWN_SIGNAL                                \
+  do {                                                          \
+    if (get_is_fi_hit()) {                                      \
+      s3_log(S3_LOG_DEBUG, "reset shutdown signal ...\n");      \
+      S3Option::get_instance()->set_is_s3_shutting_down(false); \
+      set_is_fi_hit(false);                                     \
+    }                                                           \
+  } while (0)
+
+#else  // ENABLE_FAULT_INJECTION
+
+#define S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(tag)
+#define S3_RESET_SHUTDOWN_SIGNAL
+
+#endif  // ENABLE_FAULT_INJECTION
 
 enum class S3ActionState {
   start,
@@ -81,13 +109,16 @@ protected:
   // is already scheduled.
   bool is_response_scheduled;
 
-public:
- S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true);
- virtual ~S3Action();
+  // For shutdown related system tests, if FI gets hit then set this flag
+  bool is_fi_hit;
 
- void get_error_message(std::string& message);
+ public:
+  S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true);
+  virtual ~S3Action();
 
-protected:
+  void get_error_message(std::string& message);
+
+ protected:
   void add_task(std::function<void()> task) {
     task_list.push_back(task);
   }
@@ -126,6 +157,10 @@ protected:
   void check_shutdown_signal_for_next_task(bool check_signal) {
     check_shutdown_signal = check_signal;
   }
+
+  void set_is_fi_hit(bool hit) { is_fi_hit = hit; }
+
+  bool get_is_fi_hit() { return is_fi_hit; }
 
  public:
   // Self destructing object.

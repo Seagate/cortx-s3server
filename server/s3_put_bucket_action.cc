@@ -55,16 +55,13 @@ void S3PutBucketAction::validate_request() {
   } else {
     validate_request_body("");
   }
-
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_bucket_action_validate_request_shutdown_fail");
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutBucketAction::consume_incoming_content() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
-    return;
-  }
   s3_log(S3_LOG_DEBUG, "Consume data\n");
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
@@ -123,8 +120,15 @@ void S3PutBucketAction::send_response_to_s3_client() {
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    S3Error error("ServiceUnavailable", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
-    request->send_response(S3HttpFailed503);
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (invalid_request) {
     S3Error error("MalformedXML", request->get_request_id(), request->get_bucket_name());
     std::string& response_xml = error.to_xml();
@@ -150,6 +154,7 @@ void S3PutBucketAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   }
+  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   i_am_done();  // self delete
   s3_log(S3_LOG_DEBUG, "Exiting\n");

@@ -52,6 +52,10 @@ void S3GetServiceAction::get_next_buckets() {
   clovis_kv_reader =
       std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
   clovis_kv_reader->next_keyval(get_account_user_index_name(), last_key, count, std::bind( &S3GetServiceAction::get_next_buckets_successful, this), std::bind( &S3GetServiceAction::get_next_buckets_failed, this));
+
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "get_service_action_get_next_buckets_shutdown_fail");
 }
 
 void S3GetServiceAction::get_next_buckets_successful() {
@@ -101,8 +105,15 @@ void S3GetServiceAction::send_response_to_s3_client() {
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    S3Error error("ServiceUnavailable", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
-    request->send_response(S3HttpFailed503);
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
     std::string& response_xml = bucket_list.get_xml();
     request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
@@ -117,6 +128,7 @@ void S3GetServiceAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   }
+  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   i_am_done();  // self delete
   s3_log(S3_LOG_DEBUG, "Exiting\n");

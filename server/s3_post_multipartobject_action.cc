@@ -97,6 +97,10 @@ void S3PostMultipartObjectAction::create_object() {
     //--
     send_response_to_s3_client();
   }
+
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "post_multipartobject_action_create_object_shutdown_fail");
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -222,6 +226,9 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
       part_metadata->get_part_index_oid());
   object_multipart_metadata->save(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::save_upload_metadata_failed, this));
 
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "post_multipartobject_action_save_upload_metadata_shutdown_fail");
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -302,8 +309,15 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    S3Error error("ServiceUnavailable", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
-    request->send_response(S3HttpFailed503);
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
@@ -338,6 +352,7 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   }
+  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   i_am_done();  // self delete
   s3_log(S3_LOG_DEBUG, "Exiting\n");

@@ -92,6 +92,10 @@ void S3PutMultiObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3PutMultiObjectAction::next, this), std::bind( &S3PutMultiObjectAction::fetch_bucket_info_failed, this));
+
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_multiobject_action_fetch_bucket_info_shutdown_fail");
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -173,10 +177,9 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
 
 void S3PutMultiObjectAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
-    return;
-  }
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_multiobject_action_consume_incoming_content_shutdown_fail");
   if (!clovis_write_in_progress) {
     if (request->get_buffered_input().is_freezed() ||
         request->get_buffered_input().length() >=
@@ -291,8 +294,15 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    S3Error error("ServiceUnavailable", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
-    request->send_response(S3HttpFailed503);
+
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (request->is_chunked() && auth_failed) {
     // Invalid Bucket Name
     S3Error error("SignatureDoesNotMatch", request->get_request_id(), request->get_object_uri());
@@ -356,6 +366,7 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   }
+  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   request->resume();
 
   done();
