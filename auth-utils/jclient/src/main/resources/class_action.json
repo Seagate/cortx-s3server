@@ -62,5 +62,17 @@
     "location": {
         "Class": "S3API",
         "Action": "getBucketLocation"
+    },
+    "setpolicy": {
+        "Class": "S3API",
+        "Action": "putBucketPolicy"
+    },
+    "getpolicy": {
+        "Class": "S3API",
+        "Action": "getBucketPolicy"
+    },
+    "delpolicy": {
+        "Class": "S3API",
+        "Action": "deleteBucketPolicy"
     }
 }

@@ -226,3 +226,24 @@ class JClientTest(S3PyCliTest):
 
         self.with_cli(cmd)
         return self
+
+    def set_bucket_policy(self, bucket_name, policy_file):
+        cmd = "%s setpolicy s3://%s %s %s" % (self.jclient_cmd, bucket_name,
+            policy_file, self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def get_bucket_policy(self, bucket_name):
+        cmd = "%s getpolicy s3://%s %s" % (self.jclient_cmd, bucket_name,
+            self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
+    def delete_bucket_policy(self, bucket_name):
+        cmd = "%s delpolicy s3://%s %s" % (self.jclient_cmd, bucket_name,
+            self.get_test_config())
+
+        self.with_cli(cmd)
+        return self

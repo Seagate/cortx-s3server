@@ -24,6 +24,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -43,6 +46,7 @@ import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.BucketPolicy;
 import com.amazonaws.services.s3.model.CanonicalGrantee;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
@@ -784,6 +788,77 @@ public class S3API {
         } catch (AmazonClientException awsClientException) {
             printError(awsClientException.toString());
         }
+    }
+
+    public void putBucketPolicy() {
+        checkCommandLength(3);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty()) {
+            printError("Bucket name cannot be empty");
+        }
+
+        String policyText = getPolicyText(cmd.getArgs()[2]);
+        try {
+            client.setBucketPolicy(bucketName, policyText);
+            System.out.println("Bucket policy set successfully");
+        } catch (AmazonServiceException awsServiceException) {
+            printAwsServiceException(awsServiceException);
+        } catch (AmazonClientException awsClientException) {
+            printError(awsClientException.toString());
+        }
+    }
+
+    public void getBucketPolicy() {
+        checkCommandLength(2);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty()) {
+            printError("Bucket name cannot be empty");
+        }
+
+        try {
+            BucketPolicy bucketPolicy = client.getBucketPolicy(bucketName);
+            if (bucketPolicy.getPolicyText() != null) {
+                System.out.println(bucketPolicy.getPolicyText());
+            } else {
+                System.out.println("Bucket policy not found");
+            }
+        } catch (AmazonServiceException awsServiceException) {
+            printAwsServiceException(awsServiceException);
+        } catch (AmazonClientException awsClientException) {
+            printError(awsClientException.toString());
+        }
+    }
+
+    public void deleteBucketPolicy() {
+        checkCommandLength(2);
+        getBucketObjectName(cmd.getArgs()[1]);
+
+        if (bucketName.isEmpty()) {
+            printError("Bucket name cannot be empty");
+        }
+
+        try {
+            client.deleteBucketPolicy(bucketName);
+            System.out.println("Successfully deleted bucket policy");
+        } catch (AmazonServiceException awsServiceException) {
+            printAwsServiceException(awsServiceException);
+        } catch (AmazonClientException awsClientException) {
+            printError(awsClientException.toString());
+        }
+    }
+
+    private String getPolicyText(String policyFile) {
+        String policyText = null;
+
+        try {
+            policyText = new String(Files.readAllBytes(Paths.get(policyFile)), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            printError(e.getMessage());
+        }
+
+        return policyText;
     }
 
     private void printGrants(List <Grant> grants) {
