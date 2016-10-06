@@ -122,7 +122,10 @@ void S3AbortMultipartAction::check_if_any_parts_present_failed() {
 
 void S3AbortMultipartAction::delete_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (object_multipart_metadata->get_state() == S3ObjectMetadataState::present) {
+  if ((object_multipart_metadata->get_state() ==
+       S3ObjectMetadataState::present) ||
+      (object_multipart_metadata->get_state() ==
+       S3ObjectMetadataState::deleted)) {
     clovis_writer = std::make_shared<S3ClovisWriter>(request, object_multipart_metadata->get_oid());
     clovis_writer->delete_object(std::bind( &S3AbortMultipartAction::next, this), std::bind( &S3AbortMultipartAction::delete_object_failed, this));
   } else {

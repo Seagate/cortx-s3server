@@ -80,7 +80,11 @@ void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (object_multipart_metadata->get_state() != S3ObjectMetadataState::present) {
     create_object_timer.start();
-    clovis_writer = std::make_shared<S3ClovisWriter>(request, oid);
+    if (tried_count == 0) {
+      clovis_writer = std::make_shared<S3ClovisWriter>(request, oid);
+    } else {
+      clovis_writer->set_oid(oid);
+    }
     clovis_writer->create_object(std::bind( &S3PostMultipartObjectAction::next, this), std::bind( &S3PostMultipartObjectAction::create_object_failed, this));
   } else {
     //++

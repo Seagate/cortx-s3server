@@ -212,7 +212,8 @@ void S3ObjectMetadata::load_successful() {
 
 void S3ObjectMetadata::load_failed() {
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, "Object metadata missing\n");
+    s3_log(S3_LOG_DEBUG, "Object metadata missing for %s\n",
+           object_name.c_str());
     state = S3ObjectMetadataState::missing;  // Missing
   } else {
     s3_log(S3_LOG_WARN, "Object metadata load failed\n");
@@ -252,7 +253,11 @@ void S3ObjectMetadata::create_bucket_index_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "Object metadata bucket index created.\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->set_object_list_index_oid(index_oid);
+  if (is_multipart) {
+    bucket_metadata->set_multipart_index_oid(index_oid);
+  } else {
+    bucket_metadata->set_object_list_index_oid(index_oid);
+  }
   bucket_metadata->save(
       std::bind(&S3ObjectMetadata::save_object_list_index_oid_successful, this),
       std::bind(&S3ObjectMetadata::save_object_list_index_oid_failed, this));
