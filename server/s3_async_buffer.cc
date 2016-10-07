@@ -23,6 +23,17 @@ S3AsyncBufferContainer::S3AsyncBufferContainer() : buffered_input_length(0), is_
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 }
 
+S3AsyncBufferContainer::~S3AsyncBufferContainer() {
+  s3_log(S3_LOG_DEBUG, "Destructor\n");
+  // clear buffered_input
+  evbuf_t* buf = NULL;
+  while (!buffered_input.empty()) {
+    buf = buffered_input.front();
+    buffered_input.pop_front();
+    evbuffer_free(buf);
+  }
+}
+
 // Call this to indicate that no more data will be added to buffer.
 void S3AsyncBufferContainer::freeze() {
   is_expecting_more = false;

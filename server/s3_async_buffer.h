@@ -45,6 +45,7 @@ private:
 
 public:
   S3AsyncBufferContainer();
+  virtual ~S3AsyncBufferContainer();
 
   // Call this to indicate that no more data will be added to buffer.
   void freeze();
