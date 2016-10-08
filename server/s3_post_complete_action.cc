@@ -396,7 +396,10 @@ void S3PostCompleteAction::send_response_to_s3_client() {
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
+  } else if (object_metadata &&
+             (object_metadata->get_state() == S3ObjectMetadataState::saved) &&
+             multipart_metadata && (multipart_metadata->get_state() !=
+                                    S3ObjectMetadataState::failed)) {
     std::string response;
     std::string object_name = request->get_object_name();
     std::string bucket_name = request->get_bucket_name();
