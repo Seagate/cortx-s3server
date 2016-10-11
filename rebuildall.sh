@@ -2,6 +2,8 @@
 # Simple helper script to rebuild all s3 related binaries & install.
 set -e
 
+./checkcodeformat.sh
+
 bazel clean
 bazel build //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
 bazel build //:s3server --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
