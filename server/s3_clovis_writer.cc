@@ -222,10 +222,11 @@ void S3ClovisWriter::delete_object_successful() {
 
 void S3ClovisWriter::delete_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Object deletion failed\n");
   if (writer_context->get_errno_for(0) == -ENOENT) {
+    s3_log(S3_LOG_ERROR, "ENOENT: Object missing\n");
     state = S3ClovisWriterOpState::missing;
   } else {
+    s3_log(S3_LOG_ERROR, "Object deletion failed\n");
     state = S3ClovisWriterOpState::failed;
   }
   this->handler_on_failed();
@@ -277,8 +278,19 @@ void S3ClovisWriter::delete_objects_successful() {
 
 void S3ClovisWriter::delete_objects_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Objects deletion failed\n");
-  state = S3ClovisWriterOpState::failed;
+  int missing_count = 0;
+
+  for (missing_count = 0; missing_count < ops_count; missing_count++) {
+    if (writer_context->get_errno_for(missing_count) != -ENOENT) break;
+  }
+
+  if (missing_count == ops_count) {
+    s3_log(S3_LOG_ERROR, "ENOENT: All Objects missing\n");
+    state = S3ClovisWriterOpState::missing;
+  } else {
+    s3_log(S3_LOG_ERROR, "Objects deletion failed\n");
+    state = S3ClovisWriterOpState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

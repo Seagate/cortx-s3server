@@ -203,7 +203,8 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids, std:
 
   writer_context->start_timer_for("delete_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, oids.size());
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, oids.size(),
+                                  ClovisOpType::deleteidx);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -451,7 +452,7 @@ void S3ClovisKVSWriter::del_put_keyval(std::string key, std::string val,
 
   writer_context->start_timer_for("delete_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1);
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::deletekv);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

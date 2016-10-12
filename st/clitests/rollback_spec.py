@@ -131,9 +131,27 @@ S3cmdTest('s3cmd cannot download 3k file').download_test("seagatebucket", "3kfil
 S3cmdTest('s3cmd cannot download 18MB file').download_test("seagatebucket", "18MBfile").execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 
+# ************ Multiple Delete bucket TEST ************
+file_name = "3kfile"
+for num in range(0, 2):
+  new_file_name = '%s%d' % (file_name, num)
+  S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", new_file_name, 3000).execute_test().command_is_successful()
+
+S3fiTest('s3cmd enable fail_fetch_bucket_info').enable_fi("enable", "always", "fail_fetch_bucket_info").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot delete multiple objects').multi_delete_test("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+S3fiTest('s3cmd disable Fault injection').disable_fi("fail_fetch_bucket_info").execute_test().command_is_successful()
+
+S3fiTest('s3cmd enable fail_fetch_objects_info').enable_fi("enable", "always", "fail_fetch_objects_info").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot delete multiple objects').multi_delete_test("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+S3fiTest('s3cmd disable Fault injection').disable_fi("fail_fetch_objects_info").execute_test().command_is_successful()
+
+S3fiTest('s3cmd enable fail_delete_objects_metadata').enable_fi("enable", "always", "fail_delete_objects_metadata").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot delete multiple objects').multi_delete_test("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+S3fiTest('s3cmd disable Fault injection').disable_fi("fail_delete_objects_metadata").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete multiple objects').multi_delete_test("seagatebucket").execute_test().command_is_successful().command_response_should_have('delete: \'s3://seagatebucket/3kfile0\'').command_response_should_have('delete: \'s3://seagatebucket/3kfile1\'')
+
 # ************ Cleanup bucket + Object  ************
-S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
-S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
 # ******************* multipart and partial parts *********************
@@ -159,6 +177,9 @@ S3fiTest('s3cmd enable FI GET KV').enable_fi("enable", "always", "clovis_kv_get_
 result = S3cmdTest('S3cmd cannot list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 
+S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "clovis_kv_get_fail", "4", "99").execute_test().command_is_successful()
+result = S3cmdTest('S3cmd cannot list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail()
+S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 S3fiTest('s3cmd enable FI GET KV').enable_fi("enable", "always", "clovis_kv_get_fail").execute_test().command_is_successful()
 S3cmdTest('S3cmd cannot abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
@@ -186,6 +207,7 @@ S3cmdTest('s3cmd cannot set acl on object').setacl_object("seagatebucket","3kfil
 S3cmdTest('s3cmd cannot revoke acl on bucket').revoke_acl_bucket("seagatebucket","read:123").execute_test(negative_case=True).command_should_fail()
 S3cmdTest('s3cmd cannot revoke acl on object').revoke_acl_object("seagatebucket","3kfile","read:123").execute_test(negative_case=True).command_should_fail()
 S3cmdTest('s3cmd cannot set policy on bucket').setpolicy_bucket("seagatebucket","policy.txt").execute_test(negative_case=True).command_should_fail()
+S3cmdTest('s3cmd can set policy on bucket').delpolicy_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_put_fail").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete 3kfile after setting acl').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket after setting policy/acl').delete_bucket("seagatebucket").execute_test().command_is_successful()

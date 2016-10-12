@@ -105,6 +105,9 @@ void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
 
 void S3DeleteMultipleObjectsAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (s3_fi_is_enabled("fail_fetch_bucket_info")) {
+    s3_fi_enable_once("clovis_kv_get_fail");
+  }
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
   bucket_metadata->load(std::bind( &S3DeleteMultipleObjectsAction::next, this), std::bind( &S3DeleteMultipleObjectsAction::fetch_bucket_info_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -131,7 +134,9 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info() {
       keys_to_delete.clear();
       keys_to_delete = delete_request.get_keys(
           delete_index, S3Option::get_instance()->get_clovis_idx_fetch_count());
-
+      if (s3_fi_is_enabled("fail_fetch_objects_info")) {
+        s3_fi_enable_once("clovis_kv_get_fail");
+      }
       clovis_kv_reader->get_keyval(
           object_list_index_oid, keys_to_delete,
           std::bind(&S3DeleteMultipleObjectsAction::delete_objects, this),
@@ -183,16 +188,17 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
 
 void S3DeleteMultipleObjectsAction::delete_objects_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  int i = 0;
+  int count = 0;
   for (auto& obj : objects_metadata) {
-    if (clovis_writer->get_op_ret_code_for(i) == 0 ||
-        clovis_writer->get_op_ret_code_for(i) == -ENOENT) {
+    if (clovis_writer->get_op_ret_code_for(count) == 0 ||
+        clovis_writer->get_op_ret_code_for(count) == -ENOENT) {
       delete_objects_response.add_success(obj->get_object_name());
     } else {
       // TODO - ACL may also return AccessDenied
       delete_objects_response.add_failure(obj->get_object_name(), "InternalError");
       obj->mark_invalid();
     }
+    count += 1;
   }
   delete_objects_metadata();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -200,8 +206,22 @@ void S3DeleteMultipleObjectsAction::delete_objects_successful() {
 
 void S3DeleteMultipleObjectsAction::delete_objects_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Deletion of objects failed\n");
-  send_response_to_s3_client();
+  uint missing_count = 0;
+  for (auto& obj : objects_metadata) {
+    if (clovis_writer->get_op_ret_code_for(missing_count) == -ENOENT) {
+      delete_objects_response.add_success(obj->get_object_name());
+    } else {
+      s3_log(S3_LOG_ERROR, "Deletion of objects failed\n");
+      break;
+    }
+    missing_count += 1;
+  }
+  if (missing_count == objects_metadata.size()) {
+    s3_log(S3_LOG_DEBUG, "ENOENT: Objects missing \n");
+    delete_objects_metadata();
+  } else {
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -213,7 +233,9 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
       keys.push_back(obj->get_object_name());
     }
   }
-
+  if (s3_fi_is_enabled("fail_delete_objects_metadata")) {
+    s3_fi_enable_once("clovis_kv_delete_fail");
+  }
   clovis_kv_writer->delete_keyval(get_bucket_index_name(), keys, std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_successful, this), std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -260,7 +282,8 @@ void S3DeleteMultipleObjectsAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_list_index_oid.u_lo == 0ULL &&
-             object_list_index_oid.u_hi == 0ULL) {
+             object_list_index_oid.u_hi == 0ULL && bucket_metadata &&
+             bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string& response_xml = delete_objects_response.to_xml();
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
@@ -268,13 +291,19 @@ void S3DeleteMultipleObjectsAction::send_response_to_s3_client() {
     s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n",
            response_xml.c_str());
     request->send_response(S3HttpSuccess200, response_xml);
-  } else if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::failed ||
-             clovis_writer->get_state()    == S3ClovisWriterOpState::failed ||
-             clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::failed ) {
-    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+  } else if (clovis_kv_reader->get_state() ==
+                 S3ClovisKVSReaderOpState::failed ||
+             clovis_writer->get_state() == S3ClovisWriterOpState::failed ||
+             clovis_kv_writer->get_state() ==
+                 S3ClovisKVSWriterOpState::failed ||
+             (bucket_metadata &&
+              bucket_metadata->get_state() == S3BucketMetadataState::failed)) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
