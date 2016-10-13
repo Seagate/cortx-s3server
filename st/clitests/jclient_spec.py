@@ -212,23 +212,42 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient should not have object after its delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 
     # ************ 18MB FILE Multipart Upload TEST ***********
-    JClientTest('Jclient can upload 18MB file (multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15).execute_test().command_is_successful()
+    JClientTest('Jclient can upload 18MB file (multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15)\
+            .execute_test().command_is_successful()
 
-    JClientTest('Jclient cannot upload 18MB file (multipart) to nonexistent bucket').put_object_multipart("seagate-bucket", "18MBfile", 18000000, 15).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    JClientTest('Jclient cannot upload 18MB file (multipart) to nonexistent bucket').put_object_multipart("seagate-bucket", "18MBfile", 18000000, 15)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
-    JClientTest('Jclient can download 18MB file').get_object("seagatebucket", "18MBfile").execute_test().command_is_successful().command_created_file("18MBfile")
+    JClientTest('Jclient can download 18MB file').get_object("seagatebucket", "18MBfile")\
+            .execute_test().command_is_successful().command_created_file("18MBfile")
 
-    JClientTest('Jclient cannot upload 18MB file (multipart) in chunked mode to nonexistent bucket').put_object_multipart("seagate-bucket", "18MBfilec", 18000000, 15, chunked=True).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    JClientTest('Jclient cannot upload 18MB file (multipart) in chunked mode to nonexistent bucket')\
+            .put_object_multipart("seagate-bucket", "18MBfilec", 18000000, 15, chunked=True)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
-    JClientTest('Jclient can upload 18MB file (multipart) in chunked mode').put_object_multipart("seagatebucket", "18MBfilec", 18000000, 15, chunked=True).execute_test().command_is_successful()
+    JClientTest('Jclient can upload 18MB file (multipart) in chunked mode').put_object_multipart("seagatebucket", "18MBfilec", 18000000, 15, chunked=True)\
+            .execute_test().command_is_successful()
 
-    JClientTest('Jclient can download 18MB file uploaded in chunked mode').get_object("seagatebucket", "18MBfilec").execute_test().command_is_successful().command_created_file("18MBfilec")
+    JClientTest('Jclient can download 18MB file uploaded in chunked mode').get_object("seagatebucket", "18MBfilec")\
+            .execute_test().command_is_successful().command_created_file("18MBfilec")
 
-    JClientTest('Jclient cannot upload partial parts to nonexistent bucket.').partial_multipart_upload("seagate-bucket", "18MBfile", 18000000, 1, 2).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    # Partial multipart upload tests
+    """
+    JClientTest('Jclient cannot list parts of multipart upload on nonexistent object.').list_parts("seagatebucket", "INVALID.file", "UPLOAD-ID")\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchUpload")
+    """
 
-    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test().command_is_successful()
+    JClientTest('Jclient cannot upload partial parts to nonexistent bucket.').partial_multipart_upload("seagate-bucket", "18MBfile", 18000000, 1, 2)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
-    JClientTest('Jclient cannot list all multipart uploads on nonexistent bucket.').list_multipart("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient cannot upload partial parts when partial upload is already in progress.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidObjectState")
+
+    JClientTest('Jclient cannot list all multipart uploads on nonexistent bucket.').list_multipart("seagate-bucket")\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
     result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
     result.command_response_should_have('18MBfile')
@@ -236,18 +255,36 @@ for i, val in enumerate(pathstyle_values):
     upload_id = result.status.stdout.split("id - ")[1]
     print(upload_id)
 
-    JClientTest('Jclient cannot list parts of multipart upload on invalid bucket.').list_parts("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    JClientTest('Jclient cannot list parts of multipart upload on invalid bucket.').list_parts("seagate-bucket", "18MBfile", upload_id)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
-    JClientTest('Jclient cannot abort multipart upload on invalid bucket.').abort_multipart("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    JClientTest('Jclient cannot list parts of multipart upload on invalid object.').list_parts("seagatebucket", "INVALID.file", upload_id)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchUpload")
+
+    """
+    JClientTest('Jclient cannot list parts of multipart upload on invalid upload-id.').list_parts("seagatebucket", "18MBfile", "INVALID-UPLOAD-ID")\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchUpload")
+    """
 
     result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id).execute_test()
     result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
 
-    JClientTest('Jclient cannot abort multipart upload on invalid bucket').abort_multipart("seagate-bucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+    JClientTest('Jclient cannot abort multipart upload on invalid bucket.').abort_multipart("seagate-bucket", "18MBfile", upload_id)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
-    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+    JClientTest('Jclient cannot abort multipart upload on invalid object.').abort_multipart("seagatebucket", "INVALID.file", upload_id)\
+            .execute_test(negative_case=True).command_should_fail()
 
-    JClientTest('Jclient can test the multipart was aborted.').list_multipart('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+    """
+    JClientTest('Jclient cannot abort multipart upload on invalid upload_id').abort_multipart("seagatebucket", "18MBfile", "INVALID-UPLOAD-ID")\
+            .execute_test(negative_case=True).command_should_fail("NoSuchUpload")
+    """
+
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can test the multipart was aborted.').list_multipart('seagatebucket')\
+            .execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 
     # ************ DELETE OBJECT TEST ************
     JClientTest('Jclient can delete 3k file').delete_object("seagatebucket", "3kfile").execute_test().command_is_successful()
