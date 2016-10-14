@@ -40,6 +40,7 @@ void S3DeleteBucketAction::setup_steps(){
   add_task(std::bind( &S3DeleteBucketAction::fetch_multipart_objects, this ));
   add_task(std::bind( &S3DeleteBucketAction::remove_part_indexes, this ));
   add_task(std::bind( &S3DeleteBucketAction::remove_multipart_index, this ));
+  add_task(std::bind(&S3DeleteBucketAction::remove_object_list_index, this));
   add_task(std::bind( &S3DeleteBucketAction::delete_bucket, this ));
   add_task(std::bind( &S3DeleteBucketAction::send_response_to_s3_client, this ));
   // ...
@@ -61,14 +62,15 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
     clovis_kv_reader =
         std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
     // Try to fetch one object at least
-    struct m0_uint128 oid = bucket_metadata->get_object_list_index_oid();
+    object_list_index_oid = bucket_metadata->get_object_list_index_oid();
     // If no object list index oid then it means bucket is empty
-    if (oid.u_lo == 0ULL && oid.u_hi == 0ULL) {
+    if (object_list_index_oid.u_lo == 0ULL &&
+        object_list_index_oid.u_hi == 0ULL) {
       is_bucket_empty = true;
       next();
     } else {
       clovis_kv_reader->next_keyval(
-          bucket_metadata->get_object_list_index_oid(), last_key, 1,
+          object_list_index_oid, "", 1,
           std::bind(
               &S3DeleteBucketAction::fetch_first_object_metadata_successful,
               this),
@@ -192,6 +194,35 @@ void S3DeleteBucketAction::remove_multipart_index() {
   } else {
    next();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3DeleteBucketAction::remove_object_list_index() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (object_list_index_oid.u_hi == 0ULL &&
+      object_list_index_oid.u_lo == 0ULL) {
+    next();
+  } else {
+    // Can happen when only index is present, no objects in it
+    clovis_kv_writer =
+        std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+
+    clovis_kv_writer->delete_index(
+        object_list_index_oid, std::bind(&S3DeleteBucketAction::next, this),
+        std::bind(&S3DeleteBucketAction::remove_object_list_index_failed,
+                  this));
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3DeleteBucketAction::remove_object_list_index_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR,
+         "Failed to delete index, this will be stale in Mero: u_hi(base64) = "
+         "[%s] and u_lo(base64) = [%s]\n",
+         bucket_metadata->get_object_list_index_oid_u_hi_str().c_str(),
+         bucket_metadata->get_object_list_index_oid_u_lo_str().c_str());
+  next();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

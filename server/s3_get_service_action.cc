@@ -31,13 +31,26 @@ S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req) : S
   setup_steps();
   bucket_list.set_owner_name(request->get_user_name());
   bucket_list.set_owner_id(request->get_user_id());
+  bucket_list_index_oid = {0ULL, 0ULL};
 }
 
 void S3GetServiceAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  add_task(std::bind(&S3GetServiceAction::fetch_bucket_list_index_oid, this));
   add_task(std::bind( &S3GetServiceAction::get_next_buckets, this ));
   add_task(std::bind( &S3GetServiceAction::send_response_to_s3_client, this ));
   // ...
+}
+
+void S3GetServiceAction::fetch_bucket_list_index_oid() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  account_user_index_metadata =
+      std::make_shared<S3AccountUserIdxMetadata>(request);
+  account_user_index_metadata->load(std::bind(&S3GetServiceAction::next, this),
+                                    std::bind(&S3GetServiceAction::next, this));
+
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3GetServiceAction::get_next_buckets() {
@@ -46,12 +59,27 @@ void S3GetServiceAction::get_next_buckets() {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
-  s3_log(S3_LOG_DEBUG, "Fetching bucket list from KV store\n");
-  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  if (account_user_index_metadata->get_state() ==
+      S3AccountUserIdxMetadataState::present) {
+    bucket_list_index_oid =
+        account_user_index_metadata->get_bucket_list_index_oid();
+  }
 
-  clovis_kv_reader =
-      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
-  clovis_kv_reader->next_keyval(get_account_user_index_name(), last_key, count, std::bind( &S3GetServiceAction::get_next_buckets_successful, this), std::bind( &S3GetServiceAction::get_next_buckets_failed, this));
+  if (bucket_list_index_oid.u_hi == 0ULL &&
+      bucket_list_index_oid.u_lo == 0ULL) {
+    fetch_successful = true;  // With no entries.
+    send_response_to_s3_client();
+  } else {
+    s3_log(S3_LOG_DEBUG, "Fetching bucket list from KV store\n");
+    size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+
+    clovis_kv_reader =
+        std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
+    clovis_kv_reader->next_keyval(
+        bucket_list_index_oid, last_key, count,
+        std::bind(&S3GetServiceAction::get_next_buckets_successful, this),
+        std::bind(&S3GetServiceAction::get_next_buckets_failed, this));
+  }
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(

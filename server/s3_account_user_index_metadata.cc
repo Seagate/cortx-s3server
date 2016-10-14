@@ -32,7 +32,7 @@ S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(std::shared_ptr<S3RequestObje
   account_id = request->get_account_id();
   user_name = request->get_user_name();
   user_id = request->get_user_id();
-
+  bucket_list_index_oid = {0ULL, 0ULL};
   state = S3AccountUserIdxMetadataState::empty;
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 }

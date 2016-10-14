@@ -74,10 +74,20 @@ void S3GetBucketAction::fetch_bucket_info() {
 void S3GetBucketAction::get_next_objects() {
   s3_log(S3_LOG_DEBUG, "Fetching object listing\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-
+  m0_uint128 object_list_index_oid =
+      bucket_metadata->get_object_list_index_oid();
   clovis_kv_reader =
       std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
-  clovis_kv_reader->next_keyval(get_bucket_index_name(), last_key, count, std::bind( &S3GetBucketAction::get_next_objects_successful, this), std::bind( &S3GetBucketAction::get_next_objects_failed, this));
+  if (object_list_index_oid.u_hi == 0ULL &&
+      object_list_index_oid.u_lo == 0ULL) {
+    fetch_successful = true;
+    send_response_to_s3_client();
+  } else {
+    clovis_kv_reader->next_keyval(
+        object_list_index_oid, last_key, count,
+        std::bind(&S3GetBucketAction::get_next_objects_successful, this),
+        std::bind(&S3GetBucketAction::get_next_objects_failed, this));
+  }
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -145,8 +155,8 @@ void S3GetBucketAction::get_next_objects_successful() {
     // Go ahead and respond.
     if (object_list.size() == max_keys) {
       object_list.set_response_is_truncated(true);
+      object_list.set_next_marker_key(last_key);
     }
-    object_list.set_next_marker_key(last_key);
     fetch_successful = true;
     send_response_to_s3_client();
   } else {

@@ -240,8 +240,10 @@ void S3ObjectMetadata::create_bucket_index() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3ObjectMetadataState::missing;
-
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  if (tried_count == 0) {
+    clovis_kv_writer =
+        std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  }
   clovis_kv_writer->create_index_with_oid(
       index_oid,
       std::bind(&S3ObjectMetadata::create_bucket_index_successful, this),
@@ -331,7 +333,10 @@ void S3ObjectMetadata::save_metadata() {
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
   clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-  clovis_kv_writer->put_keyval(index_name, object_name, this->to_json(), std::bind( &S3ObjectMetadata::save_metadata_successful, this), std::bind( &S3ObjectMetadata::save_metadata_failed, this));
+  clovis_kv_writer->put_keyval(
+      index_oid, object_name, this->to_json(),
+      std::bind(&S3ObjectMetadata::save_metadata_successful, this),
+      std::bind(&S3ObjectMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

@@ -24,15 +24,18 @@
 
 #include <memory>
 
+#include "s3_account_user_index_metadata.h"
 #include "s3_action_base.h"
-#include "s3_service_list_response.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_service_list_response.h"
 
 class S3GetServiceAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+  m0_uint128 bucket_list_index_oid;
   std::string last_key;  // last key during each iteration
   S3ServiceListResponse bucket_list;
+  std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
 
   bool fetch_successful;
 
@@ -45,7 +48,7 @@ public:
   S3GetServiceAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
-
+  void fetch_bucket_list_index_oid();
   void get_next_buckets();
   void get_next_buckets_successful();
   void get_next_buckets_failed();
