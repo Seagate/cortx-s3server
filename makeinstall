@@ -1,88 +1,10 @@
 #!/bin/sh
-
 # make install things for testing
+set -e
 
-S3_INSTALL_LOCATION=/opt/seagate/s3
-AUTH_INSTALL_LOCATION=/opt/seagate/auth
-S3_CONFIG_FILE_LOCATION=/opt/seagate/s3/conf
-
-mkdir -p $S3_INSTALL_LOCATION/bin
-mkdir -p /var/log/seagate/s3/
-mkdir -p /var/log/seagate/auth/
-mkdir -p $S3_INSTALL_LOCATION/lib
-mkdir -p $S3_INSTALL_LOCATION/libevent
-mkdir -p $S3_INSTALL_LOCATION/libxml2
-mkdir -p $S3_INSTALL_LOCATION/libyaml-cpp/lib
-mkdir -p $S3_INSTALL_LOCATION/resources
-mkdir -p $AUTH_INSTALL_LOCATION
-mkdir -p $S3_CONFIG_FILE_LOCATION
-
-# Copy over the mero libs
-echo "Copying clovis libraries and dependencies to install location..."
-cp ../../mero/.libs/libmero*.so $S3_INSTALL_LOCATION/lib/
-cp ../../extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATION/lib/
-
-# Copy the s3 dependencies
-echo "Copying s3 library dependencies to install location..."
-cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
-cp -R third_party/libxml2/s3_dist/lib/* $S3_INSTALL_LOCATION/libxml2/
-cp -R third_party/yaml-cpp/s3_dist/lib/libyaml-cpp.so* $S3_INSTALL_LOCATION/libyaml-cpp/lib/
-
-# Copy the s3 server
-echo "Copying s3 server to install location..."
-cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
-
-# Copy the resources
-echo "Copying s3 server resources to install location..."
-cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json
-
-# Copy the S3 Config option file
-echo "Copying s3 config file to install location..."
-cp s3config.yaml $S3_CONFIG_FILE_LOCATION
-
-# Copy the s3 server startup script.
-echo "Copying s3 startup script to install location..."
-cp starts3.sh $S3_INSTALL_LOCATION/
-
-# Copy the s3 server startup script for multiple instance
-cp ./system/s3startsystem.sh $S3_INSTALL_LOCATION/
-
-# Copy the s3 server daemon shutdown script.
-echo "Copying s3 shutdown script to install location..."
-cp stops3.sh $S3_INSTALL_LOCATION/
-
-# Copy the s3 service status script.
-echo "Copying s3 shutdown script to install location..."
-cp statuss3.sh $S3_INSTALL_LOCATION/
-
-# Copy the s3 server daemon shutdown script for multiple instance via systemctl
-echo "Copying s3 shutdown script for an instance via systemctl to install location..."
-cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
-
-# Copy the s3 service file for systemctl support.
-echo "Copying s3 service file to /lib/systemd/system location..."
-cp ./system/s3server.service /lib/systemd/system
-
-# Copy the s3 service file for systemctl multiple instance support.
-echo "Copying s3 service file for multiple instances to /lib/systemd/system location..."
-cp ./system/s3server@.service /lib/systemd/system
-
-# Copy Auth server jar to install location
-echo "Copying Auth server jar to install location..."
-cp -f auth/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION
-
-#Copy Auth Server resources to install location
-echo "Copying auth/resources to install location"
-cp -ru auth/resources/ /opt/seagate/auth/
-
-# Copy the auth server startup script.
-echo "Copying auth server startup script to install location..."
-cp startauth.sh $AUTH_INSTALL_LOCATION/
-
-echo "Creating systemd service file for S3AuthServer"
-cp auth/s3authserver.service /lib/systemd/system
+echo "Installing S3/Auth server files..."
+./installhelper.sh /
 systemctl daemon-reload
-
 
 echo "S3 server and Auth server are setup."
 echo "Setup nginx using configuration similar to nginx.conf.sample."

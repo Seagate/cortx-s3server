@@ -187,10 +187,11 @@ openssl pkcs12 -in s3_auth.jks.p12 -out s3_auth.jks.pem
 
 ```sh
 openssl x509 -in seagates3.pem -out seagates3.crt
-```sh
+```
 
 ## RPM builds - For S3 deployment you need 3 rpms, libuv, libcassandra, and s3 server
 Following dependencies are required to build rpms.
+```sh
 yum install ruby
 yum install ruby-devel
 gem install bundler
@@ -247,7 +248,6 @@ python auth_spec.py
 $ mvn jacoco:report -Djacoco.skip=false
 ```
 
-```
 ### How to setup ssl
 ```sh
 $ cd ssl
@@ -256,4 +256,3 @@ $ cd ssl
 $ ./setup.sh
 
 ```
-
