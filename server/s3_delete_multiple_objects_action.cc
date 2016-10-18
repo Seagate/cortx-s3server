@@ -236,7 +236,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
   if (s3_fi_is_enabled("fail_delete_objects_metadata")) {
     s3_fi_enable_once("clovis_kv_delete_fail");
   }
-  clovis_kv_writer->delete_keyval(get_bucket_index_name(), keys, std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_successful, this), std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_failed, this));
+  clovis_kv_writer->delete_keyval(object_list_index_oid, keys, std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_successful, this), std::bind( &S3DeleteMultipleObjectsAction::delete_objects_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
