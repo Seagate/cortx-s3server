@@ -278,22 +278,32 @@ S3cmdTest('s3cmd cannot fetch info for nonexistent bucket').info_bucket("seagate
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd should not have bucket').list_buckets().execute_test().command_is_successful().command_response_should_not_have('s3://seagatebucket')
 
-
 # ************ Collision Resolution TEST ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
-S3cmdTest('s3cmd can upload 3k file for Collision resolution test').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+S3cmdTest('s3cmd can upload 3k file for Collision resolution test').upload_test("seagatebucket", "3kfilecollision", 3000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can upload 18MB file for Collision resolution test').upload_test("seagatebucket", "18MBfilecollision", 18000000).execute_test().command_is_successful()
 
 S3cmdTest('Deleted metadata using cqlsh for Collision resolution test').delete_metadata_test().execute_test().command_is_successful().command_is_successful()
 
 S3cmdTest('Create bucket for Collision resolution test').create_bucket("seagatebucket").execute_test().command_is_successful()
 
-S3cmdTest('s3cmd can upload 3k file after Collision resolution').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+S3cmdTest('s3cmd can upload 3k file after Collision resolution').upload_test("seagatebucket", "3kfilecollision", 3000).execute_test().command_is_successful()
 
-S3cmdTest('Check metadata have key 3kfile after Collision resolution').get_keyval_test().execute_test().command_is_successful().command_response_should_have('3kfile')
+S3cmdTest('Check metadata have key 3kfilecollision after Collision resolution').get_keyval_test().execute_test().command_is_successful().command_response_should_have('3kfilecollision')
 
-S3cmdTest('s3cmd can download 3kfile after Collision resolution upload').download_test("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
+S3cmdTest('s3cmd can download 3kfilecollision after Collision resolution upload').download_test("seagatebucket", "3kfilecollision").execute_test().command_is_successful().command_created_file("3kfilecollision")
 
-S3cmdTest('s3cmd can delete 3kfile after collision resolution').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete 3kfilecollision after collision resolution').delete_test("seagatebucket", "3kfilecollision").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can upload 18MB file after Collision resolution').upload_test("seagatebucket", "18MBfilecollision", 3000).execute_test().command_is_successful()
+
+S3cmdTest('Check metadata have key 18MBfilecollision after Collision resolution').get_keyval_test().execute_test().command_is_successful().command_response_should_have('18MBfilecollision')
+
+S3cmdTest('s3cmd can download 18MBfilecollision after Collision resolution upload').download_test("seagatebucket", "18MBfilecollision").execute_test().command_is_successful().command_created_file("18MBfilecollision")
+
+S3cmdTest('s3cmd can delete 18MBfilecollision after collision resolution').delete_test("seagatebucket", "18MBfilecollision").execute_test().command_is_successful()
+
 
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 

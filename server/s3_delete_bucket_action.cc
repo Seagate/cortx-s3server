@@ -38,6 +38,7 @@ void S3DeleteBucketAction::setup_steps(){
   add_task(std::bind( &S3DeleteBucketAction::fetch_bucket_metadata, this ));
   add_task(std::bind( &S3DeleteBucketAction::fetch_first_object_metadata, this ));
   add_task(std::bind( &S3DeleteBucketAction::fetch_multipart_objects, this ));
+  add_task(std::bind(&S3DeleteBucketAction::delete_multipart_objects, this));
   add_task(std::bind( &S3DeleteBucketAction::remove_part_indexes, this ));
   add_task(std::bind( &S3DeleteBucketAction::remove_multipart_index, this ));
   add_task(std::bind(&S3DeleteBucketAction::remove_object_list_index, this));
@@ -123,6 +124,7 @@ void S3DeleteBucketAction::fetch_multipart_objects() {
 }
 
 void S3DeleteBucketAction::fetch_multipart_objects_successful() {
+  struct m0_uint128 multipart_obj_oid;
   s3_log(S3_LOG_DEBUG, "Found multipart uploads listing\n");
   size_t return_list_size = 0;
   auto& kvps = clovis_kv_reader->get_key_values();
@@ -131,10 +133,13 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, "Parsing Multipart object metadata = %s\n", kv.first.c_str());
     auto object = std::make_shared<S3ObjectMetadata>(request, true);
-
     object->from_json(kv.second);
     multipart_objects[kv.first] = object->get_upload_id();
+    multipart_obj_oid = object->get_oid();
     part_oids.push_back(object->get_part_index_oid());
+    if (multipart_obj_oid.u_hi != 0ULL || multipart_obj_oid.u_lo != 0ULL) {
+      multipart_object_oids.push_back(multipart_obj_oid);
+    }
     return_list_size++;
 
     if (--length == 0 || return_list_size == count_we_requested) {
@@ -148,6 +153,59 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   } else {
     fetch_multipart_objects();
   }
+}
+
+void S3DeleteBucketAction::delete_multipart_objects() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (multipart_object_oids.size() != 0) {
+    clovis_writer = std::make_shared<S3ClovisWriter>(request);
+    clovis_writer->delete_objects(
+        multipart_object_oids,
+        std::bind(&S3DeleteBucketAction::delete_multipart_objects_successful,
+                  this),
+        std::bind(&S3DeleteBucketAction::delete_multipart_objects_failed,
+                  this));
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3DeleteBucketAction::delete_multipart_objects_successful() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  int count = 0;
+  for (auto& multipart_obj_oid : multipart_object_oids) {
+    if (clovis_writer->get_op_ret_code_for(count) == 0 ||
+        clovis_writer->get_op_ret_code_for(count) == -ENOENT) {
+      s3_log(S3_LOG_DEBUG, "Deleted multipart object, oid is %lu %lu\n",
+             multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
+    } else {
+      s3_log(S3_LOG_ERROR,
+             "Failed to delete multipart object, this will be stale in Mero: "
+             "%lu %lu\n",
+             multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
+    }
+    count += 1;
+  }
+  next();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3DeleteBucketAction::delete_multipart_objects_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  uint count = 0;
+  for (auto& multipart_obj_oid : multipart_object_oids) {
+    if (clovis_writer->get_op_ret_code_for(count) != -ENOENT &&
+        clovis_writer->get_op_ret_code_for(count) != 0) {
+      s3_log(S3_LOG_ERROR,
+             "Failed to delete multipart object, this will be stale in Mero: "
+             "%lu %lu\n",
+             multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
+    }
+    count++;
+  }
+  next();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3DeleteBucketAction::remove_part_indexes() {

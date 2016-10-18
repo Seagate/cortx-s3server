@@ -27,15 +27,18 @@
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_clovis_writer.h"
 
 class S3DeleteBucketAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::map<std::string, std::string>::iterator multipart_kv;
   std::map <std::string, std::string> multipart_objects;
   std::vector<struct m0_uint128> part_oids;
+  std::vector<struct m0_uint128> multipart_object_oids;
   m0_uint128 object_list_index_oid;
 
   std::string last_key;  // last key during each iteration
@@ -68,6 +71,9 @@ public:
   void delete_bucket_failed();
   void fetch_multipart_objects();
   void fetch_multipart_objects_successful();
+  void delete_multipart_objects();
+  void delete_multipart_objects_successful();
+  void delete_multipart_objects_failed();
   void remove_part_indexes();
   void remove_part_indexes_successful();
   void remove_part_indexes_failed();
