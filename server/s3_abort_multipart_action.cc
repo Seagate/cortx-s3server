@@ -26,7 +26,7 @@
 
 S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3RequestObject> req)
-    : S3Action(req, false) {
+    : S3Action(req, false), invalid_upload_id(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   upload_id = request->get_query_string_value("uploadId");
   object_name = request->get_object_name();
@@ -79,12 +79,15 @@ void S3AbortMultipartAction::get_multipart_metadata() {
 
 void S3AbortMultipartAction::delete_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (object_multipart_metadata->get_state() == S3ObjectMetadataState::present) {
+  if ((object_multipart_metadata->get_state() ==
+       S3ObjectMetadataState::present) &&
+      (object_multipart_metadata->get_upload_id() == upload_id)) {
     part_index_oid = object_multipart_metadata->get_part_index_oid();
     object_multipart_metadata->remove(std::bind( &S3AbortMultipartAction::next, this),
                                       std::bind( &S3AbortMultipartAction::next, this));
   } else {
-    next();
+    invalid_upload_id = true;
+    send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -167,6 +170,12 @@ void S3AbortMultipartAction::send_response_to_s3_client() {
   if (bucket_metadata && (bucket_metadata->get_state() == S3BucketMetadataState::missing)) {
     // Invalid Bucket Name
     S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (object_multipart_metadata && invalid_upload_id) {
+    S3Error error("NoSuchUpload", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->send_response(error.get_http_status_code(), response_xml);

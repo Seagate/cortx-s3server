@@ -46,6 +46,7 @@ class S3AbortMultipartAction : public S3Action {
   m0_uint128 multipart_oid;
   m0_uint128 part_index_oid;
   bool abort_success;
+  bool invalid_upload_id;
 
  public:
   S3AbortMultipartAction(std::shared_ptr<S3RequestObject> req);

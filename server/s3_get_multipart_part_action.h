@@ -40,8 +40,10 @@ class S3GetMultipartPartAction : public S3Action {
   std:: string bucket_name;
   std::string object_name;
   std::string upload_id;
+  m0_uint128 multipart_oid;
 
   bool fetch_successful;
+  bool invalid_upload_id;
 
   // Request Input params
   std::string request_marker_key;

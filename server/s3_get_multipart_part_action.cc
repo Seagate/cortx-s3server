@@ -26,7 +26,13 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3GetMultipartPartAction::S3GetMultipartPartAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), return_list_size(0), fetch_successful(false) {
+S3GetMultipartPartAction::S3GetMultipartPartAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req),
+      last_key(""),
+      return_list_size(0),
+      fetch_successful(false),
+      invalid_upload_id(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
@@ -41,6 +47,7 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(std::shared_ptr<S3RequestObje
   object_name = request->get_object_name();
   last_key = request_marker_key;  // as requested by user
   upload_id = request->get_query_string_value("uploadId");
+  multipart_oid = {0ULL, 0ULL};
   multipart_part_list.set_bucket_name(bucket_name);
   multipart_part_list.set_object_name(object_name);
   multipart_part_list.set_upload_id(upload_id);
@@ -80,11 +87,17 @@ void S3GetMultipartPartAction::fetch_bucket_info() {
 void S3GetMultipartPartAction::get_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
-        request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
-    object_multipart_metadata->load(
-        std::bind(&S3GetMultipartPartAction::next, this),
-        std::bind(&S3GetMultipartPartAction::next, this));
+    multipart_oid = bucket_metadata->get_multipart_index_oid();
+    if (multipart_oid.u_hi == 0ULL && multipart_oid.u_lo == 0ULL) {
+      s3_log(S3_LOG_DEBUG, "No such upload in progress within the bucket\n");
+      send_response_to_s3_client();
+    } else {
+      object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
+          request, multipart_oid, true, upload_id);
+      object_multipart_metadata->load(
+          std::bind(&S3GetMultipartPartAction::next, this),
+          std::bind(&S3GetMultipartPartAction::next, this));
+    }
   } else {
     send_response_to_s3_client();
   }
@@ -93,8 +106,9 @@ void S3GetMultipartPartAction::get_multipart_metadata() {
 
 void S3GetMultipartPartAction::get_key_object() {
   s3_log(S3_LOG_DEBUG, "Fetching part listing\n");
-  if (object_multipart_metadata->get_state() ==
-      S3ObjectMetadataState::present) {
+  if ((object_multipart_metadata->get_state() ==
+       S3ObjectMetadataState::present) &&
+      (object_multipart_metadata->get_upload_id() == upload_id)) {
     clovis_kv_reader =
         std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
     clovis_kv_reader->get_keyval(
@@ -102,6 +116,7 @@ void S3GetMultipartPartAction::get_key_object() {
         std::bind(&S3GetMultipartPartAction::get_key_object_successful, this),
         std::bind(&S3GetMultipartPartAction::get_key_object_failed, this));
   } else {
+    invalid_upload_id = true;
     send_response_to_s3_client();
   }
 }
@@ -245,9 +260,16 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->send_response(error.get_http_status_code(), response_xml);
+  } else if (multipart_oid.u_hi == 0ULL && multipart_oid.u_lo == 0ULL) {
+    S3Error error("NoSuchUpload", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_multipart_metadata &&
-             (object_multipart_metadata->get_state() !=
-              S3ObjectMetadataState::present)) {
+             ((object_multipart_metadata->get_state() !=
+               S3ObjectMetadataState::present) ||
+              invalid_upload_id)) {
     S3Error error("NoSuchUpload", request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
