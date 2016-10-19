@@ -180,6 +180,16 @@ class S3cmdTest(S3PyCliTest):
         self.with_cli(cqlsh_cmd)
         return self
 
+    def stop_s3authserver_test(self):
+        cqlsh_cmd = "systemctl stop s3authserver.service";
+        self.with_cli(cqlsh_cmd)
+        return self
+
+    def start_s3authserver_test(self):
+        cqlsh_cmd = "systemctl start s3authserver.service";
+        self.with_cli(cqlsh_cmd)
+        return self
+
     def delete_test(self, bucket_name, filename):
         self.filename = filename
         self.bucket_name = bucket_name

@@ -26,6 +26,8 @@
 #include "s3_common.h"
 #include "s3_error_codes.h"
 #include "s3_auth_client.h"
+#include "s3_auth_fake.h"
+#include "s3_fi_common.h"
 #include "s3_url_encode.h"
 #include "s3_option.h"
 
@@ -51,6 +53,7 @@ extern "C" evhtp_res on_auth_conn_err_callback(evhtp_connection_t * connection, 
     return EVHTP_RES_OK;
   }
   context->set_op_status_for(0, S3AsyncOpStatus::connection_failed, "Cannot connect to Auth server.");
+  context->set_auth_response_xml("", false);
   context->on_failed_handler()();  // Invoke the handler.
   return EVHTP_RES_OK;
 }
@@ -108,10 +111,15 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t * req, evbuf_t * 
 
 extern "C" evhtp_res on_auth_response(evhtp_request_t * req, evbuf_t * buf, void * arg) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  unsigned int auth_resp_status = evhtp_request_status(req);
-  s3_log(S3_LOG_DEBUG, "auth_resp_status = %d\n", auth_resp_status);
-
+  unsigned int auth_resp_status;
   S3AuthClientOpContext *context = (S3AuthClientOpContext*)arg;
+
+  if (s3_fi_is_enabled("fake_authentication_fail")) {
+    auth_resp_status = S3HttpFailed401;
+  } else {
+    auth_resp_status = evhtp_request_status(req);
+  }
+  s3_log(S3_LOG_DEBUG, "auth_resp_status = %d\n", auth_resp_status);
 
   // Note: Do not remove this, else you will have s3 crashes as the
   // callbacks are invoked after request/connection is freed.
@@ -353,6 +361,7 @@ void S3AuthClient::setup_auth_request_headers() {
 
 void S3AuthClient::execute_authconnect_request(struct s3_auth_op_context* auth_ctx) {
   S3AuthClientOpType auth_request_type = get_op_type();
+
   if (auth_request_type == S3AuthClientOpType::authorization) {
     //Free http request used for authentication, when we make request via
     //evhtp_make_request in the connnection data structure, the http request of auth will be replaced with
@@ -361,11 +370,23 @@ void S3AuthClient::execute_authconnect_request(struct s3_auth_op_context* auth_c
       evhtp_request_free(auth_ctx->authrequest);
       auth_ctx->authrequest = NULL;
     }
-    evhtp_make_request(auth_ctx->conn, auth_ctx->authorization_request, htp_method_POST, "/");
-    evhtp_send_reply_body(auth_ctx->authorization_request, req_body_buffer);
+    if (s3_fi_is_enabled("fake_authorization_fail")) {
+      s3_auth_fake_evhtp_request(S3AuthClientOpType::authorization,
+                                 auth_context.get());
+    } else {
+      evhtp_make_request(auth_ctx->conn, auth_ctx->authorization_request,
+                         htp_method_POST, "/");
+      evhtp_send_reply_body(auth_ctx->authorization_request, req_body_buffer);
+    }
   } else {
-    evhtp_make_request(auth_ctx->conn, auth_ctx->authrequest, htp_method_POST, "/");
-    evhtp_send_reply_body(auth_ctx->authrequest, req_body_buffer);
+    if (s3_fi_is_enabled("fake_authentication_fail")) {
+      s3_auth_fake_evhtp_request(S3AuthClientOpType::authentication,
+                                 auth_context.get());
+    } else {
+      evhtp_make_request(auth_ctx->conn, auth_ctx->authrequest, htp_method_POST,
+                         "/");
+      evhtp_send_reply_body(auth_ctx->authrequest, req_body_buffer);
+    }
   }
   evbuffer_free(req_body_buffer);
 }

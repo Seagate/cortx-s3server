@@ -103,6 +103,16 @@ S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfil
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 clean_18mb_multipart()
 
+# ************  auth FI ***************
+S3fiTest('s3cmd enable FI auth').enable_fi("enable", "always", "fake_authentication_fail").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidAccessKeyId")
+JClientTest('JClient cannot upload 3k file').put_object("seagatebucket", "3kfile", 3000, chunked=True).execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidAccessKeyId")
+S3fiTest('s3cmd disable Fault injection').disable_fi("fake_authentication_fail").execute_test().command_is_successful()
+
+S3cmdTest('Stop s3authserver service').stop_s3authserver_test().execute_test().command_is_successful().command_is_successful()
+S3cmdTest('s3cmd cannot upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail().command_error_should_have("ServiceUnavailable")
+S3cmdTest('Start s3authserver service').start_s3authserver_test().execute_test().command_is_successful().command_is_successful()
+
 # ************  OBJ create FI ***************
 S3fiTest('s3cmd enable FI Obj create').enable_fi("enable", "always", "clovis_obj_create_fail").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()
