@@ -293,6 +293,46 @@ public class S3API {
         }
     }
 
+    public void createMultipartUpload() {
+        checkCommandLength(3);
+
+        String fileName = cmd.getArgs()[1];
+        File file = new File(fileName);
+
+        if (!file.exists()) {
+            printError("Given file doesn't exist.");
+        }
+
+        getBucketObjectName(cmd.getArgs()[2]);
+        if (bucketName.isEmpty()) {
+            printError("Incorrect command. Bucket name is required.");
+            printError("Incorrect command. Check java client usage.");
+        }
+
+        if (keyName.isEmpty()) {
+            keyName = file.getName();
+        } else if (keyName.endsWith("/")) {
+            keyName += file.getName();
+        }
+
+        initiateMPU(bucketName, keyName);
+    }
+
+    private InitiateMultipartUploadResult initiateMPU(String bucketName,
+                                                      String keyName) {
+        InitiateMultipartUploadRequest initRequest
+                = new InitiateMultipartUploadRequest(bucketName, keyName);
+        InitiateMultipartUploadResult initResponse = null;
+        try {
+            initResponse = client.initiateMultipartUpload(initRequest);
+            System.out.println("Upload id - " + initResponse.getUploadId());
+        } catch (AmazonClientException ex) {
+            printError(ex.toString());
+        }
+
+        return initResponse;
+    }
+
     public void partialPutObject() {
         checkCommandLength(4);
 
@@ -318,44 +358,40 @@ public class S3API {
         }
 
         int noOfParts = Integer.parseInt(cmd.getArgs()[3]);
-
-        InitiateMultipartUploadRequest initRequest
-                = new InitiateMultipartUploadRequest(bucketName, keyName);
-
-        InitiateMultipartUploadResult initResponse = null;
-        try {
-            initResponse = client.initiateMultipartUpload(initRequest);
-        } catch (AmazonClientException ex) {
-            printError(ex.toString());
-        }
-
-        System.out.println("Upload id - " + initResponse.getUploadId());
-
         long contentLength = file.length();
-        long partSize = Integer.parseInt(cmd.getOptionValue("m")) * 1024 * 1024;
-
+        long partSize = 16 * 1024 * 1024;
+        if (cmd.hasOption("m")) {
+            partSize = Integer.parseInt(cmd.getOptionValue("m")) * 1024 * 1024;
+        }
+        String uploadId = getOptionValue("with-upload-id");
+        if (uploadId == null) {
+            uploadId = initiateMPU(bucketName, keyName).getUploadId();
+        }
         try {
             long filePosition = 0;
             int i = 1;
-            while (i <= noOfParts && filePosition < contentLength) {
+            if (cmd.hasOption("from-part")) {
+                int fromPart = Integer.parseInt(getOptionValue("from-part"));
+                filePosition = (fromPart - 1) * partSize;
+                i = fromPart;
+            }
+            while (noOfParts > 0 && filePosition < contentLength) {
                 partSize = Math.min(partSize, (contentLength - filePosition));
-
                 UploadPartRequest uploadRequest = new UploadPartRequest()
                         .withBucketName(bucketName).withKey(keyName)
-                        .withUploadId(initResponse.getUploadId())
+                        .withUploadId(uploadId)
                         .withPartNumber(i)
                         .withFileOffset(filePosition)
                         .withFile(file)
                         .withPartSize(partSize);
-
                 System.out.println("Uploading part " + i + " of size "
                         + partSize / (1024 * 1024) + "MB");
-
                 client.uploadPart(uploadRequest);
-
                 filePosition += partSize;
                 i++;
+                noOfParts--;
             }
+            System.out.println("Partial upload successful.");
         } catch (AmazonClientException e) {
             printError("Partial upload failed." + e.getMessage());
         }
@@ -439,6 +475,57 @@ public class S3API {
         }
     }
 
+    private void printMultipartUploads(MultipartUploadListing uploads) {
+        for (MultipartUpload upload : uploads.getMultipartUploads()) {
+            System.out.println("Name - " + upload.getKey() + ", Upload id - "
+                    + upload.getUploadId());
+        }
+    }
+
+    private void printCommonPrefixes(MultipartUploadListing uploads) {
+        for (String commonPrefix : uploads.getCommonPrefixes()) {
+            System.out.println("CommonPrefix - " + commonPrefix);
+        }
+    }
+
+    private String getOptionValue(String option) {
+        String value = null;
+        if (cmd.hasOption(option)) {
+            value = cmd.getOptionValue(option);
+        }
+
+        return value;
+    }
+
+    private ListMultipartUploadsRequest createListMpuRequest(String bucketName,
+                                                             Integer maxUploads,
+                                                             String nextMarker,
+                                                             String uploadIdMarker,
+                                                             String prefix,
+                                                             String delimiter) {
+        ListMultipartUploadsRequest request = new ListMultipartUploadsRequest(bucketName);
+
+        if (maxUploads > 0) {
+            request.setMaxUploads(maxUploads);
+        }
+        if (nextMarker != null || uploadIdMarker != null) {
+            if (nextMarker != null && uploadIdMarker != null) {
+                request.setKeyMarker(nextMarker);
+                request.setUploadIdMarker(uploadIdMarker);
+            } else {
+                printError("Both next-marker and upload-id-marker are required");
+            }
+        }
+        if (prefix != null) {
+            request.setPrefix(prefix);
+        }
+        if (delimiter != null) {
+            request.setDelimiter(delimiter);
+        }
+
+        return request;
+    }
+
     public void listMultiParts() {
         checkCommandLength(2);
         getBucketObjectName(cmd.getArgs()[1]);
@@ -447,15 +534,35 @@ public class S3API {
             printError("Incorrect command. Bucket name is required.");
         }
 
-        try {
-            MultipartUploadListing uploads = client.listMultipartUploads(
-                    new ListMultipartUploadsRequest(bucketName));
+        boolean showNext = false;
+        int maxUploads = 0; // S3 BUG WHEN MAX-UPLOADS = 1
+        String nextMarker = getOptionValue("next-marker");
+        String uploadIdMarker = getOptionValue("upload-id-marker");
+        String prefix = getOptionValue("prefix");
+        String delimiter = getOptionValue("delimiter");
 
-            System.out.println("Multipart uploads - ");
-            for (MultipartUpload upload : uploads.getMultipartUploads()) {
-                System.out.println("Name - " + upload.getKey() + ", Upload id - "
-                        + upload.getUploadId());
-            }
+        if (cmd.hasOption("show-next")) {
+            showNext = true;
+        }
+        if (cmd.hasOption("max-uploads")) {
+            maxUploads = Integer.parseInt(getOptionValue("max-uploads"));
+        }
+
+        try {
+            MultipartUploadListing uploads;
+            ListMultipartUploadsRequest request;
+            System.out.println("Multipart uploads -");
+            do {
+                request = createListMpuRequest(bucketName, maxUploads,
+                        nextMarker, uploadIdMarker, prefix, delimiter);
+                uploads = client.listMultipartUploads(request);
+                printMultipartUploads(uploads);
+                if (!uploads.getCommonPrefixes().isEmpty()) {
+                    printCommonPrefixes(uploads);
+                }
+                nextMarker = uploads.getNextKeyMarker();
+                uploadIdMarker = uploads.getNextUploadIdMarker();
+            } while (showNext && uploads.isTruncated());
         } catch (AmazonClientException ex) {
             printError(ex.toString());
         }

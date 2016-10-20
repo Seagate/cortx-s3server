@@ -95,6 +95,16 @@ class JClientTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def init_mpu(self, bucket_name, filename, filesize):
+        self.filename = filename
+        self.filesize = filesize
+
+        cmd =  "%s initmpu %s s3://%s %s" % (self.jclient_cmd, filename,
+                bucket_name, self.get_test_config())
+
+        self.with_cli(cmd)
+        return self
+
     def put_object_multipart(self, bucket_name, filename, filesize, size_of_part, chunked=False):
         self.filename = filename
         self.filesize = filesize
@@ -134,7 +144,7 @@ class JClientTest(S3PyCliTest):
         return self
 
     def partial_multipart_upload(self, bucket_name, filename, filesize,
-        size_of_part, no_of_parts, chunked=False):
+        size_of_part, no_of_parts, with_upload_id=None, from_part=None, chunked=False):
         self.filename = filename
         self.filesize = filesize
         if chunked:
@@ -146,12 +156,38 @@ class JClientTest(S3PyCliTest):
             filename, bucket_name, str(no_of_parts), str(size_of_part),
             self.get_test_config())
 
+        if with_upload_id:
+            cmd += " --with-upload-id %s" % with_upload_id
+
+        if from_part:
+            cmd += " --from-part %s" % from_part
+
         self.with_cli(cmd)
         return self
 
-    def list_multipart(self, bucket_name):
+    def list_multipart(self, bucket_name, prefix=None, delimiter=None,
+            next_marker=None, upload_id_marker=None, max_uploads=None,
+            show_next=None):
         cmd = "%s multipart s3://%s %s" % (self.jclient_cmd, bucket_name,
             self.get_test_config())
+
+        if prefix:
+            cmd += " --prefix %s" % prefix
+
+        if delimiter:
+            cmd += " --delimiter %s" % delimiter
+
+        if next_marker:
+            cmd += " --next-marker %s" % next_marker
+
+        if upload_id_marker:
+            cmd += " --upload-id-marker %s" % upload_id_marker
+
+        if max_uploads:
+            cmd += " --max-uploads %s" % max_uploads
+
+        if show_next:
+            cmd += " --show-next"
 
         self.with_cli(cmd)
         return self

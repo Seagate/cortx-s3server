@@ -74,5 +74,9 @@
     "delpolicy": {
         "Class": "S3API",
         "Action": "deleteBucketPolicy"
+    },
+    "initmpu": {
+        "Class": "S3API",
+        "Action": "createMultipartUpload"
     }
 }

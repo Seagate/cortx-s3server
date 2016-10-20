@@ -343,6 +343,130 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can delete bucket seagate.bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
     JClientTest('Jclient should not list bucket after its deletion').list_buckets().execute_test().command_is_successful().command_response_should_not_have('seagatebucket').command_response_should_not_have('seagatebucket123').command_response_should_not_have('seagate.bucket').command_response_should_not_have('seagate-bucket')
 
+    # ************ TEST: INIT-MPU && PARTIAL-MPU ***********
+    JClientTest('Jclient can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    JClientTest('Jclient can initiate multpart upload').init_mpu("seagatebucket", "18MBfile", 18000000)\
+            .execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
+    result.command_response_should_have('18MBfile')
+
+    upload_id = result.status.stdout.split("18MBfile, Upload id - ")[1].strip()
+    print("UPLOAD-ID: ", upload_id)
+
+    JClientTest('JClient cannot upload other parts before uploading part-1')\
+            .partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 1, with_upload_id=upload_id, from_part=2)\
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("Partial upload failed")
+
+    JClientTest('JClient can upload part-1')\
+            .partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 1, with_upload_id=upload_id)\
+            .execute_test().command_is_successful().command_response_should_have("Partial upload successful")
+
+    JClientTest('JClient can upload part-1')\
+            .partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 1, with_upload_id=upload_id)\
+            .execute_test().command_is_successful().command_response_should_have("Partial upload successful")
+
+    JClientTest('JClient can upload part-3')\
+            .partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 1, with_upload_id=upload_id, from_part=3)\
+            .execute_test().command_is_successful().command_response_should_have("Partial upload successful")
+
+    JClientTest('JClient can upload part-4-5-6')\
+            .partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 3, with_upload_id=upload_id, from_part=4)\
+            .execute_test().command_is_successful().command_response_should_have("Partial upload successful")
+
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can test the multipart was aborted.').list_multipart('seagatebucket')\
+            .execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+
+    JClientTest('Jclient can initiate multpart upload').init_mpu("seagatebucket", "FILE_L0", 18000000)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can initiate multpart upload').init_mpu("seagatebucket/L1/", "FILE_L1_A", 18000000)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can initiate multpart upload').init_mpu("seagatebucket/L1/", "FILE_L1_B", 18000000)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can initiate multpart upload').init_mpu("seagatebucket/L1/L2/", "FILE_L2_C", 18000000)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can initiate multpart upload').init_mpu("seagatebucket/L1/L2/", "FILE_L2_D", 18000000)\
+            .execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
+    uid_0 = result.status.stdout.split("FILE_L0, Upload id - ")[1].strip()
+    uid_a = result.status.stdout.split("FILE_L1_A, Upload id - ")[1].strip()
+    uid_b = result.status.stdout.split("FILE_L1_B, Upload id - ")[1].strip()
+    uid_c = result.status.stdout.split("FILE_L2_C, Upload id - ")[1].strip()
+    uid_d = result.status.stdout.split("FILE_L2_D, Upload id - ")[1].strip()
+
+    JClientTest('Jclient can list 3 multipart uploads.')\
+            .list_multipart("seagatebucket", max_uploads=3).execute_test().command_is_successful()\
+            .command_response_should_have("FILE_L0")\
+            .command_response_should_have("L1/FILE_L1_A").command_response_should_have("L1/FILE_L1_B")\
+            .command_response_should_not_have("L1/L2/FILE_L2_C").command_response_should_not_have("L1/L2/FILE_L2_D")
+
+    JClientTest('Jclient can list multipart uploads with prefix.')\
+            .list_multipart("seagatebucket", prefix="L1/L2/").execute_test().command_is_successful()\
+            .command_response_should_have("L1/L2/FILE_L2_C").command_response_should_have("L1/L2/FILE_L2_D")\
+            .command_response_should_not_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
+            .command_response_should_not_have("FILE_L0")
+
+    JClientTest('Jclient can list multipart uploads with delimiter.')\
+            .list_multipart("seagatebucket", delimiter="/").execute_test().command_is_successful()\
+            .command_response_should_have("FILE_L0").command_response_should_have("CommonPrefix - L1/")\
+            .command_response_should_not_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
+            .command_response_should_not_have("L1/L2/FILE_L2_C").command_response_should_not_have("L1/L2/FILE_L2_D")
+
+    JClientTest('Jclient can list multipart uploads with prefix and delimiter.')\
+            .list_multipart("seagatebucket", prefix="L1/L2/", delimiter="/").execute_test().command_is_successful()\
+            .command_response_should_have("L1/L2/FILE_L2_C").command_response_should_have("L1/L2/FILE_L2_D")\
+            .command_response_should_not_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
+            .command_response_should_not_have("CommonPrefix")
+
+    """ S3 BUG: When max-uploads specified with prefix, result has 1 less uploads than max-uploads
+    JClientTest('Jclient can list multipart uploads with max-uploads && prefix')\
+            .list_multipart("seagatebucket", prefix="L1/", delimiter="/", max_uploads=1).execute_test().command_is_successful()\
+            .command_response_should_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
+            .command_response_should_not_have("L1/L2/FILE_L2_C").command_response_should_not_have("L1/L2/FILE_L2_D")\
+            .command_response_should_not_have("FILE_L0")
+
+    JClientTest('Jclient can list multipart uploads with max-uploads, prefix and delimiter.')\
+            .list_multipart("seagatebucket", prefix="L1/", delimiter="/", max_uploads=1).execute_test().command_is_successful()\
+            .command_response_should_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
+            .command_response_should_not_have("L1/L2/FILE_L2_C").command_response_should_not_have("L1/L2/FILE_L2_D")\
+            .command_response_should_not_have("FILE_L0")
+    """
+
+    """ S3 BUG: When first multipart upload is used as next-marker(and upload-id-marker) with max-uploads=1,
+        it returns same(first mpu) upload only, forming loop.
+    JClientTest('Jclient can list multipart uploads with max-uploads ')\
+            .list_multipart("seagatebucket", max_uploads=1, show_next=True).execute_test().command_is_successful()\
+            .command_response_should_have("L1/FILE_L1_A").command_response_should_have("L1/FILE_L1_B")\
+            .command_response_should_have("L1/L2/FILE_L2_C").command_response_should_have("L1/L2/FILE_L2_D")\
+            .command_response_should_have("FILE_L0")
+    """
+
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "FILE_L0", uid_0)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket/L1", "FILE_L1_A", uid_a)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket/L1", "FILE_L1_B", uid_b)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket/L1/L2", "FILE_L2_C", uid_c)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket/L1/L2", "FILE_L2_D", uid_d)\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+
 
 # Add tests which are specific to Path style APIs
 

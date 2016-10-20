@@ -29,6 +29,7 @@ import java.util.HashMap;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.log4j.Level;
@@ -138,13 +139,36 @@ public class JavaClient {
                 .addOption("L", "log_level", true, "Log level (INFO, DEFAULT, "
                         + "ALL, WARN, ERROR, TRACE). Default ERROR.")
                 .addOption("C", "chunk", false, "Enable chunked upload")
+                .addOption(OptionBuilder.withLongOpt("from-part")
+                        .withDescription("Partial upload will start from this part")
+                        .hasArg().withArgName("PART-NUMBER").create())
+                .addOption(OptionBuilder.withLongOpt("with-upload-id")
+                        .withDescription("Upload id when used for partial uploads")
+                        .hasArg().withArgName("UPLOAD-ID").create())
+                .addOption(OptionBuilder.withLongOpt("max-uploads")
+                        .withDescription("Get max-uploads").hasArg()
+                        .withArgName("MAX-UPLOADS").create())
+                .addOption(OptionBuilder.withLongOpt("delimiter")
+                        .withDescription("Delimiter").hasArg()
+                        .withArgName("DELIMITER").create())
+                .addOption(OptionBuilder.withLongOpt("prefix")
+                        .withDescription("Prefix").hasArg()
+                        .withArgName("PREFIX").create())
+                .addOption(OptionBuilder.withLongOpt("next-marker")
+                        .withDescription("Next marker").hasArg()
+                        .withArgName("NEXT-MARKER").create())
+                .addOption(OptionBuilder.withLongOpt("upload-id-marker")
+                        .withDescription("Upload id marker").hasArg()
+                        .withArgName("UPLOAD-ID-MARKER").create())
+                .addOption(OptionBuilder.withLongOpt("show-next")
+                        .withDescription("Display next set of results").create())
                 .addOption("h", "help", false, "Show usage");
 
         return options;
     }
 
     private static void showUsage() {
-        String usage = "Commands:\n"
+        String usage = "Usage:\n"
                 + "  Make bucket\n"
                 + "      java -jar jclient.jar mb s3://BUCKET\n"
                 + "  Remove bucket\n"
@@ -163,22 +187,24 @@ public class JavaClient {
                 + "      java -jar jclient.jar head s3://BUCKET/PREFIX/OBJECT\n"
                 + "  Bucket or Object exists\n"
                 + "      java -jar jclient.jar exists s3://BUCKET[/PREFIX/OBJECT]\n"
+                + "  Initiate multipart uploads\n"
+                + "      java -jar jclient.jar initmpu FILE s3://BUCKET[/PREFIX]\n"
                 + "  Show multipart uploads\n"
                 + "      java -jar jclient.jar multipart s3://BUCKET\n"
                 + "  Abort a multipart upload\n"
                 + "      java -jar jclient.jar abortmp s3://BUCKET/OBJECT Id\n"
                 + "  List parts of a multipart upload\n"
-                + "      java -jar jclient.jar listmp s3://BUCKET/OBJECT Id"
+                + "      java -jar jclient.jar listmp s3://BUCKET/OBJECT Id\n"
                 + "  Multipart upload\n"
-                + "      java -jar jclient.jar put FILE s3://BUCKET[/PREFIX] "
+                + "      java -jar jclient.jar put FILE s3://BUCKET[/PREFIX]"
                 + "-m [size of each chunk in MB]\n"
                 + "  Partial multipart upload (for System Tests only)\n"
                 + "      java -jar jclient.jar partialput FILE s3://BUCKET NO_OF_PARTS_TO_UPLOAD[/PREFIX] "
                 + "-m [size of each chunk in MB]\n";
 
         HelpFormatter s3HelpFormatter = new HelpFormatter();
-
-        s3HelpFormatter.printHelp(usage, s3Options);
+        System.out.println(usage);
+        s3HelpFormatter.printHelp("java -jar jclient.jar <OPERATION> [ARGUMENT 1...N]", s3Options);
         System.exit(0);
     }
 
