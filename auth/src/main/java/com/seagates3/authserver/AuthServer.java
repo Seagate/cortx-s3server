@@ -20,6 +20,7 @@ package com.seagates3.authserver;
 
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.exception.ServerInitialisationException;
+import com.seagates3.fi.FaultPoints;
 import com.seagates3.perf.S3Perf;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -131,6 +132,13 @@ public class AuthServer {
         IAMResourceMapper.init();
         DAODispatcher.init();
         S3Perf.init();
+
+        /**
+         * If fault injection is enabled, create instance of FaultPoints
+         */
+        if (AuthServerConfig.isFaultInjectionEnabled()) {
+            FaultPoints.init();
+        }
 
         AuthServer.attachShutDownHook();
 

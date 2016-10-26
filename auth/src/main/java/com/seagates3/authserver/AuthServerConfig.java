@@ -155,6 +155,10 @@ public class AuthServerConfig {
                 authServerConfig.getProperty("nettyEventExecutorThreads"));
     }
 
+    public static boolean isFaultInjectionEnabled() {
+        return Boolean.valueOf(authServerConfig.getProperty("enableFaultInjection"));
+    }
+
     /**
      * Set the SAML Metadata file Path.
      *

@@ -18,6 +18,11 @@
  */
 package com.seagates3.authserver;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+
+import com.seagates3.controller.FaultPointsController;
 import com.seagates3.controller.IAMController;
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
@@ -28,9 +33,6 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import io.netty.handler.codec.http.HttpVersion;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -54,23 +56,24 @@ public class AuthServerPostHandler {
     }
 
     public void run() {
-        Map<String, String> requestBody;
-        ServerResponse serverResponse;
-
-        AuthRequestDecoder authRequestDecoder = new AuthRequestDecoder(httpRequest);
-        requestBody = authRequestDecoder.getRequestBodyAsMap();
+        Map<String, String> requestBody = getHttpRequestBodyAsMap();
 
         if (httpRequest.getUri().startsWith("/saml")) {
             LOGGER.debug("Calling SAML WebSSOControler.");
-
             FullHttpResponse response = new SAMLWebSSOController(requestBody)
                     .samlSignIn();
             returnHTTPResponse(response);
         } else {
-            LOGGER.debug("Requested Action - " + requestBody.get("Action"));
+            ServerResponse serverResponse;
+            String action = requestBody.get("Action");
+            LOGGER.debug("Requested action: " + action);
 
-            IAMController iamController = new IAMController();
-            serverResponse = iamController.serve(httpRequest, requestBody);
+            if (isFiRequest(action)) {
+                serverResponse = serveFiRequest(requestBody);
+            } else {
+                serverResponse = serveIamRequest(requestBody);
+            }
+
             returnHTTPResponse(serverResponse);
         }
     }
@@ -115,5 +118,36 @@ public class AuthServerPostHandler {
             response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             ctx.writeAndFlush(response);
         }
+    }
+
+    private Map getHttpRequestBodyAsMap() {
+        AuthRequestDecoder decoder = new AuthRequestDecoder(httpRequest);
+        return decoder.getRequestBodyAsMap();
+    }
+
+    private boolean isFiRequest(String request) {
+        return request.equals("InjectFault") || request.equals("ResetFault");
+    }
+
+    private ServerResponse serveFiRequest(Map requestBody) {
+        FaultPointsController faultPointsController = new FaultPointsController();
+        ServerResponse serverResponse;
+
+        if (!AuthServerConfig.isFaultInjectionEnabled()) {
+            return faultPointsController.responseGenerator.badRequest("Invalid Request");
+        }
+
+        if (requestBody.get("Action").equals("InjectFault")) {
+            serverResponse = faultPointsController.set(requestBody);
+        } else {
+            serverResponse = faultPointsController.reset(requestBody);
+        }
+
+        return serverResponse;
+    }
+
+    private ServerResponse serveIamRequest(Map requestBody) {
+        IAMController iamController = new IAMController();
+        return iamController.serve(httpRequest, requestBody);
     }
 }
