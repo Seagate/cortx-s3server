@@ -57,6 +57,10 @@ DECLARE_bool(fake_clovis_putkv);
 DECLARE_bool(fake_clovis_deletekv);
 DECLARE_bool(fault_injection);
 
+DECLARE_bool(stats_enable);
+DECLARE_string(statsd_host);
+DECLARE_int32(statsd_port);
+
 // Loads config and also processes the command line options.
 // options specified on cli overrides the option specified in config file.
 int parse_and_load_config_options(int argc, char ** argv);

@@ -52,6 +52,10 @@ DEFINE_bool(fake_clovis_putkv, false, "Fake out clovis put key-val");
 DEFINE_bool(fake_clovis_deletekv, false, "Fake out clovis delete key-val");
 DEFINE_bool(fault_injection, false, "Enable fault Injection flag for testing");
 
+DEFINE_bool(stats_enable, true, "Enable Statistics feature");
+DEFINE_string(statsd_host, "127.0.0.1", "StatsD daemon host");
+DEFINE_int32(statsd_port, 8125, "StatsD daemon port");
+
 int parse_and_load_config_options(int argc, char ** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
@@ -133,6 +137,18 @@ int parse_and_load_config_options(int argc, char ** argv) {
   gflags::GetCommandLineFlagInfo("clovislayoutid", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("statsd_host", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR,
+                                        flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("statsd_port", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_STATSD_PORT,
+                                        flag_info.current_value.c_str());
   }
 
   return 0;

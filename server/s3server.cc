@@ -38,6 +38,7 @@
 #include "s3_perf_logger.h"
 #include "s3_request_object.h"
 #include "s3_router.h"
+#include "s3_stats.h"
 #include "s3_timer.h"
 
 #define WEBSTORE "/home/seagate/webstore"
@@ -45,6 +46,7 @@
 /* Program options */
 #include <unistd.h>
 
+S3Option *g_option_instance = NULL;
 evbase_t * global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
 struct m0_uint128 root_account_user_index_oid;
@@ -217,11 +219,11 @@ main(int argc, char ** argv) {
   }
 
   S3ErrorMessages::init_messages();
-  S3Option *option_instance = S3Option::get_instance();
+  g_option_instance = S3Option::get_instance();
 
   // Init perf logger
-  if (option_instance->s3_performance_enabled()) {
-    S3PerfLogger::initialize(option_instance->get_perf_log_filename());
+  if (g_option_instance->s3_performance_enabled()) {
+    S3PerfLogger::initialize(g_option_instance->get_perf_log_filename());
   }
 
   S3Daemonize s3daemon;
@@ -229,13 +231,20 @@ main(int argc, char ** argv) {
   s3daemon.register_signals();
 
   // dump the config
-  option_instance->dump_options();
+  g_option_instance->dump_options();
+
+  // Init stats
+  rc = s3_stats_init();
+  if (rc < 0) {
+    s3_log(S3_LOG_FATAL, "Stats Init failed!!\n");
+    return rc;
+  }
 
   // Call this function before creating event base
   evthread_use_pthreads();
 
   global_evbase_handle = event_base_new();
-  option_instance->set_eventbase(global_evbase_handle);
+  g_option_instance->set_eventbase(global_evbase_handle);
 
   // Uncomment below api if we want to run libevent in debug mode
   // event_enable_debug_mode();
@@ -259,8 +268,8 @@ main(int argc, char ** argv) {
   // This handler is just like complete the request processing & respond
   evhtp_set_gencb(htp, s3_handler, router);
 
-  bind_port = option_instance->get_s3_bind_port();
-  bind_addr = option_instance->get_bind_addr().c_str();
+  bind_port = g_option_instance->get_s3_bind_port();
+  bind_addr = g_option_instance->get_bind_addr().c_str();
 
   /* Initilise mero and Clovis */
   rc = init_clovis();
@@ -299,7 +308,7 @@ main(int argc, char ** argv) {
 
   /* Clean-up */
   fini_clovis();
-  if(option_instance->s3_performance_enabled()) {
+  if (g_option_instance->s3_performance_enabled()) {
     S3PerfLogger::finalize();
   }
 
@@ -308,6 +317,7 @@ main(int argc, char ** argv) {
   S3ErrorMessages::finalize();
   s3_log(S3_LOG_DEBUG, "S3server exiting...\n");
   s3daemon.delete_pidfile();
+  s3_stats_fini();
   fini_log();
   finalize_cli_options();
 

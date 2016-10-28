@@ -63,6 +63,10 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ(30, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(10, instance->get_s3_grace_period_sec());
   EXPECT_EQ(false, instance->get_is_s3_shutting_down());
+  EXPECT_EQ(true, instance->is_stats_enabled());
+  EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
+  EXPECT_EQ(8125, instance->get_statsd_port());
+  EXPECT_EQ(3, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
@@ -94,6 +98,9 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(false, instance->is_log_buffering_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
+  EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
+  EXPECT_EQ(9125, instance->get_statsd_port());
+  EXPECT_EQ(15, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, TestOverrideOptions) {
@@ -107,6 +114,8 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
+  instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
+  instance->set_cmdline_option(S3_OPTION_STATSD_PORT, "1234");
   // load from Config file, overriding the command options
   EXPECT_TRUE(instance->load_all_sections(true));
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
@@ -127,6 +136,9 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(false, instance->is_log_buffering_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
+  EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
+  EXPECT_EQ(9125, instance->get_statsd_port());
+  EXPECT_EQ(15, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
@@ -140,6 +152,8 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
+  instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
+  instance->set_cmdline_option(S3_OPTION_STATSD_PORT, "1234");
   instance->set_is_s3_shutting_down(true);
   EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
@@ -158,6 +172,9 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(true, instance->get_clovis_is_read_verify());
   EXPECT_EQ(1, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(true, instance->get_is_s3_shutting_down());
+  EXPECT_EQ("192.168.0.9", instance->get_statsd_ip_addr());
+  EXPECT_EQ(1234, instance->get_statsd_port());
+  EXPECT_EQ(15, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
@@ -169,6 +186,9 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(false, instance->is_log_buffering_enabled());
+  EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
+  EXPECT_EQ(9125, instance->get_statsd_port());
+  EXPECT_EQ(15, instance->get_statsd_max_send_retry());
 
   // These will come with default values.
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -190,6 +210,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
+  instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
   EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", true));
 
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
@@ -198,6 +219,9 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(false, instance->is_log_buffering_enabled());
+  EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
+  EXPECT_EQ(9125, instance->get_statsd_port());
+  EXPECT_EQ(15, instance->get_statsd_max_send_retry());
 
   // These should be default values
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -233,6 +257,9 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(false, instance->get_clovis_is_read_verify());
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(true, instance->is_log_buffering_enabled());
+  EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
+  EXPECT_EQ(8125, instance->get_statsd_port());
+  EXPECT_EQ(3, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
@@ -259,6 +286,9 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(false, instance->get_clovis_is_read_verify());
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(true, instance->is_log_buffering_enabled());
+  EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
+  EXPECT_EQ(8125, instance->get_statsd_port());
+  EXPECT_EQ(3, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
@@ -279,6 +309,9 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_EQ(8081, instance->get_s3_bind_port());
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(true, instance->is_log_buffering_enabled());
+  EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
+  EXPECT_EQ(8125, instance->get_statsd_port());
+  EXPECT_EQ(3, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
@@ -301,6 +334,9 @@ TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   EXPECT_EQ(8081, instance->get_s3_bind_port());
   EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
   EXPECT_EQ(true, instance->is_log_buffering_enabled());
+  EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
+  EXPECT_EQ(8125, instance->get_statsd_port());
+  EXPECT_EQ(3, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, SetCmdOptionFlag) {
@@ -315,11 +351,14 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
   instance->set_cmdline_option(S3_OPTION_LOG_DIR, "/tmp/");
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
+  instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
+  instance->set_cmdline_option(S3_OPTION_STATSD_PORT, "1234");
 
   flag = S3_OPTION_BIND_ADDR | S3_OPTION_BIND_PORT |
          S3_OPTION_CLOVIS_LOCAL_ADDR | S3_OPTION_CLOVIS_CONFD_ADDR |
          S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT | S3_CLOVIS_LAYOUT_ID |
-         S3_OPTION_LOG_DIR | S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE;
+         S3_OPTION_LOG_DIR | S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE |
+         S3_OPTION_STATSD_IP_ADDR | S3_OPTION_STATSD_PORT;
 
   EXPECT_EQ(flag, instance->get_cmd_opt_flag());
 }

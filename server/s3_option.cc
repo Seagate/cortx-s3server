@@ -82,6 +82,13 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_INTERVAL_MILLISEC");
       retry_interval_millisec =
           s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
+      statsd_port = s3_option_node["S3_STATSD_PORT"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_IP_ADDR");
+      statsd_ip_addr = s3_option_node["S3_STATSD_IP_ADDR"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
+      statsd_max_send_retry =
+          s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -168,6 +175,14 @@ bool S3Option::load_section(std::string section_name,
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_ADDR");
         s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
       }
+      if (!(cmd_opt_flag & S3_OPTION_STATSD_PORT)) {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
+        statsd_port = s3_option_node["S3_STATSD_PORT"].as<unsigned short>();
+      }
+      if (!(cmd_opt_flag & S3_OPTION_STATSD_IP_ADDR)) {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_IP_ADDR");
+        statsd_ip_addr = s3_option_node["S3_STATSD_IP_ADDR"].as<std::string>();
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_WORKING_DIR");
       s3_daemon_dir = s3_option_node["S3_DAEMON_WORKING_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_DO_REDIRECTION");
@@ -202,6 +217,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FLUSH_FREQUENCY");
       log_flush_frequency_sec =
           s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
+      statsd_max_send_retry =
+          s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -340,6 +358,10 @@ void S3Option::set_cmdline_option(int option_flag, const char *optarg) {
     log_file_max_size_mb = atoi(optarg);
   } else if (option_flag & S3_OPTION_PIDFILE) {
     s3_pidfile = optarg;
+  } else if (option_flag & S3_OPTION_STATSD_IP_ADDR) {
+    statsd_ip_addr = optarg;
+  } else if (option_flag & S3_OPTION_STATSD_PORT) {
+    statsd_port = atoi(optarg);
   }
   cmd_opt_flag |= option_flag;
   return;
@@ -409,6 +431,13 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_putkv = %d\n", FLAGS_fake_clovis_putkv);
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deletekv = %d\n", FLAGS_fake_clovis_deletekv);
   s3_log(S3_LOG_INFO, "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
+
+  s3_log(S3_LOG_INFO, "FLAGS_stats_enable = %s\n",
+         (FLAGS_stats_enable ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "S3_STATSD_IP_ADDR = %s\n", statsd_ip_addr.c_str());
+  s3_log(S3_LOG_INFO, "S3_STATSD_PORT = %d\n", statsd_port);
+  s3_log(S3_LOG_INFO, "S3_STATSD_MAX_SEND_RETRY = %d\n", statsd_max_send_retry);
+
   return;
 }
 
@@ -620,6 +649,16 @@ unsigned short S3Option::get_retry_interval_in_millisec() {
 
 void S3Option::set_eventbase(evbase_t* base) {
   eventbase = base;
+}
+
+bool S3Option::is_stats_enabled() { return FLAGS_stats_enable; }
+
+std::string S3Option::get_statsd_ip_addr() { return statsd_ip_addr; }
+
+unsigned short S3Option::get_statsd_port() { return statsd_port; }
+
+unsigned short S3Option::get_statsd_max_send_retry() {
+  return statsd_max_send_retry;
 }
 
 evbase_t* S3Option::get_eventbase() {

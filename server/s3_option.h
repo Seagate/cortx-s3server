@@ -34,6 +34,8 @@
 #define S3_OPTION_PERF_LOG_FILE 0x0400
 #define S3_OPTION_LOG_FILE_MAX_SIZE 0x0800
 #define S3_OPTION_PIDFILE 0x01000
+#define S3_OPTION_STATSD_IP_ADDR 0x2000
+#define S3_OPTION_STATSD_PORT 0x4000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -99,6 +101,10 @@ class S3Option {
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
 
+  std::string statsd_ip_addr;
+  unsigned short statsd_port;
+  unsigned short statsd_max_send_retry;
+
   evbase_t *eventbase;
 
   static S3Option* option_instance;
@@ -157,6 +163,10 @@ class S3Option {
 
     retry_interval_millisec = 0;
     max_retry_count = 0;
+
+    statsd_ip_addr = FLAGS_statsd_host;
+    statsd_port = FLAGS_statsd_port;
+    statsd_max_send_retry = 3;
 
     eventbase = NULL;
   }
@@ -236,6 +246,11 @@ class S3Option {
 
   void set_eventbase(evbase_t* base);
   evbase_t* get_eventbase();
+
+  bool is_stats_enabled();
+  std::string get_statsd_ip_addr();
+  unsigned short get_statsd_port();
+  unsigned short get_statsd_max_send_retry();
 
   // Fault injection Option
   void enable_fault_injection();
