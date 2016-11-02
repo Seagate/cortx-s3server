@@ -51,6 +51,9 @@ S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test
 # ************ List buckets ************
 S3cmdTest('s3cmd can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('s3://seagatebucket')
 
+# ************ Multi delete empty bucket test *********
+JClientTest('Jclient multiple delete should succeed when objects not present').delete_multiple_objects("seagatebucket", ["8kfile", "700Kfile", "18MBfile"]).execute_test().command_is_successful()
+
 # ************ 18MB FILE Multipart Rollback TEST ***********
 # function to cleanup multipart upload
 def clean_18mb_multipart():
@@ -102,6 +105,11 @@ S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "clovis_kv_get_fa
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 clean_18mb_multipart()
+
+S3fiTest('s3cmd enable FI fail_save_part_mdata').enable_fi("enable", "always", "fail_save_part_mdata").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+S3cmdTest('s3cmd should not have objects after rollback').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
+S3fiTest('s3cmd can disable Fault injection').disable_fi("fail_save_part_mdata").execute_test().command_is_successful()
 
 # ************  auth FI ***************
 S3fiTest('s3cmd enable FI auth').enable_fi("enable", "always", "fake_authentication_fail").execute_test().command_is_successful()
@@ -193,7 +201,10 @@ S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execu
 S3fiTest('s3cmd enable FI GET KV').enable_fi("enable", "always", "clovis_kv_get_fail").execute_test().command_is_successful()
 S3cmdTest('S3cmd cannot abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
+
+S3fiTest('s3cmd enable FI fail_remove_part_mindex').enable_fi("enable", "always", "fail_remove_part_mindex").execute_test().command_is_successful()
 S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+S3fiTest('s3cmd can disable Fault injection').disable_fi("fail_remove_part_mindex").execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can test the multipart was aborted.').list_multipart_uploads('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()

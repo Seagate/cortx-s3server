@@ -284,6 +284,11 @@ void S3PutMultiObjectAction::save_metadata() {
   }
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
+
+  if (s3_fi_is_enabled("fail_save_part_mdata")) {
+    s3_fi_enable_once("clovis_kv_put_fail");
+  }
+
   part_metadata->save(std::bind( &S3PutMultiObjectAction::next, this), std::bind( &S3PutMultiObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

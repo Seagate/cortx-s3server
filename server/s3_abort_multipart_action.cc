@@ -157,11 +157,26 @@ void S3AbortMultipartAction::delete_part_index_with_parts() {
   if (part_index_oid.u_lo == 0ULL && part_index_oid.u_hi == 0ULL) {
     next();
   } else {
+    if (s3_fi_is_enabled("fail_remove_part_mindex")) {
+      s3_fi_enable_once("clovis_idx_delete_fail");
+    }
     part_metadata =
         std::make_shared<S3PartMetadata>(request, part_index_oid, upload_id, 1);
-    part_metadata->remove_index(std::bind(&S3AbortMultipartAction::next, this),
-                                std::bind(&S3AbortMultipartAction::next, this));
+    part_metadata->remove_index(
+        std::bind(&S3AbortMultipartAction::next, this),
+        std::bind(&S3AbortMultipartAction::delete_part_index_with_parts_failed,
+                  this));
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR,
+         "Failed to delete part index, this will be stale in Mero: "
+         "%lu %lu\n",
+         part_index_oid.u_hi, part_index_oid.u_lo);
+  next();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

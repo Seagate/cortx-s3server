@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2016 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -40,11 +40,16 @@ void s3_auth_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
       "<RequestId>0000</RequestId>"
       "</Error>");
 
+  struct user_event_context *user_context =
+      (struct user_event_context *)user_data;
+  S3AuthClientOpContext *context =
+      (S3AuthClientOpContext *)user_context->app_ctx;
+
   req_body_buffer = evbuffer_new();
   evbuffer_add(req_body_buffer, xml_error.c_str(), xml_error.length());
-  on_auth_response(req, req_body_buffer, user_data);
+  on_auth_response(req, req_body_buffer, context);
   evbuffer_free(req_body_buffer);
-
+  free(user_data);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -53,7 +58,10 @@ int s3_auth_fake_evhtp_request(S3AuthClientOpType auth_request_type,
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   if (auth_request_type == S3AuthClientOpType::authentication) {
-    S3PostToMainLoop((void *)context)(s3_auth_dummy_op_failed);
+    struct user_event_context *user_ctx = (struct user_event_context *)calloc(
+        1, sizeof(struct user_event_context));
+    user_ctx->app_ctx = context;
+    S3PostToMainLoop((void *)user_ctx)(s3_auth_dummy_op_failed);
   } else {
     // TODO: fake cb for authorization when server support is added
     s3_log(S3_LOG_FATAL, "Unrecognized S3AuthClientOpType \n");
