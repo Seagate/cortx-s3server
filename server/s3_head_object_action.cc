@@ -112,6 +112,10 @@ void S3HeadObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value("Content-Length", object_metadata->get_content_length_str());
 
+    for (auto it : object_metadata->get_user_attributes()) {
+      request->set_out_header_value(it.first, it.second);
+    }
+
     request->send_response(S3HttpSuccess200);
   } else {
     S3Error error("InternalError", request->get_request_id(), request->get_object_uri());

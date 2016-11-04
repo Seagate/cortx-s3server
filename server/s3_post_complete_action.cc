@@ -218,6 +218,9 @@ void S3PostCompleteAction::save_metadata() {
   } else {
     // Mark it as non-multipart, create final object metadata.
     // object_metadata->mark_as_non_multipart();
+    for (auto it : multipart_metadata->get_user_attributes()) {
+      object_metadata->add_user_defined_attribute(it.first, it.second);
+    }
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
     object_metadata->set_oid(multipart_metadata->get_oid());
