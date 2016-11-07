@@ -23,13 +23,13 @@
 #include <event2/event.h>
 #include <evhttp.h>
 
-#include "s3_common.h"
-#include "s3_error_codes.h"
 #include "s3_auth_client.h"
 #include "s3_auth_fake.h"
+#include "s3_common.h"
+#include "s3_error_codes.h"
 #include "s3_fi_common.h"
-#include "s3_url_encode.h"
 #include "s3_option.h"
+#include "s3_url_encode.h"
 
 /* S3 Auth client callbacks */
 

@@ -17,14 +17,14 @@
  * Original creation date: 14th-Oct-2016
  */
 
-#include <unistd.h>
-#include <string>
 #include <event2/event.h>
 #include <evhttp.h>
+#include <unistd.h>
+#include <string>
 
+#include "s3_auth_client.h"
 #include "s3_common.h"
 #include "s3_error_codes.h"
-#include "s3_auth_client.h"
 #include "s3_post_to_main_loop.h"
 
 void s3_auth_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
