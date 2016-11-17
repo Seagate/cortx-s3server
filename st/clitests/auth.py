@@ -248,3 +248,17 @@ class AuthTest(PyCliTest):
 
         self.with_cli(cmd)
         return self
+
+    def inject_fault(self, fault_point, mode, value):
+        cmd = "curl -s --data 'Action=InjectFault&FaultPoint=%s&Mode=%s&Value=%s' %s"\
+                % (fault_point, mode, value, S3ClientConfig.iam_uri)
+
+        self.with_cli(cmd)
+        return self
+
+    def reset_fault(self, fault_point):
+        cmd = "curl -s --data 'Action=ResetFault&FaultPoint=%s' %s"\
+                % (fault_point, S3ClientConfig.iam_uri)
+
+        self.with_cli(cmd)
+        return self

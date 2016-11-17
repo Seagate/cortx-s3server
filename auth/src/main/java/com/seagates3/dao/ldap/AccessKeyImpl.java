@@ -205,7 +205,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             ldapResults = LDAPUtils.search(accessKeyBaseDN,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
-            throw new DataAccessException("Failed to searcf access keys" + ex);
+            throw new DataAccessException("Failed to search access keys" + ex);
         }
 
         AccessKeyStatus accessKeystatus;

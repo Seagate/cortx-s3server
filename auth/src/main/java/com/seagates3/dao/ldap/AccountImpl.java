@@ -26,6 +26,7 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.fi.FaultPoints;
 import com.seagates3.model.Account;
 import java.util.ArrayList;
 
@@ -94,6 +95,11 @@ public class AccountImpl implements AccountDAO {
 
         if (ldapResults.hasMore()) {
             try {
+                if (FaultPoints.fiEnabled() &&
+                        FaultPoints.getInstance().isFaultPointActive("LDAP_GET_ATTR_FAIL")) {
+                    throw new LDAPException();
+                }
+
                 LDAPEntry entry = ldapResults.next();
                 account.setId(entry.getAttribute(LDAPUtils.ACCOUNT_ID).
                         getStringValue());
@@ -140,6 +146,11 @@ public class AccountImpl implements AccountDAO {
             LDAPEntry ldapEntry;
             account = new Account();
             try {
+                if (FaultPoints.fiEnabled() &&
+                        FaultPoints.getInstance().isFaultPointActive("LDAP_GET_ATTR_FAIL")) {
+                    throw new LDAPException();
+                }
+
                 ldapEntry = ldapResults.next();
             } catch (LDAPException ldapException) {
                 throw new DataAccessException("Failed to read ldapEntry.\n"

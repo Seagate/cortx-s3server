@@ -23,6 +23,7 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.connectionpool.PoolManager;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.ServerInitialisationException;
+import com.seagates3.fi.FaultPoints;
 import java.io.UnsupportedEncodingException;
 
 public class LdapConnectionManager {
@@ -50,6 +51,15 @@ public class LdapConnectionManager {
     public static LDAPConnection getConnection() {
         LDAPConnection lc = null;
         try {
+            if (FaultPoints.fiEnabled()) {
+                if (FaultPoints.getInstance().isFaultPointActive("LDAP_CONNECT_FAIL")) {
+                    throw new LDAPException("Connection failed", LDAPException.CONNECT_ERROR,
+                            null);
+                } else if (FaultPoints.getInstance().isFaultPointActive("LDAP_CONN_INTRPT")) {
+                    throw new InterruptedException("Connection interrupted");
+                }
+            }
+
             lc = ldapPool.getBoundConnection(
                     ldapLoginDN, ldapLoginPW.getBytes("UTF-8"));
         } catch (LDAPException | InterruptedException | UnsupportedEncodingException ex) {

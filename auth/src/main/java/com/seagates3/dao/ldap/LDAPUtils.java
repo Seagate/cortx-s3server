@@ -23,6 +23,7 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.fi.FaultPoints;
 import java.util.ArrayList;
 
 public class LDAPUtils {
@@ -98,6 +99,11 @@ public class LDAPUtils {
 
         if (lc != null && lc.isConnected()) {
             try {
+                if (FaultPoints.fiEnabled() &&
+                        FaultPoints.getInstance().isFaultPointActive("LDAP_SEARCH_FAIL")) {
+                    throw new LDAPException();
+                }
+
                 ldapSearchResult = lc.search(BASE_DN, scope,
                         filter, attrs, false);
             } finally {
@@ -120,6 +126,11 @@ public class LDAPUtils {
 
         if (lc != null && lc.isConnected()) {
             try {
+                if (FaultPoints.fiEnabled() &&
+                        FaultPoints.getInstance().isFaultPointActive("LDAP_ADD_ENTRY_FAIL")) {
+                    throw new LDAPException();
+                }
+
                 lc.add(newEntry);
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -139,6 +150,11 @@ public class LDAPUtils {
 
         if (lc != null && lc.isConnected()) {
             try {
+                if (FaultPoints.fiEnabled() &&
+                        FaultPoints.getInstance().isFaultPointActive("LDAP_DELETE_ENTRY_FAIL")) {
+                    throw new LDAPException();
+                }
+
                 lc.delete(dn);
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -160,6 +176,11 @@ public class LDAPUtils {
 
         if (lc != null && lc.isConnected()) {
             try {
+                if (FaultPoints.fiEnabled() &&
+                        FaultPoints.getInstance().isFaultPointActive("LDAP_UPDATE_ENTRY_FAIL")) {
+                    throw new LDAPException();
+                }
+
                 lc.modify(dn, modification);
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -183,6 +204,11 @@ public class LDAPUtils {
 
         if (lc != null && lc.isConnected()) {
             try {
+                if (FaultPoints.fiEnabled() &&
+                        FaultPoints.getInstance().isFaultPointActive("LDAP_UPDATE_ENTRY_FAIL")) {
+                    throw new LDAPException();
+                }
+
                 lc.modify(dn, modifications);
             } finally {
                 LdapConnectionManager.releaseConnection(lc);

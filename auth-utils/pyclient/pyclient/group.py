@@ -17,7 +17,7 @@ class Group:
         try:
             result = self.iam_client.create_group(**policy_args)
         except Exception as ex:
-            print("Exception occured while creating policy.")
+            print("Exception occured while creating group.")
             print(str(ex))
             return
 
