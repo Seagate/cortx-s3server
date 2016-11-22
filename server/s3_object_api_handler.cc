@@ -17,20 +17,21 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include "s3_abort_multipart_action.h"
 #include "s3_api_handler.h"
-#include "s3_head_object_action.h"
-#include "s3_get_object_action.h"
-#include "s3_put_object_action.h"
-#include "s3_put_chunk_upload_object_action.h"
-#include "s3_put_multiobject_action.h"
-#include "s3_post_multipartobject_action.h"
-#include "s3_post_complete_action.h"
 #include "s3_delete_object_action.h"
 #include "s3_get_multipart_part_action.h"
-#include "s3_abort_multipart_action.h"
 #include "s3_get_object_acl_action.h"
-#include "s3_put_object_acl_action.h"
+#include "s3_get_object_action.h"
+#include "s3_head_object_action.h"
 #include "s3_log.h"
+#include "s3_post_complete_action.h"
+#include "s3_post_multipartobject_action.h"
+#include "s3_put_chunk_upload_object_action.h"
+#include "s3_put_multiobject_action.h"
+#include "s3_put_object_acl_action.h"
+#include "s3_put_object_action.h"
+#include "s3_stats.h"
 
 void S3ObjectAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
@@ -42,9 +43,11 @@ void S3ObjectAPIHandler::dispatch() {
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetObjectACLAction>(request);
+          s3_stats_inc("get_object_acl_request_count");
           break;
         case S3HttpVerb::PUT:
           action = std::make_shared<S3PutObjectACLAction>(request);
+          s3_stats_inc("put_object_acl_request_count");
           break;
         default:
           // should never be here.
@@ -56,13 +59,15 @@ void S3ObjectAPIHandler::dispatch() {
     case S3OperationCode::multipart:
       switch (request->http_verb()) {
         case S3HttpVerb::POST:
-           if (request->has_query_param_key("uploadid")) {
-             // Complete multipart upload
-             action = std::make_shared<S3PostCompleteAction>(request);
-           } else {
+          if (request->has_query_param_key("uploadid")) {
+            // Complete multipart upload
+            action = std::make_shared<S3PostCompleteAction>(request);
+            s3_stats_inc("post_multipart_complete_request_count");
+          } else {
             // Initiate Multipart
             action = std::make_shared<S3PostMultipartObjectAction>(request);
-           }
+            s3_stats_inc("post_multipart_initiate_request_count");
+          }
           break;
         case S3HttpVerb::PUT:
           if (!request->get_header_value("x-amz-copy-source").empty()) {
@@ -71,15 +76,18 @@ void S3ObjectAPIHandler::dispatch() {
           } else {
             // Multipart part uploads
             action = std::make_shared<S3PutMultiObjectAction>(request);
+            s3_stats_inc("put_multipart_part_request_count");
           }
           break;
         case S3HttpVerb::GET:
           // Multipart part listing
           action = std::make_shared<S3GetMultipartPartAction>(request);
+          s3_stats_inc("get_multipart_parts_request_count");
           break;
         case S3HttpVerb::DELETE:
           // Multipart abort
           action = std::make_shared<S3AbortMultipartAction>(request);
+          s3_stats_inc("abort_multipart_request_count");
           break;
         default:
           break;
@@ -90,24 +98,29 @@ void S3ObjectAPIHandler::dispatch() {
       switch (request->http_verb()) {
         case S3HttpVerb::HEAD:
           action = std::make_shared<S3HeadObjectAction>(request);
+          s3_stats_inc("head_object_request_count");
           break;
         case S3HttpVerb::PUT:
           if (request->get_header_value("x-amz-content-sha256") == "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
             // chunk upload
             action = std::make_shared<S3PutChunkUploadObjectAction>(request);
+            s3_stats_inc("put_object_chunkupload_request_count");
           } else if (!request->get_header_value("x-amz-copy-source").empty()) {
             // Copy Object not yet supported.
             // Do nothing = unsupported API
           } else {
             // single chunk upload
             action = std::make_shared<S3PutObjectAction>(request);
+            s3_stats_inc("put_object_request_count");
           }
           break;
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetObjectAction>(request);
+          s3_stats_inc("get_object_request_count");
           break;
         case S3HttpVerb::DELETE:
           action = std::make_shared<S3DeleteObjectAction>(request);
+          s3_stats_inc("delete_object_request_count");
           break;
         case S3HttpVerb::POST:
           // action = std::make_shared<S3PostObjectAction>(request);

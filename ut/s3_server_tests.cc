@@ -24,6 +24,7 @@
 #include "s3_error_messages.h"
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_stats.h"
 
 // Some declarations from s3server that are required to get compiled.
 // TODO - Remove such globals by implementing config file.
@@ -33,6 +34,7 @@ uint16_t auth_port = 8095;
 extern int s3log_level;
 struct m0_uint128 root_account_user_index_oid;
 S3Option *g_option_instance = NULL;
+extern S3Stats *g_stats_instance;
 
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;
@@ -49,6 +51,8 @@ static void _fini_log() {
 int main(int argc, char **argv) {
   int rc;
 
+  g_option_instance = S3Option::get_instance();
+  g_stats_instance = S3Stats::get_instance();
   _init_log();
 
   ::testing::InitGoogleTest(&argc, argv);
@@ -59,7 +63,9 @@ int main(int argc, char **argv) {
   rc = RUN_ALL_TESTS();
 
   _fini_log();
-
+  if (g_stats_instance) {
+    S3Stats::delete_instance();
+  }
   if (g_option_instance) {
     S3Option::destroy_instance();
   }

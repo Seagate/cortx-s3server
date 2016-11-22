@@ -18,19 +18,20 @@
  */
 
 #include "s3_api_handler.h"
-#include "s3_get_bucket_location_action.h"
-#include "s3_get_bucket_acl_action.h"
-#include "s3_put_bucket_acl_action.h"
-#include "s3_get_bucket_policy_action.h"
-#include "s3_delete_multiple_objects_action.h"
-#include "s3_head_bucket_action.h"
-#include "s3_get_bucket_action.h"
-#include "s3_get_multipart_bucket_action.h"
-#include "s3_put_bucket_action.h"
 #include "s3_delete_bucket_action.h"
-#include "s3_log.h"
-#include "s3_put_bucket_policy_action.h"
 #include "s3_delete_bucket_policy_action.h"
+#include "s3_delete_multiple_objects_action.h"
+#include "s3_get_bucket_acl_action.h"
+#include "s3_get_bucket_action.h"
+#include "s3_get_bucket_location_action.h"
+#include "s3_get_bucket_policy_action.h"
+#include "s3_get_multipart_bucket_action.h"
+#include "s3_head_bucket_action.h"
+#include "s3_log.h"
+#include "s3_put_bucket_acl_action.h"
+#include "s3_put_bucket_action.h"
+#include "s3_put_bucket_policy_action.h"
+#include "s3_stats.h"
 
 void S3BucketAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
@@ -43,6 +44,7 @@ void S3BucketAPIHandler::dispatch() {
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetBucketlocationAction>(request);
+          s3_stats_inc("get_bucket_location_request_count");
           break;
         case S3HttpVerb::PUT:
           // action = std::make_shared<S3PutBucketlocationAction>(request);
@@ -59,15 +61,18 @@ void S3BucketAPIHandler::dispatch() {
       break;
     case S3OperationCode::multidelete:
       action = std::make_shared<S3DeleteMultipleObjectsAction>(request);
+      s3_stats_inc("delete_multiobject_request_count");
       break;
     case S3OperationCode::acl:
       // ACL operations.
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetBucketACLAction>(request);
+          s3_stats_inc("get_bucket_acl_request_count");
           break;
         case S3HttpVerb::PUT:
           action = std::make_shared<S3PutBucketACLAction>(request);
+          s3_stats_inc("put_bucket_acl_request_count");
           break;
         default:
           // should never be here.
@@ -81,6 +86,7 @@ void S3BucketAPIHandler::dispatch() {
       switch(request->http_verb()) {
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetMultipartBucketAction>(request);
+          s3_stats_inc("get_multipart_bucket_request_count");
           break;
       default:
           request->respond_unsupported_api();
@@ -93,12 +99,15 @@ void S3BucketAPIHandler::dispatch() {
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetBucketPolicyAction>(request);
+          s3_stats_inc("get_bucket_policy_request_count");
           break;
         case S3HttpVerb::PUT:
           action = std::make_shared<S3PutBucketPolicyAction>(request);
+          s3_stats_inc("put_bucket_policy_request_count");
           break;
         case S3HttpVerb::DELETE:
           action = std::make_shared<S3DeleteBucketPolicyAction>(request);
+          s3_stats_inc("delete_bucket_policy_request_count");
           break;
         default:
           // should never be here.
@@ -112,16 +121,20 @@ void S3BucketAPIHandler::dispatch() {
       switch (request->http_verb()) {
         case S3HttpVerb::HEAD:
           action = std::make_shared<S3HeadBucketAction>(request);
+          s3_stats_inc("head_bucket_request_count");
           break;
         case S3HttpVerb::GET:
           // List Objects in bucket
           action = std::make_shared<S3GetBucketAction>(request);
+          s3_stats_inc("get_bucket_request_count");
           break;
         case S3HttpVerb::PUT:
           action = std::make_shared<S3PutBucketAction>(request);
+          s3_stats_inc("put_bucket_request_count");
           break;
         case S3HttpVerb::DELETE:
           action = std::make_shared<S3DeleteBucketAction>(request);
+          s3_stats_inc("delete_bucket_request_count");
           break;
         case S3HttpVerb::POST:
           // action = std::make_shared<S3PostBucketAction>(request);

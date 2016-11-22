@@ -18,11 +18,12 @@
  */
 
 #include "s3_put_object_action.h"
-#include "s3_option.h"
 #include "s3_error_codes.h"
-#include "s3_perf_logger.h"
-#include "s3_uri_to_mero_oid.h"
 #include "s3_log.h"
+#include "s3_option.h"
+#include "s3_perf_logger.h"
+#include "s3_stats.h"
+#include "s3_uri_to_mero_oid.h"
 
 #define MAX_COLLISION_TRY 20
 
@@ -110,6 +111,8 @@ void S3PutObjectAction::create_object_failed() {
   } else {
     create_object_timer.stop();
     LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
+    s3_stats_timing("create_object_failed",
+                    create_object_timer.elapsed_time_in_millisec());
     s3_log(S3_LOG_WARN, "Create object failed.\n");
 
     // Any other error report failure.
@@ -171,6 +174,8 @@ void S3PutObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   create_object_timer.stop();
   LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
+  s3_stats_timing("create_object_success",
+                  create_object_timer.elapsed_time_in_millisec());
 
   // mark rollback point
   add_task_rollback(std::bind( &S3PutObjectAction::rollback_create, this ));

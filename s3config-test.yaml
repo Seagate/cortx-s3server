@@ -20,6 +20,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_STATSD_IP_ADDR: 127.9.7.5                         # StatsD server IP address
    S3_STATSD_PORT: 9125                                 # StatsD server port
    S3_STATSD_MAX_SEND_RETRY: 15                         # Limit the user requested retry count. A retry is attempted in case message delivery to StatsD server fails.
+   S3_STATS_WHITELIST_FILENAME: "s3stats-whitelist-test.yaml"  # White list of Stats metrics to be published to the backend.
 S3_AUTH_CONFIG:                                       # Section for S3 Auth Service
    S3_AUTH_IP_ADDR: 10.10.1.2                           # Auth server IP address
    S3_AUTH_PORT: 8095                                   # Auth server port

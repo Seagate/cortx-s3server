@@ -22,10 +22,11 @@
 #include <unistd.h>
 
 #include "s3_clovis_rw_common.h"
-#include "s3_option.h"
 #include "s3_clovis_writer.h"
-#include "s3_timer.h"
+#include "s3_option.h"
 #include "s3_perf_logger.h"
+#include "s3_stats.h"
+#include "s3_timer.h"
 #include "s3_uri_to_mero_oid.h"
 
 extern struct m0_clovis_realm     clovis_uber_realm;
@@ -150,6 +151,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
   copy_timer.stop();
   LOG_PERF(("copy_to_clovis_buf_" + std::to_string(total_written - last_w_cnt) + "_bytes_ns").c_str(),
     copy_timer.elapsed_time_in_nanosec());
+  s3_stats_timing("copy_to_clovis_buf", copy_timer.elapsed_time_in_millisec());
 
   // We have copied data to clovis buffers.
   buffer.mark_size_of_data_consumed(estimated_write_length);
@@ -162,7 +164,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
-  writer_context->start_timer_for("write_to_clovis_op_" + std::to_string(total_written - last_w_cnt) + "_bytes");
+  writer_context->start_timer_for("write_to_clovis_op");
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::writeobj);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

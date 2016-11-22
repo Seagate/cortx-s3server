@@ -17,13 +17,14 @@
  * Original creation date: 1-Oct-2015
  */
 
-#include "s3_common.h"
 #include "s3_uri_to_mero_oid.h"
-#include "murmur3_hash.h"
-#include "s3_timer.h"
-#include "s3_perf_logger.h"
-#include "s3_log.h"
 #include "fid/fid.h"
+#include "murmur3_hash.h"
+#include "s3_common.h"
+#include "s3_log.h"
+#include "s3_perf_logger.h"
+#include "s3_stats.h"
+#include "s3_timer.h"
 
 void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
                     S3ClovisEntityType type) {
@@ -86,6 +87,7 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
 
   timer.stop();
   LOG_PERF("S3UriToMeroOID_ns", timer.elapsed_time_in_nanosec());
+  s3_stats_timing("uri_to_mero_oid", timer.elapsed_time_in_millisec());
 
   s3_log(S3_LOG_DEBUG, "Exiting\n");
   return;

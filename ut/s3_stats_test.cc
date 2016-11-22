@@ -27,13 +27,9 @@ extern S3Stats* g_stats_instance;
 class S3StatsTest : public testing::Test {
  public:
   virtual void SetUp() {
-    if (!g_option_instance) {
-      g_option_instance = S3Option::get_instance();
-    }
+    g_option_instance = S3Option::get_instance();
     g_stats_instance = S3Stats::get_instance();
   }
-
-  virtual void TearDown() { S3Stats::delete_instance(); }
 };
 
 TEST_F(S3StatsTest, Init) {
@@ -41,6 +37,7 @@ TEST_F(S3StatsTest, Init) {
   EXPECT_EQ(g_stats_instance->host, g_option_instance->get_statsd_ip_addr());
   EXPECT_EQ(g_stats_instance->port, g_option_instance->get_statsd_port());
   EXPECT_NE(g_stats_instance->sock, -1);
+  EXPECT_FALSE(g_stats_instance->metrics_whitelist.empty());
 
   // test private utility functions
   EXPECT_TRUE(g_stats_instance->is_fequal(1.0, 1.0));
@@ -53,6 +50,27 @@ TEST_F(S3StatsTest, Init) {
   EXPECT_FALSE(g_stats_instance->is_keyname_valid("bucket:object"));
   EXPECT_FALSE(g_stats_instance->is_keyname_valid("bucket|object"));
   EXPECT_FALSE(g_stats_instance->is_keyname_valid("@bucket|object:"));
+}
+
+TEST_F(S3StatsTest, Whitelist) {
+  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("uri_to_mero_oid"));
+  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish(
+      "delete_object_from_clovis_failed"));
+  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish("total_request_time"));
+  EXPECT_TRUE(g_stats_instance->is_allowed_to_publish(
+      "get_bucket_location_request_count"));
+  EXPECT_TRUE(
+      g_stats_instance->is_allowed_to_publish("get_object_acl_request_count"));
+  EXPECT_TRUE(
+      g_stats_instance->is_allowed_to_publish("get_service_request_count"));
+  EXPECT_FALSE(g_stats_instance->is_allowed_to_publish("xyz"));
+
+  // test loading of non-existing whitelist yaml file
+  g_option_instance->set_stats_whitelist_filename(
+      "non-existing-whitelist.yaml");
+  EXPECT_NE(g_stats_instance->load_whitelist(), 0);
+  g_option_instance->set_stats_whitelist_filename(
+      "s3stats-whitelist-test.yaml");
 }
 
 // TODO (Vinayak)

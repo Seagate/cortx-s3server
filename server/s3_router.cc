@@ -21,11 +21,12 @@
 #include <string>
 #include <regex>
 
-#include "s3_router.h"
-#include "s3_uri.h"
 #include "s3_api_handler.h"
-#include "s3_option.h"
 #include "s3_log.h"
+#include "s3_option.h"
+#include "s3_router.h"
+#include "s3_stats.h"
+#include "s3_uri.h"
 
 S3Router::S3Router(S3APIHandlerFactory *api_creator, S3UriFactory *uri_creator) :
     api_handler_factory(api_creator), uri_factory(uri_creator) {
@@ -97,6 +98,7 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
   handler = api_handler_factory->create_api_handler(uri->get_s3_api_type(), request, uri->get_operation_code());
 
   if (handler) {
+    s3_stats_inc("total_request_count");
     handler->manage_self(handler);
     handler->dispatch();  // Start processing the request
   } else {

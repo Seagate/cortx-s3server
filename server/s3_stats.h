@@ -25,6 +25,8 @@
 #include <gtest/gtest_prod.h>
 #include <math.h>
 #include <limits>
+#include <string>
+#include <unordered_set>
 #include "s3_log.h"
 #include "s3_option.h"
 
@@ -54,11 +56,20 @@ class S3Stats {
  private:
   S3Stats(const std::string& host_addr, const unsigned short port_num)
       : host(host_addr), port(port_num), sock(-1) {
+    metrics_whitelist.clear();
     s3_log(S3_LOG_DEBUG, "Constructor\n");
   }
 
   int init();
   void finish();
+
+  // Load & parse the whitelist file
+  int load_whitelist();
+
+  // Check if metric is present in whitelist
+  bool is_allowed_to_publish(const std::string& key) {
+    return metrics_whitelist.find(key) != metrics_whitelist.end();
+  }
 
   // Send message to server
   int send(const std::string& msg, int retry = 1);
@@ -87,7 +98,11 @@ class S3Stats {
   int sock;
   struct sockaddr_in server;
 
+  // metrics whitelist
+  std::unordered_set<std::string> metrics_whitelist;
+
   FRIEND_TEST(S3StatsTest, Init);
+  FRIEND_TEST(S3StatsTest, Whitelist);
 };
 
 extern S3Option* g_option_instance;

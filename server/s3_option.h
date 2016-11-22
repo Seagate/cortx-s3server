@@ -104,6 +104,7 @@ class S3Option {
   std::string statsd_ip_addr;
   unsigned short statsd_port;
   unsigned short statsd_max_send_retry;
+  std::string stats_whitelist_filename;
 
   evbase_t *eventbase;
 
@@ -167,6 +168,7 @@ class S3Option {
     statsd_ip_addr = FLAGS_statsd_host;
     statsd_port = FLAGS_statsd_port;
     statsd_max_send_retry = 3;
+    stats_whitelist_filename = "/opt/seagate/s3/conf/s3stats-whitelist.yaml";
 
     eventbase = NULL;
   }
@@ -251,6 +253,8 @@ class S3Option {
   std::string get_statsd_ip_addr();
   unsigned short get_statsd_port();
   unsigned short get_statsd_max_send_retry();
+  std::string get_stats_whitelist_filename();
+  void set_stats_whitelist_filename(std::string filename);
 
   // Fault injection Option
   void enable_fault_injection();

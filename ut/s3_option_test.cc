@@ -67,6 +67,8 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
   EXPECT_EQ(8125, instance->get_statsd_port());
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());
+  EXPECT_EQ("/opt/seagate/s3/conf/s3stats-whitelist.yaml",
+            instance->get_stats_whitelist_filename());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
@@ -101,6 +103,8 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
+  EXPECT_EQ("s3stats-whitelist-test.yaml",
+            instance->get_stats_whitelist_filename());
 }
 
 TEST_F(S3OptionsTest, TestOverrideOptions) {
@@ -139,6 +143,8 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
+  EXPECT_EQ("s3stats-whitelist-test.yaml",
+            instance->get_stats_whitelist_filename());
 }
 
 TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
@@ -175,6 +181,8 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ("192.168.0.9", instance->get_statsd_ip_addr());
   EXPECT_EQ(1234, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
+  EXPECT_EQ("s3stats-whitelist-test.yaml",
+            instance->get_stats_whitelist_filename());
 }
 
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
@@ -189,6 +197,8 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
+  EXPECT_EQ("s3stats-whitelist-test.yaml",
+            instance->get_stats_whitelist_filename());
 
   // These will come with default values.
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_local_addr());
@@ -222,6 +232,8 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
+  EXPECT_EQ("s3stats-whitelist-test.yaml",
+            instance->get_stats_whitelist_filename());
 
   // These should be default values
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"), instance->get_clovis_local_addr());

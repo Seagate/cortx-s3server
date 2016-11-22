@@ -18,10 +18,11 @@
  * Original creation date: 1-Oct-2015
  */
 
-#include <string>
-#include <evhttp.h>
 #include "s3_request_object.h"
+#include <evhttp.h>
+#include <string>
 #include "s3_error_codes.h"
+#include "s3_stats.h"
 
 // evhttp Helpers
 /* evhtp_kvs_iterator */
@@ -83,6 +84,8 @@ S3RequestObject::~S3RequestObject(){
   s3_log(S3_LOG_DEBUG, "Destructor\n");
   request_timer.stop();
   LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+  s3_stats_timing("total_request_time",
+                  request_timer.elapsed_time_in_millisec());
   if (ev_req) {
     ev_req->cbarg = NULL;
   }
@@ -297,6 +300,8 @@ void S3RequestObject::notify_incoming_data(evbuf_t * buf) {
   buffering_timer.stop();
   LOG_PERF(("total_buffering_time_" + std::to_string(data_bytes_received) + "_bytes_ns").c_str(),
     buffering_timer.elapsed_time_in_nanosec());
+  s3_stats_timing("total_buffering_time",
+                  buffering_timer.elapsed_time_in_millisec());
 
   if ( incoming_data_callback &&
        ((buffered_input.length() >= notify_read_watermark) || (pending_in_flight == 0)) ) {
@@ -319,6 +324,9 @@ void S3RequestObject::send_response(int code, std::string body) {
   }
   set_out_header_value("x-amzn-RequestId", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
+  if (code == S3HttpFailed500) {
+    s3_stats_inc("internal_error_count");
+  }
   resume(); // attempt resume just in case some one forgot
 }
 
@@ -357,5 +365,6 @@ void S3RequestObject::respond_unsupported_api() {
   set_out_header_value("x-amzn-RequestId", request_id);
 
   send_response(error.get_http_status_code(), response_xml);
+  s3_stats_inc("unsupported_api_count");
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

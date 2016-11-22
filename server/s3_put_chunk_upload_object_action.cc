@@ -22,6 +22,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
+#include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
 
 S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(std::shared_ptr<S3RequestObject> req) :
@@ -147,6 +148,9 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
   } else {
     create_object_timer.stop();
     LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
+    s3_stats_timing("chunkupload_create_object_failed",
+                    create_object_timer.elapsed_time_in_millisec());
+
     s3_log(S3_LOG_WARN, "Create object failed.\n");
 
     request->resume();
@@ -219,6 +223,8 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
 
   create_object_timer.stop();
   LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
+  s3_stats_timing("chunkupload_create_object_success",
+                  create_object_timer.elapsed_time_in_millisec());
 
   total_data_to_stream = request->get_data_length();
   if (!S3Option::get_instance()->is_auth_disabled()) {

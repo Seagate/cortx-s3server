@@ -19,6 +19,7 @@
 
 #include "s3_api_handler.h"
 #include "s3_get_service_action.h"
+#include "s3_stats.h"
 
 void S3ServiceAPIHandler::dispatch() {
   std::shared_ptr<S3Action> action;
@@ -30,6 +31,7 @@ void S3ServiceAPIHandler::dispatch() {
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
           action = std::make_shared<S3GetServiceAction>(request);
+          s3_stats_inc("get_service_request_count");
           break;
         default:
           // should never be here.

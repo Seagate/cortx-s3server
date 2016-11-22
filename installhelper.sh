@@ -50,6 +50,9 @@ cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_mess
 # Copy the S3 Config option file
 cp s3config.yaml $S3_CONFIG_FILE_LOCATION
 
+# Copy the S3 Stats whitelist file
+cp s3stats-whitelist.yaml $S3_CONFIG_FILE_LOCATION
+
 # Copy the s3 server startup script.
 cp starts3.sh $S3_INSTALL_LOCATION/
 

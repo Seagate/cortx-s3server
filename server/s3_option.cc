@@ -89,6 +89,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
       statsd_max_send_retry =
           s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_WHITELIST_FILENAME");
+      stats_whitelist_filename =
+          s3_option_node["S3_STATS_WHITELIST_FILENAME"].as<std::string>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -220,6 +223,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
       statsd_max_send_retry =
           s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_WHITELIST_FILENAME");
+      stats_whitelist_filename =
+          s3_option_node["S3_STATS_WHITELIST_FILENAME"].as<std::string>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -437,6 +443,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_STATSD_IP_ADDR = %s\n", statsd_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_STATSD_PORT = %d\n", statsd_port);
   s3_log(S3_LOG_INFO, "S3_STATSD_MAX_SEND_RETRY = %d\n", statsd_max_send_retry);
+  s3_log(S3_LOG_INFO, "S3_STATS_WHITELIST_FILENAME = %s\n",
+         stats_whitelist_filename.c_str());
 
   return;
 }
@@ -659,6 +667,14 @@ unsigned short S3Option::get_statsd_port() { return statsd_port; }
 
 unsigned short S3Option::get_statsd_max_send_retry() {
   return statsd_max_send_retry;
+}
+
+std::string S3Option::get_stats_whitelist_filename() {
+  return stats_whitelist_filename;
+}
+
+void S3Option::set_stats_whitelist_filename(std::string filename) {
+  stats_whitelist_filename = filename;
 }
 
 evbase_t* S3Option::get_eventbase() {

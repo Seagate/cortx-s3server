@@ -19,6 +19,7 @@
 
 #include "s3_asyncop_context_base.h"
 #include "s3_perf_logger.h"
+#include "s3_stats.h"
 
 S3AsyncOpContextBase::S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed, int ops_cnt) : request(req), on_success(success), on_failed(failed), ops_count(ops_cnt), response_received_count(0),
 at_least_one_success(false) {
@@ -89,4 +90,5 @@ void S3AsyncOpContextBase::log_timer() {
     return;
   }
   LOG_PERF((operation_key + "_ms").c_str(), timer.elapsed_time_in_millisec());
+  s3_stats_timing(operation_key, timer.elapsed_time_in_millisec());
 }

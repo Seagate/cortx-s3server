@@ -20,6 +20,7 @@
 #include "s3_action_base.h"
 #include "s3_error_codes.h"
 #include "s3_option.h"
+#include "s3_stats.h"
 
 S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
     : request(req),
@@ -223,6 +224,11 @@ void S3Action::check_authorization_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (request->client_connected()) {
     std::string error_code = auth_client->get_error_code();
+    if (error_code == "InvalidAccessKeyId") {
+      s3_stats_inc("authorization_failed_invalid_accesskey_count");
+    } else if (error_code == "SignatureDoesNotMatch") {
+      s3_stats_inc("authorization_failed_signature_mismatch_count");
+    }
     s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", error_code.c_str());
 
     S3Error error(error_code, request->get_request_id(), request->get_object_uri());
@@ -254,6 +260,11 @@ void S3Action::check_authentication_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (request->client_connected()) {
     std::string error_code = auth_client->get_error_code();
+    if (error_code == "InvalidAccessKeyId") {
+      s3_stats_inc("authentication_failed_invalid_accesskey_count");
+    } else if (error_code == "SignatureDoesNotMatch") {
+      s3_stats_inc("authentication_failed_signature_mismatch_count");
+    }
     s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", error_code.c_str());
 
     S3Error error(error_code, request->get_request_id(), request->get_object_uri());

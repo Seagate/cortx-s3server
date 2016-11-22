@@ -92,7 +92,7 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
-  reader_context->start_timer_for("read_object_data_" + std::to_string(num_of_blocks_read * clovis_block_size) + "_bytes");
+  reader_context->start_timer_for("read_object_data");
 
   s3_clovis_api->clovis_op_launch(ctx->ops, 1);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
