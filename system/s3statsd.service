@@ -1,0 +1,11 @@
+[Unit]
+Description=S3-Statsd server
+
+[Service]
+Type=simple
+ExecStart=/opt/seagate/s3/nodejs/node /opt/seagate/s3/statsd/stats.js /opt/seagate/s3/statsd/s3statsd-console-config.js
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target

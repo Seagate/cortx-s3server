@@ -13,6 +13,8 @@ cd third_party
 ./setup_yamlcpp.sh
 ./setup_gflags.sh
 ./setup_glog.sh
+./setup_nodejs.sh
+./setup_statsd.sh
 
 cd $S3_SRC_FOLDER
 

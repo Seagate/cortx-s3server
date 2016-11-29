@@ -19,6 +19,8 @@ S3_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/s3
 S3_CONFIG_FILE_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/conf
 SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
 LOG_DIR_LOCATION=$INSTALL_PREFIX/var/log/seagate
+STATSD_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/statsd
+NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/nodejs
 
 mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $S3_INSTALL_LOCATION/bin
@@ -31,6 +33,8 @@ mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $SERVICE_FILE_LOCATION
 mkdir -p $LOG_DIR_LOCATION/s3
 mkdir -p $LOG_DIR_LOCATION/auth
+mkdir -p $STATSD_DIR_LOCATION
+mkdir -p $NODEJS_DIR_LOCATION
 
 # Copy over the mero libs
 cp ../../mero/.libs/libmero*.so $S3_INSTALL_LOCATION/lib/
@@ -85,5 +89,15 @@ cp startauth.sh $AUTH_INSTALL_LOCATION/
 
 # Copy the auth service file for systemctl support.
 cp auth/s3authserver.service $SERVICE_FILE_LOCATION
+
+# Copy nodejs binary
+cp third_party/nodejs/node-v6.9.1-linux-x64/bin/node $NODEJS_DIR_LOCATION/
+
+# Copy statsd & it's config files
+cp -R third_party/statsd/* $STATSD_DIR_LOCATION/
+cp s3statsd-console-config.js $STATSD_DIR_LOCATION/
+
+# Copy the Statsd service file for systemctl support.
+cp ./system/s3statsd.service $SERVICE_FILE_LOCATION
 
 exit 0
