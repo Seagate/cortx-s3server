@@ -150,12 +150,7 @@ public class AWSV2Sign implements AWSSign {
             String key = entry.getKey().toLowerCase();
 
             if (key.startsWith("x-amz-")) {
-                if (xAmzHeaders.containsKey(key)) {
-                    String value = xAmzHeaders.get(key) + "," + entry.getValue();
-                    xAmzHeaders.put(key, value);
-                } else {
-                    xAmzHeaders.put(key, entry.getValue());
-                }
+                xAmzHeaders.put(key, entry.getValue());
             }
         }
 

@@ -59,6 +59,9 @@ public class AuthRequestDecoder extends HttpPostRequestDecoder {
                 try {
                     key = attribute.getName();
                     value = attribute.getValue();
+                    if (requestBody.containsKey(key) && key.toLowerCase().startsWith("x-amz-")) {
+                        value = requestBody.get(key) + "," + value;
+                    }
                     requestBody.put(key, value);
                     LOGGER.debug(attribute.getHttpDataType().name() + " "
                             + key + ": " + value);
