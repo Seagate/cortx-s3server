@@ -256,3 +256,81 @@ $ cd ssl
 $ ./setup.sh
 
 ```
+
+## StatsD configuration
+By default, Stats feature is disabled. To enable the same, edit the S3 server
+config file /opt/seagate/s3/conf/s3config.yaml & set the S3_ENABLE_STATS to true.
+After above config change, s3server needs to be restarted.
+
+Before starting StatsD daemon, select backends to be used. StatsD can send data
+to multiple backends. By default, through config file, StatsD is configured to
+send data only to console backend. To enable sending data to Graphite backend,
+after s3server installation, edit the file /opt/seagate/s3/statsd/s3statsd-config.js
+Un-comment lines having Graphite variables (graphiteHost & graphitePort) and set their
+values. Also add graphite to the backends variable as shown in the comment in the
+s3statsd-config.js file.
+
+Once above config is done, run StatsD daemon as below
+```sh
+sudo systemctl restart s3statsd
+```
+
+## Viewing StatsD data
+a) Console backend
+StatsD data can be viewed from /var/log/messages file. Alternatively the data
+can also be viewed by telnetting to the management port 8126. The port number
+is configurable in the s3statsd-config.js file. Common commands are:
+help, stats, counters, timers, gauges, delcounters, deltimers, delgauges,
+health, config, quit etc.
+
+eg:
+```sh
+$ echo "help" | nc 127.0.0.1 8126
+  Commands: stats, counters, timers, gauges, delcounters, deltimers, delgauges,
+            health, config, quit
+
+$ echo "stats" | nc 127.0.0.1 8126
+  uptime: 30
+  messages.last_msg_seen: 30
+  messages.bad_lines_seen: 0
+  console.lastFlush: 1481173145
+  console.lastException: 1481173145
+  END
+
+$ echo "counters" | nc 127.0.0.1 8126
+  { 'statsd.bad_lines_seen': 0,
+    'statsd.packets_received': 1,
+    'statsd.metrics_received': 1,
+    total_request_count: 1 }
+  END
+```
+
+b) Graphite backend
+Open a browser on the machine hosting Graphite. Type 127.0.0.1 as the URL.
+Graphite will show a dashboard, select a metric name. Graphite will display
+the corresponding stats data in the form of graphs.
+
+## Graphite installation
+For the sake of simplicity, install Graphite on a VM running Ubuntu 14.04 LTS.
+
+```sh
+# Download synthesize which in turn will install Graphite
+cd ~/Downloads/
+wget https://github.com/obfuscurity/synthesize/archive/v2.4.0.tar.gz
+tar -xvzf v2.4.0.tar.gz
+cd synthesize-2.4.0/
+
+# Edit install file: comment out lines concerning installation of collectd and
+statsite.
+
+# Run the install script
+sudo ./install
+
+# Refer to https://github.com/etsy/statsd/blob/master/docs/graphite.md and
+  edit files:
+    /opt/graphite/conf/storage-schemas.conf and
+    /opt/graphite/conf/storage-aggregation.conf
+
+# Restart Graphite
+sudo service carbon-cache restart
+```

@@ -61,7 +61,7 @@ fpm -s dir -t rpm -C $S3_RPM_SANDBOX_DIR \
     --name $S3_RPM_PKG_NAME \
     --config-files opt/seagate/s3/conf/s3config.yaml \
     --config-files opt/seagate/s3/conf/s3stats-whitelist.yaml \
-    --config-files opt/seagate/s3/statsd/s3statsd-console-config.js \
+    --config-files opt/seagate/s3/statsd/s3statsd-config.js \
     --config-files opt/seagate/auth/resources/authserver.properties \
     --config-files opt/seagate/auth/resources/static/saml-metadata.xml \
     --directories opt/seagate/ \

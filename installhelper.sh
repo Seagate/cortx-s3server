@@ -95,7 +95,7 @@ cp third_party/nodejs/node-v6.9.1-linux-x64/bin/node $NODEJS_DIR_LOCATION/
 
 # Copy statsd & it's config files
 cp -R third_party/statsd/* $STATSD_DIR_LOCATION/
-cp s3statsd-console-config.js $STATSD_DIR_LOCATION/
+cp s3statsd-config.js $STATSD_DIR_LOCATION/
 
 # Copy the Statsd service file for systemctl support.
 cp ./system/s3statsd.service $SERVICE_FILE_LOCATION
