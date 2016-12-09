@@ -6,7 +6,7 @@
 #   Dry-run 'git clang-format' and check whether code changes compy
 #   with 'clang-format'.
 clang_failed=0
-git clang-format --style=Google --diff --commit HEAD~1 \
+git clang-format --style=Google --extensions=c,cc,h --diff --commit HEAD~1 \
     | grep -E 'clang-format did not modify any files|no modified files to format' \
     > /dev/null
 if [ $? -ne 0 ]
@@ -16,7 +16,7 @@ then
           "[ERROR:Code formatting]" \
           "One or more modified files do not comply with clang-format." \
           "Run below command to see required changes:" \
-          "'git clang-format --style=Google --diff --commit HEAD~1'"
+          "'git clang-format --style=Google --extensions=c,cc,h --diff --commit HEAD~1'"
 fi
 
 # For untracked files (new files):
