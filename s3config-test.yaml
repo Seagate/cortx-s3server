@@ -17,6 +17,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_READ_AHEAD_MULTIPLE: 1                            # Maximum blocks of size (S3_CLOVIS_BLOCK_SIZE * S3_CLOVIS_MAX_BLOCKS_PER_REQUEST) to read ahead or buffer in-memory
    S3_MAX_RETRY_COUNT: 3                                # Max retry count in case of failure
    S3_RETRY_INTERVAL_MILLISEC: 5                        # Retry interval in milliseconds
+   S3_ENABLE_STATS: false                               # Enable the Stats feature. Default is false.
    S3_STATSD_IP_ADDR: 127.9.7.5                         # StatsD server IP address
    S3_STATSD_PORT: 9125                                 # StatsD server port
    S3_STATSD_MAX_SEND_RETRY: 15                         # Limit the user requested retry count. A retry is attempted in case message delivery to StatsD server fails.

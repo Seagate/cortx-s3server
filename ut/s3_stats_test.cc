@@ -28,6 +28,7 @@ class S3StatsTest : public testing::Test {
  public:
   virtual void SetUp() {
     g_option_instance = S3Option::get_instance();
+    g_option_instance->set_stats_enable(true);
     g_stats_instance = S3Stats::get_instance();
   }
 };

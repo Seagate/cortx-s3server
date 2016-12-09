@@ -57,7 +57,6 @@ DECLARE_bool(fake_clovis_putkv);
 DECLARE_bool(fake_clovis_deletekv);
 DECLARE_bool(fault_injection);
 
-DECLARE_bool(stats_enable);
 DECLARE_string(statsd_host);
 DECLARE_int32(statsd_port);
 

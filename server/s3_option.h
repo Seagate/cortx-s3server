@@ -101,6 +101,7 @@ class S3Option {
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
 
+  bool stats_enable;
   std::string statsd_ip_addr;
   unsigned short statsd_port;
   unsigned short statsd_max_send_retry;
@@ -165,6 +166,7 @@ class S3Option {
     retry_interval_millisec = 0;
     max_retry_count = 0;
 
+    stats_enable = false;
     statsd_ip_addr = FLAGS_statsd_host;
     statsd_port = FLAGS_statsd_port;
     statsd_max_send_retry = 3;
@@ -250,6 +252,7 @@ class S3Option {
   evbase_t* get_eventbase();
 
   bool is_stats_enabled();
+  void set_stats_enable(bool enable);
   std::string get_statsd_ip_addr();
   unsigned short get_statsd_port();
   unsigned short get_statsd_max_send_retry();

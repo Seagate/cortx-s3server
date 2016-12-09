@@ -82,6 +82,8 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_INTERVAL_MILLISEC");
       retry_interval_millisec =
           s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_STATS");
+      stats_enable = s3_option_node["S3_ENABLE_STATS"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
       statsd_port = s3_option_node["S3_STATSD_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_IP_ADDR");
@@ -220,6 +222,8 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FLUSH_FREQUENCY");
       log_flush_frequency_sec =
           s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_STATS");
+      stats_enable = s3_option_node["S3_ENABLE_STATS"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_MAX_SEND_RETRY");
       statsd_max_send_retry =
           s3_option_node["S3_STATSD_MAX_SEND_RETRY"].as<unsigned short>();
@@ -438,8 +442,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deletekv = %d\n", FLAGS_fake_clovis_deletekv);
   s3_log(S3_LOG_INFO, "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
 
-  s3_log(S3_LOG_INFO, "FLAGS_stats_enable = %s\n",
-         (FLAGS_stats_enable ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "S3_ENABLE_STATS = %s\n",
+         (stats_enable ? "true" : "false"));
   s3_log(S3_LOG_INFO, "S3_STATSD_IP_ADDR = %s\n", statsd_ip_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_STATSD_PORT = %d\n", statsd_port);
   s3_log(S3_LOG_INFO, "S3_STATSD_MAX_SEND_RETRY = %d\n", statsd_max_send_retry);
@@ -659,7 +663,9 @@ void S3Option::set_eventbase(evbase_t* base) {
   eventbase = base;
 }
 
-bool S3Option::is_stats_enabled() { return FLAGS_stats_enable; }
+bool S3Option::is_stats_enabled() { return stats_enable; }
+
+void S3Option::set_stats_enable(bool enable) { stats_enable = enable; }
 
 std::string S3Option::get_statsd_ip_addr() { return statsd_ip_addr; }
 
