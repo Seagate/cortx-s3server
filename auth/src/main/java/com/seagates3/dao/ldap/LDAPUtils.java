@@ -24,9 +24,13 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.fi.FaultPoints;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 
 public class LDAPUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LDAPUtils.class.getName());
 
     public static final String BASE_DN = "dc=s3,dc=seagate,dc=com";
     public static final String ACCESS_KEY_ID = "ak";
@@ -106,6 +110,10 @@ public class LDAPUtils {
 
                 ldapSearchResult = lc.search(BASE_DN, scope,
                         filter, attrs, false);
+            } catch (LDAPException ldapException) {
+                LOGGER.error("Error occurred while searching for entry. Cause: "
+                        + ldapException.getCause());
+                throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
             }
@@ -132,6 +140,10 @@ public class LDAPUtils {
                 }
 
                 lc.add(newEntry);
+            } catch (LDAPException ldapException) {
+                LOGGER.error("Error occurred while adding new entry. Cause: "
+                        + ldapException.getCause());
+                throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
             }
@@ -156,6 +168,10 @@ public class LDAPUtils {
                 }
 
                 lc.delete(dn);
+            } catch (LDAPException ldapException) {
+                LOGGER.error("Error occurred while deleting entry. Cause: "
+                        + ldapException.getCause());
+                throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
             }
@@ -182,6 +198,10 @@ public class LDAPUtils {
                 }
 
                 lc.modify(dn, modification);
+            } catch (LDAPException ldapException) {
+                LOGGER.error("Error occurred while updating entry. Cause: "
+                        + ldapException.getCause());
+                throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
             }
@@ -210,6 +230,10 @@ public class LDAPUtils {
                 }
 
                 lc.modify(dn, modifications);
+            } catch (LDAPException ldapException) {
+                LOGGER.error("Error occurred while updating entry.Cause: "
+                        + ldapException.getCause());
+                throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
             }

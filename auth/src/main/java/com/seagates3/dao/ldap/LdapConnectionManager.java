@@ -24,10 +24,13 @@ import com.novell.ldap.connectionpool.PoolManager;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.ServerInitialisationException;
 import com.seagates3.fi.FaultPoints;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
 
 public class LdapConnectionManager {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(LdapConnectionManager.class.getName());
     static PoolManager ldapPool;
     static String ldapLoginDN, ldapLoginPW;
 
@@ -44,6 +47,7 @@ public class LdapConnectionManager {
             ldapLoginPW = AuthServerConfig.getLdapLoginPassword();
         } catch (LDAPException ex) {
             String msg = "Failed to initialise LDAP.\n" + ex.toString();
+            LOGGER.error(msg);
             throw new ServerInitialisationException(msg);
         }
     }
@@ -63,6 +67,8 @@ public class LdapConnectionManager {
             lc = ldapPool.getBoundConnection(
                     ldapLoginDN, ldapLoginPW.getBytes("UTF-8"));
         } catch (LDAPException | InterruptedException | UnsupportedEncodingException ex) {
+            LOGGER.error("Failed to connect to LDAP server. Cause: "
+                    + ex.getCause());
         }
 
         return lc;
