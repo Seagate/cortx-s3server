@@ -77,44 +77,47 @@ struct pool_info {
  * 3) Destroy the pool when its not needed
  *
  * Example 1: Simple Memory pool
- *  1) A simple memory pool is created using mempool_create api, user supplies
+ * 1) A simple memory pool is created using mempool_create api, user supplies
  *     initial pool size as 0, The pool initially doesn't have any items in it.
- *  2) When user asks for item using mempool_allocate, it allocates it by using
- * native method(malloc/posix_memalign) as the free list is empty.
- *  3) When user is done with item, it frees the item using pool api
- * (mempool_free), mempool_api will hook the
- *     item to the free list of the pool.
- *  4) Next time when user asks for the item, it will be given the item (which
- * it freed before) from the free list of the pool
- *  5) Consecutive free operations via api mempool_free will preappend to list
- * or free the item depending on the maximum allowed free list (configurable)
+ * 2) When user asks for item using mempool_getbuffer, it allocates it by using
+ *    native method(malloc/posix_memalign) as the free list is empty.
+ * 3) When user is done with item, it releases the item using pool api
+ *    (mempool_releasebuffer), mempool api will hook the item to the
+ *    free list of the pool.
+ * 4) Next time when user asks for the item, it will be given the item (which
+ *    it released before) from the free list of the pool
+ * 5) Consecutive release buffer operations via api mempool_releasebuffer api
+ *    will preappend to list or free the item depending on the maximum allowed
+ *    free list (configurable)
  *
  *
- *     mempool_create() --> mempool_allocate() --> mempool_free() -->
+ *     mempool_create() --> mempool_getbuffer() --> mempool_releasebuffer() -->
  * mempool_destroy()
  *
  * Example 2: Memory Pool with preallocated items, dynamic expansion and with
  * cap on maximum item(memory) utilization
- *   1) Create the pool with api mempool_create, the pool will have
- * some initial number of items as specified by user
- *   2) When user asks for item it will be allocated from the pool (free list
- * will not be empty), whenever the freelist is empty
- *      then the pool will dynamically expand the free list size by expansion
- * size (specified when creating pool), error will be
- *      returned in case if the memory consumed via pool crosses the threshold
- * value(set when creating pool).
- *   3) Whenever user frees the item via mempool_free, it will hook the item to
- * the list or free it depending on the maximum free list size
+ * 1) Create the pool with api mempool_create, the pool will have some initial
+ *    number of items as specified by user
+ * 2) When user asks for item it will be allocated from the pool (free list
+ *    will not be empty), whenever the freelist is empty then the pool will
+ *    dynamically expand the free list size by expansion size
+ *    (specified when creating pool), error will be returned in case if the
+ *    memory consumed via pool crosses the threshold value(set when creating
+ * pool).
+ * 3) Whenever user releases the item via mempool_releasebuffer, it will hook
+ *    the item to the list or free it depending on the maximum free list size
  *
- *     mempool_create() --> mempool_allocate() --> mempool_free() -->
- * mempool_destroy()
+ *     mempool_create() --> mempool_getbuffer() --> mempool_releasebuffer() -->
+ *     mempool_destroy()
  */
 
 /**
  * Create a memory pool object and do preallocation of free list in it, return
  * handle to it.
  * args:
- * pool_item_size (in) Size of each buffer items that this pool will manage
+ * pool_item_size (in) Size of each buffer items that this pool will manage,
+ * minimum size is size of pointer
+ * Note: In case of clovis the minimum buffer size is 4KB
  * pool_initial_size (in) Initial size of the pool
  * pool_expansion_size (in) pool expansion size when all free memory
  * being used.
@@ -132,25 +135,25 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
                    MemoryPoolHandle *p_handle);
 
 /**
- * Allocate some memory via memory pool
+ * Allocate some buffer memory via memory pool
  * args:
  * flags (in) if ZEROED_ALLOCATION set then zero memory
  * handle (in) handle to memory pool obtained from mempool_create
  * returns:
  * 0 on success, otherwise an error
  */
-void *mempool_alloc(MemoryPoolHandle handle, int flags);
+void *mempool_getbuffer(MemoryPoolHandle handle, int flags);
 
 /**
  * Hook/Free the item that was allocated earlier from the memory pool
  * (memory alloc) to pool's free list, based on the pool's free list capacity
  * args:
  * handle (in) Pool handle as returned by mempool_create
- * buf (in) item allocated earlier via mempool_allocate()
+ * buf (in) item allocated earlier via mempool_getbuffer()
  * returns:
  * 0 on success, otherwise an error
  */
-int mempool_free(MemoryPoolHandle handle, void *buf);
+int mempool_releasebuffer(MemoryPoolHandle handle, void *buf);
 
 /**
  * Returns info about the memory pool

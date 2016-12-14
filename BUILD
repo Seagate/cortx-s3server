@@ -167,3 +167,27 @@ cc_binary(
       "-Wl,-rpath,/usr/local/lib64,-rpath,/opt/seagate/s3/lib",
     ],
 )
+
+cc_test(
+    # How to run build
+    # bazel build //:s3mempoolut --cxxopt="-std=c++11"
+
+    name = "s3mempoolut",
+
+    srcs = glob(["mempool/*.c", "mempool/*.h", "mempool/ut/*.cc"]),
+
+    copts = ["-DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -O3"],
+
+    includes = [
+      "third_party/googletest/include",
+      "third_party/googlemock/include",
+      "mempool/",
+    ],
+
+    linkopts = [
+      "-Lthird_party/googletest/build",
+      "-Lthird_party/googlemock/build",
+      "-lpthread -ldl -lm -lrt -lgtest -lgmock",
+    ],
+
+)

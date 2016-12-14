@@ -74,11 +74,17 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
   int free_list_max_size;
   int allocate_free_list_size;
   struct mempool *pool = NULL;
-  *handle = NULL;
 
-  if (pool_item_size == 0 || pool_max_theshold_size == 0) {
+  if (pool_item_size == 0 || pool_max_theshold_size == 0 || handle == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
   }
+
+  /* Minimum size of the pool's buffer will be sizeof pointer */
+  if (pool_item_size < sizeof(struct memory_pool_element)) {
+    pool_item_size = sizeof(struct memory_pool_element);
+  }
+
+  *handle = NULL;
 
   /* Bail out if the user provides initial size less than maximum threshold size
    */
@@ -90,18 +96,18 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
    */
   free_list_max_size = pool_max_theshold_size / pool_item_size;
 
-  /* flag that can be used to figure out whether we have done preallocation of
-   * items when creating pool */
-  if (pool_initial_size != 0) {
-    flags |= PREALLOCATE_MEM_ON_CREATE;
-  }
-
   pool = (struct mempool *)calloc(1, sizeof(struct mempool));
   if (pool == NULL) {
     return S3_MEMPOOL_ERROR;
   }
 
-  pool->flags = flags;
+  /* flag that can be used to figure out whether we are doing preallocation of
+   * items when creating pool */
+  if (pool_initial_size != 0) {
+    pool->flags |= PREALLOCATE_MEM_ON_CREATE;
+  }
+
+  pool->flags |= flags;
   pool->free_list_max_size = free_list_max_size;
   pool->mempool_item_size = pool_item_size;
   if (flags & CREATE_ALIGNED_MEMORY) {
@@ -117,6 +123,7 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
   }
 
   pool->expandable_size = pool_expansion_size;
+  pool->max_memory_threshold = pool_max_theshold_size;
   /* figure out the size of free list to be preallocated from given initial pool
    * size */
   allocate_free_list_size = pool_initial_size / pool_item_size;
@@ -136,7 +143,7 @@ fail:
   return S3_MEMPOOL_ERROR;
 }
 
-void *mempool_alloc(MemoryPoolHandle handle, int flags) {
+void *mempool_getbuffer(MemoryPoolHandle handle, int flags) {
   int rc;
   int number_of_extra_freelist;
   struct memory_pool_element *pool_item = NULL;
@@ -213,6 +220,22 @@ void *mempool_alloc(MemoryPoolHandle handle, int flags) {
   /* allocate a new one, if item not in pool */
   if (pool_item == NULL) {
     void *buf;
+
+    if (pool->total_outstanding_memory_alloc >= pool->free_list_max_size) {
+      /* Any further memory allocation will cross the max threshold value, so
+       * bail out */
+      if (flags & ENABLE_LOCKING) {
+        pthread_mutex_lock(&pool->lock);
+        /* Not successful in providing the item */
+        pool->number_of_allocation--;
+        pthread_mutex_unlock(&pool->lock);
+      } else {
+        pool->number_of_allocation--;
+      }
+
+      return NULL;
+    }
+
     /* allocate a new one, as item not in pool */
     if (flags & CREATE_ALIGNED_MEMORY) {
       /* Do memory aligned allocations in case of memory aligned pools */
@@ -242,7 +265,7 @@ void *mempool_alloc(MemoryPoolHandle handle, int flags) {
   return (void *)pool_item;
 }
 
-int mempool_free(MemoryPoolHandle handle, void *buf) {
+int mempool_releasebuffer(MemoryPoolHandle handle, void *buf) {
   struct mempool *pool = (struct mempool *)handle;
   struct memory_pool_element *pool_item = (struct memory_pool_element *)buf;
 
@@ -268,7 +291,12 @@ int mempool_free(MemoryPoolHandle handle, void *buf) {
   }
 
   /* Implies that we have not hooked the item to the list, so free it */
+  /* This condition won't happen currently as max threshold is enforced by
+   * default */
   if (pool_item != NULL) {
+    /* This assert need to be removed when we dont want to enforce max threshold
+     */
+    assert(pool_item == NULL);
     free(pool_item);
     pool->total_outstanding_memory_alloc--;
   }
@@ -291,6 +319,9 @@ int mempool_getinfo(MemoryPoolHandle handle, struct pool_info *poolinfo) {
   poolinfo->free_pool_items_count = pool->free_pool_items_count;
   poolinfo->number_of_allocation = pool->number_of_allocation;
   poolinfo->expandable_size = pool->expandable_size;
+  poolinfo->total_outstanding_memory_alloc =
+      pool->total_outstanding_memory_alloc;
+  poolinfo->flags = pool->flags;
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
@@ -304,15 +335,12 @@ int mempool_resize(MemoryPoolHandle handle, int new_max_threshold) {
   struct mempool *pool = (struct mempool *)handle;
   struct memory_pool_element *pool_item_tobe_freed = NULL;
 
-  /* calculate new free list size for new_max_threshold */
-  new_max_free_list_count = (new_max_threshold - (pool->number_of_allocation *
-                                                  pool->mempool_item_size)) /
-                            pool->mempool_item_size;
-
-  /* Dont allow new value of max free list to be 0 */
-  if (new_max_free_list_count <= 0) {
+  if (new_max_threshold <= 0) {
     return S3_MEMPOOL_ERROR;
   }
+
+  /* calculate new free list size for new_max_threshold */
+  new_max_free_list_count = new_max_threshold / pool->mempool_item_size;
 
   if (pool->flags & ENABLE_LOCKING) {
     pthread_mutex_lock(&pool->lock);
@@ -349,9 +377,15 @@ int mempool_resize(MemoryPoolHandle handle, int new_max_threshold) {
 }
 
 int mempool_destroy(MemoryPoolHandle *handle) {
-  struct mempool *pool = (struct mempool *)handle;
+  struct mempool *pool;
   struct memory_pool_element *pool_item;
   struct memory_pool_element *next_item;
+
+  if (handle == NULL) {
+    return S3_MEMPOOL_INVALID_ARG;
+  }
+
+  pool = (struct mempool *)*handle;
 
   if (pool == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
@@ -371,7 +405,7 @@ int mempool_destroy(MemoryPoolHandle *handle) {
 
   /* Assert if total memory allocation via pool and free via pool doesn't match
    */
-  assert((pool->total_outstanding_memory_alloc - pool->number_of_allocation) !=
+  assert((pool->total_outstanding_memory_alloc - pool->number_of_allocation) ==
          0);
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
@@ -382,6 +416,5 @@ int mempool_destroy(MemoryPoolHandle *handle) {
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_destroy(&pool->lock);
   }
-
   return 0;
 }
