@@ -155,7 +155,7 @@ void S3PostCompleteAction::get_parts_successful() {
      send_response_to_s3_client();
   }
   std::map<std::string, std::string>::iterator part_kv;
-  std::map<std::string, std::string>::iterator store_kv;
+  std::map<std::string, std::pair<int, std::string>>::iterator store_kv;
 
   for (part_kv = parts.begin(); part_kv != parts.end(); part_kv++) {
     store_kv = kvps.find(part_kv->first);
@@ -164,8 +164,8 @@ void S3PostCompleteAction::get_parts_successful() {
       send_response_to_s3_client();
     } else {
       s3_log(S3_LOG_DEBUG, "Metadata for key [%s] -> [%s]\n",
-             store_kv->first.c_str(), store_kv->second.c_str());
-      part_metadata->from_json(store_kv->second);
+             store_kv->first.c_str(), store_kv->second.second.c_str());
+      part_metadata->from_json(store_kv->second.second);
       s3_log(S3_LOG_DEBUG, "Processing Part [%s]\n",
              part_metadata->get_part_number().c_str());
 

@@ -212,6 +212,8 @@ create_basic_kvs_op_ctx(int no_of_keys) {
   ctx->values = index_bufvec_alloc(no_of_keys);
   if (ctx->values == NULL)
     goto FAIL;
+  ctx->rcs = (int *)calloc(no_of_keys, sizeof(int));
+  if (ctx->rcs == NULL) goto FAIL;
   s3_log(S3_LOG_DEBUG, "Exiting\n");
   return ctx;
 
@@ -221,6 +223,9 @@ FAIL:
   }
   if(ctx->values) {
     index_bufvec_free(ctx->values);
+  }
+  if (ctx->rcs) {
+    free(ctx->rcs);
   }
   if(ctx) {
     free(ctx);
@@ -233,6 +238,7 @@ int free_basic_kvs_op_ctx(struct s3_clovis_kvs_op_context *ctx) {
 
   index_bufvec_free(ctx->keys);
   index_bufvec_free(ctx->values);
+  free(ctx->rcs);
   free(ctx);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
   return 0;

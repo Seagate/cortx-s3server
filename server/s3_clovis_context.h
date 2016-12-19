@@ -56,6 +56,7 @@ struct s3_clovis_idx_op_context {
 struct s3_clovis_kvs_op_context {
   struct m0_bufvec        *keys;
   struct m0_bufvec        *values;
+  int *rcs;  // per key return status array
 };
 
 struct s3_clovis_op_context* create_basic_op_ctx(size_t op_count);

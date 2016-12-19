@@ -97,7 +97,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     auto bucket = std::make_shared<S3BucketMetadata>(request);
-    bucket->from_json(kv.second);
+    bucket->from_json(kv.second.second);
     bucket_list.add_bucket(bucket);
     if (--length == 0) {
       // this is the last element returned.

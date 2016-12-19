@@ -70,7 +70,7 @@ class ClovisAPI {
    virtual int clovis_idx_op(struct m0_clovis_idx *idx,
                              enum m0_clovis_idx_opcode opcode,
                              struct m0_bufvec *keys, struct m0_bufvec *vals,
-                             struct m0_clovis_op **op) = 0;
+                             int *rcs, struct m0_clovis_op **op) = 0;
 
    virtual void clovis_obj_op(struct m0_clovis_obj *obj,
                               enum m0_clovis_obj_opcode opcode,
@@ -130,12 +130,11 @@ class ConcreteClovisAPI : public ClovisAPI {
       m0_clovis_op_setup(op, ops, linger);
     }
 
-    int clovis_idx_op(struct m0_clovis_idx       *idx,
-                      enum m0_clovis_idx_opcode   opcode,
-                      struct m0_bufvec           *keys,
-                      struct m0_bufvec           *vals,
-                      struct m0_clovis_op       **op) {
-      return m0_clovis_idx_op(idx, opcode, keys, vals, op);
+    int clovis_idx_op(struct m0_clovis_idx *idx,
+                      enum m0_clovis_idx_opcode opcode, struct m0_bufvec *keys,
+                      struct m0_bufvec *vals, int *rcs,
+                      struct m0_clovis_op **op) {
+      return m0_clovis_idx_op(idx, opcode, keys, vals, rcs, op);
     }
 
     void clovis_obj_op(struct m0_clovis_obj       *obj,

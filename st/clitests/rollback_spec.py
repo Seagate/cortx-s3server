@@ -328,7 +328,7 @@ for i, val in enumerate(pathstyle_values):
             .execute_test().command_is_successful()
 
     JClientTest('Jclient cannot abort multipart upload.').abort_multipart("seagatebucket", "18MBfile", upload_id)\
-            .execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+            .execute_test(negative_case=True).command_should_fail()
 
     S3fiTest('S3Fi disable Fault injection').disable_fi("clovis_obj_delete_fail").execute_test().command_is_successful()
 

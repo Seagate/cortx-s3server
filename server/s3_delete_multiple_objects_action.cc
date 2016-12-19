@@ -170,10 +170,10 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
 
   std::vector<struct m0_uint128> oids;
   for (auto& kv : kvps) {
-    if (!kv.second.empty()) {
+    if ((kv.second.first == 0) && (!kv.second.second.empty())) {
       s3_log(S3_LOG_DEBUG, "Delete Object = %s\n", kv.first.c_str());
       auto object = std::make_shared<S3ObjectMetadata>(request);
-      object->from_json(kv.second);
+      object->from_json(kv.second.second);
       objects_metadata.push_back(object);
       oids.push_back(object->get_oid());
     } else {
@@ -181,8 +181,16 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
       delete_objects_response.add_success(kv.first);
     }
   }
-  // Now trigger the delete.
-  clovis_writer->delete_objects(oids, std::bind( &S3DeleteMultipleObjectsAction::delete_objects_successful, this), std::bind( &S3DeleteMultipleObjectsAction::delete_objects_failed, this));
+  if (oids.empty()) {
+    send_response_to_s3_client();
+  } else {
+    // Now trigger the delete.
+    clovis_writer->delete_objects(
+        oids,
+        std::bind(&S3DeleteMultipleObjectsAction::delete_objects_successful,
+                  this),
+        std::bind(&S3DeleteMultipleObjectsAction::delete_objects_failed, this));
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

@@ -43,11 +43,10 @@ int s3_test_alloc_op(struct m0_clovis_entity *entity, struct m0_clovis_op **op) 
   return 0;
 }
 
-int s3_test_clovis_idx_op(struct m0_clovis_idx       *idx,
-                  enum m0_clovis_idx_opcode   opcode,
-                  struct m0_bufvec           *keys,
-                  struct m0_bufvec           *vals,
-                  struct m0_clovis_op       **op) {
+int s3_test_clovis_idx_op(struct m0_clovis_idx *idx,
+                          enum m0_clovis_idx_opcode opcode,
+                          struct m0_bufvec *keys, struct m0_bufvec *vals,
+                          int *rcs, struct m0_clovis_op **op) {
   *op = (struct m0_clovis_op*)calloc(1, sizeof(struct m0_clovis_op));
   return 0;
 }
@@ -217,7 +216,8 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
   struct s3_clovis_kvs_op_context *kvs_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   S3Option::get_instance()->set_eventbase(evbase);
@@ -261,7 +261,8 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailCallback) {
   struct s3_clovis_idx_op_context * idx_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   S3Option::get_instance()->set_eventbase(evbase);
@@ -295,7 +296,8 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailEmpty) {
   struct s3_clovis_idx_op_context * idx_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   ptr_mock_cloviskvs_writer->put_keyval("",
@@ -318,7 +320,8 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccess) {
   struct s3_clovis_idx_op_context * idx_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   ptr_mock_cloviskvs_writer->put_keyval("BUCKET/seagate_bucket",
@@ -339,7 +342,8 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFail) {
   S3CallBack s3cloviskvscallbackobj;
   struct s3_clovis_idx_op_context * idx_ctx;
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   ptr_mock_cloviskvs_writer->put_keyval("BUCKET/seagate_bucket",
@@ -364,7 +368,8 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccessCallback) {
   struct s3_clovis_kvs_op_context *kvs_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   S3Option::get_instance()->set_eventbase(evbase);
@@ -400,7 +405,8 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailCallback) {
   struct s3_clovis_idx_op_context * idx_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   S3Option::get_instance()->set_eventbase(evbase);
@@ -433,7 +439,8 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailEmpty) {
   struct s3_clovis_kvs_op_context *kvs_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   ptr_mock_cloviskvs_writer->delete_keyval("",
@@ -456,7 +463,8 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccess) {
   struct s3_clovis_idx_op_context * idx_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   ptr_mock_cloviskvs_writer->delete_keyval("BUCKET/seagate_bucket",
@@ -477,7 +485,8 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFail) {
   struct s3_clovis_idx_op_context * idx_ctx;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _)).WillOnce(Invoke(s3_test_clovis_idx_op));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _));
   ptr_mock_cloviskvs_writer->delete_keyval("BUCKET/seagate_bucket",

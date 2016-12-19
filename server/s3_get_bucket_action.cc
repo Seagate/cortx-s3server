@@ -105,22 +105,22 @@ void S3GetBucketAction::get_next_objects_successful() {
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
-    s3_log(S3_LOG_DEBUG, "Read Object Value = %s\n", kv.second.c_str());
+    s3_log(S3_LOG_DEBUG, "Read Object Value = %s\n", kv.second.second.c_str());
     auto object = std::make_shared<S3ObjectMetadata>(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {
-      object->from_json(kv.second);
+      object->from_json(kv.second.second);
       object_list.add_object(object);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
-        object->from_json(kv.second);
+        object->from_json(kv.second.second);
         object_list.add_object(object);
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
       delimiter_pos = kv.first.find(request_delimiter);
       if (delimiter_pos == std::string::npos) {
-        object->from_json(kv.second);
+        object->from_json(kv.second.second);
         object_list.add_object(object);
       } else {
         // Roll up
@@ -133,7 +133,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       if (prefix_match) {
         delimiter_pos = kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
-          object->from_json(kv.second);
+          object->from_json(kv.second.second);
           object_list.add_object(object);
         } else {
           s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());

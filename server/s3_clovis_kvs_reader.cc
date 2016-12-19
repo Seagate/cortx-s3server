@@ -18,6 +18,7 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include <assert.h>
 #include <unistd.h>
 
 #include "s3_common.h"
@@ -122,7 +123,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid, std::vector<std::strin
 
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_GET,
                                     kvs_ctx->keys, kvs_ctx->values,
-                                    &(idx_ctx->ops[0]));
+                                    kvs_ctx->rcs, &(idx_ctx->ops[0]));
   if(rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   }
@@ -144,20 +145,43 @@ void S3ClovisKVSReader::get_keyval_successful() {
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
   struct s3_clovis_kvs_op_context *kvs_ctx = reader_context->get_clovis_kvs_op_ctx();
+  int rcs;
+  std::string key;
+  std::string val;
+  bool keys_retrieved = false;
   for(size_t i = 0; i < kvs_ctx->keys->ov_vec.v_nr; i++)
   {
-    if (kvs_ctx->keys->ov_buf[i] != NULL) {
-      last_result_keys_values.insert({
-        std::string((char*)kvs_ctx->keys->ov_buf[i], kvs_ctx->keys->ov_vec.v_count[i]), std::string((char*)kvs_ctx->values->ov_buf[i], kvs_ctx->values->ov_vec.v_count[i])});
+    assert(kvs_ctx->keys->ov_buf[i] != NULL);
+    key = std::string((char *)kvs_ctx->keys->ov_buf[i],
+                      kvs_ctx->keys->ov_vec.v_count[i]);
+    if (kvs_ctx->rcs[i] == 0) {
+      rcs = 0;
+      keys_retrieved = true;  // atleast one key successfully retrieved
+      if (kvs_ctx->values->ov_buf[i] != NULL) {
+        val = std::string((char *)kvs_ctx->values->ov_buf[i],
+                          kvs_ctx->values->ov_vec.v_count[i]);
+      } else {
+        val = "";
+      }
     } else {
-      last_result_keys_values.insert({
-        std::string((char*)kvs_ctx->keys->ov_buf[i], kvs_ctx->keys->ov_vec.v_count[i]), std::string("")});
+      rcs = kvs_ctx->rcs[i];
+      val = "";
     }
+    last_result_keys_values[key] = std::make_pair(rcs, val);
   }
   if (kvs_ctx->keys->ov_vec.v_nr == 1) {
-    last_value = std::string((char*)clovis_kvs_op_context->values->ov_buf[0], clovis_kvs_op_context->values->ov_vec.v_count[0]);
+    last_value = val;
   }
-  this->handler_on_success();
+  if (keys_retrieved) {
+    // at least one key successfully retrieved
+    this->handler_on_success();
+  } else {
+    // no keys successfully retrieved
+    reader_context->set_op_errno_for(0, -ENOENT);
+    reader_context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                                      "Operation Failed.");
+    get_keyval_failed();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -216,7 +240,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key, 
                                  &idx_oid);
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT,
                                     kvs_ctx->keys, kvs_ctx->values,
-                                    &(idx_ctx->ops[0]));
+                                    kvs_ctx->rcs, &(idx_ctx->ops[0]));
   if(rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   }
@@ -249,17 +273,35 @@ void S3ClovisKVSReader::next_keyval_successful() {
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
   struct s3_clovis_kvs_op_context *kvs_ctx = reader_context->get_clovis_kvs_op_ctx();
+  std::string key;
+  std::string val;
+  // for IC_NEXT op, clovis updates the `keys->ov_vec.v_nr` and sets it to
+  // number of keys retrieved.
   for(size_t i = 0; i < kvs_ctx->keys->ov_vec.v_nr; i++)
   {
-    if (kvs_ctx->keys->ov_buf[i] != NULL) {
-      last_result_keys_values.insert({
-        std::string((char*)kvs_ctx->keys->ov_buf[i], kvs_ctx->keys->ov_vec.v_count[i]), std::string((char*)kvs_ctx->values->ov_buf[i], kvs_ctx->values->ov_vec.v_count[i])});
-    } else {
-      s3_log(S3_LOG_DEBUG, "We fetched all.....\n");
+    if (kvs_ctx->keys->ov_buf[i] == NULL) {
       break;
     }
+    key = std::string((char *)kvs_ctx->keys->ov_buf[i],
+                      kvs_ctx->keys->ov_vec.v_count[i]);
+    if (kvs_ctx->values->ov_buf[i] != NULL) {
+      val = std::string((char *)kvs_ctx->values->ov_buf[i],
+                        kvs_ctx->values->ov_vec.v_count[i]);
+    } else {
+      val = "";
+    }
+    last_result_keys_values[key] = std::make_pair(0, val);
   }
-  this->handler_on_success();
+  if (last_result_keys_values.empty()) {
+    // no keys retrieved
+    reader_context->set_op_errno_for(0, -ENOENT);
+    reader_context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                                      "Operation Failed.");
+    next_keyval_failed();
+  } else {
+    // at least one key successfully retrieved
+    this->handler_on_success();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

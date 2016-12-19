@@ -201,7 +201,7 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
     s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
     auto part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(kv.first.c_str()));
 
-    part->from_json(kv.second);
+    part->from_json(kv.second.second);
     multipart_part_list.add_part(part);
 
     return_list_size++;

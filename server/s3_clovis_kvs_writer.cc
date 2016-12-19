@@ -280,7 +280,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key, std::
     s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm,
                                    &id);
     rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_PUT,
-                                      kvs_ctx->keys, kvs_ctx->values,
+                                      kvs_ctx->keys, kvs_ctx->values, NULL,
                                       &(idx_ctx->ops[0]));
     if (rc != 0) {
       s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op failed\n");
@@ -374,7 +374,9 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid, std::vector<std::st
   }
 
   s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
-  rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL, kvs_ctx->keys, NULL, &(idx_ctx->ops[0]));
+  rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL,
+                                    kvs_ctx->keys, NULL, NULL,
+                                    &(idx_ctx->ops[0]));
   if( rc != 0 ) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   }
@@ -439,8 +441,9 @@ void S3ClovisKVSWriter::del_put_keyval(std::string key, std::string val,
   memcpy(kvs_ctx->keys->ov_buf[0], (void *)key.c_str(), key.length());
 
   s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
-  int rc = s3_clovis_api->clovis_idx_op(
-      idx_ctx->idx, M0_CLOVIS_IC_DEL, kvs_ctx->keys, NULL, &(idx_ctx->ops[0]));
+  int rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL,
+                                        kvs_ctx->keys, NULL, NULL,
+                                        &(idx_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   } else {
@@ -507,7 +510,7 @@ void S3ClovisKVSWriter::create_keyval() {
 
   s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_PUT,
-                                    kvs_ctx->keys, kvs_ctx->values,
+                                    kvs_ctx->keys, kvs_ctx->values, NULL,
                                     &(idx_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op failed\n");

@@ -133,7 +133,7 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, "Parsing Multipart object metadata = %s\n", kv.first.c_str());
     auto object = std::make_shared<S3ObjectMetadata>(request, true);
-    object->from_json(kv.second);
+    object->from_json(kv.second.second);
     multipart_objects[kv.first] = object->get_upload_id();
     multipart_obj_oid = object->get_oid();
     part_oids.push_back(object->get_part_index_oid());

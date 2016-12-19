@@ -234,18 +234,18 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
     std::string upload_str = object->get_upload_id();
 
     if (request_prefix.empty() && request_delimiter.empty()) {
-      object->from_json(kv.second);
+      object->from_json(kv.second.second);
       multipart_object_list.add_object(object);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
-        object->from_json(kv.second);
+        object->from_json(kv.second.second);
         multipart_object_list.add_object(object);
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
       delimiter_pos = kv.first.find(request_delimiter);
       if (delimiter_pos == std::string::npos) {
-        object->from_json(kv.second);
+        object->from_json(kv.second.second);
         multipart_object_list.add_object(object);
       } else {
         // Roll up
@@ -258,7 +258,7 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
       if (prefix_match) {
         delimiter_pos = kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
-          object->from_json(kv.second);
+          object->from_json(kv.second.second);
           multipart_object_list.add_object(object);
         } else {
           s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());

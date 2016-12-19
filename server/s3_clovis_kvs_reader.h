@@ -23,8 +23,9 @@
 #ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_KVS_READER_H__
 #define __MERO_FE_S3_SERVER_S3_CLOVIS_KVS_READER_H__
 
-#include <memory>
 #include <functional>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "s3_request_object.h"
@@ -105,7 +106,10 @@ private:
   // Holds references to keys and values after the read so it can be consumed.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   std::string last_value;
-  std::map<std::string, std::string> last_result_keys_values;
+  // Map to hold last result: first element is `key`, the second is a pair of
+  // `return status` & the `value` corresponding to the `key`.
+  // `value` is valid if `return status` is 0.
+  std::map<std::string, std::pair<int, std::string>> last_result_keys_values;
   size_t iteration_index;
 
 public:
@@ -143,7 +147,7 @@ public:
   void next_keyval_failed();
 
   // returns the fetched kv pairs
-  std::map<std::string, std::string>& get_key_values() {
+  std::map<std::string, std::pair<int, std::string>>& get_key_values() {
     return last_result_keys_values;
   }
 

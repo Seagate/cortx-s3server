@@ -41,11 +41,10 @@ public:
   MOCK_METHOD2(clovis_entity_delete, int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
   MOCK_METHOD0(init_clovis_api, int());
   MOCK_METHOD3(clovis_op_setup, void(struct m0_clovis_op *op, const struct m0_clovis_op_ops *ops, m0_time_t linger));
-  MOCK_METHOD5(clovis_idx_op, int(struct m0_clovis_idx *idx,
-                                  enum m0_clovis_idx_opcode opcode,
-                                  struct m0_bufvec * keys,
-                                  struct m0_bufvec * vals,
-                                  struct m0_clovis_op **op));
+  MOCK_METHOD6(clovis_idx_op,
+               int(struct m0_clovis_idx *idx, enum m0_clovis_idx_opcode opcode,
+                   struct m0_bufvec *keys, struct m0_bufvec *vals, int *rcs,
+                   struct m0_clovis_op **op));
   MOCK_METHOD7(clovis_obj_op, void(struct m0_clovis_obj       *obj,
                                    enum m0_clovis_obj_opcode   opcode,
                                    struct m0_indexvec         *ext,
