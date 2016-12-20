@@ -63,7 +63,7 @@ DEFINE_string(value, "", "KVS operation value");
 DEFINE_int32(op_count, 10, "number of keys");
 DEFINE_string(index_hi, "", "KVS operation oid HI <0xhex64bitOidString>");
 DEFINE_string(index_lo, "", "KVS operation oid LO <0xhex64bitOidString>");
-DEFINE_int32(kvstore, 1, "Type of index service: 1:MERO; 2:CASSANDRA");
+DEFINE_int32(kvstore, 2, "Type of index service: 1:MERO; 2:CASSANDRA");
 
 DEFINE_string(clovis_local_addr, "local@tcp:12345:33:100",
               "Clovis local address");
@@ -224,7 +224,7 @@ FAIL:
 // NOTE: Common func to query opcodes supported via m0_clovis_idx_opcode
 // Refer clovis/clovis.h for opcodes
 static int execute_kv_query(struct m0_uint128 id, struct m0_bufvec *keys,
-                            struct m0_bufvec *vals,
+                            int *rc_keys, struct m0_bufvec *vals,
                             enum m0_clovis_idx_opcode opcode) {
   int rc;
   struct m0_clovis_op *ops[1] = {NULL};
@@ -234,7 +234,7 @@ static int execute_kv_query(struct m0_uint128 id, struct m0_bufvec *keys,
   ops[0] = NULL;
 
   m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
-  m0_clovis_idx_op(&idx, opcode, keys, vals, NULL, &ops[0]);
+  m0_clovis_idx_op(&idx, opcode, keys, vals, rc_keys, &ops[0]);
 
   m0_clovis_op_launch(ops, 1);
   rc = m0_clovis_op_wait(
@@ -257,12 +257,15 @@ static int kv_next(struct m0_uint128 id, const char *keystring, int nr_kvp) {
   int rc = 0, i = 0;
   struct m0_bufvec *keys;
   struct m0_bufvec *vals;
+  int *rc_keys = NULL;
   int keylen = strlen(keystring);
 
   /* Allocate bufvec's for keys and vals. */
   keys = idx_bufvec_alloc(nr_kvp);
   vals = idx_bufvec_alloc(nr_kvp);
-  if (keys == NULL || vals == NULL) {
+  rc_keys = (int *)calloc(nr_kvp, sizeof(int));
+
+  if (keys == NULL || vals == NULL || rc_keys == NULL) {
     rc = -ENOMEM;
     fprintf(stderr, "Memory allocation failed:%d\n", rc);
     goto ERROR;
@@ -277,27 +280,35 @@ static int kv_next(struct m0_uint128 id, const char *keystring, int nr_kvp) {
     memcpy(keys->ov_buf[0], keystring, keylen);
   }
 
-  rc = execute_kv_query(id, keys, vals, M0_CLOVIS_IC_NEXT);
+  rc = execute_kv_query(id, keys, rc_keys, vals, M0_CLOVIS_IC_NEXT);
   if (rc < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
   }
 
-  for (i = 0; i < nr_kvp; i++) {
-    fprintf(stdout, "Index:%" PRIx64 ":%" PRIx64 "\n", id.u_hi, id.u_lo);
-    fprintf(stdout, "Key: %s\n", (char *)keys->ov_buf[i]);
-    fprintf(stdout, "Val: %s\n", (char *)vals->ov_buf[i]);
+  for (i = 0; i < nr_kvp && keys->ov_buf[i] != NULL; i++) {
+    fprintf(stdout, "Index: %" PRIx64 ":%" PRIx64 "\n", id.u_hi, id.u_lo);
+    fprintf(stdout, "Key: %.*s\n", (int)keys->ov_vec.v_count[i],
+            (char *)keys->ov_buf[i]);
+    if (vals->ov_buf[i] == NULL) {
+      fprintf(stdout, "Val: \n");
+    } else {
+      fprintf(stdout, "Val: %.*s\n", (int)vals->ov_vec.v_count[i],
+              (char *)vals->ov_buf[i]);
+    }
     fprintf(stdout, "----------------------------------------------\n");
   }
 
   idx_bufvec_free(keys);
   idx_bufvec_free(vals);
+  if (rc_keys) free(rc_keys);
 
   return rc;
 
 ERROR:
   if (keys) idx_bufvec_free(keys);
   if (vals) idx_bufvec_free(vals);
+  if (rc_keys) free(rc_keys);
   return rc;
 }
 
@@ -316,6 +327,7 @@ static int kv_get(struct m0_uint128 id, const char *keystring) {
   int rc = 0;
   struct m0_bufvec *keys;
   struct m0_bufvec *vals;
+  int rc_key = 0;
   int keylen = strlen(keystring);
 
   /* Allocate bufvec's for keys and vals. */
@@ -332,15 +344,23 @@ static int kv_get(struct m0_uint128 id, const char *keystring) {
   if (keys->ov_buf[0] == NULL) goto ERROR;
   memcpy(keys->ov_buf[0], keystring, keylen);
 
-  rc = execute_kv_query(id, keys, vals, M0_CLOVIS_IC_GET);
-  if (rc < 0) {
+  rc = execute_kv_query(id, keys, &rc_key, vals, M0_CLOVIS_IC_GET);
+  if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
   }
 
+  if (keys->ov_buf[0] == NULL) goto ERROR;
+
   fprintf(stdout, "Index:%" PRIx64 ":%" PRIx64 "\n", id.u_hi, id.u_lo);
-  fprintf(stdout, "Key: %s\n", (char *)keys->ov_buf[0]);
-  fprintf(stdout, "Val: %s\n", (char *)vals->ov_buf[0]);
+  fprintf(stdout, "Key: %.*s\n", (int)keys->ov_vec.v_count[0],
+          (char *)keys->ov_buf[0]);
+  if (vals->ov_buf[0] == NULL) {
+    fprintf(stdout, "Val: \n");
+  } else {
+    fprintf(stdout, "Val: %.*s\n", (int)vals->ov_vec.v_count[0],
+            (char *)vals->ov_buf[0]);
+  }
   fprintf(stdout, "----------------------------------------------\n");
 
   idx_bufvec_free(keys);
@@ -379,7 +399,7 @@ static int kv_put(struct m0_uint128 id, const char *keystring,
   vals->ov_buf[0] = (char *)malloc(valuelen);
   memcpy(vals->ov_buf[0], keyvalue, valuelen);
 
-  rc = execute_kv_query(id, keys, vals, M0_CLOVIS_IC_PUT);
+  rc = execute_kv_query(id, keys, NULL, vals, M0_CLOVIS_IC_PUT);
   if (rc < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -415,14 +435,15 @@ static int kv_delete(struct m0_uint128 id, const char *keystring) {
   if (keys->ov_buf[0] == NULL) goto ERROR;
   memcpy(keys->ov_buf[0], keystring, keylen);
 
-  rc = execute_kv_query(id, keys, vals, M0_CLOVIS_IC_DEL);
+  rc = execute_kv_query(id, keys, NULL, vals, M0_CLOVIS_IC_DEL);
   if (rc < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
   }
 
   fprintf(stdout, "Index:%" PRIx64 ":%" PRIx64 "\n", id.u_hi, id.u_lo);
-  fprintf(stdout, "Key: %s\n", (char *)keys->ov_buf[0]);
+  fprintf(stdout, "Key: %.*s\n", (int)keys->ov_vec.v_count[0],
+          (char *)keys->ov_buf[0]);
   fprintf(stdout, "successfully deleted \n");
   fprintf(stdout, "----------------------------------------------\n");
 
@@ -437,58 +458,58 @@ ERROR:
   return rc;
 }
 
-static void get_kv_pair() {
+static int get_kv_pair() {
   struct m0_uint128 id;
 
   id.u_hi = std::stoull(FLAGS_index_hi, nullptr, 0);
   id.u_lo = std::stoull(FLAGS_index_lo, nullptr, 0);
 
-  kv_get(id, FLAGS_key.c_str());
+  return kv_get(id, FLAGS_key.c_str());
 }
 
-static void get_kv_next() {
+static int get_kv_next() {
   struct m0_uint128 id;
 
   id.u_hi = std::stoull(FLAGS_index_hi, nullptr, 0);
   id.u_lo = std::stoull(FLAGS_index_lo, nullptr, 0);
 
-  kv_next(id, FLAGS_key.c_str(), FLAGS_op_count);
+  return kv_next(id, FLAGS_key.c_str(), FLAGS_op_count);
 }
 
-static void put_kv_pair() {
+static int put_kv_pair() {
   struct m0_uint128 id;
 
   id.u_hi = std::stoull(FLAGS_index_hi, nullptr, 0);
   id.u_lo = std::stoull(FLAGS_index_lo, nullptr, 0);
 
-  kv_put(id, FLAGS_key.c_str(), FLAGS_value.c_str());
+  return kv_put(id, FLAGS_key.c_str(), FLAGS_value.c_str());
 }
 
-static void create_kv_index() {
+static int create_kv_index() {
   struct m0_uint128 id;
 
   id.u_hi = std::stoull(FLAGS_index_hi, nullptr, 0);
   id.u_lo = std::stoull(FLAGS_index_lo, nullptr, 0);
 
-  create_index(id);
+  return create_index(id);
 }
 
-static void delete_kv_index() {
+static int delete_kv_index() {
   struct m0_uint128 id;
 
   id.u_hi = std::stoull(FLAGS_index_hi, nullptr, 0);
   id.u_lo = std::stoull(FLAGS_index_lo, nullptr, 0);
 
-  delete_index(id);
+  return delete_index(id);
 }
 
-static void delete_kv_pair() {
+static int delete_kv_pair() {
   struct m0_uint128 id;
 
   id.u_hi = std::stoull(FLAGS_index_hi, nullptr, 0);
   id.u_lo = std::stoull(FLAGS_index_lo, nullptr, 0);
 
-  kv_delete(id, FLAGS_key.c_str());
+  return kv_delete(id, FLAGS_key.c_str());
 }
 
 int main(int argc, char **argv) {
@@ -498,25 +519,29 @@ int main(int argc, char **argv) {
 
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  init_clovis();
+  rc = init_clovis();
+  if (rc < 0) {
+    return rc;
+  }
 
   if (!FLAGS_action.compare("root")) {
     fetch_root_index();
-    kv_next(root_user_index_oid, "", FLAGS_op_count);
+    rc = kv_next(root_user_index_oid, "", FLAGS_op_count);
   } else if (!FLAGS_action.compare("get")) {
-    get_kv_pair();
+    rc = get_kv_pair();
   } else if (!FLAGS_action.compare("next")) {
-    get_kv_next();
+    rc = get_kv_next();
   } else if (!FLAGS_action.compare("put")) {
-    put_kv_pair();
+    rc = put_kv_pair();
   } else if (!FLAGS_action.compare("del")) {
-    delete_kv_pair();
+    rc = delete_kv_pair();
   } else if (!FLAGS_action.compare("createidx")) {
-    create_kv_index();
+    rc = create_kv_index();
   } else if (!FLAGS_action.compare("deleteidx")) {
-    delete_kv_index();
+    rc = delete_kv_index();
   } else {
     fprintf(stderr, "Unrecognised action: try --help \n");
+    rc = -EINVAL;
   }
 
   // Clean-up

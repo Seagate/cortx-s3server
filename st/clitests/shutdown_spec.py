@@ -35,9 +35,6 @@ config_types = ["pathstyle.s3cfg", "virtualhoststyle.s3cfg"]
 for i, type in enumerate(config_types):
     Config.config_file = type
 
-    S3cmdTest('Deleted metadata using cqlsh').delete_metadata_test().\
-        execute_test().command_is_successful().command_is_successful()
-
     # ************ Create bucket ************
     S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").\
         execute_test().command_is_successful()

@@ -75,6 +75,15 @@ How to run?
   127.0.0.1 s3-us-west-2.seagate.com seagatebucket.s3-us-west-2.seagate.com
   127.0.0.1 iam.seagate.com sts.seagate.com
 - Ensure you have sourced mero_st (python version 3.5) with virtualenv.
+- If you are not running as root add user to /etc/sudoers file
+  - Run visudo to edit the /etc/sudoers file
+  - Find section "User privilege specification". Add below line under it
+  - <some_user> ALL=(ALL) NOPASSWD:ALL
+  - Note: Warning: This gives super user privilege to all commands when invoked as sudo.
+- Add s3server binary path to sudo secure path
+  - Run visudo to edit the /etc/sudoers file
+  - Find line with variable "secure_path". Edit to add below path
+  - /opt/seagate/s3/bin
 - cd to clitests directory
 - To verify setup and execute standard systests (auth, s3cmd, jclient and jcloud )
 - run runallsystest.sh
@@ -84,7 +93,10 @@ How to run?
 - run $python jclient_spec.py
 - run $python jcloud_spec.py
 
-Note - To get execution time in milli seconds (parsable format), make the
+Notes:
+ - To get execution time in milli seconds (parsable format), make the
 following change in the test script (ex - s3cmd_spec.py) before running the tests
 set
    Config.time_readable_format = False
+- s3kvstool.py currently holds Class ClovisConfig that houses clovis endpoints(HA_EP/CONFD_EP etc).
+  Change them here if they differ for your setup.

@@ -123,16 +123,6 @@ class S3cmdTest(S3PyCliTest):
         self.with_cli("s3cmd -c " + self.s3cfg + " get " + "s3://" + self.bucket_name + "/" + self.filename)
         return self
 
-    def get_keyval_test(self):
-        cqlsh_cmd = "cqlsh.py -e " + '"' + "select blobAsText(key) from clovis_index_keyspace.clovis_cass_v150915_0;" + '"'
-        self.with_cli(cqlsh_cmd)
-        return self
-
-    def get_metadata(self):
-        cqlsh_cmd = "cqlsh.py -e " + '"' + "select blobAsText(key), blobAsText(value) from clovis_index_keyspace.clovis_cass_v150915_0;" + '"'
-        self.with_cli(cqlsh_cmd)
-        return self
-
     def setacl_bucket(self, bucket_name, acl_perm):
         self.bucket_name = bucket_name
         self.with_cli("s3cmd -c " + self.s3cfg + " setacl " + "s3://" + self.bucket_name + " --acl-grant=" + acl_perm)
@@ -173,11 +163,6 @@ class S3cmdTest(S3PyCliTest):
         self.filename = filename
         self.bucket_name = bucket_name
         self.with_cli("s3cmd -c " + self.s3cfg + " setacl " + "s3://" + self.bucket_name + "/" + self.filename + " --acl-revoke=" + acl_perm)
-        return self
-
-    def delete_metadata_test(self):
-        cqlsh_cmd = "cqlsh.py -e " + '"' + "truncate clovis_index_keyspace.clovis_cass_v150915_0;" + '"';
-        self.with_cli(cqlsh_cmd)
         return self
 
     def stop_s3authserver_test(self):

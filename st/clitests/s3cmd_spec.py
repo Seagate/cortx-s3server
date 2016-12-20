@@ -5,6 +5,8 @@ from framework import S3PyCliTest
 from s3cmd import S3cmdTest
 from jclient import JClientTest
 from s3client_config import S3ClientConfig
+from s3kvstool import S3kvTest
+import s3kvs
 
 # Helps debugging
 # Config.log_enabled = True
@@ -32,6 +34,7 @@ S3ClientConfig.secret_key = 'ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYZ5Hd'
 
 # Path style tests.
 Config.config_file = "pathstyle.s3cfg"
+
 
 # ************ Create bucket ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
@@ -284,13 +287,13 @@ S3cmdTest('s3cmd can upload 3k file for Collision resolution test').upload_test(
 
 S3cmdTest('s3cmd can upload 18MB file for Collision resolution test').upload_test("seagatebucket", "18MBfilecollision", 18000000).execute_test().command_is_successful()
 
-S3cmdTest('Deleted metadata using cqlsh for Collision resolution test').delete_metadata_test().execute_test().command_is_successful().command_is_successful()
+s3kvs.delete_bucket_info("seagatebucket")
 
 S3cmdTest('Create bucket for Collision resolution test').create_bucket("seagatebucket").execute_test().command_is_successful()
 
 S3cmdTest('s3cmd can upload 3k file after Collision resolution').upload_test("seagatebucket", "3kfilecollision", 3000).execute_test().command_is_successful()
 
-S3cmdTest('Check metadata have key 3kfilecollision after Collision resolution').get_keyval_test().execute_test().command_is_successful().command_response_should_have('3kfilecollision')
+s3kvs.expect_object_in_bucket("seagatebucket", "3kfilecollision")
 
 S3cmdTest('s3cmd can download 3kfilecollision after Collision resolution upload').download_test("seagatebucket", "3kfilecollision").execute_test().command_is_successful().command_created_file("3kfilecollision")
 
@@ -298,7 +301,7 @@ S3cmdTest('s3cmd can delete 3kfilecollision after collision resolution').delete_
 
 S3cmdTest('s3cmd can upload 18MB file after Collision resolution').upload_test("seagatebucket", "18MBfilecollision", 3000).execute_test().command_is_successful()
 
-S3cmdTest('Check metadata have key 18MBfilecollision after Collision resolution').get_keyval_test().execute_test().command_is_successful().command_response_should_have('18MBfilecollision')
+s3kvs.expect_object_in_bucket("seagatebucket", "18MBfilecollision")
 
 S3cmdTest('s3cmd can download 18MBfilecollision after Collision resolution upload').download_test("seagatebucket", "18MBfilecollision").execute_test().command_is_successful().command_created_file("18MBfilecollision")
 
@@ -309,13 +312,19 @@ S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test
 
 # ************ ACL/Policy TESTS ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
-S3cmdTest('Check for default bucket ACL').get_metadata().execute_test().command_is_successful().command_response_should_have('seagatebucket | {\"ACL\":\"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiAgPE93bmVyPgogICAgPElEPjEyMzwvSUQ+CiAgICAgIDxEaXNwbGF5TmFtZT50ZXN0ZXI8L0Rpc3BsYXlOYW1lPgogIDwvT3duZXI+CiAgPEFjY2Vzc0NvbnRyb2xMaXN0PgogICAgPEdyYW50PgogICAgICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICAgICAgPElEPjEyMzwvSUQ+CiAgICAgICAgPERpc3BsYXlOYW1lPnRlc3RlcjwvRGlzcGxheU5hbWU+CiAgICAgIDwvR3JhbnRlZT4KICAgICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogICAgPC9HcmFudD4KICA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+Cg==')
+s3kvs.check_bucket_acl("seagatebucket", default_acl_test=True)
+
 S3cmdTest('s3cmd can upload 3k file with default acl').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
-S3cmdTest('Check for default object ACL').get_metadata().execute_test().command_is_successful().command_response_should_have('3kfile | {\"ACL\":\"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+CiAgPE93bmVyPgogICAgPElEPjEyMzwvSUQ+CiAgICAgIDxEaXNwbGF5TmFtZT50ZXN0ZXI8L0Rpc3BsYXlOYW1lPgogIDwvT3duZXI+CiAgPEFjY2Vzc0NvbnRyb2xMaXN0PgogICAgPEdyYW50PgogICAgICA8R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+CiAgICAgICAgPElEPjEyMzwvSUQ+CiAgICAgICAgPERpc3BsYXlOYW1lPnRlc3RlcjwvRGlzcGxheU5hbWU+CiAgICAgIDwvR3JhbnRlZT4KICAgICAgPFBlcm1pc3Npb24+RlVMTF9DT05UUk9MPC9QZXJtaXNzaW9uPgogICAgPC9HcmFudD4KICA8L0FjY2Vzc0NvbnRyb2xMaXN0Pgo8L0FjY2Vzc0NvbnRyb2xQb2xpY3k+Cg==\"')
+s3kvs.check_object_acl("seagatebucket", "3kfile", default_acl_test=True)
+
 S3cmdTest('s3cmd can set acl on bucket').setacl_bucket("seagatebucket","read:123").execute_test().command_is_successful()
-S3cmdTest('Check for default bucket ACL').get_metadata().execute_test().command_is_successful().command_response_should_have('{\"ACL\":\"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+PE93bmVyPjxJRD4xMjM8L0lEPjxEaXNwbGF5TmFtZT50ZXN0ZXI8L0Rpc3BsYXlOYW1lPjwvT3duZXI+PEFjY2Vzc0NvbnRyb2xMaXN0PjxHcmFudD48R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+PElEPjEyMzwvSUQ+PERpc3BsYXlOYW1lPnRlc3RlcjwvRGlzcGxheU5hbWU+PC9HcmFudGVlPjxQZXJtaXNzaW9uPkZVTExfQ09OVFJPTDwvUGVybWlzc2lvbj48L0dyYW50PjwvQWNjZXNzQ29udHJvbExpc3Q+PC9BY2Nlc3NDb250cm9sUG9saWN5Pg==\"')
+bucket_chk_acl="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+PE93bmVyPjxJRD4xMjM8L0lEPjxEaXNwbGF5TmFtZT50ZXN0ZXI8L0Rpc3BsYXlOYW1lPjwvT3duZXI+PEFjY2Vzc0NvbnRyb2xMaXN0PjxHcmFudD48R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+PElEPjEyMzwvSUQ+PERpc3BsYXlOYW1lPnRlc3RlcjwvRGlzcGxheU5hbWU+PC9HcmFudGVlPjxQZXJtaXNzaW9uPkZVTExfQ09OVFJPTDwvUGVybWlzc2lvbj48L0dyYW50PjwvQWNjZXNzQ29udHJvbExpc3Q+PC9BY2Nlc3NDb250cm9sUG9saWN5Pg=="
+s3kvs.check_bucket_acl("seagatebucket", acl=bucket_chk_acl)
+
 S3cmdTest('s3cmd can set acl on object').setacl_object("seagatebucket","3kfile", "read:123").execute_test().command_is_successful()
-S3cmdTest('Check for object ACL').get_metadata().execute_test().command_is_successful().command_response_should_have('{\"ACL\":\"PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+PE93bmVyPjxJRD4xMjM8L0lEPjxEaXNwbGF5TmFtZT50ZXN0ZXI8L0Rpc3BsYXlOYW1lPjwvT3duZXI+PEFjY2Vzc0NvbnRyb2xMaXN0PjxHcmFudD48R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+PElEPjEyMzwvSUQ+PERpc3BsYXlOYW1lPnRlc3RlcjwvRGlzcGxheU5hbWU+PC9HcmFudGVlPjxQZXJtaXNzaW9uPkZVTExfQ09OVFJPTDwvUGVybWlzc2lvbj48L0dyYW50PjwvQWNjZXNzQ29udHJvbExpc3Q+PC9BY2Nlc3NDb250cm9sUG9saWN5Pg==\"')
+file_chk_acl="PEFjY2Vzc0NvbnRyb2xQb2xpY3kgeG1sbnM9Imh0dHA6Ly9zMy5hbWF6b25hd3MuY29tL2RvYy8yMDA2LTAzLTAxLyI+PE93bmVyPjxJRD4xMjM8L0lEPjxEaXNwbGF5TmFtZT50ZXN0ZXI8L0Rpc3BsYXlOYW1lPjwvT3duZXI+PEFjY2Vzc0NvbnRyb2xMaXN0PjxHcmFudD48R3JhbnRlZSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIiB4c2k6dHlwZT0iQ2Fub25pY2FsVXNlciI+PElEPjEyMzwvSUQ+PERpc3BsYXlOYW1lPnRlc3RlcjwvRGlzcGxheU5hbWU+PC9HcmFudGVlPjxQZXJtaXNzaW9uPkZVTExfQ09OVFJPTDwvUGVybWlzc2lvbj48L0dyYW50PjwvQWNjZXNzQ29udHJvbExpc3Q+PC9BY2Nlc3NDb250cm9sUG9saWN5Pg=="
+s3kvs.check_object_acl("seagatebucket", "3kfile", acl=file_chk_acl)
+
 S3cmdTest('s3cmd can revoke acl on bucket').revoke_acl_bucket("seagatebucket","read:123").execute_test().command_is_successful()
 S3cmdTest('s3cmd can revoke acl on object').revoke_acl_object("seagatebucket","3kfile","read:123").execute_test().command_is_successful()
 S3cmdTest('s3cmd can set policy on bucket').setpolicy_bucket("seagatebucket","policy.txt").execute_test().command_is_successful()

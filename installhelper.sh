@@ -48,6 +48,9 @@ cp -R third_party/yaml-cpp/s3_dist/lib/libyaml-cpp.so* $S3_INSTALL_LOCATION/liby
 # Copy the s3 server
 cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
 
+# Copy cloviskvscli tool
+cp bazel-bin/cloviskvscli $S3_INSTALL_LOCATION/bin/
+
 # Copy the resources
 cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json
 

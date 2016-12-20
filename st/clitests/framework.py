@@ -29,6 +29,7 @@ class PyCliTest(object):
         self.description = description
         self.command = ''
         self.negative_case = False
+        self.ignore_err = False
         self.tmp_wd = tmp_wd
         self._create_temp_working_dir()
         self.env = TestFileEnvironment(base_path = self.working_dir, start_clear = clear_base_dir)
@@ -58,6 +59,8 @@ class PyCliTest(object):
         else:
             if(self.negative_case):
               self.status = self.env.run(self.command, expect_stderr=True, expect_error=True)
+            elif(self.ignore_err):
+              self.status = self.env.run(self.command, expect_error=False, expect_stderr=True)
             else:
               self.status = self.env.run(self.command)
 
@@ -90,9 +93,10 @@ class PyCliTest(object):
         shutil.rmtree(self.working_dir, ignore_errors=True)
         return self
 
-    def execute_test(self, negative_case = False):
+    def execute_test(self, negative_case = False, ignore_err = False):
         print("\nTest case [%s] - " % (self.description), end="")
         self.negative_case = negative_case
+        self.ignore_err = ignore_err
         self.setup()
         self.run()
         self.teardown()
