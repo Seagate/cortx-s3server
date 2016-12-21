@@ -240,6 +240,18 @@ TEST_F(MempoolTestSuite, MemPoolFreeTest) {
             secondpass_pool_details.free_pool_items_count);
 }
 
+TEST_F(MempoolTestSuite, MemPoolBufferSizeTest) {
+  size_t buffer_size;
+  EXPECT_EQ(0, mempool_getbuffer_size(handle, &buffer_size));
+  EXPECT_EQ(ONE_4K_BLOCK, buffer_size);
+}
+
+TEST_F(MempoolTestSuite, MemPoolNegativeBufferSizeTest) {
+  size_t buffer_size;
+  EXPECT_EQ(S3_MEMPOOL_INVALID_ARG, mempool_getbuffer_size(NULL, &buffer_size));
+  EXPECT_EQ(S3_MEMPOOL_INVALID_ARG, mempool_getbuffer_size(handle, NULL));
+}
+
 TEST_F(MempoolTestSuite, MemPoolResizeTest) {
   EXPECT_EQ(0, mempool_getinfo(handle, &firstpass_pool_details));
   EXPECT_EQ(0, mempool_resize(handle, TWO_4K_BLOCK));

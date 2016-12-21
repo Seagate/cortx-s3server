@@ -88,6 +88,9 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"), instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
+  EXPECT_EQ(40960, instance->get_libevent_pool_initial_size());
+  EXPECT_EQ(20480, instance->get_libevent_pool_expandable_size());
+  EXPECT_EQ(104857600, instance->get_libevent_pool_max_threshold());
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
   EXPECT_EQ(1, instance->get_clovis_layout_id());
@@ -186,6 +189,18 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
   EXPECT_EQ("s3stats-whitelist-test.yaml",
             instance->get_stats_whitelist_filename());
+}
+
+TEST_F(S3OptionsTest, LoadThirdPartySectionFromFile) {
+  EXPECT_TRUE(instance->load_section("S3_THIRDPARTY_CONFIG", false));
+  EXPECT_EQ(40960, instance->get_libevent_pool_initial_size());
+  EXPECT_EQ(20480, instance->get_libevent_pool_expandable_size());
+  EXPECT_EQ(104857600, instance->get_libevent_pool_max_threshold());
+
+  EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", true));
+  EXPECT_EQ(40960, instance->get_libevent_pool_initial_size());
+  EXPECT_EQ(20480, instance->get_libevent_pool_expandable_size());
+  EXPECT_EQ(104857600, instance->get_libevent_pool_max_threshold());
 }
 
 TEST_F(S3OptionsTest, LoadS3SectionFromFile) {

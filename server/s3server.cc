@@ -21,6 +21,7 @@
 #include <openssl/md5.h>
 #include "clovis_helpers.h"
 #include "murmur3_hash.h"
+#include "s3_memory_pool.h"
 #include "s3_uri_to_mero_oid.h"
 
 #include <tuple>
@@ -40,6 +41,8 @@
 #include "s3_router.h"
 #include "s3_stats.h"
 #include "s3_timer.h"
+
+#define FOUR_KB 4096
 
 #define WEBSTORE "/home/seagate/webstore"
 
@@ -202,6 +205,9 @@ main(int argc, char ** argv) {
   int rc = 0;
   const char  *bind_addr;
   uint16_t     bind_port;
+  size_t libevent_pool_initial_size;
+  size_t libevent_pool_expandable_size;
+  size_t libevent_pool_max_threshold;
 
   // Load Any configs.
   if (parse_and_load_config_options(argc, argv) < 0) {
@@ -237,6 +243,26 @@ main(int argc, char ** argv) {
   rc = s3_stats_init();
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "Stats Init failed!!\n");
+    return rc;
+  }
+
+  // Call this function at starting as we need to make use of our own
+  // memory allocation/deallocation functions
+  libevent_pool_initial_size =
+      g_option_instance->get_libevent_pool_initial_size();
+  libevent_pool_expandable_size =
+      g_option_instance->get_libevent_pool_expandable_size();
+  libevent_pool_max_threshold =
+      g_option_instance->get_libevent_pool_max_threshold();
+  // TODO -- Replace FOUR_KB with clovis block size
+  // Call this function at starting as we need to make use of our own
+  // memory allocation/deallocation functions
+  rc = evthread_use_mempool(FOUR_KB, libevent_pool_initial_size,
+                            libevent_pool_expandable_size,
+                            libevent_pool_max_threshold, CREATE_ALIGNED_MEMORY);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "Memory pool creation failed!\n");
+    s3daemon.delete_pidfile();
     return rc;
   }
 

@@ -16,6 +16,7 @@ cc_binary(
       "-Ithird_party/lustre-2.5.1-headers/libcfs/include",
       "-Ithird_party/lustre-2.5.1-headers/lnet/include",
       "-Ithird_party/lustre-2.5.1-headers/lustre/include",
+      "-Imempool",
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
       "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
     ],

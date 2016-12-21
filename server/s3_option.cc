@@ -17,7 +17,6 @@
  * Original creation date: 31-March-2016
  */
 
-
 #include <yaml-cpp/yaml.h>
 #include <vector>
 #include <inttypes.h>
@@ -151,6 +150,27 @@ bool S3Option::load_section(std::string section_name,
                                "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
+    } else if (section_name == "S3_THIRDPARTY_CONFIG") {
+      std::string libevent_pool_initial_size_str;
+      std::string libevent_pool_expandable_size_str;
+      std::string libevent_pool_max_threshold_str;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LIBEVENT_POOL_INITIAL_SIZE");
+      libevent_pool_initial_size_str =
+          s3_option_node["S3_LIBEVENT_POOL_INITIAL_SIZE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_LIBEVENT_POOL_EXPANDABLE_SIZE");
+      libevent_pool_expandable_size_str =
+          s3_option_node["S3_LIBEVENT_POOL_EXPANDABLE_SIZE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_LIBEVENT_POOL_MAX_THRESHOLD");
+      libevent_pool_max_threshold_str =
+          s3_option_node["S3_LIBEVENT_POOL_MAX_THRESHOLD"].as<std::string>();
+      sscanf(libevent_pool_initial_size_str.c_str(), "%zu",
+             &libevent_pool_initial_size);
+      sscanf(libevent_pool_expandable_size_str.c_str(), "%zu",
+             &libevent_pool_expandable_size);
+      sscanf(libevent_pool_max_threshold_str.c_str(), "%zu",
+             &libevent_pool_max_threshold);
     }
   } else {
     if (section_name == "S3_SERVER_CONFIG") {
@@ -299,6 +319,27 @@ bool S3Option::load_section(std::string section_name,
                                "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
+    } else if (section_name == "S3_THIRDPARTY_CONFIG") {
+      std::string libevent_pool_initial_size_str;
+      std::string libevent_pool_expandable_size_str;
+      std::string libevent_pool_max_threshold_str;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LIBEVENT_POOL_INITIAL_SIZE");
+      libevent_pool_initial_size_str =
+          s3_option_node["S3_LIBEVENT_POOL_INITIAL_SIZE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_LIBEVENT_POOL_EXPANDABLE_SIZE");
+      libevent_pool_expandable_size_str =
+          s3_option_node["S3_LIBEVENT_POOL_EXPANDABLE_SIZE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_LIBEVENT_POOL_MAX_THRESHOLD");
+      libevent_pool_max_threshold_str =
+          s3_option_node["S3_LIBEVENT_POOL_MAX_THRESHOLD"].as<std::string>();
+      sscanf(libevent_pool_initial_size_str.c_str(), "%zu",
+             &libevent_pool_initial_size);
+      sscanf(libevent_pool_expandable_size_str.c_str(), "%zu",
+             &libevent_pool_expandable_size);
+      sscanf(libevent_pool_max_threshold_str.c_str(), "%zu",
+             &libevent_pool_max_threshold);
     }
   }
   return true;
@@ -432,6 +473,13 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM = %d\n",
          clovis_cass_max_column_family_num);
 
+  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_INITIAL_SIZE = %zu\n",
+         libevent_pool_initial_size);
+  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_EXPANDABLE_SIZE = %zu\n",
+         libevent_pool_expandable_size);
+  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_MAX_THRESHOLD = %zud\n",
+         libevent_pool_max_threshold);
+
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n", FLAGS_fake_clovis_createobj);
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n", FLAGS_fake_clovis_writeobj);
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteobj = %d\n", FLAGS_fake_clovis_deleteobj);
@@ -485,6 +533,18 @@ std::string S3Option::get_option_file() {
 
 std::string S3Option::get_daemon_dir() {
   return s3_daemon_dir;
+}
+
+size_t S3Option::get_libevent_pool_initial_size() {
+  return libevent_pool_initial_size;
+}
+
+size_t S3Option::get_libevent_pool_expandable_size() {
+  return libevent_pool_expandable_size;
+}
+
+size_t S3Option::get_libevent_pool_max_threshold() {
+  return libevent_pool_max_threshold;
 }
 
 unsigned short S3Option::do_redirection() {

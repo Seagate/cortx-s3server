@@ -97,6 +97,9 @@ class S3Option {
   std::string clovis_cass_cluster_ep;
   std::string clovis_cass_keyspace;
   int clovis_cass_max_column_family_num;
+  size_t libevent_pool_initial_size;
+  size_t libevent_pool_expandable_size;
+  size_t libevent_pool_max_threshold;
 
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
@@ -224,6 +227,10 @@ class S3Option {
   int get_clovis_idx_fetch_count();
   unsigned short get_max_retry_count();
   unsigned short get_retry_interval_in_millisec();
+  size_t get_libevent_pool_initial_size();
+  size_t get_libevent_pool_expandable_size();
+  size_t get_libevent_pool_max_threshold();
+
   bool get_clovis_is_oostore();
   bool get_clovis_is_read_verify();
   unsigned int get_clovis_tm_recv_queue_min_len();

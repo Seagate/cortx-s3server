@@ -1,4 +1,4 @@
-S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_CLOVIS_CONFIG]
+S3Config_Sections: [S3_SERVER_CONFIG, S3_AUTH_CONFIG, S3_CLOVIS_CONFIG, S3_THIRDPARTY_CONFIG]
 S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_DAEMON_WORKING_DIR: "/"                           # S3 Daemon will run in the specified directory, / is recommended
    S3_DAEMON_DO_REDIRECTION: 1                          # Do redirection of stderr, stdout and stdin to /dev/null
@@ -46,3 +46,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_CASS_CLUSTER_EP: 10.10.1.3                 # Cassandra cluster end point
    S3_CLOVIS_CASS_KEYSPACE: "clovis_index_keyspace"     # Cassandra keyspace
    S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM: 1                 # Cassandra max column family number, default is 1
+S3_THIRDPARTY_CONFIG:
+   S3_LIBEVENT_POOL_INITIAL_SIZE: 40960                 # Ten 4k blocks, the initial pool size
+   S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 20480              # Five 4k blocks, pool's expandable size
+   S3_LIBEVENT_POOL_MAX_THRESHOLD: 104857600            # 100 MB, The maximum memory threshold for the pool

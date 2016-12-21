@@ -166,6 +166,16 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf);
 int mempool_getinfo(MemoryPoolHandle handle, struct pool_info *poolinfo);
 
 /**
+ * Returns memory pool's buffer size
+ * args:
+ * handle (in) Pool handle as returned by mempool_create
+ * buffer_size (out) memory pool's buffer size
+ * returns:
+ * 0 on success, otherwise an error
+ */
+int mempool_getbuffer_size(MemoryPoolHandle handle, size_t *buffer_size);
+
+/**
  * Change the the pool's maximum threshold memory(Application consumed memory +
  * pools free memory), setting up maximum threshold will fail if it makes the
  * pool's maximum free list size 0.
