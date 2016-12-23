@@ -275,8 +275,6 @@ void S3ClovisKVSReader::next_keyval_successful() {
   struct s3_clovis_kvs_op_context *kvs_ctx = reader_context->get_clovis_kvs_op_ctx();
   std::string key;
   std::string val;
-  // for IC_NEXT op, clovis updates the `keys->ov_vec.v_nr` and sets it to
-  // number of keys retrieved.
   for(size_t i = 0; i < kvs_ctx->keys->ov_vec.v_nr; i++)
   {
     if (kvs_ctx->keys->ov_buf[i] == NULL) {
