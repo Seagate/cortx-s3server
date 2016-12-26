@@ -21,6 +21,9 @@ package com.seagates3.authentication;
 import java.util.Map;
 import java.util.TreeMap;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpMethod;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +34,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.seagates3.authserver.AuthServerConfig;
+
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(AuthServerConfig.class)
@@ -91,5 +99,25 @@ public class AWSRequestParserTest {
         awsRequestParser.parseRequestHeaders(requestBody, clientRequestToken);
         Assert.assertFalse(clientRequestToken.isVirtualHost());
         Assert.assertEquals(null, clientRequestToken.getBucketName());
+    }
+
+    @Test
+    public void parseRequestHeadersTest_HttpRequest() {
+        // Arrange
+        FullHttpRequest httpRequest = Mockito.mock(FullHttpRequest.class);
+        ClientRequestToken clientRequestToken = Mockito.mock(ClientRequestToken.class);
+
+        when(httpRequest.headers()).thenReturn(new DefaultHttpHeaders().add("host", "s3.seagate.com"));
+        when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(httpRequest.getUri()).thenReturn("/");
+
+        // Act
+        awsRequestParser.parseRequestHeaders(httpRequest, clientRequestToken);
+
+        // Verify
+        verify(clientRequestToken).setHttpMethod("GET");
+        verify(clientRequestToken).setUri("/");
+        verify(clientRequestToken).setQuery("");
+        verify(clientRequestToken).setRequestHeaders(anyMap());
     }
 }
