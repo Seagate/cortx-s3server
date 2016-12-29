@@ -28,7 +28,7 @@ class S3OID():
 class S3kvTest(S3PyCliTest):
     def __init__(self, description):
         clovis_conf = ClovisConfig()
-        self.cmd = "sudo cloviskvscli"
+        self.cmd = "sudo ../cloviskvscli.sh"
         self.common_args = " --clovis_local_addr=" + clovis_conf.LOCAL_EP  + " --clovis_ha_addr=" + clovis_conf.HA_EP + " --clovis_confd_addr=" + clovis_conf.CONFD_EP + " "
         super(S3kvTest, self).__init__(description)
 

@@ -121,14 +121,19 @@ public:
 
   std::string get_header_value(std::string key);
   virtual std::string get_host_header();
-  // returns x-amz-decoded-content-length OR Content-Length
-  std::string get_data_length_str();
-  std::string get_content_length_str();
-  size_t get_data_length();
-  size_t get_content_length();
-  std::string& get_full_body_content_as_string();
-  std::string get_query_string_value(std::string key);
 
+  // returns x-amz-decoded-content-length OR Content-Length
+  // Always prefer get_data_length*() version since it takes
+  // care of both above headers (chunked and non-chunked cases)
+  size_t get_data_length();
+  std::string get_data_length_str();
+
+  size_t get_content_length();
+  std::string get_content_length_str();
+
+  std::string& get_full_body_content_as_string();
+
+  std::string get_query_string_value(std::string key);
   virtual bool has_query_param_key(std::string key);
 
   // xxx Remove this soon

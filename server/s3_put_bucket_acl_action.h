@@ -23,6 +23,7 @@
 #define __MERO_FE_S3_SERVER_S3_PUT_BUCKET_ACL_ACTION_H__
 
 #include <memory>
+#include <string>
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
@@ -30,11 +31,15 @@
 class S3PutBucketACLAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
-public:
+  std::string new_bucket_acl;
+
+ public:
   S3PutBucketACLAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
-
+  void validate_request();
+  void consume_incoming_content();
+  void validate_request_body(std::string content);
   void get_metadata();
   void setacl();
   void send_response_to_s3_client();

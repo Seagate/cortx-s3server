@@ -51,18 +51,17 @@ void S3DeleteMultipleObjectsAction::setup_steps(){
 
 void S3DeleteMultipleObjectsAction::validate_request() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (request->get_content_length() > 0) {
-    if (request->has_all_body_content()) {
-      validate_request_body(request->get_full_body_content_as_string());
-    } else {
-      request->listen_for_incoming_data(
-          std::bind(&S3DeleteMultipleObjectsAction::consume_incoming_content, this),
-          request->get_content_length()
-        );
-    }
+
+  if (request->has_all_body_content()) {
+    validate_request_body(request->get_full_body_content_as_string());
   } else {
-    validate_request_body("");
+    request->listen_for_incoming_data(
+        std::bind(&S3DeleteMultipleObjectsAction::consume_incoming_content,
+                  this),
+        request->get_data_length() /* we ask for all */
+        );
   }
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

@@ -57,20 +57,22 @@ void S3PostCompleteAction::setup_steps() {
 
 void S3PostCompleteAction::load_and_validate_request() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (request->get_content_length() > 0) {
+  if (request->get_data_length() > 0) {
     if (request->has_all_body_content()) {
       if (validate_request_body(request->get_full_body_content_as_string())) {
         next();
       } else {
+        invalid_request = true;
         send_response_to_s3_client();
       }
     } else {
       request->listen_for_incoming_data(
           std::bind(&S3PostCompleteAction::consume_incoming_content, this),
-          request->get_content_length()
-        );
+          request->get_data_length() /* we ask for all */
+          );
     }
   } else {
+    invalid_request = true;
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -82,6 +84,7 @@ void S3PostCompleteAction::consume_incoming_content() {
     if (validate_request_body(request->get_full_body_content_as_string())) {
       next();
     } else {
+      invalid_request = true;
       send_response_to_s3_client();
     }
   } else {

@@ -78,6 +78,10 @@ void S3RequestObject::initialise() {
     is_chunked_upload = true;
   }
   pending_in_flight = get_data_length();
+  if (pending_in_flight == 0) {
+    // We are not expecting any payload.
+    buffered_input.freeze();
+  }
 }
 
 S3RequestObject::~S3RequestObject(){
@@ -186,7 +190,7 @@ std::string& S3RequestObject::get_full_body_content_as_string() {
   full_request_body = "";
   if (buffered_input.is_freezed()) {
     full_request_body = buffered_input.get_content_as_string();
-   }
+  }
 
   return full_request_body;
 }

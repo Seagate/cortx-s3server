@@ -42,19 +42,16 @@ void S3PutBucketAction::setup_steps(){
 void S3PutBucketAction::validate_request() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (request->get_content_length() > 0) {
-    if (request->has_all_body_content()) {
-      validate_request_body(request->get_full_body_content_as_string());
-    } else {
-      // Start streaming, logically pausing action till we get data.
-      request->listen_for_incoming_data(
-          std::bind(&S3PutBucketAction::consume_incoming_content, this),
-          4096 /* xmls will mostly be less, ~1k, but still */
-        );
-    }
+  if (request->has_all_body_content()) {
+    validate_request_body(request->get_full_body_content_as_string());
   } else {
-    validate_request_body("");
+    // Start streaming, logically pausing action till we get data.
+    request->listen_for_incoming_data(
+        std::bind(&S3PutBucketAction::consume_incoming_content, this),
+        request->get_data_length() /* we ask for all */
+        );
   }
+
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_bucket_action_validate_request_shutdown_fail");

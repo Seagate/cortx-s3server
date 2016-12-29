@@ -29,10 +29,54 @@ S3PutBucketACLAction::S3PutBucketACLAction(std::shared_ptr<S3RequestObject> req)
 
 void S3PutBucketACLAction::setup_steps(){
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  add_task(std::bind(&S3PutBucketACLAction::validate_request, this));
   add_task(std::bind( &S3PutBucketACLAction::get_metadata, this ));
   add_task(std::bind( &S3PutBucketACLAction::setacl, this ));
   add_task(std::bind( &S3PutBucketACLAction::send_response_to_s3_client, this ));
 
+}
+
+void S3PutBucketACLAction::validate_request() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  if (request->has_all_body_content()) {
+    new_bucket_acl = request->get_full_body_content_as_string();
+    validate_request_body(new_bucket_acl);
+  } else {
+    // Start streaming, logically pausing action till we get data.
+    request->listen_for_incoming_data(
+        std::bind(&S3PutBucketACLAction::consume_incoming_content, this),
+        request->get_data_length() /* we ask for all */
+        );
+  }
+
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PutBucketACLAction::consume_incoming_content() {
+  s3_log(S3_LOG_DEBUG, "Consume data\n");
+  if (request->has_all_body_content()) {
+    new_bucket_acl = request->get_full_body_content_as_string();
+    validate_request_body(new_bucket_acl);
+  } else {
+    // else just wait till entire body arrives. rare.
+    request->resume();
+  }
+}
+
+void S3PutBucketACLAction::validate_request_body(std::string content) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  // TODO: ACL implementation is partial, fix this when adding full support.
+  // S3PutBucketAclBody bucket_acl(content);
+  // if (bucket_acl.isOK()) {
+  //   next();
+  // } else {
+  //   invalid_request = true;
+  //   send_response_to_s3_client();
+  // }
+  next();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutBucketACLAction::get_metadata() {
@@ -48,8 +92,7 @@ void S3PutBucketACLAction::get_metadata() {
 void S3PutBucketACLAction::setacl() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    std::string acl_str = request->get_full_body_content_as_string();
-    bucket_metadata->setacl(acl_str);
+    bucket_metadata->setacl(new_bucket_acl);
     // bypass shutdown signal check for next task
     check_shutdown_signal_for_next_task(false);
     bucket_metadata->save(std::bind( &S3PutBucketACLAction::next, this), std::bind( &S3PutBucketACLAction::next, this));
@@ -71,6 +114,15 @@ void S3PutBucketACLAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
+
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (invalid_request) {
+    S3Error error("MalformedXML", request->get_request_id(),
+                  request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::saved) {
