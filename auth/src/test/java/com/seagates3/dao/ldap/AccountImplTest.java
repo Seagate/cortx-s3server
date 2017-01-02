@@ -136,6 +136,27 @@ public class AccountImplTest {
         Assert.assertThat(account, new ReflectionEquals(account));
     }
 
+    @Test(expected = DataAccessException.class)
+    public void FindAccount_SearchShouldThrowLDAPException() throws Exception {
+
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
+                BASE_DN, 2, FIND_FILTER, FIND_ATTRS);
+
+        accountImpl.find("s3test");
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindAccount_GetEntryShouldThrowLDAPException() throws Exception {
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                BASE_DN, 2, FIND_FILTER, FIND_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+        Mockito.when(ldapResults.next()).thenThrow(new LDAPException());
+
+        accountImpl.find("s3test");
+    }
+
+
     @Test
     public void Find_AccountDoesNotExists_ReturnAccountObject() throws Exception {
         Account expectedAccount = new Account();
@@ -306,5 +327,59 @@ public class AccountImplTest {
 
         Account[] accounts = accountImpl.findAll();
         Assert.assertThat(expectedAccounts, new ReflectionEquals(accounts));
+    }
+
+    @Test
+    public void FindAccountById_AccountExists_ReturnAccountObject() throws Exception {
+        Account expectedAccount = new Account();
+        expectedAccount.setName("s3test");
+        expectedAccount.setId("98765test");
+        expectedAccount.setCanonicalId("C12345");
+        expectedAccount.setEmail("test@seagate.com");
+
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+                LDAPUtils.CANONICAL_ID};
+        String filter = String.format("(&(%s=%s)(%s=%s))",
+                LDAPUtils.ACCOUNT_ID, "98765test", LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                BASE_DN, 2, filter, attrs);
+
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+
+        Account account = accountImpl.findByID("98765test");
+        Assert.assertThat(account, new ReflectionEquals(account));
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindAccountById_ShouldThrowLDAPException() throws Exception {
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+                LDAPUtils.CANONICAL_ID};
+        String filter = String.format("(&(%s=%s)(%s=%s))",
+                LDAPUtils.ACCOUNT_ID, "98765test", LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
+                BASE_DN, 2, filter, attrs);
+
+        accountImpl.findByID("98765test");
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindAccountById_GetEntryShouldThrowException() throws Exception {
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+                LDAPUtils.CANONICAL_ID};
+        String filter = String.format("(&(%s=%s)(%s=%s))",
+                LDAPUtils.ACCOUNT_ID, "98765test", LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                BASE_DN, 2, filter, attrs);
+
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+        Mockito.when(ldapResults.next()).thenThrow(new LDAPException());
+
+        accountImpl.findByID("98765test");
     }
 }

@@ -119,6 +119,22 @@ public class RequestorImplTest {
         requestorImpl.find(accessKey);
     }
 
+    @Test(expected = DataAccessException.class)
+    public void Find_GetEntryShouldThrowException() throws Exception {
+        AccessKey accessKey = new AccessKey();
+        accessKey.setId("ak=AKIATEST");
+        accessKey.setUserId("123");
+        String filter = "s3userid=123";
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                BASE_DN, 2, filter, FIND_ATTRS
+        );
+        Mockito.doReturn(Boolean.TRUE).when(ldapResults).hasMore();
+        Mockito.when(ldapResults.next()).thenThrow(new LDAPException());
+
+        requestorImpl.find(accessKey);
+    }
+
     @Test
     public void Find_UserFound_ReturnRequestor() throws Exception {
         AccessKey accessKey = new AccessKey();

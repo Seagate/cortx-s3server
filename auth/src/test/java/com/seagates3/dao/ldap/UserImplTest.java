@@ -62,6 +62,8 @@ public class UserImplTest {
     private final LDAPAttribute pathAttr;
     private final LDAPAttribute createTimeStampAttr;
     private final LDAPAttribute commonNameAttr;
+    private final LDAPAttribute roleAttr;
+
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -75,6 +77,7 @@ public class UserImplTest {
         pathAttr = Mockito.mock(LDAPAttribute.class);
         createTimeStampAttr = Mockito.mock(LDAPAttribute.class);
         commonNameAttr = Mockito.mock(LDAPAttribute.class);
+        roleAttr = Mockito.mock(LDAPAttribute.class);
 
         LDAP_DATE = "20160129160752Z";
         EXPECTED_DATE = "2016-01-29T16:07:52.000+0000";
@@ -182,6 +185,33 @@ public class UserImplTest {
     }
 
     @Test
+    public void Find_RoleUserExists_ReturnUserObject() throws Exception {
+        User expectedUser = new User();
+        expectedUser.setAccountName("s3test");
+        expectedUser.setName("s3testuser");
+        expectedUser.setId("123");
+        expectedUser.setUserType("roleUser");
+        expectedUser.setCreateDate(EXPECTED_DATE);
+        expectedUser.setRoleName("roleUserName");
+
+        setupUserAttr();
+        Mockito.when(objectClassAttr.getStringValue()).thenReturn("roleUser");
+        Mockito.when(entry.getAttribute("rolename"))
+                .thenReturn(roleAttr);
+        Mockito.when(roleAttr.getStringValue()).thenReturn("roleUserName");
+
+        String userBaseDN = "ou=users,o=s3test,ou=accounts,"
+                + "dc=s3,dc=seagate,dc=com";
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                userBaseDN, 2, FIND_FILTER, FIND_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+
+        User user = userImpl.find("s3test", "s3testuser");
+        Assert.assertThat(expectedUser, new ReflectionEquals(user));
+    }
+
+    @Test
     public void Delete_LdapDeleteFailed_ThrowException() throws Exception {
         User user = new User();
         user.setAccountName("s3test");
@@ -270,6 +300,51 @@ public class UserImplTest {
                 .withArguments("s3userid", "123");
         PowerMockito.verifyNew(LDAPAttribute.class)
                 .withArguments("path", "/test");
+
+        PowerMockito.verifyStatic(Mockito.times(1));
+        LDAPUtils.add(userEntry);
+    }
+
+    @Test
+    public void Save_SaveRoleUserSuccess() throws Exception {
+        User user = new User();
+        user.setAccountName("s3test");
+        user.setName("s3testuser");
+        user.setId("123");
+        user.setUserType(User.UserType.ROLE_USER);
+        user.setRoleName("roleUserName");
+
+        String saveUserDN = "s3userid=123,ou=users,o=s3test,ou=accounts,dc=s3,"
+                + "dc=seagate,dc=com";
+
+        LDAPAttributeSet ldapAttributeSet = Mockito.mock(LDAPAttributeSet.class);
+        LDAPAttribute ldapAttribute = Mockito.mock(LDAPAttribute.class);
+        LDAPEntry userEntry = Mockito.mock(LDAPEntry.class);
+
+        PowerMockito.whenNew(LDAPAttributeSet.class)
+                .withNoArguments()
+                .thenReturn(ldapAttributeSet);
+
+        PowerMockito.whenNew(LDAPAttribute.class)
+                .withAnyArguments()
+                .thenReturn(ldapAttribute);
+
+        Mockito.doReturn(true).when(ldapAttributeSet).add(ldapAttribute);
+        PowerMockito.whenNew(LDAPEntry.class)
+                .withParameterTypes(String.class, LDAPAttributeSet.class)
+                .withArguments(saveUserDN, ldapAttributeSet)
+                .thenReturn(userEntry);
+
+        userImpl.save(user);
+
+        PowerMockito.verifyNew(LDAPAttribute.class)
+                .withArguments("objectclass", "roleuser");
+        PowerMockito.verifyNew(LDAPAttribute.class)
+                .withArguments("cn", "s3testuser");
+        PowerMockito.verifyNew(LDAPAttribute.class)
+                .withArguments("s3userid", "123");
+        PowerMockito.verifyNew(LDAPAttribute.class)
+                .withArguments("rolename", "roleUserName");
 
         PowerMockito.verifyStatic(Mockito.times(1));
         LDAPUtils.add(userEntry);

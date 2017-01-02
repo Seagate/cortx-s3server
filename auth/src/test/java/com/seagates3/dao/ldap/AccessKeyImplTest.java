@@ -66,6 +66,8 @@ public class AccessKeyImplTest {
     private final LDAPAttribute statusAttr;
     private final LDAPAttribute createTimeStampAttr;
     private final LDAPAttribute objectClassAttr;
+    private final LDAPAttribute expiryAttr;
+    private final LDAPAttribute tokenAttr;
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -81,6 +83,8 @@ public class AccessKeyImplTest {
         statusAttr = Mockito.mock(LDAPAttribute.class);
         createTimeStampAttr = Mockito.mock(LDAPAttribute.class);
         objectClassAttr = Mockito.mock(LDAPAttribute.class);
+        expiryAttr = Mockito.mock(LDAPAttribute.class);
+        tokenAttr = Mockito.mock(LDAPAttribute.class);
 
         LDAP_DATE = "20160129160752Z";
         EXPECTED_DATE = "2016-01-29T16:07:52.000+0000";
@@ -132,6 +136,19 @@ public class AccessKeyImplTest {
         accesskeyImpl.find("AKIATEST");
     }
 
+    @Test(expected = DataAccessException.class)
+    public void Find_AccessKey_ThrowException() throws Exception {
+        String filter = "ak=AKIATEST";
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore())
+                .thenReturn(Boolean.TRUE);
+        Mockito.when(ldapResults.next()).thenThrow(LDAPException.class);
+
+        accesskeyImpl.find("AKIATEST");
+    }
+
     @Test
     public void Find_AccessKeyNotFound_ReturnEmptyAccessKey() throws Exception {
         AccessKey expectedAccessKey = new AccessKey();
@@ -168,6 +185,41 @@ public class AccessKeyImplTest {
                 .thenReturn(Boolean.FALSE);
 
         AccessKey accessKey = accesskeyImpl.find("AKIATEST");
+        Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
+    }
+
+    @Test
+    public void Find_FedAccessKeyFound_ReturnAccessKey() throws Exception {
+        AccessKey expectedAccessKey = new AccessKey();
+        expectedAccessKey.setId("AKIATEST");
+        expectedAccessKey.setUserId("123");
+        expectedAccessKey.setSecretKey("sk-123/test");
+        expectedAccessKey.setCreateDate(EXPECTED_DATE);
+        expectedAccessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+        expectedAccessKey.setExpiry("2016-01-29T16:07:52.000+0000");
+        expectedAccessKey.setToken("XYZ");
+
+        // Arrange
+        String filter = "ak=AKIATEST";
+        setupAccessKeyAttr();
+        Mockito.when(objectClassAttr.getStringValue()).thenReturn("fedaccesskey");
+        Mockito.when(entry.getAttribute("exp"))
+                .thenReturn(expiryAttr);
+        Mockito.when(expiryAttr.getStringValue()).thenReturn("20160129160752Z");
+        Mockito.when(entry.getAttribute("token"))
+                .thenReturn(tokenAttr);
+        Mockito.when(tokenAttr.getStringValue()).thenReturn("XYZ");
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore())
+                .thenReturn(Boolean.TRUE)
+                .thenReturn(Boolean.FALSE);
+
+        // Act
+        AccessKey accessKey = accesskeyImpl.find("AKIATEST");
+
+        // Verify
         Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
     }
 
@@ -558,5 +610,115 @@ public class AccessKeyImplTest {
 
         PowerMockito.verifyStatic(Mockito.times(1));
         LDAPUtils.modify(dn, modification);
+    }
+
+    @Test
+    public void FindFromToken_AccessKeyFound_ReturnAccessKey() throws Exception {
+        AccessKey expectedAccessKey = new AccessKey();
+        expectedAccessKey.setUserId("123");
+        expectedAccessKey.setSecretKey("sk-123/test");
+        expectedAccessKey.setCreateDate(EXPECTED_DATE);
+        expectedAccessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+        expectedAccessKey.setToken("AWS_SEC_TOKEN");
+
+        String filter = "token=AWS_SEC_TOKEN";
+        String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.SECRET_KEY,
+                LDAPUtils.EXPIRY, LDAPUtils.ACCESS_KEY_ID, LDAPUtils.STATUS,
+                LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.OBJECT_CLASS};
+
+        setupAccessKeyAttr();
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                ACCESSKEY_BASE_DN, 2, filter, attrs);
+        Mockito.when(ldapResults.hasMore())
+                .thenReturn(Boolean.TRUE)
+                .thenReturn(Boolean.FALSE);
+
+        AccessKey accessKey = accesskeyImpl.findFromToken("AWS_SEC_TOKEN");
+        Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
+    }
+
+    @Test
+    public void FindFromToken_AccessKeyNotFound_ReturnEmptyAccessKey() throws Exception {
+        AccessKey expectedAccessKey = new AccessKey();
+        expectedAccessKey.setToken("AWS_SEC_TOKEN");
+
+        String filter = "token=AWS_SEC_TOKEN";
+        String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.SECRET_KEY,
+                LDAPUtils.EXPIRY, LDAPUtils.ACCESS_KEY_ID, LDAPUtils.STATUS,
+                LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.OBJECT_CLASS};
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                ACCESSKEY_BASE_DN, 2, filter, attrs);
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.FALSE);
+
+        AccessKey accessKey = accesskeyImpl.findFromToken("AWS_SEC_TOKEN");
+        Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindFromToken_SearchShouldTrowException() throws Exception {
+        String filter = "token=AWS_SEC_TOKEN";
+        String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.SECRET_KEY,
+                LDAPUtils.EXPIRY, LDAPUtils.ACCESS_KEY_ID, LDAPUtils.STATUS,
+                LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.OBJECT_CLASS};
+
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
+                ACCESSKEY_BASE_DN, 2, filter, attrs);
+
+        accesskeyImpl.findFromToken("AWS_SEC_TOKEN");
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindFromToken_GetEntryShouldThrowException() throws Exception {
+        String filter = "token=AWS_SEC_TOKEN";
+        String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.SECRET_KEY,
+                LDAPUtils.EXPIRY, LDAPUtils.ACCESS_KEY_ID, LDAPUtils.STATUS,
+                LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.OBJECT_CLASS};
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                ACCESSKEY_BASE_DN, 2, filter, attrs);
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+        Mockito.when(ldapResults.next()).thenThrow(new LDAPException());
+
+        accesskeyImpl.findFromToken("AWS_SEC_TOKEN");
+    }
+
+    @Test
+    public void FindFromToken_FedAccessKeyFound_ReturnAccessKey() throws Exception {
+        AccessKey expectedAccessKey = new AccessKey();
+        expectedAccessKey.setId("AKIATEST");
+        expectedAccessKey.setUserId("123");
+        expectedAccessKey.setSecretKey("sk-123/test");
+        expectedAccessKey.setCreateDate(EXPECTED_DATE);
+        expectedAccessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+        expectedAccessKey.setExpiry("2016-01-29T16:07:52.000+0000");
+        expectedAccessKey.setToken("AWS_SEC_TOKEN");
+
+        // Arrange
+        String filter = "token=AWS_SEC_TOKEN";
+        String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.SECRET_KEY,
+                LDAPUtils.EXPIRY, LDAPUtils.ACCESS_KEY_ID, LDAPUtils.STATUS,
+                LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.OBJECT_CLASS};
+
+        setupAccessKeyAttr();
+        Mockito.when(objectClassAttr.getStringValue()).thenReturn("fedaccesskey");
+        Mockito.when(entry.getAttribute("exp"))
+                .thenReturn(expiryAttr);
+        Mockito.when(expiryAttr.getStringValue()).thenReturn("20160129160752Z");
+        Mockito.when(entry.getAttribute("token"))
+                .thenReturn(tokenAttr);
+        Mockito.when(tokenAttr.getStringValue()).thenReturn("AWS_SEC_TOKEN");
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                ACCESSKEY_BASE_DN, 2, filter, attrs);
+        Mockito.when(ldapResults.hasMore())
+                .thenReturn(Boolean.TRUE)
+                .thenReturn(Boolean.FALSE);
+
+        // Act
+        AccessKey accessKey = accesskeyImpl.findFromToken("AWS_SEC_TOKEN");
+
+        // Verify
+        Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
     }
 }
