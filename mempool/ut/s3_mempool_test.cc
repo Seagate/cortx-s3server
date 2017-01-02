@@ -20,7 +20,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "s3_memory_pool.c"
+#include "s3_memory_pool.h"
 
 #define ONE_4K_BLOCK 4096
 #define TWO_4K_BLOCK (2 * ONE_4K_BLOCK)

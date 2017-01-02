@@ -23,6 +23,7 @@
 #include "clovis_helpers.h"
 #include "s3_error_messages.h"
 #include "s3_log.h"
+#include "s3_memory_pool.h"
 #include "s3_option.h"
 #include "s3_stats.h"
 
@@ -35,6 +36,9 @@ extern int s3log_level;
 struct m0_uint128 root_account_user_index_oid;
 S3Option *g_option_instance = NULL;
 extern S3Stats *g_stats_instance;
+
+/* global Memory Pool for read from clovis */
+MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;
@@ -59,6 +63,11 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleMock(&argc, argv);
 
   S3ErrorMessages::init_messages("resources/s3_error_messages.json");
+
+  size_t clovis_block_size = g_option_instance->get_clovis_block_size();
+  mempool_create(clovis_block_size, clovis_block_size * 100,
+                 clovis_block_size * 100, clovis_block_size * 500,
+                 CREATE_ALIGNED_MEMORY, &g_clovis_read_mem_pool_handle);
 
   rc = RUN_ALL_TESTS();
 

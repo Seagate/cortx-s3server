@@ -22,6 +22,10 @@
 #ifndef __MERO_FE_S3_SERVER_S3_MEMORY_POOL_H__
 #define __MERO_FE_S3_SERVER_S3_MEMORY_POOL_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -202,4 +206,9 @@ int mempool_resize(MemoryPoolHandle handle, int new_max_threshold);
  * 0 on success, otherwise an error
  */
 int mempool_destroy(MemoryPoolHandle *p_handle);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

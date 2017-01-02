@@ -130,7 +130,7 @@ void S3ClovisWriter::write_content(std::function<void(void)> on_success, std::fu
 
   writer_context.reset(new S3ClovisWriterContext(request, std::bind( &S3ClovisWriter::write_content_successful, this), std::bind( &S3ClovisWriter::write_content_failed, this)));
 
-  writer_context->init_write_op_ctx(clovis_block_count, clovis_block_size);
+  writer_context->init_write_op_ctx(clovis_block_count);
 
   struct s3_clovis_op_context *ctx = writer_context->get_clovis_op_ctx();
   struct s3_clovis_rw_op_context *rw_ctx = writer_context->get_clovis_rw_op_ctx();

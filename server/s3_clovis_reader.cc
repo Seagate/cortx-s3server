@@ -37,19 +37,22 @@ S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
       state(S3ClovisReaderOpState::start),
       clovis_rw_op_context(NULL),
       iteration_index(0),
-      clovis_block_size(0),
       num_of_blocks_read(0),
       last_index(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 }
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api) : request(req), s3_clovis_api(clovis_api),
-      state(S3ClovisReaderOpState::start), clovis_rw_op_context(NULL),
-      iteration_index(0), clovis_block_size(0), num_of_blocks_read(0),
+                               std::shared_ptr<ClovisAPI> clovis_api)
+    : request(req),
+      s3_clovis_api(clovis_api),
+      state(S3ClovisReaderOpState::start),
+      clovis_rw_op_context(NULL),
+      iteration_index(0),
+      num_of_blocks_read(0),
       last_index(0) {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
-    S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
 }
 
 void S3ClovisReader::read_object_data(size_t num_of_blocks,
@@ -61,11 +64,9 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
   this->handler_on_failed  = on_failed;
   num_of_blocks_read = num_of_blocks;
 
-  clovis_block_size = S3Option::get_instance()->get_clovis_block_size();
-
   reader_context.reset(new S3ClovisReaderContext(request, std::bind( &S3ClovisReader::read_object_data_successful, this), std::bind( &S3ClovisReader::read_object_data_failed, this)));
 
-  last_index = reader_context->init_read_op_ctx(num_of_blocks, clovis_block_size, last_index);
+  last_index = reader_context->init_read_op_ctx(num_of_blocks, last_index);
 
   struct s3_clovis_op_context *ctx = reader_context->get_clovis_op_ctx();
   struct s3_clovis_rw_op_context *rw_ctx = reader_context->get_clovis_rw_op_ctx();

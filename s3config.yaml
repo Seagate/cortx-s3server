@@ -46,7 +46,10 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_CASS_CLUSTER_EP: 127.0.0.1                 # Cassandra cluster end point
    S3_CLOVIS_CASS_KEYSPACE: "clovis_index_keyspace"     # Cassandra keyspace
    S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM: 1                 # Cassandra max column family number, default is 1
+   S3_CLOVIS_READ_POOL_INITIAL_SIZE: 104857600          # Hundred 1mb blocks, the initial pool size, multiple of S3_CLOVIS_BLOCK_SIZE
+   S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE: 104857600       # 100mb, pool's expandable size, multiple of S3_CLOVIS_BLOCK_SIZE
+   S3_CLOVIS_READ_POOL_MAX_THRESHOLD: 524288000         # 500 MB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_BLOCK_SIZE
 S3_THIRDPARTY_CONFIG:
-   S3_LIBEVENT_POOL_INITIAL_SIZE: 40960                 # Ten 4k blocks, the initial pool size
-   S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 20480              # Five 4k blocks, pool's expandable size
-   S3_LIBEVENT_POOL_MAX_THRESHOLD: 104857600            # 100 MB, The maximum memory threshold for the pool
+   S3_LIBEVENT_POOL_INITIAL_SIZE: 104857600             # Hundred 1mb blocks, the initial pool size, multiple of S3_CLOVIS_BLOCK_SIZE
+   S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 104857600          # 100mb, pool's expandable size, multiple of S3_CLOVIS_BLOCK_SIZE
+   S3_LIBEVENT_POOL_MAX_THRESHOLD: 524288000            # 500 MB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_BLOCK_SIZE

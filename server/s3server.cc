@@ -54,6 +54,9 @@ evbase_t * global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
 struct m0_uint128 root_account_user_index_oid;
 
+/* global Memory Pool for read from clovis */
+MemoryPoolHandle g_clovis_read_mem_pool_handle;
+
 extern "C" void
 s3_handler(evhtp_request_t * req, void * a) {
   // placeholder, required to complete the request processing.
@@ -205,9 +208,6 @@ main(int argc, char ** argv) {
   int rc = 0;
   const char  *bind_addr;
   uint16_t     bind_port;
-  size_t libevent_pool_initial_size;
-  size_t libevent_pool_expandable_size;
-  size_t libevent_pool_max_threshold;
 
   // Load Any configs.
   if (parse_and_load_config_options(argc, argv) < 0) {
@@ -248,20 +248,14 @@ main(int argc, char ** argv) {
 
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
-  libevent_pool_initial_size =
-      g_option_instance->get_libevent_pool_initial_size();
-  libevent_pool_expandable_size =
-      g_option_instance->get_libevent_pool_expandable_size();
-  libevent_pool_max_threshold =
-      g_option_instance->get_libevent_pool_max_threshold();
-  // TODO -- Replace FOUR_KB with clovis block size
-  // Call this function at starting as we need to make use of our own
-  // memory allocation/deallocation functions
-  rc = evthread_use_mempool(FOUR_KB, libevent_pool_initial_size,
-                            libevent_pool_expandable_size,
-                            libevent_pool_max_threshold, CREATE_ALIGNED_MEMORY);
+  rc = evthread_use_mempool(
+      g_option_instance->get_clovis_block_size(),
+      g_option_instance->get_libevent_pool_initial_size(),
+      g_option_instance->get_libevent_pool_expandable_size(),
+      g_option_instance->get_libevent_pool_max_threshold(),
+      CREATE_ALIGNED_MEMORY);
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "Memory pool creation failed!\n");
+    s3_log(S3_LOG_FATAL, "Memory pool creation for libevent failed!\n");
     s3daemon.delete_pidfile();
     return rc;
   }
@@ -297,7 +291,20 @@ main(int argc, char ** argv) {
   bind_port = g_option_instance->get_s3_bind_port();
   bind_addr = g_option_instance->get_bind_addr().c_str();
 
-  /* Initilise mero and Clovis */
+  // Create memory pool for clovis read operations.
+  rc = mempool_create(g_option_instance->get_clovis_block_size(),
+                      g_option_instance->get_clovis_read_pool_initial_size(),
+                      g_option_instance->get_clovis_read_pool_expandable_size(),
+                      g_option_instance->get_clovis_read_pool_max_threshold(),
+                      CREATE_ALIGNED_MEMORY, &g_clovis_read_mem_pool_handle);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL,
+           "Memory pool creation for clovis read buffers failed!\n");
+    s3daemon.delete_pidfile();
+    return rc;
+  }
+
+  /* Initialise mero and Clovis */
   rc = init_clovis();
   if (rc < 0) {
       s3_log(S3_LOG_FATAL, "clovis_init failed!\n");

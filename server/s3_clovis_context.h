@@ -32,6 +32,8 @@ EXTERN_C_BLOCK_BEGIN
 
 #include "clovis/clovis.h"
 
+#include "s3_memory_pool.h"
+
 // To create a basic clovis operation
 struct s3_clovis_op_context {
   struct m0_clovis_obj *obj;
@@ -62,7 +64,8 @@ struct s3_clovis_kvs_op_context {
 struct s3_clovis_op_context* create_basic_op_ctx(size_t op_count);
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx);
 
-struct s3_clovis_rw_op_context* create_basic_rw_op_ctx(size_t clovis_block_count, size_t clovis_block_size);
+struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(
+    size_t clovis_block_count);
 int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx);
 
 struct s3_clovis_idx_op_context* create_basic_idx_op_ctx(int idx_count);

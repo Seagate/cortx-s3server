@@ -32,6 +32,8 @@
 #include "s3_clovis_wrapper.h"
 #include "s3_log.h"
 
+extern S3Option* g_option_instance;
+
 class S3ClovisReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
   struct s3_clovis_op_context* clovis_op_context;
@@ -67,14 +69,15 @@ public:
   }
 
   // Call this when you want to do write op.
-  uint64_t init_read_op_ctx(size_t clovis_block_count, size_t clovis_block_size, uint64_t last_index) {
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_block_count, clovis_block_size);
+  uint64_t init_read_op_ctx(size_t clovis_block_count, uint64_t last_index) {
+    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_block_count);
     has_clovis_rw_op_context = true;
 
     for (size_t i = 0; i < clovis_block_count; i++) {
       clovis_rw_op_context->ext->iv_index[i] = last_index ;
-      clovis_rw_op_context->ext->iv_vec.v_count[i] = clovis_block_size;
-      last_index += clovis_block_size;
+      clovis_rw_op_context->ext->iv_vec.v_count[i] =
+          g_option_instance->get_clovis_block_size();
+      last_index += g_option_instance->get_clovis_block_size();
 
       /* we don't want any attributes */
       clovis_rw_op_context->attr->ov_vec.v_count[i] = 0;
@@ -122,7 +125,6 @@ private:
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   size_t iteration_index;
   // to Help iteration.
-  size_t clovis_block_size;
   size_t num_of_blocks_read;
 
   uint64_t last_index;

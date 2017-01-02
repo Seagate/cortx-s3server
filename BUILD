@@ -5,7 +5,7 @@ cc_binary(
 
     name = "s3server",
 
-    srcs = glob(["server/*.cc", "server/*.c", "server/*.h"]),
+    srcs = glob(["server/*.cc", "server/*.c", "server/*.h", "mempool/*.c", "mempool/*.h"]),
 
     copts = [
       "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-DGCC_VERSION=4002",
@@ -16,7 +16,6 @@ cc_binary(
       "-Ithird_party/lustre-2.5.1-headers/libcfs/include",
       "-Ithird_party/lustre-2.5.1-headers/lnet/include",
       "-Ithird_party/lustre-2.5.1-headers/lustre/include",
-      "-Imempool",
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
       "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
     ],
@@ -30,6 +29,7 @@ cc_binary(
       "third_party/jsoncpp/dist",
       "third_party/yaml-cpp/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
+      "mempool",
     ],
 
     linkopts = [
@@ -59,8 +59,9 @@ cc_test(
 
     name = "s3ut",
 
-    srcs = glob(["ut/*.cc", "ut/*.h", "server/*.cc", "server/*.c", "server/*.h"],
-                exclude = ["server/s3server.cc"]),
+    srcs = glob(["ut/*.cc", "ut/*.h", "server/*.cc", "server/*.c", "server/*.h",
+                 "mempool/*.c", "mempool/*.h"],
+                 exclude = ["server/s3server.cc"]),
 
     copts = [
       "-DEVHTP_DISABLE_REGEX", "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64",
@@ -82,6 +83,7 @@ cc_test(
       "third_party/yaml-cpp/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
       "server/",
+      "mempool",
     ],
 
     linkopts = [
@@ -119,7 +121,7 @@ cc_binary(
 
     srcs = glob(["perf/*.cc"]),
 
-    copts = ["-std=c++11 -fPIC -DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -O3"],
+    copts = ["-std=c++11", "-fPIC", "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-O3"],
 
     includes = ["third_party/libevent/s3_dist/include/",
                 "third_party/libevhtp/s3_dist/include/evhtp",
@@ -177,7 +179,7 @@ cc_test(
 
     srcs = glob(["mempool/*.c", "mempool/*.h", "mempool/ut/*.cc"]),
 
-    copts = ["-DEVHTP_HAS_C99 -DEVHTP_SYS_ARCH=64 -O3"],
+    copts = ["-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-O3"],
 
     includes = [
       "third_party/googletest/include",

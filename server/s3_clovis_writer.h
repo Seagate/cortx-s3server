@@ -68,8 +68,8 @@ public:
   }
 
   // Call this when you want to do write op.
-  void init_write_op_ctx(size_t clovis_block_count, size_t clovis_block_size) {
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_block_count, clovis_block_size);
+  void init_write_op_ctx(size_t clovis_block_count) {
+    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_block_count);
     has_clovis_rw_op_context = true;
   }
 

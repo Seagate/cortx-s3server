@@ -150,6 +150,29 @@ bool S3Option::load_section(std::string section_name,
                                "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
+
+      std::string clovis_read_pool_initial_size_str;
+      std::string clovis_read_pool_expandable_size_str;
+      std::string clovis_read_pool_max_threshold_str;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_INITIAL_SIZE");
+      clovis_read_pool_initial_size_str =
+          s3_option_node["S3_CLOVIS_READ_POOL_INITIAL_SIZE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE");
+      clovis_read_pool_expandable_size_str =
+          s3_option_node["S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE"]
+              .as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_MAX_THRESHOLD");
+      clovis_read_pool_max_threshold_str =
+          s3_option_node["S3_CLOVIS_READ_POOL_MAX_THRESHOLD"].as<std::string>();
+      sscanf(clovis_read_pool_initial_size_str.c_str(), "%zu",
+             &clovis_read_pool_initial_size);
+      sscanf(clovis_read_pool_expandable_size_str.c_str(), "%zu",
+             &clovis_read_pool_expandable_size);
+      sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
+             &clovis_read_pool_max_threshold);
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
       std::string libevent_pool_expandable_size_str;
@@ -319,6 +342,29 @@ bool S3Option::load_section(std::string section_name,
                                "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
+
+      std::string clovis_read_pool_initial_size_str;
+      std::string clovis_read_pool_expandable_size_str;
+      std::string clovis_read_pool_max_threshold_str;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_INITIAL_SIZE");
+      clovis_read_pool_initial_size_str =
+          s3_option_node["S3_CLOVIS_READ_POOL_INITIAL_SIZE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE");
+      clovis_read_pool_expandable_size_str =
+          s3_option_node["S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE"]
+              .as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_MAX_THRESHOLD");
+      clovis_read_pool_max_threshold_str =
+          s3_option_node["S3_CLOVIS_READ_POOL_MAX_THRESHOLD"].as<std::string>();
+      sscanf(clovis_read_pool_initial_size_str.c_str(), "%zu",
+             &clovis_read_pool_initial_size);
+      sscanf(clovis_read_pool_expandable_size_str.c_str(), "%zu",
+             &clovis_read_pool_expandable_size);
+      sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
+             &clovis_read_pool_max_threshold);
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
       std::string libevent_pool_expandable_size_str;
@@ -473,11 +519,18 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM = %d\n",
          clovis_cass_max_column_family_num);
 
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_READ_POOL_INITIAL_SIZE = %zu\n",
+         clovis_read_pool_initial_size);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE = %zu\n",
+         clovis_read_pool_expandable_size);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_READ_POOL_MAX_THRESHOLD = %zu\n",
+         clovis_read_pool_max_threshold);
+
   s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_INITIAL_SIZE = %zu\n",
          libevent_pool_initial_size);
   s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_EXPANDABLE_SIZE = %zu\n",
          libevent_pool_expandable_size);
-  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_MAX_THRESHOLD = %zud\n",
+  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_MAX_THRESHOLD = %zu\n",
          libevent_pool_max_threshold);
 
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n", FLAGS_fake_clovis_createobj);
@@ -533,6 +586,18 @@ std::string S3Option::get_option_file() {
 
 std::string S3Option::get_daemon_dir() {
   return s3_daemon_dir;
+}
+
+size_t S3Option::get_clovis_read_pool_initial_size() {
+  return clovis_read_pool_initial_size;
+}
+
+size_t S3Option::get_clovis_read_pool_expandable_size() {
+  return clovis_read_pool_expandable_size;
+}
+
+size_t S3Option::get_clovis_read_pool_max_threshold() {
+  return clovis_read_pool_max_threshold;
 }
 
 size_t S3Option::get_libevent_pool_initial_size() {
