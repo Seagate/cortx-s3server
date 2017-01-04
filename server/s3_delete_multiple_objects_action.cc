@@ -18,8 +18,9 @@
  */
 
 #include "s3_delete_multiple_objects_action.h"
-#include "s3_option.h"
 #include "s3_error_codes.h"
+#include "s3_iem.h"
+#include "s3_option.h"
 #include "s3_perf_logger.h"
 
 S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
@@ -168,17 +169,28 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
   objects_metadata.clear();
 
   std::vector<struct m0_uint128> oids;
+  bool atleast_one_json_error = false;
   for (auto& kv : kvps) {
     if ((kv.second.first == 0) && (!kv.second.second.empty())) {
       s3_log(S3_LOG_DEBUG, "Delete Object = %s\n", kv.first.c_str());
       auto object = std::make_shared<S3ObjectMetadata>(request);
-      object->from_json(kv.second.second);
+      if (object->from_json(kv.second.second) != 0) {
+        atleast_one_json_error = true;
+        s3_log(S3_LOG_ERROR,
+               "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+               object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+               kv.first.c_str(), kv.second.second.c_str());
+      }
       objects_metadata.push_back(object);
       oids.push_back(object->get_oid());
     } else {
       s3_log(S3_LOG_DEBUG, "Delete Object missing = %s\n", kv.first.c_str());
       delete_objects_response.add_success(kv.first);
     }
+  }
+  if (atleast_one_json_error) {
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
   }
   if (oids.empty()) {
     send_response_to_s3_client();
@@ -219,6 +231,8 @@ void S3DeleteMultipleObjectsAction::delete_objects_failed() {
       delete_objects_response.add_success(obj->get_object_name());
     } else {
       s3_log(S3_LOG_ERROR, "Deletion of objects failed\n");
+      s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+             S3_IEM_DELETE_OBJ_FAIL_JSON);
       break;
     }
     missing_count += 1;

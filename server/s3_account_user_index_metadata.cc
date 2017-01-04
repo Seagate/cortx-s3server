@@ -17,11 +17,12 @@
  * Original creation date: 20-July-2016
  */
 
+#include "s3_account_user_index_metadata.h"
 #include <json/json.h>
 #include <string>
-#include "s3_account_user_index_metadata.h"
-#include "s3_datetime.h"
 #include "base64.h"
+#include "s3_datetime.h"
+#include "s3_iem.h"
 
 extern struct m0_uint128 root_account_user_index_oid;
 
@@ -78,7 +79,15 @@ void S3AccountUserIdxMetadata::load(std::function<void(void)> on_success, std::f
 void S3AccountUserIdxMetadata::load_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  this->from_json(clovis_kv_reader->get_value());
+  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
+    s3_log(S3_LOG_ERROR,
+           "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+           root_account_user_index_oid.u_hi, root_account_user_index_oid.u_lo,
+           get_account_user_index_name().c_str(),
+           clovis_kv_reader->get_value().c_str());
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+  }
   state = S3AccountUserIdxMetadataState::present;
 
   this->handler_on_success();
@@ -187,7 +196,7 @@ std::string S3AccountUserIdxMetadata::to_json() {
   return fastWriter.write(root);
 }
 
-void S3AccountUserIdxMetadata::from_json(std::string content) {
+int S3AccountUserIdxMetadata::from_json(std::string content) {
   s3_log(S3_LOG_DEBUG, "Called\n");
   Json::Value root;
   Json::Reader reader;
@@ -195,7 +204,7 @@ void S3AccountUserIdxMetadata::from_json(std::string content) {
   if (!parsingSuccessful)
   {
     s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
-    return;
+    return -1;
   }
 
   account_name = root["account_name"].asString();
@@ -208,4 +217,6 @@ void S3AccountUserIdxMetadata::from_json(std::string content) {
 
   memcpy((void*)&bucket_list_index_oid.u_hi, bucket_list_index_oid_u_hi_str.c_str(), bucket_list_index_oid_u_hi_str.length());
   memcpy((void*)&bucket_list_index_oid.u_lo, bucket_list_index_oid_u_lo_str.c_str(), bucket_list_index_oid_u_lo_str.length());
+
+  return 0;
 }

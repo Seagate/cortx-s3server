@@ -28,6 +28,7 @@
 #include "s3_common.h"
 #include "s3_error_codes.h"
 #include "s3_fi_common.h"
+#include "s3_iem.h"
 #include "s3_option.h"
 #include "s3_url_encode.h"
 
@@ -498,6 +499,30 @@ void S3AuthClient::check_authorization_successful() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047001001</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>Auth</submodule>
+ *    <description>Auth server connection failed</description>
+ *    <audience>Service</audience>
+ *    <details>
+ *      Not able to connect to the Auth server.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files. Restart S3 Auth server and check the
+ *      auth server log files for any startup issues. If problem persists,
+ *      contact development team for further investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
+
 void S3AuthClient::check_authorization_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_ERROR, "Authorization failure\n");
@@ -512,6 +537,8 @@ void S3AuthClient::check_authorization_failed() {
       s3_log(S3_LOG_ERROR,
              "Cannot connect to Auth server (Retry count = %d).\n",
              retry_count);
+      s3_iem(LOG_ALERT, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
+             S3_IEM_AUTH_CONN_FAIL_JSON);
       this->handler_on_failed();
     }
   } else {
@@ -561,6 +588,8 @@ void S3AuthClient::check_authentication_failed() {
       s3_log(S3_LOG_ERROR,
              "Cannot connect to Auth server (Retry count = %d).\n",
              retry_count);
+      s3_iem(LOG_ALERT, S3_IEM_AUTH_CONN_FAIL, S3_IEM_AUTH_CONN_FAIL_STR,
+             S3_IEM_AUTH_CONN_FAIL_JSON);
       this->handler_on_failed();
     }
   } else {

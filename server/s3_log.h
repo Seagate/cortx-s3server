@@ -25,6 +25,8 @@
 #define __MERO_FE_S3_SERVER_LOG_H__
 
 #include <glog/logging.h>
+#include <syslog.h>
+#include <time.h>
 #include <memory>
 
 #define S3_LOG_FATAL google::GLOG_FATAL
@@ -65,6 +67,32 @@ extern int s3log_level;
       }                                                                 \
     }                                                                   \
   } while (0)
+
+// Note:
+// 1. Use syslog defined severity levels as loglevel.
+// 2. syslog messages will always be sent irrespective of s3loglevel.
+#define s3_syslog(loglevel, fmt, ...)     \
+  do {                                    \
+    syslog(loglevel, fmt, ##__VA_ARGS__); \
+  } while (0)
+
+// returns timestamp in format: "yyyy:mm:dd hh:mm:ss.uuuuuu"
+static inline std::string s3_get_timestamp() {
+  struct timespec ts;
+  struct tm result;
+  char date_time[20];
+  char timestamp[30];
+
+  clock_gettime(CLOCK_REALTIME, &ts);
+  tzset();
+  if (localtime_r(&ts.tv_sec, &result) == NULL) {
+    return std::string();
+  }
+  strftime(date_time, sizeof(date_time), "%Y:%m:%d %H:%M:%S", &result);
+  snprintf(timestamp, sizeof(timestamp), "%s.%06li", date_time,
+           ts.tv_nsec / 1000);
+  return std::string(timestamp);
+}
 
 int init_log(char *process_name);
 void fini_log();

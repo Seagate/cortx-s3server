@@ -23,6 +23,7 @@
 
 #include "s3_abort_multipart_action.h"
 #include "s3_error_codes.h"
+#include "s3_iem.h"
 
 S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3RequestObject> req)
@@ -145,6 +146,8 @@ void S3AbortMultipartAction::delete_object_failed() {
     s3_log(S3_LOG_ERROR, "Failed to delete object, this will be stale in Mero: u_hi(base64) = [%s] and u_lo(base64) = [%s]\n",
                           object_multipart_metadata->get_oid_u_hi_str().c_str(),
                           object_multipart_metadata->get_oid_u_lo_str().c_str());
+    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+           S3_IEM_DELETE_OBJ_FAIL_JSON);
     abort_success = false;
   }
   next();

@@ -19,8 +19,33 @@
 
 #include "s3_clovis_rw_common.h"
 #include "s3_asyncop_context_base.h"
-#include "s3_post_to_main_loop.h"
+#include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_post_to_main_loop.h"
+
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047003001</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>Clovis</submodule>
+ *    <description>Clovis connection failed</description>
+ *    <audience>Service</audience>
+ *    <details>
+ *      Clovis operation failed due to connection failure.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files. Check status of Mero service, restart it
+ *      if needed. Restart S3 server if needed.
+ *      If problem persists, contact development team for further investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
 
 // This is run on main thread.
 void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_data) {
@@ -43,6 +68,13 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events, void *user_dat
   if (context->is_at_least_one_op_successful()) {
     context->on_success_handler()();  // Invoke the handler.
   } else {
+    int error_code = context->get_errno_for(0);
+    if ((error_code == -ETIMEDOUT) || (error_code == -ESHUTDOWN) ||
+        (error_code == -ECONNREFUSED) || (error_code == -EHOSTUNREACH) ||
+        (error_code == -ENOTCONN) || (error_code == -ECANCELED)) {
+      s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
+             S3_IEM_CLOVIS_CONN_FAIL_JSON);
+    }
     context->on_failed_handler()();  // Invoke the handler.
   }
   free(user_data);

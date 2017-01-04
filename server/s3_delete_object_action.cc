@@ -19,6 +19,7 @@
 
 #include "s3_delete_object_action.h"
 #include "s3_error_codes.h"
+#include "s3_iem.h"
 
 S3DeleteObjectAction::S3DeleteObjectAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, false) {
@@ -77,6 +78,29 @@ void S3DeleteObjectAction::delete_object() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047006001</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>S3 Actions</submodule>
+ *    <description>Delete object failed causing stale data in Mero</description>
+ *    <audience>Development</audience>
+ *    <details>
+ *      Delete object op failed. It may cause stale data in Mero.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files.
+ *      Contact development team for further investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
+
 void S3DeleteObjectAction::delete_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
@@ -84,6 +108,8 @@ void S3DeleteObjectAction::delete_object_failed() {
   } else {
     // Any other error report failure.
     s3_log(S3_LOG_ERROR, "Deletion of object failed\n");
+    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+           S3_IEM_DELETE_OBJ_FAIL_JSON);
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");

@@ -22,6 +22,7 @@
 #include "base64.h"
 
 #include "s3_datetime.h"
+#include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_uri_to_mero_oid.h"
@@ -205,7 +206,14 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success, std::function<
 
 void S3ObjectMetadata::load_successful() {
   s3_log(S3_LOG_DEBUG, "Object metadata load successful\n");
-  this->from_json(clovis_kv_reader->get_value());
+  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
+    s3_log(S3_LOG_ERROR,
+           "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+           index_oid.u_hi, index_oid.u_lo, object_name.c_str(),
+           clovis_kv_reader->get_value().c_str());
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+  }
   state = S3ObjectMetadataState::present;
   this->handler_on_success();
 }
@@ -311,6 +319,8 @@ void S3ObjectMetadata::collision_detected() {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %d times for index %s\n",
              tried_count, index_name.c_str());
+      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+             S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     state = S3ObjectMetadataState::failed;
     this->handler_on_failed();
@@ -459,7 +469,30 @@ std::string S3ObjectMetadata::to_json() {
   return fastWriter.write(root);;
 }
 
-void S3ObjectMetadata::from_json(std::string content) {
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047006003</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>S3 Actions</submodule>
+ *    <description>Metadata corrupted causing Json parsing failure</description>
+ *    <audience>Development</audience>
+ *    <details>
+ *      Json parsing failed due to metadata corruption.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files.
+ *      Contact development team for further investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
+
+int S3ObjectMetadata::from_json(std::string content) {
   s3_log(S3_LOG_DEBUG, "Called\n");
   Json::Value newroot;
   Json::Reader reader;
@@ -467,7 +500,7 @@ void S3ObjectMetadata::from_json(std::string content) {
   if (!parsingSuccessful)
   {
     s3_log(S3_LOG_ERROR,"Json Parsing failed\n");
-    return;
+    return -1;
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
@@ -508,6 +541,8 @@ void S3ObjectMetadata::from_json(std::string content) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString().c_str();
   }
   object_ACL.from_json(newroot["ACL"].asString());
+
+  return 0;
 }
 
 std::string& S3ObjectMetadata::get_encoded_object_acl() {

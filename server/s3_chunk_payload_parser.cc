@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include "s3_chunk_payload_parser.h"
+#include "s3_iem.h"
 #include "s3_log.h"
 
 S3ChunkDetail::S3ChunkDetail() :
@@ -385,9 +386,34 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
     // We missed adding data to return_val
     // logical error: should never be here.
     s3_log(S3_LOG_ERROR, "Fatal Error: Invalid ChunkParserState.\n");
+    s3_iem(LOG_ERR, S3_IEM_CHUNK_PARSING_FAIL, S3_IEM_CHUNK_PARSING_FAIL_STR,
+           S3_IEM_CHUNK_PARSING_FAIL_JSON);
   }
   return return_val;
 }
+
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047002001</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>Chunk upload</submodule>
+ *    <description>Chunk parsing failed</description>
+ *    <audience>Development</audience>
+ *    <details>
+ *      Logical error occurred during chunk parsing.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files. Contact development team for further
+ *      investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
 
 bool S3ChunkPayloadParser::is_chunk_detail_ready() {
   if (!chunk_details.empty() && chunk_details.front().is_ready()) {

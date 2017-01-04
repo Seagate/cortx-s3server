@@ -17,11 +17,12 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include "s3_bucket_metadata.h"
 #include <json/json.h>
 #include <string>
 #include "base64.h"
-#include "s3_bucket_metadata.h"
 #include "s3_datetime.h"
+#include "s3_iem.h"
 #include "s3_uri_to_mero_oid.h"
 
 S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req) : request(req) {
@@ -215,7 +216,14 @@ void S3BucketMetadata::load_bucket_info() {
 
 void S3BucketMetadata::load_bucket_info_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  this->from_json(clovis_kv_reader->get_value());
+  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
+    s3_log(S3_LOG_ERROR,
+           "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+           bucket_list_index_oid.u_hi, bucket_list_index_oid.u_lo,
+           bucket_name.c_str(), clovis_kv_reader->get_value().c_str());
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+  }
   state = S3BucketMetadataState::present;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -307,6 +315,8 @@ void S3BucketMetadata::handle_collision() {
     s3_log(S3_LOG_ERROR,
            "Failed to resolve index id collision %d times for index %s\n",
            collision_attempt_count, salted_index_name.c_str());
+    s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+           S3_IEM_COLLISION_RES_FAIL_JSON);
     state = S3BucketMetadataState::failed;
     this->handler_on_failed();
   }
@@ -489,7 +499,7 @@ std::string S3BucketMetadata::to_json() {
   return fastWriter.write(root);
 }
 
-void S3BucketMetadata::from_json(std::string content) {
+int S3BucketMetadata::from_json(std::string content) {
   s3_log(S3_LOG_DEBUG, "Called\n");
   Json::Value newroot;
   Json::Reader reader;
@@ -497,7 +507,7 @@ void S3BucketMetadata::from_json(std::string content) {
   if (!parsingSuccessful)
   {
     s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
-    return;
+    return -1;
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
@@ -539,6 +549,8 @@ void S3BucketMetadata::from_json(std::string content) {
 
   bucket_ACL.from_json((newroot["ACL"]).asString());
   bucket_policy = newroot["Policy"].asString();
+
+  return 0;
 }
 
 std::string& S3BucketMetadata::get_encoded_bucket_acl() {

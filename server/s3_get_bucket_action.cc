@@ -19,11 +19,12 @@
 
 #include <string>
 
-#include "s3_option.h"
-#include "s3_get_bucket_action.h"
-#include "s3_object_metadata.h"
 #include "s3_error_codes.h"
+#include "s3_get_bucket_action.h"
+#include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_object_metadata.h"
+#include "s3_option.h"
 
 S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
@@ -101,6 +102,9 @@ void S3GetBucketAction::get_next_objects_successful() {
     return;
   }
   s3_log(S3_LOG_DEBUG, "Found Object listing\n");
+  m0_uint128 object_list_index_oid =
+      bucket_metadata->get_object_list_index_oid();
+  bool atleast_one_json_error = false;
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
@@ -109,18 +113,36 @@ void S3GetBucketAction::get_next_objects_successful() {
     auto object = std::make_shared<S3ObjectMetadata>(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {
-      object->from_json(kv.second.second);
+      if (object->from_json(kv.second.second) != 0) {
+        atleast_one_json_error = true;
+        s3_log(S3_LOG_ERROR,
+               "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+               object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+               kv.first.c_str(), kv.second.second.c_str());
+      }
       object_list.add_object(object);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
-        object->from_json(kv.second.second);
+        if (object->from_json(kv.second.second) != 0) {
+          atleast_one_json_error = true;
+          s3_log(S3_LOG_ERROR,
+                 "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+                 object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+                 kv.first.c_str(), kv.second.second.c_str());
+        }
         object_list.add_object(object);
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
       delimiter_pos = kv.first.find(request_delimiter);
       if (delimiter_pos == std::string::npos) {
-        object->from_json(kv.second.second);
+        if (object->from_json(kv.second.second) != 0) {
+          atleast_one_json_error = true;
+          s3_log(S3_LOG_ERROR,
+                 "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+                 object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+                 kv.first.c_str(), kv.second.second.c_str());
+        }
         object_list.add_object(object);
       } else {
         // Roll up
@@ -133,7 +155,14 @@ void S3GetBucketAction::get_next_objects_successful() {
       if (prefix_match) {
         delimiter_pos = kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
-          object->from_json(kv.second.second);
+          if (object->from_json(kv.second.second) != 0) {
+            atleast_one_json_error = true;
+            s3_log(
+                S3_LOG_ERROR,
+                "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+                kv.first.c_str(), kv.second.second.c_str());
+          }
           object_list.add_object(object);
         } else {
           s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
@@ -148,6 +177,12 @@ void S3GetBucketAction::get_next_objects_successful() {
       break;
     }
   }
+
+  if (atleast_one_json_error) {
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+  }
+
   // We ask for more if there is any.
   size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
 

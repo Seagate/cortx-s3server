@@ -18,17 +18,18 @@
  */
 
 #include "s3_daemonize_server.h"
-#include "clovis_helpers.h"
-#include "s3_log.h"
-#include "s3_option.h"
-#include <iostream>
-#include <fstream>
+#include <evhtp.h>
+#include <execinfo.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <string.h>
 #include <unistd.h>
-#include <execinfo.h>
-#include <evhtp.h>
+#include <fstream>
+#include <iostream>
+#include "clovis_helpers.h"
+#include "s3_iem.h"
+#include "s3_log.h"
+#include "s3_option.h"
 
 #define S3_BACKTRACE_DEPTH_MAX 256
 #define S3_ARRAY_SIZE(a) ((sizeof(a)) / (sizeof(a)[0]))
@@ -73,8 +74,35 @@ void s3_terminate_sig_handler(int signum) {
   return;
 }
 
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047005001</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>General</submodule>
+ *    <description>Fatal handler triggered</description>
+ *    <audience>Service</audience>
+ *    <details>
+ *      Fatal handler has triggered. This will cause S3 Server to crash.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *        signal_number - signal which invoked the handler.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files. Restart S3 server and contact development
+ *      team for further investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
+
 void s3_terminate_fatal_handler(int signum) {
   s3_log(S3_LOG_INFO, "Recieved signal %d\n", signum);
+  s3_iem(LOG_ALERT, S3_IEM_FATAL_HANDLER, S3_IEM_FATAL_HANDLER_STR,
+         S3_IEM_FATAL_HANDLER_JSON, signum);
+
   void *trace[S3_BACKTRACE_DEPTH_MAX];
   std::string bt_str = "";
   std::string newline_str("\n");

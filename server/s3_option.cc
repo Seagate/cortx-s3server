@@ -567,6 +567,8 @@ void S3Option::dump_options() {
   return;
 }
 
+std::string S3Option::get_s3_nodename() { return s3_nodename; }
+
 unsigned short S3Option::get_s3_bind_port() {
   return s3_bind_port;
 }

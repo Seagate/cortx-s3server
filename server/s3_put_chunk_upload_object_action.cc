@@ -19,6 +19,7 @@
 
 #include "s3_put_chunk_upload_object_action.h"
 #include "s3_error_codes.h"
+#include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
@@ -182,6 +183,8 @@ void S3PutChunkUploadObjectAction::collision_detected() {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %d times for uri %s\n",
              tried_count, request->get_object_uri().c_str());
+      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+             S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     send_response_to_s3_client();
   }

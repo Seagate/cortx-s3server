@@ -19,6 +19,7 @@
 
 #include "s3_delete_bucket_action.h"
 #include "s3_error_codes.h"
+#include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_uri_to_mero_oid.h"
 
@@ -130,10 +131,19 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
   size_t length = kvps.size();
+  bool atleast_one_json_error = false;
+  struct m0_uint128 multipart_index_oid =
+      bucket_metadata->get_multipart_index_oid();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, "Parsing Multipart object metadata = %s\n", kv.first.c_str());
     auto object = std::make_shared<S3ObjectMetadata>(request, true);
-    object->from_json(kv.second.second);
+    if (object->from_json(kv.second.second) != 0) {
+      atleast_one_json_error = true;
+      s3_log(S3_LOG_ERROR,
+             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             multipart_index_oid.u_hi, multipart_index_oid.u_lo,
+             kv.first.c_str(), kv.second.second.c_str());
+    }
     multipart_objects[kv.first] = object->get_upload_id();
     multipart_obj_oid = object->get_oid();
     part_oids.push_back(object->get_part_index_oid());
@@ -147,6 +157,10 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
       last_key = kv.first;
       break;
     }
+  }
+  if (atleast_one_json_error) {
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
   }
   if (kvps.size() < count_we_requested) {
     next();
@@ -174,6 +188,7 @@ void S3DeleteBucketAction::delete_multipart_objects() {
 void S3DeleteBucketAction::delete_multipart_objects_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   int count = 0;
+  bool atleast_one_error = false;
   for (auto& multipart_obj_oid : multipart_object_oids) {
     if (clovis_writer->get_op_ret_code_for(count) == 0 ||
         clovis_writer->get_op_ret_code_for(count) == -ENOENT) {
@@ -184,8 +199,13 @@ void S3DeleteBucketAction::delete_multipart_objects_successful() {
              "Failed to delete multipart object, this will be stale in Mero: "
              "%lu %lu\n",
              multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
+      atleast_one_error = true;
     }
     count += 1;
+  }
+  if (atleast_one_error) {
+    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+           S3_IEM_DELETE_OBJ_FAIL_JSON);
   }
   next();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -194,6 +214,7 @@ void S3DeleteBucketAction::delete_multipart_objects_successful() {
 void S3DeleteBucketAction::delete_multipart_objects_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   uint count = 0;
+  bool atleast_one_error = false;
   for (auto& multipart_obj_oid : multipart_object_oids) {
     if (clovis_writer->get_op_ret_code_for(count) != -ENOENT &&
         clovis_writer->get_op_ret_code_for(count) != 0) {
@@ -201,8 +222,13 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
              "Failed to delete multipart object, this will be stale in Mero: "
              "%lu %lu\n",
              multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
+      atleast_one_error = true;
     }
     count++;
+  }
+  if (atleast_one_error) {
+    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+           S3_IEM_DELETE_OBJ_FAIL_JSON);
   }
   next();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -273,6 +299,29 @@ void S3DeleteBucketAction::remove_object_list_index() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047006002</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>S3 Actions</submodule>
+ *    <description>Delete index failed causing stale data in Mero</description>
+ *    <audience>Development</audience>
+ *    <details>
+ *      Delete index op failed. It may cause stale data in Mero.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files.
+ *      Contact development team for further investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
+
 void S3DeleteBucketAction::remove_object_list_index_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_ERROR,
@@ -280,6 +329,8 @@ void S3DeleteBucketAction::remove_object_list_index_failed() {
          "[%s] and u_lo(base64) = [%s]\n",
          bucket_metadata->get_object_list_index_oid_u_hi_str().c_str(),
          bucket_metadata->get_object_list_index_oid_u_lo_str().c_str());
+  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+         S3_IEM_DELETE_IDX_FAIL_JSON);
   next();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -61,6 +61,7 @@ private:
   std::string part_number;
   std::string index_name;
   std::string salt;
+  std::string str_part_num;
 
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
@@ -156,7 +157,8 @@ private:
 
   std::string to_json();
 
-  void from_json(std::string content);
+  // returns 0 on success, -1 on parsing error
+  int from_json(std::string content);
 };
 
 #endif

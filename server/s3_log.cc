@@ -60,12 +60,18 @@ int init_log(char *process_name) {
   }
 
   google::InitGoogleLogging(process_name);
+
+  // init the syslog
+  openlog(process_name, LOG_CONS | LOG_NDELAY | LOG_PID, LOG_USER);
   return 0;
 }
 
 void fini_log() {
   google::FlushLogFiles(google::GLOG_INFO);
   google::ShutdownGoogleLogging();
+
+  // close syslog
+  closelog();
 }
 
 void flushall_log() { google::FlushLogFiles(google::GLOG_INFO); }

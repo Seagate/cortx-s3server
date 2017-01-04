@@ -19,6 +19,7 @@
 
 #include "s3_put_object_action.h"
 #include "s3_error_codes.h"
+#include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
@@ -121,6 +122,29 @@ void S3PutObjectAction::create_object_failed() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+/*
+ *  <IEM_INLINE_DOCUMENTATION>
+ *    <event_code>047004001</event_code>
+ *    <application>S3 Server</application>
+ *    <submodule>Collision handling</submodule>
+ *    <description>Collision resolution failed</description>
+ *    <audience>Service</audience>
+ *    <details>
+ *      Failed to resolve object/index id collision.
+ *      The data section of the event has following keys:
+ *        time - timestamp.
+ *        node - node name.
+ *        pid  - process-id of s3server instance, useful to identify logfile.
+ *        file - source code filename.
+ *        line - line number within file where error occurred.
+ *    </details>
+ *    <service_actions>
+ *      Save the S3 server log files.
+ *      Contact development team for further investigation.
+ *    </service_actions>
+ *  </IEM_INLINE_DOCUMENTATION>
+ */
+
 void S3PutObjectAction::collision_detected() {
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -139,6 +163,8 @@ void S3PutObjectAction::collision_detected() {
     if (tried_count > MAX_COLLISION_TRY) {
       s3_log(S3_LOG_ERROR, "Failed to resolve object id collision %d times for uri %s\n",
              tried_count, request->get_object_uri().c_str());
+      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+             S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     send_response_to_s3_client();
   }
@@ -165,6 +191,8 @@ void S3PutObjectAction::rollback_create_failed() {
   } else {
     // Log rollback failure.
     s3_log(S3_LOG_WARN, "Deletion of object failed\n");
+    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+           S3_IEM_DELETE_OBJ_FAIL_JSON);
     rollback_done();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");

@@ -190,7 +190,8 @@ private:
 
   std::string to_json();
 
-  void from_json(std::string content);
+  // returns 0 on success, -1 on parsing error
+  int from_json(std::string content);
   void setacl(std::string & input_acl_str);
 };
 

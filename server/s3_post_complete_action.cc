@@ -21,11 +21,12 @@
 #include <libxml/parser.h>
 #include <unistd.h>
 
-#include "s3_post_complete_action.h"
-#include "s3_error_codes.h"
-#include "s3_md5_hash.h"
 #include "s3_aws_etag.h"
+#include "s3_error_codes.h"
+#include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_md5_hash.h"
+#include "s3_post_complete_action.h"
 
 S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, false) {
@@ -157,6 +158,8 @@ void S3PostCompleteAction::get_parts_successful() {
      part_metadata->set_state(S3PartMetadataState::missing_partially);
      send_response_to_s3_client();
   }
+  struct m0_uint128 part_index_oid = multipart_metadata->get_part_index_oid();
+  bool atleast_one_json_error = false;
   std::map<std::string, std::string>::iterator part_kv;
   std::map<std::string, std::pair<int, std::string>>::iterator store_kv;
 
@@ -168,7 +171,13 @@ void S3PostCompleteAction::get_parts_successful() {
     } else {
       s3_log(S3_LOG_DEBUG, "Metadata for key [%s] -> [%s]\n",
              store_kv->first.c_str(), store_kv->second.second.c_str());
-      part_metadata->from_json(store_kv->second.second);
+      if (part_metadata->from_json(store_kv->second.second) != 0) {
+        atleast_one_json_error = true;
+        s3_log(S3_LOG_ERROR,
+               "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+               part_index_oid.u_hi, part_index_oid.u_lo,
+               store_kv->first.c_str(), store_kv->second.second.c_str());
+      }
       s3_log(S3_LOG_DEBUG, "Processing Part [%s]\n",
              part_metadata->get_part_number().c_str());
 
@@ -199,6 +208,10 @@ void S3PostCompleteAction::get_parts_successful() {
       object_size += part_metadata->get_content_length();
       awsetag.add_part_etag(part_metadata->get_md5());
     }
+  }
+  if (atleast_one_json_error) {
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
   }
   if(!is_abort_multipart()) {
     etag = awsetag.finalize();

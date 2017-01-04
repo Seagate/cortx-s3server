@@ -46,8 +46,13 @@
     }                                                                       \
   } while (0)
 
-#include <string>
+#include <limits.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <set>
+#include <string>
 
 #include "evhtp_wrapper.h"
 #include "s3_cli_options.h"
@@ -55,6 +60,7 @@
 class S3Option {
   int cmd_opt_flag;
 
+  std::string s3_nodename;
   std::string s3_bind_addr;
   std::string s3_pidfile;
   unsigned short s3_bind_port;
@@ -182,12 +188,31 @@ class S3Option {
     stats_whitelist_filename = "/opt/seagate/s3/conf/s3stats-whitelist.yaml";
 
     eventbase = NULL;
+
+    // find out the nodename
+    char hostname[HOST_NAME_MAX];
+    if (gethostname(hostname, sizeof(hostname)) == 0) {
+      struct addrinfo hints;
+      struct addrinfo* result;
+      memset(&hints, 0, sizeof(struct addrinfo));
+      hints.ai_family = AF_UNSPEC;
+      hints.ai_flags = AI_CANONNAME;
+      if (getaddrinfo(hostname, NULL, &hints, &result) == 0) {
+        // yay!, we got the FQDN!
+        s3_nodename = std::string(result->ai_canonname);
+        freeaddrinfo(result);
+      } else {
+        // !(yay), be happy with just the hostname
+        s3_nodename = std::string(hostname);
+      }
+    }
   }
 
  public:
   bool load_section(std::string section_name, bool force_override_from_config);
   bool load_all_sections(bool force_override_from_config);
 
+  std::string get_s3_nodename();
   std::string get_bind_addr();
   std::string get_s3_pidfile();
   unsigned short get_s3_bind_port();

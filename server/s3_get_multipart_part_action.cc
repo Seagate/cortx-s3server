@@ -20,11 +20,12 @@
 
 #include <string>
 
-#include "s3_option.h"
-#include "s3_get_multipart_part_action.h"
-#include "s3_part_metadata.h"
 #include "s3_error_codes.h"
+#include "s3_get_multipart_part_action.h"
+#include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_option.h"
+#include "s3_part_metadata.h"
 
 S3GetMultipartPartAction::S3GetMultipartPartAction(
     std::shared_ptr<S3RequestObject> req)
@@ -133,7 +134,16 @@ void S3GetMultipartPartAction::get_key_object_successful() {
     s3_log(S3_LOG_DEBUG, "Read Part = %s\n", key_name.c_str());
     std::shared_ptr<S3PartMetadata> part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(key_name.c_str()));
 
-    part->from_json(clovis_kv_reader->get_value());
+    if (part->from_json(clovis_kv_reader->get_value()) != 0) {
+      struct m0_uint128 part_index_oid =
+          object_multipart_metadata->get_part_index_oid();
+      s3_log(S3_LOG_ERROR,
+             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             part_index_oid.u_hi, part_index_oid.u_lo, key_name.c_str(),
+             clovis_kv_reader->get_value().c_str());
+      s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+             S3_IEM_METADATA_CORRUPTED_JSON);
+    }
 
     return_list_size++;
     if (return_list_size == max_parts) {
@@ -195,13 +205,22 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
     return;
   }
   s3_log(S3_LOG_DEBUG, "Found part listing\n");
+  struct m0_uint128 part_index_oid =
+      object_multipart_metadata->get_part_index_oid();
+  bool atleast_one_json_error = false;
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
     auto part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(kv.first.c_str()));
 
-    part->from_json(kv.second.second);
+    if (part->from_json(kv.second.second) != 0) {
+      atleast_one_json_error = true;
+      s3_log(S3_LOG_ERROR,
+             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             part_index_oid.u_hi, part_index_oid.u_lo, kv.first.c_str(),
+             kv.second.second.c_str());
+    }
     multipart_part_list.add_part(part);
 
     return_list_size++;
@@ -210,6 +229,10 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
       last_key = kv.first;
       break;
     }
+  }
+  if (atleast_one_json_error) {
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
   }
   // We ask for more if there is any.
   size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();

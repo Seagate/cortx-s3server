@@ -19,6 +19,7 @@
 package com.seagates3.util;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 
 import java.util.Date;
@@ -76,8 +77,8 @@ public class DateUtilTest {
 
     @Test
     public void toServerResponseFormatTest_DateTime() {
-        String expected = "2017-01-10T08:02:47.806-0500";
-        DateTime date = new DateTime("2017-01-10T08:02:47.806-05:00");
+        String expected = "2017-01-10T13:02:47.806+0000";
+        DateTime date = new DateTime("2017-01-10T08:02:47.806-05:00", DateTimeZone.UTC);
 
         String actual = DateUtil.toServerResponseFormat(date);
 

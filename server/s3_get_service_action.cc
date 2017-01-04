@@ -19,11 +19,12 @@
 
 #include <string>
 
-#include "s3_option.h"
-#include "s3_get_service_action.h"
 #include "s3_bucket_metadata.h"
 #include "s3_error_codes.h"
+#include "s3_get_service_action.h"
+#include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_option.h"
 
 S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
@@ -95,14 +96,25 @@ void S3GetServiceAction::get_next_buckets_successful() {
   s3_log(S3_LOG_DEBUG, "Found buckets listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
+  bool atleast_one_json_error = false;
   for (auto& kv : kvps) {
     auto bucket = std::make_shared<S3BucketMetadata>(request);
-    bucket->from_json(kv.second.second);
+    if (bucket->from_json(kv.second.second) != 0) {
+      atleast_one_json_error = true;
+      s3_log(S3_LOG_ERROR,
+             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             bucket_list_index_oid.u_hi, bucket_list_index_oid.u_lo,
+             kv.first.c_str(), kv.second.second.c_str());
+    }
     bucket_list.add_bucket(bucket);
     if (--length == 0) {
       // this is the last element returned.
       last_key = kv.first;
     }
+  }
+  if (atleast_one_json_error) {
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
   }
   // We ask for more if there is any.
   size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();

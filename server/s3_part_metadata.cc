@@ -21,9 +21,10 @@
 #include <stdlib.h>
 #include <json/json.h>
 
-#include "s3_part_metadata.h"
 #include "s3_datetime.h"
+#include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_part_metadata.h"
 
 void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   bucket_name = request->get_bucket_name();
@@ -132,7 +133,7 @@ void S3PartMetadata::add_user_defined_attribute(std::string key, std::string val
 
 void S3PartMetadata::load(std::function<void(void)> on_success, std::function<void(void)> on_failed, int part_num = 1) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string str_part_num = "";
+  str_part_num = "";
   if(part_num > 0) {
     str_part_num = std::to_string(part_num);
   }
@@ -150,7 +151,14 @@ void S3PartMetadata::load(std::function<void(void)> on_success, std::function<vo
 
 void S3PartMetadata::load_successful() {
   s3_log(S3_LOG_DEBUG, "Found part metadata\n");
-  this->from_json(clovis_kv_reader->get_value());
+  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
+    s3_log(S3_LOG_ERROR,
+           "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+           part_index_name_oid.u_hi, part_index_name_oid.u_lo,
+           str_part_num.c_str(), clovis_kv_reader->get_value().c_str());
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+  }
   state = S3PartMetadataState::present;
   this->handler_on_success();
 }
@@ -301,6 +309,8 @@ void S3PartMetadata::remove_index_successful() {
 
 void S3PartMetadata::remove_index_failed() {
   s3_log(S3_LOG_WARN, "Failed to remove index for part info\n");
+  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+         S3_IEM_DELETE_IDX_FAIL_JSON);
   if(clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::failed) {
     state = S3PartMetadataState::failed;
   }
@@ -326,7 +336,7 @@ std::string S3PartMetadata::to_json() {
   return fastWriter.write(root);;
 }
 
-void S3PartMetadata::from_json(std::string content) {
+int S3PartMetadata::from_json(std::string content) {
   s3_log(S3_LOG_DEBUG, "\n");
   Json::Value newroot;
   Json::Reader reader;
@@ -334,7 +344,7 @@ void S3PartMetadata::from_json(std::string content) {
   if (!parsingSuccessful)
   {
     s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
-    return;
+    return -1;
   }
 
   bucket_name = newroot["Bucket-Name"].asString();
@@ -350,6 +360,8 @@ void S3PartMetadata::from_json(std::string content) {
   for(auto it : members) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString().c_str();
   }
+
+  return 0;
 }
 
 void S3PartMetadata::regenerate_new_indexname() {
@@ -375,6 +387,8 @@ void S3PartMetadata::handle_collision() {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %zu times for index %s\n",
              collision_attempt_count, index_name.c_str());
+      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+             S3_IEM_COLLISION_RES_FAIL_JSON);
     }
     state = S3PartMetadataState::failed;
     this->handler_on_failed();
