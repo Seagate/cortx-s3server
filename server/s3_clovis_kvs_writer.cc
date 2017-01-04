@@ -302,6 +302,9 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key, std::
 void S3ClovisKVSWriter::put_keyval_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisKVSWriterOpState::saved;
+  // todo: Add check, verify if (kvs_ctx->rcs == 0)
+  // do this when cassandra + mero-kvs rcs implementation completed
+  // in clovis
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -375,7 +378,7 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid, std::vector<std::st
 
   s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL,
-                                    kvs_ctx->keys, NULL, NULL,
+                                    kvs_ctx->keys, NULL, kvs_ctx->rcs,
                                     &(idx_ctx->ops[0]));
   if( rc != 0 ) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
@@ -396,6 +399,9 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid, std::vector<std::st
 void S3ClovisKVSWriter::delete_keyval_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisKVSWriterOpState::deleted;
+  // todo: Add check, verify if (kvs_ctx->rcs == 0)
+  // do this when cassandra + mero-kvs rcs implementation completed
+  // in clovis
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -442,7 +448,7 @@ void S3ClovisKVSWriter::del_put_keyval(std::string key, std::string val,
 
   s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
   int rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL,
-                                        kvs_ctx->keys, NULL, NULL,
+                                        kvs_ctx->keys, NULL, kvs_ctx->rcs,
                                         &(idx_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
@@ -462,6 +468,9 @@ void S3ClovisKVSWriter::del_put_keyval(std::string key, std::string val,
 void S3ClovisKVSWriter::del_put_keyval_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   state = S3ClovisKVSWriterOpState::deleted;
+  // todo: Add check, verify if (kvs_ctx->rcs == 0)
+  // do this when cassandra + mero-kvs rcs implementation completed
+  // in clovis
   create_keyval();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -510,8 +519,8 @@ void S3ClovisKVSWriter::create_keyval() {
 
   s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_PUT,
-                                    kvs_ctx->keys, kvs_ctx->values, NULL,
-                                    &(idx_ctx->ops[0]));
+                                    kvs_ctx->keys, kvs_ctx->values,
+                                    kvs_ctx->rcs, &(idx_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op failed\n");
   } else {

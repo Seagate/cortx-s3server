@@ -102,7 +102,10 @@ static int init_clovis(void) {
 
   cass_conf.cc_max_column_family_num = 1;
   clovis_conf.cc_idx_service_id = FLAGS_kvstore;
-  clovis_conf.cc_idx_service_conf = &cass_conf;
+  if (FLAGS_kvstore == 2)
+    clovis_conf.cc_idx_service_conf = &cass_conf;
+  else
+    clovis_conf.cc_idx_service_conf = NULL;
 
   clovis_conf.cc_layout_id = 0;
 
@@ -379,6 +382,7 @@ static int kv_put(struct m0_uint128 id, const char *keystring,
   int rc = 0;
   struct m0_bufvec *keys;
   struct m0_bufvec *vals;
+  int rc_key = 0;
   int keylen = strlen(keystring);
   int valuelen = strlen(keyvalue);
   /* Allocate bufvec's for keys and vals. */
@@ -399,8 +403,8 @@ static int kv_put(struct m0_uint128 id, const char *keystring,
   vals->ov_buf[0] = (char *)malloc(valuelen);
   memcpy(vals->ov_buf[0], keyvalue, valuelen);
 
-  rc = execute_kv_query(id, keys, NULL, vals, M0_CLOVIS_IC_PUT);
-  if (rc < 0) {
+  rc = execute_kv_query(id, keys, &rc_key, vals, M0_CLOVIS_IC_PUT);
+  if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
   }
@@ -420,6 +424,7 @@ static int kv_delete(struct m0_uint128 id, const char *keystring) {
   int rc = 0;
   struct m0_bufvec *keys;
   struct m0_bufvec *vals = NULL;
+  int rc_key = 0;
   int keylen = strlen(keystring);
 
   /* Allocate bufvec's for keys and vals. */
@@ -435,8 +440,8 @@ static int kv_delete(struct m0_uint128 id, const char *keystring) {
   if (keys->ov_buf[0] == NULL) goto ERROR;
   memcpy(keys->ov_buf[0], keystring, keylen);
 
-  rc = execute_kv_query(id, keys, NULL, vals, M0_CLOVIS_IC_DEL);
-  if (rc < 0) {
+  rc = execute_kv_query(id, keys, &rc_key, vals, M0_CLOVIS_IC_DEL);
+  if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
   }
