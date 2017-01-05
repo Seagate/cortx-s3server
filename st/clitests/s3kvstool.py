@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import subprocess
+import yaml
 from framework import S3PyCliTest
 from framework import Config
 from framework import logit
@@ -11,9 +12,19 @@ class ClovisConfig():
         lctl_cmd = "sudo lctl list_nids | head -1"
         result = subprocess.check_output(lctl_cmd, shell=True).decode().split()[0]
         self.LOCAL_NID = result
-        self.LOCAL_EP = self.LOCAL_NID + ":12345:33:101"
-        self.HA_EP = self.LOCAL_NID + ":12345:34:1"
-        self.CONFD_EP = self.LOCAL_NID + ":12345:44:101"
+
+        self.cfg_dir = os.path.join(os.path.dirname(__file__), 'cfg')
+        config_file =  os.path.join(self.cfg_dir, 'cloviskvscli.yaml')
+        with open(config_file, 'r') as f:
+            s3config = yaml.safe_load(f)
+            self.KVS_IDX = str(s3config['S3_CLOVIS_IDX_SERVICE_ID'])
+            self.LOCAL_EP = s3config['S3_CLOVIS_LOCAL_EP']
+            self.HA_EP = s3config['S3_CLOVIS_HA_EP']
+            self.CONFD_EP = s3config['S3_CLOVIS_CONFD_EP']
+
+        self.LOCAL_EP = self.LOCAL_NID + self.LOCAL_EP
+        self.HA_EP = self.LOCAL_NID + self.HA_EP
+        self.CONFD_EP = self.LOCAL_NID + self.CONFD_EP
 
 class S3OID():
     def __init__(self, oid_hi="0x0", oid_lo="0x0"):
@@ -29,7 +40,7 @@ class S3kvTest(S3PyCliTest):
     def __init__(self, description):
         clovis_conf = ClovisConfig()
         self.cmd = "sudo ../cloviskvscli.sh"
-        self.common_args = " --clovis_local_addr=" + clovis_conf.LOCAL_EP  + " --clovis_ha_addr=" + clovis_conf.HA_EP + " --clovis_confd_addr=" + clovis_conf.CONFD_EP + " "
+        self.common_args = " --clovis_local_addr=" + clovis_conf.LOCAL_EP  + " --clovis_ha_addr=" + clovis_conf.HA_EP + " --clovis_confd_addr=" + clovis_conf.CONFD_EP + " --kvstore=" + clovis_conf.KVS_IDX + " "
         super(S3kvTest, self).__init__(description)
 
     def root_index_records(self):
