@@ -246,7 +246,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key, std::
 // Temporary workaround: put keyval will first delete the metadata and then
 // insert it using action M0_CLOVIS_IC_PUT
 
-  if (option_instance->delete_kv_before_put()) {
+  if (option_instance->get_delete_kv_before_put()) {
     // TODO -- Remove below function once Mero KVS supports KVS update
     // Below function deletes the key value and then puts a new key value
     del_put_keyval(key, val, on_success, on_failed);
@@ -461,7 +461,8 @@ void S3ClovisKVSWriter::del_put_keyval(std::string key, std::string val,
 
   writer_context->start_timer_for("delete_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::deletekv);
+  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1,
+                                  ClovisOpType::deletebeforeputkv);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 

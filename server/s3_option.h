@@ -100,6 +100,7 @@ class S3Option {
   size_t clovis_read_pool_initial_size;
   size_t clovis_read_pool_expandable_size;
   size_t clovis_read_pool_max_threshold;
+  bool clovis_kv_del_before_put;
 
   size_t libevent_pool_initial_size;
   size_t libevent_pool_expandable_size;
@@ -154,6 +155,7 @@ class S3Option {
     clovis_cass_cluster_ep = "127.0.0.1";
     clovis_cass_keyspace = "clovis_index_keyspace";
     clovis_cass_max_column_family_num = 1;
+    clovis_kv_del_before_put = false;
 
     auth_ip_addr = FLAGS_authhost;
     auth_port = FLAGS_authport;
@@ -248,7 +250,7 @@ class S3Option {
   std::string get_clovis_cass_cluster_ep();
   std::string get_clovis_cass_keyspace();
   int get_clovis_cass_max_column_family_num();
-  bool delete_kv_before_put();
+  bool get_delete_kv_before_put();
 
   void set_cmdline_option(int option_flag, const char *option);
   int get_cmd_opt_flag();

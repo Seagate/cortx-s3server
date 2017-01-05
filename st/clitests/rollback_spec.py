@@ -60,9 +60,11 @@ JClientTest('Jclient multiple delete should succeed when objects not present').d
 # function to cleanup multipart upload
 def clean_18mb_multipart():
     result = S3cmdTest('s3cmd can list multipart uploads in progress').list_multipart_uploads("seagatebucket").execute_test()
-    result.command_response_should_have('18MBfile')
-    upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
-    S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+    if '18MBfile' in result.status.stdout:
+        upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
+        S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).execute_test().command_is_successful()
+    else:
+        raise AssertionError("Failed to find multipart info.")
     return
 
 S3fiTest('s3cmd enable FI create index fail').enable_fi("enable", "always", "clovis_idx_create_fail").execute_test().command_is_successful()
