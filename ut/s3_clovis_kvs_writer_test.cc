@@ -237,7 +237,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessCallback) {
   EXPECT_STREQ("3kfile", key_str.c_str());
   S3Option *option_instance = S3Option::get_instance();
 
-  if (!option_instance->delete_kv_before_put()) {
+  if (!option_instance->get_delete_kv_before_put()) {
     std::string value_str((char *)kvs_ctx->values->ov_buf[0], kvs_ctx->values->ov_vec.v_count[0]);
     EXPECT_STREQ("{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}",
               value_str.c_str());
