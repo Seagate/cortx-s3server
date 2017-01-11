@@ -49,6 +49,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_READ_POOL_INITIAL_SIZE: 40960              # Ten 4k blocks, the initial pool size, multiple of S3_CLOVIS_BLOCK_SIZE
    S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE: 20480           # Five 4k blocks, pool's expandable size, multiple of S3_CLOVIS_BLOCK_SIZE
    S3_CLOVIS_READ_POOL_MAX_THRESHOLD: 104857600         # 100 MB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_BLOCK_SIZE
+   S3_CLOVIS_KV_DEL_BEFORE_PUT: true                    # Expected KV store behaviour. Will force delete kv before put if true. (default is false)
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_INITIAL_SIZE: 40960                 # Ten 4k blocks, the initial pool size, multiple of S3_CLOVIS_BLOCK_SIZE
    S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 20480              # Five 4k blocks, pool's expandable size, multiple of S3_CLOVIS_BLOCK_SIZE

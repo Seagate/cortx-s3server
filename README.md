@@ -65,9 +65,6 @@ mvn package
 
 ## How to build S3 server tests?
 ```sh
-cd third_party
-./setup_libevhtp.sh test
-cd ..
 bazel build //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
 ```
 
