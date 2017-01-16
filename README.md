@@ -54,7 +54,7 @@ Fetch the third party dependencies.
 ## How to build S3 server?
 Run Bazel build. For details see bazel BUILD file.
 ```sh
-bazel build //:s3server --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+bazel build //:s3server --cxxopt="-std=c++11"
 ```
 
 ## How to build Auth server?
@@ -65,12 +65,12 @@ mvn package
 
 ## How to build S3 server tests?
 ```sh
-bazel build //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+bazel build //:s3ut --cxxopt="-std=c++11"
 ```
 
 ## How to run S3 server Unit tests?
 ```sh
-bazel test //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+bazel test //:s3ut --cxxopt="-std=c++11"
 ```
 or
 ```sh

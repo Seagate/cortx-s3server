@@ -1,7 +1,7 @@
 
 cc_binary(
     # How to run build
-    # bazel build //:s3server --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+    # bazel build //:s3server --cxxopt="-std=c++11"
 
     name = "s3server",
 
@@ -12,7 +12,7 @@ cc_binary(
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_SRC)", "-iquote", ".", "-include", "config.h",
+      "-iquote", "third_party/mero", "-iquote", ".", "-include", "config.h",
       "-Ithird_party/lustre-2.5.1-headers/libcfs/include",
       "-Ithird_party/lustre-2.5.1-headers/lnet/include",
       "-Ithird_party/lustre-2.5.1-headers/lustre/include",
@@ -33,8 +33,8 @@ cc_binary(
     ],
 
     linkopts = [
-      "-L $(MERO_SRC)/mero/.libs",
-      "-L $(MERO_SRC)/extra-libs/gf-complete/src/.libs/",
+      "-L third_party/mero/mero/.libs",
+      "-L third_party/mero/extra-libs/gf-complete/src/.libs/",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-Lthird_party/yaml-cpp/s3_dist/lib",
@@ -54,8 +54,8 @@ cc_binary(
 
 cc_test(
     # How to run build
-    # bazel build //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
-    # bazel test //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+    # bazel build //:s3ut --cxxopt="-std=c++11"
+    # bazel test //:s3ut --cxxopt="-std=c++11"
 
     name = "s3ut",
 
@@ -69,7 +69,7 @@ cc_test(
       "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_SRC)",
+      "-iquote", "third_party/mero",
     ],
 
     includes = [
@@ -87,8 +87,8 @@ cc_test(
     ],
 
     linkopts = [
-      "-L $(MERO_SRC)/mero/.libs",
-      "-L $(MERO_SRC)/extra-libs/gf-complete/src/.libs/",
+      "-L third_party/mero/mero/.libs",
+      "-L third_party/mero/extra-libs/gf-complete/src/.libs/",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-Lthird_party/yaml-cpp/s3_dist/lib",
@@ -101,8 +101,8 @@ cc_test(
       "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread third_party/glog/s3_dist/lib/libglog.a",
-      "-Wl,-rpath,/usr/local/lib64,-rpath,$(MERO_SRC)/mero/.libs",
-      "-Wl,-rpath,$(MERO_SRC)/extra-libs/gf-complete/src/.libs",
+      "-Wl,-rpath,/usr/local/lib64,-rpath,third_party/mero/mero/.libs",
+      "-Wl,-rpath,third_party/mero/extra-libs/gf-complete/src/.libs",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
       "-Wl,-rpath,third_party/libxml2/s3_dist/lib",
       "-Wl,-rpath,third_party/yaml-cpp/s3_dist/lib",
@@ -137,7 +137,7 @@ cc_binary(
 
 cc_binary(
     # How to run build
-    # bazel build //:cloviskvscli --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+    # bazel build //:cloviskvscli --cxxopt="-std=c++11"
 
     name = "cloviskvscli",
 
@@ -148,7 +148,7 @@ cc_binary(
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_SRC)", "-iquote", ".", "-include", "config.h",
+      "-iquote", "third_party/mero", "-iquote", ".", "-include", "config.h",
       "-Ithird_party/lustre-2.5.1-headers/libcfs/include",
       "-Ithird_party/lustre-2.5.1-headers/lnet/include",
       "-Ithird_party/lustre-2.5.1-headers/lustre/include",
@@ -161,8 +161,8 @@ cc_binary(
     ],
 
     linkopts = [
-      "-L $(MERO_SRC)/mero/.libs",
-      "-L $(MERO_SRC)/extra-libs/gf-complete/src/.libs/",
+      "-L third_party/mero/mero/.libs",
+      "-L third_party/mero/extra-libs/gf-complete/src/.libs/",
       "-Lthird_party/gflags/s3_dist/lib",
       "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
       "-lgflags",

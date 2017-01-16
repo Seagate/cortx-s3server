@@ -78,7 +78,7 @@ then
 fi
 if [ $no_s3ut_build -eq 0 ]
 then
-  bazel build //:s3ut --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+  bazel build //:s3ut --cxxopt="-std=c++11"
 fi
 if [ $no_s3mempoolut_build -eq 0 ]
 then
@@ -86,11 +86,11 @@ then
 fi
 if [ $no_s3server_build -eq 0 ]
 then
-  bazel build //:s3server --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+  bazel build //:s3server --cxxopt="-std=c++11"
 fi
 if [ $no_cloviskvscli_build -eq 0 ]
 then
-  bazel build //:cloviskvscli --cxxopt="-std=c++11" --define MERO_SRC=`pwd`/../..
+  bazel build //:cloviskvscli --cxxopt="-std=c++11"
 fi
 
 if [ $no_auth_build -eq 0 ]

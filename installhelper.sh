@@ -37,8 +37,8 @@ mkdir -p $STATSD_DIR_LOCATION
 mkdir -p $NODEJS_DIR_LOCATION
 
 # Copy over the mero libs
-cp ../../mero/.libs/libmero*.so $S3_INSTALL_LOCATION/lib/
-cp ../../extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATION/lib/
+cp -R third_party/mero/mero/.libs/libmero.so* $S3_INSTALL_LOCATION/lib/
+cp -R third_party/mero/extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATION/lib/
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
