@@ -18,8 +18,8 @@
  */
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_OPTION_H__
-#define __MERO_FE_S3_SERVER_S3_OPTION_H__
+#ifndef __S3_SERVER_S3_OPTION_H__
+#define __S3_SERVER_S3_OPTION_H__
 
 #define S3_OPTION_BIND_ADDR 0x0001
 #define S3_OPTION_BIND_PORT 0x0002

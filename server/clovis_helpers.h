@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_CLOVIS_HELPERS_H__
-#define __MERO_FE_S3_SERVER_CLOVIS_HELPERS_H__
+#ifndef __S3_SERVER_CLOVIS_HELPERS_H__
+#define __S3_SERVER_CLOVIS_HELPERS_H__
 
 #ifdef __cplusplus
 #define EXTERN_C_BLOCK_BEGIN extern "C" {

@@ -21,8 +21,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_LOG_H__
-#define __MERO_FE_S3_SERVER_LOG_H__
+#ifndef __S3_SERVER_LOG_H__
+#define __S3_SERVER_LOG_H__
 
 #include <glog/logging.h>
 #include <syslog.h>
@@ -98,4 +98,4 @@ int init_log(char *process_name);
 void fini_log();
 void flushall_log();
 
-#endif  // __MERO_FE_S3_SERVER_LOG_H__
+#endif  // __S3_SERVER_LOG_H__

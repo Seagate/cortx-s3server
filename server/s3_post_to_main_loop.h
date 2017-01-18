@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
-#define __MERO_FE_S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
+#ifndef __S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
+#define __S3_SERVER_S3_POST_TO_MAIN_LOOP_H__
 
 /* libevhtp */
 #include <evhtp.h>

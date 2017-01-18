@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_URI_TO_MERO_OID_H__
-#define __MERO_FE_S3_SERVER_S3_URI_TO_MERO_OID_H__
+#ifndef __S3_SERVER_S3_URI_TO_MERO_OID_H__
+#define __S3_SERVER_S3_URI_TO_MERO_OID_H__
 
 #include "s3_common.h"
 

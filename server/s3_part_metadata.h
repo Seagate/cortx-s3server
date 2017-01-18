@@ -21,8 +21,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_PART_METADATA_H__
-#define __MERO_FE_S3_SERVER_S3_PART_METADATA_H__
+#ifndef __S3_SERVER_S3_PART_METADATA_H__
+#define __S3_SERVER_S3_PART_METADATA_H__
 
 #include <functional>
 #include <map>

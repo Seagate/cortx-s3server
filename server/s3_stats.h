@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_STATS_H__
-#define __MERO_FE_S3_SERVER_STATS_H__
+#ifndef __S3_SERVER_STATS_H__
+#define __S3_SERVER_STATS_H__
 
 #include <gtest/gtest_prod.h>
 #include <math.h>
@@ -169,4 +169,4 @@ static inline int s3_stats_count_unique(const std::string& key,
   return g_stats_instance->count_unique(key, value, retry);
 }
 
-#endif  // __MERO_FE_S3_SERVER_STATS_H__
+#endif  // __S3_SERVER_STATS_H__

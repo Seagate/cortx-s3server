@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_ERROR_MESSAGES_H__
-#define __MERO_FE_S3_SERVER_S3_ERROR_MESSAGES_H__
+#ifndef __S3_SERVER_S3_ERROR_MESSAGES_H__
+#define __S3_SERVER_S3_ERROR_MESSAGES_H__
 
 #include <gtest/gtest_prod.h>
 #include <map>

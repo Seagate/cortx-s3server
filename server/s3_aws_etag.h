@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_AWS_ETAG_H__
-#define __MERO_FE_S3_SERVER_S3_AWS_ETAG_H__
+#ifndef __S3_SERVER_S3_AWS_ETAG_H__
+#define __S3_SERVER_S3_AWS_ETAG_H__
 
 #include <string>
 #include "s3_log.h"

@@ -20,8 +20,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_AUTH_CLIENT_H__
-#define __MERO_FE_S3_SERVER_S3_AUTH_CLIENT_H__
+#ifndef __S3_SERVER_S3_AUTH_CLIENT_H__
+#define __S3_SERVER_S3_AUTH_CLIENT_H__
 
 #include <gtest/gtest_prod.h>
 #include <functional>

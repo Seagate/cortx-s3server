@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_EVHTP_WRAPPER_H__
-#define __MERO_FE_S3_SERVER_EVHTP_WRAPPER_H__
+#ifndef __S3_SERVER_EVHTP_WRAPPER_H__
+#define __S3_SERVER_EVHTP_WRAPPER_H__
 
 #include "s3_common.h"
 

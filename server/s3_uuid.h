@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_UUID_H__
-#define __MERO_FE_S3_SERVER_S3_UUID_H__
+#ifndef __S3_SERVER_S3_UUID_H__
+#define __S3_SERVER_S3_UUID_H__
 #define MAX_UUID_STR_SIZE 37
 
 #include <uuid/uuid.h>

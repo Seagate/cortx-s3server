@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_SERVER_S3_PERF_LOGGER_H__
-#define __MERO_FE_S3_SERVER_S3_PERF_LOGGER_H__
+#ifndef __S3_SERVER_S3_PERF_LOGGER_H__
+#define __S3_SERVER_S3_PERF_LOGGER_H__
 
 #include <fstream>
 #include <iostream>
