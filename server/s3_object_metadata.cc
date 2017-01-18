@@ -17,8 +17,8 @@
  * Original creation date: 1-Oct-2015
  */
 
-#include <stdlib.h>
 #include <json/json.h>
+#include <stdlib.h>
 #include "base64.h"
 
 #include "s3_datetime.h"
@@ -48,21 +48,27 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   current_time.init_current_time();
   system_defined_attribute["Date"] = current_time.get_isoformat_string();
   system_defined_attribute["Content-Length"] = "";
-  system_defined_attribute["Last-Modified"] = current_time.get_isoformat_string();  // TODO
+  system_defined_attribute["Last-Modified"] =
+      current_time.get_isoformat_string();  // TODO
   system_defined_attribute["Content-MD5"] = "";
   system_defined_attribute["Owner-User"] = "";
   system_defined_attribute["Owner-User-id"] = "";
   system_defined_attribute["Owner-Account"] = "";
   system_defined_attribute["Owner-Account-id"] = "";
 
-  system_defined_attribute["x-amz-server-side-encryption"] = "None"; // Valid values aws:kms, AES256
-  system_defined_attribute["x-amz-version-id"] = "";  // Generate if versioning enabled
-  system_defined_attribute["x-amz-storage-class"] = "STANDARD";  // Valid Values: STANDARD | STANDARD_IA | REDUCED_REDUNDANCY
+  system_defined_attribute["x-amz-server-side-encryption"] =
+      "None";  // Valid values aws:kms, AES256
+  system_defined_attribute["x-amz-version-id"] =
+      "";  // Generate if versioning enabled
+  system_defined_attribute["x-amz-storage-class"] =
+      "STANDARD";  // Valid Values: STANDARD | STANDARD_IA | REDUCED_REDUNDANCY
   system_defined_attribute["x-amz-website-redirect-location"] = "None";
   system_defined_attribute["x-amz-server-side-encryption-aws-kms-key-id"] = "";
-  system_defined_attribute["x-amz-server-side-encryption-customer-algorithm"] = "";
+  system_defined_attribute["x-amz-server-side-encryption-customer-algorithm"] =
+      "";
   system_defined_attribute["x-amz-server-side-encryption-customer-key"] = "";
-  system_defined_attribute["x-amz-server-side-encryption-customer-key-MD5"] = "";
+  system_defined_attribute["x-amz-server-side-encryption-customer-key-MD5"] =
+      "";
   if (is_multipart) {
     index_name = get_multipart_index_name();
     system_defined_attribute["Upload-ID"] = upload_id;
@@ -99,25 +105,17 @@ std::string S3ObjectMetadata::get_owner_name() {
   return system_defined_attribute["Owner-User"];
 }
 
-std::string S3ObjectMetadata::get_object_name() {
-  return object_name;
-}
+std::string S3ObjectMetadata::get_object_name() { return object_name; }
 
 struct m0_uint128 S3ObjectMetadata::get_index_oid() {
   return index_oid;
 }
 
-std::string S3ObjectMetadata::get_user_id() {
-  return user_id;
-}
+std::string S3ObjectMetadata::get_user_id() { return user_id; }
 
-std::string S3ObjectMetadata::get_upload_id() {
-  return upload_id;
-}
+std::string S3ObjectMetadata::get_upload_id() { return upload_id; }
 
-std::string S3ObjectMetadata::get_user_name() {
-  return user_name;
-}
+std::string S3ObjectMetadata::get_user_name() { return user_name; }
 
 std::string S3ObjectMetadata::get_creation_date() {
   return system_defined_attribute["Date"];
@@ -165,8 +163,10 @@ std::string S3ObjectMetadata::get_md5() {
 void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
   oid = id;
 
-  mero_oid_u_hi_str = base64_encode((unsigned char const*)&oid.u_hi, sizeof(oid.u_hi));
-  mero_oid_u_lo_str = base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
+  mero_oid_u_hi_str =
+      base64_encode((unsigned char const*)&oid.u_hi, sizeof(oid.u_hi));
+  mero_oid_u_lo_str =
+      base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
 }
 
 void S3ObjectMetadata::set_part_index_oid(struct m0_uint128 id) {
@@ -181,7 +181,8 @@ void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
   system_defined_attribute[key] = val;
 }
 
-void S3ObjectMetadata::add_user_defined_attribute(std::string key, std::string val) {
+void S3ObjectMetadata::add_user_defined_attribute(std::string key,
+                                                  std::string val) {
   user_defined_attribute[key] = val;
 }
 
@@ -189,11 +190,12 @@ void S3ObjectMetadata::validate() {
   // TODO
 }
 
-void S3ObjectMetadata::load(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+void S3ObjectMetadata::load(std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   this->handler_on_success = on_success;
-  this->handler_on_failed  = on_failed;
+  this->handler_on_failed = on_failed;
 
   clovis_kv_reader =
       std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
@@ -230,11 +232,12 @@ void S3ObjectMetadata::load_failed() {
   this->handler_on_failed();
 }
 
-void S3ObjectMetadata::save(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+void S3ObjectMetadata::save(std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Saving Object metadata\n");
 
   this->handler_on_success = on_success;
-  this->handler_on_failed  = on_failed;
+  this->handler_on_failed = on_failed;
   if (index_oid.u_lo == 0 && index_oid.u_hi == 0) {
     S3UriToMeroOID(index_name.c_str(), &index_oid, S3ClovisEntityType::index);
     // Index table doesn't exist so create it
@@ -330,7 +333,8 @@ void S3ObjectMetadata::collision_detected() {
 void S3ObjectMetadata::create_new_oid() {
   std::string salted_index_name =
       index_name + salt + std::to_string(tried_count);
-  S3UriToMeroOID(salted_index_name.c_str(), &index_oid, S3ClovisEntityType::index);
+  S3UriToMeroOID(salted_index_name.c_str(), &index_oid,
+                 S3ClovisEntityType::index);
   return;
 }
 
@@ -342,7 +346,8 @@ void S3ObjectMetadata::save_metadata() {
   system_defined_attribute["Owner-User-id"] = user_id;
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  clovis_kv_writer =
+      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->put_keyval(
       index_oid, object_name, this->to_json(),
       std::bind(&S3ObjectMetadata::save_metadata_successful, this),
@@ -350,42 +355,48 @@ void S3ObjectMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success,
+                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string key;
   this->handler_on_success = on_success;
-  this->handler_on_failed  = on_failed;
+  this->handler_on_failed = on_failed;
   save_metadata();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ObjectMetadata::save_metadata_successful() {
-  s3_log(S3_LOG_DEBUG, "Object metadata saved for Object [%s].\n", object_name.c_str());
+  s3_log(S3_LOG_DEBUG, "Object metadata saved for Object [%s].\n",
+         object_name.c_str());
   state = S3ObjectMetadataState::saved;
   this->handler_on_success();
 }
 
 void S3ObjectMetadata::save_metadata_failed() {
-  s3_log(S3_LOG_ERROR, "Object metadata save failed for Object [%s].\n", object_name.c_str());
+  s3_log(S3_LOG_ERROR, "Object metadata save failed for Object [%s].\n",
+         object_name.c_str());
   state = S3ObjectMetadataState::failed;
   this->handler_on_failed();
 }
 
-void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Deleting Object metadata for Object [%s].\n", object_name.c_str());
+void S3ObjectMetadata::remove(std::function<void(void)> on_success,
+                              std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, "Deleting Object metadata for Object [%s].\n",
+         object_name.c_str());
 
   std::string index_name;
 
   this->handler_on_success = on_success;
-  this->handler_on_failed  = on_failed;
+  this->handler_on_failed = on_failed;
 
-  if( is_multipart ) {
+  if (is_multipart) {
     index_name = get_multipart_index_name();
   } else {
     index_name = get_bucket_index_name();
   }
 
-  clovis_kv_writer = std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  clovis_kv_writer =
+      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(
       index_oid, object_name,
       std::bind(&S3ObjectMetadata::remove_successful, this),
@@ -393,13 +404,15 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success, std::functio
 }
 
 void S3ObjectMetadata::remove_successful() {
-  s3_log(S3_LOG_DEBUG, "Deleted Object metadata for Object [%s].\n", object_name.c_str());
+  s3_log(S3_LOG_DEBUG, "Deleted Object metadata for Object [%s].\n",
+         object_name.c_str());
   state = S3ObjectMetadataState::deleted;
   this->handler_on_success();
 }
 
 void S3ObjectMetadata::remove_failed() {
-  s3_log(S3_LOG_DEBUG, "Delete Object metadata failed for Object [%s].\n", object_name.c_str());
+  s3_log(S3_LOG_DEBUG, "Delete Object metadata failed for Object [%s].\n",
+         object_name.c_str());
   state = S3ObjectMetadataState::failed;
   this->handler_on_failed();
 }
@@ -443,7 +456,7 @@ std::string S3ObjectMetadata::to_json() {
   root["Bucket-Name"] = bucket_name;
   root["Object-Name"] = object_name;
   root["Object-URI"] = object_key_uri;
-  if(is_multipart) {
+  if (is_multipart) {
     root["Upload-ID"] = upload_id;
     root["mero_part_oid_u_hi"] = mero_part_oid_u_hi_str;
     root["mero_part_oid_u_lo"] = mero_part_oid_u_lo_str;
@@ -452,21 +465,23 @@ std::string S3ObjectMetadata::to_json() {
   root["mero_oid_u_hi"] = mero_oid_u_hi_str;
   root["mero_oid_u_lo"] = mero_oid_u_lo_str;
 
-  for (auto sit: system_defined_attribute) {
+  for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
   }
-  for (auto uit: user_defined_attribute) {
+  for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
-  //root["ACL"] = object_ACL.to_json();
+  // root["ACL"] = object_ACL.to_json();
   std::string xml_acl = object_ACL.get_xml_str();
   if (xml_acl == "") {
     xml_acl = create_default_acl();
   }
-  root["ACL"] = base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
+  root["ACL"] =
+      base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
 
   Json::FastWriter fastWriter;
-  return fastWriter.write(root);;
+  return fastWriter.write(root);
+  ;
 }
 
 /*
@@ -497,9 +512,8 @@ int S3ObjectMetadata::from_json(std::string content) {
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
-  if (!parsingSuccessful)
-  {
-    s3_log(S3_LOG_ERROR,"Json Parsing failed\n");
+  if (!parsingSuccessful) {
+    s3_log(S3_LOG_ERROR, "Json Parsing failed\n");
     return -1;
   }
 
@@ -528,8 +542,9 @@ int S3ObjectMetadata::from_json(std::string content) {
          dec_oid_u_lo_str.length());
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
-  for(auto it : members) {
-    system_defined_attribute[it.c_str()] = newroot["System-Defined"][it].asString().c_str();
+  for (auto it : members) {
+    system_defined_attribute[it.c_str()] =
+        newroot["System-Defined"][it].asString().c_str();
   }
   user_name = system_defined_attribute["Owner-User"];
   user_id = system_defined_attribute["Owner-User-id"];
@@ -537,8 +552,9 @@ int S3ObjectMetadata::from_json(std::string content) {
   account_id = system_defined_attribute["Owner-Account-id"];
 
   members = newroot["User-Defined"].getMemberNames();
-  for(auto it : members) {
-    user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString().c_str();
+  for (auto it : members) {
+    user_defined_attribute[it.c_str()] =
+        newroot["User-Defined"][it].asString().c_str();
   }
   object_ACL.from_json(newroot["ACL"].asString());
 
@@ -550,7 +566,7 @@ std::string& S3ObjectMetadata::get_encoded_object_acl() {
   return object_ACL.get_acl_metadata();
 }
 
-void S3ObjectMetadata::setacl(std::string & input_acl_str) {
+void S3ObjectMetadata::setacl(std::string& input_acl_str) {
   std::string input_acl = input_acl_str;
   object_ACL.set_display_name(get_owner_name());
   input_acl = object_ACL.insert_display_name(input_acl);

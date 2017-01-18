@@ -25,17 +25,21 @@
 class SuccessDeleteKey {
   std::string object_key;
   std::string version;
-public:
+
+ public:
   SuccessDeleteKey(std::string key, std::string id = "") : object_key(key) {}
 
   std::string to_xml() {
     std::string xml = "";
-    xml += "<Deleted>\n"
-           "  <Key>" + object_key + "</Key>\n"
-          //  "  <VersionId>" + version + "</VersionId>\n"
-          //  "  <DeleteMarker>" + true + "</DeleteMarker>\n"
-          //  "  <DeleteMarkerVersionId>" + true + "</DeleteMarkerVersionId>\n"
-           "</Deleted>\n";
+    xml +=
+        "<Deleted>\n"
+        "  <Key>" +
+        object_key +
+        "</Key>\n"
+        //  "  <VersionId>" + version + "</VersionId>\n"
+        //  "  <DeleteMarker>" + true + "</DeleteMarker>\n"
+        //  "  <DeleteMarkerVersionId>" + true + "</DeleteMarkerVersionId>\n"
+        "</Deleted>\n";
     return xml;
   }
 };
@@ -44,18 +48,26 @@ class ErrorDeleteKey {
   std::string object_key;
   std::string error_code;
   std::string error_message;
-public:
-  ErrorDeleteKey(std::string key, std::string code, std::string msg) :
-    object_key(key), error_code(code), error_message(msg) {}
+
+ public:
+  ErrorDeleteKey(std::string key, std::string code, std::string msg)
+      : object_key(key), error_code(code), error_message(msg) {}
 
   std::string to_xml() {
     std::string xml = "";
-    xml += "<Error>\n"
-           "  <Key>" + object_key + "</Key>\n"
-          //  "  <VersionId>" + owner_name + "</VersionId>\n"
-           "  <Code>" + error_code + "</Code>\n"
-           "  <Message>" + error_message + "</Message>\n"
-           "</Error>\n";
+    xml +=
+        "<Error>\n"
+        "  <Key>" +
+        object_key +
+        "</Key>\n"
+        //  "  <VersionId>" + owner_name + "</VersionId>\n"
+        "  <Code>" +
+        error_code +
+        "</Code>\n"
+        "  <Message>" +
+        error_message +
+        "</Message>\n"
+        "</Error>\n";
     return xml;
   }
 };
@@ -66,18 +78,21 @@ class S3DeleteMultipleObjectsResponseBody {
   std::vector<ErrorDeleteKey> error;
 
   std::string response_xml;
-public:
+
+ public:
   void add_success(std::string key, std::string version = "") {
     success.push_back(SuccessDeleteKey(key, version));
   }
 
-  void add_failure(std::string key, std::string code, std::string message = "") {
+  void add_failure(std::string key, std::string code,
+                   std::string message = "") {
     error.push_back(ErrorDeleteKey(key, code, message));
   }
 
   std::string& to_xml() {
     response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    response_xml += "<DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+    response_xml +=
+        "<DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
     for (auto sitem : success) {
       response_xml += sitem.to_xml();
     }
@@ -87,7 +102,6 @@ public:
     response_xml += "</DeleteResult>";
     return response_xml;
   }
-
 };
 
 #endif

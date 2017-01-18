@@ -27,8 +27,8 @@
 #include "s3_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
-#include "s3_object_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_object_metadata.h"
 #include "s3_timer.h"
 
 class S3PutChunkUploadObjectAction : public S3Action {
@@ -46,16 +46,17 @@ class S3PutChunkUploadObjectAction : public S3Action {
 
   bool auth_failed;
   bool write_failed;
-  // These 2 flags help respond to client gracefully when either auth or write fails.
+  // These 2 flags help respond to client gracefully when either auth or write
+  // fails.
   // Both write and chunk auth happen in parallel.
   bool clovis_write_in_progress;
-  bool clovis_write_completed; // full object write
+  bool clovis_write_completed;  // full object write
   bool auth_in_progress;
-  bool auth_completed; // all chunk auth
+  bool auth_completed;  // all chunk auth
   void create_new_oid();
   void collision_detected();
 
-public:
+ public:
   S3PutChunkUploadObjectAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

@@ -29,8 +29,8 @@
 #include "s3_clovis_writer.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
-#include "s3_uuid.h"
 #include "s3_timer.h"
+#include "s3_uuid.h"
 
 class S3PostMultipartObjectAction : public S3Action {
   struct m0_uint128 oid;
@@ -42,10 +42,11 @@ class S3PostMultipartObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
-  std::string  upload_id;
+  std::string upload_id;
 
   S3Timer create_object_timer;
-public:
+
+ public:
   S3PostMultipartObjectAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
@@ -71,9 +72,7 @@ public:
   void rollback_create_part_meta_index();
   void rollback_create_part_meta_index_failed();
 
-  std::shared_ptr<S3RequestObject> get_request() {
-    return request;
-  }
+  std::shared_ptr<S3RequestObject> get_request() { return request; }
 };
 
 #endif

@@ -26,8 +26,8 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
-#include "s3_object_metadata.h"
 #include "s3_clovis_reader.h"
+#include "s3_object_metadata.h"
 
 class S3GetObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;

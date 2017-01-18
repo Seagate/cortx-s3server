@@ -22,18 +22,18 @@
 #ifndef __MERO_FE_S3_SERVER_S3_DELETE_MULTIPLE_OBJECTS_ACTION_H__
 #define __MERO_FE_S3_SERVER_S3_DELETE_MULTIPLE_OBJECTS_ACTION_H__
 
-#include <memory>
 #include <map>
+#include <memory>
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
-#include "s3_object_metadata.h"
-#include "s3_clovis_writer.h"
-#include "s3_clovis_kvs_writer.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_clovis_kvs_writer.h"
+#include "s3_clovis_writer.h"
 #include "s3_delete_multiple_objects_body.h"
 #include "s3_delete_multiple_objects_response_body.h"
 #include "s3_log.h"
+#include "s3_object_metadata.h"
 
 class S3DeleteMultipleObjectsAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -56,7 +56,7 @@ class S3DeleteMultipleObjectsAction : public S3Action {
     return "BUCKET/" + request->get_bucket_name();
   }
 
-public:
+ public:
   S3DeleteMultipleObjectsAction(std::shared_ptr<S3RequestObject> req);
 
   // Helpers

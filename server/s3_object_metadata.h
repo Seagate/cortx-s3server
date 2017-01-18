@@ -22,10 +22,10 @@
 #ifndef __MERO_FE_S3_SERVER_S3_OBJECT_METADATA_H__
 #define __MERO_FE_S3_SERVER_S3_OBJECT_METADATA_H__
 
-#include <map>
-#include <string>
-#include <memory>
 #include <functional>
+#include <map>
+#include <memory>
+#include <string>
 
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
@@ -36,7 +36,7 @@
 enum class S3ObjectMetadataState {
   empty,    // Initial state, no lookup done
   present,  // Metadata exists and was read successfully
-  missing,   // Metadata not present in store.
+  missing,  // Metadata not present in store.
   saved,    // Metadata saved to store.
   deleted,  // Metadata deleted from store
   failed,
@@ -47,7 +47,7 @@ class S3ObjectMetadata {
   // Holds system-defined metadata (creation date etc)
   // Holds user-defined metadata (names must begin with "x-amz-meta-")
   // Partially supported on need bases, some of these are placeholders
-private:
+ private:
   std::string account_name;
   std::string account_id;
   std::string user_name;
@@ -60,7 +60,9 @@ private:
   unsigned short tried_count;
   std::string salt;
 
-  // The name for a key is a sequence of Unicode characters whose UTF-8 encoding is at most 1024 bytes long. http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
+  // The name for a key is a sequence of Unicode characters whose UTF-8 encoding
+  // is at most 1024 bytes long.
+  // http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
   std::string object_key_uri;
 
   struct m0_uint128 oid;
@@ -99,16 +101,15 @@ private:
   void save_object_list_index_oid_failed();
 
  public:
-  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req, bool ismultipart = false, std::string uploadid = "");
+  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
+                   bool ismultipart = false, std::string uploadid = "");
   S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
                    struct m0_uint128 bucket_idx_id, bool ismultipart = false,
                    std::string uploadid = "");
 
   std::string create_default_acl();
   struct m0_uint128 get_index_oid();
-  std::string get_bucket_index_name() {
-    return "BUCKET/" + bucket_name;
-  }
+  std::string get_bucket_index_name() { return "BUCKET/" + bucket_name; }
 
   std::string get_multipart_index_name() {
     return "BUCKET/" + bucket_name + "/" + "Multipart";
@@ -132,12 +133,8 @@ private:
   }
 
   // returns base64 encoded strings
-  std::string get_oid_u_hi_str() {
-    return mero_oid_u_hi_str;
-  }
-  std::string get_oid_u_lo_str() {
-    return mero_oid_u_lo_str;
-  }
+  std::string get_oid_u_hi_str() { return mero_oid_u_hi_str; }
+  std::string get_oid_u_lo_str() { return mero_oid_u_lo_str; }
 
   std::string get_owner_name();
   std::string get_owner_id();
@@ -162,37 +159,37 @@ private:
     return user_defined_attribute;
   }
 
-  void load(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void load(std::function<void(void)> on_success,
+            std::function<void(void)> on_failed);
   void load_successful();
   void load_failed();
 
-  void save(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void save(std::function<void(void)> on_success,
+            std::function<void(void)> on_failed);
   void create_bucket_index();
   void create_bucket_index_successful();
   void create_bucket_index_failed();
   void save_metadata();
   void save_metadata_successful();
   void save_metadata_failed();
-  void save_metadata(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void save_metadata(std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed);
 
-  void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void remove(std::function<void(void)> on_success,
+              std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
 
-  S3ObjectMetadataState get_state() {
-    return state;
-  }
+  S3ObjectMetadataState get_state() { return state; }
 
   // placeholder state, so as to not perform any operation on this.
-  void mark_invalid() {
-    state = S3ObjectMetadataState::invalid;
-  }
+  void mark_invalid() { state = S3ObjectMetadataState::invalid; }
 
   std::string to_json();
 
   // returns 0 on success, -1 on parsing error
   int from_json(std::string content);
-  void setacl(std::string & input_acl_str);
+  void setacl(std::string& input_acl_str);
 };
 
 #endif

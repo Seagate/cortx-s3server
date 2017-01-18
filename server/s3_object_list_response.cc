@@ -20,7 +20,17 @@
 #include "s3_object_list_response.h"
 #include "s3_log.h"
 
-S3ObjectListResponse::S3ObjectListResponse() : request_prefix(""), request_delimiter(""), request_marker_key(""), request_marker_uploadid(""), max_keys(""), response_is_truncated(false), next_marker_key(""), response_xml(""), max_uploads(""), next_marker_uploadid("") {
+S3ObjectListResponse::S3ObjectListResponse()
+    : request_prefix(""),
+      request_delimiter(""),
+      request_marker_key(""),
+      request_marker_uploadid(""),
+      max_keys(""),
+      response_is_truncated(false),
+      next_marker_key(""),
+      response_xml(""),
+      max_uploads(""),
+      next_marker_uploadid("") {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   object_list.clear();
   part_list.clear();
@@ -50,9 +60,7 @@ void S3ObjectListResponse::set_request_marker_uploadid(std::string marker) {
   request_marker_uploadid = marker;
 }
 
-void S3ObjectListResponse::set_max_keys(std::string count) {
-  max_keys = count;
-}
+void S3ObjectListResponse::set_max_keys(std::string count) { max_keys = count; }
 
 void S3ObjectListResponse::set_max_uploads(std::string upload_count) {
   max_uploads = upload_count;
@@ -74,17 +82,14 @@ void S3ObjectListResponse::set_next_marker_uploadid(std::string next) {
   next_marker_uploadid = next;
 }
 
-std::string& S3ObjectListResponse::get_object_name() {
-  return object_name;
-}
+std::string& S3ObjectListResponse::get_object_name() { return object_name; }
 
-void S3ObjectListResponse::add_object(std::shared_ptr<S3ObjectMetadata> object) {
+void S3ObjectListResponse::add_object(
+    std::shared_ptr<S3ObjectMetadata> object) {
   object_list.push_back(object);
 }
 
-unsigned int S3ObjectListResponse::size() {
-  return object_list.size();
-}
+unsigned int S3ObjectListResponse::size() { return object_list.size(); }
 
 void S3ObjectListResponse::add_part(std::shared_ptr<S3PartMetadata> part) {
   part_list[strtoul(part->get_part_number().c_str(), NULL, 0)] = part;
@@ -94,9 +99,7 @@ void S3ObjectListResponse::add_common_prefix(std::string common_prefix) {
   common_prefixes.insert(common_prefix);
 }
 
-void S3ObjectListResponse::set_user_id(std::string userid) {
-  user_id = userid;
-}
+void S3ObjectListResponse::set_user_id(std::string userid) { user_id = userid; }
 
 void S3ObjectListResponse::set_user_name(std::string username) {
   user_name = username;
@@ -110,39 +113,28 @@ void S3ObjectListResponse::set_account_name(std::string accountname) {
   account_name = accountname;
 }
 
-std::string& S3ObjectListResponse::get_account_id() {
-  return account_id;
-}
+std::string& S3ObjectListResponse::get_account_id() { return account_id; }
 
-std::string& S3ObjectListResponse::get_account_name() {
-  return account_name;
-}
+std::string& S3ObjectListResponse::get_account_name() { return account_name; }
 
 void S3ObjectListResponse::set_storage_class(std::string stor_class) {
   storage_class = stor_class;
 }
 
-std::string& S3ObjectListResponse::get_user_id() {
-  return user_id;
-}
+std::string& S3ObjectListResponse::get_user_id() { return user_id; }
 
-std::string& S3ObjectListResponse::get_user_name() {
-  return user_name;
-}
+std::string& S3ObjectListResponse::get_user_name() { return user_name; }
 
-std::string& S3ObjectListResponse::get_storage_class() {
-  return storage_class;
-}
+std::string& S3ObjectListResponse::get_storage_class() { return storage_class; }
 
 void S3ObjectListResponse::set_upload_id(std::string uploadid) {
   upload_id = uploadid;
 }
 
-std::string& S3ObjectListResponse::get_upload_id() {
-  return upload_id;
-}
+std::string& S3ObjectListResponse::get_upload_id() { return upload_id; }
 
 std::string& S3ObjectListResponse::get_xml() {
+  // clang-format off
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   response_xml += "<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
   response_xml += "<Name>" + bucket_name + "</Name>\n"
@@ -170,15 +162,16 @@ std::string& S3ObjectListResponse::get_xml() {
   for (auto&& prefix : common_prefixes) {
     response_xml += "<CommonPrefixes>\n"
                     "  <Prefix>" + prefix + "</Prefix>\n"
-                    "</CommonPrefixes>";
+        "</CommonPrefixes>";
   }
 
   response_xml += "</ListBucketResult>\n";
-
+  // clang-format on
   return response_xml;
 }
 
 std::string& S3ObjectListResponse::get_multiupload_xml() {
+  // clang-format off
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   response_xml += "<ListMultipartUploadsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
   response_xml += "<Bucket>" + bucket_name + "</Bucket>"
@@ -213,7 +206,7 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
   }
 
   response_xml += "</ListMultipartUploadsResult>\n";
-
+  // clang-format on
   return response_xml;
 }
 

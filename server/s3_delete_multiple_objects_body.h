@@ -38,7 +38,7 @@ class S3DeleteMultipleObjectsBody {
 
   bool parse_and_validate();
 
-public:
+ public:
   S3DeleteMultipleObjectsBody();
   void initialize(std::string& xml);
 
@@ -52,10 +52,12 @@ public:
 
   std::vector<std::string> get_keys(size_t index, size_t count) {
     if (index + count <= object_keys.size()) {
-      std::vector<std::string> sub(object_keys.begin() + index, object_keys.begin() + index + count);
+      std::vector<std::string> sub(object_keys.begin() + index,
+                                   object_keys.begin() + index + count);
       return sub;
     } else if (index < object_keys.size()) {
-      std::vector<std::string> sub(object_keys.begin() + index, object_keys.end());
+      std::vector<std::string> sub(object_keys.begin() + index,
+                                   object_keys.end());
       return sub;
     } else {
       std::vector<std::string> sub;
@@ -65,10 +67,12 @@ public:
 
   std::vector<std::string> get_version_ids(size_t index, size_t count) {
     if (index + count <= version_ids.size()) {
-      std::vector<std::string> sub(version_ids.begin() + index, version_ids.begin() + index + count);
+      std::vector<std::string> sub(version_ids.begin() + index,
+                                   version_ids.begin() + index + count);
       return sub;
     } else if (index < version_ids.size()) {
-      std::vector<std::string> sub(version_ids.begin() + index, object_keys.end());
+      std::vector<std::string> sub(version_ids.begin() + index,
+                                   object_keys.end());
       return sub;
     } else {
       std::vector<std::string> sub;
@@ -76,9 +80,7 @@ public:
     }
   }
 
-  bool is_quiet() {
-    return quiet;
-  }
+  bool is_quiet() { return quiet; }
 };
 
 #endif

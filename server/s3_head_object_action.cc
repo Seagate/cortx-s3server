@@ -21,7 +21,8 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3HeadObjectAction::S3HeadObjectAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3HeadObjectAction::S3HeadObjectAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   object_list_index_oid = {0ULL, 0ULL};
   setup_steps();
@@ -29,16 +30,17 @@ S3HeadObjectAction::S3HeadObjectAction(std::shared_ptr<S3RequestObject> req) : S
 
 void S3HeadObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
-  add_task(std::bind( &S3HeadObjectAction::fetch_bucket_info, this ));
-  add_task(std::bind( &S3HeadObjectAction::fetch_object_info, this ));
-  add_task(std::bind( &S3HeadObjectAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3HeadObjectAction::fetch_bucket_info, this));
+  add_task(std::bind(&S3HeadObjectAction::fetch_object_info, this));
+  add_task(std::bind(&S3HeadObjectAction::send_response_to_s3_client, this));
   // ...
 }
 
 void S3HeadObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3HeadObjectAction::next, this), std::bind( &S3HeadObjectAction::next, this));
+  bucket_metadata->load(std::bind(&S3HeadObjectAction::next, this),
+                        std::bind(&S3HeadObjectAction::next, this));
 }
 
 void S3HeadObjectAction::fetch_object_info() {
@@ -83,10 +85,12 @@ void S3HeadObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
-    S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
+    S3Error error("NoSuchBucket", request->get_request_id(),
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_list_index_oid.u_lo == 0ULL &&
@@ -100,17 +104,21 @@ void S3HeadObjectAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    S3Error error("NoSuchKey", request->get_request_id(), request->get_object_uri());
+    S3Error error("NoSuchKey", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    request->set_out_header_value("Last-Modified", object_metadata->get_last_modified_gmt());
+    request->set_out_header_value("Last-Modified",
+                                  object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", object_metadata->get_md5());
     request->set_out_header_value("Accept-Ranges", "bytes");
-    request->set_out_header_value("Content-Length", object_metadata->get_content_length_str());
+    request->set_out_header_value("Content-Length",
+                                  object_metadata->get_content_length_str());
 
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
@@ -118,10 +126,12 @@ void S3HeadObjectAction::send_response_to_s3_client() {
 
     request->send_response(S3HttpSuccess200);
   } else {
-    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   }

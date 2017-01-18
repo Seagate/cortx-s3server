@@ -23,8 +23,8 @@
 #ifndef __MERO_FE_S3_SERVER_S3_OBJECT_ACL_H__
 #define __MERO_FE_S3_SERVER_S3_OBJECT_ACL_H__
 
-#include <string>
 #include <json/json.h>
+#include <string>
 
 class S3ObjectACL {
   std::string owner_id;

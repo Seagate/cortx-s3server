@@ -22,24 +22,24 @@
 #ifndef __MERO_FE_S3_SERVER_S3_REQUEST_OBJECT_H__
 #define __MERO_FE_S3_SERVER_S3_REQUEST_OBJECT_H__
 
-#include <string>
-#include <memory>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
 #include <tuple>
 #include <vector>
 
 /* libevhtp */
-#include "evhtp_wrapper.h"
 #include <gtest/gtest_prod.h>
+#include "evhtp_wrapper.h"
 
 #include "s3_async_buffer.h"
 #include "s3_chunk_payload_parser.h"
-#include "s3_timer.h"
-#include "s3_perf_logger.h"
-#include "s3_uuid.h"
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_perf_logger.h"
+#include "s3_timer.h"
+#include "s3_uuid.h"
 
 enum class S3HttpVerb {
   HEAD = htp_method_HEAD,
@@ -56,10 +56,10 @@ enum class S3RequestError {
   InvalidChunkFormat
 };
 
-extern "C" int consume_header(evhtp_kv_t * kvobj, void * arg);
+extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg);
 
 class S3RequestObject {
-  evhtp_request_t *ev_req;
+  evhtp_request_t* ev_req;
   std::string bucket_name;
   std::string object_name;
   // This info is fetched from auth service.
@@ -72,8 +72,9 @@ class S3RequestObject {
 
   bool is_paused;  // indicates whether request is explicitly paused
 
-  size_t notify_read_watermark;  // notification sent when available data is more than this.
-  size_t pending_in_flight;  // Total data yet to consume by observer.
+  size_t notify_read_watermark;  // notification sent when available data is
+                                 // more than this.
+  size_t pending_in_flight;      // Total data yet to consume by observer.
   size_t total_bytes_received;
   S3AsyncBufferContainer buffered_input;
 
@@ -94,20 +95,22 @@ class S3RequestObject {
   virtual void set_query_params(const char* query_params);
 
  public:
-  S3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr);
+  S3RequestObject(evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr);
   virtual ~S3RequestObject();
 
-  // Broken into helper function primarily to allow initialisations after faking data.
+  // Broken into helper function primarily to allow initialisations after faking
+  // data.
   void initialise();
 
-  virtual const char * c_get_uri_query();
+  virtual const char* c_get_uri_query();
   virtual S3HttpVerb http_verb();
   virtual const char* c_get_full_path();
   virtual const char* c_get_full_encoded_path();
-  const char * c_get_file_name();
+  const char* c_get_file_name();
   void set_api_type(S3ApiType apitype);
   S3ApiType get_api_type();
-private:
+
+ private:
   std::map<std::string, std::string> in_headers_copy;
   bool in_headers_copied;
   std::string full_request_body;
@@ -115,9 +118,10 @@ private:
   std::string file_path_decoded_uri;
   std::string query_raw_decoded_uri;
   S3RequestError request_error;
-public:
+
+ public:
   std::map<std::string, std::string>& get_in_headers_copy();
-  friend int consume_header(evhtp_kv_t * kvobj, void * arg);
+  friend int consume_header(evhtp_kv_t* kvobj, void* arg);
 
   std::string get_header_value(std::string key);
   virtual std::string get_host_header();
@@ -163,25 +167,32 @@ public:
 
   const std::string& get_request_id();
 
-  S3RequestError get_request_error() {
-    return request_error;
-  }
+  S3RequestError get_request_error() { return request_error; }
 
   void set_request_error(S3RequestError req_error) {
     request_error = req_error;
   }
 
   /* INFO: https://github.com/ellzey/libevhtp/issues/93
-     Pause and resume will essentially stop and start attempting to read from the client socket.
-     But also has some extra logic around it. Since the parser is a state machine, you can get functions executed as data is passed to it. But what if you wanted to temporarily stop that input processing? Well you have to save the state on the current input, then turn off the reading.
+     Pause and resume will essentially stop and start attempting to read from
+     the client socket.
+     But also has some extra logic around it. Since the parser is a state
+     machine, you can get functions executed as data is passed to it. But what
+     if you wanted to temporarily stop that input processing? Well you have to
+     save the state on the current input, then turn off the reading.
 
-     You can do all the normal things you can do while the request is paused, add output data, headers, etc. But it isn't until you use the resume function will these actions actually happen on the socket. When resume is called, it does an event_active(), which in turn goes back to the original reader function.
+     You can do all the normal things you can do while the request is paused,
+     add output data, headers, etc. But it isn't until you use the resume
+     function will these actions actually happen on the socket. When resume is
+     called, it does an event_active(), which in turn goes back to the original
+     reader function.
   */
   // We specifically use this when auth is in-progress so that
   // we dont flood with data coming from socket in user buffers.
   void pause() {
     if (!is_paused) {
-      s3_log(S3_LOG_DEBUG, "Pausing the request for sock %d...\n", ev_req->conn->sock);
+      s3_log(S3_LOG_DEBUG, "Pausing the request for sock %d...\n",
+             ev_req->conn->sock);
       evhtp_obj->http_request_pause(ev_req);
       is_paused = true;
     }
@@ -189,32 +200,23 @@ public:
 
   void resume() {
     if (is_paused) {
-      s3_log(S3_LOG_DEBUG, "Resuming the request for sock %d...\n", ev_req->conn->sock);
+      s3_log(S3_LOG_DEBUG, "Resuming the request for sock %d...\n",
+             ev_req->conn->sock);
       evhtp_obj->http_request_resume(ev_req);
       is_paused = false;
     }
   }
 
-  void client_has_disconnected() {
-    is_client_connected = false;
-  }
+  void client_has_disconnected() { is_client_connected = false; }
 
-  bool client_connected() {
-    return is_client_connected;
-  }
+  bool client_connected() { return is_client_connected; }
 
-  bool is_chunked() {
-    return is_chunked_upload;
-  }
+  bool is_chunked() { return is_chunked_upload; }
 
   // pass thru functions
-  bool is_chunk_detail_ready() {
-    return chunk_parser.is_chunk_detail_ready();
-  }
+  bool is_chunk_detail_ready() { return chunk_parser.is_chunk_detail_ready(); }
 
-  S3ChunkDetail pop_chunk_detail() {
-    return chunk_parser.pop_chunk_detail();
-  }
+  S3ChunkDetail pop_chunk_detail() { return chunk_parser.pop_chunk_detail(); }
 
   // Streaming
   // Note: Call this only if request object has to still receive from socket
@@ -222,35 +224,33 @@ public:
   // notify_on_size: notify when we have atleast 'notify_read_watermark' bytes
   // of data available of if its last payload.
 
-  // Notifications are sent on socket read events. In case we already have full body
-  // in first payload, notify will just remember it and caller should grab the buffers
+  // Notifications are sent on socket read events. In case we already have full
+  // body
+  // in first payload, notify will just remember it and caller should grab the
+  // buffers
   // without a listener.
-  void listen_for_incoming_data(
-    std::function<void()> callback, size_t notify_on_size) {
-      notify_read_watermark = notify_on_size;
-      incoming_data_callback = callback;
-      resume();  // resume reading if it was paused
+  void listen_for_incoming_data(std::function<void()> callback,
+                                size_t notify_on_size) {
+    notify_read_watermark = notify_on_size;
+    incoming_data_callback = callback;
+    resume();  // resume reading if it was paused
   }
 
-  void notify_incoming_data(evbuf_t * buf);
+  void notify_incoming_data(evbuf_t* buf);
 
   // Check whether we already have (read) the entire body.
-  size_t has_all_body_content() {
-    return (pending_in_flight == 0);
-  }
+  size_t has_all_body_content() { return (pending_in_flight == 0); }
 
-  S3AsyncBufferContainer& get_buffered_input() {
-    return buffered_input;
-  }
+  S3AsyncBufferContainer& get_buffered_input() { return buffered_input; }
 
   // Response Helpers
-private:
+ private:
   struct evbuffer* reply_buffer;
 
-public:
+ public:
   void send_response(int code, std::string body = "");
   void send_reply_start(int code);
-  void send_reply_body(char *data, int length);
+  void send_reply_body(char* data, int length);
   void send_reply_end();
   void respond_unsupported_api();
 

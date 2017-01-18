@@ -26,16 +26,21 @@
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
 
-S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(std::shared_ptr<S3RequestObject> req) :
-    S3Action(req), total_data_to_stream(0),
-    auth_failed(false), write_failed(false),
-    clovis_write_in_progress(false), clovis_write_completed(false),
-    auth_in_progress(false), auth_completed(false) {
+S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req),
+      total_data_to_stream(0),
+      auth_failed(false),
+      write_failed(false),
+      clovis_write_in_progress(false),
+      clovis_write_completed(false),
+      auth_in_progress(false),
+      auth_completed(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
-  clear_tasks(); // remove default auth
+  clear_tasks();  // remove default auth
   if (!S3Option::get_instance()->is_auth_disabled()) {
     // Add chunk style auth
-    add_task(std::bind( &S3Action::start_chunk_authentication, this ));
+    add_task(std::bind(&S3Action::start_chunk_authentication, this));
   } else {
     // auth is disabled, so assume its done.
     auth_completed = true;
@@ -46,14 +51,16 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(std::shared_ptr<S3Req
   setup_steps();
 }
 
-void S3PutChunkUploadObjectAction::setup_steps(){
+void S3PutChunkUploadObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
 
-  add_task(std::bind( &S3PutChunkUploadObjectAction::fetch_bucket_info, this ));
-  add_task(std::bind( &S3PutChunkUploadObjectAction::create_object, this ));
-  add_task(std::bind( &S3PutChunkUploadObjectAction::initiate_data_streaming, this ));
-  add_task(std::bind( &S3PutChunkUploadObjectAction::save_metadata, this ));
-  add_task(std::bind( &S3PutChunkUploadObjectAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3PutChunkUploadObjectAction::fetch_bucket_info, this));
+  add_task(std::bind(&S3PutChunkUploadObjectAction::create_object, this));
+  add_task(
+      std::bind(&S3PutChunkUploadObjectAction::initiate_data_streaming, this));
+  add_task(std::bind(&S3PutChunkUploadObjectAction::save_metadata, this));
+  add_task(std::bind(&S3PutChunkUploadObjectAction::send_response_to_s3_client,
+                     this));
   // ...
 }
 
@@ -96,7 +103,8 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
 void S3PutChunkUploadObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3PutChunkUploadObjectAction::next, this), std::bind( &S3PutChunkUploadObjectAction::next, this));
+  bucket_metadata->load(std::bind(&S3PutChunkUploadObjectAction::next, this),
+                        std::bind(&S3PutChunkUploadObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -109,9 +117,12 @@ void S3PutChunkUploadObjectAction::create_object() {
     } else {
       clovis_writer->set_oid(oid);
     }
-    clovis_writer->create_object(std::bind( &S3PutChunkUploadObjectAction::next, this), std::bind( &S3PutChunkUploadObjectAction::create_object_failed, this));
+    clovis_writer->create_object(
+        std::bind(&S3PutChunkUploadObjectAction::next, this),
+        std::bind(&S3PutChunkUploadObjectAction::create_object_failed, this));
   } else {
-    s3_log(S3_LOG_WARN, "Bucket [%s] not found\n", request->get_bucket_name().c_str());
+    s3_log(S3_LOG_WARN, "Bucket [%s] not found\n",
+           request->get_bucket_name().c_str());
     request->resume();
     send_response_to_s3_client();
   }
@@ -148,7 +159,8 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
     }
   } else {
     create_object_timer.stop();
-    LOG_PERF("create_object_failed_ms", create_object_timer.elapsed_time_in_millisec());
+    LOG_PERF("create_object_failed_ms",
+             create_object_timer.elapsed_time_in_millisec());
     s3_stats_timing("chunkupload_create_object_failed",
                     create_object_timer.elapsed_time_in_millisec());
 
@@ -225,13 +237,16 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
       std::bind(&S3PutChunkUploadObjectAction::rollback_create, this));
 
   create_object_timer.stop();
-  LOG_PERF("create_object_successful_ms", create_object_timer.elapsed_time_in_millisec());
+  LOG_PERF("create_object_successful_ms",
+           create_object_timer.elapsed_time_in_millisec());
   s3_stats_timing("chunkupload_create_object_success",
                   create_object_timer.elapsed_time_in_millisec());
 
   total_data_to_stream = request->get_data_length();
   if (!S3Option::get_instance()->is_auth_disabled()) {
-    get_auth_client()->init_chunk_auth_cycle(std::bind( &S3PutChunkUploadObjectAction::chunk_auth_successful, this), std::bind( &S3PutChunkUploadObjectAction::chunk_auth_failed, this));
+    get_auth_client()->init_chunk_auth_cycle(
+        std::bind(&S3PutChunkUploadObjectAction::chunk_auth_successful, this),
+        std::bind(&S3PutChunkUploadObjectAction::chunk_auth_failed, this));
   }
 
   if (total_data_to_stream == 0) {
@@ -244,9 +259,9 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
       s3_log(S3_LOG_DEBUG, "We do not have all the data, start listening...\n");
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
-          std::bind(&S3PutChunkUploadObjectAction::consume_incoming_content, this),
-          S3Option::get_instance()->get_clovis_write_payload_size()
-        );
+          std::bind(&S3PutChunkUploadObjectAction::consume_incoming_content,
+                    this),
+          S3Option::get_instance()->get_clovis_write_payload_size());
     }
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -262,14 +277,17 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
   }
   if (!request->get_buffered_input().is_freezed() &&
       request->get_buffered_input().length() >=
-      (S3Option::get_instance()->get_clovis_write_payload_size() * S3Option::get_instance()->get_read_ahead_multiple())) {
-    s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n", request->get_buffered_input().length());
+          (S3Option::get_instance()->get_clovis_write_payload_size() *
+           S3Option::get_instance()->get_read_ahead_multiple())) {
+    s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n",
+           request->get_buffered_input().length());
     request->pause();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3PutChunkUploadObjectAction::write_object(S3AsyncBufferContainer& buffer) {
+void S3PutChunkUploadObjectAction::write_object(
+    S3AsyncBufferContainer& buffer) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   // Also send any ready chunk data for auth
   while (request->is_chunk_detail_ready()) {
@@ -279,16 +297,21 @@ void S3PutChunkUploadObjectAction::write_object(S3AsyncBufferContainer& buffer) 
     if (!S3Option::get_instance()->is_auth_disabled()) {
       if (detail.get_size() == 0) {
         // Last chunk is size 0
-        get_auth_client()->add_last_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+        get_auth_client()->add_last_checksum_for_chunk(
+            detail.get_signature(), detail.get_payload_hash());
       } else {
-        get_auth_client()->add_checksum_for_chunk(detail.get_signature(), detail.get_payload_hash());
+        get_auth_client()->add_checksum_for_chunk(detail.get_signature(),
+                                                  detail.get_payload_hash());
       }
       auth_in_progress = true;  // this triggers auth
     }
   }
   clovis_write_in_progress = true;
 
-  clovis_writer->write_content(std::bind( &S3PutChunkUploadObjectAction::write_object_successful, this), std::bind( &S3PutChunkUploadObjectAction::write_object_failed, this), buffer);
+  clovis_writer->write_content(
+      std::bind(&S3PutChunkUploadObjectAction::write_object_successful, this),
+      std::bind(&S3PutChunkUploadObjectAction::write_object_failed, this),
+      buffer);
 
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -308,12 +331,18 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     return;
   }
 
-  if (/* buffered data len is at least equal max we can write to clovis in one write */
-      request->get_buffered_input().length() > S3Option::get_instance()->get_clovis_write_payload_size()
-      || /* we have all the data buffered and ready to write */
-      (request->get_buffered_input().is_freezed() && request->get_buffered_input().length() > 0)) {
+  if (/* buffered data len is at least equal max we can write to clovis in one
+         write */
+      request->get_buffered_input().length() >
+          S3Option::get_instance()
+              ->get_clovis_write_payload_size() || /* we have all the data
+                                                      buffered and ready to
+                                                      write */
+      (request->get_buffered_input().is_freezed() &&
+       request->get_buffered_input().length() > 0)) {
     write_object(request->get_buffered_input());
-  } else if (request->get_buffered_input().is_freezed() && request->get_buffered_input().length() == 0) {
+  } else if (request->get_buffered_input().is_freezed() &&
+             request->get_buffered_input().length() == 0) {
     clovis_write_completed = true;
     if (request->is_chunked()) {
       if (auth_completed) {
@@ -322,7 +351,8 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     } else {
       next();
     }
-  } if (!request->get_buffered_input().is_freezed()) {
+  }
+  if (!request->get_buffered_input().is_freezed()) {
     // else we wait for more incoming data
     request->resume();
   }
@@ -354,10 +384,10 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   object_metadata->set_content_length(request->get_data_length_str());
   object_metadata->set_md5(clovis_writer->get_content_md5());
   object_metadata->set_oid(clovis_writer->get_oid());
-  for (auto it: request->get_in_headers_copy()) {
+  for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
       s3_log(S3_LOG_DEBUG, "Writing user metadata on object: [%s] -> [%s]\n",
-          it.first.c_str(), it.second.c_str());
+             it.first.c_str(), it.second.c_str());
       object_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
@@ -386,36 +416,46 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (auth_failed) {
     // Invalid Bucket Name
-    S3Error error("SignatureDoesNotMatch", request->get_request_id(), request->get_object_uri());
+    S3Error error("SignatureDoesNotMatch", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
-    S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
+    S3Error error("NoSuchBucket", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (clovis_writer && clovis_writer->get_state() == S3ClovisWriterOpState::failed) {
-    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+  } else if (clovis_writer &&
+             clovis_writer->get_state() == S3ClovisWriterOpState::failed) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata && object_metadata->get_state() == S3ObjectMetadataState::saved) {
+  } else if (object_metadata &&
+             object_metadata->get_state() == S3ObjectMetadataState::saved) {
     request->set_out_header_value("ETag", clovis_writer->get_content_md5());
 
     request->send_response(S3HttpSuccess200);
   } else {
-    S3Error error("InternalError", request->get_request_id(), request->get_object_uri());
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   }

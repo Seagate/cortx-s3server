@@ -27,10 +27,9 @@
 #include "s3_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
-#include "s3_object_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_object_metadata.h"
 #include "s3_timer.h"
-
 
 class S3PutObjectAction : public S3Action {
   struct m0_uint128 oid;

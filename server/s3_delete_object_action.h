@@ -26,9 +26,9 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
-#include "s3_object_metadata.h"
 #include "s3_clovis_writer.h"
 #include "s3_log.h"
+#include "s3_object_metadata.h"
 
 class S3DeleteObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;

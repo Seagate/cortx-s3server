@@ -22,10 +22,10 @@
 #ifndef __MERO_FE_S3_SERVER_S3_OBJECT_LIST_RESPONSE_H__
 #define __MERO_FE_S3_SERVER_S3_OBJECT_LIST_RESPONSE_H__
 
-#include <string>
 #include <memory>
-#include <vector>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
@@ -55,7 +55,7 @@ class S3ObjectListResponse {
   std::string max_parts;
   std::string next_marker_uploadid;
 
-public:
+ public:
   S3ObjectListResponse();
 
   void set_bucket_name(std::string name);

@@ -38,7 +38,7 @@ void S3ObjectAPIHandler::dispatch() {
 
   s3_log(S3_LOG_DEBUG, "Operation code = %d\n", operation_code);
 
-  switch(operation_code) {
+  switch (operation_code) {
     case S3OperationCode::acl:
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
@@ -101,7 +101,8 @@ void S3ObjectAPIHandler::dispatch() {
           s3_stats_inc("head_object_request_count");
           break;
         case S3HttpVerb::PUT:
-          if (request->get_header_value("x-amz-content-sha256") == "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
+          if (request->get_header_value("x-amz-content-sha256") ==
+              "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
             // chunk upload
             action = std::make_shared<S3PutChunkUploadObjectAction>(request);
             s3_stats_inc("put_object_chunkupload_request_count");
