@@ -22,16 +22,16 @@
 #ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_WRITER_H__
 #define __MERO_FE_S3_SERVER_S3_CLOVIS_WRITER_H__
 
-#include <memory>
 #include <deque>
 #include <functional>
+#include <memory>
 
-#include "s3_request_object.h"
+#include "s3_asyncop_context_base.h"
 #include "s3_clovis_context.h"
 #include "s3_clovis_wrapper.h"
-#include "s3_asyncop_context_base.h"
-#include "s3_md5_hash.h"
 #include "s3_log.h"
+#include "s3_md5_hash.h"
+#include "s3_request_object.h"
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
@@ -42,8 +42,13 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   bool has_clovis_rw_op_context;
 
-public:
-  S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req, std::function<void()> success_callback, std::function<void()> failed_callback, int ops_count = 1) : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count) {
+ public:
+  S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req,
+                        std::function<void()> success_callback,
+                        std::function<void()> failed_callback,
+                        int ops_count = 1)
+      : S3AsyncOpContextBase(req, success_callback, failed_callback,
+                             ops_count) {
     s3_log(S3_LOG_DEBUG, "Constructor\n");
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(ops_count);
@@ -76,7 +81,6 @@ public:
   struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
     return clovis_rw_op_context;
   }
-
 };
 
 enum class S3ClovisWriterOpState {
@@ -85,12 +89,12 @@ enum class S3ClovisWriterOpState {
   created,
   saved,
   deleted,
-  exists,  // Object already exists
+  exists,   // Object already exists
   missing,  // Object does not exists
 };
 
 class S3ClovisWriter {
-private:
+ private:
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisWriterContext> writer_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -107,7 +111,7 @@ private:
   uint64_t last_index;
 
   // md5 for the content written to clovis.
-  MD5hash  md5crypt;
+  MD5hash md5crypt;
 
   // TODO remove, just for debugging.
   size_t total_written;
@@ -116,22 +120,20 @@ private:
 
   // helper to set mock clovis apis, only used in tests.
   void reset_clovis_api(std::shared_ptr<ClovisAPI> api);
-public:
-  //struct m0_uint128 id;
-  S3ClovisWriter(std::shared_ptr<S3RequestObject> req, struct m0_uint128 object_id, uint64_t offset = 0);
+
+ public:
+  // struct m0_uint128 id;
+  S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
+                 struct m0_uint128 object_id, uint64_t offset = 0);
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0);
 
-  S3ClovisWriterOpState get_state() {
-    return state;
-  }
+  S3ClovisWriterOpState get_state() { return state; }
 
   struct m0_uint128 get_oid() {
     return oid;
   }
 
-  void set_oid(struct m0_uint128 id) {
-    oid = id;
-  }
+  void set_oid(struct m0_uint128 id) { oid = id; }
 
   // This concludes the md5 calculation
   std::string get_content_md5() {
@@ -140,27 +142,33 @@ public:
       md5crypt.Finalize();
       content_md5 = md5crypt.get_md5_string();
     }
-    s3_log(S3_LOG_DEBUG, "content_md5 of data written = %s\n", content_md5.c_str());
+    s3_log(S3_LOG_DEBUG, "content_md5 of data written = %s\n",
+           content_md5.c_str());
     return content_md5;
   }
 
   // async create
-  void create_object(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void create_object(std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed);
   void create_object_successful();
   void create_object_failed();
 
   // Async save operation.
-  void write_content(std::function<void(void)> on_success, std::function<void(void)> on_failed,
-      S3AsyncBufferContainer& buffer);
+  void write_content(std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed,
+                     S3AsyncBufferContainer& buffer);
   void write_content_successful();
   void write_content_failed();
 
   // Async delete operation.
-  void delete_object(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_object(std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed);
   void delete_object_successful();
   void delete_object_failed();
 
-  void delete_objects(std::vector<struct m0_uint128> oids, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_objects(std::vector<struct m0_uint128> oids,
+                      std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
   void delete_objects_successful();
   void delete_objects_failed();
 
@@ -169,8 +177,10 @@ public:
   }
 
   // xxx remove this
-  void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
-      std::deque< std::tuple<void*, size_t> >& data_items, size_t clovis_block_count);
+  void set_up_clovis_data_buffers(
+      struct s3_clovis_rw_op_context* rw_ctx,
+      std::deque<std::tuple<void*, size_t> >& data_items,
+      size_t clovis_block_count);
 };
 
 #endif

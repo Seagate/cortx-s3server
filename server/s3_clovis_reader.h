@@ -23,14 +23,14 @@
 #ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_READER_H__
 #define __MERO_FE_S3_SERVER_S3_CLOVIS_READER_H__
 
-#include <memory>
 #include <functional>
+#include <memory>
 
-#include "s3_request_object.h"
-#include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_clovis_context.h"
 #include "s3_clovis_wrapper.h"
 #include "s3_log.h"
+#include "s3_request_object.h"
 
 extern S3Option* g_option_instance;
 
@@ -43,10 +43,11 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   bool has_clovis_rw_op_context;
 
-public:
+ public:
   S3ClovisReaderContext(std::shared_ptr<S3RequestObject> req,
-      std::function<void()> success_callback, std::function<void()> failed_callback) :
-      S3AsyncOpContextBase(req, success_callback, failed_callback) {
+                        std::function<void()> success_callback,
+                        std::function<void()> failed_callback)
+      : S3AsyncOpContextBase(req, success_callback, failed_callback) {
     s3_log(S3_LOG_DEBUG, "Constructor\n");
 
     // Create or write, we need op context
@@ -74,7 +75,7 @@ public:
     has_clovis_rw_op_context = true;
 
     for (size_t i = 0; i < clovis_block_count; i++) {
-      clovis_rw_op_context->ext->iv_index[i] = last_index ;
+      clovis_rw_op_context->ext->iv_index[i] = last_index;
       clovis_rw_op_context->ext->iv_vec.v_count[i] =
           g_option_instance->get_clovis_block_size();
       last_index += g_option_instance->get_clovis_block_size();
@@ -97,7 +98,6 @@ public:
     has_clovis_rw_op_context = false;  // release ownership, caller should free.
     return clovis_rw_op_context;
   }
-
 };
 
 enum class S3ClovisReaderOpState {
@@ -108,7 +108,7 @@ enum class S3ClovisReaderOpState {
 };
 
 class S3ClovisReader {
-private:
+ private:
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisReaderContext> reader_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -129,23 +129,25 @@ private:
 
   uint64_t last_index;
 
-public:
-  //struct m0_uint128 id;
-  //object id for object is generated within this constructor
-  S3ClovisReader(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api);
-  //object id is generated at upper level and passed to this constructor
-  S3ClovisReader(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api, struct m0_uint128 id);
-  S3ClovisReaderOpState get_state() {
-    return state;
-  }
+ public:
+  // struct m0_uint128 id;
+  // object id for object is generated within this constructor
+  S3ClovisReader(std::shared_ptr<S3RequestObject> req,
+                 std::shared_ptr<ClovisAPI> clovis_api);
+  // object id is generated at upper level and passed to this constructor
+  S3ClovisReader(std::shared_ptr<S3RequestObject> req,
+                 std::shared_ptr<ClovisAPI> clovis_api, struct m0_uint128 id);
+  S3ClovisReaderOpState get_state() { return state; }
 
   void set_oid(struct m0_uint128 id) {
-    //TODO
+    // TODO
     // oid = id;
   }
 
   // async read
-  void read_object_data(size_t num_of_blocks, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void read_object_data(size_t num_of_blocks,
+                        std::function<void(void)> on_success,
+                        std::function<void(void)> on_failed);
   void read_object_data_successful();
   void read_object_data_failed();
 
@@ -157,7 +159,8 @@ public:
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisReaderTest, Constructor);
-  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataSuccessStatusAndSuccessCallback);
+  FRIEND_TEST(S3ClovisReaderTest,
+              ReadObjectDataSuccessStatusAndSuccessCallback);
 };
 
 #endif

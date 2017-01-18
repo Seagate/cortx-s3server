@@ -28,23 +28,26 @@
 #include <utility>
 #include <vector>
 
-#include "s3_request_object.h"
-#include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_clovis_context.h"
 #include "s3_clovis_wrapper.h"
 #include "s3_log.h"
+#include "s3_request_object.h"
 
 class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_idx_op_context *clovis_idx_op_context;
+  struct s3_clovis_idx_op_context* clovis_idx_op_context;
   bool has_clovis_idx_op_context;
 
   // Read/Write Operation context.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
 
-public:
-  S3ClovisKVSReaderContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+ public:
+  S3ClovisKVSReaderContext(std::shared_ptr<S3RequestObject> req,
+                           std::function<void()> success_callback,
+                           std::function<void()> failed_callback)
+      : S3AsyncOpContextBase(req, success_callback, failed_callback) {
     s3_log(S3_LOG_DEBUG, "Constructor\n");
 
     // Create or write, we need op context
@@ -58,7 +61,7 @@ public:
   ~S3ClovisKVSReaderContext() {
     s3_log(S3_LOG_DEBUG, "Destructor\n");
 
-    if(has_clovis_idx_op_context) {
+    if (has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }
     if (has_clovis_kvs_op_context) {
@@ -79,7 +82,6 @@ public:
   struct s3_clovis_kvs_op_context* get_clovis_kvs_op_ctx() {
     return clovis_kvs_op_context;
   }
-
 };
 
 enum class S3ClovisKVSReaderOpState {
@@ -90,7 +92,7 @@ enum class S3ClovisKVSReaderOpState {
 };
 
 class S3ClovisKVSReader {
-private:
+ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
@@ -112,13 +114,11 @@ private:
   std::map<std::string, std::pair<int, std::string>> last_result_keys_values;
   size_t iteration_index;
 
-public:
- S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
-                   std::shared_ptr<ClovisAPI> s3_clovis_api);
+ public:
+  S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
+                    std::shared_ptr<ClovisAPI> s3_clovis_api);
 
-  S3ClovisKVSReaderOpState get_state() {
-    return state;
-  }
+  S3ClovisKVSReaderOpState get_state() { return state; }
 
   // Async get operation.
   // Note -- get_keyval() is called with oid of index
@@ -126,23 +126,31 @@ public:
   // std::function<void(void)> on_success, std::function<void(void)> on_failed);
   // void get_keyval(std::string index_name, std::string key,
   // std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void get_keyval(struct m0_uint128 oid, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void get_keyval(struct m0_uint128 oid, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void get_keyval(struct m0_uint128 oid, std::vector<std::string> keys,
+                  std::function<void(void)> on_success,
+                  std::function<void(void)> on_failed);
+  void get_keyval(struct m0_uint128 oid, std::string key,
+                  std::function<void(void)> on_success,
+                  std::function<void(void)> on_failed);
 
   void get_keyval_successful();
   void get_keyval_failed();
 
-  // When looking up for just one KV, use this else for multiple use get_key_values
-  std::string get_value() {
-    return last_value;
-  }
+  // When looking up for just one KV, use this else for multiple use
+  // get_key_values
+  std::string get_value() { return last_value; }
 
   // Used to iterate over the key-value pairs.
-  // If the input key is empty string "", it returns the first count key-value pairs
+  // If the input key is empty string "", it returns the first count key-value
+  // pairs
   // If input key is specified, it returns the next count key-value pairs
   // Async call resutls can be accessed using get_values()
-  void next_keyval(struct m0_uint128 idx_oid, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void next_keyval(std::string index_name, std::string key, size_t nr_kvp, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void next_keyval(struct m0_uint128 idx_oid, std::string key, size_t nr_kvp,
+                   std::function<void(void)> on_success,
+                   std::function<void(void)> on_failed);
+  void next_keyval(std::string index_name, std::string key, size_t nr_kvp,
+                   std::function<void(void)> on_success,
+                   std::function<void(void)> on_failed);
   void next_keyval_successful();
   void next_keyval_failed();
 
@@ -150,7 +158,6 @@ public:
   std::map<std::string, std::pair<int, std::string>>& get_key_values() {
     return last_result_keys_values;
   }
-
 };
 
 #endif

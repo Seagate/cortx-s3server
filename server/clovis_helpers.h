@@ -24,26 +24,25 @@
 #define __MERO_FE_S3_SERVER_CLOVIS_HELPERS_H__
 
 #ifdef __cplusplus
-#define EXTERN_C_BLOCK_BEGIN    extern "C" {
-#define EXTERN_C_BLOCK_END      }
-#define EXTERN_C_FUNC           extern "C"
+#define EXTERN_C_BLOCK_BEGIN extern "C" {
+#define EXTERN_C_BLOCK_END }
+#define EXTERN_C_FUNC extern "C"
 #else
 #define EXTERN_C_BLOCK_BEGIN
 #define EXTERN_C_BLOCK_END
 #define EXTERN_C_FUNC
 #endif
 
-
 EXTERN_C_BLOCK_BEGIN
 
+#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <errno.h>
 
-#include <sys/stat.h>
 #include <math.h>
+#include <sys/stat.h>
 
 #include "clovis/clovis.h"
 #include "clovis/clovis_idx.h"

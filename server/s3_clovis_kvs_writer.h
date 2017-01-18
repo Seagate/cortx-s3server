@@ -23,27 +23,32 @@
 #ifndef __MERO_FE_S3_SERVER_S3_CLOVIS_KVS_WRITER_H__
 #define __MERO_FE_S3_SERVER_S3_CLOVIS_KVS_WRITER_H__
 
-#include <memory>
-#include <functional>
 #include <gtest/gtest_prod.h>
+#include <functional>
+#include <memory>
 
-#include "s3_request_object.h"
-#include "s3_clovis_context.h"
 #include "s3_asyncop_context_base.h"
+#include "s3_clovis_context.h"
 #include "s3_clovis_wrapper.h"
 #include "s3_log.h"
+#include "s3_request_object.h"
 
 class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_idx_op_context *clovis_idx_op_context;
+  struct s3_clovis_idx_op_context* clovis_idx_op_context;
   bool has_clovis_idx_op_context;
 
   // Read/Write Operation context.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
 
-public:
-  S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,std::function<void()> success_callback, std::function<void()> failed_callback, int ops_count = 1) : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count) {
+ public:
+  S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,
+                           std::function<void()> success_callback,
+                           std::function<void()> failed_callback,
+                           int ops_count = 1)
+      : S3AsyncOpContextBase(req, success_callback, failed_callback,
+                             ops_count) {
     s3_log(S3_LOG_DEBUG, "Constructor\n");
     // Create or write, we need op context
     clovis_idx_op_context = create_basic_idx_op_ctx(ops_count);
@@ -54,7 +59,7 @@ public:
 
   ~S3ClovisKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, "Destructor\n");
-    if(has_clovis_idx_op_context) {
+    if (has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }
     if (has_clovis_kvs_op_context) {
@@ -75,7 +80,6 @@ public:
   struct s3_clovis_kvs_op_context* get_clovis_kvs_op_ctx() {
     return clovis_kvs_op_context;
   }
-
 };
 
 enum class S3ClovisKVSWriterOpState {
@@ -84,12 +88,12 @@ enum class S3ClovisKVSWriterOpState {
   created,
   saved,
   deleted,
-  exists,  // Object already exists
+  exists,   // Object already exists
   missing,  // Object does not exists
 };
 
 class S3ClovisKVSWriter {
-private:
+ private:
   struct m0_uint128 id;
 
   std::shared_ptr<S3RequestObject> request;
@@ -117,19 +121,20 @@ private:
   //--
 
  public:
-  S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> s3_clovis_api);
+  S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
+                    std::shared_ptr<ClovisAPI> s3_clovis_api);
   virtual ~S3ClovisKVSWriter();
 
-  S3ClovisKVSWriterOpState get_state() {
-    return state;
-  }
+  S3ClovisKVSWriterOpState get_state() { return state; }
 
   struct m0_uint128 get_oid() {
     return id;
   }
 
   // async create
-  void create_index(std::string index_name,std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void create_index(std::string index_name,
+                    std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void create_index_successful();
   void create_index_failed();
 
@@ -138,38 +143,55 @@ private:
                              std::function<void(void)> on_failed);
 
   // async delete
-  void delete_index(struct m0_uint128 idx_oid, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void delete_index(std::string index_name,std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_index(struct m0_uint128 idx_oid,
+                    std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
+  void delete_index(std::string index_name,
+                    std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void delete_index_successful();
   void delete_index_failed();
 
-  void delete_indexes(std::vector<struct m0_uint128> oids, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_indexes(std::vector<struct m0_uint128> oids,
+                      std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
   void delete_indexes_successful();
   void delete_indexes_failed();
 
-
   // Async save operation.
-  void put_keyval(std::string index_name, std::string key, std::string val, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void put_keyval(struct m0_uint128 oid, std::string key, std::string  val, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void put_keyval(std::string index_name, std::string key, std::string val,
+                  std::function<void(void)> on_success,
+                  std::function<void(void)> on_failed);
+  void put_keyval(struct m0_uint128 oid, std::string key, std::string val,
+                  std::function<void(void)> on_success,
+                  std::function<void(void)> on_failed);
   void put_keyval_successful();
   void put_keyval_failed();
 
   // Async delete operation.
-  void delete_keyval(std::string index_name, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void delete_keyval(struct m0_uint128 oid, std::string key, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_keyval(std::string index_name, std::string key,
+                     std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed);
+  void delete_keyval(struct m0_uint128 oid, std::string key,
+                     std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed);
 
-  void delete_keyval(std::string index_name, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void delete_keyval(struct m0_uint128 oid, std::vector<std::string> keys, std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void delete_keyval(std::string index_name, std::vector<std::string> keys,
+                     std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed);
+  void delete_keyval(struct m0_uint128 oid, std::vector<std::string> keys,
+                     std::function<void(void)> on_success,
+                     std::function<void(void)> on_failed);
 
   void delete_keyval_successful();
   void delete_keyval_failed();
 
-  void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx, std::string key, std::string val);
+  void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx,
+                              std::string key, std::string val);
 
   int get_op_ret_code_for(int index) {
     return writer_context->get_errno_for(index);
   }
-
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisKvsWritterTest, Constructor);
