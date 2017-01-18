@@ -22,26 +22,26 @@
 #ifndef __MERO_FE_S3_SERVER_S3_BUCKET_METADATA_H__
 #define __MERO_FE_S3_SERVER_S3_BUCKET_METADATA_H__
 
-#include <string>
+#include <functional>
 #include <map>
 #include <memory>
-#include <functional>
+#include <string>
 
-#include "s3_request_object.h"
+#include "s3_account_user_index_metadata.h"
 #include "s3_bucket_acl.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_log.h"
 #include "s3_request_object.h"
-#include "s3_account_user_index_metadata.h"
+#include "s3_request_object.h"
 
 enum class S3BucketMetadataState {
-  empty,    // Initial state, no lookup done
-  fetching, // Loading in progress
-  present,  // Metadata exists and was read successfully
-  missing,  // Metadata not present in store.
-  saving,   // Save is in progress
-  saved,    // Metadata saved to store.
+  empty,     // Initial state, no lookup done
+  fetching,  // Loading in progress
+  present,   // Metadata exists and was read successfully
+  missing,   // Metadata not present in store.
+  saving,    // Save is in progress
+  saved,     // Metadata saved to store.
   deleting,
   deleted,  // Metadata deleted from store
   failed
@@ -50,7 +50,7 @@ enum class S3BucketMetadataState {
 class S3BucketMetadata {
   // Holds mainly system-defined metadata (creation date etc)
   // Partially supported on need bases, some of these are placeholders
-private:
+ private:
   std::string account_name;
   std::string user_name;
   std::string salted_index_name;
@@ -88,7 +88,7 @@ private:
 
   std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
 
-private:
+ private:
   std::string get_account_user_index_name() {
     return "ACCOUNTUSER/" + account_name + "/" + user_name;
   }
@@ -156,19 +156,22 @@ private:
   void add_system_attribute(std::string key, std::string val);
   void add_user_defined_attribute(std::string key, std::string val);
 
-  void load(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void load(std::function<void(void)> on_success,
+            std::function<void(void)> on_failed);
   void load_successful();
   void load_failed();
 
-  void save(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void save(std::function<void(void)> on_success,
+            std::function<void(void)> on_failed);
   void save_successful();
   void save_failed();
 
-  void setpolicy(std::string & policy_str);
+  void setpolicy(std::string& policy_str);
   void deletepolicy();
-  void setacl(std::string & acl_str);
+  void setacl(std::string& acl_str);
 
-  void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void remove(std::function<void(void)> on_success,
+              std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
 
@@ -176,9 +179,7 @@ private:
   // void save_idx_metadata_successful();
   // void save_idx_metadata_failed();
 
-  S3BucketMetadataState get_state() {
-    return state;
-  }
+  S3BucketMetadataState get_state() { return state; }
 
   // Streaming to json
   std::string to_json();

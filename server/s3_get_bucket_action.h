@@ -26,8 +26,8 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
-#include "s3_object_list_response.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_object_list_response.h"
 
 class S3GetBucketAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -53,7 +53,7 @@ class S3GetBucketAction : public S3Action {
   std::string request_marker_key;
   size_t max_keys;
 
-public:
+ public:
   S3GetBucketAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

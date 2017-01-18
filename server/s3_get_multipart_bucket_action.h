@@ -26,8 +26,8 @@
 #include <memory>
 
 #include "s3_action_base.h"
-#include "s3_object_list_response.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_object_list_response.h"
 
 class S3GetMultipartBucketAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
@@ -51,7 +51,7 @@ class S3GetMultipartBucketAction : public S3Action {
   std::string request_marker_uploadid;
   size_t max_uploads;
 
-public:
+ public:
   S3GetMultipartBucketAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

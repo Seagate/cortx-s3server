@@ -19,27 +19,21 @@
  */
 
 #include "s3_bucket_acl.h"
-#include "s3_log.h"
-#include <json/json.h>
-#include "base64.h"
 #include <assert.h>
+#include <json/json.h>
 #include <string.h>
+#include "base64.h"
+#include "s3_log.h"
 
-S3BucketACL::S3BucketACL(): acl_xml_str(""), acl_metadata("") {}
+S3BucketACL::S3BucketACL() : acl_xml_str(""), acl_metadata("") {}
 
-void S3BucketACL::set_owner_id(std::string id) {
-  owner_id = id;
-}
+void S3BucketACL::set_owner_id(std::string id) { owner_id = id; }
 
-void S3BucketACL::set_owner_name(std::string name) {
-  owner_name = name;
-}
+void S3BucketACL::set_owner_name(std::string name) { owner_name = name; }
 
 void S3BucketACL::set_display_name(std::string name) { display_name = name; }
 
-std::string S3BucketACL::get_owner_name() {
-  return owner_name;
-}
+std::string S3BucketACL::get_owner_name() { return owner_name; }
 
 void S3BucketACL::from_json(std::string acl_json_str) {
   s3_log(S3_LOG_DEBUG, "Called\n");
@@ -47,13 +41,9 @@ void S3BucketACL::from_json(std::string acl_json_str) {
   acl_xml_str = base64_decode(acl_metadata);
 }
 
-std::string& S3BucketACL::get_xml_str() {
-  return acl_xml_str;
-}
+std::string &S3BucketACL::get_xml_str() { return acl_xml_str; }
 
-std::string& S3BucketACL::get_acl_metadata() {
-  return acl_metadata;
-}
+std::string &S3BucketACL::get_acl_metadata() { return acl_metadata; }
 
 std::string S3BucketACL::insert_display_name(std::string acl_str) {
   char *acl = (char *)acl_str.c_str();
@@ -61,7 +51,7 @@ std::string S3BucketACL::insert_display_name(std::string acl_str) {
   char *partial_acl;
   std::string final_acl;
   // TODO -- XML parsing to be used when authorization supports "Display name"
-  while((partial_acl = strstr(acl, "</ID>"))) {
+  while ((partial_acl = strstr(acl, "</ID>"))) {
     memset(partial_acl_str, '\0', acl_str.length());
     // Get DisplayName by querying the auth server
     if (partial_acl[5] == '\n') {

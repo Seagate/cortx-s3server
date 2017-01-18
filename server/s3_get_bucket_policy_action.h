@@ -30,7 +30,7 @@
 class S3GetBucketPolicyAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
-public:
+ public:
   S3GetBucketPolicyAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

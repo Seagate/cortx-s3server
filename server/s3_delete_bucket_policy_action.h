@@ -38,7 +38,7 @@ class S3DeleteBucketPolicyAction : public S3Action {
     return "BUCKET/" + request->get_bucket_name();
   }
 
-public:
+ public:
   S3DeleteBucketPolicyAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

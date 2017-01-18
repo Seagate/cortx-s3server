@@ -21,15 +21,18 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3GetBucketPolicyAction::S3GetBucketPolicyAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3GetBucketPolicyAction::S3GetBucketPolicyAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
-void S3GetBucketPolicyAction::setup_steps(){
+void S3GetBucketPolicyAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
-  add_task(std::bind( &S3GetBucketPolicyAction::get_metadata, this ));
-  add_task(std::bind( &S3GetBucketPolicyAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3GetBucketPolicyAction::get_metadata, this));
+  add_task(
+      std::bind(&S3GetBucketPolicyAction::send_response_to_s3_client, this));
   // ...
 }
 
@@ -58,28 +61,34 @@ void S3GetBucketPolicyAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
+    S3Error error("NoSuchBucket", request->get_request_id(),
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string response_json = bucket_metadata->get_policy_as_json();
     if (response_json.empty()) {
-      S3Error error("NoSuchBucketPolicy", request->get_request_id(), request->get_bucket_name());
+      S3Error error("NoSuchBucketPolicy", request->get_request_id(),
+                    request->get_bucket_name());
       std::string& response_xml = error.to_xml();
       request->set_out_header_value("Content-Type", "application/xml");
-      request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+      request->set_out_header_value("Content-Length",
+                                    std::to_string(response_xml.length()));
       request->send_response(error.get_http_status_code(), response_xml);
     } else {
       request->send_response(S3HttpSuccess200, response_json);
     }
   } else {
-    S3Error error("InternalError", request->get_request_id(), request->get_bucket_name());
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();

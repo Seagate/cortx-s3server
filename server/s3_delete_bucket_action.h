@@ -36,7 +36,7 @@ class S3DeleteBucketAction : public S3Action {
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::map<std::string, std::string>::iterator multipart_kv;
-  std::map <std::string, std::string> multipart_objects;
+  std::map<std::string, std::string> multipart_objects;
   std::vector<struct m0_uint128> part_oids;
   std::vector<struct m0_uint128> multipart_object_oids;
   m0_uint128 object_list_index_oid;
@@ -56,7 +56,7 @@ class S3DeleteBucketAction : public S3Action {
     return "BUCKET/" + request->get_bucket_name() + "/Multipart";
   }
 
-public:
+ public:
   S3DeleteBucketAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

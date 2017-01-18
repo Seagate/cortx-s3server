@@ -21,15 +21,18 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3GetBucketlocationAction::S3GetBucketlocationAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3GetBucketlocationAction::S3GetBucketlocationAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
-void S3GetBucketlocationAction::setup_steps(){
+void S3GetBucketlocationAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
-  add_task(std::bind( &S3GetBucketlocationAction::get_metadata, this ));
-  add_task(std::bind( &S3GetBucketlocationAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3GetBucketlocationAction::get_metadata, this));
+  add_task(
+      std::bind(&S3GetBucketlocationAction::send_response_to_s3_client, this));
   // ...
 }
 
@@ -60,17 +63,22 @@ void S3GetBucketlocationAction::send_response_to_s3_client() {
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     std::string response_xml;
     response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-    response_xml += "<LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+    response_xml +=
+        "<LocationConstraint "
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
     response_xml += bucket_metadata->get_location_constraint();
     response_xml += "</LocationConstraint>";
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
-    S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
+    S3Error error("NoSuchBucket", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   }
 

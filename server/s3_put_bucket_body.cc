@@ -17,20 +17,19 @@
  * Original creation date: 1-Oct-2015
  */
 
-#include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
+#include <libxml/xmlmemory.h>
 
-#include "s3_put_bucket_body.h"
 #include "s3_log.h"
+#include "s3_put_bucket_body.h"
 
-S3PutBucketBody::S3PutBucketBody(std::string& xml) : xml_content(xml), is_valid(false) {
+S3PutBucketBody::S3PutBucketBody(std::string &xml)
+    : xml_content(xml), is_valid(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   parse_and_validate();
 }
 
-bool S3PutBucketBody::isOK() {
-  return is_valid;
-}
+bool S3PutBucketBody::isOK() { return is_valid; }
 
 bool S3PutBucketBody::parse_and_validate() {
   /* Sample body:
@@ -47,8 +46,8 @@ bool S3PutBucketBody::parse_and_validate() {
     return true;
   }
   s3_log(S3_LOG_DEBUG, "Parsing xml request = %s\n", xml_content.c_str());
-  xmlDocPtr document = xmlParseDoc((const xmlChar*)xml_content.c_str());
-  if (document == NULL ) {
+  xmlDocPtr document = xmlParseDoc((const xmlChar *)xml_content.c_str());
+  if (document == NULL) {
     s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
     is_valid = false;
     return false;
@@ -57,7 +56,9 @@ bool S3PutBucketBody::parse_and_validate() {
   xmlNodePtr root_node = xmlDocGetRootElement(document);
 
   // Validate the root node
-  if (root_node == NULL || xmlStrcmp(root_node->name, (const xmlChar *)"CreateBucketConfiguration")) {
+  if (root_node == NULL ||
+      xmlStrcmp(root_node->name,
+                (const xmlChar *)"CreateBucketConfiguration")) {
     s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
     xmlFreeDoc(document);
     is_valid = false;
@@ -68,7 +69,7 @@ bool S3PutBucketBody::parse_and_validate() {
   xmlNodePtr child = root_node->xmlChildrenNode;
   xmlChar *key = NULL;
   while (child != NULL) {
-    if ((!xmlStrcmp(child->name, (const xmlChar *)"LocationConstraint"))){
+    if ((!xmlStrcmp(child->name, (const xmlChar *)"LocationConstraint"))) {
       key = xmlNodeGetContent(child);
       if (key == NULL) {
         s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
@@ -77,7 +78,7 @@ bool S3PutBucketBody::parse_and_validate() {
         is_valid = false;
         return false;
       }
-      location_constraint = (char*)key;
+      location_constraint = (char *)key;
       is_valid = true;
       xmlFree(key);
       break;

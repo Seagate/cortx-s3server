@@ -17,23 +17,23 @@
  * Original creation date: 19-May-2016
  */
 
-#include "s3_bucket_acl.h"
 #include "s3_put_bucket_acl_action.h"
+#include "s3_bucket_acl.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3PutBucketACLAction::S3PutBucketACLAction(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
+S3PutBucketACLAction::S3PutBucketACLAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   setup_steps();
 }
 
-void S3PutBucketACLAction::setup_steps(){
+void S3PutBucketACLAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind(&S3PutBucketACLAction::validate_request, this));
-  add_task(std::bind( &S3PutBucketACLAction::get_metadata, this ));
-  add_task(std::bind( &S3PutBucketACLAction::setacl, this ));
-  add_task(std::bind( &S3PutBucketACLAction::send_response_to_s3_client, this ));
-
+  add_task(std::bind(&S3PutBucketACLAction::get_metadata, this));
+  add_task(std::bind(&S3PutBucketACLAction::setacl, this));
+  add_task(std::bind(&S3PutBucketACLAction::send_response_to_s3_client, this));
 }
 
 void S3PutBucketACLAction::validate_request() {
@@ -82,7 +82,8 @@ void S3PutBucketACLAction::validate_request_body(std::string content) {
 void S3PutBucketACLAction::get_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3PutBucketACLAction::next, this), std::bind( &S3PutBucketACLAction::next, this));
+  bucket_metadata->load(std::bind(&S3PutBucketACLAction::next, this),
+                        std::bind(&S3PutBucketACLAction::next, this));
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -95,7 +96,8 @@ void S3PutBucketACLAction::setacl() {
     bucket_metadata->setacl(new_bucket_acl);
     // bypass shutdown signal check for next task
     check_shutdown_signal_for_next_task(false);
-    bucket_metadata->save(std::bind( &S3PutBucketACLAction::next, this), std::bind( &S3PutBucketACLAction::next, this));
+    bucket_metadata->save(std::bind(&S3PutBucketACLAction::next, this),
+                          std::bind(&S3PutBucketACLAction::next, this));
   } else {
     send_response_to_s3_client();
   }
@@ -128,16 +130,20 @@ void S3PutBucketACLAction::send_response_to_s3_client() {
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::saved) {
     request->send_response(S3HttpSuccess200);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
+    S3Error error("NoSuchBucket", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
-    S3Error error("InternalError", request->get_request_id(), request->get_bucket_name());
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases

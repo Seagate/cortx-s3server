@@ -30,7 +30,7 @@ class S3PutBucketBody {
   std::string location_constraint;
   bool parse_and_validate();
 
-public:
+ public:
   S3PutBucketBody(std::string& xml);
   bool isOK();
   std::string get_location_constraint();

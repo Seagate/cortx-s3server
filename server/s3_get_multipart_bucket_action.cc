@@ -27,7 +27,13 @@
 #include "s3_object_metadata.h"
 #include "s3_option.h"
 
-S3GetMultipartBucketAction::S3GetMultipartBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), return_list_size(0), fetch_successful(false), last_uploadid("") {
+S3GetMultipartBucketAction::S3GetMultipartBucketAction(
+    std::shared_ptr<S3RequestObject> req)
+    : S3Action(req),
+      last_key(""),
+      return_list_size(0),
+      fetch_successful(false),
+      last_uploadid("") {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
@@ -41,7 +47,8 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(std::shared_ptr<S3Request
 
   request_marker_uploadid = request->get_query_string_value("upload-id-marker");
   multipart_object_list.set_request_marker_uploadid(request_marker_uploadid);
-  s3_log(S3_LOG_DEBUG, "request_marker_uploadid = %s\n", request_marker_uploadid.c_str());
+  s3_log(S3_LOG_DEBUG, "request_marker_uploadid = %s\n",
+         request_marker_uploadid.c_str());
   last_uploadid = request_marker_uploadid;
 
   setup_steps();
@@ -67,36 +74,44 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(std::shared_ptr<S3Request
   // TODO request param validations
 }
 
-void S3GetMultipartBucketAction::setup_steps(){
+void S3GetMultipartBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
-  add_task(std::bind( &S3GetMultipartBucketAction::fetch_bucket_info, this ));
-  if(!request_marker_uploadid.empty() && !request_marker_key.empty()) {
-    add_task(std::bind( &S3GetMultipartBucketAction::get_key_object, this ));
+  add_task(std::bind(&S3GetMultipartBucketAction::fetch_bucket_info, this));
+  if (!request_marker_uploadid.empty() && !request_marker_key.empty()) {
+    add_task(std::bind(&S3GetMultipartBucketAction::get_key_object, this));
   }
-  add_task(std::bind( &S3GetMultipartBucketAction::get_next_objects, this ));
-  add_task(std::bind( &S3GetMultipartBucketAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3GetMultipartBucketAction::get_next_objects, this));
+  add_task(
+      std::bind(&S3GetMultipartBucketAction::send_response_to_s3_client, this));
   // ...
 }
 
 void S3GetMultipartBucketAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3GetMultipartBucketAction::next, this), std::bind( &S3GetMultipartBucketAction::send_response_to_s3_client, this));
+  bucket_metadata->load(
+      std::bind(&S3GetMultipartBucketAction::next, this),
+      std::bind(&S3GetMultipartBucketAction::send_response_to_s3_client, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3GetMultipartBucketAction::get_key_object() {
   s3_log(S3_LOG_DEBUG, "Fetching multipart listing\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    struct m0_uint128  empty_indx_oid = {0ULL, 0ULL};
+    struct m0_uint128 empty_indx_oid = {0ULL, 0ULL};
     struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
-    // If the index oid is 0 in metadata then it implies that there is no multipart index
+    // If the index oid is 0 in metadata then it implies that there is no
+    // multipart index
     if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
       clovis_kv_reader =
           std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
-      clovis_kv_reader->get_keyval(bucket_metadata->get_multipart_index_oid(), last_key, std::bind( &S3GetMultipartBucketAction::get_key_object_successful, this), std::bind( &S3GetMultipartBucketAction::get_key_object_failed, this));
+      clovis_kv_reader->get_keyval(
+          bucket_metadata->get_multipart_index_oid(), last_key,
+          std::bind(&S3GetMultipartBucketAction::get_key_object_successful,
+                    this),
+          std::bind(&S3GetMultipartBucketAction::get_key_object_failed, this));
     } else {
-      fetch_successful = true; // list empty
+      fetch_successful = true;  // list empty
       send_response_to_s3_client();
     }
   } else {
@@ -116,7 +131,8 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
   std::string key_name = last_key;
   if (!(clovis_kv_reader->get_value()).empty()) {
     s3_log(S3_LOG_DEBUG, "Read Object = %s\n", key_name.c_str());
-    std::shared_ptr<S3ObjectMetadata> object = std::make_shared<S3ObjectMetadata>(request, true);
+    std::shared_ptr<S3ObjectMetadata> object =
+        std::make_shared<S3ObjectMetadata>(request, true);
     size_t delimiter_pos = std::string::npos;
     std::string upload_str = object->get_upload_id();
 
@@ -129,7 +145,7 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
         s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
                S3_IEM_METADATA_CORRUPTED_STR, S3_IEM_METADATA_CORRUPTED_JSON);
       }
-      if(object->get_upload_id() > request_marker_uploadid)
+      if (object->get_upload_id() > request_marker_uploadid)
         multipart_object_list.add_object(object);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
@@ -142,7 +158,7 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
           s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
                  S3_IEM_METADATA_CORRUPTED_STR, S3_IEM_METADATA_CORRUPTED_JSON);
         }
-        if(object->get_upload_id() > request_marker_uploadid) {
+        if (object->get_upload_id() > request_marker_uploadid) {
           multipart_object_list.add_object(object);
         }
       }
@@ -157,19 +173,22 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
           s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
                  S3_IEM_METADATA_CORRUPTED_STR, S3_IEM_METADATA_CORRUPTED_JSON);
         }
-        if(object->get_upload_id() > request_marker_uploadid) {
+        if (object->get_upload_id() > request_marker_uploadid) {
           multipart_object_list.add_object(object);
         }
       } else {
         // Roll up
-        s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, key_name.c_str());
-        multipart_object_list.add_common_prefix(key_name.substr(0, delimiter_pos + 1));
+        s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+               request_delimiter.c_str(), delimiter_pos, key_name.c_str());
+        multipart_object_list.add_common_prefix(
+            key_name.substr(0, delimiter_pos + 1));
       }
     } else {
       // both prefix and delimiter are not empty
       bool prefix_match = (key_name.find(request_prefix) == 0) ? true : false;
       if (prefix_match) {
-        delimiter_pos = key_name.find(request_delimiter, request_prefix.length());
+        delimiter_pos =
+            key_name.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
           if (object->from_json(clovis_kv_reader->get_value()) != 0) {
             s3_log(
@@ -181,14 +200,16 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
                    S3_IEM_METADATA_CORRUPTED_STR,
                    S3_IEM_METADATA_CORRUPTED_JSON);
           }
-          if(object->get_upload_id() > request_marker_uploadid) {
+          if (object->get_upload_id() > request_marker_uploadid) {
             multipart_object_list.add_object(object);
           }
         } else {
-          s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, key_name.c_str());
-          multipart_object_list.add_common_prefix(key_name.substr(0, delimiter_pos + 1));
+          s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+                 request_delimiter.c_str(), delimiter_pos, key_name.c_str());
+          multipart_object_list.add_common_prefix(
+              key_name.substr(0, delimiter_pos + 1));
         }
-      } // else no prefix match, filter it out
+      }  // else no prefix match, filter it out
     }
 
     return_list_size++;
@@ -233,13 +254,18 @@ void S3GetMultipartBucketAction::get_next_objects() {
   }
   s3_log(S3_LOG_DEBUG, "Fetching next set of multipart uploads listing\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    struct m0_uint128  empty_indx_oid = {0ULL, 0ULL};
+    struct m0_uint128 empty_indx_oid = {0ULL, 0ULL};
     struct m0_uint128 indx_oid = bucket_metadata->get_multipart_index_oid();
     if (m0_uint128_cmp(&indx_oid, &empty_indx_oid) != 0) {
       size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
       clovis_kv_reader =
           std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
-      clovis_kv_reader->next_keyval(bucket_metadata->get_multipart_index_oid(), last_key, count, std::bind( &S3GetMultipartBucketAction::get_next_objects_successful, this), std::bind( &S3GetMultipartBucketAction::get_next_objects_failed, this));
+      clovis_kv_reader->next_keyval(
+          bucket_metadata->get_multipart_index_oid(), last_key, count,
+          std::bind(&S3GetMultipartBucketAction::get_next_objects_successful,
+                    this),
+          std::bind(&S3GetMultipartBucketAction::get_next_objects_failed,
+                    this));
     } else {
       fetch_successful = true;
       send_response_to_s3_client();
@@ -301,14 +327,17 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
         multipart_object_list.add_object(object);
       } else {
         // Roll up
-        s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
-        multipart_object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
+        s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+               request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
+        multipart_object_list.add_common_prefix(
+            kv.first.substr(0, delimiter_pos + 1));
       }
     } else {
       // both prefix and delimiter are not empty
       bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
       if (prefix_match) {
-        delimiter_pos = kv.first.find(request_delimiter, request_prefix.length());
+        delimiter_pos =
+            kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
           if (object->from_json(kv.second.second) != 0) {
             atleast_one_json_error = true;
@@ -320,10 +349,12 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
           }
           multipart_object_list.add_object(object);
         } else {
-          s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
-          multipart_object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
+          s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+                 request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
+          multipart_object_list.add_common_prefix(
+              kv.first.substr(0, delimiter_pos + 1));
         }
-      } // else no prefix match, filter it out
+      }  // else no prefix match, filter it out
     }
 
     return_list_size++;
@@ -339,7 +370,8 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
            S3_IEM_METADATA_CORRUPTED_JSON);
   }
   // We ask for more if there is any.
-  size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  size_t count_we_requested =
+      S3Option::get_instance()->get_clovis_idx_fetch_count();
 
   if ((return_list_size == max_uploads) || (kvps.size() < count_we_requested)) {
     // Go ahead and respond.
@@ -384,24 +416,30 @@ void S3GetMultipartBucketAction::send_response_to_s3_client() {
   } else if (fetch_successful) {
     std::string& response_xml = multipart_object_list.get_multiupload_xml();
 
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n", response_xml.c_str());
+    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n",
+           response_xml.c_str());
 
     request->send_response(S3HttpSuccess200, response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name
-    S3Error error("NoSuchBucket", request->get_request_id(), request->get_object_uri());
+    S3Error error("NoSuchBucket", request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
-    S3Error error("InternalError", request->get_request_id(), request->get_bucket_name());
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   }

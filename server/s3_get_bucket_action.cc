@@ -26,7 +26,8 @@
 #include "s3_object_metadata.h"
 #include "s3_option.h"
 
-S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
+S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   setup_steps();
@@ -58,18 +59,20 @@ S3GetBucketAction::S3GetBucketAction(std::shared_ptr<S3RequestObject> req) : S3A
   // TODO request param validations
 }
 
-void S3GetBucketAction::setup_steps(){
+void S3GetBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
-  add_task(std::bind( &S3GetBucketAction::fetch_bucket_info, this ));
-  add_task(std::bind( &S3GetBucketAction::get_next_objects, this ));
-  add_task(std::bind( &S3GetBucketAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3GetBucketAction::fetch_bucket_info, this));
+  add_task(std::bind(&S3GetBucketAction::get_next_objects, this));
+  add_task(std::bind(&S3GetBucketAction::send_response_to_s3_client, this));
   // ...
 }
 
 void S3GetBucketAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
   bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind( &S3GetBucketAction::next, this), std::bind( &S3GetBucketAction::send_response_to_s3_client, this));
+  bucket_metadata->load(
+      std::bind(&S3GetBucketAction::next, this),
+      std::bind(&S3GetBucketAction::send_response_to_s3_client, this));
 }
 
 void S3GetBucketAction::get_next_objects() {
@@ -146,14 +149,16 @@ void S3GetBucketAction::get_next_objects_successful() {
         object_list.add_object(object);
       } else {
         // Roll up
-        s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
+        s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+               request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
         object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
       }
     } else {
       // both prefix and delimiter are not empty
       bool prefix_match = (kv.first.find(request_prefix) == 0) ? true : false;
       if (prefix_match) {
-        delimiter_pos = kv.first.find(request_delimiter, request_prefix.length());
+        delimiter_pos =
+            kv.first.find(request_delimiter, request_prefix.length());
         if (delimiter_pos == std::string::npos) {
           if (object->from_json(kv.second.second) != 0) {
             atleast_one_json_error = true;
@@ -165,10 +170,11 @@ void S3GetBucketAction::get_next_objects_successful() {
           }
           object_list.add_object(object);
         } else {
-          s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n", request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
+          s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+                 request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
           object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
         }
-      } // else no prefix match, filter it out
+      }  // else no prefix match, filter it out
     }
 
     if (--length == 0 || object_list.size() == max_keys) {
@@ -184,7 +190,8 @@ void S3GetBucketAction::get_next_objects_successful() {
   }
 
   // We ask for more if there is any.
-  size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  size_t count_we_requested =
+      S3Option::get_instance()->get_clovis_idx_fetch_count();
 
   if ((object_list.size() == max_keys) || (kvps.size() < count_we_requested)) {
     // Go ahead and respond.
@@ -226,25 +233,31 @@ void S3GetBucketAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
-    S3Error error("NoSuchBucket", request->get_request_id(), request->get_bucket_name());
+    S3Error error("NoSuchBucket", request->get_request_id(),
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
     std::string& response_xml = object_list.get_xml();
 
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n", response_xml.c_str());
+    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n",
+           response_xml.c_str());
 
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
-    S3Error error("InternalError", request->get_request_id(), request->get_bucket_name());
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   }
