@@ -34,7 +34,8 @@ class S3AuthResponseError {
   std::string request_id;
 
   bool parse_and_validate();
-public:
+
+ public:
   S3AuthResponseError(std::string& xml);
   bool isOK();
 

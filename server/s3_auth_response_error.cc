@@ -18,32 +18,25 @@
  * Original creation date: 10-Mar-2016
  */
 
-#include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
+#include <libxml/xmlmemory.h>
 
 #include "s3_auth_response_error.h"
 #include "s3_log.h"
 
-S3AuthResponseError::S3AuthResponseError(std::string& xml) : xml_content(xml), is_valid(false) {
+S3AuthResponseError::S3AuthResponseError(std::string& xml)
+    : xml_content(xml), is_valid(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   is_valid = parse_and_validate();
 }
 
-bool S3AuthResponseError::isOK() {
-  return is_valid;
-}
+bool S3AuthResponseError::isOK() { return is_valid; }
 
-const std::string& S3AuthResponseError::get_code() {
-  return error_code;
-}
+const std::string& S3AuthResponseError::get_code() { return error_code; }
 
-const std::string& S3AuthResponseError::get_message() {
-  return error_message;
-}
+const std::string& S3AuthResponseError::get_message() { return error_message; }
 
-const std::string& S3AuthResponseError::get_request_id() {
-  return request_id;
-}
+const std::string& S3AuthResponseError::get_request_id() { return request_id; }
 
 bool S3AuthResponseError::parse_and_validate() {
   s3_log(S3_LOG_DEBUG, "Parsing Auth server Error response\n");
@@ -56,42 +49,42 @@ bool S3AuthResponseError::parse_and_validate() {
 
   s3_log(S3_LOG_DEBUG, "Parsing error xml = %s\n", xml_content.c_str());
   xmlDocPtr document = xmlParseDoc((const xmlChar*)xml_content.c_str());
-  if (document == NULL ) {
+  if (document == NULL) {
     s3_log(S3_LOG_ERROR, "Auth response xml body is invalid.\n");
     is_valid = false;
     return is_valid;
   }
 
   xmlNodePtr root_node = xmlDocGetRootElement(document);
-  if(root_node == NULL) {
+  if (root_node == NULL) {
     s3_log(S3_LOG_ERROR, "Auth response xml body is invalid.\n");
     xmlFreeDoc(document);
     is_valid = false;
     return is_valid;
   }
 
-  xmlChar *key = NULL;
+  xmlChar* key = NULL;
   xmlNodePtr child = root_node->xmlChildrenNode;
 
   while (child != NULL) {
     s3_log(S3_LOG_DEBUG, "child->name = %s\n", (const char*)child->name);
     key = xmlNodeGetContent(child);
-    if ((!xmlStrcmp(child->name, (const xmlChar *)"Code"))) {
+    if ((!xmlStrcmp(child->name, (const xmlChar*)"Code"))) {
       s3_log(S3_LOG_DEBUG, "Code = %s\n", (const char*)key);
       error_code = (const char*)key;
-    } else if ((!xmlStrcmp(child->name, (const xmlChar *)"Message"))) {
+    } else if ((!xmlStrcmp(child->name, (const xmlChar*)"Message"))) {
       s3_log(S3_LOG_DEBUG, "Message = %s\n", (const char*)key);
       error_message = (const char*)key;
-    } else if ((!xmlStrcmp(child->name, (const xmlChar *)"RequestId"))) {
+    } else if ((!xmlStrcmp(child->name, (const xmlChar*)"RequestId"))) {
       s3_log(S3_LOG_DEBUG, "RequestId = %s\n", (const char*)key);
       request_id = (const char*)key;
     }
-    if(key != NULL) {
+    if (key != NULL) {
       xmlFree(key);
       key = NULL;
     }
     child = child->next;
-  } // while
+  }  // while
   xmlFreeDoc(document);
   if (error_code.empty()) {
     is_valid = false;

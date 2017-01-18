@@ -18,10 +18,10 @@
  * Original creation date: 10-Mar-2016
  */
 
- #pragma once
+#pragma once
 
- #ifndef __MERO_FE_S3_SERVER_S3_AUTH_RESPONSE_SUCCESS_H__
- #define __MERO_FE_S3_SERVER_S3_AUTH_RESPONSE_SUCCESS_H__
+#ifndef __MERO_FE_S3_SERVER_S3_AUTH_RESPONSE_SUCCESS_H__
+#define __MERO_FE_S3_SERVER_S3_AUTH_RESPONSE_SUCCESS_H__
 
 #include <string>
 
@@ -37,7 +37,8 @@ class S3AuthResponseSuccess {
   std::string request_id;
 
   bool parse_and_validate();
-public:
+
+ public:
   S3AuthResponseSuccess(std::string& xml);
   bool isOK();
 
