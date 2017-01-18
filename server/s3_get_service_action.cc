@@ -26,7 +26,8 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
-S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req) : S3Action(req), last_key(""), fetch_successful(false) {
+S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req)
+    : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   setup_steps();
@@ -38,8 +39,8 @@ S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req) : S
 void S3GetServiceAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   add_task(std::bind(&S3GetServiceAction::fetch_bucket_list_index_oid, this));
-  add_task(std::bind( &S3GetServiceAction::get_next_buckets, this ));
-  add_task(std::bind( &S3GetServiceAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3GetServiceAction::get_next_buckets, this));
+  add_task(std::bind(&S3GetServiceAction::send_response_to_s3_client, this));
   // ...
 }
 
@@ -117,7 +118,8 @@ void S3GetServiceAction::get_next_buckets_successful() {
            S3_IEM_METADATA_CORRUPTED_JSON);
   }
   // We ask for more if there is any.
-  size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  size_t count_we_requested =
+      S3Option::get_instance()->get_clovis_idx_fetch_count();
 
   if (kvps.size() < count_we_requested) {
     // Go ahead and respond.
@@ -156,15 +158,18 @@ void S3GetServiceAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
     std::string& response_xml = bucket_list.get_xml();
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, "Bucket list response_xml = %s\n", response_xml.c_str());
+    s3_log(S3_LOG_DEBUG, "Bucket list response_xml = %s\n",
+           response_xml.c_str());
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
     S3Error error("InternalError", request->get_request_id(), "");
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   }

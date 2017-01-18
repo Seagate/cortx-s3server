@@ -65,15 +65,16 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
   // TODO request param validations
 }
 
-void S3GetMultipartPartAction::setup_steps(){
+void S3GetMultipartPartAction::setup_steps() {
   add_task(std::bind(&S3GetMultipartPartAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetMultipartPartAction::get_multipart_metadata, this));
   s3_log(S3_LOG_DEBUG, "Setting up the action\n");
   if (!request_marker_key.empty()) {
-    add_task(std::bind( &S3GetMultipartPartAction::get_key_object, this ));
+    add_task(std::bind(&S3GetMultipartPartAction::get_key_object, this));
   }
-  add_task(std::bind( &S3GetMultipartPartAction::get_next_objects, this ));
-  add_task(std::bind( &S3GetMultipartPartAction::send_response_to_s3_client, this ));
+  add_task(std::bind(&S3GetMultipartPartAction::get_next_objects, this));
+  add_task(
+      std::bind(&S3GetMultipartPartAction::send_response_to_s3_client, this));
   // ...
 }
 
@@ -132,7 +133,8 @@ void S3GetMultipartPartAction::get_key_object_successful() {
   std::string key_name = last_key;
   if (!(clovis_kv_reader->get_value()).empty()) {
     s3_log(S3_LOG_DEBUG, "Read Part = %s\n", key_name.c_str());
-    std::shared_ptr<S3PartMetadata> part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(key_name.c_str()));
+    std::shared_ptr<S3PartMetadata> part = std::make_shared<S3PartMetadata>(
+        request, upload_id, atoi(key_name.c_str()));
 
     if (part->from_json(clovis_kv_reader->get_value()) != 0) {
       struct m0_uint128 part_index_oid =
@@ -212,7 +214,8 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
   size_t length = kvps.size();
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
-    auto part = std::make_shared<S3PartMetadata>(request, upload_id, atoi(kv.first.c_str()));
+    auto part = std::make_shared<S3PartMetadata>(request, upload_id,
+                                                 atoi(kv.first.c_str()));
 
     if (part->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
@@ -235,7 +238,8 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
            S3_IEM_METADATA_CORRUPTED_JSON);
   }
   // We ask for more if there is any.
-  size_t count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  size_t count_we_requested =
+      S3Option::get_instance()->get_clovis_idx_fetch_count();
 
   if ((return_list_size == max_parts) || (kvps.size() < count_we_requested)) {
     // Go ahead and respond.
@@ -306,16 +310,19 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
 
     std::string& response_xml = multipart_part_list.get_multipart_xml();
 
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n", response_xml.c_str());
+    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n",
+           response_xml.c_str());
 
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
     S3Error error("InternalError", request->get_request_id(), bucket_name);
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
   }

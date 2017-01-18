@@ -26,11 +26,10 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_clovis_writer.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
-#include "s3_clovis_writer.h"
 #include "s3_uuid.h"
-
 
 class S3PostCompleteAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -52,7 +51,7 @@ class S3PostCompleteAction : public S3Action {
 
   void parse_xml_str(std::string &xml_str);
 
-public:
+ public:
   S3PostCompleteAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
@@ -88,8 +87,6 @@ public:
   std::string get_multipart_bucket_index_name() {
     return "BUCKET/" + request->get_bucket_name() + "/Multipart";
   }
-
-
 };
 
 #endif

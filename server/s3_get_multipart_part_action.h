@@ -26,8 +26,8 @@
 #include <memory>
 
 #include "s3_action_base.h"
-#include "s3_object_list_response.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_object_list_response.h"
 
 class S3GetMultipartPartAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
@@ -37,7 +37,7 @@ class S3GetMultipartPartAction : public S3Action {
   std::string last_key;  // last key during each iteration
   S3ObjectListResponse multipart_part_list;
   size_t return_list_size;
-  std:: string bucket_name;
+  std::string bucket_name;
   std::string object_name;
   std::string upload_id;
   m0_uint128 multipart_oid;
@@ -53,7 +53,7 @@ class S3GetMultipartPartAction : public S3Action {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;
   }
 
-public:
+ public:
   S3GetMultipartPartAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();

@@ -17,8 +17,8 @@
  * Original creation date: 21th-June-2016
  */
 
-#include "s3_api_handler.h"
 #include "s3_action_base.h"
+#include "s3_api_handler.h"
 #include "s3_put_fi_action.h"
 
 void S3FaultinjectionAPIHandler::dispatch() {

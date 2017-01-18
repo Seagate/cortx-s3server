@@ -17,15 +17,15 @@
  * Original creation date: 21th-June-2016
  */
 
-#include <string>
 #include <iostream>
 #include <sstream>
+#include <string>
 
+#include "s3_error_codes.h"
+#include "s3_fi_common.h"
+#include "s3_log.h"
 #include "s3_option.h"
 #include "s3_put_fi_action.h"
-#include "s3_error_codes.h"
-#include "s3_log.h"
-#include "s3_fi_common.h"
 
 S3PutFiAction::S3PutFiAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, false) {

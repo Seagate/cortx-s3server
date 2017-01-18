@@ -41,10 +41,11 @@ class S3GetServiceAction : public S3Action {
 
   // Helpers
   std::string get_account_user_index_name() {
-    return "ACCOUNTUSER/" + request->get_account_name() + "/" + request->get_user_name();
+    return "ACCOUNTUSER/" + request->get_account_name() + "/" +
+           request->get_user_name();
   }
 
-public:
+ public:
   S3GetServiceAction(std::shared_ptr<S3RequestObject> req);
 
   void setup_steps();
