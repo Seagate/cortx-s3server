@@ -22,19 +22,19 @@
 #ifndef __MERO_FE_S3_SERVER_S3_SHA256_H__
 #define __MERO_FE_S3_SERVER_S3_SHA256_H__
 
-#include <openssl/sha.h>
 #include <assert.h>
+#include <openssl/sha.h>
 #include <stdio.h>
 #include <string>
 
 class S3sha256 {
-private:
+ private:
   unsigned char hash[SHA256_DIGEST_LENGTH] = {'\0'};
   char hex_hash[SHA256_DIGEST_LENGTH * 2] = {'\0'};
   SHA256_CTX context;
   int status;
 
-public:
+ public:
   S3sha256();
   void reset();
   bool Update(const char *input, size_t length);

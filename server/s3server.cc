@@ -50,22 +50,23 @@
 #include <unistd.h>
 
 S3Option *g_option_instance = NULL;
-evbase_t * global_evbase_handle;
+evbase_t *global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
 struct m0_uint128 root_account_user_index_oid;
 
 /* global Memory Pool for read from clovis */
 MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
-extern "C" void
-s3_handler(evhtp_request_t * req, void * a) {
+extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
   s3_log(S3_LOG_DEBUG, "Request Completed.\n");
 }
 
-extern "C" void on_client_conn_err_callback(evhtp_request_t * req, evhtp_error_flags errtype, void * arg) {
+extern "C" void on_client_conn_err_callback(evhtp_request_t *req,
+                                            evhtp_error_flags errtype,
+                                            void *arg) {
   s3_log(S3_LOG_DEBUG, "S3 Client disconnected.\n");
-  S3RequestObject* request = (S3RequestObject*)req->cbarg;
+  S3RequestObject *request = (S3RequestObject *)req->cbarg;
 
   if (request) {
     request->client_has_disconnected();
@@ -76,66 +77,70 @@ extern "C" void on_client_conn_err_callback(evhtp_request_t * req, evhtp_error_f
   return;
 }
 
-extern "C" int
-s3_log_header(evhtp_header_t * header, void * arg) {
-
-    s3_log(S3_LOG_DEBUG, "http header(key = '%s', val = '%s')\n",
-                        header->key, header->val);
-    return 0;
+extern "C" int s3_log_header(evhtp_header_t *header, void *arg) {
+  s3_log(S3_LOG_DEBUG, "http header(key = '%s', val = '%s')\n", header->key,
+         header->val);
+  return 0;
 }
 
-extern "C" evhtp_res
-dispatch_request(evhtp_request_t * req, evhtp_headers_t * hdrs, void * arg ) {
-    s3_log(S3_LOG_INFO, "Received Request with uri [%s].\n", req->uri->path->full);
+extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
+                                      evhtp_headers_t *hdrs, void *arg) {
+  s3_log(S3_LOG_INFO, "Received Request with uri [%s].\n",
+         req->uri->path->full);
 
-    if (req->uri->query_raw) {
-      s3_log(S3_LOG_DEBUG, "Received Request with query params [%s].\n", req->uri->query_raw);
-    }
-    // Log http headers
-    evhtp_headers_for_each(hdrs, s3_log_header, NULL);
+  if (req->uri->query_raw) {
+    s3_log(S3_LOG_DEBUG, "Received Request with query params [%s].\n",
+           req->uri->query_raw);
+  }
+  // Log http headers
+  evhtp_headers_for_each(hdrs, s3_log_header, NULL);
 
-    S3Router *router = (S3Router*)arg;
+  S3Router *router = (S3Router *)arg;
 
-    EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    std::shared_ptr<S3RequestObject> s3_request = std::make_shared<S3RequestObject> (req, evhtp_obj_ptr);
+  EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+  std::shared_ptr<S3RequestObject> s3_request =
+      std::make_shared<S3RequestObject>(req, evhtp_obj_ptr);
 
-    if (S3Option::get_instance()->get_is_s3_shutting_down() &&
-        !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
-      // We are shutting down, so don't entertain new requests.
-      s3_request->pause();
-      evhtp_unset_all_hooks(&req->conn->hooks);
-      // Send response with 'Service Unavailable' code.
-      s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-      S3Error error("ServiceUnavailable", s3_request->get_request_id(), "");
-      std::string &response_xml = error.to_xml();
-      s3_request->set_out_header_value("Content-Type", "application/xml");
-      s3_request->set_out_header_value("Content-Length",
-                                       std::to_string(response_xml.length()));
-      s3_request->set_out_header_value("Retry-After", "1");
+  if (S3Option::get_instance()->get_is_s3_shutting_down() &&
+      !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
+    // We are shutting down, so don't entertain new requests.
+    s3_request->pause();
+    evhtp_unset_all_hooks(&req->conn->hooks);
+    // Send response with 'Service Unavailable' code.
+    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    S3Error error("ServiceUnavailable", s3_request->get_request_id(), "");
+    std::string &response_xml = error.to_xml();
+    s3_request->set_out_header_value("Content-Type", "application/xml");
+    s3_request->set_out_header_value("Content-Length",
+                                     std::to_string(response_xml.length()));
+    s3_request->set_out_header_value("Retry-After", "1");
 
-      s3_request->send_response(error.get_http_status_code(), response_xml);
-      return EVHTP_RES_OK;
-    }
-
-    req->cbarg = s3_request.get();
-
-    evhtp_set_hook(&req->hooks, evhtp_hook_on_error, (evhtp_hook)on_client_conn_err_callback, NULL);
-
-    router->dispatch(s3_request);
-
+    s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
+  }
+
+  req->cbarg = s3_request.get();
+
+  evhtp_set_hook(&req->hooks, evhtp_hook_on_error,
+                 (evhtp_hook)on_client_conn_err_callback, NULL);
+
+  router->dispatch(s3_request);
+
+  return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res
-process_request_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
-  s3_log(S3_LOG_DEBUG, "Received Request body for sock = %d\n", req->conn->sock);
+extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
+                                          void *arg) {
+  s3_log(S3_LOG_DEBUG, "Received Request body for sock = %d\n",
+         req->conn->sock);
 
-  S3RequestObject* request = (S3RequestObject*)req->cbarg;
+  S3RequestObject *request = (S3RequestObject *)req->cbarg;
 
   if (request) {
-    evbuf_t            * s3_buf = evbuffer_new();
+    evbuf_t *s3_buf = evbuffer_new();
     size_t bytes_received = evbuffer_get_length(buf);
-    s3_log(S3_LOG_DEBUG, "got %zu bytes of data for sock = %d\n", bytes_received, req->conn->sock);
+    s3_log(S3_LOG_DEBUG, "got %zu bytes of data for sock = %d\n",
+           bytes_received, req->conn->sock);
 
     evbuffer_add_buffer(s3_buf, buf);
 
@@ -144,19 +149,21 @@ process_request_data(evhtp_request_t * req, evbuf_t * buf, void * arg) {
   } else {
     evhtp_unset_all_hooks(&req->conn->hooks);
     evhtp_unset_all_hooks(&req->hooks);
-    s3_log(S3_LOG_DEBUG, "S3 request failed, Ignoring data for this request \n");
+    s3_log(S3_LOG_DEBUG,
+           "S3 request failed, Ignoring data for this request \n");
   }
 
   return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res
-set_s3_connection_handlers(evhtp_connection_t * conn, void * arg) {
+extern "C" evhtp_res set_s3_connection_handlers(evhtp_connection_t *conn,
+                                                void *arg) {
+  evhtp_set_hook(&conn->hooks, evhtp_hook_on_headers,
+                 (evhtp_hook)dispatch_request, arg);
+  evhtp_set_hook(&conn->hooks, evhtp_hook_on_read,
+                 (evhtp_hook)process_request_data, NULL);
 
-    evhtp_set_hook(&conn->hooks, evhtp_hook_on_headers, (evhtp_hook)dispatch_request, arg);
-    evhtp_set_hook(&conn->hooks, evhtp_hook_on_read, (evhtp_hook)process_request_data, NULL);
-
-    return EVHTP_RES_OK;
+  return EVHTP_RES_OK;
 }
 
 void fatal_libevent(int err) {
@@ -203,11 +210,10 @@ int create_s3_user_index(std::string index_name) {
   return 0;
 }
 
-int
-main(int argc, char ** argv) {
+int main(int argc, char **argv) {
   int rc = 0;
-  const char  *bind_addr;
-  uint16_t     bind_port;
+  const char *bind_addr;
+  uint16_t bind_port;
 
   // Load Any configs.
   if (parse_and_load_config_options(argc, argv) < 0) {
@@ -269,15 +275,15 @@ main(int argc, char ** argv) {
   // Uncomment below api if we want to run libevent in debug mode
   // event_enable_debug_mode();
 
-  if (evthread_make_base_notifiable(global_evbase_handle)<0) {
+  if (evthread_make_base_notifiable(global_evbase_handle) < 0) {
     s3_log(S3_LOG_ERROR, "Couldn't make base notifiable!");
     return 1;
   }
-  evhtp_t  * htp    = evhtp_new(global_evbase_handle, NULL);
+  evhtp_t *htp = evhtp_new(global_evbase_handle, NULL);
   event_set_fatal_callback(fatal_libevent);
 
-  S3Router *router = new S3Router(new S3APIHandlerFactory(),
-                                  new S3UriFactory());
+  S3Router *router =
+      new S3Router(new S3APIHandlerFactory(), new S3UriFactory());
 
   // So we can support queries like s3.com/bucketname?location or ?acl
   evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
@@ -307,9 +313,9 @@ main(int argc, char ** argv) {
   /* Initialise mero and Clovis */
   rc = init_clovis();
   if (rc < 0) {
-      s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
-      s3daemon.delete_pidfile();
-      return rc;
+    s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
+    s3daemon.delete_pidfile();
+    return rc;
   }
 
   rc = create_s3_user_index(ACCOUNT_USER_INDEX_NAME);
@@ -318,22 +324,25 @@ main(int argc, char ** argv) {
     return rc;
   }
 
-  /* KD - setup for reading data */
-  /* set a callback to set per-connection hooks (via a post_accept cb) */
-  // evhtp_set_post_accept_cb(htp, set_my_connection_handlers, NULL);
+/* KD - setup for reading data */
+/* set a callback to set per-connection hooks (via a post_accept cb) */
+// evhtp_set_post_accept_cb(htp, set_my_connection_handlers, NULL);
 
 #if 0
 #ifndef EVHTP_DISABLE_EVTHR
     evhtp_use_threads(htp, NULL, 4, NULL);
 #endif
 #endif
-  s3_log(S3_LOG_INFO, "Starting S3 listener on host = %s and port = %d!\n", bind_addr, bind_port);
+  s3_log(S3_LOG_INFO, "Starting S3 listener on host = %s and port = %d!\n",
+         bind_addr, bind_port);
   evhtp_bind_socket(htp, bind_addr, bind_port, 1024);
   rc = event_base_loop(global_evbase_handle, 0);
-  if( rc == 0) {
+  if (rc == 0) {
     s3_log(S3_LOG_DEBUG, "Event base loop exited normally\n");
   } else {
-    s3_log(S3_LOG_ERROR, "Event base loop exited due to unhandled exception in libevent's backend\n");
+    s3_log(S3_LOG_ERROR,
+           "Event base loop exited due to unhandled exception in libevent's "
+           "backend\n");
   }
   evhtp_unbind_socket(htp);
   evhtp_free(htp);

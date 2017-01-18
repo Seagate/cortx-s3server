@@ -24,16 +24,15 @@
 
 #include "s3_error_messages.h"
 
-#define S3HttpSuccess200         EVHTP_RES_OK
-#define S3HttpSuccess204         EVHTP_RES_NOCONTENT
-#define S3HttpFailed400          EVHTP_RES_400
-#define S3HttpFailed401          EVHTP_RES_UNAUTH
-#define S3HttpFailed404          EVHTP_RES_NOTFOUND
-#define S3HttpFailed405          EVHTP_RES_METHNALLOWED
-#define S3HttpFailed409          EVHTP_RES_CONFLICT
-#define S3HttpFailed500          EVHTP_RES_500
-#define S3HttpFailed503          EVHTP_RES_SERVUNAVAIL
-
+#define S3HttpSuccess200 EVHTP_RES_OK
+#define S3HttpSuccess204 EVHTP_RES_NOCONTENT
+#define S3HttpFailed400 EVHTP_RES_400
+#define S3HttpFailed401 EVHTP_RES_UNAUTH
+#define S3HttpFailed404 EVHTP_RES_NOTFOUND
+#define S3HttpFailed405 EVHTP_RES_METHNALLOWED
+#define S3HttpFailed409 EVHTP_RES_CONFLICT
+#define S3HttpFailed500 EVHTP_RES_500
+#define S3HttpFailed503 EVHTP_RES_SERVUNAVAIL
 
 /* Example error message:
   <?xml version="1.0" encoding="UTF-8"?>
@@ -52,7 +51,8 @@ class S3Error {
   S3ErrorDetails& details;
 
   std::string xml_message;
-public:
+
+ public:
   S3Error(std::string error_code, std::string req_id, std::string res_key);
 
   int get_http_status_code();

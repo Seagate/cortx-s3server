@@ -121,7 +121,7 @@ class S3Option {
   unsigned short statsd_max_send_retry;
   std::string stats_whitelist_filename;
 
-  evbase_t *eventbase;
+  evbase_t* eventbase;
 
   static S3Option* option_instance;
 
@@ -174,7 +174,7 @@ class S3Option {
     perf_enabled = FLAGS_perfenable;
     perf_log_file = FLAGS_perflogfile;
 
-    clovis_block_size = 1048576; // One MB
+    clovis_block_size = 1048576;  // One MB
     clovis_factor = 1;
     clovis_idx_fetch_count = 100;
 
@@ -277,7 +277,7 @@ class S3Option {
   int get_clovis_cass_max_column_family_num();
   bool get_delete_kv_before_put();
 
-  void set_cmdline_option(int option_flag, const char *option);
+  void set_cmdline_option(int option_flag, const char* option);
   int get_cmd_opt_flag();
 
   // Check if any fake out options are provided.
@@ -307,8 +307,8 @@ class S3Option {
 
   void dump_options();
 
-  static S3Option *get_instance()  {
-    if (!option_instance){
+  static S3Option* get_instance() {
+    if (!option_instance) {
       option_instance = new S3Option();
     }
     return option_instance;

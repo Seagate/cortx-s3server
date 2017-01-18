@@ -19,7 +19,10 @@
 
 #include "s3_async_buffer.h"
 
-S3AsyncBufferContainer::S3AsyncBufferContainer() : buffered_input_length(0), is_expecting_more(true), count_bufs_shared_for_read(0) {
+S3AsyncBufferContainer::S3AsyncBufferContainer()
+    : buffered_input_length(0),
+      is_expecting_more(true),
+      count_bufs_shared_for_read(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 }
 
@@ -35,21 +38,16 @@ S3AsyncBufferContainer::~S3AsyncBufferContainer() {
 }
 
 // Call this to indicate that no more data will be added to buffer.
-void S3AsyncBufferContainer::freeze() {
-  is_expecting_more = false;
-}
+void S3AsyncBufferContainer::freeze() { is_expecting_more = false; }
 
-bool S3AsyncBufferContainer::is_freezed() {
-  return !is_expecting_more;
-}
+bool S3AsyncBufferContainer::is_freezed() { return !is_expecting_more; }
 
-size_t S3AsyncBufferContainer::length() {
-  return buffered_input_length;
-}
+size_t S3AsyncBufferContainer::length() { return buffered_input_length; }
 
 void S3AsyncBufferContainer::add_content(evbuf_t* buf) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "add_content with len %zu at address %p\n", evbuffer_get_length(buf), buf);
+  s3_log(S3_LOG_DEBUG, "add_content with len %zu at address %p\n",
+         evbuffer_get_length(buf), buf);
   buffered_input.push_back(buf);
   buffered_input_length += evbuffer_get_length(buf);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -60,22 +58,23 @@ void S3AsyncBufferContainer::add_content(evbuf_t* buf) {
 // Call mark_size_of_data_consumed() to drain the data that was consumed
 // after get_buffers_ref call.
 // expected_content_size = -1 and all data is available, returns all buffers
-std::deque< std::tuple<void*, size_t> >
-S3AsyncBufferContainer::get_buffers_ref(size_t expected_content_size) {
+std::deque<std::tuple<void*, size_t> > S3AsyncBufferContainer::get_buffers_ref(
+    size_t expected_content_size) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "get_buffers_ref with expected_content_size = %zu\n", expected_content_size);
+  s3_log(S3_LOG_DEBUG, "get_buffers_ref with expected_content_size = %zu\n",
+         expected_content_size);
 
-  std::deque< std::tuple<void*, size_t> > data_items;
+  std::deque<std::tuple<void*, size_t> > data_items;
   size_t len_in_buf = 0;
   size_t num_of_extents = 0;
-  struct evbuffer_iovec *vec_in = NULL;
+  struct evbuffer_iovec* vec_in = NULL;
   size_t size_we_can_share = length();
   evbuf_t* buf = NULL;
   count_bufs_shared_for_read = 0;
 
   if (size_we_can_share >= expected_content_size || !(is_expecting_more)) {
-    std::deque<evbuf_t *>::iterator it = buffered_input.begin();
-    while(it != buffered_input.end()) {
+    std::deque<evbuf_t*>::iterator it = buffered_input.begin();
+    while (it != buffered_input.end()) {
       buf = *it++;
 
       bool is_shared_for_read = false;
@@ -84,18 +83,23 @@ S3AsyncBufferContainer::get_buffers_ref(size_t expected_content_size) {
       num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
 
       /* do the actual peek */
-      vec_in = (struct evbuffer_iovec *)malloc(num_of_extents * sizeof(struct evbuffer_iovec));
+      vec_in = (struct evbuffer_iovec*)malloc(num_of_extents *
+                                              sizeof(struct evbuffer_iovec));
 
       /* do the actual peek at data */
-      evbuffer_peek(buf, len_in_buf, NULL/*start of buffer*/, vec_in, num_of_extents);
+      evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
+                    num_of_extents);
 
       for (size_t i = 0; i < num_of_extents; i++) {
         if ((expected_content_size > 0) &&
-            ((size_we_can_share >= expected_content_size) || !(is_expecting_more))) {
+            ((size_we_can_share >= expected_content_size) ||
+             !(is_expecting_more))) {
           if (expected_content_size >= vec_in[i].iov_len) {
-            data_items.push_back(std::make_tuple(vec_in[i].iov_base, vec_in[i].iov_len));
+            data_items.push_back(
+                std::make_tuple(vec_in[i].iov_base, vec_in[i].iov_len));
           } else {
-            data_items.push_back(std::make_tuple(vec_in[i].iov_base, expected_content_size));
+            data_items.push_back(
+                std::make_tuple(vec_in[i].iov_base, expected_content_size));
           }
 
           if (expected_content_size >= vec_in[i].iov_len) {
@@ -127,9 +131,11 @@ S3AsyncBufferContainer::get_buffers_ref(size_t expected_content_size) {
 
 void S3AsyncBufferContainer::mark_size_of_data_consumed(size_t size_consumed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "mark_size_of_data_consumed size_consumed = %zu\n", size_consumed);
+  s3_log(S3_LOG_DEBUG, "mark_size_of_data_consumed size_consumed = %zu\n",
+         size_consumed);
 
-  for (size_t i = 0; (i < count_bufs_shared_for_read) && (buffered_input.size() != 0); ++i) {
+  for (size_t i = 0;
+       (i < count_bufs_shared_for_read) && (buffered_input.size() != 0); ++i) {
     if (size_consumed > 0) {
       evbuf_t* buf = buffered_input.front();
       size_t len = evbuffer_get_length(buf);
@@ -159,7 +165,7 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
   if (is_freezed()) {
     size_t len_in_buf = 0;
     size_t num_of_extents = 0;
-    struct evbuffer_iovec *vec_in = NULL;
+    struct evbuffer_iovec* vec_in = NULL;
     evbuf_t* buf = NULL;
     while (!buffered_input.empty()) {
       buf = buffered_input.front();
@@ -170,10 +176,12 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
       num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
 
       /* do the actual peek in buf */
-      vec_in = (struct evbuffer_iovec *)malloc(num_of_extents * sizeof(struct evbuffer_iovec));
+      vec_in = (struct evbuffer_iovec*)malloc(num_of_extents *
+                                              sizeof(struct evbuffer_iovec));
 
       /* do the actual peek at data inside buf */
-      evbuffer_peek(buf, len_in_buf, NULL/*start of buffer*/, vec_in, num_of_extents);
+      evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
+                    num_of_extents);
 
       for (size_t i = 0; i < num_of_extents; i++) {
         content.append((char*)vec_in[i].iov_base, vec_in[i].iov_len);

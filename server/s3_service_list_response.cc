@@ -28,14 +28,14 @@ void S3ServiceListResponse::set_owner_name(std::string name) {
   owner_name = name;
 }
 
-void S3ServiceListResponse::set_owner_id(std::string id) {
-  owner_id = id;
-}
+void S3ServiceListResponse::set_owner_id(std::string id) { owner_id = id; }
 
-void S3ServiceListResponse::add_bucket(std::shared_ptr<S3BucketMetadata> bucket) {
+void S3ServiceListResponse::add_bucket(
+    std::shared_ptr<S3BucketMetadata> bucket) {
   bucket_list.push_back(bucket);
 }
 
+// clang-format off
 std::string& S3ServiceListResponse::get_xml() {
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   response_xml += "<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01\">\n";
@@ -56,3 +56,4 @@ std::string& S3ServiceListResponse::get_xml() {
 
   return response_xml;
 }
+// clang-format on

@@ -28,22 +28,21 @@
 
 #include <gtest/gtest_prod.h>
 
-#include "s3_uri.h"
 #include "s3_api_handler.h"
+#include "s3_uri.h"
 
 // Not thread-safe, but we are single threaded.
 class S3Router {
-
-private:
+ private:
   S3APIHandlerFactory *api_handler_factory;
   S3UriFactory *uri_factory;
 
   // Some way to map URL pattern with handler.
-  bool is_default_endpoint(std::string& endpoint);
-  bool is_exact_valid_endpoint(std::string& endpoint);
-  bool is_subdomain_match(std::string& endpoint);
+  bool is_default_endpoint(std::string &endpoint);
+  bool is_exact_valid_endpoint(std::string &endpoint);
+  bool is_subdomain_match(std::string &endpoint);
 
-public:
+ public:
   S3Router(S3APIHandlerFactory *api_creator, S3UriFactory *uri_creator);
   virtual ~S3Router();
 
@@ -93,7 +92,6 @@ public:
 // list multipart uploads in progress
 //               -> http://s3.seagate.com/bucketname?uploads
 
-
 // Object APIs   -> http://s3.seagate.com/bucketname/ObjectKey
 // Host Header = s3.seagate.com or empty
 //               -> http://bucketname.s3.seagate.com/ObjectKey
@@ -107,6 +105,8 @@ public:
 
 // Initiate multipart upload
 //               -> http://s3.seagate.com/bucketname/ObjectKey?uploads
-// Upload part   -> http://s3.seagate.com/bucketname/ObjectKey?partNumber=PartNumber&uploadId=UploadId
+// Upload part   ->
+// http://s3.seagate.com/bucketname/ObjectKey?partNumber=PartNumber&uploadId=UploadId
 // Complete      -> http://s3.seagate.com/bucketname/ObjectKey?uploadId=UploadId
-// Abort         -> http://s3.seagate.com/bucketname/ObjectKey?uploadId=UploadId DEL
+// Abort         -> http://s3.seagate.com/bucketname/ObjectKey?uploadId=UploadId
+// DEL

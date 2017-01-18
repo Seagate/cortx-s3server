@@ -33,12 +33,17 @@ struct user_event_context {
   void *user_event;
 };
 
-extern "C" typedef void (*user_event_on_main_loop)(evutil_socket_t, short events, void *user_data);
+extern "C" typedef void (*user_event_on_main_loop)(evutil_socket_t,
+                                                   short events,
+                                                   void *user_data);
 
 class S3PostToMainLoop {
-  void* context;
-public:
-  S3PostToMainLoop(void* ctx) : context(ctx) { s3_log(S3_LOG_DEBUG, "Constructor\n"); }
+  void *context;
+
+ public:
+  S3PostToMainLoop(void *ctx) : context(ctx) {
+    s3_log(S3_LOG_DEBUG, "Constructor\n");
+  }
 
   void operator()(user_event_on_main_loop callback);
 };

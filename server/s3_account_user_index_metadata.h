@@ -24,22 +24,22 @@
 
 #include <string>
 
-#include "s3_request_object.h"
 #include "s3_bucket_acl.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_log.h"
+#include "s3_request_object.h"
 
 enum class S3AccountUserIdxMetadataState {
-  empty,    // Initial state, no lookup done
+  empty,  // Initial state, no lookup done
 
   // Ops on root index
   created,  // create root success
-  exists, // create root exists
+  exists,   // create root exists
 
   // Following are ops on key-val
   present,  // Metadata exists and was read successfully
-  missing,   // Metadata not present in store.
+  missing,  // Metadata not present in store.
   saved,    // Metadata saved to store.
   deleted,  // Metadata deleted from store
   failed
@@ -49,9 +49,10 @@ class S3AccountUserIdxMetadata {
   // Holds mainly system-defined metadata
   // Partially supported on need basis, some of these are placeholders
   // ACCOUNTUSERINDEX  (Account User Index)
-  //    Key = "ACCOUNTUSER/<Account id>/<user id>" | Value = "Account user Index OID", account and user info
+  //    Key = "ACCOUNTUSER/<Account id>/<user id>" | Value = "Account user Index
+  //    OID", account and user info
   // "Account user Index OID" = OID of index containing bucket list
-private:
+ private:
   std::string account_name;
   std::string account_id;
   std::string user_name;
@@ -73,12 +74,12 @@ private:
 
   S3AccountUserIdxMetadataState state;
 
-private:
+ private:
   std::string get_account_user_index_name() {
     return "ACCOUNTUSER/" + account_name + "/" + user_name;
   }
 
-public:
+ public:
   S3AccountUserIdxMetadata(std::shared_ptr<S3RequestObject> req);
 
   std::string get_account_name();
@@ -99,23 +100,24 @@ public:
   void create_root_account_user_index();
 
   // Load Account user info(bucket list oid)
-  void load(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void load(std::function<void(void)> on_success,
+            std::function<void(void)> on_failed);
   void load_successful();
   void load_failed();
 
   // Save Account user info(bucket list oid)
-  void save(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void save(std::function<void(void)> on_success,
+            std::function<void(void)> on_failed);
   void save_successful();
   void save_failed();
 
   // Remove Account user info(bucket list oid)
-  void remove(std::function<void(void)> on_success, std::function<void(void)> on_failed);
+  void remove(std::function<void(void)> on_success,
+              std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
 
-  S3AccountUserIdxMetadataState get_state() {
-    return state;
-  }
+  S3AccountUserIdxMetadataState get_state() { return state; }
 
   // Streaming to/from json
   std::string to_json();

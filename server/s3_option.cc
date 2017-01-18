@@ -17,10 +17,10 @@
  * Original creation date: 31-March-2016
  */
 
+#include "s3_option.h"
+#include <inttypes.h>
 #include <yaml-cpp/yaml.h>
 #include <vector>
-#include <inttypes.h>
-#include "s3_option.h"
 #include "s3_log.h"
 
 S3Option* S3Option::option_instance = NULL;
@@ -29,7 +29,7 @@ bool S3Option::load_section(std::string section_name,
                             bool force_override_from_config = false) {
   YAML::Node root_node = YAML::LoadFile(option_file);
   if (root_node.IsNull()) {
-    return false; //File Not Found?
+    return false;  // File Not Found?
   }
   YAML::Node s3_option_node = root_node[section_name];
   if (s3_option_node.IsNull()) {
@@ -401,12 +401,12 @@ bool S3Option::load_section(std::string section_name,
   return true;
 }
 
-bool S3Option::load_all_sections(bool force_override_from_config=false) {
+bool S3Option::load_all_sections(bool force_override_from_config = false) {
   std::string s3_section;
   try {
     YAML::Node root_node = YAML::LoadFile(option_file);
     if (root_node.IsNull()) {
-       return false; //File Not Found?
+      return false;  // File Not Found?
     }
     for (unsigned short i = 0; i < root_node["S3Config_Sections"].size(); ++i) {
       if (!load_section(root_node["S3Config_Sections"][i].as<std::string>(),
@@ -414,19 +414,19 @@ bool S3Option::load_all_sections(bool force_override_from_config=false) {
         return false;
       }
     }
-  } catch (const YAML::RepresentationException &e) {
+  } catch (const YAML::RepresentationException& e) {
     fprintf(stderr, "%s:%d:YAML::RepresentationException caught: %s\n",
             __FILE__, __LINE__, e.what());
     fprintf(stderr, "%s:%d:Yaml file %s is incorrect\n", __FILE__, __LINE__,
             option_file.c_str());
     return false;
-  } catch (const YAML::ParserException &e) {
+  } catch (const YAML::ParserException& e) {
     fprintf(stderr, "%s:%d:YAML::ParserException caught: %s\n", __FILE__,
             __LINE__, e.what());
     fprintf(stderr, "%s:%d:Parsing Error in yaml file %s\n", __FILE__, __LINE__,
             option_file.c_str());
     return false;
-  } catch (const YAML::EmitterException &e) {
+  } catch (const YAML::EmitterException& e) {
     fprintf(stderr, "%s:%d:YAML::EmitterException caught: %s\n", __FILE__,
             __LINE__, e.what());
     return false;
@@ -438,7 +438,7 @@ bool S3Option::load_all_sections(bool force_override_from_config=false) {
   return true;
 }
 
-void S3Option::set_cmdline_option(int option_flag, const char *optarg) {
+void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
   if (option_flag & S3_OPTION_BIND_ADDR) {
     s3_bind_addr = optarg;
   } else if (option_flag & S3_OPTION_BIND_PORT) {
@@ -474,9 +474,7 @@ void S3Option::set_cmdline_option(int option_flag, const char *optarg) {
   return;
 }
 
-int S3Option::get_cmd_opt_flag() {
-  return cmd_opt_flag;
-}
+int S3Option::get_cmd_opt_flag() { return cmd_opt_flag; }
 
 void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_DAEMON_WORKING_DIR = %s\n", s3_daemon_dir.c_str());
@@ -495,7 +493,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
   s3_log(S3_LOG_INFO, "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
-  s3_log(S3_LOG_INFO, "S3_SERVER_DEFAULT_ENDPOINT = %s\n", s3_default_endpoint.c_str());
+  s3_log(S3_LOG_INFO, "S3_SERVER_DEFAULT_ENDPOINT = %s\n",
+         s3_default_endpoint.c_str());
   for (auto endpoint : s3_region_endpoints) {
     s3_log(S3_LOG_INFO, "S3 Server region endpoint = %s\n", endpoint.c_str());
   }
@@ -510,7 +509,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_CLOVIS_LAYOUT_ID = %d\n", clovis_layout_id);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_BLOCK_SIZE = %d\n", clovis_block_size);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_BLOCKS_PER_REQUEST = %d\n", clovis_factor);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n", clovis_idx_fetch_count);
+  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n",
+         clovis_idx_fetch_count);
   s3_log(S3_LOG_INFO, "S3_CLOVIS_IS_OOSTORE = %s\n",
          (clovis_is_oostore ? "true" : "false"));
   s3_log(S3_LOG_INFO, "S3_CLOVIS_IS_READ_VERIFY = %s\n",
@@ -546,14 +546,22 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_CLOVIS_KV_DEL_BEFORE_PUT = %s\n",
          (clovis_kv_del_before_put ? "true" : "false"));
 
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n", FLAGS_fake_clovis_createobj);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n", FLAGS_fake_clovis_writeobj);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteobj = %d\n", FLAGS_fake_clovis_deleteobj);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createidx = %d\n", FLAGS_fake_clovis_createidx);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteidx = %d\n", FLAGS_fake_clovis_deleteidx);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_getkv = %d\n", FLAGS_fake_clovis_getkv);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_putkv = %d\n", FLAGS_fake_clovis_putkv);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deletekv = %d\n", FLAGS_fake_clovis_deletekv);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n",
+         FLAGS_fake_clovis_createobj);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n",
+         FLAGS_fake_clovis_writeobj);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteobj = %d\n",
+         FLAGS_fake_clovis_deleteobj);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createidx = %d\n",
+         FLAGS_fake_clovis_createidx);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteidx = %d\n",
+         FLAGS_fake_clovis_deleteidx);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_getkv = %d\n",
+         FLAGS_fake_clovis_getkv);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_putkv = %d\n",
+         FLAGS_fake_clovis_putkv);
+  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deletekv = %d\n",
+         FLAGS_fake_clovis_deletekv);
   s3_log(S3_LOG_INFO, "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
 
   s3_log(S3_LOG_INFO, "S3_ENABLE_STATS = %s\n",
@@ -569,13 +577,9 @@ void S3Option::dump_options() {
 
 std::string S3Option::get_s3_nodename() { return s3_nodename; }
 
-unsigned short S3Option::get_s3_bind_port() {
-  return s3_bind_port;
-}
+unsigned short S3Option::get_s3_bind_port() { return s3_bind_port; }
 
-std::string S3Option::get_s3_pidfile() {
-  return s3_pidfile;
-}
+std::string S3Option::get_s3_pidfile() { return s3_pidfile; }
 
 unsigned short S3Option::get_s3_grace_period_sec() {
   return s3_grace_period_sec;
@@ -587,21 +591,13 @@ void S3Option::set_is_s3_shutting_down(bool is_shutting_down) {
   is_s3_shutting_down = is_shutting_down;
 }
 
-unsigned short S3Option::get_auth_port() {
-  return auth_port;
-}
+unsigned short S3Option::get_auth_port() { return auth_port; }
 
-unsigned short S3Option::get_clovis_layout_id() {
-  return clovis_layout_id;
-}
+unsigned short S3Option::get_clovis_layout_id() { return clovis_layout_id; }
 
-std::string S3Option::get_option_file() {
-  return option_file;
-}
+std::string S3Option::get_option_file() { return option_file; }
 
-std::string S3Option::get_daemon_dir() {
-  return s3_daemon_dir;
-}
+std::string S3Option::get_daemon_dir() { return s3_daemon_dir; }
 
 size_t S3Option::get_clovis_read_pool_initial_size() {
   return clovis_read_pool_initial_size;
@@ -627,17 +623,11 @@ size_t S3Option::get_libevent_pool_max_threshold() {
   return libevent_pool_max_threshold;
 }
 
-unsigned short S3Option::do_redirection() {
-  return s3_daemon_redirect;
-}
+unsigned short S3Option::do_redirection() { return s3_daemon_redirect; }
 
-void S3Option::set_option_file(std::string filename) {
-  option_file = filename;
-}
+void S3Option::set_option_file(std::string filename) { option_file = filename; }
 
-void S3Option::set_daemon_dir(std::string path) {
-  s3_daemon_dir = path;
-}
+void S3Option::set_daemon_dir(std::string path) { s3_daemon_dir = path; }
 
 void S3Option::set_redirection(unsigned short redirect) {
   s3_daemon_redirect = redirect;
@@ -645,9 +635,7 @@ void S3Option::set_redirection(unsigned short redirect) {
 
 std::string S3Option::get_log_dir() { return log_dir; }
 
-std::string S3Option::get_log_level() {
-  return log_level;
-}
+std::string S3Option::get_log_level() { return log_level; }
 
 int S3Option::get_log_file_max_size_in_mb() { return log_file_max_size_mb; }
 
@@ -657,53 +645,31 @@ int S3Option::get_log_flush_frequency_in_sec() {
 
 bool S3Option::is_log_buffering_enabled() { return log_buffering_enable; }
 
-std::string S3Option::get_perf_log_filename() {
-  return perf_log_file;
-}
+std::string S3Option::get_perf_log_filename() { return perf_log_file; }
 
-int S3Option::get_read_ahead_multiple() {
-  return read_ahead_multiple;
-}
+int S3Option::get_read_ahead_multiple() { return read_ahead_multiple; }
 
-std::string S3Option::get_bind_addr() {
-  return s3_bind_addr;
-}
+std::string S3Option::get_bind_addr() { return s3_bind_addr; }
 
-std::string S3Option::get_default_endpoint() {
-    return s3_default_endpoint;
-}
+std::string S3Option::get_default_endpoint() { return s3_default_endpoint; }
 
 std::set<std::string>& S3Option::get_region_endpoints() {
-    return s3_region_endpoints;
+  return s3_region_endpoints;
 }
 
-std::string S3Option::get_clovis_local_addr() {
-  return clovis_local_addr;
-}
+std::string S3Option::get_clovis_local_addr() { return clovis_local_addr; }
 
-std::string S3Option::get_clovis_confd_addr() {
-  return clovis_confd_addr;
-}
+std::string S3Option::get_clovis_confd_addr() { return clovis_confd_addr; }
 
-std::string S3Option::get_clovis_ha_addr() {
-  return clovis_ha_addr;
-}
+std::string S3Option::get_clovis_ha_addr() { return clovis_ha_addr; }
 
-std::string S3Option::get_clovis_prof() {
-  return clovis_profile;
-}
+std::string S3Option::get_clovis_prof() { return clovis_profile; }
 
-unsigned int S3Option::get_clovis_block_size() {
-  return clovis_block_size;
-}
+unsigned int S3Option::get_clovis_block_size() { return clovis_block_size; }
 
-unsigned short S3Option::get_clovis_factor() {
-  return clovis_factor;
-}
+unsigned short S3Option::get_clovis_factor() { return clovis_factor; }
 
-int S3Option::get_clovis_idx_fetch_count() {
-  return clovis_idx_fetch_count;
-}
+int S3Option::get_clovis_idx_fetch_count() { return clovis_idx_fetch_count; }
 
 unsigned int S3Option::get_clovis_write_payload_size() {
   return clovis_block_size * clovis_factor;
@@ -743,29 +709,19 @@ int S3Option::get_clovis_cass_max_column_family_num() {
   return clovis_cass_max_column_family_num;
 }
 
-std::string S3Option::get_auth_ip_addr() {
-  return auth_ip_addr;
-}
+std::string S3Option::get_auth_ip_addr() { return auth_ip_addr; }
 
-void S3Option::disable_auth() {
-  FLAGS_disable_auth = true;
-}
+void S3Option::disable_auth() { FLAGS_disable_auth = true; }
 
-bool S3Option::is_auth_disabled() {
-  return FLAGS_disable_auth;
-}
+bool S3Option::is_auth_disabled() { return FLAGS_disable_auth; }
 
-unsigned short S3Option::s3_performance_enabled() {
-  return perf_enabled;
-}
+unsigned short S3Option::s3_performance_enabled() { return perf_enabled; }
 
 bool S3Option::is_fake_clovis_createobj() {
   return FLAGS_fake_clovis_createobj;
 }
 
-bool S3Option::is_fake_clovis_writeobj() {
-  return FLAGS_fake_clovis_writeobj;
-}
+bool S3Option::is_fake_clovis_writeobj() { return FLAGS_fake_clovis_writeobj; }
 
 bool S3Option::is_fake_clovis_deleteobj() {
   return FLAGS_fake_clovis_deleteobj;
@@ -779,29 +735,19 @@ bool S3Option::is_fake_clovis_deleteidx() {
   return FLAGS_fake_clovis_deleteidx;
 }
 
-bool S3Option::is_fake_clovis_getkv() {
-  return FLAGS_fake_clovis_getkv;
-}
+bool S3Option::is_fake_clovis_getkv() { return FLAGS_fake_clovis_getkv; }
 
-bool S3Option::is_fake_clovis_putkv() {
-  return FLAGS_fake_clovis_putkv;
-}
+bool S3Option::is_fake_clovis_putkv() { return FLAGS_fake_clovis_putkv; }
 
-bool S3Option::is_fake_clovis_deletekv() {
-  return FLAGS_fake_clovis_deletekv;
-}
+bool S3Option::is_fake_clovis_deletekv() { return FLAGS_fake_clovis_deletekv; }
 
-unsigned short S3Option::get_max_retry_count() {
-  return max_retry_count;
-}
+unsigned short S3Option::get_max_retry_count() { return max_retry_count; }
 
 unsigned short S3Option::get_retry_interval_in_millisec() {
   return retry_interval_millisec;
 }
 
-void S3Option::set_eventbase(evbase_t* base) {
-  eventbase = base;
-}
+void S3Option::set_eventbase(evbase_t* base) { eventbase = base; }
 
 bool S3Option::is_stats_enabled() { return stats_enable; }
 
@@ -823,9 +769,7 @@ void S3Option::set_stats_whitelist_filename(std::string filename) {
   stats_whitelist_filename = filename;
 }
 
-evbase_t* S3Option::get_eventbase() {
-  return eventbase;
-}
+evbase_t* S3Option::get_eventbase() { return eventbase; }
 
 void S3Option::enable_fault_injection() { FLAGS_fault_injection = true; }
 

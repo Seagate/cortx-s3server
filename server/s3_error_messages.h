@@ -22,15 +22,16 @@
 #ifndef __MERO_FE_S3_SERVER_S3_ERROR_MESSAGES_H__
 #define __MERO_FE_S3_SERVER_S3_ERROR_MESSAGES_H__
 
-#include <string>
-#include <map>
-#include "s3_log.h"
 #include <gtest/gtest_prod.h>
+#include <map>
+#include <string>
+#include "s3_log.h"
 
 class S3ErrorDetails {
   std::string description;
   int http_return_code;
-public:
+
+ public:
   S3ErrorDetails() : description(""), http_return_code(-1) {}
 
   S3ErrorDetails(std::string message, int http_code) {
@@ -38,28 +39,27 @@ public:
     http_return_code = http_code;
   }
 
-  std::string& get_message() {
-    return description;
-  }
+  std::string& get_message() { return description; }
 
-  int get_http_status_code() {
-    return http_return_code;
-  }
+  int get_http_status_code() { return http_return_code; }
 
   FRIEND_TEST(S3ErrorDetailsTest, DefaultConstructor);
   FRIEND_TEST(S3ErrorDetailsTest, ConstructorWithMsg);
 };
 
 class S3ErrorMessages {
-private:
+ private:
   static S3ErrorMessages* instance;
   S3ErrorMessages(std::string config_file);
   ~S3ErrorMessages();
 
   std::map<std::string, S3ErrorDetails> error_list;
-public:
+
+ public:
   // Loads messages and creates singleton
-  static void init_messages(std::string config_file = "/opt/seagate/s3/resources/s3_error_messages.json");
+  static void init_messages(
+      std::string config_file =
+          "/opt/seagate/s3/resources/s3_error_messages.json");
 
   // Cleans up the singleton instance
   static void finalize();

@@ -34,7 +34,8 @@ class S3AwsEtag {
   // Helpers
   int hex_to_dec(char ch);
   std::string convert_hex_bin(std::string hex);
-public:
+
+ public:
   S3AwsEtag() : part_count(0) {}
 
   void add_part_etag(std::string etag);

@@ -62,7 +62,7 @@ DECLARE_int32(statsd_port);
 
 // Loads config and also processes the command line options.
 // options specified on cli overrides the option specified in config file.
-int parse_and_load_config_options(int argc, char ** argv);
+int parse_and_load_config_options(int argc, char** argv);
 
 // Cleanups related to options processing.
 void finalize_cli_options();

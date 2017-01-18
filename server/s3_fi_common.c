@@ -17,10 +17,10 @@
  * Original creation date: 23th-June-2016
  */
 
+#include "s3_fi_common.h"
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
-#include "s3_fi_common.h"
 
 #ifdef ENABLE_FAULT_INJECTION
 

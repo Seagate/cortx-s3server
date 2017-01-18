@@ -22,8 +22,8 @@
 #ifndef __MERO_FE_S3_SERVER_S3_ASYNC_BUFFER_H__
 #define __MERO_FE_S3_SERVER_S3_ASYNC_BUFFER_H__
 
-#include <string>
 #include <deque>
+#include <string>
 #include <tuple>
 
 #include <evhtp.h>
@@ -33,9 +33,9 @@
 
 // Wrapper around evhtp evbuf_t buffers for incoming data.
 class S3AsyncBufferContainer {
-private:
+ private:
   // Remembers all the incoming data buffers
-  std::deque<evbuf_t *> buffered_input;
+  std::deque<evbuf_t*> buffered_input;
   size_t buffered_input_length;
 
   bool is_expecting_more;
@@ -43,7 +43,7 @@ private:
   // Manages read state. stores count of bufs shared outside for consumption.
   size_t count_bufs_shared_for_read;
 
-public:
+ public:
   S3AsyncBufferContainer();
   virtual ~S3AsyncBufferContainer();
 
@@ -60,7 +60,8 @@ public:
   // Anything less is returned only if there is no more data to be filled in.
   // Call mark_size_of_data_consumed() to drain the data that was consumed
   // after get_buffers_ref call.
-  std::deque< std::tuple<void*, size_t> > get_buffers_ref(size_t expected_content_size);
+  std::deque<std::tuple<void*, size_t> > get_buffers_ref(
+      size_t expected_content_size);
 
   // Pull up all the data in contiguous memory and releases internal buffers
   // only if all data is in and its freezed. Use check is_freezed()
@@ -69,7 +70,8 @@ public:
   void mark_size_of_data_consumed(size_t size_consumed);
 
   // Unit Testing only
-  FRIEND_TEST(S3AsyncBufferContainerTest, DataBufferIsAddedToQueueAndCanBeRetrieved);
+  FRIEND_TEST(S3AsyncBufferContainerTest,
+              DataBufferIsAddedToQueueAndCanBeRetrieved);
 };
 
 #endif

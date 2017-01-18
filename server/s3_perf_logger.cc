@@ -26,18 +26,16 @@ S3PerfLogger::S3PerfLogger(std::string log_file) {
   perf_file.open(log_file.c_str());
 }
 
-S3PerfLogger::~S3PerfLogger() {
-  perf_file.close();
-}
+S3PerfLogger::~S3PerfLogger() { perf_file.close(); }
 
 void S3PerfLogger::initialize(std::string log_file) {
-  if(!instance){
+  if (!instance) {
     instance = new S3PerfLogger(log_file);
   }
 }
 
 S3PerfLogger* S3PerfLogger::get_instance() {
-  if(!instance){
+  if (!instance) {
     S3PerfLogger::initialize();
   }
   return instance;
@@ -46,11 +44,10 @@ S3PerfLogger* S3PerfLogger::get_instance() {
 void S3PerfLogger::write(const char* perf_text, size_t elapsed_time) {
   if (instance && S3Option::get_instance()->s3_performance_enabled()) {
     if (elapsed_time != SIZE_MAX) {
-      perf_file << perf_text << ":" << elapsed_time << std::endl;  // endl flushes.
+      perf_file << perf_text << ":" << elapsed_time
+                << std::endl;  // endl flushes.
     }
   }
 }
 
-void S3PerfLogger::finalize(){
-  delete instance;
-}
+void S3PerfLogger::finalize() { delete instance; }

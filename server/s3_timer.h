@@ -30,14 +30,11 @@
 // Do some operations to be timed
 // timer.stop();
 // cout << "Elapsed time (ms) = " << timer.elapsed_time_in_millisec() << endl;
-// cout << "Elapsed time (nanosec) = " << timer.elapsed_time_in_nanosec() << endl << endl;
+// cout << "Elapsed time (nanosec) = " << timer.elapsed_time_in_nanosec() <<
+// endl << endl;
 //
 
-enum class S3TimerState {
-  unknown,
-  started,
-  stopped
-};
+enum class S3TimerState { unknown, started, stopped };
 
 class S3Timer {
   std::chrono::time_point<std::chrono::steady_clock> start_;
@@ -45,7 +42,8 @@ class S3Timer {
   std::chrono::duration<double> difference;
 
   S3TimerState state;
-public:
+
+ public:
   S3Timer() : state(S3TimerState::unknown) {}
 
   void start() {
@@ -65,14 +63,14 @@ public:
 
   size_t elapsed_time_in_millisec() {
     if (state == S3TimerState::stopped) {
-      return std::chrono::duration <double, std::milli> (difference).count();
+      return std::chrono::duration<double, std::milli>(difference).count();
     }
     return -1;
   }
 
   size_t elapsed_time_in_nanosec() {
     if (state == S3TimerState::stopped) {
-      return std::chrono::duration <double, std::nano> (difference).count();
+      return std::chrono::duration<double, std::nano>(difference).count();
     }
     return -1;
   }

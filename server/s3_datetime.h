@@ -22,9 +22,8 @@
 #ifndef __MERO_FE_S3_SERVER_S3_DATETIME_H__
 #define __MERO_FE_S3_SERVER_S3_DATETIME_H__
 
-
-#include <time.h>
 #include <stdlib.h>
+#include <time.h>
 #include <string>
 
 // UTC == GMT we always save/give out UTC/GMT time with different format
@@ -38,7 +37,8 @@ class S3DateTime {
 
   void init_with_fmt(std::string time_str, std::string format);
   std::string get_format_string(std::string format);
-public:
+
+ public:
   S3DateTime();
   void init_current_time();
   void init_with_gmt(std::string time_str);

@@ -22,17 +22,18 @@
 #ifndef __MERO_FE_S3_SERVER_S3_PERF_LOGGER_H__
 #define __MERO_FE_S3_SERVER_S3_PERF_LOGGER_H__
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 // Not thread-safe, but we are single threaded.
 class S3PerfLogger {
-private:
+ private:
   static S3PerfLogger* instance;
   S3PerfLogger(std::string log_file);
 
   std::ofstream perf_file;
-public:
+
+ public:
   ~S3PerfLogger();
 
   // Opens the Performance log file
@@ -46,6 +47,7 @@ public:
   static void finalize();
 };
 
-#define LOG_PERF(perf_text, elapsed_time) S3PerfLogger::get_instance()->write(perf_text, elapsed_time);
+#define LOG_PERF(perf_text, elapsed_time) \
+  S3PerfLogger::get_instance()->write(perf_text, elapsed_time);
 
 #endif

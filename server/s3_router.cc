@@ -18,8 +18,8 @@
  */
 
 #include <memory>
-#include <string>
 #include <regex>
+#include <string>
 
 #include "s3_api_handler.h"
 #include "s3_log.h"
@@ -28,8 +28,8 @@
 #include "s3_stats.h"
 #include "s3_uri.h"
 
-S3Router::S3Router(S3APIHandlerFactory *api_creator, S3UriFactory *uri_creator) :
-    api_handler_factory(api_creator), uri_factory(uri_creator) {
+S3Router::S3Router(S3APIHandlerFactory* api_creator, S3UriFactory* uri_creator)
+    : api_handler_factory(api_creator), uri_factory(uri_creator) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 }
 
@@ -47,15 +47,19 @@ bool S3Router::is_exact_valid_endpoint(std::string& endpoint) {
   if (endpoint == S3Option::get_instance()->get_default_endpoint()) {
     return true;
   }
-  return S3Option::get_instance()->get_region_endpoints().find(endpoint) != S3Option::get_instance()->get_region_endpoints().end();
+  return S3Option::get_instance()->get_region_endpoints().find(endpoint) !=
+         S3Option::get_instance()->get_region_endpoints().end();
 }
 
 bool S3Router::is_subdomain_match(std::string& endpoint) {
   // todo check if given endpoint is subdomain or default or region.
-  if (endpoint.find(S3Option::get_instance()->get_default_endpoint()) != std::string::npos) {
+  if (endpoint.find(S3Option::get_instance()->get_default_endpoint()) !=
+      std::string::npos) {
     return true;
   }
-  for (std::set<std::string>::iterator it = S3Option::get_instance()->get_region_endpoints().begin(); it != S3Option::get_instance()->get_region_endpoints().end(); ++it) {
+  for (std::set<std::string>::iterator it =
+           S3Option::get_instance()->get_region_endpoints().begin();
+       it != S3Option::get_instance()->get_region_endpoints().end(); ++it) {
     if (endpoint.find(*it) != std::string::npos) {
       return true;
     }
@@ -77,9 +81,11 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
   std::unique_ptr<S3URI> uri;
   S3UriType uri_type = S3UriType::unsupported;
 
-  if ( host_header.empty() || is_exact_valid_endpoint(host_header) || !is_subdomain_match(host_header)) {
+  if (host_header.empty() || is_exact_valid_endpoint(host_header) ||
+      !is_subdomain_match(host_header)) {
     // Path style API
-    // Bucket for the request will be the first slash-delimited component of the Request-URI
+    // Bucket for the request will be the first slash-delimited component of the
+    // Request-URI
     s3_log(S3_LOG_DEBUG, "Detected S3PathStyleURI\n");
     uri_type = S3UriType::path_style;
   } else {
@@ -88,14 +94,18 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
     uri_type = S3UriType::virtual_host_style;
   }
 
-  uri = std::unique_ptr<S3URI>(uri_factory->create_uri_object(uri_type,  request));
+  uri =
+      std::unique_ptr<S3URI>(uri_factory->create_uri_object(uri_type, request));
 
   request->set_bucket_name(uri->get_bucket_name());
   request->set_object_name(uri->get_object_name());
-  s3_log(S3_LOG_DEBUG, "Detected bucket name = %s\n", uri->get_bucket_name().c_str());
-  s3_log(S3_LOG_DEBUG, "Detected object name = %s\n", uri->get_object_name().c_str());
+  s3_log(S3_LOG_DEBUG, "Detected bucket name = %s\n",
+         uri->get_bucket_name().c_str());
+  s3_log(S3_LOG_DEBUG, "Detected object name = %s\n",
+         uri->get_object_name().c_str());
 
-  handler = api_handler_factory->create_api_handler(uri->get_s3_api_type(), request, uri->get_operation_code());
+  handler = api_handler_factory->create_api_handler(
+      uri->get_s3_api_type(), request, uri->get_operation_code());
 
   if (handler) {
     s3_stats_inc("total_request_count");
@@ -132,7 +142,6 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
 // list multipart uploads in progress
 //               -> http://s3.seagate.com/bucketname?uploads
 
-
 // Object APIs   -> http://s3.seagate.com/bucketname/ObjectKey
 // Host Header = s3.seagate.com or empty
 //               -> http://bucketname.s3.seagate.com/ObjectKey
@@ -146,6 +155,8 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
 
 // Initiate multipart upload
 //               -> http://s3.seagate.com/bucketname/ObjectKey?uploads
-// Upload part   -> http://s3.seagate.com/bucketname/ObjectKey?partNumber=PartNumber&uploadId=UploadId
+// Upload part   ->
+// http://s3.seagate.com/bucketname/ObjectKey?partNumber=PartNumber&uploadId=UploadId
 // Complete      -> http://s3.seagate.com/bucketname/ObjectKey?uploadId=UploadId
-// Abort         -> http://s3.seagate.com/bucketname/ObjectKey?uploadId=UploadId DEL
+// Abort         -> http://s3.seagate.com/bucketname/ObjectKey?uploadId=UploadId
+// DEL

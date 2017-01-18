@@ -34,7 +34,7 @@
 #define S3_BACKTRACE_DEPTH_MAX 256
 #define S3_ARRAY_SIZE(a) ((sizeof(a)) / (sizeof(a)[0]))
 
-extern evbase_t * global_evbase_handle;
+extern evbase_t *global_evbase_handle;
 
 void s3_terminate_sig_handler(int signum) {
   // When a daemon has been told to shutdown, there is a possibility of OS
@@ -110,19 +110,18 @@ void s3_terminate_fatal_handler(int signum) {
   int rc;
   rc = backtrace(trace, S3_ARRAY_SIZE(trace));
   buf = backtrace_symbols(trace, rc);
-  for(int i = 0; i < rc; i++) {
+  for (int i = 0; i < rc; i++) {
     bt_str += buf[i] + newline_str;
   }
   s3_log(S3_LOG_ERROR, "Backtrace:\n%s\n", bt_str.c_str());
   free(buf);
   S3Daemonize s3daemon;
   s3daemon.delete_pidfile();
-  //dafault handler for core dumping
+  // dafault handler for core dumping
   raise(signum);
 }
 
-
-S3Daemonize::S3Daemonize(): noclose(0) {
+S3Daemonize::S3Daemonize() : noclose(0) {
   option_instance = S3Option::get_instance();
   if (option_instance->do_redirection() == 0) {
     noclose = 1;
@@ -144,13 +143,15 @@ void S3Daemonize::daemonize() {
   sigaction(SIGHUP, &s3hup_act, NULL);
 
   daemon_wd = option_instance->get_daemon_dir();
-  if(access(daemon_wd.c_str(), F_OK) != 0) {
-    s3_log(S3_LOG_FATAL, "The directory %s doesn't exist, errno = %d\n",daemon_wd.c_str(), errno);
+  if (access(daemon_wd.c_str(), F_OK) != 0) {
+    s3_log(S3_LOG_FATAL, "The directory %s doesn't exist, errno = %d\n",
+           daemon_wd.c_str(), errno);
     exit(1);
   }
 
-  if(::chdir(daemon_wd.c_str())) {
-    s3_log(S3_LOG_FATAL, "Failed to chdir to %s, errno = %d\n",daemon_wd.c_str(), errno);
+  if (::chdir(daemon_wd.c_str())) {
+    s3_log(S3_LOG_FATAL, "Failed to chdir to %s, errno = %d\n",
+           daemon_wd.c_str(), errno);
     exit(1);
   }
   write_to_pidfile();
@@ -200,7 +201,7 @@ int S3Daemonize::delete_pidfile() {
     s3_log(S3_LOG_DEBUG, "Exiting");
     return -1;
   }
-  pidfile_read.getline (pidstr_read,100);
+  pidfile_read.getline(pidstr_read, 100);
   if (strlen(pidstr_read) == 0) {
     s3_log(S3_LOG_ERROR, "Pid doesn't exist within %s\n", pidfilename.c_str());
     s3_log(S3_LOG_DEBUG, "Exiting");
@@ -236,7 +237,8 @@ void S3Daemonize::register_signals() {
 
   fatal_action.sa_handler = s3_terminate_fatal_handler;
   sigemptyset(&fatal_action.sa_mask);
-  // Call default signal handler if at all heap corruption creates another SIGSEGV within signal handler
+  // Call default signal handler if at all heap corruption creates another
+  // SIGSEGV within signal handler
   fatal_action.sa_flags = SA_RESETHAND | SA_NODEFER;
   sigaction(SIGSEGV, &fatal_action, NULL);
   sigaction(SIGABRT, &fatal_action, NULL);
@@ -247,6 +249,4 @@ void S3Daemonize::register_signals() {
   sigaction(SIGXCPU, &fatal_action, NULL);
 }
 
-int S3Daemonize::get_s3daemon_redirection() {
-  return noclose;
-}
+int S3Daemonize::get_s3daemon_redirection() { return noclose; }

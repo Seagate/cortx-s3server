@@ -24,14 +24,18 @@ DEFINE_string(s3host, "0.0.0.0", "S3 server bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 
-DEFINE_string(s3loglevel, "INFO", "options: DEBUG | INFO | WARN | ERROR | FATAL");
+DEFINE_string(s3loglevel, "INFO",
+              "options: DEBUG | INFO | WARN | ERROR | FATAL");
 
 DEFINE_bool(perfenable, false, "Enable performance log");
-DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log", "Performance log path");
+DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log",
+              "Performance log path");
 
-DEFINE_string(clovislocal, "localhost@tcp:12345:33:100", "Clovis local address");
+DEFINE_string(clovislocal, "localhost@tcp:12345:33:100",
+              "Clovis local address");
 DEFINE_string(clovisha, "CLOVIS_DEFAULT_HA_ADDR", "Clovis ha address");
-DEFINE_string(clovisconfd, "localhost@tcp:12345:33:100", "Clovis confd address");
+DEFINE_string(clovisconfd, "localhost@tcp:12345:33:100",
+              "Clovis confd address");
 DEFINE_int32(clovislayoutid, 9, "For options please see the readme");
 DEFINE_string(clovisprofile, "<0x7000000000000001:0>", "Clovis profile");
 
@@ -55,7 +59,7 @@ DEFINE_bool(fault_injection, false, "Enable fault Injection flag for testing");
 DEFINE_string(statsd_host, "127.0.0.1", "StatsD daemon host");
 DEFINE_int32(statsd_port, 8125, "StatsD daemon port");
 
-int parse_and_load_config_options(int argc, char ** argv) {
+int parse_and_load_config_options(int argc, char **argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   // Create the initial options object with default values.
@@ -72,12 +76,14 @@ int parse_and_load_config_options(int argc, char ** argv) {
 
   gflags::GetCommandLineFlagInfo("s3host", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_BIND_ADDR, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_BIND_ADDR,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("s3port", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_BIND_PORT, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_BIND_PORT,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("s3pidfile", &flag_info);
@@ -88,17 +94,20 @@ int parse_and_load_config_options(int argc, char ** argv) {
 
   gflags::GetCommandLineFlagInfo("authhost", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("authport", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_AUTH_PORT, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_AUTH_PORT,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("perflogfile", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_PERF_LOG_FILE, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_PERF_LOG_FILE,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("log_dir", &flag_info);
@@ -109,7 +118,8 @@ int parse_and_load_config_options(int argc, char ** argv) {
 
   gflags::GetCommandLineFlagInfo("s3loglevel", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_LOG_MODE, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_LOG_MODE,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("max_log_size", &flag_info);
@@ -120,22 +130,26 @@ int parse_and_load_config_options(int argc, char ** argv) {
 
   gflags::GetCommandLineFlagInfo("clovislocal", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("clovisha", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_HA_ADDR, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_HA_ADDR,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("clovisconfd", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("clovislayoutid", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, flag_info.current_value.c_str());
+    option_instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID,
+                                        flag_info.current_value.c_str());
   }
 
   gflags::GetCommandLineFlagInfo("statsd_host", &flag_info);

@@ -31,7 +31,7 @@
 #include "s3_timer.h"
 
 class S3AsyncOpResponse {
-public:
+ public:
   S3AsyncOpResponse() {
     status = S3AsyncOpStatus::unknown;
     error_message = "";
@@ -61,40 +61,39 @@ class S3AsyncOpContextBase {
   // To measure performance
   S3Timer timer;
   std::string operation_key;  // used to identify operation(metric) name
-public:
-  S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success, std::function<void(void)> failed, int ops_cnt = 1);
+ public:
+  S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req,
+                       std::function<void(void)> success,
+                       std::function<void(void)> failed, int ops_cnt = 1);
   virtual ~S3AsyncOpContextBase() {}
 
   std::shared_ptr<S3RequestObject> get_request();
 
   std::function<void(void)> on_success_handler();
   std::function<void(void)> on_failed_handler();
-  void reset_callbacks(std::function<void(void)> success, std::function<void(void)> failed);
+  void reset_callbacks(std::function<void(void)> success,
+                       std::function<void(void)> failed);
 
   S3AsyncOpStatus get_op_status_for(int op_idx);
   int get_errno_for(int op_idx);
 
-  void set_op_status_for(int op_idx, S3AsyncOpStatus opstatus, std::string message);
+  void set_op_status_for(int op_idx, S3AsyncOpStatus opstatus,
+                         std::string message);
   void set_op_errno_for(int op_idx, int err);
 
   std::string& get_error_message_for(int op_idx);
 
-  int incr_response_count() {
-    return ++response_received_count;
-  }
+  int incr_response_count() { return ++response_received_count; }
 
-  int get_ops_count() {
-    return ops_count;
-  }
+  int get_ops_count() { return ops_count; }
 
-  bool is_at_least_one_op_successful() {
-    return at_least_one_success;
-  }
+  bool is_at_least_one_op_successful() { return at_least_one_success; }
   // virtual void consume(char* chars, size_t length) = 0;
 
   void start_timer_for(std::string op_key);
   void stop_timer(bool success = true);  // arg indicates success/failed metric
-  // Call the logging always on main thread, so we dont need synchronisation of log file.
+  // Call the logging always on main thread, so we dont need synchronisation of
+  // log file.
   void log_timer();
 };
 
