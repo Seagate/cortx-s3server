@@ -22,8 +22,8 @@
 #ifndef __MERO_FE_S3_SERVER_S3_ACTION_BASE_H__
 #define __MERO_FE_S3_SERVER_S3_ACTION_BASE_H__
 
-#include <memory>
 #include <functional>
+#include <memory>
 #include <vector>
 
 #include "s3_auth_client.h"
@@ -75,7 +75,7 @@ enum class S3ActionState {
 // action. The async callbacks should ensure to call next or
 // done/abort etc depending on the result of the operation.
 class S3Action {
-protected:
+ protected:
   std::shared_ptr<S3RequestObject> request;
   bool invalid_request;
   // Allow class object instiantiation without support for authentication
@@ -119,17 +119,11 @@ protected:
   void get_error_message(std::string& message);
 
  protected:
-  void add_task(std::function<void()> task) {
-    task_list.push_back(task);
-  }
+  void add_task(std::function<void()> task) { task_list.push_back(task); }
 
-  void clear_tasks() {
-    task_list.clear();
-  }
+  void clear_tasks() { task_list.clear(); }
 
-  std::shared_ptr<S3AuthClient>& get_auth_client() {
-    return auth_client;
-  }
+  std::shared_ptr<S3AuthClient>& get_auth_client() { return auth_client; }
 
   // Add tasks to list after each successful operation that needs rollback.
   // This list can be used to rollback changes in the event of error
@@ -139,9 +133,7 @@ protected:
     rollback_list.push_front(task);
   }
 
-  void clear_tasks_rollback() {
-    rollback_list.clear();
-  }
+  void clear_tasks_rollback() { rollback_list.clear(); }
 
   int number_of_rollback_tasks() { return rollback_list.size(); }
 
@@ -164,18 +156,12 @@ protected:
 
  public:
   // Self destructing object.
-  void manage_self(std::shared_ptr<S3Action> ref) {
-      self_ref = ref;
-  }
+  void manage_self(std::shared_ptr<S3Action> ref) { self_ref = ref; }
 
-  int number_of_tasks() {
-    return task_list.size();
-  }
+  int number_of_tasks() { return task_list.size(); }
 
   // This *MUST* be the last thing on object. Called @ end of dispatch.
-  void i_am_done() {
-    self_ref.reset();
-  }
+  void i_am_done() { self_ref.reset(); }
 
   // Register all the member functions required to complete the action.
   // This can register the function as
@@ -197,7 +183,8 @@ protected:
   void rollback_next();
   void rollback_done();
   // Default will call the last task in task_list after exhausting all tasks in
-  // rollback_list. It expects last task in task_list to be send_response_to_s3_client;
+  // rollback_list. It expects last task in task_list to be
+  // send_response_to_s3_client;
   virtual void rollback_exit();
 
   // Common steps for all Actions like Authenticate.

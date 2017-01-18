@@ -40,15 +40,15 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
 S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, "Destructor\n"); }
 
 void S3Action::get_error_message(std::string& message) {
-    error_message = message;
+  error_message = message;
 }
 
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setup the action\n");
 
   if (!S3Option::get_instance()->is_auth_disabled()) {
-    add_task(std::bind( &S3Action::check_authentication, this ));
-    //add_task(std::bind( &S3Action::fetch_acl_policies, this ));
+    add_task(std::bind(&S3Action::check_authentication, this));
+    // add_task(std::bind( &S3Action::fetch_acl_policies, this ));
     // Commented till we implement Authorization feature completely.
     // Current authorisation implementation in AuthServer is partial
     // add_task(std::bind( &S3Action::check_authorization, this ));
@@ -120,8 +120,8 @@ void S3Action::rollback_start() {
 void S3Action::rollback_next() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (rollback_index < rollback_list.size()) {
-      // Call step and move index to next
-      rollback_list[rollback_index++]();
+    // Call step and move index to next
+    rollback_list[rollback_index++]();
   } else {
     rollback_done();
   }
@@ -207,11 +207,15 @@ void S3Action::rollback_exit() {
 void S3Action::check_authorization() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (request->get_api_type() == S3ApiType::bucket) {
-    auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(), bucket_metadata->get_policy_as_json());
+    auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                    bucket_metadata->get_policy_as_json());
   } else if (request->get_api_type() == S3ApiType::object) {
-    auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(), "");
+    auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(),
+                                    "");
   }
-  auth_client->check_authorization(std::bind( &S3Action::check_authorization_successful, this), std::bind( &S3Action::check_authorization_failed, this));
+  auth_client->check_authorization(
+      std::bind(&S3Action::check_authorization_successful, this),
+      std::bind(&S3Action::check_authorization_failed, this));
 }
 
 void S3Action::check_authorization_successful() {
@@ -231,13 +235,16 @@ void S3Action::check_authorization_failed() {
     }
     s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", error_code.c_str());
 
-    S3Error error(error_code, request->get_request_id(), request->get_object_uri());
+    S3Error error(error_code, request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-    s3_log(S3_LOG_ERROR, "Authorization failure (http status): %d\n", error.get_http_status_code());
+    s3_log(S3_LOG_ERROR, "Authorization failure (http status): %d\n",
+           error.get_http_status_code());
     s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", response_xml.c_str());
   }
   done();
@@ -247,7 +254,9 @@ void S3Action::check_authorization_failed() {
 
 void S3Action::check_authentication() {
   auth_client = std::make_shared<S3AuthClient>(request);
-  auth_client->check_authentication(std::bind( &S3Action::check_authentication_successful, this), std::bind( &S3Action::check_authentication_failed, this));
+  auth_client->check_authentication(
+      std::bind(&S3Action::check_authentication_successful, this),
+      std::bind(&S3Action::check_authentication_failed, this));
 }
 
 void S3Action::check_authentication_successful() {
@@ -267,13 +276,16 @@ void S3Action::check_authentication_failed() {
     }
     s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", error_code.c_str());
 
-    S3Error error(error_code, request->get_request_id(), request->get_object_uri());
+    S3Error error(error_code, request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length", std::to_string(response_xml.length()));
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
-    s3_log(S3_LOG_ERROR, "Authentication failure (http status): %d\n", error.get_http_status_code());
+    s3_log(S3_LOG_ERROR, "Authentication failure (http status): %d\n",
+           error.get_http_status_code());
     s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", response_xml.c_str());
   }
   done();
@@ -283,7 +295,9 @@ void S3Action::check_authentication_failed() {
 
 void S3Action::start_chunk_authentication() {
   auth_client = std::make_shared<S3AuthClient>(request);
-  auth_client->check_chunk_auth(std::bind( &S3Action::check_authentication_successful, this), std::bind( &S3Action::check_authentication_failed, this));
+  auth_client->check_chunk_auth(
+      std::bind(&S3Action::check_authentication_successful, this),
+      std::bind(&S3Action::check_authentication_failed, this));
 }
 
 bool S3Action::check_shutdown_and_rollback() {

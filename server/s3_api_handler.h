@@ -28,46 +28,49 @@
 #include "s3_request_object.h"
 
 class S3APIHandler {
-protected:
+ protected:
   std::shared_ptr<S3RequestObject> request;
   S3OperationCode operation_code;
 
-private:
+ private:
   std::shared_ptr<S3APIHandler> self_ref;
 
-public:
-  S3APIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code) : request(req), operation_code(op_code) {}
+ public:
+  S3APIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code)
+      : request(req), operation_code(op_code) {}
   virtual ~S3APIHandler() {}
 
   virtual void dispatch() = 0;
 
   // Self destructing object.
-  void manage_self(std::shared_ptr<S3APIHandler> ref) {
-      self_ref = ref;
-  }
+  void manage_self(std::shared_ptr<S3APIHandler> ref) { self_ref = ref; }
   // This *MUST* be the last thing on object. Called @ end of dispatch.
-  void i_am_done() {
-    self_ref.reset();
-  }
+  void i_am_done() { self_ref.reset(); }
 };
 
 class S3ServiceAPIHandler : public S3APIHandler {
-public:
-  S3ServiceAPIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code) : S3APIHandler(req, op_code) {}
+ public:
+  S3ServiceAPIHandler(std::shared_ptr<S3RequestObject> req,
+                      S3OperationCode op_code)
+      : S3APIHandler(req, op_code) {}
 
   virtual void dispatch();
 };
 
 class S3BucketAPIHandler : public S3APIHandler {
-public:
-  S3BucketAPIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code) : S3APIHandler(req, op_code) {}
+ public:
+  S3BucketAPIHandler(std::shared_ptr<S3RequestObject> req,
+                     S3OperationCode op_code)
+      : S3APIHandler(req, op_code) {}
 
   virtual void dispatch();
 };
 
 class S3ObjectAPIHandler : public S3APIHandler {
-public:
-  S3ObjectAPIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code) : S3APIHandler(req, op_code) {}
+ public:
+  S3ObjectAPIHandler(std::shared_ptr<S3RequestObject> req,
+                     S3OperationCode op_code)
+      : S3APIHandler(req, op_code) {}
 
   virtual void dispatch();
 };
@@ -82,13 +85,12 @@ class S3FaultinjectionAPIHandler : public S3APIHandler {
 };
 
 class S3APIHandlerFactory {
-public:
+ public:
   virtual ~S3APIHandlerFactory() {}
 
   virtual std::shared_ptr<S3APIHandler> create_api_handler(
-        S3ApiType api_type,
-        std::shared_ptr<S3RequestObject> request,
-        S3OperationCode op_code);
+      S3ApiType api_type, std::shared_ptr<S3RequestObject> request,
+      S3OperationCode op_code);
 };
 
 #endif

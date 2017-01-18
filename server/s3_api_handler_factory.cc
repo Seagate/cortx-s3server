@@ -20,22 +20,21 @@
 #include "s3_api_handler.h"
 #include "s3_log.h"
 
-std::shared_ptr<S3APIHandler>
-S3APIHandlerFactory::create_api_handler(S3ApiType api_type,
-          std::shared_ptr<S3RequestObject> request,
-          S3OperationCode op_code) {
+std::shared_ptr<S3APIHandler> S3APIHandlerFactory::create_api_handler(
+    S3ApiType api_type, std::shared_ptr<S3RequestObject> request,
+    S3OperationCode op_code) {
   std::shared_ptr<S3APIHandler> handler;
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "api_type = %d\n", api_type);
-  switch(api_type) {
+  switch (api_type) {
     case S3ApiType::service:
-      handler = std::make_shared<S3ServiceAPIHandler> (request, op_code);
+      handler = std::make_shared<S3ServiceAPIHandler>(request, op_code);
       break;
     case S3ApiType::bucket:
-      handler = std::make_shared<S3BucketAPIHandler> (request, op_code);
+      handler = std::make_shared<S3BucketAPIHandler>(request, op_code);
       break;
     case S3ApiType::object:
-      handler = std::make_shared<S3ObjectAPIHandler> (request, op_code);
+      handler = std::make_shared<S3ObjectAPIHandler>(request, op_code);
       break;
     case S3ApiType::faultinjection:
       handler = std::make_shared<S3FaultinjectionAPIHandler>(request, op_code);
