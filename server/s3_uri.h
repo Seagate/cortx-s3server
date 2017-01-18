@@ -22,21 +22,16 @@
 #ifndef __MERO_FE_S3_SERVER_S3_URI_H__
 #define __MERO_FE_S3_SERVER_S3_URI_H__
 
-#include <string>
 #include <memory>
+#include <string>
 
-#include "s3_request_object.h"
 #include "s3_common.h"
+#include "s3_request_object.h"
 
-enum class S3UriType {
-  path_style,
-  virtual_host_style,
-  unsupported
-};
+enum class S3UriType { path_style, virtual_host_style, unsupported };
 
 class S3URI {
-
-protected:
+ protected:
   std::shared_ptr<S3RequestObject> request;
 
   S3OperationCode operation_code;
@@ -45,10 +40,10 @@ protected:
   std::string bucket_name;
   std::string object_name;
 
-private:
+ private:
   void setup_operation_code();
 
-public:
+ public:
   S3URI(std::shared_ptr<S3RequestObject> req);
   virtual ~S3URI() {}
 
@@ -58,11 +53,10 @@ public:
   virtual std::string& get_object_name();  // Object key
 
   virtual S3OperationCode get_operation_code();
-
 };
 
 class S3PathStyleURI : public S3URI {
-public:
+ public:
   S3PathStyleURI(std::shared_ptr<S3RequestObject> req);
 };
 
@@ -71,15 +65,17 @@ class S3VirtualHostStyleURI : public S3URI {
 
   // helper
   void setup_bucket_name();
-public:
+
+ public:
   S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req);
 };
 
 class S3UriFactory {
-public:
+ public:
   virtual ~S3UriFactory() {}
 
-  virtual S3URI* create_uri_object(S3UriType uri_type, std::shared_ptr<S3RequestObject> request);
+  virtual S3URI* create_uri_object(S3UriType uri_type,
+                                   std::shared_ptr<S3RequestObject> request);
 };
 
 #endif

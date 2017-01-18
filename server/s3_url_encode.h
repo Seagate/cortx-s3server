@@ -29,6 +29,6 @@ void escape_char(char c, std::string& destination);
 
 bool char_needs_url_encoding(char c);
 
-std::string  url_encode(const char* src);
+std::string url_encode(const char* src);
 
 #endif

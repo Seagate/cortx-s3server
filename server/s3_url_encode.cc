@@ -22,17 +22,14 @@
 
 #include "s3_url_encode.h"
 
-void escape_char(char ch, std::string& destination)
-{
+void escape_char(char ch, std::string& destination) {
   char buf[16];
   snprintf(buf, sizeof(buf), "%%%.2X", (int)(unsigned char)ch);
   destination.append(buf);
 }
 
-bool char_needs_url_encoding(char c)
-{
-  if (c <= 0x20 || c >= 0x7f)
-    return true;
+bool char_needs_url_encoding(char c) {
+  if (c <= 0x20 || c >= 0x7f) return true;
 
   switch (c) {
     case 0x22:
@@ -61,9 +58,7 @@ bool char_needs_url_encoding(char c)
   return false;
 }
 
-
-std::string  url_encode(const char* src)
-{
+std::string url_encode(const char* src) {
   if (src == NULL) {
     return "";
   }
@@ -73,7 +68,7 @@ std::string  url_encode(const char* src)
     if (char_needs_url_encoding(*src)) {
       escape_char(*src, encoded_string);
     } else {
-    encoded_string.append(src, 1);
+      encoded_string.append(src, 1);
     }
   }
   return encoded_string;

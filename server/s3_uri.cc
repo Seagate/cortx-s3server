@@ -19,32 +19,26 @@
 
 #include <string>
 
-#include "s3_uri.h"
-#include "s3_option.h"
 #include "s3_log.h"
+#include "s3_option.h"
+#include "s3_uri.h"
 
-S3URI::S3URI(std::shared_ptr<S3RequestObject> req) : request(req),
-             operation_code(S3OperationCode::none),
-             s3_api_type(S3ApiType::unsupported),
-             bucket_name(""), object_name("") {
+S3URI::S3URI(std::shared_ptr<S3RequestObject> req)
+    : request(req),
+      operation_code(S3OperationCode::none),
+      s3_api_type(S3ApiType::unsupported),
+      bucket_name(""),
+      object_name("") {
   setup_operation_code();
 }
 
-S3ApiType S3URI::get_s3_api_type() {
-  return s3_api_type;
-}
+S3ApiType S3URI::get_s3_api_type() { return s3_api_type; }
 
-std::string& S3URI::get_bucket_name() {
-  return bucket_name;
-}
+std::string& S3URI::get_bucket_name() { return bucket_name; }
 
-std::string& S3URI::get_object_name() {
-  return object_name;
-}
+std::string& S3URI::get_object_name() { return object_name; }
 
-S3OperationCode S3URI::get_operation_code() {
-  return operation_code;
-}
+S3OperationCode S3URI::get_operation_code() { return operation_code; }
 
 void S3URI::setup_operation_code() {
   if (request->has_query_param_key("acl")) {
@@ -53,7 +47,8 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::policy;
   } else if (request->has_query_param_key("location")) {
     operation_code = S3OperationCode::location;
-  } else if (request->has_query_param_key("uploads") || request->has_query_param_key("uploadid")) {
+  } else if (request->has_query_param_key("uploads") ||
+             request->has_query_param_key("uploadid")) {
     operation_code = S3OperationCode::multipart;
   } else if (request->has_query_param_key("delete")) {
     operation_code = S3OperationCode::multidelete;
@@ -70,7 +65,8 @@ void S3URI::setup_operation_code() {
   // Other operations - todo
 }
 
-S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req) {
+S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
+    : S3URI(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   std::string full_uri(request->c_get_full_path());
@@ -88,7 +84,8 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req
       s3_api_type = S3ApiType::service;
   } else {
     // Find the second forward slash.
-    std::size_t pos = full_path.find("/", 1);  // ignoring the first forward slash
+    std::size_t pos =
+        full_path.find("/", 1);  // ignoring the first forward slash
     if (pos == std::string::npos) {
       // no second slash, means only bucket name.
       bucket_name = std::string(full_path.c_str() + 1);
@@ -97,7 +94,7 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req
       // second slash and its last char, means only bucket name.
       bucket_name = std::string(full_path.c_str() + 1, full_path.length() - 2);
       s3_api_type = S3ApiType::bucket;
-    } else  {
+    } else {
       // Its an object api.
       s3_api_type = S3ApiType::object;
       bucket_name = std::string(full_path.c_str() + 1, pos - 1);
@@ -110,36 +107,44 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req
   request->set_api_type(s3_api_type);
 }
 
-S3VirtualHostStyleURI::S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req) : S3URI(req) {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
-    host_header = request->get_host_header();
-    setup_bucket_name();
+S3VirtualHostStyleURI::S3VirtualHostStyleURI(
+    std::shared_ptr<S3RequestObject> req)
+    : S3URI(req) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  host_header = request->get_host_header();
+  setup_bucket_name();
 
-    std::string full_uri(request->c_get_full_path());
-    // Strip the query params
-    std::size_t qparam_start = full_uri.find("?");
-    std::string full_path(full_uri, 0, qparam_start);
-    if (full_path.compare("/") == 0) {
-      s3_api_type = S3ApiType::bucket;
-      request->set_api_type(s3_api_type);
-    } else {
-      s3_api_type = S3ApiType::object;
-      request->set_api_type(s3_api_type);
-      object_name = std::string(full_path.c_str() + 1);  // ignore first slash
-      if (object_name.back() == '/') {
-        object_name.pop_back();  // ignore last slash
-      }
+  std::string full_uri(request->c_get_full_path());
+  // Strip the query params
+  std::size_t qparam_start = full_uri.find("?");
+  std::string full_path(full_uri, 0, qparam_start);
+  if (full_path.compare("/") == 0) {
+    s3_api_type = S3ApiType::bucket;
+    request->set_api_type(s3_api_type);
+  } else {
+    s3_api_type = S3ApiType::object;
+    request->set_api_type(s3_api_type);
+    object_name = std::string(full_path.c_str() + 1);  // ignore first slash
+    if (object_name.back() == '/') {
+      object_name.pop_back();  // ignore last slash
     }
+  }
 }
 
 void S3VirtualHostStyleURI::setup_bucket_name() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (host_header.find(S3Option::get_instance()->get_default_endpoint()) != std::string::npos) {
-    bucket_name = host_header.substr(0, (host_header.length() - S3Option::get_instance()->get_default_endpoint().length() - 1));
+  if (host_header.find(S3Option::get_instance()->get_default_endpoint()) !=
+      std::string::npos) {
+    bucket_name = host_header.substr(
+        0, (host_header.length() -
+            S3Option::get_instance()->get_default_endpoint().length() - 1));
   }
-  for (std::set<std::string>::iterator it = S3Option::get_instance()->get_region_endpoints().begin(); it != S3Option::get_instance()->get_region_endpoints().end(); ++it) {
+  for (std::set<std::string>::iterator it =
+           S3Option::get_instance()->get_region_endpoints().begin();
+       it != S3Option::get_instance()->get_region_endpoints().end(); ++it) {
     if (host_header.find(*it) != std::string::npos) {
-      bucket_name = host_header.substr(0, (host_header.length() - (*it).length() - 1));
+      bucket_name =
+          host_header.substr(0, (host_header.length() - (*it).length() - 1));
     }
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");

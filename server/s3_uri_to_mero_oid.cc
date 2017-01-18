@@ -58,10 +58,10 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
   tmp_uint128.u_lo = hash128_64[1];
 
   // Ensure OID does not fall in clovis and S3 reserved range.
-  struct m0_uint128 s3_range = { 0ULL, 0ULL };
+  struct m0_uint128 s3_range = {0ULL, 0ULL};
   s3_range.u_lo = S3_OID_RESERVED_COUNT;
 
-  struct m0_uint128 reserved_range = { 0ULL, 0ULL };
+  struct m0_uint128 reserved_range = {0ULL, 0ULL};
   m0_uint128_add(&reserved_range, &M0_CLOVIS_ID_APP, &s3_range);
 
   int rc = m0_uint128_cmp(&reserved_range, &tmp_uint128);

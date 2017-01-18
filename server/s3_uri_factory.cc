@@ -20,7 +20,8 @@
 #include "s3_uri.h"
 #include "s3_log.h"
 
-S3URI* S3UriFactory::create_uri_object(S3UriType uri_type, std::shared_ptr<S3RequestObject> request) {
+S3URI* S3UriFactory::create_uri_object(
+    S3UriType uri_type, std::shared_ptr<S3RequestObject> request) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   switch (uri_type) {

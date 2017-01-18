@@ -30,7 +30,6 @@ EXTERN_C_BLOCK_BEGIN
 EXTERN_C_BLOCK_END
 
 void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
-                    S3ClovisEntityType type =
-                        S3ClovisEntityType::object);
+                    S3ClovisEntityType type = S3ClovisEntityType::object);
 
 #endif
