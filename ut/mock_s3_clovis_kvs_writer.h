@@ -22,11 +22,13 @@
 #ifndef __MERO_FE_S3_UT_MOCK_S3_CLOVIS_KVS_WRITER_H__
 #define __MERO_FE_S3_UT_MOCK_S3_CLOVIS_KVS_WRITER_H__
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
-public:
-  MockS3ClovisKVSWriter(std::shared_ptr<S3RequestObject>req, std::shared_ptr<ClovisAPI>s3_clovis_api) : S3ClovisKVSWriter(req, s3_clovis_api) {}
+ public:
+  MockS3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
+                        std::shared_ptr<ClovisAPI> s3_clovis_api)
+      : S3ClovisKVSWriter(req, s3_clovis_api) {}
 };
 #endif

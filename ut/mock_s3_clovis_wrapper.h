@@ -22,36 +22,41 @@
 #ifndef __MERO_FE_S3_UT_MOCK_S3_CLOVIS_WRAPPER_H__
 #define __MERO_FE_S3_UT_MOCK_S3_CLOVIS_WRAPPER_H__
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <functional>
 #include <iostream>
-#include "s3_clovis_rw_common.h"
 #include "clovis_helpers.h"
+#include "s3_clovis_rw_common.h"
 #include "s3_clovis_wrapper.h"
 
 class MockS3Clovis : public ClovisAPI {
-public:
+ public:
   MockS3Clovis() : ClovisAPI() {}
-  MOCK_METHOD3(clovis_idx_init, void(struct m0_clovis_idx *idx, struct m0_clovis_realm  *parent, const struct m0_uint128 *id));
-  MOCK_METHOD3(clovis_obj_init, void(struct m0_clovis_obj     *obj,
-                                     struct m0_clovis_realm   *parent,
-                                     const struct m0_uint128  *id));
-  MOCK_METHOD2(clovis_entity_create, int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
-  MOCK_METHOD2(clovis_entity_delete, int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
+  MOCK_METHOD3(clovis_idx_init,
+               void(struct m0_clovis_idx *idx, struct m0_clovis_realm *parent,
+                    const struct m0_uint128 *id));
+  MOCK_METHOD3(clovis_obj_init,
+               void(struct m0_clovis_obj *obj, struct m0_clovis_realm *parent,
+                    const struct m0_uint128 *id));
+  MOCK_METHOD2(clovis_entity_create,
+               int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
+  MOCK_METHOD2(clovis_entity_delete,
+               int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
   MOCK_METHOD0(init_clovis_api, int());
-  MOCK_METHOD3(clovis_op_setup, void(struct m0_clovis_op *op, const struct m0_clovis_op_ops *ops, m0_time_t linger));
+  MOCK_METHOD3(clovis_op_setup,
+               void(struct m0_clovis_op *op, const struct m0_clovis_op_ops *ops,
+                    m0_time_t linger));
   MOCK_METHOD6(clovis_idx_op,
                int(struct m0_clovis_idx *idx, enum m0_clovis_idx_opcode opcode,
                    struct m0_bufvec *keys, struct m0_bufvec *vals, int *rcs,
                    struct m0_clovis_op **op));
-  MOCK_METHOD7(clovis_obj_op, void(struct m0_clovis_obj       *obj,
-                                   enum m0_clovis_obj_opcode   opcode,
-                                   struct m0_indexvec         *ext,
-                                   struct m0_bufvec           *data,
-                                   struct m0_bufvec           *attr,
-                                   uint64_t                    mask,
-                                   struct m0_clovis_op       **op));
-  MOCK_METHOD3(clovis_op_launch, void(struct m0_clovis_op **, uint32_t, ClovisOpType));
+  MOCK_METHOD7(clovis_obj_op,
+               void(struct m0_clovis_obj *obj, enum m0_clovis_obj_opcode opcode,
+                    struct m0_indexvec *ext, struct m0_bufvec *data,
+                    struct m0_bufvec *attr, uint64_t mask,
+                    struct m0_clovis_op **op));
+  MOCK_METHOD3(clovis_op_launch,
+               void(struct m0_clovis_op **, uint32_t, ClovisOpType));
 };
 #endif

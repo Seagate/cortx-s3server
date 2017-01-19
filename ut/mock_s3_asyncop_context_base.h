@@ -22,17 +22,19 @@
 #ifndef __MERO_FE_S3_UT_MOCK_S3_ASYNCOP_CONTEXT_BASE_H__
 #define __MERO_FE_S3_UT_MOCK_S3_ASYNCOP_CONTEXT_BASE_H__
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include "s3_asyncop_context_base.h"
 #include "s3_common.h"
 
 class MockS3AsyncOpContextBase : public S3AsyncOpContextBase {
-public:
-  MockS3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req, std::function<void(void)> success_callback, std::function<void(void)> failed_callback) : S3AsyncOpContextBase(req, success_callback, failed_callback) {}
-  MOCK_METHOD2(set_op_status, void(S3AsyncOpStatus opstatus, std::string message));
+ public:
+  MockS3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req,
+                           std::function<void(void)> success_callback,
+                           std::function<void(void)> failed_callback)
+      : S3AsyncOpContextBase(req, success_callback, failed_callback) {}
+  MOCK_METHOD2(set_op_status,
+               void(S3AsyncOpStatus opstatus, std::string message));
 };
 
 #endif
-
-

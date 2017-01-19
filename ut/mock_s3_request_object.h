@@ -23,13 +23,14 @@
 #ifndef __MERO_FE_S3_UT_MOCK_S3_REQUEST_OBJECT_H__
 #define __MERO_FE_S3_UT_MOCK_S3_REQUEST_OBJECT_H__
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include "s3_request_object.h"
 
 class MockS3RequestObject : public S3RequestObject {
-  public:
-  MockS3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr) : S3RequestObject(req, evhtp_obj_ptr) {}
+ public:
+  MockS3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr)
+      : S3RequestObject(req, evhtp_obj_ptr) {}
   MOCK_METHOD0(c_get_full_path, const char *());
   MOCK_METHOD0(c_get_full_encoded_path, const char *());
   MOCK_METHOD0(get_host_header, std::string());
@@ -37,8 +38,8 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(c_get_uri_query, const char *());
   MOCK_METHOD0(get_request, evhtp_request_t *());
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
-  MOCK_METHOD1(set_bucket_name, void(const std::string& name));
-  MOCK_METHOD1(set_object_name, void(const std::string& name));
+  MOCK_METHOD1(set_bucket_name, void(const std::string &name));
+  MOCK_METHOD1(set_object_name, void(const std::string &name));
   MOCK_METHOD1(set_api_type, void(S3ApiType));
 };
 
