@@ -17,23 +17,21 @@
  * Original creation date: 02-June-2016
  */
 
-#include "gtest/gtest.h"
 #include "s3_get_bucket_policy_action.h"
+#include "gtest/gtest.h"
 #include "mock_s3_request_object.h"
 
 class S3GetBucketPolicyActionTest : public testing::Test {
- protected: // You should make the members protected s.t. they can be
-            // accessed from sub-classes.
+ protected:  // You should make the members protected s.t. they can be
+             // accessed from sub-classes.
   S3GetBucketPolicyActionTest() {
-    evhtp_request_t * req = NULL;
+    evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    mock_request = std::make_shared<MockS3RequestObject> (req, evhtp_obj_ptr);
+    mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     bucket_policy_get = new S3GetBucketPolicyAction(mock_request);
   }
 
-  ~S3GetBucketPolicyActionTest() {
-    delete bucket_policy_get;
-  }
+  ~S3GetBucketPolicyActionTest() { delete bucket_policy_get; }
 
   S3GetBucketPolicyAction *bucket_policy_get;
   std::shared_ptr<MockS3RequestObject> mock_request;
