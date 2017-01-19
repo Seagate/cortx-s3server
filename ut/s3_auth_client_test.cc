@@ -17,16 +17,16 @@
  * Original creation date: 19-Nov-2015
  */
 
-#include "gtest/gtest.h"
-#include <functional>
 #include "s3_auth_client.h"
-#include "s3_option.h"
+#include <functional>
 #include <iostream>
 #include <memory>
-#include "mock_s3_asyncop_context_base.h"
-#include "mock_s3_request_object.h"
-#include "mock_s3_auth_client.h"
+#include "gtest/gtest.h"
 #include "mock_evhtp_wrapper.h"
+#include "mock_s3_asyncop_context_base.h"
+#include "mock_s3_auth_client.h"
+#include "mock_s3_request_object.h"
+#include "s3_option.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -36,55 +36,47 @@ using ::testing::Return;
 using ::testing::Mock;
 using ::testing::InvokeWithoutArgs;
 
-static void
-dummy_request_cb(evhtp_request_t * req, void * arg) {
-}
+static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 
-void dummy_function() {
-  return;
-}
+void dummy_function() { return; }
 
 class S3AuthBaseResponse {
-public:
-  virtual void auth_response_wrapper(evhtp_request_t * req, evbuf_t * buf, void * arg) = 0;
+ public:
+  virtual void auth_response_wrapper(evhtp_request_t *req, evbuf_t *buf,
+                                     void *arg) = 0;
 };
 
 class S3AuthResponse : public S3AuthBaseResponse {
-public:
-  S3AuthResponse() {
-    success_called = fail_called = false;
-  }
-  virtual void auth_response_wrapper(evhtp_request_t * req, evbuf_t * buf, void * arg) {
+ public:
+  S3AuthResponse() { success_called = fail_called = false; }
+  virtual void auth_response_wrapper(evhtp_request_t *req, evbuf_t *buf,
+                                     void *arg) {
     on_auth_response(req, buf, arg);
   }
 
-  void success_callback() {
-    success_called = true;
-  }
+  void success_callback() { success_called = true; }
 
-  void fail_callback() {
-    fail_called = true;
-  }
+  void fail_callback() { fail_called = true; }
 
- bool success_called;
- bool fail_called;
+  bool success_called;
+  bool fail_called;
 };
 
 class S3AuthClientOpContextTest : public testing::Test {
-  protected:
-    S3AuthClientOpContextTest() {
-      evbase_t *evbase = event_base_new();
-      evhtp_request_t *req = evhtp_request_new(NULL, evbase);
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (req, new EvhtpWrapper());
-      S3Option::get_instance()->set_eventbase(evbase);
-      success_callback = NULL;
-      failed_callback = NULL;
-      p_authopctx = new S3AuthClientOpContext(ptr_mock_request, success_callback, failed_callback);
-    }
-
-  ~S3AuthClientOpContextTest() {
-    delete p_authopctx;
+ protected:
+  S3AuthClientOpContextTest() {
+    evbase_t *evbase = event_base_new();
+    evhtp_request_t *req = evhtp_request_new(NULL, evbase);
+    ptr_mock_request =
+        std::make_shared<MockS3RequestObject>(req, new EvhtpWrapper());
+    S3Option::get_instance()->set_eventbase(evbase);
+    success_callback = NULL;
+    failed_callback = NULL;
+    p_authopctx = new S3AuthClientOpContext(ptr_mock_request, success_callback,
+                                            failed_callback);
   }
+
+  ~S3AuthClientOpContextTest() { delete p_authopctx; }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::function<void()> success_callback;
@@ -93,32 +85,35 @@ class S3AuthClientOpContextTest : public testing::Test {
 };
 
 class S3AuthClientTest : public testing::Test {
-  protected:
-    S3AuthClientTest() {
-      evbase_t *evbase = event_base_new();
-      ev_req = evhtp_request_new(NULL, evbase);
-      ptr_mock_request = std::make_shared<MockS3RequestObject> (ev_req, new EvhtpWrapper());
-      p_authclienttest = new S3AuthClient(ptr_mock_request);
-      auth_client_op_context = (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
-      auth_client_op_context->evbase = event_base_new();
-      auth_client_op_context->authrequest = evhtp_request_new(dummy_request_cb, auth_client_op_context->evbase);
-    }
+ protected:
+  S3AuthClientTest() {
+    evbase_t *evbase = event_base_new();
+    ev_req = evhtp_request_new(NULL, evbase);
+    ptr_mock_request =
+        std::make_shared<MockS3RequestObject>(ev_req, new EvhtpWrapper());
+    p_authclienttest = new S3AuthClient(ptr_mock_request);
+    auth_client_op_context = (struct s3_auth_op_context *)calloc(
+        1, sizeof(struct s3_auth_op_context));
+    auth_client_op_context->evbase = event_base_new();
+    auth_client_op_context->authrequest =
+        evhtp_request_new(dummy_request_cb, auth_client_op_context->evbase);
+  }
 
-    ~S3AuthClientTest() {
-       event_base_free(auth_client_op_context->evbase);
-       free(auth_client_op_context);
-       delete p_authclienttest;
-    }
+  ~S3AuthClientTest() {
+    event_base_free(auth_client_op_context->evbase);
+    free(auth_client_op_context);
+    delete p_authclienttest;
+  }
 
-    void fake_in_header(std::string key, std::string val) {
-      evhtp_headers_add_header(ev_req->headers_in,
-                               evhtp_header_new(key.c_str(), val.c_str(), 0, 0));
-    }
+  void fake_in_header(std::string key, std::string val) {
+    evhtp_headers_add_header(ev_req->headers_in,
+                             evhtp_header_new(key.c_str(), val.c_str(), 0, 0));
+  }
 
-    evhtp_request_t *ev_req;
-    S3AuthClient *p_authclienttest;
-    std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-    struct s3_auth_op_context *auth_client_op_context;
+  evhtp_request_t *ev_req;
+  S3AuthClient *p_authclienttest;
+  std::shared_ptr<MockS3RequestObject> ptr_mock_request;
+  struct s3_auth_op_context *auth_client_op_context;
 };
 
 TEST_F(S3AuthClientOpContextTest, Constructor) {
@@ -145,32 +140,59 @@ TEST_F(S3AuthClientOpContextTest, GetAuthCtx) {
 }
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthSuccessResponse) {
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthenticateUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName><SignatureSHA256>BSewvoSw/0og+hWR4I77NcWea24=</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+      "standalone=\"no\"?><AuthenticateUserResponse "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
+      "\"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</"
+      "UserName><AccountId>12345</AccountId><AccountName>s3_test</"
+      "AccountName><SignatureSHA256>BSewvoSw/0og+hWR4I77NcWea24=</"
+      "SignatureSHA256></"
+      "AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></"
+      "ResponseMetadata></AuthenticateUserResponse>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
 
   EXPECT_TRUE(p_authopctx->is_auth_successful);
   EXPECT_STREQ("tester", p_authopctx->get_request()->get_user_name().c_str());
   EXPECT_STREQ("123", p_authopctx->get_request()->get_user_id().c_str());
-  EXPECT_STREQ("s3_test", p_authopctx->get_request()->get_account_name().c_str());
+  EXPECT_STREQ("s3_test",
+               p_authopctx->get_request()->get_account_name().c_str());
   EXPECT_STREQ("12345", p_authopctx->get_request()->get_account_id().c_str());
 }
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationSuccessResponse) {
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthorizeUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthorizeUserResult><UserId>123</UserId><UserName>tester</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName></AuthorizeUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthorizeUserResponse>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+      "standalone=\"no\"?><AuthorizeUserResponse "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
+      "\"><AuthorizeUserResult><UserId>123</UserId><UserName>tester</"
+      "UserName><AccountId>12345</AccountId><AccountName>s3_test</"
+      "AccountName></AuthorizeUserResult><ResponseMetadata><RequestId>0000</"
+      "RequestId></ResponseMetadata></AuthorizeUserResponse>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
 
   EXPECT_TRUE(p_authopctx->is_auth_successful);
   EXPECT_STREQ("tester", p_authopctx->get_request()->get_user_name().c_str());
   EXPECT_STREQ("123", p_authopctx->get_request()->get_user_id().c_str());
-  EXPECT_STREQ("s3_test", p_authopctx->get_request()->get_account_name().c_str());
+  EXPECT_STREQ("s3_test",
+               p_authopctx->get_request()->get_account_name().c_str());
   EXPECT_STREQ("12345", p_authopctx->get_request()->get_account_id().c_str());
 }
 
-TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeSuccessResponse) {
+TEST_F(S3AuthClientOpContextTest,
+       CanHandleParseErrorInAuthorizeSuccessResponse) {
   // Missing AccountId
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthenticateUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthorizeUserResult><UserId>123</UserId><UserName>tester</UserName><AccountName>s3_test</AccountName><SignatureSHA256>BSewvoSw/0og+hWR4I77NcWea24=</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthorizeUserResponse>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+      "standalone=\"no\"?><AuthenticateUserResponse "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
+      "\"><AuthorizeUserResult><UserId>123</UserId><UserName>tester</"
+      "UserName><AccountName>s3_test</AccountName><SignatureSHA256>BSewvoSw/"
+      "0og+hWR4I77NcWea24=</SignatureSHA256></"
+      "AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></"
+      "ResponseMetadata></AuthorizeUserResponse>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
 
@@ -179,7 +201,15 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeSuccessResponse)
 
 TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthSuccessResponse) {
   // Missing AccountId
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><AuthenticateUserResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</UserName><AccountName>s3_test</AccountName><SignatureSHA256>BSewvoSw/0og+hWR4I77NcWea24=</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+      "standalone=\"no\"?><AuthenticateUserResponse "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
+      "\"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</"
+      "UserName><AccountName>s3_test</AccountName><SignatureSHA256>BSewvoSw/"
+      "0og+hWR4I77NcWea24=</SignatureSHA256></"
+      "AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></"
+      "ResponseMetadata></AuthenticateUserResponse>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
 
@@ -187,29 +217,55 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthSuccessResponse) {
 }
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
+      "\"><Code>SignatureDoesNotMatch</Code><Message>The request signature we "
+      "calculated does not match the signature you provided. Check your AWS "
+      "secret access key and signing method. For more information, see REST "
+      "Authentication andSOAP Authentication for "
+      "details.</Message><RequestId>0000</RequestId></Error>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
   EXPECT_FALSE(p_authopctx->is_auth_successful);
   EXPECT_STREQ("SignatureDoesNotMatch", p_authopctx->get_error_code().c_str());
-  EXPECT_STREQ("The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.", p_authopctx->get_error_message().c_str());
+  EXPECT_STREQ(
+      "The request signature we calculated does not match the signature you "
+      "provided. Check your AWS secret access key and signing method. For more "
+      "information, see REST Authentication andSOAP Authentication for "
+      "details.",
+      p_authopctx->get_error_message().c_str());
 }
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse) {
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Code>UnauthorizedOperation</Code><Message>You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.</Message><RequestId>0000</RequestId></Error>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
+      "\"><Code>UnauthorizedOperation</Code><Message>You are not authorized to "
+      "perform this operation. Check your IAM policies, and ensure that you "
+      "are using the correct access "
+      "keys.</Message><RequestId>0000</RequestId></Error>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
   EXPECT_FALSE(p_authopctx->is_auth_successful);
   EXPECT_STREQ("UnauthorizedOperation", p_authopctx->get_error_code().c_str());
-  EXPECT_STREQ("You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.", p_authopctx->get_error_message().c_str());
+  EXPECT_STREQ(
+      "You are not authorized to perform this operation. Check your IAM "
+      "policies, and ensure that you are using the correct access keys.",
+      p_authopctx->get_error_message().c_str());
 }
-
 
 TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthErrorResponse) {
   // Missing code
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Message>The request "
+      "signature we calculated does not match the signature you provided. "
+      "Check your AWS secret access key and signing method. For more "
+      "information, see REST Authentication andSOAP Authentication for "
+      "details.</Message><RequestId>0000</RequestId></Error>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
@@ -218,7 +274,12 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthErrorResponse) {
 
 TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthorizeErrorResponse) {
   // Missing code
-  std::string sample_response = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Message>You are not authorized to perform this operation. Check your IAM policies, and ensure that you are using the correct access keys.</Message><RequestId>0000</RequestId></Error>";
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\"><Message>You are not "
+      "authorized to perform this operation. Check your IAM policies, and "
+      "ensure that you are using the correct access "
+      "keys.</Message><RequestId>0000</RequestId></Error>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
@@ -232,13 +293,14 @@ TEST_F(S3AuthClientTest, Constructor) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=GET&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
+      "GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::GET));
+      .WillRepeatedly(Return(S3HttpVerb::GET));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
-  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return(""));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query()).WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -251,13 +313,14 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=PUT&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
+      "PUT&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::PUT));
+      .WillRepeatedly(Return(S3HttpVerb::PUT));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
-  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return(""));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query()).WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -270,13 +333,14 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=HEAD&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
+      "HEAD&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::HEAD));
+      .WillRepeatedly(Return(S3HttpVerb::HEAD));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
-  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return(""));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query()).WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -289,13 +353,14 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=DELETE&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
+      "DELETE&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::DELETE));
+      .WillRepeatedly(Return(S3HttpVerb::DELETE));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
-  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return(""));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query()).WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -308,13 +373,14 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method=POST&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
+      "POST&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::POST));
+      .WillRepeatedly(Return(S3HttpVerb::POST));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
-  EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return(""));
+  EXPECT_CALL(*ptr_mock_request, c_get_uri_query()).WillRepeatedly(Return(""));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -327,13 +393,15 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
+      "delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::GET));
+      .WillRepeatedly(Return(S3HttpVerb::GET));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+      .WillRepeatedly(Return("delimiter=/&prefix=test"));
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -346,13 +414,15 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
+      "delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::GET));
+      .WillRepeatedly(Return(S3HttpVerb::GET));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+      .WillRepeatedly(Return("delimiter=/&prefix=test"));
 
   p_authclienttest->is_chunked_auth = true;
   p_authclienttest->prev_chunk_signature_from_auth = "";
@@ -369,13 +439,15 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
+      "delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::GET));
+      .WillRepeatedly(Return(S3HttpVerb::GET));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+      .WillRepeatedly(Return("delimiter=/&prefix=test"));
 
   p_authclienttest->is_chunked_auth = true;
   p_authclienttest->prev_chunk_signature_from_auth = "ABCD";
@@ -392,13 +464,17 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
-  char expectedbody[] = "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08&current-signature-sha256=cur-XYZ&previous-signature-sha256=prev-ABCD&x-amz-content-sha256=sha256-abcd";
+  char expectedbody[] =
+      "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
+      "delimiter%3D%2F%26prefix%3Dtest&Method=GET&Version=2010-05-08&current-"
+      "signature-sha256=cur-XYZ&previous-signature-sha256=prev-ABCD&x-amz-"
+      "content-sha256=sha256-abcd";
   EXPECT_CALL(*ptr_mock_request, http_verb())
-              .WillRepeatedly(Return(S3HttpVerb::GET));
+      .WillRepeatedly(Return(S3HttpVerb::GET));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
-              .WillRepeatedly(Return("/"));
+      .WillRepeatedly(Return("/"));
   EXPECT_CALL(*ptr_mock_request, c_get_uri_query())
-              .WillRepeatedly(Return("delimiter=/&prefix=test"));
+      .WillRepeatedly(Return("delimiter=/&prefix=test"));
 
   p_authclienttest->is_chunked_auth = true;
   p_authclienttest->prev_chunk_signature_from_auth = "prev-ABCD";

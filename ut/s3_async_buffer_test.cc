@@ -17,21 +17,17 @@
  * Original creation date: 6-Jan-2016
  */
 
-#include "gtest/gtest.h"
 #include "s3_async_buffer.h"
+#include "gtest/gtest.h"
 
 // To use a test fixture, derive a class from testing::Test.
 class S3AsyncBufferContainerTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
 
-  S3AsyncBufferContainerTest() {
-    buffer = new S3AsyncBufferContainer();
-  }
+  S3AsyncBufferContainerTest() { buffer = new S3AsyncBufferContainer(); }
 
-  ~S3AsyncBufferContainerTest() {
-    delete buffer;
-  }
+  ~S3AsyncBufferContainerTest() { delete buffer; }
 
   // A helper functions
   evbuf_t* get_evbuf_t_with_data(std::string content) {
@@ -42,7 +38,7 @@ class S3AsyncBufferContainerTest : public testing::Test {
   }
 
   // Declares the variables your tests want to use.
-  S3AsyncBufferContainer *buffer;
+  S3AsyncBufferContainer* buffer;
 };
 
 TEST_F(S3AsyncBufferContainerTest, HasProperInitState) {
@@ -64,16 +60,18 @@ TEST_F(S3AsyncBufferContainerTest, DataBufferAddedToQueueAndCanBeRetrieved) {
   EXPECT_STREQ("Hello World", buffer->get_content_as_string().c_str());
 }
 
-TEST_F(S3AsyncBufferContainerTest, MultipleDataBufferAddedToQueueAndCanBeRetrieved) {
+TEST_F(S3AsyncBufferContainerTest,
+       MultipleDataBufferAddedToQueueAndCanBeRetrieved) {
   buffer->add_content(get_evbuf_t_with_data("Hello World."));
   buffer->add_content(get_evbuf_t_with_data("Seagate Storage"));
   buffer->freeze();
   EXPECT_TRUE(buffer->is_freezed());
-  EXPECT_STREQ("Hello World.Seagate Storage", buffer->get_content_as_string().c_str());
+  EXPECT_STREQ("Hello World.Seagate Storage",
+               buffer->get_content_as_string().c_str());
 }
 
 TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForMoreReturnsEmptyQ) {
-  buffer->add_content(get_evbuf_t_with_data("Hello"));  // len = 5
+  buffer->add_content(get_evbuf_t_with_data("Hello"));    // len = 5
   buffer->add_content(get_evbuf_t_with_data("Seagate"));  // len = 7
   EXPECT_EQ(5 + 7, buffer->length());
   EXPECT_FALSE(buffer->is_freezed());
@@ -86,13 +84,14 @@ TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForMoreReturnsEmptyQ) {
   EXPECT_EQ(0, buffer->length());
 }
 
-TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForLessReturnsValidData) {
-  buffer->add_content(get_evbuf_t_with_data("Hello"));  // len = 5
+TEST_F(S3AsyncBufferContainerTest,
+       DataInTransitAndAskingForLessReturnsValidData) {
+  buffer->add_content(get_evbuf_t_with_data("Hello"));    // len = 5
   buffer->add_content(get_evbuf_t_with_data("Seagate"));  // len = 7
   EXPECT_EQ(5 + 7, buffer->length());
   EXPECT_FALSE(buffer->is_freezed());
 
-  std::deque< std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(5);
+  std::deque<std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(5);
   EXPECT_EQ(1, bufs.size());
 
   std::tuple<void*, size_t> item = bufs.front();
@@ -112,13 +111,14 @@ TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForLessReturnsValidData
 }
 
 // Non Boundary check
-TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForLessReturnsValidData1) {
-  buffer->add_content(get_evbuf_t_with_data("Hello"));  // len = 5
+TEST_F(S3AsyncBufferContainerTest,
+       DataInTransitAndAskingForLessReturnsValidData1) {
+  buffer->add_content(get_evbuf_t_with_data("Hello"));    // len = 5
   buffer->add_content(get_evbuf_t_with_data("Seagate"));  // len = 7
   EXPECT_EQ(5 + 7, buffer->length());
   EXPECT_FALSE(buffer->is_freezed());
 
-  std::deque< std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(4);
+  std::deque<std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(4);
   EXPECT_EQ(1, bufs.size());
 
   std::tuple<void*, size_t> item = bufs.front();
@@ -145,13 +145,14 @@ TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForLessReturnsValidData
 }
 
 // Another Non Boundary check
-TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForLessReturnsValidData2) {
-  buffer->add_content(get_evbuf_t_with_data("Hello"));  // len = 5
+TEST_F(S3AsyncBufferContainerTest,
+       DataInTransitAndAskingForLessReturnsValidData2) {
+  buffer->add_content(get_evbuf_t_with_data("Hello"));    // len = 5
   buffer->add_content(get_evbuf_t_with_data("Seagate"));  // len = 7
   EXPECT_EQ(5 + 7, buffer->length());
   EXPECT_FALSE(buffer->is_freezed());
 
-  std::deque< std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(8);
+  std::deque<std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(8);
   EXPECT_EQ(2, bufs.size());
 
   std::tuple<void*, size_t> item = bufs.front();
@@ -177,15 +178,16 @@ TEST_F(S3AsyncBufferContainerTest, DataInTransitAndAskingForLessReturnsValidData
   EXPECT_EQ(0, buffer->length());
 }
 
-TEST_F(S3AsyncBufferContainerTest, AllDataReceivedAndAskingForMoreReturnsAllAvailable) {
-  buffer->add_content(get_evbuf_t_with_data("Hello"));  // len = 5
+TEST_F(S3AsyncBufferContainerTest,
+       AllDataReceivedAndAskingForMoreReturnsAllAvailable) {
+  buffer->add_content(get_evbuf_t_with_data("Hello"));    // len = 5
   buffer->add_content(get_evbuf_t_with_data("Seagate"));  // len = 7
   buffer->freeze();
 
   EXPECT_EQ(5 + 7, buffer->length());
   EXPECT_TRUE(buffer->is_freezed());
 
-  std::deque< std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(20);
+  std::deque<std::tuple<void*, size_t> > bufs = buffer->get_buffers_ref(20);
   EXPECT_EQ(2, bufs.size());
 
   std::tuple<void*, size_t> item = bufs.front();

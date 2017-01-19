@@ -17,8 +17,8 @@
  * Original creation date: 12-Nov-2015
  */
 
-#include "gtest/gtest.h"
 #include "s3_md5_hash.h"
+#include "gtest/gtest.h"
 
 TEST(MD5HashTest, Constructor) {
   MD5hash md5hashobj;
@@ -61,7 +61,9 @@ TEST(MD5HashTest, FinalEmptyStr) {
 }
 
 TEST(MD5HashTest, FinalNumeral) {
-  char input[] = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+  char input[] =
+      "123456789012345678901234567890123456789012345678901234567890123456789012"
+      "34567890";
   int ret;
   MD5hash md5hashobj;
   md5hashobj.Update(input, 80);

@@ -26,26 +26,19 @@
 #include "clovis_helpers.h"
 #include "s3_clovis_rw_common.h"
 
+class S3CallBack {
+ public:
+  S3CallBack() { success_called = fail_called = false; }
 
-class  S3CallBack {
-public:
-  S3CallBack() {
-    success_called = fail_called = false;
-  }
+  void on_success() { success_called = true; }
 
-  void on_success() {
-    success_called = true;
-  }
-
-  void on_failed() {
-    fail_called = true;
-  }
+  void on_failed() { fail_called = true; }
   int success_called;
   int fail_called;
 };
 
-void * async_success_call(void * arg);
+void* async_success_call(void* arg);
 
-void * async_fail_call(void * arg);
+void* async_fail_call(void* arg);
 
 #endif

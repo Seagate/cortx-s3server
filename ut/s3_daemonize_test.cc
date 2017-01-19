@@ -17,23 +17,21 @@
  * Original creation date: 18-April-2016
  */
 
+#include <evhtp.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fstream>
+#include <iostream>
 #include "gtest/gtest.h"
 #include "s3_daemonize_server.h"
 #include "s3_option.h"
-#include <unistd.h>
-#include <sys/types.h>
-#include <iostream>
-#include <fstream>
-#include <evhtp.h>
 
 evbase_t *global_evbase_handle;
 
 class S3DaemonizeTest : public testing::Test {
-  protected:
-    S3DaemonizeTest() {
-      option_instance = S3Option::get_instance();
-    }
-  S3Option  *option_instance;
+ protected:
+  S3DaemonizeTest() { option_instance = S3Option::get_instance(); }
+  S3Option *option_instance;
 };
 
 TEST_F(S3DaemonizeTest, DefaultCons) {

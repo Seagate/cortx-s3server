@@ -17,8 +17,8 @@
  * Original creation date: 1-Oct-2015
  */
 
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "clovis_helpers.h"
 #include "s3_error_messages.h"

@@ -18,13 +18,12 @@
  */
 
 #include <json/json.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
-#include "s3_error_messages.h"
 #include <gtest/gtest.h>
+#include "s3_error_messages.h"
 /* /opt/seagate/s3/resources/s3_error_messages.json */
-
 
 TEST(S3ErrorDetailsTest, DefaultConstructor) {
   S3ErrorDetails error_msg;
@@ -61,7 +60,7 @@ TEST(S3ErrorMessagesTest, GetDetails) {
   S3ErrorMessages *inst = S3ErrorMessages::get_instance();
   std::string errdesc;
   int httpcode;
-  S3ErrorDetails errdetails =  inst->get_details("AccessDenied");
+  S3ErrorDetails errdetails = inst->get_details("AccessDenied");
   errdesc = errdetails.get_message();
   httpcode = errdetails.get_http_status_code();
   EXPECT_STREQ("Access Denied", errdesc.c_str());

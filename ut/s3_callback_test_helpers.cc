@@ -21,14 +21,14 @@
 #include "s3_callback_test_helpers.h"
 #include "s3_clovis_context.h"
 
-void * async_success_call(void * arg) {
+void *async_success_call(void *arg) {
   struct s3_clovis_idx_op_context *idx_ctx;
   idx_ctx = (struct s3_clovis_idx_op_context *)arg;
   s3_clovis_op_stable(idx_ctx->ops[0]);
   return NULL;
 }
 
-void * async_fail_call(void * arg) {
+void *async_fail_call(void *arg) {
   struct s3_clovis_idx_op_context *idx_ctx;
   idx_ctx = (struct s3_clovis_idx_op_context *)arg;
   s3_clovis_op_failed(idx_ctx->ops[0]);

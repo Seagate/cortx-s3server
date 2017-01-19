@@ -19,12 +19,10 @@
 
 #include "gtest/gtest.h"
 
-#include "s3_request_object.h"
 #include "s3_error_codes.h"
+#include "s3_request_object.h"
 
-static void
-dummy_request_cb(evhtp_request_t * req, void * arg) {
-}
+static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 
 // To use a test fixture, derive a class from testing::Test.
 class S3RequestObjectTest : public testing::Test {
@@ -46,13 +44,13 @@ class S3RequestObjectTest : public testing::Test {
 
   // A helper functions
   void init_uri_() {
-    ev_request->uri = (evhtp_uri_t*)calloc(sizeof(evhtp_uri_t), 1);
+    ev_request->uri = (evhtp_uri_t *)calloc(sizeof(evhtp_uri_t), 1);
     ev_request->uri->query = evhtp_query_new();
-    ev_request->uri->path = (evhtp_path_t*)calloc(sizeof(evhtp_path_t), 1);
+    ev_request->uri->path = (evhtp_path_t *)calloc(sizeof(evhtp_path_t), 1);
   }
 
-  char* malloc_cp_c_str_(std::string str) {
-    char* c_str = (char*)malloc(str.length() + 1);
+  char *malloc_cp_c_str_(std::string str) {
+    char *c_str = (char *)malloc(str.length() + 1);
     memcpy(c_str, str.c_str(), str.length());
     c_str[str.length()] = '\0';
     return c_str;
@@ -60,14 +58,16 @@ class S3RequestObjectTest : public testing::Test {
 
   // Test setup helpers
   void fake_in_headers(std::map<std::string, std::string> hdrs_in) {
-    for(auto itr : hdrs_in) {
-      evhtp_headers_add_header(ev_request->headers_in,
-                               evhtp_header_new(itr.first.c_str(), itr.second.c_str(), 0, 0));
+    for (auto itr : hdrs_in) {
+      evhtp_headers_add_header(
+          ev_request->headers_in,
+          evhtp_header_new(itr.first.c_str(), itr.second.c_str(), 0, 0));
     }
-    request->initialise(); // reinitialize so proper state can be set
+    request->initialise();  // reinitialize so proper state can be set
   }
 
-  // For simplicity of test we take separate args and not repeat _evhtp_path_new()
+  // For simplicity of test we take separate args and not repeat
+  // _evhtp_path_new()
   void fake_uri_path(std::string full, std::string path, std::string file) {
     init_uri_();
     ev_request->uri->path->full = malloc_cp_c_str_(full);
@@ -80,10 +80,12 @@ class S3RequestObjectTest : public testing::Test {
 
   void fake_query_params(std::string raw_query) {
     init_uri_();
-    ev_request->uri->query_raw = (unsigned char*)malloc_cp_c_str_(raw_query);
+    ev_request->uri->query_raw = (unsigned char *)malloc_cp_c_str_(raw_query);
     ASSERT_TRUE(ev_request->uri->query_raw != NULL);
 
-    ev_request->uri->query = evhtp_parse_query_wflags(raw_query.c_str(), raw_query.length(), EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
+    ev_request->uri->query =
+        evhtp_parse_query_wflags(raw_query.c_str(), raw_query.length(),
+                                 EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
     if (!ev_request->uri->query) {
       FAIL() << "Test case setup failed due to invalid query.";
     }
@@ -91,7 +93,8 @@ class S3RequestObjectTest : public testing::Test {
 
   void fake_buffer_in(std::string content) {
     evbuffer_add(ev_request->buffer_in, content.c_str(), content.length());
-    // Since we are faking input data, we need to trigger notify on request object.
+    // Since we are faking input data, we need to trigger notify on request
+    // object.
     request->notify_incoming_data(ev_request->buffer_in);
   }
 
@@ -103,7 +106,7 @@ class S3RequestObjectTest : public testing::Test {
 
 TEST_F(S3RequestObjectTest, ReturnsValidRawQuery) {
   request->set_query_params("location=US&policy=test");
-  EXPECT_STREQ("location=US&policy=test", (char*)request->c_get_uri_query());
+  EXPECT_STREQ("location=US&policy=test", (char *)request->c_get_uri_query());
 }
 
 TEST_F(S3RequestObjectTest, ReturnsValidUriPaths) {
@@ -130,7 +133,8 @@ TEST_F(S3RequestObjectTest, ReturnsValidHeaderValue) {
 
   fake_in_headers(input_headers);
 
-  EXPECT_EQ(std::string("application/xml"), request->get_header_value("Content-Type"));
+  EXPECT_EQ(std::string("application/xml"),
+            request->get_header_value("Content-Type"));
 }
 
 TEST_F(S3RequestObjectTest, ReturnsValidHostHeaderValue) {
@@ -190,7 +194,8 @@ TEST_F(S3RequestObjectTest, MissingQueryStringParam) {
 
 TEST_F(S3RequestObjectTest, SetsOutputHeader) {
   request->set_out_header_value("Content-Type", "application/xml");
-  EXPECT_TRUE(evhtp_kvs_find_kv(ev_request->headers_out, "Content-Type") != NULL);
+  EXPECT_TRUE(evhtp_kvs_find_kv(ev_request->headers_out, "Content-Type") !=
+              NULL);
 }
 
 TEST_F(S3RequestObjectTest, ReturnsValidObjectURI) {

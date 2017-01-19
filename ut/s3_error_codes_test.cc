@@ -19,8 +19,8 @@
 
 #include "gtest/gtest.h"
 
-#include "libxml/xmlmemory.h"
 #include "libxml/parser.h"
+#include "libxml/xmlmemory.h"
 
 #include "s3_error_codes.h"
 
@@ -28,7 +28,6 @@
 class S3ErrorTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
-
 
   // A helper function for testing xml content.
   xmlDocPtr get_parsed_doc(std::string& content) {
@@ -46,14 +45,14 @@ class S3ErrorTest : public testing::Test {
     xmlDocPtr document_first = get_parsed_doc(first);
     ASSERT_FALSE(document_first == NULL);
 
-    xmlChar *content_first = NULL;
+    xmlChar* content_first = NULL;
     int size = 0;
     xmlDocDumpMemory(document_first, &content_first, &size);
 
     xmlDocPtr document_second = get_parsed_doc(second);
     ASSERT_FALSE(document_second == NULL);
 
-    xmlChar *content_second = NULL;
+    xmlChar* content_second = NULL;
     size = 0;
     xmlDocDumpMemory(document_second, &content_second, &size);
 
@@ -65,7 +64,9 @@ class S3ErrorTest : public testing::Test {
     xmlFreeDoc(document_second);
   }
 
-  void has_element_with_value(std::string& xml_content, std::string element_name, std::string element_value) {
+  void has_element_with_value(std::string& xml_content,
+                              std::string element_name,
+                              std::string element_value) {
     xmlDocPtr document = get_parsed_doc(xml_content);
     ASSERT_FALSE(document == NULL);
 
@@ -74,9 +75,9 @@ class S3ErrorTest : public testing::Test {
 
     // Now search for the element_name
     xmlNodePtr child = root_node->xmlChildrenNode;
-    xmlChar *value = NULL;
+    xmlChar* value = NULL;
     while (child != NULL) {
-      if ((!xmlStrcmp(child->name, (const xmlChar *)element_name.c_str()))){
+      if ((!xmlStrcmp(child->name, (const xmlChar*)element_name.c_str()))) {
         value = xmlNodeGetContent(child);
         ASSERT_FALSE(value == NULL);
         if (value == NULL) {
@@ -93,11 +94,11 @@ class S3ErrorTest : public testing::Test {
         child = child->next;
       }
     }
-    FAIL() << "Element [" << element_name << "] is missing in the xml document [" << xml_content << "]";
+    FAIL() << "Element [" << element_name
+           << "] is missing in the xml document [" << xml_content << "]";
   }
 
   // Declares the variables your tests want to use.
-
 };
 
 TEST_F(S3ErrorTest, HasValidHttpCodes) {
@@ -110,18 +111,21 @@ TEST_F(S3ErrorTest, ReturnValidErrorXml) {
   std::string xml_content = error.to_xml();
   is_valid_xml(xml_content);
 
-  std::string expected_response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  expected_response += "<Error>\n"
-                  "  <Code>BucketNotEmpty</Code>\n"
-                  "  <Message>The bucket you tried to delete is not empty.</Message>\n"
-                  "  <Resource>SomeBucketName</Resource>\n"
-                  "  <RequestId>dummy-request-id</RequestId>\n"
-                  "</Error>\n";
+  std::string expected_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  expected_response +=
+      "<Error>\n"
+      "  <Code>BucketNotEmpty</Code>\n"
+      "  <Message>The bucket you tried to delete is not empty.</Message>\n"
+      "  <Resource>SomeBucketName</Resource>\n"
+      "  <RequestId>dummy-request-id</RequestId>\n"
+      "</Error>\n";
 
   EXPECT_EQ(expected_response, xml_content);
   // xmls_are_equal(xml_content, expected_response);
 
-  has_element_with_value(xml_content, "Message", "The bucket you tried to delete is not empty.");
+  has_element_with_value(xml_content, "Message",
+                         "The bucket you tried to delete is not empty.");
 }
 
 TEST_F(S3ErrorTest, Negative) {
