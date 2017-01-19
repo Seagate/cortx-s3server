@@ -65,6 +65,14 @@ sudo pip install scripttest==1.3
 Build Jcloud and Jclient and copy jcloud.jar and jclient.jar to the
 current directory i.e st/clitests from the respective build directories.
 
+Configuration:
+cfg directory contains configuration files used by some system tests.
+Edit corresponding configuration file to modify adjustable parameters
+eg: To configure Mero-KVS as backend for System Test runs set S3_CLOVIS_IDX_SERVICE_ID: 1
+```sh
+cd cfg/
+edit cloviskvscli.yaml
+```
 
 How to run?
 - Ensure you have s3server, auth server and mero running with test data.
@@ -98,5 +106,3 @@ Notes:
 following change in the test script (ex - s3cmd_spec.py) before running the tests
 set
    Config.time_readable_format = False
-- s3kvstool.py currently holds Class ClovisConfig that houses clovis endpoints(HA_EP/CONFD_EP etc).
-  Change them here if they differ for your setup.
