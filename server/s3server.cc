@@ -355,13 +355,13 @@ int main(int argc, char **argv) {
   }
 
   delete router;
-  S3Option::destroy_instance();
   S3ErrorMessages::finalize();
   s3_log(S3_LOG_DEBUG, "S3server exiting...\n");
   s3daemon.delete_pidfile();
   s3_stats_fini();
   fini_log();
   finalize_cli_options();
+  S3Option::destroy_instance();
 
   return 0;
 }

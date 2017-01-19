@@ -24,6 +24,8 @@
 #include <memory>
 #include "gtest/gtest.h"
 
+extern S3Option *g_option_instance;
+
 class S3OptionsTest : public testing::Test {
  protected:
   S3OptionsTest() {
@@ -32,6 +34,15 @@ class S3OptionsTest : public testing::Test {
   }
 
   ~S3OptionsTest() { S3Option::destroy_instance(); }
+
+  static void TearDownTestCase() {
+    // Called after the last test fixture in this file.
+    // This is to ensure rest all tests cases in other test files have a
+    // good S3option instance as most server/* code is using global ptr.
+    g_option_instance = S3Option::get_instance();
+    g_option_instance->set_stats_whitelist_filename(
+        "s3stats-whitelist-test.yaml");
+  }
 
   S3Option *instance;
 };
@@ -67,8 +78,6 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
   EXPECT_EQ(8125, instance->get_statsd_port());
   EXPECT_EQ(3, instance->get_statsd_max_send_retry());
-  EXPECT_EQ("/opt/seagate/s3/conf/s3stats-whitelist.yaml",
-            instance->get_stats_whitelist_filename());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
