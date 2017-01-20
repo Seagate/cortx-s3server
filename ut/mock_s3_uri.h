@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __MERO_FE_S3_UT_MOCK_S3_URI_H__
-#define __MERO_FE_S3_UT_MOCK_S3_URI_H__
+#ifndef __S3_UT_MOCK_S3_URI_H__
+#define __S3_UT_MOCK_S3_URI_H__
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
