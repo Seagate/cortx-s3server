@@ -74,6 +74,10 @@ DEFINE_string(clovis_profile, "<0x7000000000000001:0>", "Clovis profile");
 DEFINE_string(clovis_proc, "<0x7200000000000000:0>", "Clovis proc");
 DEFINE_string(clovis_kvs_keyspace, "clovis_index_keyspace", "Clovis keyspace");
 DEFINE_string(clovis_cluster_ep, "127.0.0.1", "Cluster EP");
+DEFINE_int32(recv_queue_min_len, 16,
+             "Recv Queue min length: default 16");  // As Suggested by Mero team
+DEFINE_int32(max_rpc_msg_size, 65536,
+             "RPC msg size max: default 65536");  // As Suggested by Mero team
 
 static struct m0_idx_cass_config cass_conf;
 static struct m0_clovis *clovis_instance = NULL;
@@ -94,8 +98,8 @@ static int init_clovis(void) {
   clovis_conf.cc_confd = FLAGS_clovis_confd_addr.c_str();
   clovis_conf.cc_profile = FLAGS_clovis_profile.c_str();
   clovis_conf.cc_process_fid = FLAGS_clovis_proc.c_str();
-  clovis_conf.cc_tm_recv_queue_min_len = M0_NET_TM_RECV_QUEUE_DEF_LEN;
-  clovis_conf.cc_max_rpc_msg_size = M0_RPC_DEF_MAX_RPC_MSG_SIZE;
+  clovis_conf.cc_tm_recv_queue_min_len = FLAGS_recv_queue_min_len;
+  clovis_conf.cc_max_rpc_msg_size = FLAGS_max_rpc_msg_size;
 
   cass_conf.cc_cluster_ep = const_cast<char *>(FLAGS_clovis_cluster_ep.c_str());
   cass_conf.cc_keyspace = const_cast<char *>(FLAGS_clovis_kvs_keyspace.c_str());
