@@ -375,6 +375,15 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
                                   std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
+  } else if (bucket_metadata &&
+             (bucket_metadata->get_state() == S3BucketMetadataState::failed)) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_multipart_metadata &&
              (object_multipart_metadata->get_state() ==
               S3ObjectMetadataState::missing)) {
@@ -391,6 +400,16 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
 
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (object_multipart_metadata &&
+             (object_multipart_metadata->get_state() ==
+              S3ObjectMetadataState::failed)) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (part_metadata &&
              (part_metadata->get_state() == S3PartMetadataState::missing)) {
@@ -411,6 +430,15 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Retry-After", "1");
     request->send_response(error.get_http_status_code(), response_xml);
 
+  } else if (part_metadata &&
+             (part_metadata->get_state() == S3PartMetadataState::failed)) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (clovis_writer &&
              (clovis_writer->get_state() == S3ClovisWriterOpState::failed)) {
     s3_log(S3_LOG_ERROR,

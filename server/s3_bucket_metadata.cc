@@ -26,7 +26,7 @@
 #include "s3_uri_to_mero_oid.h"
 
 S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req)
-    : request(req) {
+    : request(req), json_parsing_error(false) {
   s3_log(S3_LOG_DEBUG, "Constructor");
   account_name = request->get_account_name();
   user_name = request->get_user_name();
@@ -227,16 +227,23 @@ void S3BucketMetadata::load_bucket_info_successful() {
            bucket_name.c_str(), clovis_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
+
+    json_parsing_error = true;
+    load_bucket_info_failed();
+  } else {
+    state = S3BucketMetadataState::present;
+    this->handler_on_success();
   }
-  state = S3BucketMetadataState::present;
-  this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3BucketMetadata::load_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (json_parsing_error) {
+    state = S3BucketMetadataState::failed;
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, "Bucket metadata is missing\n");
     state = S3BucketMetadataState::missing;
   } else {
@@ -315,11 +322,13 @@ void S3BucketMetadata::handle_collision() {
     }
     create_bucket_list_index();
   } else {
-    s3_log(S3_LOG_ERROR,
-           "Failed to resolve index id collision %d times for index %s\n",
-           collision_attempt_count, salted_index_name.c_str());
-    s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-           S3_IEM_COLLISION_RES_FAIL_JSON);
+    if (collision_attempt_count >= MAX_COLLISION_TRY) {
+      s3_log(S3_LOG_ERROR,
+             "Failed to resolve index id collision %d times for index %s\n",
+             collision_attempt_count, salted_index_name.c_str());
+      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
+             S3_IEM_COLLISION_RES_FAIL_JSON);
+    }
     state = S3BucketMetadataState::failed;
     this->handler_on_failed();
   }
@@ -514,7 +523,7 @@ int S3BucketMetadata::from_json(std::string content) {
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
-  if (!parsingSuccessful) {
+  if (!parsingSuccessful || s3_fi_is_enabled("bucket_metadata_corrupted")) {
     s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
     return -1;
   }

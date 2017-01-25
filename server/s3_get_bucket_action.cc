@@ -122,8 +122,9 @@ void S3GetBucketAction::get_next_objects_successful() {
                "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                kv.first.c_str(), kv.second.second.c_str());
+      } else {
+        object_list.add_object(object);
       }
-      object_list.add_object(object);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
@@ -133,8 +134,9 @@ void S3GetBucketAction::get_next_objects_successful() {
                  "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                  object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                  kv.first.c_str(), kv.second.second.c_str());
+        } else {
+          object_list.add_object(object);
         }
-        object_list.add_object(object);
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
       delimiter_pos = kv.first.find(request_delimiter);
@@ -145,8 +147,9 @@ void S3GetBucketAction::get_next_objects_successful() {
                  "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                  object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                  kv.first.c_str(), kv.second.second.c_str());
+        } else {
+          object_list.add_object(object);
         }
-        object_list.add_object(object);
       } else {
         // Roll up
         s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
@@ -167,8 +170,9 @@ void S3GetBucketAction::get_next_objects_successful() {
                 "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                 object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                 kv.first.c_str(), kv.second.second.c_str());
+          } else {
+            object_list.add_object(object);
           }
-          object_list.add_object(object);
         } else {
           s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
                  request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
@@ -232,7 +236,7 @@ void S3GetBucketAction::send_response_to_s3_client() {
     request->set_out_header_value("Retry-After", "1");
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() != S3BucketMetadataState::present) {
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     S3Error error("NoSuchBucket", request->get_request_id(),
                   request->get_bucket_name());
     std::string& response_xml = error.to_xml();
@@ -240,6 +244,14 @@ void S3GetBucketAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
 
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
     std::string& response_xml = object_list.get_xml();

@@ -82,6 +82,9 @@ class S3PartMetadata {
   S3PartMetadataState state;
   size_t collision_attempt_count;
 
+  // `true` in case of json parsing failure
+  bool json_parsing_error;
+
  private:
   // Any validations we want to do on metadata
   void validate();

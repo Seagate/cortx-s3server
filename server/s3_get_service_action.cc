@@ -65,6 +65,10 @@ void S3GetServiceAction::get_next_buckets() {
       S3AccountUserIdxMetadataState::present) {
     bucket_list_index_oid =
         account_user_index_metadata->get_bucket_list_index_oid();
+  } else if (account_user_index_metadata->get_state() ==
+             S3AccountUserIdxMetadataState::failed) {
+    send_response_to_s3_client();
+    return;
   }
 
   if (bucket_list_index_oid.u_hi == 0ULL &&
@@ -106,8 +110,9 @@ void S3GetServiceAction::get_next_buckets_successful() {
              "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
              bucket_list_index_oid.u_hi, bucket_list_index_oid.u_lo,
              kv.first.c_str(), kv.second.second.c_str());
+    } else {
+      bucket_list.add_bucket(bucket);
     }
-    bucket_list.add_bucket(bucket);
     if (--length == 0) {
       // this is the last element returned.
       last_key = kv.first;

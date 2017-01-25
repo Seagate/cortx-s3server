@@ -159,7 +159,6 @@ void S3PostCompleteAction::get_parts_successful() {
     send_response_to_s3_client();
   }
   struct m0_uint128 part_index_oid = multipart_metadata->get_part_index_oid();
-  bool atleast_one_json_error = false;
   std::map<std::string, std::string>::iterator part_kv;
   std::map<std::string, std::pair<int, std::string>>::iterator store_kv;
 
@@ -172,11 +171,17 @@ void S3PostCompleteAction::get_parts_successful() {
       s3_log(S3_LOG_DEBUG, "Metadata for key [%s] -> [%s]\n",
              store_kv->first.c_str(), store_kv->second.second.c_str());
       if (part_metadata->from_json(store_kv->second.second) != 0) {
-        atleast_one_json_error = true;
         s3_log(S3_LOG_ERROR,
                "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                part_index_oid.u_hi, part_index_oid.u_lo,
                store_kv->first.c_str(), store_kv->second.second.c_str());
+        s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
+               S3_IEM_METADATA_CORRUPTED_STR, S3_IEM_METADATA_CORRUPTED_JSON);
+
+        // part metadata is corrupted, send response and return from here
+        part_metadata->set_state(S3PartMetadataState::missing_partially);
+        send_response_to_s3_client();
+        return;
       }
       s3_log(S3_LOG_DEBUG, "Processing Part [%s]\n",
              part_metadata->get_part_number().c_str());
@@ -208,10 +213,6 @@ void S3PostCompleteAction::get_parts_successful() {
       object_size += part_metadata->get_content_length();
       awsetag.add_part_etag(part_metadata->get_md5());
     }
-  }
-  if (atleast_one_json_error) {
-    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-           S3_IEM_METADATA_CORRUPTED_JSON);
   }
   if (!is_abort_multipart()) {
     etag = awsetag.finalize();
@@ -401,6 +402,15 @@ void S3PostCompleteAction::send_response_to_s3_client() {
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (bucket_metadata &&
+             (bucket_metadata->get_state() == S3BucketMetadataState::failed)) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_object_uri());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (req_state == S3RequestError::InvalidPartOrder) {
     S3Error error("InvalidPartOrder", request->get_request_id(),

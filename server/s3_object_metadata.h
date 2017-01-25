@@ -90,6 +90,10 @@ class S3ObjectMetadata {
   std::function<void()> handler_on_failed;
 
   S3ObjectMetadataState state;
+
+  // `true` in case of json parsing failure
+  bool json_parsing_error;
+
   void initialize(bool is_multipart, std::string uploadid);
   void collision_detected();
   void create_new_oid();

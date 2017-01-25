@@ -322,7 +322,7 @@ for i, val in enumerate(pathstyle_values):
             .execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 
     JClientTest('Jclient cannot list parts of multipart upload.').list_parts("seagatebucket", "18MBfile", upload_id)\
-            .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 
     S3fiTest('S3Fi disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 

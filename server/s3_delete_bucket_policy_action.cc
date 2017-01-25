@@ -89,6 +89,14 @@ void S3DeleteBucketPolicyAction::send_response_to_s3_client() {
                                   std::to_string(response_xml.length()));
 
     request->send_response(error.get_http_status_code(), response_xml);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
+    request->send_response(error.get_http_status_code(), response_xml);
   } else if (delete_successful) {
     request->send_response(S3HttpSuccess204);
   } else {

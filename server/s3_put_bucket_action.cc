@@ -101,7 +101,7 @@ void S3PutBucketAction::create_bucket() {
 
     // Report 409 bucket exists.
     send_response_to_s3_client();
-  } else {
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // xxx set attributes & save
     if (!location_constraint.empty()) {
       bucket_metadata->set_location_constraint(location_constraint);
@@ -110,6 +110,8 @@ void S3PutBucketAction::create_bucket() {
     check_shutdown_signal_for_next_task(false);
     bucket_metadata->save(std::bind(&S3PutBucketAction::next, this),
                           std::bind(&S3PutBucketAction::next, this));
+  } else {
+    send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

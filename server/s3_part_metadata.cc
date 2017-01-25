@@ -27,6 +27,7 @@
 #include "s3_part_metadata.h"
 
 void S3PartMetadata::initialize(std::string uploadid, int part_num) {
+  json_parsing_error = false;
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
   state = S3PartMetadataState::empty;
@@ -162,14 +163,21 @@ void S3PartMetadata::load_successful() {
            str_part_num.c_str(), clovis_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
+
+    json_parsing_error = true;
+    load_failed();
+  } else {
+    state = S3PartMetadataState::present;
+    this->handler_on_success();
   }
-  state = S3PartMetadataState::present;
-  this->handler_on_success();
 }
 
 void S3PartMetadata::load_failed() {
   s3_log(S3_LOG_WARN, "Missing part metadata\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (json_parsing_error) {
+    state = S3PartMetadataState::failed;
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::missing) {
     state = S3PartMetadataState::missing;  // Missing
   } else {
     state = S3PartMetadataState::failed;
@@ -357,7 +365,7 @@ int S3PartMetadata::from_json(std::string content) {
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
-  if (!parsingSuccessful) {
+  if (!parsingSuccessful || s3_fi_is_enabled("part_metadata_corrupted")) {
     s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
     return -1;
   }
@@ -400,7 +408,7 @@ void S3PartMetadata::handle_collision() {
     }
     create_part_index();
   } else {
-    if (collision_attempt_count > MAX_COLLISION_TRY) {
+    if (collision_attempt_count >= MAX_COLLISION_TRY) {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %zu times for index %s\n",
              collision_attempt_count, index_name.c_str());

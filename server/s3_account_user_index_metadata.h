@@ -74,6 +74,9 @@ class S3AccountUserIdxMetadata {
 
   S3AccountUserIdxMetadataState state;
 
+  // `true` in case of json parsing failure
+  bool json_parsing_error;
+
  private:
   std::string get_account_user_index_name() {
     return "ACCOUNTUSER/" + account_name + "/" + user_name;

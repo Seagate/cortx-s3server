@@ -37,13 +37,13 @@ mkdir -p $STATSD_DIR_LOCATION
 mkdir -p $NODEJS_DIR_LOCATION
 
 # Copy over the mero libs
-cp -R third_party/mero/mero/.libs/libmero.so* $S3_INSTALL_LOCATION/lib/
-cp -R third_party/mero/extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATION/lib/
+cp -P third_party/mero/mero/.libs/libmero.so* $S3_INSTALL_LOCATION/lib/
+cp -P third_party/mero/extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATION/lib/
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
 cp -R third_party/libxml2/s3_dist/lib/* $S3_INSTALL_LOCATION/libxml2/
-cp -R third_party/yaml-cpp/s3_dist/lib/libyaml-cpp.so* $S3_INSTALL_LOCATION/libyaml-cpp/lib/
+cp -P third_party/yaml-cpp/s3_dist/lib/libyaml-cpp.so* $S3_INSTALL_LOCATION/libyaml-cpp/lib/
 
 # Copy the s3 server
 cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/

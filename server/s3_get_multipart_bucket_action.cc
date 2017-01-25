@@ -144,9 +144,10 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
                clovis_kv_reader->get_value().c_str());
         s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
                S3_IEM_METADATA_CORRUPTED_STR, S3_IEM_METADATA_CORRUPTED_JSON);
+      } else {
+        if (object->get_upload_id() > request_marker_uploadid)
+          multipart_object_list.add_object(object);
       }
-      if (object->get_upload_id() > request_marker_uploadid)
-        multipart_object_list.add_object(object);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (key_name.find(request_prefix) == 0) {
@@ -157,9 +158,10 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
                  clovis_kv_reader->get_value().c_str());
           s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
                  S3_IEM_METADATA_CORRUPTED_STR, S3_IEM_METADATA_CORRUPTED_JSON);
-        }
-        if (object->get_upload_id() > request_marker_uploadid) {
-          multipart_object_list.add_object(object);
+        } else {
+          if (object->get_upload_id() > request_marker_uploadid) {
+            multipart_object_list.add_object(object);
+          }
         }
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
@@ -172,9 +174,10 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
                  clovis_kv_reader->get_value().c_str());
           s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
                  S3_IEM_METADATA_CORRUPTED_STR, S3_IEM_METADATA_CORRUPTED_JSON);
-        }
-        if (object->get_upload_id() > request_marker_uploadid) {
-          multipart_object_list.add_object(object);
+        } else {
+          if (object->get_upload_id() > request_marker_uploadid) {
+            multipart_object_list.add_object(object);
+          }
         }
       } else {
         // Roll up
@@ -199,9 +202,10 @@ void S3GetMultipartBucketAction::get_key_object_successful() {
             s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
                    S3_IEM_METADATA_CORRUPTED_STR,
                    S3_IEM_METADATA_CORRUPTED_JSON);
-          }
-          if (object->get_upload_id() > request_marker_uploadid) {
-            multipart_object_list.add_object(object);
+          } else {
+            if (object->get_upload_id() > request_marker_uploadid) {
+              multipart_object_list.add_object(object);
+            }
           }
         } else {
           s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
@@ -300,8 +304,9 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
                "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                indx_oid.u_hi, indx_oid.u_lo, kv.first.c_str(),
                kv.second.second.c_str());
+      } else {
+        multipart_object_list.add_object(object);
       }
-      multipart_object_list.add_object(object);
     } else if (!request_prefix.empty() && request_delimiter.empty()) {
       // Filter out by prefix
       if (kv.first.find(request_prefix) == 0) {
@@ -311,8 +316,9 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
                  "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                  indx_oid.u_hi, indx_oid.u_lo, kv.first.c_str(),
                  kv.second.second.c_str());
+        } else {
+          multipart_object_list.add_object(object);
         }
-        multipart_object_list.add_object(object);
       }
     } else if (request_prefix.empty() && !request_delimiter.empty()) {
       delimiter_pos = kv.first.find(request_delimiter);
@@ -323,8 +329,9 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
                  "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                  indx_oid.u_hi, indx_oid.u_lo, kv.first.c_str(),
                  kv.second.second.c_str());
+        } else {
+          multipart_object_list.add_object(object);
         }
-        multipart_object_list.add_object(object);
       } else {
         // Roll up
         s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
@@ -346,8 +353,9 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
                 "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                 indx_oid.u_hi, indx_oid.u_lo, kv.first.c_str(),
                 kv.second.second.c_str());
+          } else {
+            multipart_object_list.add_object(object);
           }
-          multipart_object_list.add_object(object);
         } else {
           s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
                  request_delimiter.c_str(), delimiter_pos, kv.first.c_str());

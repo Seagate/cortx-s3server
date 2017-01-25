@@ -186,9 +186,12 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
                "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                kv.first.c_str(), kv.second.second.c_str());
+        delete_objects_response.add_failure(kv.first, "InternalError");
+        object->mark_invalid();
+      } else {
+        objects_metadata.push_back(object);
+        oids.push_back(object->get_oid());
       }
-      objects_metadata.push_back(object);
-      oids.push_back(object->get_oid());
     } else {
       s3_log(S3_LOG_DEBUG, "Delete Object missing = %s\n", kv.first.c_str());
       delete_objects_response.add_success(kv.first);

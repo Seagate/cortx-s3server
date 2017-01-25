@@ -150,12 +150,13 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
              "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
              multipart_index_oid.u_hi, multipart_index_oid.u_lo,
              kv.first.c_str(), kv.second.second.c_str());
-    }
-    multipart_objects[kv.first] = object->get_upload_id();
-    multipart_obj_oid = object->get_oid();
-    part_oids.push_back(object->get_part_index_oid());
-    if (multipart_obj_oid.u_hi != 0ULL || multipart_obj_oid.u_lo != 0ULL) {
-      multipart_object_oids.push_back(multipart_obj_oid);
+    } else {
+      multipart_objects[kv.first] = object->get_upload_id();
+      multipart_obj_oid = object->get_oid();
+      part_oids.push_back(object->get_part_index_oid());
+      if (multipart_obj_oid.u_hi != 0ULL || multipart_obj_oid.u_lo != 0ULL) {
+        multipart_object_oids.push_back(multipart_obj_oid);
+      }
     }
     return_list_size++;
 
@@ -383,6 +384,14 @@ void S3DeleteBucketAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
 
+    request->send_response(error.get_http_status_code(), response_xml);
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
+    S3Error error("InternalError", request->get_request_id(),
+                  request->get_bucket_name());
+    std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Content-Type", "application/xml");
+    request->set_out_header_value("Content-Length",
+                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (is_bucket_empty == false) {
     // Bucket not empty, cannot delete

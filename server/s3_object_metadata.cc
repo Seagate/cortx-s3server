@@ -28,6 +28,7 @@
 #include "s3_uri_to_mero_oid.h"
 
 void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
+  json_parsing_error = false;
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
@@ -215,13 +216,20 @@ void S3ObjectMetadata::load_successful() {
            clovis_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
+
+    json_parsing_error = true;
+    load_failed();
+  } else {
+    state = S3ObjectMetadataState::present;
+    this->handler_on_success();
   }
-  state = S3ObjectMetadataState::present;
-  this->handler_on_success();
 }
 
 void S3ObjectMetadata::load_failed() {
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (json_parsing_error) {
+    state = S3ObjectMetadataState::failed;
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, "Object metadata missing for %s\n",
            object_name.c_str());
     state = S3ObjectMetadataState::missing;  // Missing
@@ -318,7 +326,7 @@ void S3ObjectMetadata::collision_detected() {
     }
     create_bucket_index();
   } else {
-    if (tried_count > MAX_COLLISION_TRY) {
+    if (tried_count >= MAX_COLLISION_TRY) {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %d times for index %s\n",
              tried_count, index_name.c_str());
@@ -512,7 +520,7 @@ int S3ObjectMetadata::from_json(std::string content) {
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
-  if (!parsingSuccessful) {
+  if (!parsingSuccessful || s3_fi_is_enabled("object_metadata_corrupted")) {
     s3_log(S3_LOG_ERROR, "Json Parsing failed\n");
     return -1;
   }

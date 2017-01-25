@@ -28,7 +28,7 @@ extern struct m0_uint128 root_account_user_index_oid;
 
 S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(
     std::shared_ptr<S3RequestObject> req)
-    : request(req) {
+    : request(req), json_parsing_error(false) {
   s3_log(S3_LOG_DEBUG, "Constructor");
 
   account_name = request->get_account_name();
@@ -87,17 +87,23 @@ void S3AccountUserIdxMetadata::load_successful() {
            clovis_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
-  }
-  state = S3AccountUserIdxMetadataState::present;
 
-  this->handler_on_success();
+    json_parsing_error = true;
+    load_failed();
+  } else {
+    state = S3AccountUserIdxMetadataState::present;
+    this->handler_on_success();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::load_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+  if (json_parsing_error) {
+    state = S3AccountUserIdxMetadataState::failed;
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, "Account User index metadata is missing\n");
     state = S3AccountUserIdxMetadataState::missing;
   } else {
@@ -211,7 +217,8 @@ int S3AccountUserIdxMetadata::from_json(std::string content) {
   Json::Value root;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), root);
-  if (!parsingSuccessful) {
+  if (!parsingSuccessful ||
+      s3_fi_is_enabled("account_user_idx_metadata_corrupted")) {
     s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
     return -1;
   }

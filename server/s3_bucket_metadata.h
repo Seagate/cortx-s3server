@@ -88,6 +88,9 @@ class S3BucketMetadata {
 
   std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
 
+  // `true` in case of json parsing failure
+  bool json_parsing_error;
+
  private:
   std::string get_account_user_index_name() {
     return "ACCOUNTUSER/" + account_name + "/" + user_name;
