@@ -96,12 +96,12 @@ void S3GetObjectAction::read_object() {
       s3_log(S3_LOG_DEBUG, "Reading object of size %zu\n",
              object_metadata->get_content_length());
 
-      size_t clovis_block_size =
-          S3Option::get_instance()->get_clovis_block_size();
+      size_t clovis_unit_size =
+          S3Option::get_instance()->get_clovis_unit_size();
       /* Count Data blocks from data size */
       total_blocks_in_object =
-          (object_metadata->get_content_length() + (clovis_block_size - 1)) /
-          clovis_block_size;
+          (object_metadata->get_content_length() + (clovis_unit_size - 1)) /
+          clovis_unit_size;
 
       clovis_reader = std::make_shared<S3ClovisReader>(
           request, std::make_shared<ConcreteClovisAPI>(),
@@ -123,7 +123,7 @@ void S3GetObjectAction::read_object_data() {
 
   size_t max_blocks_in_one_read_op =
       S3Option::get_instance()->get_clovis_read_payload_size() /
-      S3Option::get_instance()->get_clovis_block_size();
+      S3Option::get_instance()->get_clovis_unit_size();
   size_t blocks_to_read = 0;
 
   if (blocks_already_read != total_blocks_in_object) {
@@ -155,6 +155,8 @@ void S3GetObjectAction::send_data_to_client() {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
+  s3_log(S3_LOG_DEBUG, "Earlier data_sent_to_client = %zu bytes.\n",
+         data_sent_to_client);
 
   char* data = NULL;
   size_t length = 0;
@@ -168,6 +170,7 @@ void S3GetObjectAction::send_data_to_client() {
     }
 
     data_sent_to_client += length;
+    s3_log(S3_LOG_DEBUG, "Sending %zu bytes to client.\n", length);
     request->send_reply_body(data, length);
     length = clovis_reader->get_next_block(&data);
   }

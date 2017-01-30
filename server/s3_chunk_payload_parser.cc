@@ -22,6 +22,9 @@
 #include "s3_chunk_payload_parser.h"
 #include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_option.h"
+
+extern S3Option *g_option_instance;
 
 S3ChunkDetail::S3ChunkDetail() : chunk_size(0), ready(false), chunk_number(0) {}
 
@@ -46,36 +49,12 @@ void S3ChunkDetail::add_size(size_t size) { chunk_size = size; }
 
 void S3ChunkDetail::add_signature(const std::string &sign) { signature = sign; }
 
-bool S3ChunkDetail::update_hash(evbuf_t *buf) {
-  if (buf == NULL) {
+bool S3ChunkDetail::update_hash(const void *data_ptr, size_t data_len) {
+  if (data_ptr == NULL) {
     std::string emptee_string = "";
-    bool status =
-        hash_ctx.Update(emptee_string.c_str(), emptee_string.length());
-    return status;
+    return hash_ctx.Update(emptee_string.c_str(), emptee_string.length());
   }
-
-  size_t len_in_buf = evbuffer_get_length(buf);
-  size_t num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
-  bool status = false;
-
-  /* do the actual peek */
-  struct evbuffer_iovec *vec_in = (struct evbuffer_iovec *)malloc(
-      num_of_extents * sizeof(struct evbuffer_iovec));
-
-  /* do the actual peek at data */
-  evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
-                num_of_extents);
-
-  for (size_t i = 0; i < num_of_extents; i++) {
-    status =
-        hash_ctx.Update((const char *)vec_in[i].iov_base, vec_in[i].iov_len);
-    if (!status) {
-      break;
-    }
-  }
-  free(vec_in);
-
-  return status;
+  return hash_ctx.Update((const char *)data_ptr, data_len);
 }
 
 bool S3ChunkDetail::fini_hash() {
@@ -96,9 +75,18 @@ std::string S3ChunkDetail::get_payload_hash() { return payload_hash; }
 S3ChunkPayloadParser::S3ChunkPayloadParser()
     : parser_state(ChunkParserState::c_start),
       chunk_data_size_to_read(0),
+      content_length(0),
       chunk_sig_key_q_const(S3_AWS_CHUNK_KEY),
       chunk_sig_key_char_state(S3_AWS_CHUNK_KEY) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+
+  evbuf_t *spare_buffer = evbuffer_new();
+  // Lets just preallocate space in evbuf to max we intend
+  evbuffer_expand(spare_buffer,
+                  g_option_instance->get_libevent_pool_buffer_size());
+  // We will never write more than this in single spare buffer
+  spare_buffers.push_back(spare_buffer);
+  s3_log(S3_LOG_DEBUG, "spare_buffers.size(%zu)\n", spare_buffers.size());
 }
 
 void S3ChunkPayloadParser::reset_parser_state() {
@@ -110,306 +98,35 @@ void S3ChunkPayloadParser::reset_parser_state() {
   current_chunk_detail.incr_chunk_number();
 }
 
-std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
-  std::vector<evbuf_t *> return_val;
-  bool remember_to_drain_cr = false;
-  bool reset_parsing = false;
-
-  while (true) {
-    size_t len_in_buf = evbuffer_get_length(buf);
-    s3_log(S3_LOG_DEBUG, "Parsing evbuffer_get_length(buf) = %zu\n",
-           evbuffer_get_length(buf));
-
-    size_t remaining_to_parse = len_in_buf;
-    size_t num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
-
-    /* do the actual peek */
-    struct evbuffer_iovec *vec_in = (struct evbuffer_iovec *)malloc(
-        num_of_extents * sizeof(struct evbuffer_iovec));
-
-    /* do the actual peek at data */
-    evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
-                  num_of_extents);
-    size_t meta_read_in_current_parse = 0;
-    s3_log(S3_LOG_DEBUG, "num_of_extents = %zu\n", num_of_extents);
-    for (size_t i = 0; i < num_of_extents; i++) {
-      // std::string chunk_debug((const char*)vec_in[i].iov_base,
-      // vec_in[i].iov_len);
-      // s3_log(S3_LOG_DEBUG, "vec_in[i].iov_base = %s\n", chunk_debug.c_str());
-      // s3_log(S3_LOG_DEBUG, "vec_in[i].iov_len = %zu\n", vec_in[i].iov_len);
-
-      for (size_t j = 0; j < vec_in[i].iov_len; j++) {
-        // Parsing Syntax:
-        // string(IntHexBase(chunk-size)) + ";chunk-signature=" + signature +
-        // \r\n + chunk-data + \r\n
-        if (parser_state == ChunkParserState::c_start) {
-          reset_parser_state();
-          reset_parsing = false;
-          parser_state = ChunkParserState::c_chunk_size;
-        }
-        switch (parser_state) {
-          case ChunkParserState::c_error: {
-            s3_log(S3_LOG_ERROR, "ChunkParserState::c_error.\n");
-            evbuffer_drain(buf, -1);
-            evbuffer_free(buf);
-            free(vec_in);
-            return return_val;
-          }
-          case ChunkParserState::c_start: {
-            // s3_log(S3_LOG_DEBUG, "ChunkParserState::c_start.")
-          }  // dummycase will never happen, see 1 line above
-          case ChunkParserState::c_chunk_size: {
-            // s3_log(S3_LOG_DEBUG, "ChunkParserState::c_chunk_size.")
-            const char *chptr = (const char *)vec_in[i].iov_base;
-
-            if (chptr[j] == ';') {
-              parser_state = ChunkParserState::c_chunk_signature_key;
-              chunk_sig_key_char_state = chunk_sig_key_q_const;
-              chunk_data_size_to_read =
-                  strtol(current_chunk_size.c_str(), NULL, 16);
-              current_chunk_detail.add_size(chunk_data_size_to_read);
-              s3_log(S3_LOG_DEBUG, "current_chunk_size = [%s]\n",
-                     current_chunk_size.c_str());
-              s3_log(S3_LOG_DEBUG, "chunk_data_size_to_read (int) = [%zu]\n",
-                     chunk_data_size_to_read);
-
-              // ignore the semicolon
-            } else {
-              current_chunk_size.push_back(chptr[j]);
-            }
-            meta_read_in_current_parse++;
-            break;
-          }
-          case ChunkParserState::c_chunk_signature_key: {
-            // s3_log(S3_LOG_DEBUG, "ChunkParserState::c_chunk_signature_key.")
-            const char *chptr = (const char *)vec_in[i].iov_base;
-
-            if (chunk_sig_key_char_state.empty()) {
-              // ignore '='
-              if (chptr[j] == '=') {
-                parser_state = ChunkParserState::c_chunk_signature_value;
-              } else {
-                parser_state = ChunkParserState::c_error;
-                evbuffer_drain(buf, -1);
-                evbuffer_free(buf);
-                free(vec_in);
-                return return_val;
-              }
-            } else {
-              if (chptr[j] == chunk_sig_key_char_state.front()) {
-                chunk_sig_key_char_state.pop();
-              } else {
-                parser_state = ChunkParserState::c_error;
-                evbuffer_drain(buf, -1);
-                evbuffer_free(buf);
-                free(vec_in);
-                return return_val;
-              }
-            }
-            meta_read_in_current_parse++;
-            break;
-          }
-          case ChunkParserState::c_chunk_signature_value: {
-            // s3_log(S3_LOG_DEBUG,
-            // "ChunkParserState::c_chunk_signature_value.")
-            const char *chptr = (const char *)vec_in[i].iov_base;
-            if ((unsigned char)chptr[j] == CR) {
-              parser_state = ChunkParserState::c_cr;
-            } else {
-              current_chunk_signature.push_back(chptr[j]);
-            }
-            meta_read_in_current_parse++;
-            break;
-          }
-          case ChunkParserState::c_cr: {
-            // s3_log(S3_LOG_DEBUG, "ChunkParserState::c_cr.")
-            const char *chptr = (const char *)vec_in[i].iov_base;
-            if ((unsigned char)chptr[j] == LF) {
-              // CRLF means we are done with signature
-              parser_state = ChunkParserState::c_chunk_data;
-              current_chunk_detail.add_signature(current_chunk_signature);
-              s3_log(S3_LOG_DEBUG, "current_chunk_signature = [%s]\n",
-                     current_chunk_signature.c_str());
-            } else {
-              // what we detected as CR was part of signature, move back
-              current_chunk_signature.push_back(CR);
-              if ((unsigned char)chptr[j] == CR) {
-                parser_state = ChunkParserState::c_cr;
-              } else {
-                current_chunk_signature.push_back(chptr[j]);
-              }
-            }
-            meta_read_in_current_parse++;
-            break;
-          }
-          case ChunkParserState::c_chunk_data: {
-            // s3_log(S3_LOG_DEBUG, "ChunkParserState::c_chunk_data.")
-            // we have to read 'chunk_data_size_to_read' data, so we have 3
-            // cases.
-            // 1. current payload has "all" and "only" data related to current
-            // chunk, optionally crlf
-            // 2. current payload has "partial" and "only" data related to
-            // current chunk.
-            // 3. current payload had "all" data of current chunk and some part
-            // of next chunk
-            if (chunk_data_size_to_read > 0) {
-              s3_log(S3_LOG_DEBUG, "len_in_buf = [%zu]\n", len_in_buf);
-              s3_log(S3_LOG_DEBUG, "meta_read_in_current_parse = [%zu]\n",
-                     meta_read_in_current_parse);
-
-              s3_log(S3_LOG_DEBUG, "Before draining metadata = %zu\n",
-                     evbuffer_get_length(buf));
-              evbuffer_drain(buf, meta_read_in_current_parse);
-              s3_log(S3_LOG_DEBUG, "After draining metadata = %zu\n",
-                     evbuffer_get_length(buf));
-
-              remaining_to_parse = len_in_buf - meta_read_in_current_parse;
-              s3_log(S3_LOG_DEBUG, "remaining_to_parse = [%zu]\n",
-                     remaining_to_parse);
-              if (chunk_data_size_to_read == remaining_to_parse) {
-                // (==) we have all data, missing crlf
-                parser_state = ChunkParserState::c_chunk_data_end_cr;
-                return_val.push_back(buf);
-                current_chunk_detail.update_hash(buf);
-                chunk_data_size_to_read -= evbuffer_get_length(buf);
-                free(vec_in);
-                return return_val;
-              } else if (chunk_data_size_to_read > remaining_to_parse) {
-                // (>)  we have partial data, but its all part of data OR
-                return_val.push_back(buf);
-                current_chunk_detail.update_hash(buf);
-                chunk_data_size_to_read -= evbuffer_get_length(buf);
-                free(vec_in);
-                return return_val;
-              } else if (chunk_data_size_to_read + 2 /*CRLF*/ ==
-                         remaining_to_parse) {
-                // we have all data + crlf
-                evbuf_t *current_buf = evbuffer_new();
-                evbuffer_remove_buffer(buf, current_buf,
-                                       chunk_data_size_to_read);  // copy data
-                return_val.push_back(current_buf);
-                current_chunk_detail.update_hash(current_buf);
-                chunk_data_size_to_read -= evbuffer_get_length(current_buf);
-                evbuffer_drain(buf, -1);  // remove CRLF
-                evbuffer_free(buf);
-                parser_state = ChunkParserState::c_start;
-                current_chunk_detail.fini_hash();
-                current_chunk_detail.debug_dump();
-                chunk_details.push(current_chunk_detail);
-                free(vec_in);
-                return return_val;
-              } else if (chunk_data_size_to_read + 1 /*CR*/ ==
-                         remaining_to_parse) {
-                // we have all data + cr
-                evbuf_t *current_buf = evbuffer_new();
-                evbuffer_remove_buffer(buf, current_buf,
-                                       chunk_data_size_to_read);
-                return_val.push_back(current_buf);
-                current_chunk_detail.update_hash(current_buf);
-                chunk_data_size_to_read -= evbuffer_get_length(current_buf);
-                evbuffer_drain(buf, -1);  // remove CR
-                evbuffer_free(buf);
-
-                parser_state = ChunkParserState::c_chunk_data_end_cr;
-                free(vec_in);
-                return return_val;
-              } else if (chunk_data_size_to_read <= remaining_to_parse) {
-                // we have all data + CRLF + some part of next chunk
-                evbuf_t *current_buf = evbuffer_new();
-
-                // copy/move data from buf to current_buf
-                s3_log(S3_LOG_DEBUG,
-                       "Before move evbuffer_get_length(buf) = %zu\n",
-                       evbuffer_get_length(buf));
-                evbuffer_remove_buffer(buf, current_buf,
-                                       chunk_data_size_to_read);
-                s3_log(S3_LOG_DEBUG,
-                       "After move evbuffer_get_length(buf) = %zu\n",
-                       evbuffer_get_length(buf));
-                s3_log(S3_LOG_DEBUG,
-                       "After move evbuffer_get_length(current_buf) = %zu\n",
-                       evbuffer_get_length(current_buf));
-
-                evbuffer_drain(buf, 2);  // remove CRLF
-                return_val.push_back(current_buf);
-                current_chunk_detail.update_hash(current_buf);
-                chunk_data_size_to_read -= evbuffer_get_length(current_buf);
-
-                // Now we need to reinit parsing with whatever is in buf
-                reset_parsing = true;
-                parser_state = ChunkParserState::c_start;
-                current_chunk_detail.fini_hash();
-                current_chunk_detail.debug_dump();
-                chunk_details.push(current_chunk_detail);
-              }
-            } else {
-              // This can be last chunk with size 0
-              s3_log(S3_LOG_DEBUG, "Last chunk of size 0\n");
-              reset_parsing = true;
-              parser_state = ChunkParserState::c_start;
-              current_chunk_detail.update_hash(NULL);
-              current_chunk_detail.fini_hash();
-              current_chunk_detail.debug_dump();
-              chunk_details.push(current_chunk_detail);
-              evbuffer_drain(buf, -1);
-              evbuffer_free(buf);
-
-              free(vec_in);
-              return return_val;
-            }
-            break;
-          }
-          case ChunkParserState::c_chunk_data_end_cr: {
-            // s3_log(S3_LOG_DEBUG, "ChunkParserState::c_chunk_data_end_cr.")
-            const char *chptr = (const char *)vec_in[i].iov_base;
-
-            if ((unsigned char)chptr[j] == LF) {
-              // CRLF means we are done with data
-              parser_state = ChunkParserState::c_start;
-              reset_parsing = true;
-              if (remember_to_drain_cr) {
-                evbuffer_drain(buf, 2);  // remove CRLF
-              } else {
-                evbuffer_drain(buf, 1);  // remove LF
-              }
-              remember_to_drain_cr = false;
-              current_chunk_detail.fini_hash();
-              current_chunk_detail.debug_dump();
-              chunk_details.push(current_chunk_detail);
-            } else {
-              parser_state = ChunkParserState::c_cr;
-              remember_to_drain_cr = true;
-            }
-            break;
-          }
-          default: { s3_log(S3_LOG_ERROR, "Invalid ChunkParserState.\n"); }
-        };  // switch
-        if (reset_parsing) {
-          break;
-        }
-      }  // Inner for
-      if (reset_parsing) {
-        break;
-      }
-    }  // for num_of_extents
-    free(vec_in);
-    if (!reset_parsing) {
-      break;
-    }  // else buf was rearranged, we need to continue parsing pending buf data.
-  }    // while true
-
-  if (parser_state < ChunkParserState::c_chunk_data) {
-    // Here we just have metadata in buf which is already parsed, so free it.
-    evbuffer_drain(buf, -1);
-    evbuffer_free(buf);
+void S3ChunkPayloadParser::add_to_spare(const void *data, size_t len) {
+  s3_log(S3_LOG_DEBUG, "data(%p), len(%zu)\n", data, len);
+  evbuf_t *spare = spare_buffers.front();
+  size_t buf_size = g_option_instance->get_libevent_pool_buffer_size();
+  size_t free_in_current_spare = buf_size - evbuffer_get_length(spare);
+  // Distribute across spares
+  s3_log(S3_LOG_DEBUG, "spare_buffers.size(%zu)\n", spare_buffers.size());
+  if (len <= free_in_current_spare) {
+    s3_log(S3_LOG_DEBUG, "Adding all in free_in_current_spare(%zu)\n",
+           free_in_current_spare);
+    evbuffer_add(spare, data, len);
   } else {
-    // We missed adding data to return_val
-    // logical error: should never be here.
-    s3_log(S3_LOG_ERROR, "Fatal Error: Invalid ChunkParserState.\n");
-    s3_iem(LOG_ERR, S3_IEM_CHUNK_PARSING_FAIL, S3_IEM_CHUNK_PARSING_FAIL_STR,
-           S3_IEM_CHUNK_PARSING_FAIL_JSON);
+    // add in current spare with free space
+    s3_log(S3_LOG_DEBUG, "Adding possible in free_in_current_spare(%zu)\n",
+           free_in_current_spare);
+    evbuffer_add(spare, data, free_in_current_spare);
+    len -= free_in_current_spare;
+
+    // move full spare to ready and pick up next spare
+    ready_buffers.push_back(spare);
+    spare_buffers.pop_front();
+
+    // add remaining in next spare
+    assert(!spare_buffers.empty());
+    spare = spare_buffers.front();
+    evbuffer_add(
+        spare, (const void *)((const char *)data + free_in_current_spare), len);
   }
-  return return_val;
+  s3_log(S3_LOG_DEBUG, "spare_buffers.size(%zu)\n", spare_buffers.size());
 }
 
 /*
@@ -434,6 +151,251 @@ std::vector<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
  *    </service_actions>
  *  </IEM_INLINE_DOCUMENTATION>
  */
+
+std::deque<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
+  ready_buffers.clear();  // will be filled with add_to_spare
+
+  size_t len_in_buf = evbuffer_get_length(buf);
+  s3_log(S3_LOG_DEBUG, "Parsing evbuffer_get_length(buf) = %zu\n", len_in_buf);
+
+  size_t num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
+  s3_log(S3_LOG_DEBUG, "num_of_extents = %zu\n", num_of_extents);
+
+  /* do the actual peek */
+  struct evbuffer_iovec *vec_in = (struct evbuffer_iovec *)calloc(
+      num_of_extents, sizeof(struct evbuffer_iovec));
+
+  /* do the actual peek at data */
+  evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
+                num_of_extents);
+
+  for (size_t i = 0; i < num_of_extents; i++) {
+    // std::string chunk_debug((const char*)vec_in[i].iov_base,
+    // vec_in[i].iov_len);
+    // s3_log(S3_LOG_DEBUG, "vec_in[i].iov_base = %s\n", chunk_debug.c_str());
+    // s3_log(S3_LOG_DEBUG, "vec_in[i].iov_len = %zu\n", vec_in[i].iov_len);
+    // Within current vec
+    for (size_t j = 0; j < vec_in[i].iov_len; j++) {
+      // Parsing Syntax:
+      // string(IntHexBase(chunk-size)) + ";chunk-signature=" + signature + \r\n
+      // + chunk-data + \r\n
+      if (parser_state == ChunkParserState::c_start) {
+        reset_parser_state();
+        // reset_parsing = false;
+        parser_state = ChunkParserState::c_chunk_size;
+      }
+      switch (parser_state) {
+        case ChunkParserState::c_error: {
+          s3_log(S3_LOG_ERROR, "ChunkParserState::c_error. i(%zu), j(%zu)\n", i,
+                 j);
+          free(vec_in);
+          return ready_buffers;
+        }
+        case ChunkParserState::c_start: {
+          s3_log(S3_LOG_DEBUG, "ChunkParserState::c_start. i(%zu), j(%zu)\n", i,
+                 j);
+        }  // dummycase will never happen, see 1 line above
+        case ChunkParserState::c_chunk_size: {
+          s3_log(S3_LOG_DEBUG,
+                 "ChunkParserState::c_chunk_size. i(%zu), j(%zu)\n", i, j);
+          const char *chptr = (const char *)vec_in[i].iov_base;
+
+          if (chptr[j] == ';') {
+            parser_state = ChunkParserState::c_chunk_signature_key;
+            chunk_sig_key_char_state = chunk_sig_key_q_const;
+            chunk_data_size_to_read =
+                strtol(current_chunk_size.c_str(), NULL, 16);
+            current_chunk_detail.add_size(chunk_data_size_to_read);
+            s3_log(S3_LOG_DEBUG, "current_chunk_size = [%s]\n",
+                   current_chunk_size.c_str());
+            s3_log(S3_LOG_DEBUG, "chunk_data_size_to_read (int) = [%zu]\n",
+                   chunk_data_size_to_read);
+
+            // ignore the semicolon
+          } else {
+            current_chunk_size.push_back(chptr[j]);
+          }
+          break;
+        }
+        case ChunkParserState::c_chunk_signature_key: {
+          s3_log(S3_LOG_DEBUG,
+                 "ChunkParserState::c_chunk_signature_key. i(%zu), j(%zu)\n", i,
+                 j);
+          const char *chptr = (const char *)vec_in[i].iov_base;
+
+          if (chunk_sig_key_char_state.empty()) {
+            // ignore '='
+            if (chptr[j] == '=') {
+              parser_state = ChunkParserState::c_chunk_signature_value;
+            } else {
+              parser_state = ChunkParserState::c_error;
+              free(vec_in);
+              return ready_buffers;
+            }
+          } else {
+            if (chptr[j] == chunk_sig_key_char_state.front()) {
+              chunk_sig_key_char_state.pop();
+            } else {
+              parser_state = ChunkParserState::c_error;
+              free(vec_in);
+              return ready_buffers;
+            }
+          }
+          break;
+        }
+        case ChunkParserState::c_chunk_signature_value: {
+          s3_log(S3_LOG_DEBUG,
+                 "ChunkParserState::c_chunk_signature_value. i(%zu), j(%zu)\n",
+                 i, j);
+          const char *chptr = (const char *)vec_in[i].iov_base;
+          if ((unsigned char)chptr[j] == CR) {
+            parser_state = ChunkParserState::c_cr;
+          } else {
+            current_chunk_signature.push_back(chptr[j]);
+          }
+          break;
+        }
+        case ChunkParserState::c_cr: {
+          s3_log(S3_LOG_DEBUG, "ChunkParserState::c_cr. i(%zu), j(%zu)\n", i,
+                 j);
+          const char *chptr = (const char *)vec_in[i].iov_base;
+          if ((unsigned char)chptr[j] == LF) {
+            // CRLF means we are done with signature
+            parser_state = ChunkParserState::c_chunk_data;
+            current_chunk_detail.add_signature(current_chunk_signature);
+            s3_log(S3_LOG_DEBUG, "current_chunk_signature = [%s]\n",
+                   current_chunk_signature.c_str());
+          } else {
+            // what we detected as CR was part of signature, move back
+            current_chunk_signature.push_back(CR);
+            if ((unsigned char)chptr[j] == CR) {
+              parser_state = ChunkParserState::c_cr;
+            } else {
+              current_chunk_signature.push_back(chptr[j]);
+            }
+          }
+          break;
+        }
+        case ChunkParserState::c_chunk_data: {
+          s3_log(S3_LOG_DEBUG,
+                 "ChunkParserState::c_chunk_data. i(%zu), j(%zu)\n", i, j);
+
+          // we have to read 'chunk_data_size_to_read' data, so we have 3 cases.
+          // 1. current payload has "all" and "only" data related to current
+          // chunk, optionally crlf
+          // 2. current payload has "partial" and "only" data related to current
+          // chunk.
+          // 3. current payload had "all" data of current chunk and some part of
+          // next chunk
+          s3_log(S3_LOG_DEBUG, "chunk_data_size_to_read(%zu)\n",
+                 chunk_data_size_to_read);
+          if (chunk_data_size_to_read > 0) {
+            // How much data does current vec has for current chunk?
+            void *data_ptr = (void *)((const char *)(vec_in[i].iov_base) + j);
+            size_t data_len = 0;
+            s3_log(S3_LOG_DEBUG, "vec_in[i].iov_len(%zu)\n", vec_in[i].iov_len);
+            if (chunk_data_size_to_read <= vec_in[i].iov_len - j) {
+              // current vec has all data and possibly next some of chunk
+              data_len = chunk_data_size_to_read;
+            } else {
+              // Current vec has only data
+              data_len = vec_in[i].iov_len - j;
+            }
+            add_to_spare(data_ptr, data_len);
+            current_chunk_detail.update_hash(data_ptr, data_len);
+            chunk_data_size_to_read -= data_len;
+            content_length -= data_len;
+            s3_log(S3_LOG_DEBUG, "chunk_data_size_to_read(%zu)\n",
+                   chunk_data_size_to_read);
+            j += data_len - 1;
+
+            if (chunk_data_size_to_read == 0) {
+              s3_log(S3_LOG_DEBUG, "goto c_chunk_data_end_cr i(%zu), j(%zu)\n",
+                     i, j);
+              // Means we are moving on to crlf followed by next chunk.
+              parser_state = ChunkParserState::c_chunk_data_end_cr;
+            } else if (chunk_data_size_to_read < 0) {
+              parser_state = ChunkParserState::c_error;
+              free(vec_in);
+              return ready_buffers;
+            } else {
+              // we are expecting more data, keep going with same parser state
+            }
+          } else {
+            // This can be last chunk with size 0
+            s3_log(S3_LOG_DEBUG, "Last chunk of size 0 i(%zu), j(%zu)\n", i, j);
+            parser_state = ChunkParserState::c_chunk_data_end_cr;
+            j--;
+            current_chunk_detail.update_hash(NULL);
+          }
+          break;
+        }
+        case ChunkParserState::c_chunk_data_end_cr: {
+          s3_log(S3_LOG_DEBUG,
+                 "ChunkParserState::c_chunk_data_end_cr. i(%zu), j(%zu)\n", i,
+                 j);
+          const char *chptr = (const char *)vec_in[i].iov_base;
+
+          if ((unsigned char)chptr[j] == CR) {
+            parser_state = ChunkParserState::c_chunk_data_end_lf;
+          } else {
+            parser_state = ChunkParserState::c_error;
+            free(vec_in);
+            return ready_buffers;
+          }
+          break;
+        }
+        case ChunkParserState::c_chunk_data_end_lf: {
+          s3_log(S3_LOG_DEBUG,
+                 "ChunkParserState::c_chunk_data_end_lf. i(%zu), j(%zu)\n", i,
+                 j);
+          const char *chptr = (const char *)vec_in[i].iov_base;
+
+          if ((unsigned char)chptr[j] == LF) {
+            // CRLF means we are done with data
+            parser_state = ChunkParserState::c_start;
+            current_chunk_detail.fini_hash();
+            current_chunk_detail.debug_dump();
+            chunk_details.push(current_chunk_detail);
+          } else {
+            parser_state = ChunkParserState::c_error;
+            free(vec_in);
+            return ready_buffers;
+          }
+          break;
+        }
+        default: {
+          s3_log(S3_LOG_ERROR, "Invalid ChunkParserState. i(%zu), j(%zu)\n", i,
+                 j);
+          s3_iem(LOG_ERR, S3_IEM_CHUNK_PARSING_FAIL,
+                 S3_IEM_CHUNK_PARSING_FAIL_STR, S3_IEM_CHUNK_PARSING_FAIL_JSON);
+          parser_state = ChunkParserState::c_error;
+          free(vec_in);
+          return ready_buffers;
+        }
+      };  // switch
+    }     // Inner for
+  }       // for num_of_extents
+  free(vec_in);
+
+  s3_log(S3_LOG_DEBUG, "content_length(%zu)\n", content_length);
+  if (content_length == 0) {
+    // we have all required data, move partially filled spares to ready.
+    while (!spare_buffers.empty()) {
+      evbuf_t *spare = spare_buffers.front();
+      s3_log(S3_LOG_DEBUG, "move evbuffer_get_length(spare)(%zu)\n",
+             evbuffer_get_length(spare));
+      if (evbuffer_get_length(spare) > 0) {
+        ready_buffers.push_back(spare);
+      }
+      spare_buffers.pop_front();
+      s3_log(S3_LOG_DEBUG, "spare_buffers.size(%zu)\n", spare_buffers.size());
+    }
+  }
+  evbuffer_drain(buf, -1);
+  spare_buffers.push_back(buf);
+  return ready_buffers;
+}
 
 bool S3ChunkPayloadParser::is_chunk_detail_ready() {
   if (!chunk_details.empty() && chunk_details.front().is_ready()) {

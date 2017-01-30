@@ -30,6 +30,7 @@
 #include "s3_clovis_context.h"
 #include "s3_clovis_wrapper.h"
 #include "s3_log.h"
+#include "s3_option.h"
 #include "s3_request_object.h"
 
 extern S3Option* g_option_instance;
@@ -70,15 +71,15 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   }
 
   // Call this when you want to do write op.
-  uint64_t init_read_op_ctx(size_t clovis_block_count, uint64_t last_index) {
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_block_count);
+  uint64_t init_read_op_ctx(size_t clovis_buf_count, uint64_t last_index) {
+    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count);
     has_clovis_rw_op_context = true;
 
-    for (size_t i = 0; i < clovis_block_count; i++) {
+    for (size_t i = 0; i < clovis_buf_count; i++) {
       clovis_rw_op_context->ext->iv_index[i] = last_index;
       clovis_rw_op_context->ext->iv_vec.v_count[i] =
-          g_option_instance->get_clovis_block_size();
-      last_index += g_option_instance->get_clovis_block_size();
+          g_option_instance->get_clovis_unit_size();
+      last_index += g_option_instance->get_clovis_unit_size();
 
       /* we don't want any attributes */
       clovis_rw_op_context->attr->ov_vec.v_count[i] = 0;

@@ -61,6 +61,7 @@ class S3PutMultiObjectAction : public S3Action {
 
   void chunk_auth_successful();
   void chunk_auth_failed();
+  void send_chunk_details_if_any();
 
  public:
   S3PutMultiObjectAction(std::shared_ptr<S3RequestObject> req);
@@ -78,7 +79,7 @@ class S3PutMultiObjectAction : public S3Action {
 
   void initiate_data_streaming();
   void consume_incoming_content();
-  void write_object(S3AsyncBufferContainer& buffer);
+  void write_object(std::shared_ptr<S3AsyncBufferOptContainer> buffer);
 
   void write_object_successful();
   void write_object_failed();

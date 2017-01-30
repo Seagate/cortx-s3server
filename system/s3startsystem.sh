@@ -29,11 +29,9 @@ if [[ ${1} == +([0-9]) ]]; then
   PID_FILENAME='/var/run/s3server.'$1'.pid'
   s3server --s3pidfile $PID_FILENAME \
            --clovislocal $LOCAL_EP:${clovis_local_port} --clovisha $HA_EP \
-           --clovisconfd $CONFD_EP --s3port $s3port --authhost 127.0.0.1 \
-           --authport 8085 --log_dir /var/log/seagate/s3 --s3loglevel INFO
+           --clovisconfd $CONFD_EP --s3port $s3port
 else
   # simple s3 service with default ( s3server.pid ) pid file
   s3server --clovislocal $LOCAL_EP:100 --clovisha $HA_EP \
-           --clovisconfd $CONFD_EP --s3port 8081 --authhost 127.0.0.1 \
-           --authport 8085 --log_dir /var/log/seagate/s3 --s3loglevel INFO
+           --clovisconfd $CONFD_EP --s3port 8081
 fi

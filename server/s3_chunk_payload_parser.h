@@ -29,6 +29,8 @@
 #include <string>
 #include <vector>
 
+#include <gtest/gtest_prod.h>
+
 #include "s3_sha256.h"
 
 #define LF (unsigned char)10
@@ -54,7 +56,7 @@ class S3ChunkDetail {
   // preferably Call in sequence to complete the details
   void add_size(size_t size);
   void add_signature(const std::string &sign);
-  bool update_hash(evbuf_t *buf);
+  bool update_hash(const void *data_ptr, size_t data_len = 0);
   bool fini_hash();
 
   size_t get_size();
@@ -76,6 +78,7 @@ enum class ChunkParserState {
   c_cr,  // carriage return CR char
   c_chunk_data,
   c_chunk_data_end_cr,
+  c_chunk_data_end_lf,
   c_error
 };
 
@@ -84,6 +87,7 @@ class S3ChunkPayloadParser {
   ChunkParserState parser_state;
   std::string current_chunk_size;
   size_t chunk_data_size_to_read;
+  size_t content_length;  // actual data embedded in chunks
   std::string current_chunk_signature;
   S3ChunkDetail current_chunk_detail;
 
@@ -93,19 +97,42 @@ class S3ChunkPayloadParser {
 
   void reset_parser_state();
 
+  // We hold a spare buffer block internally to copy chunked data in it
+  // and keep rotating with incoming buffers in parser. Once data in incoming
+  // buffer is emptied we retain it as spare and buffer that is filled
+  // completely
+  // is given out for consumption.
+  std::deque<evbuf_t *> spare_buffers;
+  std::deque<evbuf_t *> ready_buffers;
+
+  // Adds to current spare buffer. but when spare is full:
+  // moves filled spare -> ready
+  void add_to_spare(const void *data, size_t len);
+
  public:
   S3ChunkPayloadParser();
 
+  void setup_content_length(size_t len) { content_length = len; }
+
   // For each buf passed, it strips the chunk-size and signature
-  // from payload and returns the actual payload buffers.
-  // It also splits the input buffer into 2 if the buf contains
-  // parts of 2 incoming chunks.
-  std::vector<evbuf_t *> run(evbuf_t *buf);
+  // from payload and creates bufs with filled data.
+  // It returns the bufs with data only when entire buf is filled,
+  // else it remember the partial data internally and returns in next call
+  // *Note: check for parser errors(get_state()) before using return value
+  std::deque<evbuf_t *> run(evbuf_t *buf);
 
   ChunkParserState get_state() { return parser_state; }
 
   bool is_chunk_detail_ready();
   S3ChunkDetail pop_chunk_detail();
+
+  FRIEND_TEST(S3ChunkPayloadParserTest, HasProperInitState);
+  FRIEND_TEST(S3ChunkPayloadParserTest, AddToSpareBufferEqualToSpareSize);
+  FRIEND_TEST(S3ChunkPayloadParserTest, AddToSpareBufferNotEqualToStdSpareSize);
+  FRIEND_TEST(S3ChunkPayloadParserTest,
+              AddToSpareBufferNotEqualToStdSpareSize1);
+  FRIEND_TEST(S3ChunkPayloadParserTest,
+              AddToSpareBufferNotEqualToStdSpareSize2);
 };
 
 #endif

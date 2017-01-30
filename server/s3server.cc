@@ -131,21 +131,16 @@ extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
 
 extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
                                           void *arg) {
-  s3_log(S3_LOG_DEBUG, "Received Request body for sock = %d\n",
-         req->conn->sock);
+  s3_log(S3_LOG_DEBUG, "Received Request body %zu bytes for sock = %d\n",
+         evbuffer_get_length(buf), req->conn->sock);
 
   S3RequestObject *request = (S3RequestObject *)req->cbarg;
 
   if (request) {
     evbuf_t *s3_buf = evbuffer_new();
-    size_t bytes_received = evbuffer_get_length(buf);
-    s3_log(S3_LOG_DEBUG, "got %zu bytes of data for sock = %d\n",
-           bytes_received, req->conn->sock);
-
     evbuffer_add_buffer(s3_buf, buf);
 
     request->notify_incoming_data(s3_buf);
-
   } else {
     evhtp_unset_all_hooks(&req->conn->hooks);
     evhtp_unset_all_hooks(&req->hooks);
@@ -254,17 +249,19 @@ int main(int argc, char **argv) {
 
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
-  rc = evthread_use_mempool(
-      g_option_instance->get_clovis_block_size(),
-      g_option_instance->get_libevent_pool_initial_size(),
-      g_option_instance->get_libevent_pool_expandable_size(),
-      g_option_instance->get_libevent_pool_max_threshold(),
-      CREATE_ALIGNED_MEMORY);
+  rc = event_use_mempool(g_option_instance->get_libevent_pool_buffer_size(),
+                         g_option_instance->get_libevent_pool_initial_size(),
+                         g_option_instance->get_libevent_pool_expandable_size(),
+                         g_option_instance->get_libevent_pool_max_threshold(),
+                         CREATE_ALIGNED_MEMORY);
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "Memory pool creation for libevent failed!\n");
     s3daemon.delete_pidfile();
     return rc;
   }
+
+  event_set_max_read(g_option_instance->get_libevent_max_read_size());
+  evhtp_set_low_watermark(g_option_instance->get_libevent_max_read_size());
 
   // Call this function before creating event base
   evthread_use_pthreads();
@@ -298,7 +295,7 @@ int main(int argc, char **argv) {
   bind_addr = g_option_instance->get_bind_addr().c_str();
 
   // Create memory pool for clovis read operations.
-  rc = mempool_create(g_option_instance->get_clovis_block_size(),
+  rc = mempool_create(g_option_instance->get_clovis_unit_size(),
                       g_option_instance->get_clovis_read_pool_initial_size(),
                       g_option_instance->get_clovis_read_pool_expandable_size(),
                       g_option_instance->get_clovis_read_pool_max_threshold(),
@@ -350,6 +347,11 @@ int main(int argc, char **argv) {
 
   /* Clean-up */
   fini_clovis();
+
+  mempool_destroy(&g_clovis_read_mem_pool_handle);
+
+  event_destroy_mempool();
+
   if (g_option_instance->s3_performance_enabled()) {
     S3PerfLogger::finalize();
   }

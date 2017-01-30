@@ -5,7 +5,7 @@ index 75e376d..43e761b 100644
 @@ -173,7 +173,7 @@ include/event2/event-config.h: config.h make-event-config.sed
  	$(SED) -f $(srcdir)/make-event-config.sed < config.h > $@T
  	mv -f $@T $@
-
+ 
 -CORE_SRC = event.c evthread.c buffer.c \
 +CORE_SRC = event.c ../../mempool/s3_memory_pool.c evthread.c buffer.c \
  	bufferevent.c bufferevent_sock.c bufferevent_filter.c \
@@ -14,7 +14,7 @@ index 75e376d..43e761b 100644
 @@ -213,7 +213,7 @@ libevent_openssl_la_LIBADD = $(MAYBE_CORE) $(OPENSSL_LIBS)
  libevent_openssl_la_LDFLAGS = $(GENERIC_LDFLAGS)
  endif
-
+ 
 -noinst_HEADERS = util-internal.h mm-internal.h ipv6-internal.h \
 +noinst_HEADERS = util-internal.h ../../mempool/s3_memory_pool.h mm-internal.h ipv6-internal.h \
  	evrpc-internal.h strlcpy-internal.h evbuffer-internal.h \
@@ -23,79 +23,82 @@ index 75e376d..43e761b 100644
 @@ -232,7 +232,7 @@ else
  noinst_HEADERS += $(EVENT1_HDRS)
  endif
-
+ 
 -AM_CPPFLAGS = -I$(srcdir)/compat -I$(srcdir)/include -I./include $(SYS_INCLUDES)
 +AM_CPPFLAGS = -I$(srcdir)/compat -I$(srcdir)/include -I./include -I../../mempool $(SYS_INCLUDES)
-
+ 
  verify: check
-
+ 
 diff --git a/buffer.c b/buffer.c
-index 8510955..c1b5f32 100644
+index 8510955..62596c6 100644
 --- a/buffer.c
 +++ b/buffer.c
-@@ -118,7 +118,6 @@ static int use_sendfile = 1;
- static int use_mmap = 1;
- #endif
-
--
- /* Mask of user-selectable callback flags. */
- #define EVBUFFER_CB_USER_FLAGS	    0xffff
- /* Mask of all internal-use-only flags. */
-@@ -156,11 +155,11 @@ evbuffer_chain_new(size_t size)
+@@ -135,6 +135,7 @@ static int use_mmap = 1;
+ #define CHAIN_PINNED(ch)  (((ch)->flags & EVBUFFER_MEM_PINNED_ANY) != 0)
+ #define CHAIN_PINNED_R(ch)  (((ch)->flags & EVBUFFER_MEM_PINNED_R) != 0)
+ 
++extern size_t g_event_max_read;
+ static void evbuffer_chain_align(struct evbuffer_chain *chain);
+ static int evbuffer_chain_should_realign(struct evbuffer_chain *chain,
+     size_t datalen);
+@@ -156,12 +157,10 @@ evbuffer_chain_new(size_t size)
  {
  	struct evbuffer_chain *chain;
  	size_t to_alloc;
-+	size_t pool_item_size = 0;
-
+-
 -	if (size > EVBUFFER_CHAIN_MAX - EVBUFFER_CHAIN_SIZE)
++	size_t pool_item_size = 0;
 +	if (size > EVBUFFER_CHAIN_MAX)
  		return (NULL);
-
+ 
 -	size += EVBUFFER_CHAIN_SIZE;
-
+-
  	/* get the next largest memory that can hold the buffer */
  	if (size < EVBUFFER_CHAIN_MAX / 2) {
-@@ -172,18 +171,30 @@ evbuffer_chain_new(size_t size)
+ 		to_alloc = MIN_BUFFER_SIZE;
+@@ -172,18 +171,32 @@ evbuffer_chain_new(size_t size)
  		to_alloc = size;
  	}
-
+ 
 -	/* we get everything in one chunk */
 -	if ((chain = mm_malloc(to_alloc)) == NULL)
 +	/* Allocating the structure, buffer within this structure will be
 +	 * allocated separately */
 +	if ((chain = mm_malloc(EVBUFFER_CHAIN_SIZE)) == NULL)
  		return (NULL);
-
+ 
 -	memset(chain, 0, EVBUFFER_CHAIN_SIZE);
 -
 -	chain->buffer_len = to_alloc - EVBUFFER_CHAIN_SIZE;
 +	mempool_getbuffer_size(g_pool_handle, &pool_item_size);
-
+ 
 -	/* this way we can manipulate the buffer to different addresses,
 -	 * which is required for mmap for example.
 -	 */
 -	chain->buffer = EVBUFFER_CHAIN_EXTRA(u_char, chain);
 +	memset(chain, 0, EVBUFFER_CHAIN_SIZE);
-+	if (pool_item_size == to_alloc) {
++	if ((pool_item_size >= to_alloc) && (pool_item_size % to_alloc == 0)) {
 +		if ((chain->buffer = (unsigned char *)mempool_getbuffer(
 +			g_pool_handle, ZEROED_ALLOCATION)) == NULL) {
 +			mm_free(chain);
 +			return NULL;
 +		}
++		chain->buffer_len = pool_item_size;
++		chain->chain_buffer_len = pool_item_size;
 +	} else {
 +		if ((chain->buffer = (unsigned char *)mm_malloc(to_alloc)) ==
 +		    NULL) {
 +			mm_free(chain);
 +			return NULL;
 +		}
++		chain->buffer_len = to_alloc;
++		chain->chain_buffer_len = to_alloc;
 +	}
-+	chain->buffer_len = to_alloc;
 +	chain->chain_buffer = chain->buffer;
-+	chain->chain_buffer_len = to_alloc;
-
+ 
  	return (chain);
  }
-@@ -191,6 +202,7 @@ evbuffer_chain_new(size_t size)
+@@ -191,6 +204,7 @@ evbuffer_chain_new(size_t size)
  static inline void
  evbuffer_chain_free(struct evbuffer_chain *chain)
  {
@@ -103,10 +106,10 @@ index 8510955..c1b5f32 100644
  	if (CHAIN_PINNED(chain)) {
  		chain->flags |= EVBUFFER_DANGLING;
  		return;
-@@ -231,6 +243,15 @@ evbuffer_chain_free(struct evbuffer_chain *chain)
+@@ -231,6 +245,15 @@ evbuffer_chain_free(struct evbuffer_chain *chain)
  #endif
  	}
-
+ 
 +	mempool_getbuffer_size(g_pool_handle, &pool_item_size);
 +
 +	if (chain->chain_buffer_len == pool_item_size) {
@@ -118,16 +121,52 @@ index 8510955..c1b5f32 100644
 +	}
  	mm_free(chain);
  }
-
-@@ -961,7 +982,6 @@ evbuffer_drain(struct evbuffer *buf, size_t len)
- 	struct evbuffer_chain *chain, *next;
- 	size_t remaining, old_len;
- 	int result = 0;
+ 
+@@ -2074,12 +2097,23 @@ get_n_bytes_readable_on_socket(evutil_socket_t fd)
+ 	/* Can overflow, but mostly harmlessly. XXXX */
+ 	return (int)lng;
+ #elif defined(FIONREAD)
+-	int n = EVBUFFER_MAX_READ;
++	int n;
++	if (g_event_max_read == 0)
++	{
++		n = EVBUFFER_MAX_READ;
++	} else {
++		n = g_event_max_read;
++	}
+ 	if (ioctl(fd, FIONREAD, &n) < 0)
+ 		return -1;
+ 	return n;
+ #else
+-	return EVBUFFER_MAX_READ;
++	if (g_event_max_read == 0)
++	{
++		return EVBUFFER_MAX_READ;
++	} else {
++		return g_event_max_read;
++	}
+ #endif
+ }
+ 
+@@ -2107,11 +2141,14 @@ evbuffer_read(struct evbuffer *buf, evutil_socket_t fd, int howmuch)
+ 	}
+ 
+ 	n = get_n_bytes_readable_on_socket(fd);
+-	if (n <= 0 || n > EVBUFFER_MAX_READ)
+-		n = EVBUFFER_MAX_READ;
++	if (g_event_max_read == 0)
++		g_event_max_read = EVBUFFER_MAX_READ;
++
++	if (n <= 0 || n > g_event_max_read)
++		n = g_event_max_read;
++
+ 	if (howmuch < 0 || howmuch > n)
+ 		howmuch = n;
 -
- 	EVBUFFER_LOCK(buf);
- 	old_len = buf->total_len;
-
-@@ -2762,6 +2782,7 @@ evbuffer_add_reference(struct evbuffer *outbuf,
+ #ifdef USE_IOVEC_IMPL
+ 	/* Since we can use iovecs, we're willing to use the last
+ 	 * NUM_READ_IOVEC chains. */
+@@ -2762,6 +2799,7 @@ evbuffer_add_reference(struct evbuffer *outbuf,
  		/* don't call chain_free; we do not want to actually invoke
  		 * the cleanup function */
  		mm_free(chain);
@@ -135,7 +174,7 @@ index 8510955..c1b5f32 100644
  		goto done;
  	}
  	evbuffer_chain_insert(outbuf, chain);
-@@ -2827,6 +2848,7 @@ evbuffer_add_file(struct evbuffer *outbuf, int fd,
+@@ -2827,6 +2865,7 @@ evbuffer_add_file(struct evbuffer *outbuf, int fd,
  		EVBUFFER_LOCK(outbuf);
  		if (outbuf->freeze_end) {
  			mm_free(chain);
@@ -143,6 +182,55 @@ index 8510955..c1b5f32 100644
  			ok = 0;
  		} else {
  			outbuf->n_add_for_cb += length;
+diff --git a/bufferevent.c b/bufferevent.c
+index 7518c3b..6dc18d0 100644
+--- a/bufferevent.c
++++ b/bufferevent.c
+@@ -510,9 +510,19 @@ bufferevent_disable(struct bufferevent *bufev, short event)
+ }
+ 
+ /*
+- * Sets the water marks
++ * Set the maximum read
+  */
++void
++bufferevent_set_read_data(struct bufferevent *bufev, size_t max_val)
++{
++	BEV_LOCK(bufev);
++	bufev->read_max_data = max_val;
++	BEV_UNLOCK(bufev);
++}
+ 
++/*
++ * Sets the water marks
++ */
+ void
+ bufferevent_setwatermark(struct bufferevent *bufev, short events,
+     size_t lowmark, size_t highmark)
+diff --git a/bufferevent_sock.c b/bufferevent_sock.c
+index 9b0caf2..5ceb1f3 100644
+--- a/bufferevent_sock.c
++++ b/bufferevent_sock.c
+@@ -154,6 +154,10 @@ bufferevent_readcb(evutil_socket_t fd, short event, void *arg)
+ 			goto done;
+ 		}
+ 	}
++
++	if (bufev->read_max_data != 0) {
++		howmuch = bufev->read_max_data;
++	}
+ 	readmax = _bufferevent_get_read_max(bufev_p);
+ 	if (howmuch < 0 || howmuch > readmax) /* The use of -1 for "unlimited"
+ 					       * uglifies this code. XXXX */
+@@ -179,6 +183,8 @@ bufferevent_readcb(evutil_socket_t fd, short event, void *arg)
+ 	if (res <= 0)
+ 		goto error;
+ 
++	bufev->read_max_data = 0;
++
+ 	_bufferevent_decrement_read_buckets(bufev_p, res);
+ 
+ 	/* Invoke the user callback - must always be called last */
 diff --git a/evbuffer-internal.h b/evbuffer-internal.h
 index f9dcc06..c105fcc 100644
 --- a/evbuffer-internal.h
@@ -154,12 +242,12 @@ index f9dcc06..c105fcc 100644
 -#define MIN_BUFFER_SIZE	1024
 +#define MIN_BUFFER_SIZE	4096
  #endif
-
+ 
  /** A single evbuffer callback for an evbuffer. This function will be invoked
 @@ -173,6 +173,9 @@ struct evbuffer_chain {
  	/** total allocation available in the buffer field. */
  	size_t buffer_len;
-
+ 
 +	/** Total allocation created initially */
 +	size_t chain_buffer_len;
 +
@@ -174,20 +262,20 @@ index f9dcc06..c105fcc 100644
 +	 * same */
 +	unsigned char *chain_buffer;
  };
-
+ 
  /* this is currently used by both mmap and sendfile */
 @@ -223,7 +229,8 @@ struct evbuffer_chain_reference {
-
+ 
  #define EVBUFFER_CHAIN_SIZE sizeof(struct evbuffer_chain)
  /** Return a pointer to extra data allocated along with an evbuffer. */
 -#define EVBUFFER_CHAIN_EXTRA(t, c) (t *)((struct evbuffer_chain *)(c) + 1)
 +#define EVBUFFER_CHAIN_EXTRA(t, c)                                             \
 +	(t *)(((struct evbuffer_chain *)(c))->chain_buffer)
-
+ 
  /** Assert that we are holding the lock on an evbuffer */
  #define ASSERT_EVBUFFER_LOCKED(buffer)			\
 diff --git a/event.c b/event.c
-index fab419a..3e3ad84 100644
+index fab419a..932d0c3 100644
 --- a/event.c
 +++ b/event.c
 @@ -25,6 +25,7 @@
@@ -195,25 +283,26 @@ index fab419a..3e3ad84 100644
   */
  #include "event2/event-config.h"
 +#include "s3_memory_pool.h"
-
+ 
  #ifdef WIN32
  #include <winsock2.h>
-@@ -125,6 +126,9 @@ struct event_base *event_global_current_base_ = NULL;
-
+@@ -125,6 +126,10 @@ struct event_base *event_global_current_base_ = NULL;
+ 
  static int use_monotonic;
-
+ 
 +/* global Memory Pool handle */
 +MemoryPoolHandle g_pool_handle;
-+
++/* global max allowed read */
++size_t g_event_max_read;
  /* Prototypes */
  static inline int event_add_internal(struct event *ev,
      const struct timeval *tv, int tv_is_absolute);
-@@ -2726,6 +2730,21 @@ event_set_mem_functions(void *(*malloc_fn)(size_t sz),
+@@ -2726,6 +2731,31 @@ event_set_mem_functions(void *(*malloc_fn)(size_t sz),
  	_mm_free_fn = free_fn;
  }
  #endif
 +int
-+evthread_use_mempool(size_t item_size, size_t pool_initial_size,
++event_use_mempool(size_t item_size, size_t pool_initial_size,
 +		     size_t pool_expansion_size,
 +		     size_t pool_max_threshold_size,
 +		     int flags)
@@ -227,16 +316,74 @@ index fab419a..3e3ad84 100644
 +	return 0;
 +}
 +
-
++int event_destroy_mempool() {
++	return mempool_destroy(&g_pool_handle);
++
++}
++
++void event_set_max_read(size_t max_read)
++{
++	g_event_max_read = max_read;
++}
++
+ 
  #if defined(_EVENT_HAVE_EVENTFD) && defined(_EVENT_HAVE_SYS_EVENTFD_H)
  static void
+diff --git a/include/event2/buffer.h b/include/event2/buffer.h
+index 5c89655..5852e4c 100644
+--- a/include/event2/buffer.h
++++ b/include/event2/buffer.h
+@@ -834,6 +834,10 @@ struct event_base;
+    of execution.
+  */
+ int evbuffer_defer_callbacks(struct evbuffer *buffer, struct event_base *base);
++/**
++  Set the maximum allowed read
++*/
++void evbuffer_set_max_read(size_t max_read);
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/include/event2/bufferevent.h b/include/event2/bufferevent.h
+index 0cc6cb1..901f55c 100644
+--- a/include/event2/bufferevent.h
++++ b/include/event2/bufferevent.h
+@@ -455,6 +455,16 @@ int bufferevent_set_timeouts(struct bufferevent *bufev,
+     const struct timeval *timeout_read, const struct timeval *timeout_write);
+ 
+ /**
++  Gets the low water mark for the buffer set during memory pool creation.
++*/
++size_t  bufferevent_get_s3_low_watermark();
++
++/**
++  Sets the data length to be read from socket
++*/
++void bufferevent_set_read_data(struct bufferevent *bufev, size_t max_val);
++
++/**
+   Sets the watermarks for read and write events.
+ 
+   On input, a bufferevent does not invoke the user read callback unless
+diff --git a/include/event2/bufferevent_struct.h b/include/event2/bufferevent_struct.h
+index 02835c1..fa75f51 100644
+--- a/include/event2/bufferevent_struct.h
++++ b/include/event2/bufferevent_struct.h
+@@ -107,6 +107,7 @@ struct bufferevent {
+ 	/** Events that are currently enabled: currently EV_READ and EV_WRITE
+ 	    are supported. */
+ 	short enabled;
++	size_t read_max_data;
+ };
+ 
+ #ifdef __cplusplus
 diff --git a/include/event2/event.h b/include/event2/event.h
-index 10bcd97..79a9136 100644
+index 10bcd97..9cbad5f 100644
 --- a/include/event2/event.h
 +++ b/include/event2/event.h
-@@ -295,6 +295,24 @@ struct event_config
+@@ -295,6 +295,36 @@ struct event_config
  ;
-
+ 
  /**
 + * Enable use of memory pool for libevent.
 + * Memory pool is created with some pre allocated buffers of fixed size.
@@ -251,33 +398,44 @@ index 10bcd97..79a9136 100644
 + * @flags CREATE_ALIGNED_MEMORY, ENABLE_LOCKING
 + * @return 0 if successful otherwise an error
 + */
-+int evthread_use_mempool(size_t item_size, size_t pool_initial_size,
-+			 size_t pool_expansion_size,
-+			 size_t pool_max_threshold_size, int flags);
++int event_use_mempool(size_t item_size, size_t pool_initial_size,
++			size_t pool_expansion_size,
++			size_t pool_max_threshold_size, int flags);
++
++/**
++ * Destroy the memory pool
++ */
++int event_destroy_mempool();
++
++/**
++ * Set maximum read possible.
++ *
++ * @param max_read maximum read possible
++ */
++void event_set_max_read(size_t max_read);
 +
 +/**
   * Enable some relatively expensive debugging checks in Libevent that
   * would normally be turned off.  Generally, these checks cause code that
   * would otherwise crash mysteriously to fail earlier with an assertion
 diff --git a/mm-internal.h b/mm-internal.h
-index b375155..be78cfd 100644
+index b375155..a82e9f4 100644
 --- a/mm-internal.h
 +++ b/mm-internal.h
 @@ -27,6 +27,7 @@
  #define _EVENT_MM_INTERNAL_H
-
+ 
  #include <sys/types.h>
 +#include "s3_memory_pool.h"
-
+ 
  #ifdef __cplusplus
  extern "C" {
-@@ -54,6 +55,9 @@ void event_mm_free_(void *p);
+@@ -54,6 +55,8 @@ void event_mm_free_(void *p);
  #define mm_free(p) free(p)
  #endif
-
+ 
 +/* Memory Pool handle declaration */
 +extern MemoryPoolHandle g_pool_handle;
-+
  #ifdef __cplusplus
  }
  #endif
@@ -286,11 +444,11 @@ index 0253a49..d55aea4 100644
 --- a/test/Makefile.am
 +++ b/test/Makefile.am
 @@ -6,7 +6,7 @@
-
+ 
  AUTOMAKE_OPTIONS = foreign
-
+ 
 -AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/compat -I$(top_srcdir)/include -I../include -DTINYTEST_LOCAL
 +AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/compat -I$(top_srcdir)/include -I../include -I ../../../mempool -DTINYTEST_LOCAL
-
+ 
  EXTRA_DIST = regress.rpc regress.gen.h regress.gen.c rpcgen_wrapper.sh test.sh
-
+ 

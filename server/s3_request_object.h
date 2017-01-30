@@ -33,7 +33,7 @@
 #include <gtest/gtest_prod.h>
 #include "evhtp_wrapper.h"
 
-#include "s3_async_buffer.h"
+#include "s3_async_buffer_opt.h"
 #include "s3_chunk_payload_parser.h"
 #include "s3_log.h"
 #include "s3_option.h"
@@ -76,7 +76,7 @@ class S3RequestObject {
                                  // more than this.
   size_t pending_in_flight;      // Total data yet to consume by observer.
   size_t total_bytes_received;
-  S3AsyncBufferContainer buffered_input;
+  std::shared_ptr<S3AsyncBufferOptContainer> buffered_input;
 
   std::function<void()> incoming_data_callback;
 
@@ -241,7 +241,9 @@ class S3RequestObject {
   // Check whether we already have (read) the entire body.
   size_t has_all_body_content() { return (pending_in_flight == 0); }
 
-  S3AsyncBufferContainer& get_buffered_input() { return buffered_input; }
+  std::shared_ptr<S3AsyncBufferOptContainer> get_buffered_input() {
+    return buffered_input;
+  }
 
   // Response Helpers
  private:

@@ -244,25 +244,27 @@ void S3PutObjectAction::consume_incoming_content() {
       "put_object_action_consume_incoming_content_shutdown_fail");
   // Resuming the action since we have data.
   if (!write_in_progress) {
-    if (request->get_buffered_input().is_freezed() ||
-        request->get_buffered_input().length() >=
+    if (request->get_buffered_input()->is_freezed() ||
+        request->get_buffered_input()->get_content_length() >=
             S3Option::get_instance()->get_clovis_write_payload_size()) {
       write_object(request->get_buffered_input());
     }
   }
-  if (!request->get_buffered_input().is_freezed() &&
-      request->get_buffered_input().length() >=
+  if (!request->get_buffered_input()->is_freezed() &&
+      request->get_buffered_input()->get_content_length() >=
           (S3Option::get_instance()->get_clovis_write_payload_size() *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n",
-           request->get_buffered_input().length());
+           request->get_buffered_input()->get_content_length());
     request->pause();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3PutObjectAction::write_object(S3AsyncBufferContainer& buffer) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+void S3PutObjectAction::write_object(
+    std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
+  s3_log(S3_LOG_DEBUG, "Entering with buffer length = %zu\n",
+         buffer->get_content_length());
 
   clovis_writer->write_content(
       std::bind(&S3PutObjectAction::write_object_successful, this),
@@ -282,18 +284,18 @@ void S3PutObjectAction::write_object_successful() {
   write_in_progress = false;
   if (/* buffered data len is at least equal to max we can write to clovis in
          one write */
-      request->get_buffered_input().length() >
+      request->get_buffered_input()->get_content_length() >
           S3Option::get_instance()
               ->get_clovis_write_payload_size() || /* we have all the data
                                                       buffered and ready to
                                                       write */
-      (request->get_buffered_input().is_freezed() &&
-       request->get_buffered_input().length() > 0)) {
+      (request->get_buffered_input()->is_freezed() &&
+       request->get_buffered_input()->get_content_length() > 0)) {
     write_object(request->get_buffered_input());
-  } else if (request->get_buffered_input().is_freezed() &&
-             request->get_buffered_input().length() == 0) {
+  } else if (request->get_buffered_input()->is_freezed() &&
+             request->get_buffered_input()->get_content_length() == 0) {
     next();
-  } else if (!request->get_buffered_input().is_freezed()) {
+  } else if (!request->get_buffered_input()->is_freezed()) {
     // else we wait for more incoming data
     request->resume();
   }

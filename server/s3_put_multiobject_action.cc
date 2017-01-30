@@ -199,50 +199,56 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_consume_incoming_content_shutdown_fail");
   if (!clovis_write_in_progress) {
-    if (request->get_buffered_input().is_freezed() ||
-        request->get_buffered_input().length() >=
+    if (request->get_buffered_input()->is_freezed() ||
+        request->get_buffered_input()->get_content_length() >=
             S3Option::get_instance()->get_clovis_write_payload_size()) {
       write_object(request->get_buffered_input());
     }
   }
-  if (!request->get_buffered_input().is_freezed() &&
-      request->get_buffered_input().length() >=
+  if (!request->get_buffered_input()->is_freezed() &&
+      request->get_buffered_input()->get_content_length() >=
           (S3Option::get_instance()->get_clovis_write_payload_size() *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n",
-           request->get_buffered_input().length());
+           request->get_buffered_input()->get_content_length());
     request->pause();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3PutMultiObjectAction::write_object(S3AsyncBufferContainer& buffer) {
+void S3PutMultiObjectAction::send_chunk_details_if_any() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  while (request->is_chunk_detail_ready()) {
+    S3ChunkDetail detail = request->pop_chunk_detail();
+    s3_log(S3_LOG_DEBUG, "Using chunk details for auth:\n");
+    detail.debug_dump();
+    if (!S3Option::get_instance()->is_auth_disabled()) {
+      if (detail.get_size() == 0) {
+        // Last chunk is size 0
+        get_auth_client()->add_last_checksum_for_chunk(
+            detail.get_signature(), detail.get_payload_hash());
+      } else {
+        get_auth_client()->add_checksum_for_chunk(detail.get_signature(),
+                                                  detail.get_payload_hash());
+      }
+      auth_in_progress = true;  // this triggers auth
+    }
+  }
+}
+
+void S3PutMultiObjectAction::write_object(
+    std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (request->is_chunked()) {
     // Also send any ready chunk data for auth
-    while (request->is_chunk_detail_ready()) {
-      S3ChunkDetail detail = request->pop_chunk_detail();
-      s3_log(S3_LOG_DEBUG, "Using chunk details for auth:\n");
-      detail.debug_dump();
-      if (!S3Option::get_instance()->is_auth_disabled()) {
-        if (detail.get_size() == 0) {
-          // Last chunk is size 0
-          get_auth_client()->add_last_checksum_for_chunk(
-              detail.get_signature(), detail.get_payload_hash());
-        } else {
-          get_auth_client()->add_checksum_for_chunk(detail.get_signature(),
-                                                    detail.get_payload_hash());
-        }
-        auth_in_progress = true;  // this triggers auth
-      }
-    }
+    send_chunk_details_if_any();
   }
+
+  clovis_write_in_progress = true;
 
   clovis_writer->write_content(
       std::bind(&S3PutMultiObjectAction::write_object_successful, this),
       std::bind(&S3PutMultiObjectAction::write_object_failed, this), buffer);
-
-  clovis_write_in_progress = true;
 
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -264,25 +270,28 @@ void S3PutMultiObjectAction::write_object_successful() {
   }
   if (/* buffered data len is at least equal max we can write to clovis in one
          write */
-      request->get_buffered_input().length() >
+      request->get_buffered_input()->get_content_length() >
           S3Option::get_instance()
               ->get_clovis_write_payload_size() || /* we have all the data
                                                       buffered and ready to
                                                       write */
-      (request->get_buffered_input().is_freezed() &&
-       request->get_buffered_input().length() > 0)) {
+      (request->get_buffered_input()->is_freezed() &&
+       request->get_buffered_input()->get_content_length() > 0)) {
     write_object(request->get_buffered_input());
-  } else if (request->get_buffered_input().is_freezed() &&
-             request->get_buffered_input().length() == 0) {
+  } else if (request->get_buffered_input()->is_freezed() &&
+             request->get_buffered_input()->get_content_length() == 0) {
     clovis_write_completed = true;
     if (request->is_chunked()) {
       if (auth_completed) {
         next();
-      }  // else wait for auth to complete
+      } else {
+        // else wait for auth to complete
+        send_chunk_details_if_any();
+      }
     } else {
       next();
     }
-  } else if (!request->get_buffered_input().is_freezed()) {
+  } else if (!request->get_buffered_input()->is_freezed()) {
     // else we wait for more incoming data
     request->resume();
   }

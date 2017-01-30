@@ -113,6 +113,67 @@ cc_test(
     ],
 )
 
+cc_test(
+    # How to run build
+    # bazel build //:s3utdeathtests --cxxopt="-std=c++11"
+    # bazel test //:s3utdeathtests --cxxopt="-std=c++11"
+
+    name = "s3utdeathtests",
+
+    srcs = glob(["ut_death_tests/*.cc", "ut_death_tests/*.h", "server/*.cc", "server/*.c", "server/*.h",
+                 "mempool/*.c", "mempool/*.h"],
+                 exclude = ["server/s3server.cc"]),
+
+    copts = [
+      "-DEVHTP_DISABLE_REGEX", "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64",
+      "-DGCC_VERSION=4002", "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest",
+      "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=",
+      "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
+      # Do NOT change the order of strings in below line
+      "-iquote", "third_party/mero",
+    ],
+
+    includes = [
+      "third_party/googletest/include",
+      "third_party/googlemock/include",
+      "third_party/gflags/s3_dist/include/",
+      "third_party/glog/s3_dist/include/",
+      "third_party/libevent/s3_dist/include/",
+      "third_party/libevhtp/s3_dist/include/evhtp",
+      "third_party/jsoncpp/dist",
+      "third_party/yaml-cpp/include/",
+      "third_party/libxml2/s3_dist/include/libxml2",
+      "server/",
+      "mempool",
+    ],
+
+    linkopts = [
+      "-L third_party/mero/mero/.libs",
+      "-L third_party/mero/extra-libs/gf-complete/src/.libs/",
+      "-Lthird_party/libevent/s3_dist/lib/",
+      "-Lthird_party/libevhtp/s3_dist/lib",
+      "-Lthird_party/yaml-cpp/s3_dist/lib",
+      "-Lthird_party/libxml2/s3_dist/lib",
+      "-Lthird_party/googletest/build",
+      "-Lthird_party/googlemock/build",
+      "-Lthird_party/glog/s3_dist/lib",
+      "-Lthird_party/gflags/s3_dist/lib",
+      "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
+      "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
+      "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
+      "-pthread third_party/glog/s3_dist/lib/libglog.a",
+      "-Wl,-rpath,/usr/local/lib64,-rpath,third_party/mero/mero/.libs",
+      "-Wl,-rpath,third_party/mero/extra-libs/gf-complete/src/.libs",
+      "-Wl,-rpath,third_party/libevent/s3_dist/lib",
+      "-Wl,-rpath,third_party/libxml2/s3_dist/lib",
+      "-Wl,-rpath,third_party/yaml-cpp/s3_dist/lib",
+    ],
+
+    data = [
+      "resources",
+    ],
+)
+
 cc_binary(
     # How to run build
     # bazel build //:s3perfclient

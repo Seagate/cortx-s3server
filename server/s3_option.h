@@ -87,8 +87,8 @@ class S3Option {
   int log_flush_frequency_sec;
 
   unsigned short clovis_layout_id;
-  unsigned short clovis_factor;
-  unsigned int clovis_block_size;
+  unsigned short clovis_units_per_request;
+  unsigned int clovis_unit_size;
   int clovis_idx_fetch_count;
   std::string clovis_local_addr;
   std::string clovis_confd_addr;
@@ -111,6 +111,8 @@ class S3Option {
   size_t libevent_pool_initial_size;
   size_t libevent_pool_expandable_size;
   size_t libevent_pool_max_threshold;
+  size_t libevent_pool_buffer_size;
+  size_t libevent_max_read_size;
 
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
@@ -163,6 +165,17 @@ class S3Option {
     clovis_cass_max_column_family_num = 1;
     clovis_kv_del_before_put = false;
 
+    // libevent_pool_buffer_size is used for each item in this
+    clovis_read_pool_initial_size = 10485760;    // 10mb
+    clovis_read_pool_expandable_size = 1048576;  // 1mb
+    clovis_read_pool_max_threshold = 104857600;  // 100mb
+
+    libevent_pool_buffer_size = 4096;
+    libevent_pool_initial_size = 10485760;
+    libevent_pool_expandable_size = 1048576;
+    libevent_pool_max_threshold = 104857600;
+    libevent_max_read_size = 16384;  // libevent max
+
     auth_ip_addr = FLAGS_authhost;
     auth_port = FLAGS_authport;
 
@@ -174,8 +187,8 @@ class S3Option {
     perf_enabled = FLAGS_perfenable;
     perf_log_file = FLAGS_perflogfile;
 
-    clovis_block_size = 1048576;  // One MB
-    clovis_factor = 1;
+    clovis_unit_size = 1048576;  // One MB
+    clovis_units_per_request = 1;
     clovis_idx_fetch_count = 100;
 
     retry_interval_millisec = 0;
@@ -251,8 +264,8 @@ class S3Option {
   std::string get_clovis_ha_addr();
   std::string get_clovis_prof();
   unsigned short get_clovis_layout_id();
-  unsigned int get_clovis_block_size();
-  unsigned short get_clovis_factor();
+  unsigned int get_clovis_unit_size();
+  unsigned short get_clovis_units_per_request();
   unsigned int get_clovis_write_payload_size();
   unsigned int get_clovis_read_payload_size();
   int get_clovis_idx_fetch_count();
@@ -265,6 +278,8 @@ class S3Option {
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
   size_t get_libevent_pool_max_threshold();
+  size_t get_libevent_pool_buffer_size();
+  size_t get_libevent_max_read_size();
 
   bool get_clovis_is_oostore();
   bool get_clovis_is_read_verify();

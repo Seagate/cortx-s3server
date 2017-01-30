@@ -36,6 +36,7 @@ extern int s3log_level;
 struct m0_uint128 root_account_user_index_oid;
 S3Option *g_option_instance = NULL;
 extern S3Stats *g_stats_instance;
+evbase_t *global_evbase_handle;
 
 /* global Memory Pool for read from clovis */
 MemoryPoolHandle g_clovis_read_mem_pool_handle;
@@ -56,8 +57,6 @@ int main(int argc, char **argv) {
   int rc;
 
   g_option_instance = S3Option::get_instance();
-  g_option_instance->set_stats_whitelist_filename(
-      "s3stats-whitelist-test.yaml");
   g_stats_instance = S3Stats::get_instance();
   _init_log();
 

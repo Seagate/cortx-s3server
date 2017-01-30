@@ -32,6 +32,8 @@ EXTERN_C_BLOCK_BEGIN
 
 #include "clovis/clovis.h"
 
+EXTERN_C_BLOCK_END
+
 #include "s3_memory_pool.h"
 
 // To create a basic clovis operation
@@ -46,6 +48,7 @@ struct s3_clovis_rw_op_context {
   struct m0_indexvec *ext;
   struct m0_bufvec *data;
   struct m0_bufvec *attr;
+  bool allocated_bufs;  // Do we own data bufs and we should free?
 };
 
 struct s3_clovis_idx_op_context {
@@ -65,7 +68,7 @@ struct s3_clovis_op_context *create_basic_op_ctx(size_t op_count);
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx);
 
 struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(
-    size_t clovis_block_count);
+    size_t clovis_buf_count, bool allocate_bufs = true);
 int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx);
 
 struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int idx_count);
@@ -76,7 +79,5 @@ int free_basic_kvs_op_ctx(struct s3_clovis_kvs_op_context *ctx);
 
 struct m0_bufvec *index_bufvec_alloc(int nr);
 void index_bufvec_free(struct m0_bufvec *bv);
-
-EXTERN_C_BLOCK_END
 
 #endif

@@ -83,8 +83,12 @@ std::deque<std::tuple<void*, size_t> > S3AsyncBufferContainer::get_buffers_ref(
       num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
 
       /* do the actual peek */
-      vec_in = (struct evbuffer_iovec*)malloc(num_of_extents *
+      vec_in = (struct evbuffer_iovec*)calloc(num_of_extents,
                                               sizeof(struct evbuffer_iovec));
+      if (vec_in == NULL) {
+        s3_log(S3_LOG_ERROR, "Fatal: Out of memory.\n");
+        break;
+      }
 
       /* do the actual peek at data */
       evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
@@ -166,6 +170,7 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
     size_t len_in_buf = 0;
     size_t num_of_extents = 0;
     struct evbuffer_iovec* vec_in = NULL;
+    bool out_of_memory = false;
     evbuf_t* buf = NULL;
     while (!buffered_input.empty()) {
       buf = buffered_input.front();
@@ -176,8 +181,15 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
       num_of_extents = evbuffer_peek(buf, len_in_buf, NULL, NULL, 0);
 
       /* do the actual peek in buf */
-      vec_in = (struct evbuffer_iovec*)malloc(num_of_extents *
+      vec_in = (struct evbuffer_iovec*)calloc(num_of_extents,
                                               sizeof(struct evbuffer_iovec));
+      if (vec_in == NULL) {
+        s3_log(S3_LOG_ERROR, "Fatal: Out of memory.\n");
+        out_of_memory = true;
+        content = "";  // we dont return partial data
+        evbuffer_free(buf);
+        break;
+      }
 
       /* do the actual peek at data inside buf */
       evbuffer_peek(buf, len_in_buf, NULL /*start of buffer*/, vec_in,
@@ -187,6 +199,12 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
         content.append((char*)vec_in[i].iov_base, vec_in[i].iov_len);
       }
       free(vec_in);
+      evbuffer_free(buf);
+    }
+    while (out_of_memory && !buffered_input.empty()) {
+      // Free up what we can and return.
+      buf = buffered_input.front();
+      buffered_input.pop_front();
       evbuffer_free(buf);
     }
   }

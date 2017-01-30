@@ -22,7 +22,10 @@
 #include <evhttp.h>
 #include <string>
 #include "s3_error_codes.h"
+#include "s3_option.h"
 #include "s3_stats.h"
+
+extern S3Option* g_option_instance;
 
 // evhttp Helpers
 /* evhtp_kvs_iterator */
@@ -44,11 +47,14 @@ S3RequestObject::S3RequestObject(evhtp_request_t* req,
       reply_buffer(NULL) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
+  buffered_input = std::make_shared<S3AsyncBufferOptContainer>(
+      g_option_instance->get_libevent_pool_buffer_size());
+
   request_timer.start();
   bucket_name = object_name = user_name = user_id = account_name = account_id =
       "";
   // For auth disabled, use some dummy user.
-  if (S3Option::get_instance()->is_auth_disabled()) {
+  if (g_option_instance->is_auth_disabled()) {
     account_name = "s3_test";
     account_id = "12345";
     user_name = "tester";
@@ -88,9 +94,10 @@ void S3RequestObject::initialise() {
     is_chunked_upload = true;
   }
   pending_in_flight = get_data_length();
+  chunk_parser.setup_content_length(pending_in_flight);
   if (pending_in_flight == 0) {
     // We are not expecting any payload.
-    buffered_input.freeze();
+    buffered_input->freeze();
   }
 }
 
@@ -197,8 +204,8 @@ size_t S3RequestObject::get_content_length() {
 
 std::string& S3RequestObject::get_full_body_content_as_string() {
   full_request_body = "";
-  if (buffered_input.is_freezed()) {
-    full_request_body = buffered_input.get_content_as_string();
+  if (buffered_input->is_freezed()) {
+    full_request_body = buffered_input->get_content_as_string();
   }
 
   return full_request_body;
@@ -268,18 +275,23 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
   buffering_timer.start();
 
   if (is_chunked_upload) {
-    std::vector<evbuf_t*> bufs = chunk_parser.run(buf);
+    auto bufs = chunk_parser.run(buf);
     if (chunk_parser.get_state() == ChunkParserState::c_error) {
+      s3_log(S3_LOG_DEBUG, "ChunkParserState::c_error\n");
       set_request_error(S3RequestError::InvalidChunkFormat);
     } else if (!bufs.empty()) {
       for (auto b : bufs) {
+        s3_log(S3_LOG_DEBUG, "Adding data length to async buffer: %zu\n",
+               evhtp_obj->evbuffer_get_length(b));
         data_bytes_received += evhtp_obj->evbuffer_get_length(b);
-        buffered_input.add_content(b);
+        buffered_input->add_content(
+            b, (pending_in_flight - data_bytes_received) == 0);
       }
     }
   } else {
     data_bytes_received = evhtp_obj->evbuffer_get_length(buf);
-    buffered_input.add_content(buf);
+    buffered_input->add_content(buf,
+                                (pending_in_flight - data_bytes_received) == 0);
   }
   s3_log(S3_LOG_DEBUG, "Buffering data to be consumed: %zu\n",
          data_bytes_received);
@@ -291,7 +303,7 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
   s3_log(S3_LOG_DEBUG, "pending_in_flight (after): %zu\n", pending_in_flight);
   if (pending_in_flight == 0) {
     s3_log(S3_LOG_DEBUG, "Buffering complete for data to be consumed.\n");
-    buffered_input.freeze();
+    buffered_input->freeze();
   }
   buffering_timer.stop();
   LOG_PERF(("total_buffering_time_" + std::to_string(data_bytes_received) +
@@ -302,17 +314,17 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
                   buffering_timer.elapsed_time_in_millisec());
 
   if (incoming_data_callback &&
-      ((buffered_input.length() >= notify_read_watermark) ||
+      ((buffered_input->get_content_length() >= notify_read_watermark) ||
        (pending_in_flight == 0))) {
     s3_log(S3_LOG_DEBUG, "Sending data to be consumed...\n");
     incoming_data_callback();
   }
   // Pause if we have read enough in buffers for this request,
   // and let the handlers resume when required.
-  if (!incoming_data_callback && !buffered_input.is_freezed() &&
-      buffered_input.length() >=
+  if (!incoming_data_callback && !buffered_input->is_freezed() &&
+      buffered_input->get_content_length() >=
           (notify_read_watermark *
-           S3Option::get_instance()->get_read_ahead_multiple())) {
+           g_option_instance->get_read_ahead_multiple())) {
     pause();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");

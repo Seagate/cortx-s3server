@@ -26,11 +26,15 @@ extern MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
 // Helper methods to free m0_bufvec array which holds
 // Memory buffers from custom memory pool
-static void s3_bufvec_free_aligned(struct m0_bufvec *bufvec) {
+static void s3_bufvec_free_aligned(struct m0_bufvec *bufvec,
+                                   bool free_bufs = true) {
   if (bufvec != NULL) {
     if (bufvec->ov_buf != NULL) {
-      for (uint32_t i = 0; i < bufvec->ov_vec.v_nr; ++i) {
-        mempool_releasebuffer(g_clovis_read_mem_pool_handle, bufvec->ov_buf[i]);
+      if (free_bufs) {
+        for (uint32_t i = 0; i < bufvec->ov_vec.v_nr; ++i) {
+          mempool_releasebuffer(g_clovis_read_mem_pool_handle,
+                                bufvec->ov_buf[i]);
+        }
       }
       free(bufvec->ov_buf);
       bufvec->ov_buf = NULL;
@@ -45,8 +49,8 @@ static void s3_bufvec_free_aligned(struct m0_bufvec *bufvec) {
 // Memory buffers from custom memory pool
 // Each buffer size is pre-determined == size set in mempool
 // mempool = g_clovis_read_mem_pool_handle
-static int s3_bufvec_alloc_aligned(struct m0_bufvec *bufvec,
-                                   uint32_t num_segs) {
+static int s3_bufvec_alloc_aligned(struct m0_bufvec *bufvec, uint32_t num_segs,
+                                   bool allocate_bufs = true) {
   size_t pool_item_size = 0;
 
   mempool_getbuffer_size(g_clovis_read_mem_pool_handle, &pool_item_size);
@@ -58,25 +62,27 @@ static int s3_bufvec_alloc_aligned(struct m0_bufvec *bufvec,
   bufvec->ov_vec.v_nr = num_segs;
   bufvec->ov_vec.v_count = (m0_bcount_t *)calloc(num_segs, sizeof(m0_bcount_t));
   if (bufvec->ov_vec.v_count == NULL) {
-    s3_bufvec_free_aligned(bufvec);
+    s3_bufvec_free_aligned(bufvec, allocate_bufs);
     return -ENOMEM;
   }
 
   bufvec->ov_buf = (void **)calloc(num_segs, sizeof(void *));
   if (bufvec->ov_buf == NULL) {
-    s3_bufvec_free_aligned(bufvec);
+    s3_bufvec_free_aligned(bufvec, allocate_bufs);
     return -ENOMEM;
   }
 
-  for (uint32_t i = 0; i < num_segs; ++i) {
-    bufvec->ov_buf[i] = (void *)mempool_getbuffer(g_clovis_read_mem_pool_handle,
-                                                  ZEROED_ALLOCATION);
+  if (allocate_bufs) {
+    for (uint32_t i = 0; i < num_segs; ++i) {
+      bufvec->ov_buf[i] = (void *)mempool_getbuffer(
+          g_clovis_read_mem_pool_handle, ZEROED_ALLOCATION);
 
-    if (bufvec->ov_buf[i] == NULL) {
-      s3_bufvec_free_aligned(bufvec);
-      return -ENOMEM;
+      if (bufvec->ov_buf[i] == NULL) {
+        s3_bufvec_free_aligned(bufvec, allocate_bufs);
+        return -ENOMEM;
+      }
+      bufvec->ov_vec.v_count[i] = pool_item_size;
     }
-    bufvec->ov_vec.v_count[i] = pool_item_size;
   }
   return 0;
 }
@@ -121,11 +127,12 @@ int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
 }
 
 // To create a clovis RW operation
-struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(
-    size_t clovis_block_count) {
+// default allocate_bufs = true -> allocate memory for each buffer
+struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(size_t clovis_buf_count,
+                                                       bool allocate_bufs) {
   int rc = 0;
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "clovis_block_count = %zu\n", clovis_block_count);
+  s3_log(S3_LOG_DEBUG, "clovis_buf_count = %zu\n", clovis_buf_count);
 
   struct s3_clovis_rw_op_context *ctx =
       (struct s3_clovis_rw_op_context *)calloc(
@@ -135,7 +142,8 @@ struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(
   ctx->data = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
   ctx->attr = (struct m0_bufvec *)calloc(1, sizeof(struct m0_bufvec));
 
-  rc = s3_bufvec_alloc_aligned(ctx->data, clovis_block_count);
+  ctx->allocated_bufs = allocate_bufs;
+  rc = s3_bufvec_alloc_aligned(ctx->data, clovis_buf_count, allocate_bufs);
   if (rc != 0) {
     free(ctx->ext);
     free(ctx->data);
@@ -144,18 +152,18 @@ struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(
     return NULL;
   }
 
-  rc = m0_bufvec_alloc(ctx->attr, clovis_block_count, 1);
+  rc = m0_bufvec_alloc(ctx->attr, clovis_buf_count, 1);
   if (rc != 0) {
-    s3_bufvec_free_aligned(ctx->data);
+    s3_bufvec_free_aligned(ctx->data, allocate_bufs);
     free(ctx->data);
     free(ctx->attr);
     free(ctx->ext);
     free(ctx);
     return NULL;
   }
-  rc = m0_indexvec_alloc(ctx->ext, clovis_block_count);
+  rc = m0_indexvec_alloc(ctx->ext, clovis_buf_count);
   if (rc != 0) {
-    s3_bufvec_free_aligned(ctx->data);
+    s3_bufvec_free_aligned(ctx->data, allocate_bufs);
     m0_bufvec_free(ctx->attr);
     free(ctx->data);
     free(ctx->attr);
@@ -170,7 +178,7 @@ struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(
 int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  s3_bufvec_free_aligned(ctx->data);
+  s3_bufvec_free_aligned(ctx->data, ctx->allocated_bufs);
   m0_bufvec_free(ctx->attr);
   m0_indexvec_free(ctx->ext);
   free(ctx->ext);

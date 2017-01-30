@@ -79,6 +79,7 @@ fi
 if [ $no_s3ut_build -eq 0 ]
 then
   bazel build //:s3ut --cxxopt="-std=c++11"
+  bazel build //:s3utdeathtests --cxxopt="-std=c++11"
 fi
 if [ $no_s3mempoolut_build -eq 0 ]
 then
