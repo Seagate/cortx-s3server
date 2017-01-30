@@ -49,6 +49,7 @@ class S3DateTime {
 
   std::string get_isoformat_string();
   std::string get_gmtformat_string();
+  friend class S3DateTimeTest;
 };
 
 #endif
