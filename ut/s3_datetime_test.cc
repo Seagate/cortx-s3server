@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2016 SEAGATE LLC
+ * COPYRIGHT 2017 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -14,7 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Rajesh Nambiar   <rajesh.nambiarr@seagate.com>
- * Original creation date: 24-Jan-2016
+ * Original creation date: 24-Jan-2017
  */
 
 #include "s3_datetime.h"
