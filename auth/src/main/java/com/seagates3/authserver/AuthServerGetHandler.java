@@ -87,13 +87,13 @@ public class AuthServerGetHandler {
                 LOGGER.debug("Static file length - " + fileLength);
             } catch (FileNotFoundException ex) {
                 LOGGER.debug("File not found.");
-                sendeErrorResponse(HttpResponseStatus.NOT_FOUND, "Resource not found.");
+                sendErrorResponse(HttpResponseStatus.NOT_FOUND, "Resource not found.");
                 return;
             } catch (IOException ex) {
-                LOGGER.error("Error occured while reading file.\n"
+                LOGGER.error("Error occurred while reading file.\n"
                         + ex.getMessage());
-                sendeErrorResponse(HttpResponseStatus.INTERNAL_SERVER_ERROR,
-                        "Error occured while reading the file.");
+                sendErrorResponse(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                        "Error occurred while reading the file.");
                 return;
             }
 
@@ -201,7 +201,7 @@ public class AuthServerGetHandler {
         }
     }
 
-    private void sendeErrorResponse(HttpResponseStatus status,
+    private void sendErrorResponse(HttpResponseStatus status,
             String responseBody) {
         FullHttpResponse response;
 

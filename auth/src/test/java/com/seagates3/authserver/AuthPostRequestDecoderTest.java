@@ -58,7 +58,8 @@ public class AuthPostRequestDecoderTest {
                 "1%28EtagIntegrity.1%28BlobStoreConnection.1%29%29%29&" +
                 "x-amz-meta-ics.meta-digest=71e7bb5fdf6784e6f9b889b2d0d39818&" +
                 "x-amz-meta-ics.etagintegrity.status=enabled&" +
-                "x-amz-meta-ics.meta-version=1&";
+                "x-amz-meta-ics.meta-version=1&" +
+                "x-amz-meta-ics.meta-version=2&";
         ByteBuf byteBuf = Unpooled.buffer(params.length());
         ByteBufUtil.writeUtf8(byteBuf, params);
 
@@ -81,7 +82,8 @@ public class AuthPostRequestDecoderTest {
                 "ICStore.1(SimpleEncryption.1(EtagIntegrity.1(BlobStoreConnection.1)))");
         expectedRequestBody.put("x-amz-meta-ics.meta-digest", "71e7bb5fdf6784e6f9b889b2d0d39818");
         expectedRequestBody.put("x-amz-meta-ics.etagintegrity.status", "enabled");
-        expectedRequestBody.put("x-amz-meta-ics.meta-version", "1");
+        expectedRequestBody.put("x-amz-meta-ics.meta-version", "1,2");
+
 
         return expectedRequestBody;
     }

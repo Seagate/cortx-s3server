@@ -120,7 +120,7 @@ public class AuthServerPostHandler {
         }
     }
 
-    private Map getHttpRequestBodyAsMap() {
+    private Map<String, String> getHttpRequestBodyAsMap() {
         AuthRequestDecoder decoder = new AuthRequestDecoder(httpRequest);
         return decoder.getRequestBodyAsMap();
     }
@@ -129,7 +129,7 @@ public class AuthServerPostHandler {
         return request.equals("InjectFault") || request.equals("ResetFault");
     }
 
-    private ServerResponse serveFiRequest(Map requestBody) {
+    private ServerResponse serveFiRequest(Map<String, String> requestBody) {
         FaultPointsController faultPointsController = new FaultPointsController();
         ServerResponse serverResponse;
 
@@ -146,7 +146,7 @@ public class AuthServerPostHandler {
         return serverResponse;
     }
 
-    private ServerResponse serveIamRequest(Map requestBody) {
+    private ServerResponse serveIamRequest(Map<String, String> requestBody) {
         IAMController iamController = new IAMController();
         return iamController.serve(httpRequest, requestBody);
     }
