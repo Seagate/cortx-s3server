@@ -90,7 +90,7 @@ int S3AwsEtag::hex_to_dec(char ch) {
       break;
     default:
       s3_log(S3_LOG_ERROR, "Invalid hexadecimal digit %c \n", ch);
-      return 0;
+      return -1;
   }
 }
 

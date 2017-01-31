@@ -22,6 +22,7 @@
 #ifndef __S3_SERVER_S3_AWS_ETAG_H__
 #define __S3_SERVER_S3_AWS_ETAG_H__
 
+#include <gtest/gtest_prod.h>
 #include <string>
 #include "s3_log.h"
 
@@ -41,6 +42,13 @@ class S3AwsEtag {
   void add_part_etag(std::string etag);
   std::string finalize();
   std::string get_final_etag();
+  FRIEND_TEST(S3AwsEtagTest, Constructor);
+  FRIEND_TEST(S3AwsEtagTest, HexToDec);
+  FRIEND_TEST(S3AwsEtagTest, HexToDecInvalid);
+  FRIEND_TEST(S3AwsEtagTest, HexToBinary);
+  FRIEND_TEST(S3AwsEtagTest, AddPartEtag);
+  FRIEND_TEST(S3AwsEtagTest, Finalize);
+  FRIEND_TEST(S3AwsEtagTest, GetFinalEtag);
 };
 
 #endif
