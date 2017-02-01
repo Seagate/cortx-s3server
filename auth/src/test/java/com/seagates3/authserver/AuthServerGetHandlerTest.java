@@ -16,6 +16,7 @@
  * Original author: Sushant Mane <sushant.mane@seagate.com>
  * Original creation date: 24-Jan-2017
  */
+
 package com.seagates3.authserver;
 
 import com.seagates3.controller.SAMLWebSSOController;
@@ -69,17 +70,16 @@ public class AuthServerGetHandlerTest {
 
     @Before
     public void setUp() throws Exception {
+        mockStatic(HttpHeaders.class);
         fullHttpRequest = mock(FullHttpRequest.class);
         ctx = mock(ChannelHandlerContext.class);
-
-        mockStatic(HttpHeaders.class);
         when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.FALSE);
     }
 
     @Test
     public void runTest() {
-        when(fullHttpRequest.getUri()).thenReturn("/");
         ChannelFuture channelFuture = mock(ChannelFuture.class);
+        when(fullHttpRequest.getUri()).thenReturn("/");
         when(ctx.write(any(ServerResponse.class))).thenReturn(channelFuture);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
 
@@ -91,9 +91,9 @@ public class AuthServerGetHandlerTest {
 
     @Test
     public void runTest_KeepAlive() {
+        ChannelFuture channelFuture = mock(ChannelFuture.class);
         when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.TRUE);
         when(fullHttpRequest.getUri()).thenReturn("/");
-        ChannelFuture channelFuture = mock(ChannelFuture.class);
         when(ctx.write(any(ServerResponse.class))).thenReturn(channelFuture);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
 
@@ -105,8 +105,8 @@ public class AuthServerGetHandlerTest {
 
     @Test
     public void runTest_Static() throws Exception {
-        when(fullHttpRequest.getUri()).thenReturn("/static");
         RandomAccessFile rf = mock(RandomAccessFile.class);
+        when(fullHttpRequest.getUri()).thenReturn("/static");
         whenNew(RandomAccessFile.class).withAnyArguments().thenReturn(rf);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
         AuthServerGetHandler getHandlerSpy = spy(handler);
@@ -122,8 +122,8 @@ public class AuthServerGetHandlerTest {
 
     @Test
     public void runTest_Static_IOException() throws Exception {
-        when(fullHttpRequest.getUri()).thenReturn("/static");
         RandomAccessFile rf = mock(RandomAccessFile.class);
+        when(fullHttpRequest.getUri()).thenReturn("/static");
         whenNew(RandomAccessFile.class).withAnyArguments().thenReturn(rf);
         when(rf.length()).thenThrow(IOException.class);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
@@ -136,8 +136,7 @@ public class AuthServerGetHandlerTest {
         getHandlerSpy.run();
 
         verifyPrivate(getHandlerSpy).invoke("sendErrorResponse",
-                HttpResponseStatus.INTERNAL_SERVER_ERROR,
-                "Error occurred while reading the file."
+                HttpResponseStatus.INTERNAL_SERVER_ERROR, "Error occurred while reading the file."
         );
     }
 
@@ -157,10 +156,10 @@ public class AuthServerGetHandlerTest {
 
     @Test
     public void runTest_SAML_FileNotFoundException() throws Exception {
+        SAMLWebSSOController controller = mock(SAMLWebSSOController.class);
         when(fullHttpRequest.getUri()).thenReturn("/saml/session/xyz");
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
         AuthServerGetHandler getHandlerSpy = spy(handler);
-        SAMLWebSSOController controller = mock(SAMLWebSSOController.class);
         whenNew(SAMLWebSSOController.class).withAnyArguments().thenReturn(controller);
         doNothing().when(getHandlerSpy, "returnHTTPResponse", any(ServerResponse.class));
 
@@ -172,11 +171,10 @@ public class AuthServerGetHandlerTest {
     @Test
     public void returnHTTPResponseTest_ServerResponse() throws Exception {
         ServerResponse requestResponse = mock(ServerResponse.class);
+        ChannelFuture channelFuture = mock(ChannelFuture.class);
         String responseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
         when(requestResponse.getResponseBody()).thenReturn(responseBody);
         when(requestResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
-
-        ChannelFuture channelFuture = mock(ChannelFuture.class);
         when(ctx.write(any(ServerResponse.class))).thenReturn(channelFuture);
 
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
@@ -204,13 +202,12 @@ public class AuthServerGetHandlerTest {
     @Test
     public void writeHeaderTest() throws Exception {
         File file = mock(File.class);
-        long fileLength = 1024L;
         MimetypesFileTypeMap mimeTypesMap = mock(MimetypesFileTypeMap.class);
         whenNew(MimetypesFileTypeMap.class).withNoArguments().thenReturn(mimeTypesMap);
         when(mimeTypesMap.getContentType(anyString())).thenReturn("text/plain");
 
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
-        WhiteboxImpl.invokeMethod(handler, "writeHeader", file, fileLength);
+        WhiteboxImpl.invokeMethod(handler, "writeHeader", file, 1024L);
 
         verify(ctx).write(any(ServerResponse.class));
     }
@@ -218,14 +215,13 @@ public class AuthServerGetHandlerTest {
     @Test
     public void writeHeaderTest_KeepAlive() throws Exception {
         File file = mock(File.class);
-        long fileLength = 1024L;
         MimetypesFileTypeMap mimeTypesMap = mock(MimetypesFileTypeMap.class);
         whenNew(MimetypesFileTypeMap.class).withNoArguments().thenReturn(mimeTypesMap);
         when(mimeTypesMap.getContentType(anyString())).thenReturn("text/plain");
         when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.TRUE);
 
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
-        WhiteboxImpl.invokeMethod(handler, "writeHeader", file, fileLength);
+        WhiteboxImpl.invokeMethod(handler, "writeHeader", file, 1024L);
 
         verify(ctx).write(any(ServerResponse.class));
     }
@@ -233,15 +229,14 @@ public class AuthServerGetHandlerTest {
     @Test
     public void writeContentTest_SslHandler_Null() throws Exception {
         RandomAccessFile raf = mock(RandomAccessFile.class);
-        long fileLength = 1024L;
         ChannelPipeline pipeline = mock(ChannelPipeline.class);
+        ChannelFuture lastContentFuture = mock(ChannelFuture.class);
         when(ctx.pipeline()).thenReturn(pipeline);
         when(pipeline.get(SslHandler.class)).thenReturn(null);
-        ChannelFuture lastContentFuture = mock(ChannelFuture.class);
         when(ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)).thenReturn(lastContentFuture);
 
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
-        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, fileLength);
+        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, 1024L);
 
         verify(ctx).write(any(DefaultFileRegion.class), any(ChannelProgressivePromise.class));
         verify(ctx).writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -251,16 +246,15 @@ public class AuthServerGetHandlerTest {
     @Test
     public void writeContentTest_KeepAlive_SslHandler_Null() throws Exception {
         RandomAccessFile raf = mock(RandomAccessFile.class);
-        long fileLength = 1024L;
         ChannelPipeline pipeline = mock(ChannelPipeline.class);
+        ChannelFuture lastContentFuture = mock(ChannelFuture.class);
         when(ctx.pipeline()).thenReturn(pipeline);
         when(pipeline.get(SslHandler.class)).thenReturn(null);
-        ChannelFuture lastContentFuture = mock(ChannelFuture.class);
         when(ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)).thenReturn(lastContentFuture);
         when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.TRUE);
 
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
-        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, fileLength);
+        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, 1024L);
 
         verify(ctx).write(any(DefaultFileRegion.class), any(ChannelProgressivePromise.class));
         verify(ctx).writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -270,17 +264,16 @@ public class AuthServerGetHandlerTest {
     @Test
     public void writeContentTest() throws Exception {
         RandomAccessFile raf = mock(RandomAccessFile.class);
-        long fileLength = 1024L;
         ChannelPipeline pipeline = mock(ChannelPipeline.class);
-        when(ctx.pipeline()).thenReturn(pipeline);
         SslHandler sslHandler = mock(SslHandler.class);
-        when(pipeline.get(SslHandler.class)).thenReturn(sslHandler);
         ChannelFuture lastContentFuture = mock(ChannelFuture.class);
+        when(ctx.pipeline()).thenReturn(pipeline);
+        when(pipeline.get(SslHandler.class)).thenReturn(sslHandler);
         when(ctx.writeAndFlush(any(HttpChunkedInput.class),
                 any(ChannelProgressivePromise.class))).thenReturn(lastContentFuture);
 
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
-        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, fileLength);
+        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, 1024L);
 
         verify(ctx).writeAndFlush(any(HttpChunkedInput.class),
                 any(ChannelProgressivePromise.class));
@@ -290,17 +283,16 @@ public class AuthServerGetHandlerTest {
     @Test
     public void writeContentTest_keepAlive_IOException() throws Exception {
         RandomAccessFile raf = mock(RandomAccessFile.class);
-        long fileLength = 1024L;
         ChannelPipeline pipeline = mock(ChannelPipeline.class);
-        when(ctx.pipeline()).thenReturn(pipeline);
         SslHandler sslHandler = mock(SslHandler.class);
+        when(ctx.pipeline()).thenReturn(pipeline);
         when(pipeline.get(SslHandler.class)).thenReturn(sslHandler);
         when(ctx.writeAndFlush(any(HttpChunkedInput.class),
                 any(ChannelProgressivePromise.class))).thenThrow(IOException.class);
         when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.TRUE);
 
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
-        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, fileLength);
+        WhiteboxImpl.invokeMethod(handler, "writeContent", raf, 1024L);
 
         verify(ctx).writeAndFlush(any(HttpChunkedInput.class),
                 any(ChannelProgressivePromise.class));

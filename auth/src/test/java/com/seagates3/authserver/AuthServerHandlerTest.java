@@ -16,6 +16,7 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 24-Dec-2015
  */
+
 package com.seagates3.authserver;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -26,22 +27,30 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.powermock.api.mockito.PowerMockito;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
+
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.internal.WhiteboxImpl;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({AuthServerHandler.class, AuthServerConfig.class})
 @PowerMockIgnore({"javax.management.*"})
+@MockPolicy(Slf4jMockPolicy.class)
 public class AuthServerHandlerTest {
 
-    AuthServerHandler testHandler;
-    ChannelHandlerContext ctx;
-    FullHttpRequest msg;
+    private AuthServerHandler testHandler;
+    private ChannelHandlerContext ctx;
+    private FullHttpRequest httpRequest;
 
     @BeforeClass
     public static void setUpStatic() throws Exception {
@@ -55,19 +64,59 @@ public class AuthServerHandlerTest {
     @Before
     public void setUp() {
         ctx = Mockito.mock(ChannelHandlerContext.class);
-        msg = mock(FullHttpRequest.class);
+        httpRequest = mock(FullHttpRequest.class);
         testHandler = new AuthServerHandler();
     }
 
     @Test
     public void channelReadTest() throws Exception {
         AuthServerPostHandler postHandler = mock(AuthServerPostHandler.class);
-
-        when(msg.getMethod()).thenReturn(HttpMethod.POST);
+        when(httpRequest.getMethod()).thenReturn(HttpMethod.POST);
         whenNew(AuthServerPostHandler.class).withArguments(
-                ctx, msg).thenReturn(postHandler);
+                ctx, httpRequest).thenReturn(postHandler);
 
-        testHandler.channelRead(ctx, msg);
+        testHandler.channelRead(ctx, httpRequest);
         Mockito.verify(postHandler).run();
+    }
+
+    @Test
+    public void channelReadTest_GetRequest() throws Exception {
+        AuthServerGetHandler getHandler = mock(AuthServerGetHandler.class);
+        when(httpRequest.getMethod()).thenReturn(HttpMethod.GET);
+        whenNew(AuthServerGetHandler.class)
+                .withArguments(ctx, httpRequest).thenReturn(getHandler);
+
+        testHandler.channelRead(ctx, httpRequest);
+
+        Mockito.verify(getHandler).run();
+    }
+
+    @Test
+    public void channelReadCompleteTest() {
+        testHandler.channelReadComplete(ctx);
+
+        verify(ctx).flush();
+    }
+
+    @Test
+    public void exceptionCaughtTest() {
+        Throwable cause = mock(Throwable.class);
+
+        testHandler.exceptionCaught(ctx, cause);
+
+        verify(ctx).close();
+    }
+
+    @Test
+    public void createPostHandlerTest() throws Exception {
+        AuthServerPostHandler postHandler = mock(AuthServerPostHandler.class);
+        when(httpRequest.getMethod()).thenReturn(HttpMethod.POST);
+        whenNew(AuthServerPostHandler.class).withArguments(
+                ctx, httpRequest).thenReturn(postHandler);
+
+        AuthServerPostHandler result = WhiteboxImpl.invokeMethod(
+                testHandler, "createPostHandler", ctx, httpRequest);
+
+        assertEquals(postHandler, result);
     }
 }

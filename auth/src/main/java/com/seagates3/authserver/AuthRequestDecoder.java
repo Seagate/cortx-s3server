@@ -52,28 +52,25 @@ public class AuthRequestDecoder extends HttpPostRequestDecoder {
         String key;
         String value;
 
-        LOGGER.debug("Request Body:");
+        LOGGER.debug("Request body attributes:");
         for (InterfaceHttpData data : datas) {
             if (data.getHttpDataType() == HttpDataType.Attribute) {
                 Attribute attribute = (Attribute) data;
+                key = attribute.getName();
                 try {
-                    key = attribute.getName();
                     value = attribute.getValue();
                     if (requestBody.containsKey(key) && key.toLowerCase().startsWith("x-amz-")) {
                         value = requestBody.get(key) + "," + value;
                     }
                     requestBody.put(key, value);
-                    LOGGER.debug(attribute.getHttpDataType().name() + " "
-                            + key + ": " + value);
-                } catch (IOException readError) {
-                    readError.printStackTrace();
-                    LOGGER.error(attribute.getHttpDataType().name() + " "
-                            + attribute.getName()
-                            + " Error while reading value: "
-                            + readError.getMessage());
+                    LOGGER.debug("{}: {}", key, value);
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to get value of {} attribute. Error: {}",
+                            key, e.getMessage());
                 }
             }
         }
+
         return requestBody;
     }
 }

@@ -16,10 +16,12 @@
  * Original author: Sushant Mane <sushant.mane@seagate.com>
  * Original creation date: 03-Jan-2017
  */
+
 package com.seagates3.authserver;
 
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.exception.ServerInitialisationException;
+import com.seagates3.fi.FaultPoints;
 import com.seagates3.perf.S3Perf;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -72,10 +74,9 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SSLContextProvider.class,
-        IAMResourceMapper.class, DAODispatcher.class,
-        S3Perf.class, AuthServerConfig.class, LoggerFactory.class,
-        AuthServer.class, Paths.class, Configurator.class})
+@PrepareForTest({SSLContextProvider.class, IAMResourceMapper.class, DAODispatcher.class,
+        S3Perf.class, AuthServerConfig.class, LoggerFactory.class, AuthServer.class,
+        Paths.class, Configurator.class, FaultPoints.class})
 @MockPolicy(Slf4jMockPolicy.class)
 @PowerMockIgnore({"javax.management.*"})
 public class AuthServerTest {
@@ -163,6 +164,36 @@ public class AuthServerTest {
         verify(channelFuture, times(2)).sync();
     }
 
+    @Test
+    public void mainTest_HttpAndHttpsEnabled_FiEnabled() throws Exception {
+        mainTestHelper();
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpsEnabled");
+        doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
+                any(EventLoopGroup.class), any(EventLoopGroup.class),
+                any(EventExecutorGroup.class), anyInt());
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
+
+        AuthServer.main(new String[]{});
+
+        verifyStatic();
+        FaultPoints.init();
+        verifyStatic();
+        SSLContextProvider.init();
+        verifyStatic();
+        IAMResourceMapper.init();
+        verifyStatic();
+        DAODispatcher.init();
+        verifyStatic();
+        S3Perf.init();
+
+        verifyPrivate(AuthServer.class).invoke("readConfig");
+        verifyPrivate(AuthServer.class).invoke("logInit");
+        verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
+
+        verify(serverChannel, times(2)).closeFuture();
+        verify(channelFuture, times(2)).sync();
+    }
+
     private  void mainTestHelper() throws Exception {
         spy(AuthServer.class);
         doNothing().when(AuthServer.class, "readConfig");
@@ -173,10 +204,12 @@ public class AuthServerTest {
         mockStatic(IAMResourceMapper.class);
         mockStatic(DAODispatcher.class);
         mockStatic(S3Perf.class);
+        mockStatic(FaultPoints.class);
         doNothing().when(SSLContextProvider.class, "init");
         doNothing().when(IAMResourceMapper.class, "init");
         doNothing().when(DAODispatcher.class, "init");
         doNothing().when(S3Perf.class, "init");
+        doNothing().when(FaultPoints.class, "init");
 
         serverChannel = mock(Channel.class);
         doReturn(serverChannel).when(AuthServer.class, "httpServerBootstrap",
@@ -383,5 +416,23 @@ public class AuthServerTest {
         verify(serverBootstrap).bind(port);
         verify(channelFuture).sync();
         verify(channelFuture).channel();
+    }
+
+    @Test
+    public void attachShutDownHookTest() throws Exception {
+        mockStatic(S3Perf.class);
+        doNothing().when(S3Perf.class, "clean");
+
+        EventLoopGroup bossGroup = mock(EventLoopGroup.class);
+        EventLoopGroup workerGroup = mock(EventLoopGroup.class);
+        EventExecutorGroup executorGroup = mock(EventExecutorGroup.class);
+        Logger logger = mock(Logger.class);
+
+        WhiteboxImpl.setInternalState(AuthServer.class, "bossGroup", bossGroup);
+        WhiteboxImpl.setInternalState(AuthServer.class, "workerGroup", workerGroup);
+        WhiteboxImpl.setInternalState(AuthServer.class, "executorGroup", executorGroup);
+        WhiteboxImpl.setInternalState(AuthServer.class, "logger", logger);
+
+        WhiteboxImpl.invokeMethod(AuthServer.class, "attachShutDownHook");
     }
 }

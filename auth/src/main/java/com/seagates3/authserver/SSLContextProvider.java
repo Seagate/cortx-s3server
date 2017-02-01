@@ -73,13 +73,13 @@ public class SSLContextProvider {
                 LOGGER.info("SSL context created.");
             } catch (FileNotFoundException ex) {
                 throw new ServerInitialisationException(
-                        "Exception occured while initializnig ssl context.\n"
+                        "Exception occurred while initializing ssl context.\n"
                         + ex.getMessage());
             } catch (IOException | NoSuchAlgorithmException |
                     CertificateException | KeyStoreException |
                     UnrecoverableKeyException ex) {
                 throw new ServerInitialisationException(
-                        "Exception occured while initializnig ssl context.\n"
+                        "Exception occurred while initializing ssl context.\n"
                         + ex.getMessage());
             }
 
