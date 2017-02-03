@@ -122,8 +122,7 @@ void S3GetObjectAction::read_object_data() {
   }
 
   size_t max_blocks_in_one_read_op =
-      S3Option::get_instance()->get_clovis_read_payload_size() /
-      S3Option::get_instance()->get_clovis_unit_size();
+      S3Option::get_instance()->get_clovis_units_per_request();
   size_t blocks_to_read = 0;
 
   if (blocks_already_read != total_blocks_in_object) {

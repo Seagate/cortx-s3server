@@ -49,7 +49,7 @@ struct memory_pool_element {
 
 struct mempool {
   int flags; /* CREATE_ALIGNED_MEMORY, ENABLE_LOCKING, ZEROED_ALLOCATION */
-  int free_list_max_size;   /* Maximum number of items allowed on free list */
+  int free_list_max_count;   /* Maximum number of items allowed on free list */
   int free_pool_items_count; /* Number of items on free list */
   int number_of_allocation; /*Number of items outstanding, still allocated */
   int total_outstanding_memory_alloc; /* Total outstanding memory allocated by
@@ -66,7 +66,7 @@ struct mempool {
 
 struct pool_info {
   int flags;
-  int free_list_max_size;
+  int free_list_max_count;
   int free_pool_items_count;
   int number_of_allocation;
   int total_outstanding_memory_alloc;
@@ -168,6 +168,16 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf);
  * 0 on success, otherwise an error
  */
 int mempool_getinfo(MemoryPoolHandle handle, struct pool_info *poolinfo);
+
+/**
+ * Returns total free space available in memory pool
+ * args:
+ * handle (in) Pool handle as returned by mempool_create
+ * free_bytes (out) Total free bytes available in pool
+ * returns:
+ * 0 on success, otherwise an error
+ */
+int mempool_free_space(MemoryPoolHandle handle, size_t *free_bytes);
 
 /**
  * Returns memory pool's buffer size

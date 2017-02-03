@@ -108,7 +108,7 @@ class S3RequestObject {
   virtual const char* c_get_full_encoded_path();
   const char* c_get_file_name();
   void set_api_type(S3ApiType apitype);
-  S3ApiType get_api_type();
+  virtual S3ApiType get_api_type();
 
  private:
   std::map<std::string, std::string> in_headers_copy;
@@ -254,7 +254,13 @@ class S3RequestObject {
   void send_reply_start(int code);
   void send_reply_body(char* data, int length);
   void send_reply_end();
+
+  void respond_error(std::string error_code,
+                     const std::map<std::string, std::string>& headers =
+                         std::map<std::string, std::string>());
+
   void respond_unsupported_api();
+  virtual void respond_retry_after(int retry_after_in_secs = 1);
 
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
   FRIEND_TEST(S3RequestObjectTest, ReturnsValidUriPaths);

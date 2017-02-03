@@ -30,6 +30,7 @@
 #include "s3_bucket_metadata.h"
 #include "s3_fi_common.h"
 #include "s3_log.h"
+#include "s3_memory_profile.h"
 #include "s3_object_metadata.h"
 #include "s3_request_object.h"
 
@@ -111,6 +112,9 @@ class S3Action {
 
   // For shutdown related system tests, if FI gets hit then set this flag
   bool is_fi_hit;
+
+ protected:
+  std::shared_ptr<S3MemoryProfile> mem_profile;
 
  public:
   S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true);
@@ -203,6 +207,7 @@ class S3Action {
   void fetch_acl_object_policies_failed();
 
   virtual void send_response_to_s3_client() = 0;
+  virtual void send_retry_error_to_s3_client(int retry_after_in_secs = 1);
 
   FRIEND_TEST(S3ActionTest, Constructor);
   FRIEND_TEST(S3ActionTest, AddTask);

@@ -34,6 +34,7 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
   error_message = "";
   state = S3ActionState::start;
   rollback_state = S3ActionState::start;
+  mem_profile.reset(new S3MemoryProfile());
   setup_steps();
 }
 
@@ -56,14 +57,33 @@ void S3Action::setup_steps() {
 }
 
 void S3Action::start() {
+  // Check if we have enough approx memory to proceed with request
+  if (request->get_api_type() == S3ApiType::object) {
+    if (request->http_verb() == S3HttpVerb::GET &&
+        !mem_profile->we_have_enough_memory_for_get_obj()) {
+      s3_log(S3_LOG_DEBUG,
+             "Limited memory: Rejecting GET object request with retry.\n");
+      send_retry_error_to_s3_client();
+      return;
+    } else if (request->http_verb() == S3HttpVerb::PUT &&
+               !mem_profile->we_have_enough_memory_for_put_obj()) {
+      s3_log(S3_LOG_DEBUG,
+             "Limited memory: Rejecting PUT object/part request with retry.\n");
+      send_retry_error_to_s3_client();
+      return;
+    }
+  }
+
   if (check_shutdown_signal && check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
+
   task_iteration_index = 0;
   state = S3ActionState::running;
   task_list[task_iteration_index++]();
 }
+
 // Step to next async step.
 void S3Action::next() {
   if (check_shutdown_signal && check_shutdown_and_rollback()) {
@@ -234,18 +254,7 @@ void S3Action::check_authorization_failed() {
       s3_stats_inc("authorization_failed_signature_mismatch_count");
     }
     s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", error_code.c_str());
-
-    S3Error error(error_code, request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-    s3_log(S3_LOG_ERROR, "Authorization failure (http status): %d\n",
-           error.get_http_status_code());
-    s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", response_xml.c_str());
+    request->respond_error(error_code);
   }
   done();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -275,18 +284,7 @@ void S3Action::check_authentication_failed() {
       s3_stats_inc("authentication_failed_signature_mismatch_count");
     }
     s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", error_code.c_str());
-
-    S3Error error(error_code, request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-    s3_log(S3_LOG_ERROR, "Authentication failure (http status): %d\n",
-           error.get_http_status_code());
-    s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", response_xml.c_str());
+    request->respond_error(error_code);
   }
   done();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -315,4 +313,11 @@ bool S3Action::check_shutdown_and_rollback() {
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
   return is_s3_shutting_down;
+}
+
+void S3Action::send_retry_error_to_s3_client(int retry_after_in_secs) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  request->respond_retry_after(1);
+  done();
+  i_am_done();
 }

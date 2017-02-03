@@ -66,6 +66,12 @@ int main(int argc, char **argv) {
 
   S3ErrorMessages::init_messages("resources/s3_error_messages.json");
 
+  size_t libevent_pool_buffer_size =
+      g_option_instance->get_libevent_pool_buffer_size();
+  event_use_mempool(libevent_pool_buffer_size, libevent_pool_buffer_size * 100,
+                    libevent_pool_buffer_size * 100,
+                    libevent_pool_buffer_size * 500, CREATE_ALIGNED_MEMORY);
+
   size_t clovis_unit_size = g_option_instance->get_clovis_unit_size();
   mempool_create(clovis_unit_size, clovis_unit_size * 100,
                  clovis_unit_size * 100, clovis_unit_size * 500,

@@ -20,6 +20,9 @@
 #include "s3_cli_options.h"
 #include "s3_option.h"
 
+DEFINE_string(s3config, "/opt/seagate/s3/conf/s3config.yaml",
+              "S3 server config file");
+
 DEFINE_string(s3host, "0.0.0.0", "S3 server bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
@@ -66,6 +69,7 @@ int parse_and_load_config_options(int argc, char **argv) {
   S3Option *option_instance = S3Option::get_instance();
 
   // load the configurations from config file.
+  option_instance->set_option_file(FLAGS_s3config);
   bool force_override_from_config = true;
   if (!option_instance->load_all_sections(force_override_from_config)) {
     return -1;

@@ -70,7 +70,7 @@ TEST_F(MempoolSelfCreateTestSuite, CreatePoolTest) {
       0, mempool_create(ONE_4K_BLOCK, 0, 0, THREE_4K_BLOCK, 0, &first_handle));
   EXPECT_NE(first_handle, (void *)NULL);
   EXPECT_EQ(0, mempool_getinfo(first_handle, &firstpass_pool_details));
-  EXPECT_EQ(3, firstpass_pool_details.free_list_max_size);
+  EXPECT_EQ(3, firstpass_pool_details.free_list_max_count);
   EXPECT_EQ(0, firstpass_pool_details.free_pool_items_count);
   EXPECT_EQ(0, firstpass_pool_details.number_of_allocation);
   EXPECT_EQ(0, firstpass_pool_details.total_outstanding_memory_alloc);
@@ -84,7 +84,7 @@ TEST_F(MempoolSelfCreateTestSuite, CreatePoolTest) {
                    &second_handle));
   EXPECT_NE(second_handle, (void *)NULL);
   EXPECT_EQ(0, mempool_getinfo(second_handle, &firstpass_pool_details));
-  EXPECT_EQ(6, firstpass_pool_details.free_list_max_size);
+  EXPECT_EQ(6, firstpass_pool_details.free_list_max_count);
   EXPECT_EQ(3, firstpass_pool_details.free_pool_items_count);
   EXPECT_EQ(0, firstpass_pool_details.number_of_allocation);
   EXPECT_EQ(3, firstpass_pool_details.total_outstanding_memory_alloc);
@@ -122,8 +122,8 @@ TEST_F(MempoolTestSuite, AllocateMemMemoryPoolTest) {
   buf = (char *)mempool_getbuffer(handle, ZEROED_ALLOCATION);
   EXPECT_NE(buf, (void *)NULL);
   EXPECT_EQ(0, mempool_getinfo(handle, &secondpass_pool_details));
-  EXPECT_EQ(firstpass_pool_details.free_list_max_size,
-            secondpass_pool_details.free_list_max_size);
+  EXPECT_EQ(firstpass_pool_details.free_list_max_count,
+            secondpass_pool_details.free_list_max_count);
   // After memory allocation from pool, pool's free_pool_items_count should
   // decrease
   EXPECT_EQ(secondpass_pool_details.free_pool_items_count,
@@ -256,14 +256,14 @@ TEST_F(MempoolTestSuite, MemPoolResizeTest) {
   EXPECT_EQ(0, mempool_getinfo(handle, &firstpass_pool_details));
   EXPECT_EQ(0, mempool_resize(handle, TWO_4K_BLOCK));
   EXPECT_EQ(0, mempool_getinfo(handle, &secondpass_pool_details));
-  EXPECT_EQ(2, secondpass_pool_details.free_list_max_size);
+  EXPECT_EQ(2, secondpass_pool_details.free_list_max_count);
   EXPECT_EQ(2, secondpass_pool_details.free_pool_items_count);
 
   memset(&firstpass_pool_details, 0, sizeof(firstpass_pool_details));
   EXPECT_EQ(0, mempool_resize(handle, SIX_4K_BLOCK));
   EXPECT_EQ(0, mempool_getinfo(handle, &firstpass_pool_details));
 
-  EXPECT_EQ(6, firstpass_pool_details.free_list_max_size);
+  EXPECT_EQ(6, firstpass_pool_details.free_list_max_count);
 }
 
 int main(int argc, char **argv) {

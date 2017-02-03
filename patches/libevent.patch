@@ -275,7 +275,7 @@ index f9dcc06..c105fcc 100644
  /** Assert that we are holding the lock on an evbuffer */
  #define ASSERT_EVBUFFER_LOCKED(buffer)			\
 diff --git a/event.c b/event.c
-index fab419a..932d0c3 100644
+index fab419a..e46e9a0 100644
 --- a/event.c
 +++ b/event.c
 @@ -25,6 +25,7 @@
@@ -297,7 +297,7 @@ index fab419a..932d0c3 100644
  /* Prototypes */
  static inline int event_add_internal(struct event *ev,
      const struct timeval *tv, int tv_is_absolute);
-@@ -2726,6 +2731,31 @@ event_set_mem_functions(void *(*malloc_fn)(size_t sz),
+@@ -2726,6 +2731,35 @@ event_set_mem_functions(void *(*malloc_fn)(size_t sz),
  	_mm_free_fn = free_fn;
  }
  #endif
@@ -314,6 +314,10 @@ index fab419a..932d0c3 100644
 +		return rc;
 +
 +	return 0;
++}
++
++int event_mempool_free_space(size_t *free_space) {
++	return mempool_free_space(g_pool_handle, free_space);
 +}
 +
 +int event_destroy_mempool() {
@@ -378,10 +382,10 @@ index 02835c1..fa75f51 100644
  
  #ifdef __cplusplus
 diff --git a/include/event2/event.h b/include/event2/event.h
-index 10bcd97..9cbad5f 100644
+index 10bcd97..c8bf810 100644
 --- a/include/event2/event.h
 +++ b/include/event2/event.h
-@@ -295,6 +295,36 @@ struct event_config
+@@ -295,6 +295,41 @@ struct event_config
  ;
  
  /**
@@ -401,6 +405,11 @@ index 10bcd97..9cbad5f 100644
 +int event_use_mempool(size_t item_size, size_t pool_initial_size,
 +			size_t pool_expansion_size,
 +			size_t pool_max_threshold_size, int flags);
++
++/**
++ * Free space in the memory pool
++ */
++int event_mempool_free_space(size_t *free_space);
 +
 +/**
 + * Destroy the memory pool

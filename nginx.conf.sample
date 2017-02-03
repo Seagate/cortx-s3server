@@ -65,6 +65,10 @@ http {
         location / {
             #s3
             proxy_pass  http://s3server;
+            # Retry next s3 instance when current returns 503.
+            proxy_next_upstream error timeout http_502 http_503 http_504;
+            # We dont want clients to be held too long when retrying upstreams
+            proxy_next_upstream_timeout 5;
             proxy_set_header Host            $host;
             proxy_pass_request_headers      on;
             proxy_send_timeout  300;
@@ -77,16 +81,24 @@ http {
             #proxy_busy_buffers_size 16k;
             #proxy_http_version 1.1;
             #proxy_set_header Connection "";
+            set $originalrequest $uri;
         }
 
         #error_page  404              /404.html;
 
         # redirect server error pages to the static page /50x.html
         #
-        error_page   500 502 503 504  /50x.html;
-        location = /50x.html {
-            root   html;
+        #error_page   500 502 503 504  /50x.html;
+        #location = /50x.html {
+        #    root   html;
+        #}
+        error_page  502 504 =503 /503.xml;
+
+        # We respond with s3 compatible error response
+        location /503.xml{
+            return 503 '<?xml version="1.0" encoding="UTF-8"?><Error><Code>ServiceUnavailable</Code><Message>Reduce your request rate.</Message><Resource>$originalrequest</Resource><RequestId>00000000-0000-0000-0000-000000000000</RequestId></Error>';
         }
+
 
         # proxy the PHP scripts to Apache listening on 127.0.0.1:80
         #

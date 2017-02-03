@@ -41,6 +41,8 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD1(set_bucket_name, void(const std::string &name));
   MOCK_METHOD1(set_object_name, void(const std::string &name));
   MOCK_METHOD1(set_api_type, void(S3ApiType));
+  MOCK_METHOD0(get_api_type, S3ApiType());
+  MOCK_METHOD1(respond_retry_after, void(int retry_after_in_secs));
 };
 
 #endif

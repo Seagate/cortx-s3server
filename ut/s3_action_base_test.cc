@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 
 #include "mock_evhtp_wrapper.h"
+#include "mock_s3_memory_profile.h"
 #include "mock_s3_request_object.h"
 #include "s3_action_base.h"
 #include "s3_error_codes.h"
@@ -37,12 +38,22 @@ class S3ActionTestbase : public S3Action {
   // Instantiate S3Action with authentication disabled
   S3ActionTestbase(std::shared_ptr<S3RequestObject> req) : S3Action(req) {
     response_called = 0;
+    profile = new MockS3MemoryProfile();
+    mem_profile.reset(profile);
   };
+
+  void set_defaults() {
+    EXPECT_CALL(*profile, we_have_enough_memory_for_get_obj())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*profile, we_have_enough_memory_for_put_obj())
+        .WillRepeatedly(Return(true));
+  }
 
   void send_response_to_s3_client() { response_called += 1; };
 
   // Declare viariables
   int response_called;
+  MockS3MemoryProfile *profile;
 };
 
 class S3ActionTest : public testing::Test {
@@ -57,6 +68,10 @@ class S3ActionTest : public testing::Test {
     call_count_one = call_count_two = 0;
     S3Option::get_instance()->disable_auth();
     ptr_s3Actionobject = new S3ActionTestbase(ptr_mock_request);
+    EXPECT_CALL(*ptr_mock_request, get_api_type())
+        .WillRepeatedly(Return(S3ApiType::object));
+    EXPECT_CALL(*ptr_mock_request, http_verb())
+        .WillRepeatedly(Return(S3HttpVerb::GET));
   };
 
   ~S3ActionTest() { delete ptr_s3Actionobject; }
@@ -75,6 +90,7 @@ class S3ActionTest : public testing::Test {
 };
 
 TEST_F(S3ActionTest, Constructor) {
+  ptr_s3Actionobject->set_defaults();
   EXPECT_EQ(NULL, ptr_s3Actionobject->task_iteration_index);
   EXPECT_TRUE(S3ActionState::start == ptr_s3Actionobject->state);
   EXPECT_EQ(0, ptr_s3Actionobject->task_list.size());
@@ -84,6 +100,7 @@ TEST_F(S3ActionTest, Constructor) {
 }
 
 TEST_F(S3ActionTest, AddTask) {
+  ptr_s3Actionobject->set_defaults();
   ptr_s3Actionobject->add_task(
       std::bind(&S3ActionTest::func_callback_one, this));
   ptr_s3Actionobject->add_task(
@@ -93,6 +110,7 @@ TEST_F(S3ActionTest, AddTask) {
 }
 
 TEST_F(S3ActionTest, AddTaskRollback) {
+  ptr_s3Actionobject->set_defaults();
   ptr_s3Actionobject->add_task_rollback(
       std::bind(&S3ActionTest::func_callback_one, this));
   ptr_s3Actionobject->add_task_rollback(
@@ -102,6 +120,7 @@ TEST_F(S3ActionTest, AddTaskRollback) {
 }
 
 TEST_F(S3ActionTest, TasklistRun) {
+  ptr_s3Actionobject->set_defaults();
   ptr_s3Actionobject->add_task(
       std::bind(&S3ActionTest::func_callback_one, this));
   ptr_s3Actionobject->add_task(
@@ -114,6 +133,7 @@ TEST_F(S3ActionTest, TasklistRun) {
 }
 
 TEST_F(S3ActionTest, RollbacklistRun) {
+  ptr_s3Actionobject->set_defaults();
   ptr_s3Actionobject->add_task_rollback(
       std::bind(&S3ActionTest::func_callback_one, this));
   ptr_s3Actionobject->add_task_rollback(
@@ -127,4 +147,40 @@ TEST_F(S3ActionTest, RollbacklistRun) {
   EXPECT_TRUE(call_count_one == 1);
   ptr_s3Actionobject->rollback_next();
   EXPECT_EQ(1, ptr_s3Actionobject->response_called);
+}
+
+TEST_F(S3ActionTest, OutOfMemoryTestForGetObject) {
+  EXPECT_CALL(*(ptr_s3Actionobject->profile),
+              we_have_enough_memory_for_get_obj())
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(*(ptr_s3Actionobject->profile),
+              we_have_enough_memory_for_put_obj())
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*ptr_mock_request, get_api_type())
+      .WillRepeatedly(Return(S3ApiType::object));
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+      .WillRepeatedly(Return(S3HttpVerb::GET));
+
+  EXPECT_CALL(*ptr_mock_request, respond_retry_after(Eq(1))).Times(1);
+
+  ptr_s3Actionobject->start();
+}
+
+TEST_F(S3ActionTest, OutOfMemoryTestForPutObject) {
+  EXPECT_CALL(*(ptr_s3Actionobject->profile),
+              we_have_enough_memory_for_get_obj())
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*(ptr_s3Actionobject->profile),
+              we_have_enough_memory_for_put_obj())
+      .WillRepeatedly(Return(false));
+
+  EXPECT_CALL(*ptr_mock_request, get_api_type())
+      .WillRepeatedly(Return(S3ApiType::object));
+  EXPECT_CALL(*ptr_mock_request, http_verb())
+      .WillRepeatedly(Return(S3HttpVerb::PUT));
+
+  EXPECT_CALL(*ptr_mock_request, respond_retry_after(Eq(1))).Times(1);
+
+  ptr_s3Actionobject->start();
 }

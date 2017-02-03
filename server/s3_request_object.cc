@@ -18,11 +18,12 @@
  * Original creation date: 1-Oct-2015
  */
 
-#include "s3_request_object.h"
 #include <evhttp.h>
 #include <string>
+
 #include "s3_error_codes.h"
 #include "s3_option.h"
+#include "s3_request_object.h"
 #include "s3_stats.h"
 
 extern S3Option* g_option_instance;
@@ -367,16 +368,40 @@ void S3RequestObject::set_api_type(S3ApiType api_type) {
 
 S3ApiType S3RequestObject::get_api_type() { return s3_api_type; }
 
+void S3RequestObject::respond_error(
+    std::string error_code, const std::map<std::string, std::string>& headers) {
+  if (client_connected()) {
+    S3Error error(error_code, get_request_id(), get_object_uri());
+    std::string& response_xml = error.to_xml();
+    set_out_header_value("Content-Type", "application/xml");
+    set_out_header_value("Content-Length",
+                         std::to_string(response_xml.length()));
+    set_out_header_value("x-amzn-RequestId", request_id);
+    for (auto& header : headers) {
+      set_out_header_value(header.first.c_str(), header.second.c_str());
+    }
+    s3_log(S3_LOG_DEBUG, "Error response to client: [%s]",
+           response_xml.c_str());
+
+    send_response(error.get_http_status_code(), response_xml);
+  }
+}
+
 void S3RequestObject::respond_unsupported_api() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  respond_error("NotImplemented");
 
-  S3Error error("NotImplemented", get_request_id(), "");
-  std::string& response_xml = error.to_xml();
-  set_out_header_value("Content-Type", "application/xml");
-  set_out_header_value("Content-Length", std::to_string(response_xml.length()));
-  set_out_header_value("x-amzn-RequestId", request_id);
-
-  send_response(error.get_http_status_code(), response_xml);
   s3_stats_inc("unsupported_api_count");
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3RequestObject::respond_retry_after(int retry_after_in_secs) {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  std::map<std::string, std::string> headers;
+  headers["Retry-After"] = std::to_string(retry_after_in_secs);
+
+  respond_error("ServiceUnavailable", headers);
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
