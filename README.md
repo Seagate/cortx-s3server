@@ -46,9 +46,10 @@ int main() {
 
 ## How to Build S3 server?
 
-Fetch the third party dependencies.
+Fetch & Build the third party dependencies.
 ```sh
-./fetch_thirdparty.sh
+git submodule update --init --recursive
+./build_thirdparty.sh
 ```
 
 ## How to build S3 server?

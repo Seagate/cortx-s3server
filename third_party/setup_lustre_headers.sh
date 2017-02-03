@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh -xe
 
 rm -rf lustre-2.5.1-headers
 

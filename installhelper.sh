@@ -94,7 +94,7 @@ cp startauth.sh $AUTH_INSTALL_LOCATION/
 cp auth/s3authserver.service $SERVICE_FILE_LOCATION
 
 # Copy nodejs binary
-cp third_party/nodejs/node-v6.9.1-linux-x64/bin/node $NODEJS_DIR_LOCATION/
+#cp third_party/nodejs/s3_dist/bin/node $NODEJS_DIR_LOCATION/
 
 # Copy statsd & it's config files
 cp -R third_party/statsd/* $STATSD_DIR_LOCATION/
