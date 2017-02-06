@@ -27,13 +27,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -45,6 +47,8 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LdapConnectionManager.class, FaultPoints.class})
+@PowerMockIgnore({"javax.management.*"})
+@MockPolicy(Slf4jMockPolicy.class)
 public class LDAPUtilsTest {
 
     private LDAPConnection ldapConnection;
@@ -58,7 +62,7 @@ public class LDAPUtilsTest {
     }
 
     @Test
-    public void searchTest() throws LDAPException {
+    public void searchTest_DefaultBaseDn() throws LDAPException {
         // Arrange
         String baseDn = "dc=s3,dc=seagate,dc=com";
         String filter = "(cn=s3testuser)";
@@ -66,6 +70,23 @@ public class LDAPUtilsTest {
 
         // Act
         LDAPUtils.search(baseDn, 2, filter, attrs);
+
+        // Verify
+        verify(ldapConnection).search(baseDn, 2, filter, attrs, false);
+
+        verifyStatic();
+        LdapConnectionManager.releaseConnection(ldapConnection);
+    }
+
+    @Test
+    public void searchTest() throws LDAPException {
+        // Arrange
+        String baseDn = "ou=users,o=beta,ou=accounts,dc=s3,dc=seagate,dc=com";
+        String filter = "(&(path=/*)(objectclass=iamuser))";
+        String[] attrs = {"s3userid", "cn", "path", "createtimestamp"};
+
+        // Act
+        LDAPUtils.search(baseDn, LDAPConnection.SCOPE_SUB, filter, attrs);
 
         // Verify
         verify(ldapConnection).search(baseDn, 2, filter, attrs, false);

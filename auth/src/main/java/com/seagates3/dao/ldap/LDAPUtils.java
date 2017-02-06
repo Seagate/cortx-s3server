@@ -108,7 +108,7 @@ public class LDAPUtils {
                     throw new LDAPException();
                 }
 
-                ldapSearchResult = lc.search(BASE_DN, scope,
+                ldapSearchResult = lc.search(base, scope,
                         filter, attrs, false);
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while searching for entry. Cause: "
