@@ -101,7 +101,7 @@ Install build to /opt
 sudo ./makeinstall
 ```
 
-## How to build & install S3 server and Auth server using helper script
+## How to build & install third party libs, S3 server and Auth server using helper script
 ```sh
 ./rebuildall.sh
 ```

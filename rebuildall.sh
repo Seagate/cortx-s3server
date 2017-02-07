@@ -3,11 +3,12 @@
 set -e
 
 usage() {
-  echo 'Usage: ./rebuildall.sh [--no-check-code][--no-clean-build][--no-s3ut-build]'
+  echo 'Usage: ./rebuildall.sh [--no-thirdparty-build][--no-check-code][--no-clean-build][--no-s3ut-build]'
   echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build]'
   echo '                       [--no-s3mempoolut-build][--no-install] [--help]'
   echo 'Optional params as below:'
+  echo '          --no-thirdparty-build   : Do not build third party libs, Default (false)'
   echo '          --no-check-code         : Do not check code for formatting style, Default (false)'
   echo '          --no-clean-build        : Do not clean before build, Default (false)'
   echo '                                    Use this option for incremental build.'
@@ -24,12 +25,13 @@ usage() {
 }
 
 # read the options
-OPTS=`getopt -o h --long no-check-code,no-clean-build,no-s3ut-build,no-s3mempoolut-build,\
+OPTS=`getopt -o h --long no-thirdparty-build,no-check-code,no-clean-build,no-s3ut-build,no-s3mempoolut-build,\
 no-s3server-build,no-cloviskvscli-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
 no-install,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
+no_thirdparty_build=0
 no_check_code=0
 no_clean_build=0
 no_s3ut_build=0
@@ -43,6 +45,7 @@ no_install=0
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
+    --no-thirdparty-build) no_thirdparty_build=1; shift ;;
     --no-check-code) no_check_code=1; shift ;;
     --no-clean-build)no_clean_build=1; shift ;;
     --no-s3ut-build) no_s3ut_build=1; shift ;;
@@ -60,6 +63,11 @@ while true; do
 done
 
 set -x
+
+if [ $no_thirdparty_build -eq 0 ]
+then
+  ./build_thirdparty.sh
+fi
 
 if [ $no_check_code -eq 0 ]
 then
