@@ -31,7 +31,8 @@ git commit
 ```
 
 ## How to inform clang-format to ignore code for formatting
-If you don't want clang-format to work on a section of code then surround it with `// clang-format off` and `// clang-format on`
+If you don't want clang-format to work on a section of code then surround it
+with `// clang-format off` and `// clang-format on`
 ```cpp
 
 #include <iostream>
@@ -44,67 +45,112 @@ int main() {
 
 ```
 
-## How to Build S3 server?
+## How to Build & Install S3 server, Auth server, UTs & third party libs?
+Build steps for Dev environment and for release environment differ slightly.
+In case of Dev, we locally build the mero source and use the mero libs from
+the source code location. Whereas in case of Release, we assume that mero rpms
+are pre-installed and use mero libs from standard location.
 
-Fetch & Build the third party dependencies.
+Steps for Dev environment:
 ```sh
-git submodule update --init --recursive
-./build_thirdparty.sh
+./refresh_thirdparty.sh
+./rebuildall.sh --no-mero-rpm
+```
+The `./refresh_thirdparty.sh` command refreshes the third party source code.
+It will undo any changes made in third party submodules source code and will
+clone missing submodules. Normally after a fresh repo clone, this command
+needs to be executed only once.
+
+The `./rebuildall.sh --no-mero-rpm` command will build third party libs, S3
+server, Auth server, UTs etc. It will also install S3 server, Auth server &
+third party libs at `/opt/seagate` location. Note the option `--no-mero-rpm`
+passed to the command. It informs the script that mero source needs to be built
+and mero libs from the source code location would be used.
+Normally third party libs needs to be built only once after fresh repo clone.
+To skip building third party libs on subsequent runs of `./rebuildall.sh`,use
+`--no-thirdparty-build` option.
+```sh
+./rebuildall.sh --no-mero-rpm --no-thirdparty-build
 ```
 
-## How to build S3 server?
-Run Bazel build. For details see bazel BUILD file.
+Steps for Release environment:
+Make sure mero rpms are installed on the build machine before executing
+below commands.
 ```sh
-bazel build //:s3server --cxxopt="-std=c++11"
+./refresh_thirdparty.sh
+./rebuildall.sh
 ```
 
-## How to build Auth server?
+## How to run auth server (this current assumes all dependencies are on same local VM)
 ```sh
-cd auth
-mvn package
+sudo systemctl start s3authserver
 ```
 
-## How to build S3 server tests?
+## How to stop auth server (this current assumes all dependencies are on same local VM)
 ```sh
-bazel build //:s3ut --cxxopt="-std=c++11"
+sudo systemctl stop s3authserver
 ```
 
-## How to run S3 server Unit tests?
+## How to start/stop single instance of S3 server in Dev environment for testing?
+Execute below command from `s3server` top level directory. Before executing below
+commands, make sure that S3 Server, Auth server, third party libs etc are  built
+& installed using `./rebuildall.sh --no-mero-rpm` command. Also make sure S3 Auth
+server and Mero services are up & running.
 ```sh
-bazel test //:s3ut --cxxopt="-std=c++11"
-```
-or
-```sh
-bazel-bin/s3ut
+sudo ./dev-starts3.sh
 ```
 
-## How to run S3 server System tests?
+To stop S3 server in Dev environment, use below command
 ```sh
-cd st/clitests/
-cat readme
+sudo ./dev-stops3.sh
 ```
 
 ## How to run Auth server tests?
 ```sh
+cd auth
 mvn test
+cd -
 ```
+
+## How to run S3 server Unit tests in Dev environment?
+```sh
+./runalltest.sh --no-mero-rpm --no-st-run
+```
+Above command runs S3 server UTs. Note the option `--no-mero-rpm` passed
+to the command. It informs the script to use mero libs from the source code
+location at the run time. In case of Release environment, simply skip passing
+the option to the script.
 
 ## How to run S3 server standard (ST + UT) tests?
-Read above steps to setup and build ST + UT
+Python virtual env needs to be setup to run the STs. This is a one time step
+after fresh repo clone.
 ```sh
-./runalltest.sh
+cd st/clitests
+./setup.sh
+cd ../../
+```
+The `./setup.sh` script will display few entries to be added to the `/etc/hosts`
+file. Go ahead and add those entries.
+If you are not running as root then add user to /etc/sudoers file as below:
+```sh
+sudo visudo
+# Find the line `root ALL=(ALL) ALL`, add following line after current line:
+<user_name> ALL=(ALL) NOPASSWD:ALL
+# Warning: This gives super user privilege to all commands when invoked as sudo.
+
+# Now add s3server binary path to sudo secure path
+# Find line with variable `secure_path`, append below to the varible
+:/opt/seagate/s3/bin
 ```
 
-## How to install S3 server and Auth server
-Install build to /opt
+Now setup to run STs is complete. Other details of ST setup can be found at
+`st/clitests/readme`.
+Use below command to run (ST + UT) tests in Dev environment.
 ```sh
-sudo ./makeinstall
+./runalltest.sh --no-mero-rpm
 ```
-
-## How to build & install third party libs, S3 server and Auth server using helper script
-```sh
-./rebuildall.sh
-```
+In case of Release environment, simply skip passing the option `--no-mero-rpm` to
+the script.
 
 ## How to run single s3 service(this current assumes all dependencies are on same local VM)
 ```sh
@@ -139,16 +185,6 @@ sudo systemctl stop s3server
 ## How to see status of s3 service
 ```sh
 sudo /opt/seagate/s3/statuss3.sh
-```
-
-## How to run auth server (this current assumes all dependencies are on same local VM)
-```sh
-sudo systemctl start s3authserver
-```
-
-## How to stop auth server (this current assumes all dependencies are on same local VM)
-```sh
-sudo systemctl stop s3authserver
 ```
 
 
@@ -187,7 +223,7 @@ openssl pkcs12 -in s3_auth.jks.p12 -out s3_auth.jks.pem
 openssl x509 -in seagates3.pem -out seagates3.crt
 ```
 
-## RPM builds - For S3 deployment you need 3 rpms, libuv, libcassandra, and s3 server
+## How to generate S3 server RPM
 Following dependencies are required to build rpms.
 ```sh
 yum install ruby
@@ -195,21 +231,13 @@ yum install ruby-devel
 gem install bundler
 gem install fpm
 ```
-
-Generate RPMs
+To generate s3server RPMs, follow build & install steps from above section
+`Steps for Release environment`. After that execute below command:
 ```sh
-cd third_party
-./setup_libuv.sh
-# Above should generate a rpm file inside libuv
-./setup_libcassandra.sh
-# Above should generate a rpm file inside cpp-driver
-cd ..
-
-# Ensure you have run makeinstall to create necessary S3 layout for deployment in /opt/seagate
 ./makerpm
 # Above should generate a rpm file in current folder
-
 ```
+
 ### How to get unit test code coverage for Authserver?
 ```sh
 cd auth

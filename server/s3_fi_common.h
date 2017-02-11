@@ -34,7 +34,6 @@
 
 EXTERN_C_BLOCK_BEGIN
 #include "lib/finject.h"
-#include "lib/finject_internal.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h" /* ENABLE_FAULT_INJECTION */
@@ -45,6 +44,8 @@ typedef struct m0_fi_fault_point s3_fp;
 #define S3_MODULE_NAME "UNKNOWN"
 
 #ifdef ENABLE_FAULT_INJECTION
+#include "lib/finject_internal.h"
+
 /**
  * Creates and checks fault point in code, identified by "tag"
  *

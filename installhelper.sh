@@ -22,9 +22,11 @@ LOG_DIR_LOCATION=$INSTALL_PREFIX/var/log/seagate
 STATSD_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/statsd
 NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/nodejs
 
+rm -rf $AUTH_INSTALL_LOCATION
+rm -rf $S3_INSTALL_LOCATION
+
 mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $S3_INSTALL_LOCATION/bin
-mkdir -p $S3_INSTALL_LOCATION/lib
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/libxml2
 mkdir -p $S3_INSTALL_LOCATION/libyaml-cpp/lib
@@ -35,10 +37,6 @@ mkdir -p $LOG_DIR_LOCATION/s3
 mkdir -p $LOG_DIR_LOCATION/auth
 mkdir -p $STATSD_DIR_LOCATION
 mkdir -p $NODEJS_DIR_LOCATION
-
-# Copy over the mero libs
-cp -P third_party/mero/mero/.libs/libmero.so* $S3_INSTALL_LOCATION/lib/
-cp -P third_party/mero/extra-libs/gf-complete/src/.libs/libgf_complete.so* $S3_INSTALL_LOCATION/lib/
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/

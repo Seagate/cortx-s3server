@@ -5,10 +5,8 @@
 
 cd libevent
 
-# discard previously applied patch
-git checkout .
 # Apply the libevent patch for memory pool support
-git apply ../../patches/libevent.patch
+patch -f -p1 < ../../patches/libevent.patch
 
 INSTALL_DIR=`pwd`/s3_dist
 rm -rf $INSTALL_DIR

@@ -93,6 +93,13 @@ How to run?
   - Find line with variable "secure_path". Edit to add below path
   - /opt/seagate/s3/bin
 - cd to clitests directory
+- Note: For Dev environment, we use mero libs built from the source code. So before executing
+  standalone systems tests or runallsystest.sh, export LD_LIBRARY_PATH variable pointing it
+  to the source code mero libs location as below:
+  # export LD_LIBRARY_PATH="$(pwd)/../../third_party/mero/mero/.libs/:$(pwd)/../../third_party/mero/extra-libs/gf-complete/src/.libs/"
+
+  After the tests are done, unset the LD_LIBRARY_PATH variable as below:
+  # unset LD_LIBRARY_PATH
 - To verify setup and execute standard systests (auth, s3cmd, jclient and jcloud )
 - run runallsystest.sh
 - To execute system tests as standalone
@@ -100,6 +107,7 @@ How to run?
 - run $python s3cmd_spec.py
 - run $python jclient_spec.py
 - run $python jcloud_spec.py
+- To unset the LD_LIBRARY_PATH variable run `unset LD_LIBRARY_PATH`
 
 Notes:
  - To get execution time in milli seconds (parsable format), make the

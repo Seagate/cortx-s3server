@@ -5,10 +5,8 @@
 
 cd libevhtp
 
-# discard previously applied patch
-git checkout .
 # Apply the libevhtp patch
-git apply ../../patches/libevhtp.patch
+patch -f -p1 < ../../patches/libevhtp.patch
 
 INSTALL_DIR=`pwd`/s3_dist
 rm -rf $INSTALL_DIR

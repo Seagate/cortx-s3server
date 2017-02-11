@@ -3,11 +3,14 @@
 set -e
 
 usage() {
-  echo 'Usage: ./rebuildall.sh [--no-thirdparty-build][--no-check-code][--no-clean-build][--no-s3ut-build]'
+  echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--no-thirdparty-build][--no-check-code]'
+  echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build]'
   echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
-  echo '                       [--no-jclient-build][--no-jcloudclient-build]'
-  echo '                       [--no-s3mempoolut-build][--no-install] [--help]'
+  echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install][--help]'
   echo 'Optional params as below:'
+  echo '          --no-mero-rpm           : Use mero libs from source code (third_party/mero) location'
+  echo '                                    Default is (false) i.e. use mero libs from pre-installed'
+  echo '                                    mero rpm location (/usr/lib64)'
   echo '          --no-thirdparty-build   : Do not build third party libs, Default (false)'
   echo '          --no-check-code         : Do not check code for formatting style, Default (false)'
   echo '          --no-clean-build        : Do not clean before build, Default (false)'
@@ -25,12 +28,13 @@ usage() {
 }
 
 # read the options
-OPTS=`getopt -o h --long no-thirdparty-build,no-check-code,no-clean-build,no-s3ut-build,no-s3mempoolut-build,\
-no-s3server-build,no-cloviskvscli-build,no-auth-build,no-jclient-build,no-jcloudclient-build,\
-no-install,help -n 'rebuildall.sh' -- "$@"`
+OPTS=`getopt -o h --long no-mero-rpm,no-thirdparty-build,no-check-code,no-clean-build,\
+no-s3ut-build,no-s3mempoolut-build,no-s3server-build,no-cloviskvscli-build,no-auth-build,\
+no-jclient-build,no-jcloudclient-build,no-install,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
+no_mero_rpm=0
 no_thirdparty_build=0
 no_check_code=0
 no_clean_build=0
@@ -45,6 +49,7 @@ no_install=0
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
+    --no-mero-rpm) no_mero_rpm=1; shift ;;
     --no-thirdparty-build) no_thirdparty_build=1; shift ;;
     --no-check-code) no_check_code=1; shift ;;
     --no-clean-build)no_clean_build=1; shift ;;
@@ -64,14 +69,32 @@ done
 
 set -x
 
-if [ $no_thirdparty_build -eq 0 ]
-then
-  ./build_thirdparty.sh
-fi
-
 if [ $no_check_code -eq 0 ]
 then
   ./checkcodeformat.sh
+fi
+
+if [ $no_thirdparty_build -eq 0 ]
+then
+  if [ $no_mero_rpm -eq 0 ]
+  then
+    ./build_thirdparty.sh
+  else
+    ./build_thirdparty.sh --no-mero-rpm
+  fi
+fi
+
+if [ $no_mero_rpm -eq 0 ]
+then
+  # use mero libs from pre-installed mero rpm location
+  MERO_INC_="MERO_INC=/usr/include/mero/"
+  MERO_LIB_="MERO_LIB=/usr/lib64/"
+  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=/usr/lib64/"
+else
+  # use mero libs from source code
+  MERO_INC_="MERO_INC=`pwd`/third_party/mero/"
+  MERO_LIB_="MERO_LIB=`pwd`/third_party/mero/mero/.libs/"
+  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=`pwd`/third_party/mero/extra-libs/gf-complete/src/.libs/"
 fi
 
 if [ $no_clean_build -eq 0 ]
@@ -86,8 +109,11 @@ then
 fi
 if [ $no_s3ut_build -eq 0 ]
 then
-  bazel build //:s3ut --cxxopt="-std=c++11"
-  bazel build //:s3utdeathtests --cxxopt="-std=c++11"
+  bazel build //:s3ut --cxxopt="-std=c++11" --define $MERO_INC_ \
+                      --define $MERO_LIB_ --define $MERO_EXTRA_LIB_
+
+  bazel build //:s3utdeathtests --cxxopt="-std=c++11" --define $MERO_INC_ \
+                                --define $MERO_LIB_ --define $MERO_EXTRA_LIB_
 fi
 if [ $no_s3mempoolut_build -eq 0 ]
 then
@@ -95,11 +121,13 @@ then
 fi
 if [ $no_s3server_build -eq 0 ]
 then
-  bazel build //:s3server --cxxopt="-std=c++11"
+  bazel build //:s3server --cxxopt="-std=c++11" --define $MERO_INC_ \
+                          --define $MERO_LIB_ --define $MERO_EXTRA_LIB_
 fi
 if [ $no_cloviskvscli_build -eq 0 ]
 then
-  bazel build //:cloviskvscli --cxxopt="-std=c++11"
+  bazel build //:cloviskvscli --cxxopt="-std=c++11" --define $MERO_INC_ \
+                              --define $MERO_LIB_ --define $MERO_EXTRA_LIB_
 fi
 
 if [ $no_auth_build -eq 0 ]
