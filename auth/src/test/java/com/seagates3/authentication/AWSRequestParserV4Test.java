@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -45,6 +47,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(AuthServerConfig.class)
+@MockPolicy(Slf4jMockPolicy.class)
 public class AWSRequestParserV4Test {
     private AWSRequestParserV4 awsRequestParserV4;
 
@@ -55,8 +58,6 @@ public class AWSRequestParserV4Test {
 
     @Test(expected = NullPointerException.class)
     public void parseTest_ShouldThrowExceptionIfNullParamPassed() {
-        // replace this test with catch-exception paradigm
-
         // Arrange
         FullHttpRequest fullHttpRequest = mock(FullHttpRequest.class);
 

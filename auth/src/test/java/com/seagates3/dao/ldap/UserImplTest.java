@@ -37,11 +37,14 @@ import org.mockito.Mockito;
 import static org.mockito.Mockito.times;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LDAPUtils.class, UserImpl.class})
+@MockPolicy(Slf4jMockPolicy.class)
 public class UserImplTest {
 
     private final String FIND_FILTER = "(cn=s3testuser)";

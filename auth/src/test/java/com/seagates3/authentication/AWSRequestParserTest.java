@@ -36,7 +36,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import com.seagates3.authserver.AuthServerConfig;
 
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

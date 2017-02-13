@@ -22,8 +22,7 @@ import com.google.gson.JsonSyntaxException;
 import com.seagates3.model.SAMLMetadataTokens;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.*;
 
 public class JSONUtilTest {
 

@@ -39,11 +39,14 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LDAPUtils.class, SAMLProviderImpl.class, JSONUtil.class})
+@MockPolicy(Slf4jMockPolicy.class)
 public class SAMLProviderImplTest {
 
     private final String ACCOUNT_ID = "12345";

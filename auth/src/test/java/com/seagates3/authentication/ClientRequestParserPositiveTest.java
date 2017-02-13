@@ -31,8 +31,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.Map;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 @RunWith(PowerMockRunner.class)

@@ -22,11 +22,7 @@ import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class BinaryUtilTest {
 
@@ -63,7 +59,6 @@ public class BinaryUtilTest {
         String expected = "ti2GeitodN_9LdQC-5EpYHZsuDreYTM2X11RQAMRyWg";
 
         String result = BinaryUtil.base64EncodedHash(input);
-        System.out.println(result);
 
         assertNotNull(result);
         assertEquals(expected, result);
@@ -84,7 +79,8 @@ public class BinaryUtilTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void hmacSHA256Test_Null_ShouldThrowIllegalArgumentException() throws UnsupportedEncodingException {
+    public void hmacSHA256Test_Null_ShouldThrowIllegalArgumentException()
+            throws UnsupportedEncodingException {
         byte[] key = null;
         byte[] data = "The Great A.I. Awakening".getBytes("UTF-8");
 
@@ -105,7 +101,8 @@ public class BinaryUtilTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void hmacSHA1Test_Null_ShouldThrowIllegalArgumentException() throws UnsupportedEncodingException {
+    public void hmacSHA1Test_Null_ShouldThrowIllegalArgumentException()
+            throws UnsupportedEncodingException {
         byte[] key = null;
         byte[] data = "The Great A.I. Awakening".getBytes("UTF-8");
 
