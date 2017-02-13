@@ -385,6 +385,60 @@ public class AccessKeyControllerTest {
     }
 
     @Test
+    public void CreateAccessKey_AccessKeyCreatedWithRequestorName_ReturnSuccessResponse()
+            throws Exception {
+        Requestor requestor = new Requestor();
+        requestor.setAccount(ACCOUNT);
+        requestor.setName(REQUESTOR_NAME);
+
+        Map<String, String> requestBody = new TreeMap<>(
+                String.CASE_INSENSITIVE_ORDER);
+
+        userDAO = Mockito.mock(UserDAO.class);
+        accessKeyDAO = Mockito.mock(AccessKeyDAO.class);
+
+        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.USER
+        );
+        PowerMockito.doReturn(accessKeyDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.ACCESS_KEY
+        );
+
+        accessKeyController = new AccessKeyController(requestor, requestBody);
+
+        User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName(USER_NAME);
+        user.setId("123");
+
+        Mockito.doReturn(user).when(userDAO).find(ACCOUNT_NAME, REQUESTOR_NAME);
+        Mockito.doReturn(0).when(accessKeyDAO).getCount("123");
+        Mockito.doNothing().when(accessKeyDAO).save(Mockito.any(AccessKey.class));
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<CreateAccessKeyResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<CreateAccessKeyResult>"
+                + "<AccessKey>"
+                + "<UserName>s3requestor</UserName>"
+                + "<AccessKeyId>AKIAKTEST</AccessKeyId>"
+                + "<Status>Active</Status>"
+                + "<SecretAccessKey>123ASg/a-3</SecretAccessKey>"
+                + "</AccessKey>"
+                + "</CreateAccessKeyResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>0000</RequestId>"
+                + "</ResponseMetadata>"
+                + "</CreateAccessKeyResponse>";
+
+        ServerResponse response = accessKeyController.create();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.CREATED,
+                response.getResponseStatus());
+    }
+
+    @Test
     public void DeleteAccessKey_AccessKeySearchFailed_ReturnInternalServerError()
             throws Exception {
         createAccessKeyController_DeleteAPI(null);
@@ -736,6 +790,70 @@ public class AccessKeyControllerTest {
                 + "<AccessKeyMetadata>"
                 + "<member>"
                 + "<UserName>s3testuser</UserName>"
+                + "<AccessKeyId>AKIAKTEST</AccessKeyId>"
+                + "<Status>Active</Status>"
+                + "<createDate>2016-01-06'T'10:15:11:000+530</createDate>"
+                + "</member>"
+                + "</AccessKeyMetadata>"
+                + "<IsTruncated>false</IsTruncated>"
+                + "</ListAccessKeysResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>0000</RequestId>"
+                + "</ResponseMetadata>"
+                + "</ListAccessKeysResponse>";
+
+        ServerResponse response = accessKeyController.list();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                response.getResponseStatus());
+    }
+
+    @Test
+    public void ListAccessKey_UsingRequestorName_AccessKeysFound_ReturnList()
+            throws Exception {
+        Requestor requestor = new Requestor();
+        requestor.setAccount(ACCOUNT);
+        requestor.setName(REQUESTOR_NAME);
+
+        Map<String, String> requestBody = new TreeMap<>(
+                String.CASE_INSENSITIVE_ORDER);
+
+        userDAO = Mockito.mock(UserDAO.class);
+        accessKeyDAO = Mockito.mock(AccessKeyDAO.class);
+
+        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.USER
+        );
+        PowerMockito.doReturn(accessKeyDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.ACCESS_KEY
+        );
+
+        accessKeyController = new AccessKeyController(requestor, requestBody);
+        User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName(USER_NAME);
+        user.setId("123");
+
+        AccessKey accessKey = new AccessKey();
+        accessKey.setId(ACCESS_KEY_ID);
+        accessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+        accessKey.setCreateDate("2016-01-06'T'10:15:11:000+530");
+
+        AccessKey[] accessKeyList = new AccessKey[]{accessKey};
+
+        Mockito.when(userDAO.find(ACCOUNT_NAME, REQUESTOR_NAME))
+                .thenReturn(user);
+        Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAll(user);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ListAccessKeysResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<ListAccessKeysResult>"
+                + "<UserName>s3requestor</UserName>"
+                + "<AccessKeyMetadata>"
+                + "<member>"
+                + "<UserName>s3requestor</UserName>"
                 + "<AccessKeyId>AKIAKTEST</AccessKeyId>"
                 + "<Status>Active</Status>"
                 + "<createDate>2016-01-06'T'10:15:11:000+530</createDate>"

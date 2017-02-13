@@ -304,6 +304,49 @@ public class UserControllerTest {
     }
 
     @Test
+    public void CreateUser_NewUserCreatedWithDefaultPath_ReturnCreateResponse()
+            throws Exception {
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<CreateUserResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<CreateUserResult>"
+                + "<User>"
+                + "<Path>/</Path>"
+                + "<UserName>s3testuser</UserName>"
+                + "<UserId>987654</UserId>"
+                + "<Arn>arn:aws:iam::1:user/s3testuser</Arn>"
+                + "</User>"
+                + "</CreateUserResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>0000</RequestId>"
+                + "</ResponseMetadata>"
+                + "</CreateUserResponse>";
+
+        Requestor requestor = new Requestor();
+        requestor.setAccount(ACCOUNT);
+        Map<String, String> requestBody = new TreeMap<>(
+                String.CASE_INSENSITIVE_ORDER);
+        requestBody.put("UserName", "s3testuser");
+        userDAO = Mockito.mock(UserDAO.class);
+        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.USER
+        );
+        userController = new UserController(requestor, requestBody);
+        User user = new User();
+        user.setAccountName("s3test");
+        user.setName("s3testuser");
+        Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+        Mockito.doNothing().when(userDAO).save(user);
+
+        ServerResponse response = userController.create();
+
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.CREATED,
+                response.getResponseStatus());
+    }
+
+    @Test
     public void CreateUser_NewUserCreatedWithPath_ReturnCreateResponse()
             throws Exception {
         UserControllerTest.this.createUserController_CreateAPI("/test");
@@ -561,6 +604,49 @@ public class UserControllerTest {
                 + "</ListUsersResponse>";
 
         ServerResponse response = userController.list();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    }
+
+
+    @Test
+    public void ListUser_UserListEmptyWithPathPrefix_ReturnListUserResponse()
+            throws Exception {
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ListUsersResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<ListUsersResult>"
+                + "<Users/>"
+                + "<IsTruncated>false</IsTruncated>"
+                + "</ListUsersResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>0000</RequestId>"
+                + "</ResponseMetadata>"
+                + "</ListUsersResponse>";
+
+        Requestor requestor = new Requestor();
+        requestor.setAccount(ACCOUNT);
+        Map<String, String> requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        requestBody.put("PathPrefix", "/");
+
+        userDAO = Mockito.mock(UserDAO.class);
+        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.USER
+        );
+        userController = new UserController(requestor, requestBody);
+        User expectedUser = new User();
+        expectedUser.setAccountName("s3test");
+        expectedUser.setName("s3testuser");
+        expectedUser.setId("123");
+        expectedUser.setUserType("iamUser");
+        expectedUser.setPath("/");
+        expectedUser.setCreateDate("2016-01-06T10:15:11.000+0530");
+        User[] expectedUserList = new User[0];
+        Mockito.doReturn(expectedUserList).when(userDAO).findAll("s3test", "/");
+
+        ServerResponse response = userController.list();
+
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
