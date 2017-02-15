@@ -46,7 +46,6 @@ if [ $no_mero_rpm -eq 1 ]
 then
   ./build_mero.sh
 fi
-#./build_nodejs.sh
 
 cd $S3_SRC_FOLDER
 

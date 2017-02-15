@@ -33,12 +33,8 @@
 	ignore = dirty
 [submodule "third_party/mero"]
 	path = third_party/mero
-	url = http://es-gerrit.xyus.xyratex.com:8080/mero
-	branch = dev/clovis2
-	ignore = dirty
-[submodule "third_party/nodejs"]
-	path = third_party/nodejs
-	url = https://github.com/nodejs/node.git
+	url = ../mero
+	branch = master
 	ignore = dirty
 [submodule "third_party/statsd"]
 	path = third_party/statsd
