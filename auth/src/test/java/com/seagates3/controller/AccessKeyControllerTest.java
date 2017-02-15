@@ -69,7 +69,7 @@ public class AccessKeyControllerTest {
      * Create Access Key controller object and mock AccessKeyDAO and UserDAO for
      * create Access Key API.
      *
-     * @param path User path attribute.
+     * @param userName User name attribute.
      * @throws Exception
      */
     private void createAccessKeyController_CreateAPI(String userName)
@@ -103,7 +103,7 @@ public class AccessKeyControllerTest {
      * Create Access Key controller object and mock AccessKeyDAO and UserDAO for
      * Delete Access Key API.
      *
-     * @param path User path attribute.
+     * @param userName User name attribute.
      * @throws Exception
      */
     private void createAccessKeyController_DeleteAPI(String userName)
@@ -136,7 +136,7 @@ public class AccessKeyControllerTest {
      * Create Access Key controller object and mock AccessKeyDAO and UserDAO for
      * List Access Key API.
      *
-     * @param path User path attribute.
+     * @param userName User name attribute.
      * @throws Exception
      */
     private void createAccessKeyController_ListAPI(String userName)
@@ -170,7 +170,7 @@ public class AccessKeyControllerTest {
      * Create Access Key controller object and mock AccessKeyDAO and UserDAO for
      * List Access Key API.
      *
-     * @param path User path attribute.
+     * @param userName User name attribute.
      * @throws Exception
      */
     private void createAccessKeyController_UpdateAPI(String userName)
@@ -205,10 +205,8 @@ public class AccessKeyControllerTest {
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
 
-        PowerMockito.doReturn(ACCESS_KEY_ID).when(KeyGenUtil.class,
-                "createUserAccessKeyId");
-        PowerMockito.doReturn(SECRET_KEY).when(KeyGenUtil.class,
-                "createUserSecretKey", Mockito.anyString());
+        PowerMockito.doReturn(ACCESS_KEY_ID).when(KeyGenUtil.class, "createUserAccessKeyId");
+        PowerMockito.doReturn(SECRET_KEY).when(KeyGenUtil.class, "generateSecretKey");
     }
 
     @Test

@@ -42,15 +42,11 @@ public class KeyGenUtilTest {
 
     @Test
     public void createUserSecretKeyTest() {
-        String secretKey = KeyGenUtil.createUserSecretKey("SomeRandomString");
+        String secretKey = KeyGenUtil.generateSecretKey();
 
         assertNotNull(secretKey);
         assertFalse(secretKey.startsWith("-") || secretKey.startsWith("_"));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void createUserSecretKeyTest_ShouldThrowException() {
-        KeyGenUtil.createUserSecretKey(null);
+        assertEquals(40, secretKey.length());
     }
 
     @Test

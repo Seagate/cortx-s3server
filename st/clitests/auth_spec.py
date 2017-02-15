@@ -39,7 +39,7 @@ def account_tests():
     account_args['Email'] = 'test@seagate.com'
 
     test_msg = "Create account s3test"
-    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w-]*$"
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
 
@@ -122,7 +122,7 @@ def accesskey_tests():
     access_key_args = {}
 
     test_msg = 'Create access key (user name not provided)'
-    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w-]*, Status = [\w]*$"
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
     result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
     result.command_should_match_pattern(accesskey_response_pattern)
 
@@ -258,7 +258,7 @@ def get_federation_token_test():
     federation_token_args['Name'] = 's3root'
 
     test_msg = 'Get Federation Token'
-    response_pattern = "FederatedUserId = [\S]*, AccessKeyId = [\w-]*, SecretAccessKey = [\w-]*, SessionToken = [\w-]*$"
+    response_pattern = "FederatedUserId = [\S]*, AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, SessionToken = [\w/+]*$"
     result = AuthTest(test_msg).get_federation_token(**federation_token_args).execute_test()
     result.command_should_match_pattern(response_pattern)
 

@@ -311,9 +311,7 @@ public class AccountControllerTest {
                 "createUserAccessKeyId"
         );
 
-        PowerMockito.doReturn("htuspscae/123").when(KeyGenUtil.class,
-                "createUserSecretKey", any(String.class)
-        );
+        PowerMockito.doReturn("htuspscae/123").when(KeyGenUtil.class, "generateSecretKey");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));

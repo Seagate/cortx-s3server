@@ -132,12 +132,9 @@ public class AccountController extends AbstractController {
      */
     private AccessKey createRootAccessKey(User root) throws DataAccessException {
         AccessKey accessKey = new AccessKey();
-
-        String strToEncode = root.getId() + System.currentTimeMillis();
-
         accessKey.setUserId(root.getId());
         accessKey.setId(KeyGenUtil.createUserAccessKeyId());
-        accessKey.setSecretKey(KeyGenUtil.createUserSecretKey(strToEncode));
+        accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
         accessKeyDAO.save(accessKey);

@@ -36,15 +36,9 @@ public class AccessKeyService {
                 DAOResource.ACCESS_KEY);
         AccessKey accessKey = new AccessKey();
         accessKey.setUserId(user.getId());
-
-        String strToEncode = user.getId() + System.currentTimeMillis();
-
-        accessKey.setUserId(user.getId());
         accessKey.setId(KeyGenUtil.createUserAccessKeyId());
-        accessKey.setSecretKey(KeyGenUtil.createUserSecretKey(strToEncode));
-
-        strToEncode = strToEncode + System.currentTimeMillis();
-        accessKey.setToken(KeyGenUtil.createUserSecretKey(strToEncode));
+        accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
+        accessKey.setToken(KeyGenUtil.generateSecretKey());
         accessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
 
         long currentTime = DateUtil.getCurrentTime();

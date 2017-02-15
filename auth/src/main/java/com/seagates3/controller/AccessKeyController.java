@@ -82,11 +82,9 @@ public class AccessKeyController extends AbstractController {
         }
 
         AccessKey accessKey = new AccessKey();
-        String strToEncode = user.getId() + System.currentTimeMillis();
-
         accessKey.setUserId(user.getId());
         accessKey.setId(KeyGenUtil.createUserAccessKeyId());
-        accessKey.setSecretKey(KeyGenUtil.createUserSecretKey(strToEncode));
+        accessKey.setSecretKey(KeyGenUtil.generateSecretKey());
         accessKey.setStatus(AccessKeyStatus.ACTIVE);
 
         try {

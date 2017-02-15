@@ -146,27 +146,31 @@ public class BinaryUtil {
      * Return a base 64 encoded UUID.
      */
     public static String base64UUID() {
+        return encodeToUrlSafeBase64String(getRandomUUIDAsByteArray());
+    }
+
+    /*
+     * Generate random UUID
+     */
+    public static byte[] getRandomUUIDAsByteArray() {
         UUID uid = UUID.randomUUID();
         ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-
         bb.putLong(uid.getMostSignificantBits());
         bb.putLong(uid.getLeastSignificantBits());
 
-        return encodeToUrlSafeBase64String(bb.array());
+        return bb.array();
     }
 
-    /**
-     *
-     * @param text
-     * @return
+    /*
+     * Encode byte array into url safe base64 string
      */
     public static String encodeToUrlSafeBase64String(byte[] text) {
         return Base64.encodeBase64URLSafeString(text);
     }
+
     /*
      * Return true if the text is base 64 encoded.
      */
-
     public static Boolean isBase64Encoded(String text) {
         return Base64.isBase64(text);
     }

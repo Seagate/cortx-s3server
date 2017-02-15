@@ -18,6 +18,8 @@
  */
 package com.seagates3.util;
 
+import java.util.Random;
+
 public class KeyGenUtil {
     /*
      * TODO
@@ -33,9 +35,10 @@ public class KeyGenUtil {
      */
     public static String createUserId() {
         String id = BinaryUtil.base64UUID().substring(0, 22);
-        while (id.startsWith("-") || id.startsWith("_")) {
-            id = BinaryUtil.base64UUID().substring(0, 22);
+        if (id.startsWith("-") || id.startsWith("_")) {
+            id = getRandomChar() + id.substring(1);
         }
+
         return id;
     }
 
@@ -53,8 +56,8 @@ public class KeyGenUtil {
      */
     public static String createUserAccessKeyId() {
         String id = BinaryUtil.base64UUID().substring(0, 22);
-        while (id.startsWith("-") || id.startsWith("_")) {
-            id = BinaryUtil.base64UUID().substring(0, 22);
+        if (id.startsWith("-") || id.startsWith("_")) {
+            id = getRandomChar() + id.substring(1);
         }
 
         return id;
@@ -64,15 +67,12 @@ public class KeyGenUtil {
      * Generate a secret key for the user.The first character of the ID should
      * not be a hyphen or an underscore.
      *
-     * @param strToEncode
      * @return SecretKey
      */
-    public static String createUserSecretKey(String strToEncode) {
-        String secret_key = BinaryUtil.base64EncodedHash(strToEncode);
-        while (secret_key.startsWith("-") || secret_key.startsWith("_")) {
-            secret_key = BinaryUtil.base64UUID().substring(0, 22);
-        }
-        return secret_key.substring(0, 40);
+    public static String generateSecretKey() {
+        byte[] digest = BinaryUtil.hashSHA256(BinaryUtil.getRandomUUIDAsByteArray());
+
+        return BinaryUtil.encodeToBase64String(digest).substring(0, 40);
     }
 
     /**
@@ -83,8 +83,8 @@ public class KeyGenUtil {
      */
     public static String createSessionId(String strToEncode) {
         String id = BinaryUtil.base64EncodedHash(strToEncode);
-        while (id.startsWith("-") || id.startsWith("_")) {
-            id = BinaryUtil.base64UUID().substring(0, 22);
+        if (id.startsWith("-") || id.startsWith("_")) {
+            id = getRandomChar() + id.substring(1);
         }
 
         return id;
@@ -97,10 +97,21 @@ public class KeyGenUtil {
      */
     public static String createId() {
         String id = BinaryUtil.base64UUID().substring(0, 22);
-        while (id.startsWith("-") || id.startsWith("_")) {
-            id = BinaryUtil.base64UUID().substring(0, 22);
+        if (id.startsWith("-") || id.startsWith("_")) {
+            id = getRandomChar() + id.substring(1);
         }
 
         return id;
+    }
+
+    /**
+     * Generate random character
+     * @return random character in the range A..Z
+     */
+    private static char getRandomChar() {
+        Random random = new Random();
+        char c = (char)(random.nextInt(26) + 65);
+
+        return c;
     }
 }
