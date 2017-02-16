@@ -160,8 +160,9 @@ class S3ClovisReader {
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisReaderTest, Constructor);
-  FRIEND_TEST(S3ClovisReaderTest,
-              ReadObjectDataSuccessStatusAndSuccessCallback);
+  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataTest);
+  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataSuccessful);
+  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailed);
 };
 
 #endif
