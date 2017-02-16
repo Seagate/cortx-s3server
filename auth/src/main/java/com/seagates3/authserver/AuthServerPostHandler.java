@@ -26,6 +26,8 @@ import com.seagates3.controller.FaultPointsController;
 import com.seagates3.controller.IAMController;
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.FaultPointsResponseGenerator;
+import com.seagates3.response.generator.ResponseGenerator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -34,7 +36,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpVersion;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,8 +68,12 @@ public class AuthServerPostHandler {
         } else {
             ServerResponse serverResponse;
             String action = requestBody.get("Action");
+            if (action == null) {
+                LOGGER.debug("Request action can not be null.");
+                returnHTTPResponse(new ResponseGenerator().badRequest());
+                return;
+            }
             LOGGER.debug("Requested action: " + action);
-
             if (isFiRequest(action)) {
                 serverResponse = serveFiRequest(requestBody);
             } else {
@@ -83,40 +89,28 @@ public class AuthServerPostHandler {
      */
     private void returnHTTPResponse(ServerResponse requestResponse) {
         String responseBody = requestResponse.getResponseBody();
-        FullHttpResponse response;
-
-        try {
-            response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
-                    requestResponse.getResponseStatus(),
-                    Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
-            );
-
-            LOGGER.debug("Response sent successfully.");
-        } catch (UnsupportedEncodingException ex) {
-            response = null;
-        }
-
+        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
+                requestResponse.getResponseStatus(),
+                Unpooled.wrappedBuffer(responseBody.getBytes(StandardCharsets.UTF_8))
+        );
         response.headers().set(CONTENT_TYPE, "text/xml");
         response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
 
-        if (!keepAlive) {
-            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
-
-            LOGGER.debug("Connection closed.");
-        } else {
-            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
-            ctx.writeAndFlush(response);
-
-            LOGGER.debug("Connection kept alive.");
-        }
+        returnHTTPResponse(response);
     }
 
     private void returnHTTPResponse(FullHttpResponse response) {
         if (!keepAlive) {
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+
+            LOGGER.debug("Response sent successfully.");
+            LOGGER.debug("Connection closed.");
         } else {
             response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
             ctx.writeAndFlush(response);
+
+            LOGGER.debug("Response sent successfully.");
+            LOGGER.debug("Connection kept alive.");
         }
     }
 
@@ -130,17 +124,19 @@ public class AuthServerPostHandler {
     }
 
     private ServerResponse serveFiRequest(Map<String, String> requestBody) {
-        FaultPointsController faultPointsController = new FaultPointsController();
+        FaultPointsController faultPointsController;
         ServerResponse serverResponse;
 
         if (!AuthServerConfig.isFaultInjectionEnabled()) {
-            return faultPointsController.responseGenerator.badRequest("Invalid Request");
-        }
-
-        if (requestBody.get("Action").equals("InjectFault")) {
-            serverResponse = faultPointsController.set(requestBody);
+            serverResponse = new FaultPointsResponseGenerator()
+                    .badRequest("Fault injection is disabled. Invalid request.");
         } else {
-            serverResponse = faultPointsController.reset(requestBody);
+            faultPointsController = new FaultPointsController();
+            if (requestBody.get("Action").equals("InjectFault")) {
+                serverResponse = faultPointsController.set(requestBody);
+            } else {
+                serverResponse = faultPointsController.reset(requestBody);
+            }
         }
 
         return serverResponse;
