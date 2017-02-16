@@ -52,8 +52,12 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
   }
   MurmurHash3_x64_128(name, len, 0, &hash128_64);
 
-  // Reset the higher 8 bits, will be used by Mero
-  hash128_64[0] = hash128_64[0] & 0x00ffffffffffffff;
+  //
+  // Reset the higher 37 bits, will be used by Mero
+  // The lower 91 bits used by S3
+  // https://jts.seagate.com/browse/CASTOR-2155
+
+  hash128_64[0] = hash128_64[0] & 0x0000000007ffffff;
   tmp_uint128.u_hi = hash128_64[0];
   tmp_uint128.u_lo = hash128_64[1];
 
@@ -73,7 +77,7 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
     m0_uint128_add(&res, &reserved_range, &tmp_uint128);
     tmp_uint128.u_hi = res.u_hi;
     tmp_uint128.u_lo = res.u_lo;
-    tmp_uint128.u_hi = tmp_uint128.u_hi & 0x00ffffffffffffff;
+    tmp_uint128.u_hi = tmp_uint128.u_hi & 0x0000000007ffffff;
   }
   if (type == S3ClovisEntityType::index) {
     index_fid = M0_FID_TINIT('i', tmp_uint128.u_hi, tmp_uint128.u_lo);
