@@ -103,12 +103,12 @@ public class AccountControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accountController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -186,12 +186,12 @@ public class AccountControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -210,12 +210,12 @@ public class AccountControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>EntityAlreadyExists</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>EntityAlreadyExists</Code>"
                 + "<Message>The request was rejected because it attempted to "
-                + "create an account that already exists.</Message>"
+                + "create an account that already exists.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -235,12 +235,12 @@ public class AccountControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -261,12 +261,12 @@ public class AccountControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -288,12 +288,12 @@ public class AccountControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());

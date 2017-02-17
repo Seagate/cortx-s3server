@@ -91,13 +91,13 @@ public class AssumeRoleWithSAMLResponseGeneratorTest {
     public void testInvalidIdentityToken() {
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InvalidIdentityToken</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InvalidIdentityToken</Code>"
                 + "<Message>The web identity token that was passed could not "
                 + "be validated. Get a new identity token from the identity "
-                + "provider and then retry the request.</Message>"
+                + "provider and then retry the request.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         AssumeRoleWithSAMLResponseGenerator responseGenerator
                 = new AssumeRoleWithSAMLResponseGenerator();
@@ -112,13 +112,13 @@ public class AssumeRoleWithSAMLResponseGeneratorTest {
     public void testExpiredToken() {
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>ExpiredToken</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>ExpiredToken</Code>"
                 + "<Message>The web identity token that was passed is expired "
                 + "or is not valid. Get a new identity token from the identity "
-                + "provider and then retry the request.</Message>"
+                + "provider and then retry the request.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         AssumeRoleWithSAMLResponseGenerator responseGenerator
                 = new AssumeRoleWithSAMLResponseGenerator();
@@ -133,16 +133,16 @@ public class AssumeRoleWithSAMLResponseGeneratorTest {
     public void testIDPRejectedClaim() {
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>IDPRejectedClaim</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>IDPRejectedClaim</Code>"
                 + "<Message>The identity provider (IdP) reported that "
                 + "authentication failed. This might be because the claim is "
                 + "invalid.\nIf this error is returned for the "
                 + "AssumeRoleWithWebIdentity operation, it can also "
                 + "mean that the claim has expired or has been explicitly "
-                + "revoked.</Message>"
+                + "revoked.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         AssumeRoleWithSAMLResponseGenerator responseGenerator
                 = new AssumeRoleWithSAMLResponseGenerator();

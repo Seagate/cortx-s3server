@@ -219,12 +219,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -245,12 +245,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -274,12 +274,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -302,12 +302,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>AccessKeyQuotaExceeded</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>AccessKeyQuotaExceeded</Code>"
                 + "<Message>The request was rejected because the number of "
-                + "access keys allowed for the user has exceeded quota.</Message>"
+                + "access keys allowed for the user has exceeded quota.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -332,12 +332,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -447,12 +447,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -472,12 +472,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -500,12 +500,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -531,12 +531,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -563,11 +563,11 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>BadRequest</Code>"
-                + "<Message>Bad Request. Check request headers and body.</Message>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>BadRequest</Code>"
+                + "<Message>Bad Request. Check request headers and body.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -596,12 +596,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -652,12 +652,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -679,12 +679,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -709,12 +709,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -881,12 +881,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -906,12 +906,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -938,12 +938,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -970,12 +970,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -1003,12 +1003,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -1073,12 +1073,12 @@ public class AccessKeyControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());

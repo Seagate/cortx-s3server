@@ -200,12 +200,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -227,12 +227,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>EntityAlreadyExists</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>EntityAlreadyExists</Code>"
                 + "<Message>The request was rejected because it attempted "
-                + "to create or update a resource that already exists.</Message>"
+                + "to create or update a resource that already exists.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -255,12 +255,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -391,12 +391,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -417,12 +417,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "entity that does not exist. </Message>"
+                + "entity that does not exist. </Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -446,12 +446,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -475,13 +475,13 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>DeleteConflict</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>DeleteConflict</Code>"
                 + "<Message>The request was rejected because it attempted to "
                 + "delete a resource that has attached subordinate entities. "
-                + "The error message describes these entities.</Message>"
+                + "The error message describes these entities.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -507,12 +507,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -560,12 +560,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -746,12 +746,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>MissingParameter</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>MissingParameter</Code>"
                 + "<Message>A required parameter for the specified action is "
-                + "not supplied.</Message>"
+                + "not supplied.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -769,12 +769,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -795,12 +795,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "entity that does not exist. </Message>"
+                + "entity that does not exist. </Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -824,12 +824,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -857,12 +857,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>EntityAlreadyExists</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>EntityAlreadyExists</Code>"
                 + "<Message>The request was rejected because it attempted to "
-                + "create or update a resource that already exists.</Message>"
+                + "create or update a resource that already exists.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -891,12 +891,12 @@ public class UserControllerTest {
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>InternalFailure</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
                 + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message>"
+                + "unknown error, exception or failure.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());

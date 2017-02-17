@@ -169,23 +169,26 @@ public class XMLResponseFormatter extends AbstractResponseFormatter {
             return null;
         }
 
-        Element rootElement = doc.createElement("Error");
+        Element root = doc.createElement("ErrorResponse");
         Attr attr = doc.createAttribute("xmlns");
         attr.setValue(IAM_XMLNS);
-        rootElement.setAttributeNode(attr);
-        doc.appendChild(rootElement);
+        root.setAttributeNode(attr);
+        doc.appendChild(root);
+
+        Element errorEle = doc.createElement("Error");
+        root.appendChild(errorEle);
 
         Element codeEle = doc.createElement("Code");
         codeEle.appendChild(doc.createTextNode(code));
-        rootElement.appendChild(codeEle);
+        errorEle.appendChild(codeEle);
 
         Element messageEle = doc.createElement("Message");
         messageEle.appendChild(doc.createTextNode(message));
-        rootElement.appendChild(messageEle);
+        errorEle.appendChild(messageEle);
 
         Element requestIdEle = doc.createElement("RequestId");
         requestIdEle.appendChild(doc.createTextNode("0000"));
-        rootElement.appendChild(requestIdEle);
+        root.appendChild(requestIdEle);
 
         String responseBody;
         try {

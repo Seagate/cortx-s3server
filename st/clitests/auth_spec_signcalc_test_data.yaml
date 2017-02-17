@@ -39,7 +39,7 @@ test2:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test3:
     test-title: Authenticate user using AWS Signature Version 2 fails if Content-Type is wrong
@@ -61,7 +61,7 @@ test3:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test4:
     test-title: Authenticate user using AWS Signature Version 2 fails date is missing
@@ -82,7 +82,7 @@ test4:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test5:
     test-title: Authenticate user using AWS Signature Version 2 fails if X-amz-* headrs are wrong
@@ -104,7 +104,7 @@ test5:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test6:
     test-title: Authenticate user using AWS Signature Version 2 fails if X-amz-* headrs are wrong
@@ -127,7 +127,7 @@ test6:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test7:
     test-title: Authenticate user using AWS Signature Version 2 fails if subresource is incorrect
@@ -148,7 +148,7 @@ test7:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test8:
     test-title: Authenticate user using AWS Signature Version 2 fails if hostname is wrong
@@ -169,7 +169,7 @@ test8:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your AWS secret access key and signing method. For more information, see REST Authentication andSOAP Authentication for details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test9:
     test-title: Authenticate user using AWS Signature Version 2 fails if wrong uri
@@ -192,7 +192,7 @@ test9:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><Error xmlns="https://iam.seagate.com/doc/2010-05-08/"><Code>BadRequest</Code><Message>Bad Request. Check request headers and body.</Message><RequestId>0000</RequestId></Error>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>BadRequest</Code><Message>Bad Request. Check request headers and body.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test10:
     test-title: Authenticate user using AWS Signature Version 4

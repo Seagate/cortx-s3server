@@ -155,12 +155,12 @@ public class AccessKeyResponseGeneratorTest {
     public void testNoSuchEntityResponse() {
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>NoSuchEntity</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message>"
+                + "access key or user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         AccessKeyResponseGenerator responseGenerator = new AccessKeyResponseGenerator();
         ServerResponse response = responseGenerator.noSuchEntity();
@@ -173,12 +173,12 @@ public class AccessKeyResponseGeneratorTest {
     public void testAccessKeyQuotaExceeded() {
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>AccessKeyQuotaExceeded</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>AccessKeyQuotaExceeded</Code>"
                 + "<Message>The request was rejected because the number of "
-                + "access keys allowed for the user has exceeded quota.</Message>"
+                + "access keys allowed for the user has exceeded quota.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         AccessKeyResponseGenerator responseGenerator = new AccessKeyResponseGenerator();
         ServerResponse response = responseGenerator.accessKeyQuotaExceeded();

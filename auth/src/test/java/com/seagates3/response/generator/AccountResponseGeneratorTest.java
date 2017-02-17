@@ -75,12 +75,12 @@ public class AccountResponseGeneratorTest {
     public void testEntityAlreadyExists() {
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Code>EntityAlreadyExists</Code>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>EntityAlreadyExists</Code>"
                 + "<Message>The request was rejected because it attempted to "
-                + "create an account that already exists.</Message>"
+                + "create an account that already exists.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
-                + "</Error>";
+                + "</ErrorResponse>";
 
         AccountResponseGenerator responseGenerator = new AccountResponseGenerator();
         ServerResponse response = responseGenerator.entityAlreadyExists();
