@@ -34,7 +34,6 @@
 [submodule "third_party/mero"]
 	path = third_party/mero
 	url = ../mero
-	branch = master
 	ignore = dirty
 [submodule "third_party/statsd"]
 	path = third_party/statsd
