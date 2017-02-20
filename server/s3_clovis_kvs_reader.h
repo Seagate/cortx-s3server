@@ -158,6 +158,16 @@ class S3ClovisKVSReader {
   std::map<std::string, std::pair<int, std::string>>& get_key_values() {
     return last_result_keys_values;
   }
+
+  // friends declaration for Unit test
+  FRIEND_TEST(S3ClovisKvsReaderTest, Constructor);
+  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTestEmpty);
+  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalSuccessfulTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailedTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalSuccessfulTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalFailedTest);
 };
 
 #endif
