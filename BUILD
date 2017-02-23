@@ -67,7 +67,7 @@ cc_test(
     copts = [
       "-DEVHTP_DISABLE_REGEX", "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64",
       "-DGCC_VERSION=4002", "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest",
-      "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=",
+      "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DS3_GOOGLE_TEST",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MERO_INC)",

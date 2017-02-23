@@ -81,7 +81,7 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
   }
   free(user_data);
   // Free user event
-  event_free(s3user_event);
+  if (s3user_event) event_free(s3user_event);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -107,7 +107,14 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
         1, sizeof(struct user_event_context));
     user_ctx->app_ctx = app_ctx;
     app_ctx->stop_timer();
+
+#ifdef S3_GOOGLE_TEST
+    evutil_socket_t test_sock = 0;
+    short events = 0;
+    clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
+#else
     S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread);
+#endif  // S3_GOOGLE_TEST
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -137,7 +144,14 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
         1, sizeof(struct user_event_context));
     user_ctx->app_ctx = app_ctx;
     app_ctx->stop_timer(false);
+
+#ifdef S3_GOOGLE_TEST
+    evutil_socket_t test_sock = 0;
+    short events = 0;
+    clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
+#else
     S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread);
+#endif  // S3_GOOGLE_TEST
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

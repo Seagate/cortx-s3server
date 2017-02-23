@@ -194,6 +194,22 @@ class S3ClovisWriter {
   void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
                                   std::deque<evbuffer*>& data_items,
                                   size_t clovis_buf_count);
+
+  // For Testing purpose
+  FRIEND_TEST(S3ClovisWriterTest, Constructor);
+  FRIEND_TEST(S3ClovisWriterTest, Constructor2);
+  FRIEND_TEST(S3ClovisWriterTest, CreateObjectTest);
+  FRIEND_TEST(S3ClovisWriterTest, CreateObjectSuccessfulTest);
+  FRIEND_TEST(S3ClovisWriterTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectTest);
+  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectSuccessfulTest);
+  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectFailedTest);
+  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsTest);
+  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsSuccessfulTest);
+  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsFailedTest);
+  FRIEND_TEST(S3ClovisWriterTest, WriteContentTest);
+  FRIEND_TEST(S3ClovisWriterTest, WriteContentSuccessfulTest);
+  FRIEND_TEST(S3ClovisWriterTest, WriteContentFailedTest);
 };
 
 #endif
