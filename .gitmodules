@@ -29,7 +29,7 @@
 	ignore = dirty
 [submodule "third_party/libxml2"]
 	path = third_party/libxml2
-	url = https://git.gnome.org/browse/libxml2
+	url = https://github.com/GNOME/libxml2.git
 	ignore = dirty
 [submodule "third_party/mero"]
 	path = third_party/mero
