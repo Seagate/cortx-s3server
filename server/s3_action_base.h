@@ -144,7 +144,7 @@ class S3Action {
   // Checks whether S3 is shutting down. If yes then triggers rollback and
   // schedules a response.
   // Return value: true, in case of shutdown.
-  bool check_shutdown_and_rollback();
+  virtual bool check_shutdown_and_rollback();
 
   bool reject_if_shutting_down() { return is_response_scheduled; }
 

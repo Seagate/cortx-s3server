@@ -135,8 +135,8 @@ class S3PartMetadata {
 
   void save(std::function<void(void)> on_success,
             std::function<void(void)> on_failed);
-  void create_index(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
+  virtual void create_index(std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed);
   void save_part_index(std::function<void(void)> on_success,
                        std::function<void(void)> on_failed);
   void create_part_index();
@@ -150,12 +150,12 @@ class S3PartMetadata {
               std::function<void(void)> on_failed, int remove_part);
   void remove_successful();
   void remove_failed();
-  void remove_index(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
+  virtual void remove_index(std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed);
   void remove_index_successful();
   void remove_index_failed();
 
-  S3PartMetadataState get_state() { return state; }
+  virtual S3PartMetadataState get_state() { return state; }
 
   void set_state(S3PartMetadataState part_state) { state = part_state; }
 

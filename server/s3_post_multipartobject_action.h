@@ -27,6 +27,7 @@
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_factory.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
 #include "s3_timer.h"
@@ -35,7 +36,7 @@
 class S3PostMultipartObjectAction : public S3Action {
   struct m0_uint128 oid;
   struct m0_uint128 multipart_index_oid;
-  unsigned short tried_count;
+  short tried_count;
   std::string salt;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
@@ -46,8 +47,26 @@ class S3PostMultipartObjectAction : public S3Action {
 
   S3Timer create_object_timer;
 
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
+  std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
+  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+
+ protected:
+  void set_oid(struct m0_uint128 new_oid) { oid = new_oid; }
+  struct m0_uint128 get_oid() {
+    return oid;
+  }
+
  public:
-  S3PostMultipartObjectAction(std::shared_ptr<S3RequestObject> req);
+  S3PostMultipartObjectAction(
+      std::shared_ptr<S3RequestObject> req,
+      S3BucketMetadataFactory* bucket_meta_factory = NULL,
+      S3ObjectMultipartMetadataFactory* object_mp_meta_factory = NULL,
+      S3ObjectMetadataFactory* object_meta_factory = NULL,
+      S3PartMetadataFactory* part_meta_factory = NULL,
+      S3ClovisWriterFactory* clovis_writer_factory = NULL);
 
   void setup_steps();
 
@@ -55,7 +74,7 @@ class S3PostMultipartObjectAction : public S3Action {
   void check_upload_is_inprogress();
   void create_object();
   void create_object_failed();
-  void collision_occured();
+  virtual void collision_occured();
   void create_new_oid();
   void save_upload_metadata();
   void save_upload_metadata_failed();
@@ -73,6 +92,31 @@ class S3PostMultipartObjectAction : public S3Action {
   void rollback_create_part_meta_index_failed();
 
   std::shared_ptr<S3RequestObject> get_request() { return request; }
+
+  FRIEND_TEST(S3PostMultipartObjectTest, ConstructorTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, FetchBucketInfo);
+  FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgressTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectTest2);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest2);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateNewOidTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, CollisionTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackFailedTest1);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackFailedTest2);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadataFailTest2);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndexTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndexFailedTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataFailedTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadataTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadataFailTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreatePartMetadataIndexTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataFailedTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, Send503ResponseToClientTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, SendResponseToClientTest2);
 };
 
 #endif

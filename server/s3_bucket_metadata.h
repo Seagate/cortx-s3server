@@ -145,8 +145,8 @@ class S3BucketMetadata {
   std::string& get_acl_as_xml();
 
   struct m0_uint128 get_bucket_list_index_oid();
-  struct m0_uint128 get_multipart_index_oid();
-  struct m0_uint128 get_object_list_index_oid();
+  virtual struct m0_uint128 get_multipart_index_oid();
+  virtual struct m0_uint128 get_object_list_index_oid();
   std::string get_object_list_index_oid_u_hi_str();
   std::string get_object_list_index_oid_u_lo_str();
   void set_bucket_list_index_oid(struct m0_uint128 id);
@@ -159,13 +159,13 @@ class S3BucketMetadata {
   void add_system_attribute(std::string key, std::string val);
   void add_user_defined_attribute(std::string key, std::string val);
 
-  void load(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+  virtual void load(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void load_successful();
   void load_failed();
 
-  void save(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+  virtual void save(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void save_successful();
   void save_failed();
 
@@ -182,7 +182,7 @@ class S3BucketMetadata {
   // void save_idx_metadata_successful();
   // void save_idx_metadata_failed();
 
-  S3BucketMetadataState get_state() { return state; }
+  virtual S3BucketMetadataState get_state() { return state; }
 
   // Streaming to json
   std::string to_json();

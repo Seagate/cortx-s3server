@@ -24,15 +24,54 @@
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
 
-#define MAX_COLLISION_RETRY 20
-
 S3PostMultipartObjectAction::S3PostMultipartObjectAction(
-    std::shared_ptr<S3RequestObject> req)
+    std::shared_ptr<S3RequestObject> req,
+    S3BucketMetadataFactory* bucket_meta_factory,
+    S3ObjectMultipartMetadataFactory* object_mp_meta_factory,
+    S3ObjectMetadataFactory* object_meta_factory,
+    S3PartMetadataFactory* part_meta_factory,
+    S3ClovisWriterFactory* clovis_s3_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
   tried_count = 0;
+  bucket_metadata = 0;
+  object_metadata = 0;
+  object_multipart_metadata = 0;
+  part_metadata = 0;
+  clovis_writer = 0;
+  multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
+  if (bucket_meta_factory) {
+    bucket_metadata_factory.reset(bucket_meta_factory);
+  } else {
+    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+  }
+
+  if (object_meta_factory) {
+    object_metadata_factory.reset(object_meta_factory);
+  } else {
+    object_metadata_factory.reset(new S3ObjectMetadataFactory());
+  }
+
+  if (object_mp_meta_factory) {
+    object_mp_metadata_factory.reset(object_mp_meta_factory);
+  } else {
+    object_mp_metadata_factory.reset(new S3ObjectMultipartMetadataFactory());
+  }
+
+  if (clovis_s3_factory) {
+    clovis_writer_factory.reset(clovis_s3_factory);
+  } else {
+    clovis_writer_factory.reset(new S3ClovisWriterFactory());
+  }
+
+  if (part_meta_factory) {
+    part_metadata_factory.reset(part_meta_factory);
+  } else {
+    part_metadata_factory.reset(new S3PartMetadataFactory());
+  }
+
   setup_steps();
 }
 
@@ -54,7 +93,9 @@ void S3PostMultipartObjectAction::setup_steps() {
 
 void S3PostMultipartObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
+
   bucket_metadata->load(std::bind(&S3PostMultipartObjectAction::next, this),
                         std::bind(&S3PostMultipartObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -62,13 +103,13 @@ void S3PostMultipartObjectAction::fetch_bucket_info() {
 
 void S3PostMultipartObjectAction::check_upload_is_inprogress() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     S3Uuid uuid;
     upload_id = uuid.get_string_uuid();
     multipart_index_oid = bucket_metadata->get_multipart_index_oid();
-    object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
-        request, multipart_index_oid, true, upload_id);
+    object_multipart_metadata =
+        object_mp_metadata_factory->create_object_mp_metadata_obj(
+            request, multipart_index_oid, true, upload_id);
     if (multipart_index_oid.u_lo == 0ULL && multipart_index_oid.u_hi == 0ULL) {
       // There is no multipart in progress, move on
       next();
@@ -91,7 +132,7 @@ void S3PostMultipartObjectAction::create_object() {
       S3ObjectMetadataState::present) {
     create_object_timer.start();
     if (tried_count == 0) {
-      clovis_writer = std::make_shared<S3ClovisWriter>(request, oid);
+      clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
     } else {
       clovis_writer->set_oid(oid);
     }
@@ -111,7 +152,6 @@ void S3PostMultipartObjectAction::create_object() {
     //--
     send_response_to_s3_client();
   }
-
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "post_multipartobject_action_create_object_shutdown_fail");
@@ -141,8 +181,8 @@ void S3PostMultipartObjectAction::create_object_failed() {
       // There is no object list index(no object metadata).
       collision_occured();
     } else {
-      object_metadata =
-          std::make_shared<S3ObjectMetadata>(request, object_list_indx_oid);
+      object_metadata = object_metadata_factory->create_object_metadata_obj(
+          request, object_list_indx_oid);
       // Lookup object metadata, if the object doesn't exist then its collision,
       // do collision resolution
       // If object exist in metadata then we overwrite it
@@ -164,7 +204,7 @@ void S3PostMultipartObjectAction::collision_occured() {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
-  if (tried_count < MAX_COLLISION_RETRY) {
+  if (tried_count < MAX_COLLISION_TRY) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n",
            request->get_object_uri().c_str());
     // Handle Collision
@@ -176,7 +216,7 @@ void S3PostMultipartObjectAction::collision_occured() {
     }
     create_object();
   } else {
-    if (tried_count > MAX_COLLISION_RETRY) {
+    if (tried_count > MAX_COLLISION_TRY) {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %d times for uri %s\n",
              tried_count, request->get_object_uri().c_str());
@@ -297,8 +337,8 @@ void S3PostMultipartObjectAction::create_part_meta_index() {
   // mark rollback point
   add_task_rollback(
       std::bind(&S3PostMultipartObjectAction::rollback_create, this));
-
-  part_metadata = std::make_shared<S3PartMetadata>(request, upload_id, 0);
+  part_metadata =
+      part_metadata_factory->create_part_metadata_obj(request, upload_id, 0);
   part_metadata->create_index(
       std::bind(&S3PostMultipartObjectAction::next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_start, this));
@@ -336,7 +376,6 @@ void S3PostMultipartObjectAction::save_multipart_metadata_failed() {
 
 void S3PostMultipartObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
@@ -347,7 +386,6 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Retry-After", "1");
-
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // Invalid Bucket Name

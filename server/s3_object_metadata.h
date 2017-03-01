@@ -163,13 +163,13 @@ class S3ObjectMetadata {
     return user_defined_attribute;
   }
 
-  void load(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+  virtual void load(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void load_successful();
   void load_failed();
 
-  void save(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+  virtual void save(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void create_bucket_index();
   void create_bucket_index_successful();
   void create_bucket_index_failed();
@@ -179,12 +179,12 @@ class S3ObjectMetadata {
   void save_metadata(std::function<void(void)> on_success,
                      std::function<void(void)> on_failed);
 
-  void remove(std::function<void(void)> on_success,
-              std::function<void(void)> on_failed);
+  virtual void remove(std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
 
-  S3ObjectMetadataState get_state() { return state; }
+  virtual S3ObjectMetadataState get_state() { return state; }
 
   // placeholder state, so as to not perform any operation on this.
   void mark_invalid() { state = S3ObjectMetadataState::invalid; }

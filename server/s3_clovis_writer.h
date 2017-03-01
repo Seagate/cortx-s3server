@@ -142,13 +142,13 @@ class S3ClovisWriter {
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0);
   ~S3ClovisWriter();
 
-  S3ClovisWriterOpState get_state() { return state; }
+  virtual S3ClovisWriterOpState get_state() { return state; }
 
   struct m0_uint128 get_oid() {
     return oid;
   }
 
-  void set_oid(struct m0_uint128 id) { oid = id; }
+  virtual void set_oid(struct m0_uint128 id) { oid = id; }
 
   // This concludes the md5 calculation
   std::string get_content_md5() {
@@ -163,8 +163,8 @@ class S3ClovisWriter {
   }
 
   // async create
-  void create_object(std::function<void(void)> on_success,
-                     std::function<void(void)> on_failed);
+  virtual void create_object(std::function<void(void)> on_success,
+                             std::function<void(void)> on_failed);
   void create_object_successful();
   void create_object_failed();
 
@@ -176,8 +176,8 @@ class S3ClovisWriter {
   void write_content_failed();
 
   // Async delete operation.
-  void delete_object(std::function<void(void)> on_success,
-                     std::function<void(void)> on_failed);
+  virtual void delete_object(std::function<void(void)> on_success,
+                             std::function<void(void)> on_failed);
   void delete_object_successful();
   void delete_object_failed();
 

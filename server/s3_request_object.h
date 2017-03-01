@@ -120,7 +120,7 @@ class S3RequestObject {
   S3RequestError request_error;
 
  public:
-  std::map<std::string, std::string>& get_in_headers_copy();
+  virtual std::map<std::string, std::string>& get_in_headers_copy();
   friend int consume_header(evhtp_kv_t* kvobj, void* arg);
 
   std::string get_header_value(std::string key);
@@ -145,7 +145,7 @@ class S3RequestObject {
     return ev_req->buffer_in;
   }
 
-  void set_out_header_value(std::string key, std::string value);
+  virtual void set_out_header_value(std::string key, std::string value);
 
   // Operation params.
   std::string get_object_uri();
@@ -250,7 +250,7 @@ class S3RequestObject {
   struct evbuffer* reply_buffer;
 
  public:
-  void send_response(int code, std::string body = "");
+  virtual void send_response(int code, std::string body = "");
   void send_reply_start(int code);
   void send_reply_body(char* data, int length);
   void send_reply_end();
