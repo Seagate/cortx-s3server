@@ -67,21 +67,31 @@ bool S3AuthResponseError::parse_and_validate() {
   xmlNodePtr child = root_node->xmlChildrenNode;
 
   while (child != NULL) {
-    s3_log(S3_LOG_DEBUG, "child->name = %s\n", (const char*)child->name);
-    key = xmlNodeGetContent(child);
-    if ((!xmlStrcmp(child->name, (const xmlChar*)"Code"))) {
-      s3_log(S3_LOG_DEBUG, "Code = %s\n", (const char*)key);
-      error_code = (const char*)key;
-    } else if ((!xmlStrcmp(child->name, (const xmlChar*)"Message"))) {
-      s3_log(S3_LOG_DEBUG, "Message = %s\n", (const char*)key);
-      error_message = (const char*)key;
+    if ((!xmlStrcmp(child->name, (const xmlChar*)"Error"))) {
+      for (xmlNode* child_node = child->children; child_node != NULL;
+           child_node = child_node->next) {
+        s3_log(S3_LOG_DEBUG, "child->name = %s\n", (const char*)child->name);
+        key = xmlNodeGetContent(child_node);
+        if ((!xmlStrcmp(child_node->name, (const xmlChar*)"Code"))) {
+          s3_log(S3_LOG_DEBUG, "Code = %s\n", (const char*)key);
+          error_code = (const char*)key;
+        } else if ((!xmlStrcmp(child_node->name, (const xmlChar*)"Message"))) {
+          s3_log(S3_LOG_DEBUG, "Message = %s\n", (const char*)key);
+          error_message = (const char*)key;
+        }
+        if (key != NULL) {
+          xmlFree(key);
+          key = NULL;
+        }
+      }
     } else if ((!xmlStrcmp(child->name, (const xmlChar*)"RequestId"))) {
+      key = xmlNodeGetContent(child);
       s3_log(S3_LOG_DEBUG, "RequestId = %s\n", (const char*)key);
       request_id = (const char*)key;
-    }
-    if (key != NULL) {
-      xmlFree(key);
-      key = NULL;
+      if (key != NULL) {
+        xmlFree(key);
+        key = NULL;
+      }
     }
     child = child->next;
   }  // while

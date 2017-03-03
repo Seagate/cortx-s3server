@@ -218,13 +218,15 @@ TEST_F(S3AuthClientOpContextTest, CanHandleParseErrorInAuthSuccessResponse) {
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
   std::string sample_response =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error "
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+      "standalone=\"no\"?><ErrorResponse "
       "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
-      "\"><Code>SignatureDoesNotMatch</Code><Message>The request signature we "
+      "\"><Error><Code>SignatureDoesNotMatch</Code><Message>The request "
+      "signature we "
       "calculated does not match the signature you provided. Check your AWS "
       "secret access key and signing method. For more information, see REST "
       "Authentication andSOAP Authentication for "
-      "details.</Message><RequestId>0000</RequestId></Error>";
+      "details.</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 
@@ -240,12 +242,14 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
 
 TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse) {
   std::string sample_response =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><Error "
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+      "standalone=\"no\"?><ErrorResponse "
       "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
-      "\"><Code>UnauthorizedOperation</Code><Message>You are not authorized to "
+      "\"><Error><Code>UnauthorizedOperation</Code><Message>You are not "
+      "authorized to "
       "perform this operation. Check your IAM policies, and ensure that you "
       "are using the correct access "
-      "keys.</Message><RequestId>0000</RequestId></Error>";
+      "keys.</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
 

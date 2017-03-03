@@ -33,12 +33,14 @@ void s3_auth_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   evhtp_request_t *req = NULL;
   std::string xml_error(
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>"
-      "<Error xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+      "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+      "<Error>"
       "<Code>InvalidAccessKeyId</Code>"
       "<Message>The AWS access key Id you provided does not exist in our "
       "records.</Message>"
+      "</Error>"
       "<RequestId>0000</RequestId>"
-      "</Error>");
+      "</ErrorResponse>");
 
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
