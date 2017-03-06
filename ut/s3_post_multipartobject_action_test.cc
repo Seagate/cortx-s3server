@@ -352,7 +352,7 @@ TEST_F(S3PostMultipartObjectTest, CollisionTest) {
   action_under_test->collision_occured();
   EXPECT_EQ(2, action_under_test->tried_count);
 
-  action_under_test->tried_count = MAX_COLLISION_RETRY + 1;
+  action_under_test->tried_count = MAX_COLLISION_TRY + 1;
   ON_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillByDefault(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
