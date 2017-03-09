@@ -39,3 +39,27 @@ rm -rf cn\=config/
 ```sh
 rm cn\=config.ldif
 ```
+
+# Steps to configure directory replication for LDAP
+# Following steps should be replicated on each Master node
+# for an N-Way Multi-Master replication setup.
+1. Set syncrepl as a provider
+```sh
+  ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov_mod.ldif
+```
+
+2. Enable syncprov for directory
+```sh
+  ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov.ldif
+```
+
+3. Setup Master node for replication
+   Edit replicate.ldif to localize for current Master. Refer comments
+   in replicate.ldiff for details.
+```sh
+  vim replicate.ldif
+```
+   Add configuration to LDAP
+```sh
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f replicate.ldif
+```
