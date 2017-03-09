@@ -38,7 +38,7 @@ class S3DateTimeTest : public testing::Test {
 };
 
 TEST_F(S3DateTimeTest, Constructor) {
-  EXPECT_EQ(true, s3dateobj_ptr->is_OK());
+  EXPECT_TRUE(s3dateobj_ptr->is_OK());
   EXPECT_EQ(0, get_point_in_time_test().tm_sec);
   EXPECT_EQ(0, get_point_in_time_test().tm_min);
   EXPECT_EQ(0, get_point_in_time_test().tm_hour);

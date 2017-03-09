@@ -118,14 +118,14 @@ class S3AuthClientTest : public testing::Test {
 
 TEST_F(S3AuthClientOpContextTest, Constructor) {
   EXPECT_EQ(NULL, p_authopctx->auth_op_context);
-  EXPECT_EQ(false, p_authopctx->has_auth_op_context);
+  EXPECT_FALSE(p_authopctx->has_auth_op_context);
 }
 
 TEST_F(S3AuthClientOpContextTest, InitAuthCtxNull) {
   evbase_t *evbase = NULL;
   S3Option::get_instance()->set_eventbase(evbase);
   bool ret = p_authopctx->init_auth_op_ctx();
-  EXPECT_EQ(false, ret);
+  EXPECT_FALSE(ret);
 }
 
 TEST_F(S3AuthClientOpContextTest, InitAuthCtxValid) {
