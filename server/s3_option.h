@@ -36,6 +36,8 @@
 #define S3_OPTION_PIDFILE 0x01000
 #define S3_OPTION_STATSD_IP_ADDR 0x2000
 #define S3_OPTION_STATSD_PORT 0x4000
+#define S3_OPTION_CLOVIS_PROF 0x8000
+#define S3_OPTION_CLOVIS_PROCESS_FID 0x10000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -153,12 +155,12 @@ class S3Option {
     clovis_local_addr = FLAGS_clovislocal;
     clovis_confd_addr = FLAGS_clovisconfd;
     clovis_ha_addr = FLAGS_clovisha;
-    clovis_profile = FLAGS_clovisprofile;
+    clovis_profile = FLAGS_clovisprofilefid;
     clovis_is_oostore = false;
     clovis_is_read_verify = false;
     clovis_tm_recv_queue_min_len = 2;
     clovis_max_rpc_msg_size = 131072;
-    clovis_process_fid = "<0x7200000000000000:0>";
+    clovis_process_fid = FLAGS_clovisprocessfid;
     clovis_idx_service_id = 2;
     clovis_cass_cluster_ep = "127.0.0.1";
     clovis_cass_keyspace = "clovis_index_keyspace";

@@ -40,7 +40,8 @@ DEFINE_string(clovisha, "CLOVIS_DEFAULT_HA_ADDR", "Clovis ha address");
 DEFINE_string(clovisconfd, "localhost@tcp:12345:33:100",
               "Clovis confd address");
 DEFINE_int32(clovislayoutid, 9, "For options please see the readme");
-DEFINE_string(clovisprofile, "<0x7000000000000001:0>", "Clovis profile");
+DEFINE_string(clovisprofilefid, "<0x7000000000000001:0>", "Clovis profile FID");
+DEFINE_string(clovisprocessfid, "<0x7200000000000000:0>", "Clovis process FID");
 
 DEFINE_string(authhost, "127.0.0.1", "Auth server host");
 DEFINE_int32(authport, 8095, "Auth server port");
@@ -165,6 +166,18 @@ int parse_and_load_config_options(int argc, char **argv) {
   gflags::GetCommandLineFlagInfo("statsd_port", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_OPTION_STATSD_PORT,
+                                        flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("clovisprofilefid", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_PROF,
+                                        flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("clovisprocessfid", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_PROCESS_FID,
                                         flag_info.current_value.c_str());
   }
 

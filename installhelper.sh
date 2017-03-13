@@ -58,23 +58,11 @@ cp s3config.yaml $S3_CONFIG_FILE_LOCATION
 # Copy the S3 Stats whitelist file
 cp s3stats-whitelist.yaml $S3_CONFIG_FILE_LOCATION
 
-# Copy the s3 server startup script.
-cp starts3.sh $S3_INSTALL_LOCATION/
-
 # Copy the s3 server startup script for multiple instance
 cp ./system/s3startsystem.sh $S3_INSTALL_LOCATION/
 
-# Copy the s3 server daemon shutdown script.
-cp stops3.sh $S3_INSTALL_LOCATION/
-
-# Copy the s3 service status script.
-cp statuss3.sh $S3_INSTALL_LOCATION/
-
 # Copy the s3 server daemon shutdown script for multiple instance via systemctl
 cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
-
-# Copy the s3 service file for systemctl support.
-cp ./system/s3server.service $SERVICE_FILE_LOCATION
 
 # Copy the s3 service file for systemctl multiple instance support.
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION

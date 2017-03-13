@@ -38,7 +38,8 @@ DECLARE_string(clovislocal);
 DECLARE_string(clovisha);
 DECLARE_string(clovisconfd);
 DECLARE_int32(clovislayoutid);
-DECLARE_string(clovisprofile);
+DECLARE_string(clovisprofilefid);
+DECLARE_string(clovisprocessfid);
 
 DECLARE_string(authhost);
 DECLARE_int32(authport);

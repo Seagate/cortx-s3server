@@ -99,11 +99,17 @@ server and Mero services are up & running.
 ```sh
 sudo ./dev-starts3.sh
 ```
+If more than one instance of S3 server needs to be started then pass number of
+instances to start as an argument to above command. e.g. to start 4 instances:
+```sh
+sudo ./dev-starts3.sh 4
+```
 
 To stop S3 server in Dev environment, use below command
 ```sh
 sudo ./dev-stops3.sh
 ```
+Above command will stop all instances of S3 server.
 
 ## How to run Auth server tests?
 ```sh
@@ -152,41 +158,21 @@ Use below command to run (ST + UT) tests in Dev environment.
 In case of Release environment, simply skip passing the option `--no-mero-rpm` to
 the script.
 
-## How to run single s3 service(this current assumes all dependencies are on same local VM)
+## How to run s3 server via systemctl on deployment m/c
 ```sh
-sudo /opt/seagate/s3/starts3.sh
+sudo systemctl start "s3server@0x7200000000000001:0x30"
+```
+where `0x7200000000000001:0x30` is the process FID assigned by halon
+
+## How to stop s3 server service via systemctl on deployment m/c
+```sh
+sudo systemctl stop "s3server@0x7200000000000001:0x30"
 ```
 
-## How to run multiple instances of s3 service(this currently assumes all dependencies are on same local VM)
+## How to see status of s3 service on deployment m/c
 ```sh
-sudo /opt/seagate/s3/starts3.sh <Number of instances>
+sudo systemctl status "s3server@0x7200000000000001:0x30"
 ```
-
-Example: To run three s3 service instances
-```sh
-sudo /opt/seagate/s3/starts3.sh 3
-```
-
-## How to run s3 server via systemctl
-```sh
-sudo systemctl start s3server
-```
-
-## How to stop all running s3 services ( This will stop even all multiple instances of s3 service, if its running )
-```sh
-sudo /opt/seagate/s3/stops3.sh
-```
-
-## How to stop s3 server service via systemctl
-```sh
-sudo systemctl stop s3server
-```
-
-## How to see status of s3 service
-```sh
-sudo /opt/seagate/s3/statuss3.sh
-```
-
 
 ## Steps to create Java key store and Certificate.
 ```sh

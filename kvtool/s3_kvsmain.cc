@@ -68,7 +68,7 @@ DEFINE_int32(kvstore, 2, "Type of index service: 1:MERO; 2:CASSANDRA");
 DEFINE_string(clovis_local_addr, "local@tcp:12345:33:100",
               "Clovis local address");
 DEFINE_string(clovis_ha_addr, "local@tcp:12345:34:1", "Clovis ha address");
-DEFINE_string(clovis_confd_addr, "local@tcp:12345:44:101",
+DEFINE_string(clovis_confd_addr, "127.0.0.1@tcp:12345:44:101",
               "Clovis confd address");
 DEFINE_string(clovis_profile, "<0x7000000000000001:0>", "Clovis profile");
 DEFINE_string(clovis_proc, "<0x7200000000000000:0>", "Clovis proc");

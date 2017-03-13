@@ -98,6 +98,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
   EXPECT_EQ(40960, instance->get_libevent_pool_initial_size());
   EXPECT_EQ(20480, instance->get_libevent_pool_expandable_size());
@@ -145,6 +146,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
@@ -238,6 +240,7 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
   EXPECT_EQ(std::string("127.0.0.1"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
@@ -275,6 +278,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
   EXPECT_EQ(std::string("127.0.0.1"), instance->get_auth_ip_addr());
   EXPECT_EQ(8095, instance->get_auth_port());
@@ -300,6 +304,7 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
   EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
@@ -331,6 +336,7 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
   EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
@@ -352,6 +358,7 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
@@ -380,6 +387,7 @@ TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
+  EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
@@ -412,12 +420,16 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
   instance->set_cmdline_option(S3_OPTION_STATSD_PORT, "1234");
+  instance->set_cmdline_option(S3_OPTION_CLOVIS_PROF, "<0x7000000000000001:0>");
+  instance->set_cmdline_option(S3_OPTION_CLOVIS_PROCESS_FID,
+                               "<0x7200000000000000:0>");
 
   flag = S3_OPTION_BIND_ADDR | S3_OPTION_BIND_PORT |
          S3_OPTION_CLOVIS_LOCAL_ADDR | S3_OPTION_CLOVIS_CONFD_ADDR |
          S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT | S3_CLOVIS_LAYOUT_ID |
          S3_OPTION_LOG_DIR | S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE |
-         S3_OPTION_STATSD_IP_ADDR | S3_OPTION_STATSD_PORT;
+         S3_OPTION_STATSD_IP_ADDR | S3_OPTION_STATSD_PORT |
+         S3_OPTION_CLOVIS_PROF | S3_OPTION_CLOVIS_PROCESS_FID;
 
   EXPECT_EQ(flag, instance->get_cmd_opt_flag());
 }

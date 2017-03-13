@@ -497,6 +497,10 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     statsd_ip_addr = optarg;
   } else if (option_flag & S3_OPTION_STATSD_PORT) {
     statsd_port = atoi(optarg);
+  } else if (option_flag & S3_OPTION_CLOVIS_PROF) {
+    clovis_profile = optarg;
+  } else if (option_flag & S3_OPTION_CLOVIS_PROCESS_FID) {
+    clovis_process_fid = optarg;
   }
   cmd_opt_flag |= option_flag;
   return;

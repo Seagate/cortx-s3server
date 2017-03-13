@@ -43,7 +43,7 @@ int init_clovis(void) {
   clovis_conf.cc_is_read_verify = option_instance->get_clovis_is_read_verify();
   clovis_conf.cc_local_addr = option_instance->get_clovis_local_addr().c_str();
   clovis_conf.cc_ha_addr = option_instance->get_clovis_ha_addr().c_str();
-  clovis_conf.cc_confd = option_instance->get_clovis_confd_addr().c_str();
+  clovis_conf.cc_confd = "127.0.0.1@tcp:12345:33:100";
   clovis_conf.cc_profile = option_instance->get_clovis_prof().c_str();
   clovis_conf.cc_process_fid =
       option_instance->get_clovis_process_fid().c_str();

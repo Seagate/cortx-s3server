@@ -20,11 +20,11 @@ class ClovisConfig():
             self.KVS_IDX = str(s3config['S3_CLOVIS_IDX_SERVICE_ID'])
             self.LOCAL_EP = s3config['S3_CLOVIS_LOCAL_EP']
             self.HA_EP = s3config['S3_CLOVIS_HA_EP']
-            self.CONFD_EP = s3config['S3_CLOVIS_CONFD_EP']
+            self.PROFILE_FID = s3config['S3_CLOVIS_PROF']
+            self.PROCESS_FID = s3config['S3_CLOVIS_PROCESS_FID']
 
         self.LOCAL_EP = self.LOCAL_NID + self.LOCAL_EP
         self.HA_EP = self.LOCAL_NID + self.HA_EP
-        self.CONFD_EP = self.LOCAL_NID + self.CONFD_EP
 
 class S3OID():
     def __init__(self, oid_hi="0x0", oid_lo="0x0"):
@@ -43,7 +43,7 @@ class S3kvTest(S3PyCliTest):
             self.cmd = "sudo env LD_LIBRARY_PATH=%s ../cloviskvscli.sh" % os.environ["LD_LIBRARY_PATH"]
         else:
             self.cmd = "sudo ../cloviskvscli.sh"
-        self.common_args = " --clovis_local_addr=" + clovis_conf.LOCAL_EP  + " --clovis_ha_addr=" + clovis_conf.HA_EP + " --clovis_confd_addr=" + clovis_conf.CONFD_EP + " --kvstore=" + clovis_conf.KVS_IDX + " "
+        self.common_args = " --clovis_local_addr=" + clovis_conf.LOCAL_EP  + " --clovis_ha_addr=" + clovis_conf.HA_EP + " --clovis_profile=" + clovis_conf.PROFILE_FID + " --clovis_proc=" + clovis_conf.PROCESS_FID + " --kvstore=" + clovis_conf.KVS_IDX + " "
         super(S3kvTest, self).__init__(description)
 
     def root_index_records(self):
