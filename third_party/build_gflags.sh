@@ -1,7 +1,7 @@
 #!/bin/sh -xe
 # Script to build gflags.
 # git repo: https://github.com/gflags/gflags.git
-# tag: v2.1.2 commit: 1a02f2851ee3d48d32d2c8f4d8f390a0bc25565c
+# tag: v2.2.0 commit: f8a0efe03aa69b3336d8e228b37d4ccb17324b88
 
 cd gflags
 

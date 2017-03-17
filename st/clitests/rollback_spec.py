@@ -298,10 +298,10 @@ for i, val in enumerate(pathstyle_values):
             .execute_test().command_is_successful()
 
     JClientTest('JClient cannot upload 18MB file (Multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15)\
-            .execute_test(negative_case=True).command_should_fail().command_error_should_have("Multipart upload failed")
+            .execute_test(negative_case=True).command_should_fail() #.command_error_should_have("Multipart upload failed")
 
     JClientTest('JClient cannot upload 18MB file (Multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15, chunked=True)\
-            .execute_test(negative_case=True).command_should_fail().command_error_should_have("Multipart upload failed")
+            .execute_test(negative_case=True).command_should_fail() #.command_error_should_have("Multipart upload failed")
 
     S3fiTest('S3Fi disable Fault injection').disable_fi("clovis_obj_write_fail").execute_test().command_is_successful()
 

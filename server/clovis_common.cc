@@ -28,6 +28,7 @@ struct m0_clovis_container clovis_container;
 struct m0_clovis_realm clovis_uber_realm;
 static struct m0_clovis_config clovis_conf;
 
+static struct m0_idx_dix_config dix_conf;
 static struct m0_idx_cass_config cass_conf;
 
 const char *clovis_indices = "./indices";
@@ -67,14 +68,14 @@ int init_clovis(void) {
       break;
 
     case 1:
-      s3_log(S3_LOG_INFO,
-             "KVS Index service Id M0_CLOVIS_IDX_MERO[%d] selected\n",
-             idx_service_id);
-      clovis_conf.cc_idx_service_id = M0_CLOVIS_IDX_MERO;
-      clovis_conf.cc_idx_service_conf = NULL;
+      s3_log(S3_LOG_INFO, "KVS Index service Id M0_CLOVIS_IDX_DIX selected\n");
+      clovis_conf.cc_idx_service_id = M0_CLOVIS_IDX_DIX;
+      dix_conf.kc_create_meta = false;
+      clovis_conf.cc_idx_service_conf = &dix_conf;
       break;
 
     case 2:
+      s3_log(S3_LOG_INFO, "KVS Index service Id M0_CLOVIS_IDX_CASS selected\n");
       cass_conf.cc_cluster_ep = const_cast<char *>(
           option_instance->get_clovis_cass_cluster_ep().c_str());
       cass_conf.cc_keyspace = const_cast<char *>(

@@ -171,7 +171,7 @@ void initialize_global_var() {
   temp.u_lo = 1;
   // reserving an oid for root index -- M0_CLOVIS_ID_APP + 1
   m0_uint128_add(&root_account_user_index_oid, &M0_CLOVIS_ID_APP, &temp);
-  struct m0_fid index_fid = M0_FID_TINIT('i', root_account_user_index_oid.u_hi,
+  struct m0_fid index_fid = M0_FID_TINIT('x', root_account_user_index_oid.u_hi,
                                          root_account_user_index_oid.u_lo);
   root_account_user_index_oid.u_hi = index_fid.f_container;
   root_account_user_index_oid.u_lo = index_fid.f_key;

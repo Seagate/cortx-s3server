@@ -80,7 +80,7 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
     tmp_uint128.u_hi = tmp_uint128.u_hi & 0x0000000007ffffff;
   }
   if (type == S3ClovisEntityType::index) {
-    index_fid = M0_FID_TINIT('i', tmp_uint128.u_hi, tmp_uint128.u_lo);
+    index_fid = M0_FID_TINIT('x', tmp_uint128.u_hi, tmp_uint128.u_lo);
     tmp_uint128.u_hi = index_fid.f_container;
     tmp_uint128.u_lo = index_fid.f_key;
   }

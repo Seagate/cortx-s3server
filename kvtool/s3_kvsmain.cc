@@ -79,6 +79,7 @@ DEFINE_int32(recv_queue_min_len, 16,
 DEFINE_int32(max_rpc_msg_size, 65536,
              "RPC msg size max: default 65536");  // As Suggested by Mero team
 
+static struct m0_idx_dix_config dix_conf;
 static struct m0_idx_cass_config cass_conf;
 static struct m0_clovis *clovis_instance = NULL;
 static struct m0_clovis_container clovis_container;
@@ -105,11 +106,12 @@ static int init_clovis(void) {
   cass_conf.cc_keyspace = const_cast<char *>(FLAGS_clovis_kvs_keyspace.c_str());
 
   cass_conf.cc_max_column_family_num = 1;
+  dix_conf.kc_create_meta = false;
   clovis_conf.cc_idx_service_id = FLAGS_kvstore;
   if (FLAGS_kvstore == 2)
     clovis_conf.cc_idx_service_conf = &cass_conf;
   else
-    clovis_conf.cc_idx_service_conf = NULL;
+    clovis_conf.cc_idx_service_conf = &dix_conf;
 
   clovis_conf.cc_layout_id = 0;
 
@@ -232,6 +234,7 @@ FAIL:
 // Refer clovis/clovis.h for opcodes
 static int execute_kv_query(struct m0_uint128 id, struct m0_bufvec *keys,
                             int *rc_keys, struct m0_bufvec *vals,
+                            unsigned int flags,
                             enum m0_clovis_idx_opcode opcode) {
   int rc;
   struct m0_clovis_op *ops[1] = {NULL};
@@ -241,7 +244,7 @@ static int execute_kv_query(struct m0_uint128 id, struct m0_bufvec *keys,
   ops[0] = NULL;
 
   m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
-  m0_clovis_idx_op(&idx, opcode, keys, vals, rc_keys, &ops[0]);
+  m0_clovis_idx_op(&idx, opcode, keys, vals, rc_keys, flags, &ops[0]);
 
   m0_clovis_op_launch(ops, 1);
   rc = m0_clovis_op_wait(
@@ -287,7 +290,7 @@ static int kv_next(struct m0_uint128 id, const char *keystring, int nr_kvp) {
     memcpy(keys->ov_buf[0], keystring, keylen);
   }
 
-  rc = execute_kv_query(id, keys, rc_keys, vals, M0_CLOVIS_IC_NEXT);
+  rc = execute_kv_query(id, keys, rc_keys, vals, 0, M0_CLOVIS_IC_NEXT);
   if (rc < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -325,7 +328,7 @@ void fetch_root_index() {
   // Fixed oid for root index -- M0_CLOVIS_ID_APP + 1
   m0_uint128_add(&root_user_index_oid, &M0_CLOVIS_ID_APP, &temp);
   struct m0_fid index_fid =
-      M0_FID_TINIT('i', root_user_index_oid.u_hi, root_user_index_oid.u_lo);
+      M0_FID_TINIT('x', root_user_index_oid.u_hi, root_user_index_oid.u_lo);
   root_user_index_oid.u_hi = index_fid.f_container;
   root_user_index_oid.u_lo = index_fid.f_key;
 }
@@ -351,7 +354,7 @@ static int kv_get(struct m0_uint128 id, const char *keystring) {
   if (keys->ov_buf[0] == NULL) goto ERROR;
   memcpy(keys->ov_buf[0], keystring, keylen);
 
-  rc = execute_kv_query(id, keys, &rc_key, vals, M0_CLOVIS_IC_GET);
+  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_CLOVIS_IC_GET);
   if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -407,7 +410,7 @@ static int kv_put(struct m0_uint128 id, const char *keystring,
   vals->ov_buf[0] = (char *)malloc(valuelen);
   memcpy(vals->ov_buf[0], keyvalue, valuelen);
 
-  rc = execute_kv_query(id, keys, &rc_key, vals, M0_CLOVIS_IC_PUT);
+  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_CLOVIS_IC_PUT);
   if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;
@@ -444,7 +447,7 @@ static int kv_delete(struct m0_uint128 id, const char *keystring) {
   if (keys->ov_buf[0] == NULL) goto ERROR;
   memcpy(keys->ov_buf[0], keystring, keylen);
 
-  rc = execute_kv_query(id, keys, &rc_key, vals, M0_CLOVIS_IC_DEL);
+  rc = execute_kv_query(id, keys, &rc_key, vals, 0, M0_CLOVIS_IC_DEL);
   if (rc < 0 || rc_key < 0) {
     fprintf(stderr, "Index Operation failed:%d\n", rc);
     goto ERROR;

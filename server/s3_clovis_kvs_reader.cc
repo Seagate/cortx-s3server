@@ -133,7 +133,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_GET,
                                     kvs_ctx->keys, kvs_ctx->values,
-                                    kvs_ctx->rcs, &(idx_ctx->ops[0]));
+                                    kvs_ctx->rcs, 0, &(idx_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   } else {
@@ -257,7 +257,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
                                  &idx_oid);
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT,
                                     kvs_ctx->keys, kvs_ctx->values,
-                                    kvs_ctx->rcs, &(idx_ctx->ops[0]));
+                                    kvs_ctx->rcs, 0, &(idx_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   } else {

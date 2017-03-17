@@ -55,7 +55,7 @@ class S3kvTest(S3PyCliTest):
 # Root index table OID used by S3server is a constant derived by
 # adding 1 to  M0_CLOVIS_ID_APP define and packing it using M0_FID_TINIT
     def root_index(self):
-        root_oid = S3OID("0x6900000000000000", "0x100001")
+        root_oid = S3OID("0x7800000000000000", "0x100001")
         return root_oid
 
     def next_keyval(self, oid, key, count):
