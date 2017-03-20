@@ -21,12 +21,19 @@
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
 
+        <Socket name="RFC5424" host="localhost" port="514" protocol="UDP">
+            <RFC5424Layout facility="local5"/>
+            <filters>
+                <RegexFilter regex=".*IEC.*" onMatch="ACCEPT" onMismatch="DENY" />
+            </filters>
+        </Socket>
     </Appenders>
 
     <Loggers>
         <Root level="info">
             <AppenderRef ref="STDOUT"/>
             <AppenderRef ref="ROLLINGFILE"/>
+            <AppenderRef ref="RFC5424"/>
         </Root>
 
         <Logger name="io.netty" level="error" additivity="false" >

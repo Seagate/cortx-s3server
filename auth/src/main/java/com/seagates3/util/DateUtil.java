@@ -22,8 +22,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormat;
@@ -69,6 +68,29 @@ public class DateUtil {
         return DateTime.now(DateTimeZone.UTC);
     }
 
+     /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048003001</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>Parser</submodule>
+     *     <description>Unparseable date</description>
+     *     <audience>Development</audience>
+     *     <details>
+     *         Unparseable date.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *     </details>
+     *     <service_actions>
+     *         Save authserver log files and contact development team for
+     *         further investigation.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
     /**
      * Return the current time in UTC.
      */
@@ -79,7 +101,8 @@ public class DateUtil {
         try {
             return dateFormatGmt.parse(dateFormatGmt.format(new Date())).getTime();
         } catch (ParseException ex) {
-            Logger.getLogger(DateUtil.class.getName()).log(Level.SEVERE, null, ex);
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
+                    "Unparseable date", null);
         }
 
         return 0;
@@ -110,6 +133,8 @@ public class DateUtil {
         try {
             return sdf.parse(date);
         } catch (ParseException e) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UNPARSABLE_DATE,
+                    "Unparseable date", null);
         }
 
         return null;

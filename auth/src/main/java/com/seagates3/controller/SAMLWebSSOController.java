@@ -45,6 +45,7 @@ import com.seagates3.saml.SAMLValidator;
 import com.seagates3.service.AccessKeyService;
 import com.seagates3.service.UserService;
 import com.seagates3.util.BinaryUtil;
+import com.seagates3.util.IEMUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -226,6 +227,8 @@ public class SAMLWebSSOController {
                     Unpooled.wrappedBuffer(responseMessage.getBytes("UTF-8"))
             );
         } catch (UnsupportedEncodingException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
             response = null;
         }
 

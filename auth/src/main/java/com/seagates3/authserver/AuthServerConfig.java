@@ -18,6 +18,7 @@
  */
 package com.seagates3.authserver;
 
+import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
@@ -41,6 +42,15 @@ public class AuthServerConfig {
 
         setSamlMetadataFile(authServerConfig.getProperty(
                 "samlMetadataFileName"));
+        String jvm = ManagementFactory.getRuntimeMXBean().getName();
+        AuthServerConfig.authServerConfig.put("pid", jvm.substring(0, jvm.indexOf("@")));
+    }
+
+    /**
+     * @return the process id
+     */
+    public static int getPid() {
+        return Integer.parseInt(authServerConfig.getProperty("pid"));
     }
 
     /**

@@ -20,6 +20,7 @@ package com.seagates3.authserver;
 
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.util.IEMUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -131,6 +132,8 @@ public class AuthServerGetHandler {
 
             LOGGER.debug("HTTP Response sent.");
         } catch (UnsupportedEncodingException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
             response = null;
         }
 
@@ -212,6 +215,8 @@ public class AuthServerGetHandler {
 
             LOGGER.debug("Error response sent.");
         } catch (UnsupportedEncodingException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
             response = null;
         }
 

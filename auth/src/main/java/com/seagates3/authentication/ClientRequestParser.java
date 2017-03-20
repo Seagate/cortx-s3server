@@ -18,6 +18,7 @@
  */
 package com.seagates3.authentication;
 
+import com.seagates3.util.IEMUtil;
 import io.netty.handler.codec.http.FullHttpRequest;
 import java.util.Map;
 
@@ -75,7 +76,9 @@ public class ClientRequestParser {
 
             return (AWSRequestParser) obj;
         } catch (ClassNotFoundException | SecurityException ex) {
-            System.out.println(ex);
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
+                    "Failed to get required class",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException ex) {
             System.out.println(ex);
         }

@@ -24,6 +24,7 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.User;
@@ -43,7 +44,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({LDAPUtils.class, AccessKeyImpl.class})
+@PrepareForTest({LDAPUtils.class, AccessKeyImpl.class, AuthServerConfig.class})
 @MockPolicy(Slf4jMockPolicy.class)
 public class AccessKeyImplTest {
 
@@ -124,6 +125,7 @@ public class AccessKeyImplTest {
     @Before
     public void setUp() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
+        PowerMockito.mockStatic(AuthServerConfig.class);
     }
 
     @Test

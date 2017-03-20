@@ -21,6 +21,7 @@ package com.seagates3.authentication;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
+import com.seagates3.util.IEMUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,30 @@ public class SignatureValidator {
     }
 
     /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048004001</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>Reflection</submodule>
+     *     <description>Failed to get required class</description>
+     *     <audience>Development</audience>
+     *     <details>
+     *         Class not found exception occurred.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *           cause - cause of exception
+     *     </details>
+     *     <service_actions>
+     *         Save authserver log files and contact development team for
+     *         further investigation.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
+    /*
      * Get the client request version and return the AWS signer object.
      */
     private AWSSign getSigner(ClientRequestToken clientRequestToken) {
@@ -69,9 +94,11 @@ public class SignatureValidator {
 
             return (AWSSign) obj;
         } catch (ClassNotFoundException | SecurityException ex) {
-            System.out.println(ex);
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
+                    "Failed to get required class",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException ex) {
-            System.out.println(ex);
+            LOGGER.error("Exception: ", ex);
         }
 
         return null;

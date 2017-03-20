@@ -24,6 +24,7 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.SAMLMetadataTokens;
@@ -45,7 +46,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({LDAPUtils.class, SAMLProviderImpl.class, JSONUtil.class})
+@PrepareForTest({LDAPUtils.class, SAMLProviderImpl.class,
+        JSONUtil.class, AuthServerConfig.class})
 @MockPolicy(Slf4jMockPolicy.class)
 public class SAMLProviderImplTest {
 
@@ -128,6 +130,7 @@ public class SAMLProviderImplTest {
     public void setUp() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
         PowerMockito.mockStatic(JSONUtil.class);
+        PowerMockito.mockStatic(AuthServerConfig.class);
     }
 
     @Test

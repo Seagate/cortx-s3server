@@ -33,6 +33,7 @@ import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.service.RequestorService;
+import com.seagates3.util.IEMUtil;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.lang.reflect.Constructor;
@@ -170,11 +171,17 @@ public class IAMController {
             method = validator.getMethod(resourceMap.getParamValidatorMethod(),
                     Map.class);
             isValidrequest = (Boolean) method.invoke(obj, requestBody);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
-            System.out.println(ex);
-        } catch (IllegalAccessException | IllegalArgumentException |
+        } catch (ClassNotFoundException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
+                    "Failed to get required class",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
+        } catch (NoSuchMethodException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.NO_SUCH_METHOD_EX,
+                    "Failed to invoke method",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
+        } catch (SecurityException |IllegalAccessException | IllegalArgumentException |
                 InvocationTargetException | InstantiationException ex) {
-            System.out.println(ex);
+            LOGGER.error("Exception: ", ex);
         }
 
         return isValidrequest;
@@ -203,11 +210,17 @@ public class IAMController {
             method = controller.getMethod(resourceMap.getControllerAction());
             return (ServerResponse) method.invoke(obj);
 
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
-            System.out.println(ex);
-        } catch (IllegalAccessException | IllegalArgumentException |
+        } catch (ClassNotFoundException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.CLASS_NOT_FOUND_EX,
+                    "Failed to get required class",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
+        } catch (NoSuchMethodException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.NO_SUCH_METHOD_EX,
+                    "Failed to invoke method",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
+        } catch (SecurityException |IllegalAccessException | IllegalArgumentException |
                 InvocationTargetException | InstantiationException ex) {
-            System.out.println(ex);
+            LOGGER.error("Exception: ", ex);
         }
 
         return null;

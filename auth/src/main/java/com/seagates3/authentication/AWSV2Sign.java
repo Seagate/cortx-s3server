@@ -26,6 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import com.seagates3.util.IEMUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,10 +60,8 @@ public class AWSV2Sign implements AWSSign {
                     requestor.getAccesskey().getSecretKey().getBytes(),
                     stringToSign.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException ex) {
-            /*
-             * TODO
-             * Raise an exception
-             */
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
             return false;
         }
 

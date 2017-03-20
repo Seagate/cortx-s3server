@@ -39,6 +39,29 @@ public class BinaryUtil {
     private static final byte[] hexChars = "0123456789abcdef".getBytes();
 
     /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048002001</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>JRE</submodule>
+     *     <description>UTF-8 encoding is not supported</description>
+     *     <audience>Service</audience>
+     *     <details>
+     *         The encoding UTF-8 is not supported by the Java runtime.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *     </details>
+     *     <service_actions>
+     *         Stop authserver. Replace Java runtime with stable Java runtime
+     *         which supports UTF-8 charset. Restart authserver.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
+    /*
      * Return Hex encoded String.
      * All alphabets are lower case.
      */
@@ -47,7 +70,10 @@ public class BinaryUtil {
             byte[] hashedText = hashSHA256(text.getBytes("UTF-8"));
             return toString(encodeToHex(hashedText));
         } catch (UnsupportedEncodingException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
         }
+
         return null;
     }
 
@@ -75,6 +101,29 @@ public class BinaryUtil {
     }
 
     /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048002002</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>JRE</submodule>
+     *     <description>Algorithm HmacSHA256 not available</description>
+     *     <audience>Service</audience>
+     *     <details>
+     *         Algorithm HmacSHA256 is not available.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *     </details>
+     *     <service_actions>
+     *         Stop authserver. Configure security providers correctly in
+     *         java.security policy file. Restart authserver.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
+    /*
      * Calculate the HMAC using SHA-256.
      */
     public static byte[] hmacSHA256(byte[] key, byte[] data) {
@@ -84,12 +133,38 @@ public class BinaryUtil {
             mac.init(new SecretKeySpec(key, "HmacSHA256"));
 
             return mac.doFinal(data);
-        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
-            System.out.println("");
+        } catch (NoSuchAlgorithmException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.HMACSHA256_UNAVAILABLE,
+                    "Algorithm HmacSHA256 not available", null);
+        } catch (InvalidKeyException ex) {
         }
+
         return null;
     }
 
+    /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048002003</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>JRE</submodule>
+     *     <description>Algorithm HmacSHA1 not available</description>
+     *     <audience>Service</audience>
+     *     <details>
+     *         Algorithm HmacSHA1 is not available.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *     </details>
+     *     <service_actions>
+     *         Stop authserver. Configure security providers correctly in
+     *         java.security policy file. Restart authserver.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
     /*
      * Calculate the HMAC using SHA-1.
      */
@@ -100,11 +175,38 @@ public class BinaryUtil {
             mac.init(new SecretKeySpec(key, "HmacSHA1"));
 
             return mac.doFinal(data);
-        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
+        } catch (NoSuchAlgorithmException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.HMACSHA1_UNAVAILABLE,
+                    "Algorithm HmacSHA1 not available", null);
+        } catch (InvalidKeyException ex) {
         }
+
         return null;
     }
 
+    /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048002004</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>JRE</submodule>
+     *     <description>Algorithm SHA-256 not available</description>
+     *     <audience>Service</audience>
+     *     <details>
+     *         Algorithm SHA-256 is not available.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *     </details>
+     *     <service_actions>
+     *         Stop authserver. Configure security providers correctly in
+     *         java.security policy file. Restart authserver.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
     /*
      * Hash the text using SHA-256 algorithm.
      */
@@ -116,7 +218,10 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.SHA256_UNAVAILABLE,
+                    "Algorithm SHA-256 not available", null);
         }
+
         return null;
     }
 
@@ -131,7 +236,10 @@ public class BinaryUtil {
 
             return md.digest();
         } catch (NoSuchAlgorithmException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.SHA256_UNAVAILABLE,
+                    "Algorithm SHA-256 not available", null);
         }
+
         return null;
     }
 

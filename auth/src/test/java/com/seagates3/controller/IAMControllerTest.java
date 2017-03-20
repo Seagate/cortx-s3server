@@ -23,6 +23,7 @@ import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
 import com.seagates3.authorization.Authorizer;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.authserver.IAMResourceMapper;
 import com.seagates3.authserver.ResourceMap;
 import com.seagates3.exception.AuthResourceNotFoundException;
@@ -65,7 +66,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PowerMockIgnore({"javax.management.*"})
 @PrepareForTest({IAMResourceMapper.class, IAMController.class,
         RequestorService.class, ClientRequestParser.class, Authorizer.class,
-        AuthenticationResponseGenerator.class})
+        AuthenticationResponseGenerator.class, AuthServerConfig.class})
 public class IAMControllerTest {
 
     private IAMController controller;
@@ -80,6 +81,7 @@ public class IAMControllerTest {
         mockStatic(IAMResourceMapper.class);
         mockStatic(RequestorService.class);
         mockStatic(ClientRequestParser.class);
+        mockStatic(AuthServerConfig.class);
 
         resourceMap = mock(ResourceMap.class);
         httpRequest = mock(FullHttpRequest.class);

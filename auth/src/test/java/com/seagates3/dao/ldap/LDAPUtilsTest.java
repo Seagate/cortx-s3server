@@ -22,6 +22,7 @@ import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.fi.FaultPoints;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,10 +44,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({LdapConnectionManager.class, FaultPoints.class})
+@PrepareForTest({LdapConnectionManager.class, FaultPoints.class, AuthServerConfig.class})
 @PowerMockIgnore({"javax.management.*"})
 @MockPolicy(Slf4jMockPolicy.class)
 public class LDAPUtilsTest {
@@ -55,6 +57,7 @@ public class LDAPUtilsTest {
 
     @Before
     public void setUp() throws Exception {
+        mockStatic(AuthServerConfig.class);
         ldapConnection = mock(LDAPConnection.class);
         when(ldapConnection.isConnected()).thenReturn(Boolean.TRUE);
         PowerMockito.mockStatic(LdapConnectionManager.class);

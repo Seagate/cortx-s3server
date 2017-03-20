@@ -24,6 +24,7 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.fi.FaultPoints;
+import com.seagates3.util.IEMUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
@@ -85,6 +86,30 @@ public class LDAPUtils {
         return BASE_DN;
     }
 
+     /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048001001</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>LDAP</submodule>
+     *     <description>LDAP exception occurred</description>
+     *     <audience>Development</audience>
+     *     <details>
+     *         LDAP exception occurred.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *           cause - cause of LDAP exception
+     *     </details>
+     *     <service_actions>
+     *         Save authserver log files and contact development team for
+     *         further investigation.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
     /**
      * Search for an entry in LDAP and return the search results.
      *
@@ -113,6 +138,9 @@ public class LDAPUtils {
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while searching for entry. Cause: "
                         + ldapException.getCause());
+                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+                        "LDAP exception occurred",
+                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -143,6 +171,8 @@ public class LDAPUtils {
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while adding new entry. Cause: "
                         + ldapException.getCause());
+                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
+                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -171,6 +201,8 @@ public class LDAPUtils {
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while deleting entry. Cause: "
                         + ldapException.getCause());
+                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
+                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -201,6 +233,8 @@ public class LDAPUtils {
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while updating entry. Cause: "
                         + ldapException.getCause());
+                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
+                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);
@@ -231,8 +265,10 @@ public class LDAPUtils {
 
                 lc.modify(dn, modifications);
             } catch (LDAPException ldapException) {
-                LOGGER.error("Error occurred while updating entry.Cause: "
+                LOGGER.error("Error occurred while updating entry. Cause: "
                         + ldapException.getCause());
+                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
+                        String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
             } finally {
                 LdapConnectionManager.releaseConnection(lc);

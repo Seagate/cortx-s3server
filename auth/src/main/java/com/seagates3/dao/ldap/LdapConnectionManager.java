@@ -24,6 +24,7 @@ import com.novell.ldap.connectionpool.PoolManager;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.ServerInitialisationException;
 import com.seagates3.fi.FaultPoints;
+import com.seagates3.util.IEMUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
@@ -48,6 +49,9 @@ public class LdapConnectionManager {
         } catch (LDAPException ex) {
             String msg = "Failed to initialise LDAP.\n" + ex.toString();
             LOGGER.error(msg);
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
+                    "LDAP exception occurred",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
             throw new ServerInitialisationException(msg);
         }
     }
@@ -66,9 +70,15 @@ public class LdapConnectionManager {
 
             lc = ldapPool.getBoundConnection(
                     ldapLoginDN, ldapLoginPW.getBytes("UTF-8"));
-        } catch (LDAPException | InterruptedException | UnsupportedEncodingException ex) {
+        } catch (LDAPException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
+                    String.format("\"cause\": \"%s\"", ex.getCause()));
+        } catch (InterruptedException ex) {
             LOGGER.error("Failed to connect to LDAP server. Cause: "
                     + ex.getCause());
+        } catch (UnsupportedEncodingException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
         }
 
         return lc;

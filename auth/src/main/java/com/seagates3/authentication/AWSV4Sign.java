@@ -27,6 +27,8 @@ import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+
+import com.seagates3.util.IEMUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -216,6 +218,30 @@ public class AWSV4Sign implements AWSSign {
         return canonicalRequest;
     }
 
+    /*
+     * <IEM_INLINE_DOCUMENTATION>
+     *     <event_code>048004002</event_code>
+     *     <application>S3 Authserver</application>
+     *     <submodule>Reflection</submodule>
+     *     <description>Failed to invoke method</description>
+     *     <audience>Development</audience>
+     *     <details>
+     *         Failed to invoke method.
+     *         The data section of the event has following keys:
+     *           time - timestamp
+     *           node - node name
+     *           pid - process id of Authserver
+     *           file - source code filename
+     *           line - line number within file where error occurred
+     *           cause - cause of exception
+     *     </details>
+     *     <service_actions>
+     *         Save authserver log files and contact development team for
+     *         further investigation.
+     *     </service_actions>
+     * </IEM_INLINE_DOCUMENTATION>
+     *
+     */
     /**
      * Calculate the hash of Payload using the following formula. HashedPayload
      * = Lowercase(HexEncode(Hash(requestPayload)))
@@ -236,9 +262,14 @@ public class AWSV4Sign implements AWSSign {
                 byte[] hashedText = (byte[]) method.invoke(null,
                         clientRequestToken.getRequestPayload().getBytes());
                 hashedPayload = new String(BinaryUtil.encodeToHex(hashedText)).toLowerCase();
-            } catch (NoSuchMethodException | SecurityException |
-                    IllegalAccessException | IllegalArgumentException |
+            } catch (NoSuchMethodException | IllegalAccessException ex) {
+                IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.NO_SUCH_METHOD_EX,
+                        "Failed to invoke method",
+                        String.format("\"cause\": \"%s\"", ex.getCause()));
+                LOGGER.error("Exception description: ", ex);
+            } catch (SecurityException | IllegalArgumentException |
                     InvocationTargetException ex) {
+                LOGGER.error("Exception description: ", ex);
             }
 
             return hashedPayload;
@@ -320,6 +351,8 @@ public class AWSV4Sign implements AWSSign {
                     "aws4_request".getBytes("UTF-8"));
             return kSigning;
         } catch (UnsupportedEncodingException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
         }
 
         return null;
@@ -336,6 +369,8 @@ public class AWSV4Sign implements AWSSign {
                     stringToSign.getBytes("UTF-8"));
             return BinaryUtil.toHex(signature);
         } catch (UnsupportedEncodingException ex) {
+            IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
         }
 
         return null;
@@ -432,7 +467,7 @@ public class AWSV4Sign implements AWSSign {
                 canonicalString += URLEncoder.encode(entry.getKey(), "UTF-8") + "=";
                 canonicalString += URLEncoder.encode(entry.getValue(), "UTF-8");
             } catch (UnsupportedEncodingException ex) {
-
+                LOGGER.error("UTF-8 encoding is not supported");
             }
 
             if (entries.hasNext()) {
