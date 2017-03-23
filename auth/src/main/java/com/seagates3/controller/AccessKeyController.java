@@ -191,6 +191,8 @@ public class AccessKeyController extends AbstractController {
     @Override
     public ServerResponse update() {
         AccessKey accessKey;
+        User user = null;
+
         try {
             accessKey = accessKeyDAO.find(requestBody.get("AccessKeyId"));
         } catch (DataAccessException ex) {
@@ -206,7 +208,6 @@ public class AccessKeyController extends AbstractController {
          * access key id belongs to the user.
          */
         if (requestBody.containsKey("UserName")) {
-            User user;
             try {
                 user = userDAO.find(requestor.getAccount().getName(),
                         requestBody.get("UserName"));
@@ -214,13 +215,22 @@ public class AccessKeyController extends AbstractController {
                 return accessKeyResponseGenerator.internalServerError();
             }
 
-            if (!user.exists()) {
+            if (!user.exists() || accessKey.getUserId().compareTo(user.getId()) != 0) {
                 return accessKeyResponseGenerator.noSuchEntity();
             }
+        } else {
+            try {
+                user = userDAO.findByUserId(requestor.getAccount().getName(),
+                        accessKey.getUserId());
+            } catch (DataAccessException e) {
+                return accessKeyResponseGenerator.internalServerError();
+            }
+        }
 
-            if (accessKey.getUserId().compareTo(user.getId()) != 0) {
-                return accessKeyResponseGenerator.noSuchEntity();
-            }
+        if (user.getName().equals("root")) {
+            return accessKeyResponseGenerator.operationNotSupported(
+                    "Access key status for root user can not be changed."
+            );
         }
 
         String newStatus = requestBody.get("Status");

@@ -24,9 +24,14 @@ import com.seagates3.model.User;
 public interface UserDAO {
 
     /*
-     * Get user details from the database.
+     * Get user details from the database using user name.
      */
-    public User find(String accountName, String name) throws DataAccessException;
+    public User find(String accountName, String userName) throws DataAccessException;
+
+    /*
+     * Get user details from the database using user id.
+     */
+    public User findByUserId(String accountName, String userId) throws DataAccessException;
 
     /*
      * Get the details of all the users with the given path prefix from an account.

@@ -157,16 +157,11 @@ def accesskey_tests():
     result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
     result.command_response_should_have("Exception occured while deleting access key.")
 
-    test_msg = 'Update access key (Change status from Active to Inactive)'
+    test_msg = 'Update access key for root user should fail(Change status from Active to Inactive)'
     access_key_args['Status'] = "Inactive"
     access_key_args['UserName'] = 'root'
     result = AuthTest(test_msg).update_access_key(**access_key_args).execute_test()
-    result.command_response_should_have("Access key Updated.")
-
-    test_msg = 'List access keys (Check if status is inactive.)'
-    access_key_args['UserName'] = 'root'
-    result = AuthTest(test_msg).list_access_keys(**access_key_args).execute_test()
-    result.command_response_should_have("Inactive")
+    result.command_response_should_have("Access key status for root user can not be changed")
 
     test_msg = 'Delete access key'
     access_key_args['UserName'] = 'root'
@@ -179,6 +174,44 @@ def accesskey_tests():
     accesskey_response_pattern = "UserName = root, AccessKeyId = [\w-]*, Status = Active$"
     result = AuthTest(test_msg).list_access_keys(**access_key_args).execute_test()
     result.command_should_match_pattern(accesskey_response_pattern)
+
+    user_args = {}
+    user_args['UserName'] = "s3user1"
+    test_msg = "Create User s3user1 (default path)"
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+
+    test_msg = 'Create access key (user name is s3user1)'
+    access_key_args = {}
+    access_key_args['UserName'] = 's3user1'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+
+    test_msg = 'Update access key (Change status from Active to Inactive)'
+    access_key_args['Status'] = "Inactive"
+    access_key_args['UserName'] = 's3user1'
+    result = AuthTest(test_msg).update_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key Updated.")
+
+    test_msg = 'List access keys (Check if status is inactive.)'
+    access_key_args['UserName'] = 's3user1'
+    result = AuthTest(test_msg).list_access_keys(**access_key_args).execute_test()
+    result.command_response_should_have("Inactive")
+
+    test_msg = 'Delete access key'
+    access_key_args['UserName'] = 's3user1'
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+    test_msg = 'Delete User s3user1'
+    user_args = {}
+    user_args['UserName'] = "s3user1"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
 
 def role_tests():
     policy_doc = os.path.join(os.path.dirname(__file__), 'resources', 'policy')

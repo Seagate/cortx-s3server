@@ -1120,4 +1120,97 @@ public class AccessKeyControllerTest {
         Assert.assertEquals(HttpResponseStatus.OK,
                 response.getResponseStatus());
     }
+
+    @Test
+    public void UpdateAccessKey_RootUserAccesskKey_UpdateShouldFail_WithUserName()
+            throws Exception {
+        createAccessKeyController_UpdateAPI("root");
+
+        AccessKey accessKey = new AccessKey();
+        accessKey.setId(ACCESS_KEY_ID);
+        accessKey.setUserId("123");
+        accessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+
+        User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName("root");
+        user.setId("123");
+
+        Mockito.when(accessKeyDAO.find(ACCESS_KEY_ID)).thenReturn(accessKey);
+        Mockito.when(userDAO.find(ACCOUNT_NAME, USER_NAME))
+                .thenReturn(user);
+        Mockito.doNothing().when(accessKeyDAO).update(accessKey, "Inactive");
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc/" +
+                "2010-05-08/\"><Error><Code>OperationNotSupported</Code><Message>Access " +
+                "key status for root user can not be changed.</Message></Error><RequestId>" +
+                "0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accessKeyController.update();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+    }
+
+    @Test
+    public void UpdateAccessKey_RootUserAccesskKey_UpdateShouldFail()
+            throws Exception {
+        createAccessKeyController_UpdateAPI(null);
+
+        AccessKey accessKey = new AccessKey();
+        accessKey.setId(ACCESS_KEY_ID);
+        accessKey.setUserId("123");
+        accessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+
+        User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName("root");
+        user.setId("123");
+
+        Mockito.when(accessKeyDAO.find(ACCESS_KEY_ID)).thenReturn(accessKey);
+        Mockito.when(userDAO.findByUserId(ACCOUNT_NAME, "123")).thenReturn(user);
+        Mockito.doNothing().when(accessKeyDAO).update(accessKey, "Inactive");
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc/" +
+                "2010-05-08/\"><Error><Code>OperationNotSupported</Code><Message>Access " +
+                "key status for root user can not be changed.</Message></Error><RequestId>" +
+                "0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accessKeyController.update();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+    }
+
+    @Test
+    public void UpdateAccessKey_FindByUserId_ShouldThrowException()
+            throws Exception {
+        createAccessKeyController_UpdateAPI(null);
+
+        AccessKey accessKey = new AccessKey();
+        accessKey.setId(ACCESS_KEY_ID);
+        accessKey.setUserId("123");
+        accessKey.setStatus(AccessKey.AccessKeyStatus.ACTIVE);
+
+        User user = new User();
+        user.setAccountName(ACCOUNT_NAME);
+        user.setName("root");
+        user.setId("123");
+
+        Mockito.when(accessKeyDAO.find(ACCESS_KEY_ID)).thenReturn(accessKey);
+        Mockito.when(userDAO.findByUserId(ACCOUNT_NAME, "123")).thenThrow(
+                new DataAccessException("Failed to find user details.")
+        );
+        Mockito.doNothing().when(accessKeyDAO).update(accessKey, "Inactive");
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc/" +
+                "2010-05-08/\"><Error><Code>InternalFailure</Code><Message>The request " +
+                "processing has failed because of an unknown error, exception or failure." +
+                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accessKeyController.update();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR, response.getResponseStatus());
+    }
 }

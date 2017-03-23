@@ -48,10 +48,14 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class UserImplTest {
 
     private final String FIND_FILTER = "(cn=s3testuser)";
+    private final String FIND_BYUSERID_FILTER = "(s3userid=s3UserId)";
+
     private final String[] FIND_ATTRS = {"s3userid", "path", "rolename",
-        "objectclass", "createtimestamp"};
+            "objectclass", "createtimestamp"};
     private final String[] FIND_ALL_ATTRS = {"s3userid", "cn", "path",
-        "createtimestamp"};
+            "createtimestamp"};
+    private final String[] FIND_BYUSERID_ATTRS = {"cn", "path", "rolename",
+            "objectclass", "createtimestamp"};
 
     private final String LDAP_DATE;
     private final String EXPECTED_DATE;
@@ -109,7 +113,6 @@ public class UserImplTest {
                 .thenReturn(commonNameAttr);
         Mockito.when(commonNameAttr.getStringValue()).
                 thenReturn("s3testuser");
-
     }
 
     @Before
@@ -149,7 +152,7 @@ public class UserImplTest {
     }
 
     @Test
-    public void Find_ExceptionOccuredWhileIterating_ThrowException()
+    public void Find_ExceptionOccurredWhileIterating_ThrowException()
             throws Exception {
         String userBaseDN = "ou=users,o=s3test,ou=accounts,"
                 + "dc=s3,dc=seagate,dc=com";
@@ -211,6 +214,100 @@ public class UserImplTest {
         Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
 
         User user = userImpl.find("s3test", "s3testuser");
+        Assert.assertThat(expectedUser, new ReflectionEquals(user));
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindById_LdapSearchFailed_ThrowException() throws Exception {
+        String userBaseDN = "ou=users,o=s3test,ou=accounts,"
+                + "dc=s3,dc=seagate,dc=com";
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
+                userBaseDN, 2, FIND_BYUSERID_FILTER, FIND_BYUSERID_ATTRS
+        );
+
+        userImpl.findByUserId("s3test", "s3UserId");
+    }
+
+    @Test
+    public void FindById_UserDoesNotExist_ReturnUserObject() throws Exception {
+        User expectedUser = new User();
+        expectedUser.setAccountName("s3test");
+        expectedUser.setId("s3UserId");
+
+        String userBaseDN = "ou=users,o=s3test,ou=accounts,"
+                + "dc=s3,dc=seagate,dc=com";
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                userBaseDN, 2, FIND_BYUSERID_FILTER, FIND_BYUSERID_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.FALSE);
+
+        User user = userImpl.findByUserId("s3test", "s3UserId");
+        Assert.assertThat(expectedUser, new ReflectionEquals(user));
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindById_ExceptionOccurredWhileIterating_ThrowException()
+            throws Exception {
+        String userBaseDN = "ou=users,o=s3test,ou=accounts,"
+                + "dc=s3,dc=seagate,dc=com";
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                userBaseDN, 2, FIND_BYUSERID_FILTER, FIND_BYUSERID_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+        Mockito.doThrow(new LDAPException()).when(ldapResults).next();
+
+        userImpl.findByUserId("s3test", "s3UserId");
+    }
+
+    @Test
+    public void FindById_IAMUserExists_ReturnUserObject() throws Exception {
+        User expectedUser = new User();
+        expectedUser.setAccountName("s3test");
+        expectedUser.setName("s3testuser");
+        expectedUser.setId("s3UserId");
+        expectedUser.setUserType("iamUser");
+        expectedUser.setPath("/");
+        expectedUser.setCreateDate(EXPECTED_DATE);
+
+        String userBaseDN = "ou=users,o=s3test,ou=accounts,"
+                + "dc=s3,dc=seagate,dc=com";
+
+        setupUserAttr();
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                userBaseDN, 2, FIND_BYUSERID_FILTER, FIND_BYUSERID_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+
+        User user = userImpl.findByUserId("s3test", "s3UserId");
+        Assert.assertThat(expectedUser, new ReflectionEquals(user));
+    }
+
+    @Test
+    public void FindById_RoleUserExists_ReturnUserObject() throws Exception {
+        User expectedUser = new User();
+        expectedUser.setAccountName("s3test");
+        expectedUser.setName("s3testuser");
+        expectedUser.setId("s3UserId");
+        expectedUser.setUserType("roleUser");
+        expectedUser.setCreateDate(EXPECTED_DATE);
+        expectedUser.setRoleName("roleUserName");
+
+        setupUserAttr();
+        Mockito.when(objectClassAttr.getStringValue()).thenReturn("roleUser");
+        Mockito.when(entry.getAttribute("rolename"))
+                .thenReturn(roleAttr);
+        Mockito.when(roleAttr.getStringValue()).thenReturn("roleUserName");
+
+        String userBaseDN = "ou=users,o=s3test,ou=accounts,"
+                + "dc=s3,dc=seagate,dc=com";
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                userBaseDN, 2, FIND_BYUSERID_FILTER, FIND_BYUSERID_ATTRS
+        );
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+
+        User user = userImpl.findByUserId("s3test", "s3UserId");
         Assert.assertThat(expectedUser, new ReflectionEquals(user));
     }
 
