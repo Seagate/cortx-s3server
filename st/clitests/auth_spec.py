@@ -69,12 +69,27 @@ def user_tests():
     result = AuthTest(test_msg).create_user(**user_args).execute_test()
     result.command_should_match_pattern(user1_response_pattern)
 
-    test_msg = "Create User s3user2 (path = /test/)"
-    user_args['UserName'] = "s3user2"
-    user_args['Path'] = "/test/"
-    user2_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /test/$"
-    result = AuthTest(test_msg).create_user(**user_args).execute_test()
-    result.command_should_match_pattern(user2_response_pattern)
+    test_msg = 'Update User s3user1 (new name = s3user1New, new path - /test/success)'
+    user_args = {}
+    user_args['UserName'] = "s3user1"
+    user_args['NewUserName'] = "s3user1New"
+    user_args['NewPath'] = "/test/success/"
+    result = AuthTest(test_msg).update_user(**user_args).execute_test()
+    result.command_response_should_have("User Updated.")
+
+    test_msg = 'List Users (path prefix = /test/)'
+    user_args['PathPrefix'] = '/test/'
+    list_user_pattern = "UserId = [\w-]*, UserName = s3user1New, ARN = [\S]*, Path = /test/success/$"
+    result = AuthTest(test_msg).list_users(**user_args).execute_test()
+    result.command_should_match_pattern(list_user_pattern)
+
+    test_msg = 'Reset s3user1 user attributes (path and name)'
+    user_args = {}
+    user_args['UserName'] = "s3user1New"
+    user_args['NewUserName'] = "s3user1"
+    user_args['NewPath'] = "/"
+    result = AuthTest(test_msg).update_user(**user_args).execute_test()
+    result.command_response_should_have("User Updated.")
 
     test_msg = 'Delete User s3user1'
     user_args = {}
@@ -82,35 +97,47 @@ def user_tests():
     result = AuthTest(test_msg).delete_user(**user_args).execute_test()
     result.command_response_should_have("User deleted.")
 
+    test_msg = "Create User s3user2 (path = /test/)"
+    user_args['UserName'] = "s3user2"
+    user_args['Path'] = "/test/"
+    user2_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /test/$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user2_response_pattern)
+
     test_msg = 'Delete User s3user2'
     user_args['UserName'] = "s3user2"
     result = AuthTest(test_msg).delete_user(**user_args).execute_test()
     result.command_response_should_have("User deleted.")
 
-    test_msg = 'Update User root (new name = root, new path - /test/success)'
+    test_msg = 'Update User root (new name = s3root) should fail'
     user_args = {}
     user_args['UserName'] = "root"
     user_args['NewUserName'] = "s3root"
+    result = AuthTest(test_msg).update_user(**user_args).execute_test()
+    result.command_response_should_have("Cannot change user name of root user")
+
+    test_msg = 'Update User root (new path - /test/success)'
+    user_args = {}
+    user_args['UserName'] = "root"
     user_args['NewPath'] = "/test/success/"
     result = AuthTest(test_msg).update_user(**user_args).execute_test()
     result.command_response_should_have("User Updated.")
 
     test_msg = 'List Users (default path)'
     user_args = {}
-    list_user_pattern = "UserId = [\w-]*, UserName = s3root, ARN = [\S]*, Path = /test/success/$"
+    list_user_pattern = "UserId = [\w-]*, UserName = root, ARN = [\S]*, Path = /test/success/$"
     result = AuthTest(test_msg).list_users(**user_args).execute_test()
     result.command_should_match_pattern(list_user_pattern)
 
     test_msg = 'List Users (path prefix = /test/)'
     user_args['PathPrefix'] = '/test/'
-    list_user_pattern = "UserId = [\w-]*, UserName = s3root, ARN = [\S]*, Path = /test/success/$"
+    list_user_pattern = "UserId = [\w-]*, UserName = root, ARN = [\S]*, Path = /test/success/$"
     result = AuthTest(test_msg).list_users(**user_args).execute_test()
     result.command_should_match_pattern(list_user_pattern)
 
     test_msg = 'Reset root user attributes (path and name)'
     user_args = {}
-    user_args['UserName'] = "s3root"
-    user_args['NewUserName'] = "root"
+    user_args['UserName'] = "root"
     user_args['NewPath'] = "/"
     result = AuthTest(test_msg).update_user(**user_args).execute_test()
     result.command_response_should_have("User Updated.")

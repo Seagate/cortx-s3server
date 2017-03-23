@@ -162,6 +162,13 @@ public class UserController extends AbstractController {
             return userResponseGenerator.missingParameter();
         }
 
+        if ("root".equals(requestBody.get("UserName")) &&
+                requestBody.containsKey("NewUserName")) {
+            return userResponseGenerator.operationNotSupported(
+                    "Cannot change user name of root user."
+            );
+        }
+
         User user;
         try {
             user = userDAO.find(requestor.getAccount().getName(),

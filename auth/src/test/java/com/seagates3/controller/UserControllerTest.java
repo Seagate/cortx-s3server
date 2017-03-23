@@ -157,12 +157,17 @@ public class UserControllerTest {
      * @throws Exception
      */
     private void createUserController_UpdateAPI(String newUserName,
-            String newPath) throws Exception {
+                                                String newPath) throws Exception {
+        createUserController_UpdateAPI("s3testuser", newUserName, newPath);
+    }
+
+    private void createUserController_UpdateAPI(String userName, String newUserName,
+                                                String newPath) throws Exception {
         Requestor requestor = new Requestor();
         requestor.setAccount(ACCOUNT);
 
         Map<String, String> requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        requestBody.put("UserName", "s3testuser");
+        requestBody.put("UserName", userName);
         if (newPath != null) {
             requestBody.put("NewPath", newPath);
         }
@@ -756,6 +761,23 @@ public class UserControllerTest {
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                response.getResponseStatus());
+    }
+
+    @Test
+    public void UpdateUser_UpdateRootUser_ShouldFail()
+            throws Exception {
+        createUserController_UpdateAPI("root", "rootNewName", null);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc" +
+                "/2010-05-08/\"><Error><Code>OperationNotSupported</Code><Message>Cannot" +
+                " change user name of root user.</Message></Error><RequestId>0000<" +
+                "/RequestId></ErrorResponse>";
+
+        ServerResponse response = userController.update();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                 response.getResponseStatus());
     }
 
