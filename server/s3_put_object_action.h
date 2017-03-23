@@ -22,17 +22,21 @@
 #ifndef __S3_SERVER_S3_PUT_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_PUT_OBJECT_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 #include <string>
 #include "s3_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_factory.h"
 #include "s3_object_metadata.h"
 #include "s3_timer.h"
 
 class S3PutObjectAction : public S3Action {
-  struct m0_uint128 oid;
+  struct m0_uint128 old_object_oid;
+  struct m0_uint128 new_object_oid;
+  struct m0_uint128 object_list_oid;
   // Maximum retry count for collision resolution
   unsigned short tried_count;
   // string used for salting the uri
@@ -46,16 +50,25 @@ class S3PutObjectAction : public S3Action {
   S3Timer write_content_timer;
   bool write_in_progress;
 
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+
  public:
-  S3PutObjectAction(std::shared_ptr<S3RequestObject> req);
+  S3PutObjectAction(std::shared_ptr<S3RequestObject> req,
+                    S3BucketMetadataFactory* bucket_meta_factory = NULL,
+                    S3ObjectMetadataFactory* object_meta_factory = NULL,
+                    S3ClovisWriterFactory* clovis_s3_factory = NULL);
 
   void setup_steps();
   // void start();
 
   void fetch_bucket_info();
+  void fetch_object_info();
+  void fetch_object_info_status();
   void create_object();
   void create_object_failed();
-  void create_new_oid();
+  void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
 
   void initiate_data_streaming();
@@ -65,11 +78,73 @@ class S3PutObjectAction : public S3Action {
   void write_object_successful();
   void write_object_failed();
   void save_metadata();
+  void delete_old_object_if_present();
+  void delete_old_object_failed();
   void send_response_to_s3_client();
 
   // rollback functions
   void rollback_create();
   void rollback_create_failed();
+
+  FRIEND_TEST(S3PutObjectActionTest, ConstructorTest);
+  FRIEND_TEST(S3PutObjectActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
+  FRIEND_TEST(S3PutObjectActionTest,
+              FetchObjectInfoWhenBucketAndObjIndexPresent);
+  FRIEND_TEST(S3PutObjectActionTest,
+              FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);
+  FRIEND_TEST(S3PutObjectActionTest,
+              FetchObjectInfoReturnedFoundShouldHaveNewOID);
+  FRIEND_TEST(S3PutObjectActionTest,
+              FetchObjectInfoReturnedNotFoundShouldUseURL2OID);
+  FRIEND_TEST(S3PutObjectActionTest,
+              FetchObjectInfoReturnedInvalidStateReportsError);
+  FRIEND_TEST(S3PutObjectActionTest, CreateObjectFirstAttempt);
+  FRIEND_TEST(S3PutObjectActionTest, CreateObjectSecondAttempt);
+  FRIEND_TEST(S3PutObjectActionTest, CreateObjectFailedTestWhileShutdown);
+  FRIEND_TEST(S3PutObjectActionTest,
+              CreateObjectFailedWithCollisionExceededRetry);
+  FRIEND_TEST(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry);
+  FRIEND_TEST(S3PutObjectActionTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3PutObjectActionTest, RollbackTest);
+  FRIEND_TEST(S3PutObjectActionTest, CreateNewOidTest);
+  FRIEND_TEST(S3PutObjectActionTest, RollbackFailedTest1);
+  FRIEND_TEST(S3PutObjectActionTest, RollbackFailedTest2);
+  FRIEND_TEST(S3PutObjectActionTest, InitiateDataStreamingForZeroSizeObject);
+  FRIEND_TEST(S3PutObjectActionTest, InitiateDataStreamingExpectingMoreData);
+  FRIEND_TEST(S3PutObjectActionTest, InitiateDataStreamingWeHaveAllData);
+  FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeAllData);
+  FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeExactData);
+  FRIEND_TEST(S3PutObjectActionTest,
+              ConsumeIncomingShouldWriteIfWeHaveMoreData);
+  FRIEND_TEST(S3PutObjectActionTest,
+              ConsumeIncomingShouldPauseWhenWeHaveTooMuch);
+  FRIEND_TEST(S3PutObjectActionTest,
+              ConsumeIncomingShouldNotWriteWhenWriteInprogress);
+  FRIEND_TEST(S3PutObjectActionTest,
+              WriteObjectShouldWriteContentAndMarkProgress);
+  FRIEND_TEST(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
+  FRIEND_TEST(S3PutObjectActionTest,
+              WriteObjectSuccessfulWhileShuttingDownAndRollback);
+  FRIEND_TEST(S3PutObjectActionTest,
+              WriteObjectSuccessfulShouldWriteStateAllData);
+  FRIEND_TEST(S3PutObjectActionTest,
+              WriteObjectSuccessfulShouldWriteWhenExactWritableSize);
+  FRIEND_TEST(S3PutObjectActionTest,
+              WriteObjectSuccessfulShouldWriteSomeDataWhenMoreData);
+  FRIEND_TEST(S3PutObjectActionTest,
+              WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
+  FRIEND_TEST(S3PutObjectActionTest,
+              WriteObjectSuccessfulShouldRestartReadingData);
+  FRIEND_TEST(S3PutObjectActionTest, SaveMetadata);
+  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectNotRequired);
+  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectSinceItsPresent);
+  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectFailed);
+  FRIEND_TEST(S3PutObjectActionTest, SendResponseWhenShuttingDown);
+  FRIEND_TEST(S3PutObjectActionTest, SendErrorResponse);
+  FRIEND_TEST(S3PutObjectActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3PutObjectActionTest, SendFailedResponse);
 };
 
 #endif

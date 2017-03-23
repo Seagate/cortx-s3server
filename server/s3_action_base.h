@@ -67,6 +67,7 @@ enum class S3ActionState {
   complete,
   paused,
   stopped,  // Aborted
+  error,
 };
 
 // Derived Action Objects will have steps (member functions)
@@ -98,7 +99,7 @@ class S3Action {
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
-  std::string error_message;
+  std::string s3_error_code;
   S3ActionState state;
   S3ActionState rollback_state;
 
@@ -120,12 +121,17 @@ class S3Action {
   S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true);
   virtual ~S3Action();
 
-  void get_error_message(std::string& message);
+  void set_s3_error(std::string code);
+  std::string& get_s3_error_code();
+  bool is_error_state();
 
  protected:
   void add_task(std::function<void()> task) { task_list.push_back(task); }
 
-  void clear_tasks() { task_list.clear(); }
+  void clear_tasks() {
+    task_list.clear();
+    task_iteration_index = 0;
+  }
 
   std::shared_ptr<S3AuthClient>& get_auth_client() { return auth_client; }
 

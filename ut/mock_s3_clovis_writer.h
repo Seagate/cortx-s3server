@@ -36,11 +36,17 @@ class MockS3ClovisWriter : public S3ClovisWriter {
                      struct m0_uint128 oid)
       : S3ClovisWriter(req, oid) {}
   MOCK_METHOD0(get_state, S3ClovisWriterOpState());
+  MOCK_METHOD0(get_oid, struct m0_uint128());
+  MOCK_METHOD0(get_content_md5, std::string());
   MOCK_METHOD2(create_object, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
   MOCK_METHOD2(delete_object, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
   MOCK_METHOD1(set_oid, void(struct m0_uint128 oid));
+  MOCK_METHOD3(write_content,
+               void(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed,
+                    std::shared_ptr<S3AsyncBufferOptContainer> buffer));
 };
 
 #endif

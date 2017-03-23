@@ -60,9 +60,9 @@ class S3AsyncBufferOptContainer {
   // Call this to indicate that no more data will be added to buffer.
   void freeze();
 
-  bool is_freezed();
+  virtual bool is_freezed();
 
-  size_t get_content_length();
+  virtual size_t get_content_length();
 
   void add_content(evbuf_t *buf, bool is_last_buf = false);
 

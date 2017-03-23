@@ -31,7 +31,7 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   task_iteration_index = 0;
   rollback_index = 0;
-  error_message = "";
+  s3_error_code = "";
   state = S3ActionState::start;
   rollback_state = S3ActionState::start;
   mem_profile.reset(new S3MemoryProfile());
@@ -40,9 +40,14 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
 
 S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, "Destructor\n"); }
 
-void S3Action::get_error_message(std::string& message) {
-  error_message = message;
+void S3Action::set_s3_error(std::string code) {
+  state = S3ActionState::error;
+  s3_error_code = code;
 }
+
+std::string& S3Action::get_s3_error_code() { return s3_error_code; }
+
+bool S3Action::is_error_state() { return state == S3ActionState::error; }
 
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, "Setup the action\n");

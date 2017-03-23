@@ -19,13 +19,9 @@
 
 #include <memory>
 
-#include "mock_s3_bucket_metadata.h"
-#include "mock_s3_clovis_writer.h"
-#include "mock_s3_object_metadata.h"
-#include "mock_s3_object_multipart_metadata.h"
-#include "mock_s3_part_metadata.h"
+#include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
-#include "s3_factory.h"
+#include "s3_common.h"
 #include "s3_post_multipartobject_action.h"
 
 using ::testing::Return;
@@ -34,109 +30,6 @@ using ::testing::_;
 using ::testing::ReturnRef;
 using ::testing::AtLeast;
 using ::testing::DefaultValue;
-
-class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
- public:
-  MockS3BucketMetadataFactory(std::shared_ptr<S3RequestObject> req)
-      : S3BucketMetadataFactory() {
-    //  We create object here since we want to set some expectations
-    // Before create_bucket_metadata_obj() is called
-    mock_bucket_metadata = std::make_shared<MockS3BucketMetadata>(req);
-  }
-
-  std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
-      std::shared_ptr<S3RequestObject> req) {
-    return mock_bucket_metadata;
-  }
-
-  // Use this to setup your expectations.
-  std::shared_ptr<MockS3BucketMetadata> mock_bucket_metadata;
-};
-
-class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
- public:
-  MockS3ObjectMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                              m0_uint128 object_list_indx_oid)
-      : S3ObjectMetadataFactory() {
-    mock_object_metadata =
-        std::make_shared<MockS3ObjectMetadata>(req, object_list_indx_oid);
-  }
-
-  std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 indx_oid) {
-    return mock_object_metadata;
-  }
-
-  std::shared_ptr<MockS3ObjectMetadata> mock_object_metadata;
-};
-
-class MockS3PartMetadataFactory : public S3PartMetadataFactory {
- public:
-  MockS3PartMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                            m0_uint128 indx_oid, std::string upload_id,
-                            int part_num)
-      : S3PartMetadataFactory() {
-    mock_part_metadata = std::make_shared<MockS3PartMetadata>(
-        req, indx_oid, upload_id, part_num);
-  }
-
-  std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 indx_oid,
-      std::string upload_id, int part_num) {
-    s3_log(S3_LOG_DEBUG, "here....\n");
-    return mock_part_metadata;
-  }
-
-  std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, std::string upload_id,
-      int part_num) {
-    s3_log(S3_LOG_DEBUG, "here....\n");
-    return mock_part_metadata;
-  }
-
-  std::shared_ptr<MockS3PartMetadata> mock_part_metadata;
-};
-
-class MockS3ObjectMultipartMetadataFactory
-    : public S3ObjectMultipartMetadataFactory {
- public:
-  MockS3ObjectMultipartMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                                       m0_uint128 mp_indx_oid, bool is_mp,
-                                       std::string upload_id)
-      : S3ObjectMultipartMetadataFactory() {
-    //  We create object here since we want to set some expectations
-    // Before create_bucket_metadata_obj() is called
-    mock_object_mp_metadata = std::make_shared<MockS3ObjectMultipartMetadata>(
-        req, mp_indx_oid, is_mp, upload_id);
-  }
-
-  std::shared_ptr<S3ObjectMetadata> create_object_mp_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 mp_indx_oid,
-      bool is_mp, std::string upload_id) {
-    s3_log(S3_LOG_DEBUG, "here....\n");
-    return mock_object_mp_metadata;
-  }
-
-  // Use this to setup your expectations.
-  std::shared_ptr<MockS3ObjectMultipartMetadata> mock_object_mp_metadata;
-};
-
-class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
- public:
-  MockS3ClovisWriterFactory(std::shared_ptr<S3RequestObject> req,
-                            m0_uint128 oid)
-      : S3ClovisWriterFactory() {
-    mock_clovis_writer = std::make_shared<MockS3ClovisWriter>(req, oid);
-  }
-
-  std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid) {
-    s3_log(S3_LOG_DEBUG, "here....\n");
-    return mock_clovis_writer;
-  }
-
-  std::shared_ptr<MockS3ClovisWriter> mock_clovis_writer;
-};
 
 class S3PostMultipartObjectTest : public testing::Test {
  protected:
@@ -352,7 +245,7 @@ TEST_F(S3PostMultipartObjectTest, CollisionTest) {
   action_under_test->collision_occured();
   EXPECT_EQ(2, action_under_test->tried_count);
 
-  action_under_test->tried_count = MAX_COLLISION_TRY + 1;
+  action_under_test->tried_count = MAX_COLLISION_RETRY_COUNT + 1;
   ON_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillByDefault(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));

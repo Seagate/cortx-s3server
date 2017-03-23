@@ -144,14 +144,12 @@ class S3ClovisWriter {
 
   virtual S3ClovisWriterOpState get_state() { return state; }
 
-  struct m0_uint128 get_oid() {
-    return oid;
-  }
+  virtual struct m0_uint128 get_oid() { return oid; }
 
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
 
   // This concludes the md5 calculation
-  std::string get_content_md5() {
+  virtual std::string get_content_md5() {
     // Complete MD5 computation and remember
     if (content_md5.empty()) {
       md5crypt.Finalize();
@@ -169,9 +167,9 @@ class S3ClovisWriter {
   void create_object_failed();
 
   // Async save operation.
-  void write_content(std::function<void(void)> on_success,
-                     std::function<void(void)> on_failed,
-                     std::shared_ptr<S3AsyncBufferOptContainer> buffer);
+  virtual void write_content(std::function<void(void)> on_success,
+                             std::function<void(void)> on_failed,
+                             std::shared_ptr<S3AsyncBufferOptContainer> buffer);
   void write_content_successful();
   void write_content_failed();
 

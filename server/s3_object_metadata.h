@@ -119,18 +119,16 @@ class S3ObjectMetadata {
     return "BUCKET/" + bucket_name + "/" + "Multipart";
   }
 
-  void set_content_length(std::string length);
+  virtual void set_content_length(std::string length);
   size_t get_content_length();
   std::string get_content_length_str();
 
-  void set_md5(std::string md5);
+  virtual void set_md5(std::string md5);
   std::string get_md5();
 
-  void set_oid(struct m0_uint128 id);
+  virtual void set_oid(struct m0_uint128 id);
   void set_part_index_oid(struct m0_uint128 id);
-  struct m0_uint128 get_oid() {
-    return oid;
-  }
+  virtual struct m0_uint128 get_oid() { return oid; }
 
   struct m0_uint128 get_part_index_oid() {
     return part_index_oid;
@@ -158,7 +156,7 @@ class S3ObjectMetadata {
   std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);
   std::string get_user_defined_attribute(std::string key);
-  void add_user_defined_attribute(std::string key, std::string val);
+  virtual void add_user_defined_attribute(std::string key, std::string val);
   std::map<std::string, std::string>& get_user_attributes() {
     return user_defined_attribute;
   }

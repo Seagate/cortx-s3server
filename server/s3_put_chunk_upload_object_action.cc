@@ -179,7 +179,7 @@ void S3PutChunkUploadObjectAction::collision_detected() {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
-  if (tried_count < MAX_COLLISION_TRY) {
+  if (tried_count < MAX_COLLISION_RETRY_COUNT) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n",
            request->get_object_uri().c_str());
     // Handle Collision
@@ -191,7 +191,7 @@ void S3PutChunkUploadObjectAction::collision_detected() {
     }
     create_object();
   } else {
-    if (tried_count >= MAX_COLLISION_TRY) {
+    if (tried_count >= MAX_COLLISION_RETRY_COUNT) {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %d times for uri %s\n",
              tried_count, request->get_object_uri().c_str());

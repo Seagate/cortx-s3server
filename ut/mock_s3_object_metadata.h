@@ -36,6 +36,12 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
                        struct m0_uint128 oid)
       : S3ObjectMetadata(req, oid) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
+  MOCK_METHOD0(get_oid, struct m0_uint128());
+  MOCK_METHOD1(set_oid, void(struct m0_uint128));
+  MOCK_METHOD1(set_md5, void(std::string));
+  MOCK_METHOD1(set_content_length, void(std::string length));
+  MOCK_METHOD2(add_user_defined_attribute,
+               void(std::string key, std::string val));
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,

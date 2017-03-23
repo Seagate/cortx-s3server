@@ -22,8 +22,8 @@
 #ifndef __S3_SERVER_S3_POST_MULTIPARTOBJECT_ACTION_H__
 #define __S3_SERVER_S3_POST_MULTIPARTOBJECT_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
-
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
@@ -99,6 +99,8 @@ class S3PostMultipartObjectAction : public S3Action {
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectTest);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectTest2);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3PostMultipartObjectTest,
+              CreateObjectFailedTestWhileShuttingDown);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest2);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateNewOidTest);
   FRIEND_TEST(S3PostMultipartObjectTest, CollisionTest);

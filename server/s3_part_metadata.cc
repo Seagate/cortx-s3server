@@ -395,7 +395,7 @@ void S3PartMetadata::regenerate_new_indexname() {
 
 void S3PartMetadata::handle_collision() {
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists &&
-      collision_attempt_count < MAX_COLLISION_TRY) {
+      collision_attempt_count < MAX_COLLISION_RETRY_COUNT) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for index %s\n",
            index_name.c_str());
     // Handle Collision
@@ -408,7 +408,7 @@ void S3PartMetadata::handle_collision() {
     }
     create_part_index();
   } else {
-    if (collision_attempt_count >= MAX_COLLISION_TRY) {
+    if (collision_attempt_count >= MAX_COLLISION_RETRY_COUNT) {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %zu times for index %s\n",
              collision_attempt_count, index_name.c_str());

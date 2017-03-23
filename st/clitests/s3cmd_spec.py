@@ -51,6 +51,11 @@ S3cmdTest('s3cmd cannot copy object 3k file').upload_copy_test("seagatebucket", 
 
 S3cmdTest('s3cmd cannot move object 3k file').upload_move_test("seagatebucket", "3kfile", "seagatebucket", "3kfile.moved").execute_test(negative_case=True).command_should_fail()
 
+# ************ FILE Overwrite TEST ************
+S3cmdTest('s3cmd can upload 3k file with size 3072').upload_test("seagatebucket", "3kfile", 3072).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can upload 3k file with size 3000').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+
 # ************ 3k FILE TEST ************
 S3cmdTest('s3cmd can upload 3k file with special chars in filename.').upload_test("seagatebucket/2016-04:32:21/3kfile", "3kfile", 3000).execute_test().command_is_successful()
 

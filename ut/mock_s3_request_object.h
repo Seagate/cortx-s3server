@@ -29,8 +29,10 @@
 
 class MockS3RequestObject : public S3RequestObject {
  public:
-  MockS3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr)
-      : S3RequestObject(req, evhtp_obj_ptr) {}
+  MockS3RequestObject(
+      evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr,
+      S3AsyncBufferOptContainerFactory *async_buf_factory = NULL)
+      : S3RequestObject(req, evhtp_obj_ptr, async_buf_factory) {}
   MOCK_METHOD0(c_get_full_path, const char *());
   MOCK_METHOD0(c_get_full_encoded_path, const char *());
   MOCK_METHOD0(get_host_header, std::string());
@@ -39,6 +41,11 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_CONST_METHOD0(get_object_name, const std::string &());
   MOCK_CONST_METHOD0(get_bucket_name, const std::string &());
   MOCK_METHOD0(get_request, evhtp_request_t *());
+  MOCK_METHOD0(get_content_length, size_t());
+  MOCK_METHOD0(get_content_length_str, std::string());
+  MOCK_METHOD0(has_all_body_content, bool());
+  MOCK_METHOD0(pause, void());
+  MOCK_METHOD0(resume, void());
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
   MOCK_METHOD1(set_bucket_name, void(const std::string &name));
   MOCK_METHOD1(set_object_name, void(const std::string &name));
@@ -49,6 +56,8 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD2(set_out_header_value, void(std::string, std::string));
   MOCK_METHOD0(get_in_headers_copy, std::map<std::string, std::string> &());
   MOCK_METHOD2(send_response, void(int, std::string));
+  MOCK_METHOD2(listen_for_incoming_data,
+               void(std::function<void()> callback, size_t notify_on_size));
 };
 
 #endif

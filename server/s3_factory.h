@@ -23,8 +23,10 @@
 #ifndef __S3_SERVER_S3_FACTORY_H__
 #define __S3_SERVER_S3_FACTORY_H__
 
+#include "s3_async_buffer_opt.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_clovis_writer.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
@@ -99,6 +101,17 @@ class S3ClovisKVSReaderFactory {
       std::shared_ptr<ClovisAPI> s3_clovis_api) {
     s3_log(S3_LOG_DEBUG, "S3ClovisReaderFactory::create_clovis_kvs_reader\n");
     return std::make_shared<S3ClovisKVSReader>(req, s3_clovis_api);
+  }
+};
+
+class S3AsyncBufferOptContainerFactory {
+ public:
+  virtual ~S3AsyncBufferOptContainerFactory() {}
+  virtual std::shared_ptr<S3AsyncBufferOptContainer> create_async_buffer(
+      size_t size_of_each_buf) {
+    s3_log(S3_LOG_DEBUG,
+           "S3AsyncBufferOptContainerFactory::create_async_buffer\n");
+    return std::make_shared<S3AsyncBufferOptContainer>(size_of_each_buf);
   }
 };
 

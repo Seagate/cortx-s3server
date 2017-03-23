@@ -58,6 +58,8 @@ enum class S3RequestError {
 
 extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg);
 
+class S3AsyncBufferOptContainerFactory;
+
 class S3RequestObject {
   evhtp_request_t* ev_req;
   std::string bucket_name;
@@ -89,13 +91,15 @@ class S3RequestObject {
   bool is_chunked_upload;
   S3ChunkPayloadParser chunk_parser;
   S3ApiType s3_api_type;
+  std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   virtual void set_full_path(const char* full_path);
   virtual void set_file_name(const char* file_name);
   virtual void set_query_params(const char* query_params);
 
  public:
-  S3RequestObject(evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr);
+  S3RequestObject(evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
+                  S3AsyncBufferOptContainerFactory* async_buf_factory = NULL);
   virtual ~S3RequestObject();
 
   // Broken into helper function primarily to allow initialisations after faking
@@ -110,9 +114,12 @@ class S3RequestObject {
   void set_api_type(S3ApiType apitype);
   virtual S3ApiType get_api_type();
 
- private:
+ protected:
+  // protected so mocks can override
   std::map<std::string, std::string> in_headers_copy;
   bool in_headers_copied;
+
+ private:
   std::string full_request_body;
   std::string full_path_decoded_uri;
   std::string file_path_decoded_uri;
@@ -132,8 +139,8 @@ class S3RequestObject {
   size_t get_data_length();
   std::string get_data_length_str();
 
-  size_t get_content_length();
-  std::string get_content_length_str();
+  virtual size_t get_content_length();
+  virtual std::string get_content_length_str();
 
   std::string& get_full_body_content_as_string();
 
@@ -189,7 +196,7 @@ class S3RequestObject {
   */
   // We specifically use this when auth is in-progress so that
   // we dont flood with data coming from socket in user buffers.
-  void pause() {
+  virtual void pause() {
     if (!is_paused) {
       s3_log(S3_LOG_DEBUG, "Pausing the request for sock %d...\n",
              ev_req->conn->sock);
@@ -198,7 +205,7 @@ class S3RequestObject {
     }
   }
 
-  void resume() {
+  virtual void resume() {
     if (is_paused) {
       s3_log(S3_LOG_DEBUG, "Resuming the request for sock %d...\n",
              ev_req->conn->sock);
@@ -229,8 +236,8 @@ class S3RequestObject {
   // in first payload, notify will just remember it and caller should grab the
   // buffers
   // without a listener.
-  void listen_for_incoming_data(std::function<void()> callback,
-                                size_t notify_on_size) {
+  virtual void listen_for_incoming_data(std::function<void()> callback,
+                                        size_t notify_on_size) {
     notify_read_watermark = notify_on_size;
     incoming_data_callback = callback;
     resume();  // resume reading if it was paused
@@ -239,7 +246,7 @@ class S3RequestObject {
   void notify_incoming_data(evbuf_t* buf);
 
   // Check whether we already have (read) the entire body.
-  size_t has_all_body_content() { return (pending_in_flight == 0); }
+  virtual bool has_all_body_content() { return (pending_in_flight == 0); }
 
   std::shared_ptr<S3AsyncBufferOptContainer> get_buffered_input() {
     return buffered_input;

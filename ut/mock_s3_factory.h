@@ -24,13 +24,13 @@
 
 #include <memory>
 
+#include "mock_s3_async_buffer_opt_container.h"
 #include "mock_s3_bucket_metadata.h"
 #include "mock_s3_clovis_kvs_reader.h"
 #include "mock_s3_clovis_writer.h"
 #include "mock_s3_object_metadata.h"
 #include "mock_s3_object_multipart_metadata.h"
 #include "mock_s3_part_metadata.h"
-
 #include "mock_s3_request_object.h"
 #include "s3_factory.h"
 
@@ -150,4 +150,26 @@ class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
 
   std::shared_ptr<MockS3ClovisKVSReader> mock_clovis_kvs_reader;
 };
+
+class MockS3AsyncBufferOptContainerFactory
+    : public S3AsyncBufferOptContainerFactory {
+ public:
+  MockS3AsyncBufferOptContainerFactory(size_t size_of_each_buf)
+      : S3AsyncBufferOptContainerFactory() {
+    mock_async_buffer =
+        std::make_shared<MockS3AsyncBufferOptContainer>(size_of_each_buf);
+  }
+
+  std::shared_ptr<S3AsyncBufferOptContainer> create_async_buffer(
+      size_t size_of_each_buf) {
+    return mock_async_buffer;
+  }
+
+  std::shared_ptr<MockS3AsyncBufferOptContainer> get_mock_buffer() {
+    return mock_async_buffer;
+  }
+
+  std::shared_ptr<MockS3AsyncBufferOptContainer> mock_async_buffer;
+};
+
 #endif

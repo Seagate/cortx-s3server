@@ -313,7 +313,7 @@ void S3ObjectMetadata::create_bucket_index_failed() {
 
 void S3ObjectMetadata::collision_detected() {
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists &&
-      tried_count < MAX_COLLISION_TRY) {
+      tried_count < MAX_COLLISION_RETRY_COUNT) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for index %s\n",
            index_name.c_str());
     // Handle Collision
@@ -326,7 +326,7 @@ void S3ObjectMetadata::collision_detected() {
     }
     create_bucket_index();
   } else {
-    if (tried_count >= MAX_COLLISION_TRY) {
+    if (tried_count >= MAX_COLLISION_RETRY_COUNT) {
       s3_log(S3_LOG_ERROR,
              "Failed to resolve object id collision %d times for index %s\n",
              tried_count, index_name.c_str());
