@@ -427,7 +427,6 @@ for i, val in enumerate(pathstyle_values):
             .command_response_should_not_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
             .command_response_should_not_have("CommonPrefix")
 
-    """ S3 BUG: When max-uploads specified with prefix, result has 1 less uploads than max-uploads
     JClientTest('Jclient can list multipart uploads with max-uploads && prefix')\
             .list_multipart("seagatebucket", prefix="L1/", delimiter="/", max_uploads=1).execute_test().command_is_successful()\
             .command_response_should_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
@@ -439,16 +438,12 @@ for i, val in enumerate(pathstyle_values):
             .command_response_should_have("L1/FILE_L1_A").command_response_should_not_have("L1/FILE_L1_B")\
             .command_response_should_not_have("L1/L2/FILE_L2_C").command_response_should_not_have("L1/L2/FILE_L2_D")\
             .command_response_should_not_have("FILE_L0")
-    """
 
-    """ S3 BUG: When first multipart upload is used as next-marker(and upload-id-marker) with max-uploads=1,
-        it returns same(first mpu) upload only, forming loop.
     JClientTest('Jclient can list multipart uploads with max-uploads ')\
             .list_multipart("seagatebucket", max_uploads=1, show_next=True).execute_test().command_is_successful()\
             .command_response_should_have("L1/FILE_L1_A").command_response_should_have("L1/FILE_L1_B")\
             .command_response_should_have("L1/L2/FILE_L2_C").command_response_should_have("L1/L2/FILE_L2_D")\
             .command_response_should_have("FILE_L0")
-    """
 
     JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "FILE_L0", uid_0)\
             .execute_test().command_is_successful()

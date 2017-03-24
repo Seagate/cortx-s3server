@@ -207,6 +207,9 @@ void S3ClovisKVSReader::get_keyval_failed() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
+// NOTE: https://jts.seagate.com/browse/MERO-2309 tracks changes planned to
+// M0_CLOVIS_IC_NEXT to allow skipping rquested key in reply list. This would
+// affect all call sites and should be verified for corner cases when integrated
 void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
                                     size_t nr_kvp,
                                     std::function<void(void)> on_success,
