@@ -36,11 +36,14 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(get_host_header, std::string());
   MOCK_METHOD0(http_verb, S3HttpVerb());
   MOCK_METHOD0(c_get_uri_query, const char *());
+  MOCK_CONST_METHOD0(get_object_name, const std::string &());
+  MOCK_CONST_METHOD0(get_bucket_name, const std::string &());
   MOCK_METHOD0(get_request, evhtp_request_t *());
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
   MOCK_METHOD1(set_bucket_name, void(const std::string &name));
   MOCK_METHOD1(set_object_name, void(const std::string &name));
   MOCK_METHOD1(set_api_type, void(S3ApiType));
+  MOCK_METHOD1(get_query_string_value, std::string(std::string key));
   MOCK_METHOD0(get_api_type, S3ApiType());
   MOCK_METHOD1(respond_retry_after, void(int retry_after_in_secs));
   MOCK_METHOD2(set_out_header_value, void(std::string, std::string));

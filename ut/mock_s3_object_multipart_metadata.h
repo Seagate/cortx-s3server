@@ -37,6 +37,7 @@ class MockS3ObjectMultipartMetadata : public S3ObjectMetadata {
                                 std::string upload_id)
       : S3ObjectMetadata(req, oid, is_mp, upload_id) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
+  MOCK_METHOD0(get_upload_id, std::string());
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,

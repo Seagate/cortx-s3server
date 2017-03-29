@@ -150,7 +150,7 @@ class S3ObjectMetadata {
   std::string get_last_modified_gmt();
   std::string get_last_modified_iso();
   std::string get_storage_class();
-  std::string get_upload_id();
+  virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string& get_acl_as_xml();
 

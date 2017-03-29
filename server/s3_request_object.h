@@ -137,7 +137,7 @@ class S3RequestObject {
 
   std::string& get_full_body_content_as_string();
 
-  std::string get_query_string_value(std::string key);
+  virtual std::string get_query_string_value(std::string key);
   virtual bool has_query_param_key(std::string key);
 
   // xxx Remove this soon
