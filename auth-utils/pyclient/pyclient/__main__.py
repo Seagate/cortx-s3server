@@ -7,6 +7,7 @@ import imp
 import botocore
 
 from boto3.session import Session
+from config import Credentials
 
 def iam_usage():
     return '''
@@ -26,6 +27,7 @@ def iam_usage():
     CreateSAMLProvider -n <Name of saml provider> -f <Path of metadata file>
     CreateUser -n <User Name>
         -p <Path (Optional)
+    DeleteAccount -n <Account Name> -r <true|false>
     DeleteAccesskey -k <Access Key Id to be deleted>
         -n <User Name>
     Delete Role -n <Role Name>
@@ -86,6 +88,7 @@ parser.add_argument("-f", "--file", help="File Path.")
 parser.add_argument("-d", "--duration", help="Access Key Duration.", type = int)
 parser.add_argument("-k", "--access_key_update", help="Access Key to be updated or deleted.")
 parser.add_argument("-s", "--status", help="Active/Inactive")
+parser.add_argument("-r", "--force", help="true/false")
 parser.add_argument("--access_key", help="Access Key Id.")
 parser.add_argument("--secret_key", help="Secret Key.")
 parser.add_argument("--session_token", help="Session Token.")
@@ -120,6 +123,9 @@ if(cli_args.action.lower() not in ["createaccount", "listaccounts"] ):
     if(cli_args.secret_key is None):
         print("Provide secret key")
         sys.exit()
+
+    Credentials.access_key = cli_args.access_key
+    Credentials.secret_key = cli_args.secret_key
 
 if(not 'service' in controller_action[cli_args.action.lower()].keys()):
     print("Set the service(iam/s3/sts) for the action in the controller_action.yml.")

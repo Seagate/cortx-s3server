@@ -212,6 +212,41 @@ public class AccountImpl implements AccountDAO {
     }
 
     /**
+     * Delete account
+     * The dn format: o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
+     */
+    @Override
+    public void delete(Account account) throws DataAccessException {
+        String dn = String.format("%s=%s,%s=accounts,%s",
+                LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.BASE_DN);
+        try {
+            LDAPUtils.delete(dn);
+        } catch (LDAPException ex) {
+            throw new DataAccessException("Failed to delete account.\n" + ex);
+        }
+    }
+
+    /**
+     * Delete given ou from LDAP.
+     *
+     * The dn format:
+     * ou=<ou>,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com
+     */
+    public void deleteOu(Account account, String ou) throws DataAccessException {
+        String dn = String.format("%s=%s,%s=%s,%s=%s,%s",
+                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, ou, LDAPUtils.ORGANIZATIONAL_NAME,
+                account.getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
+                LDAPUtils.BASE_DN);
+
+        try {
+            LDAPUtils.delete(dn);
+        } catch (LDAPException ex) {
+            throw new DataAccessException("Failed to delete " + ou + " ou.\n" + ex);
+        }
+    }
+
+    /**
      * Create sub entry ou=users for the account. The dn should be in the
      * following format dn:
      * ou=users,o=<account name>,ou=accounts,dc=s3,dc=seagate,dc=com

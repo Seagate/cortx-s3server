@@ -11,9 +11,10 @@ from s3client_config import S3ClientConfig
 # Set time_readable_format to False if you want to display the time in milli seconds.
 # Config.time_readable_format = False
 
-# Store the access keys created during the test.
-# These keys should be deleted after
-access_key_id = []
+# global params required for suit
+class GlobalTestState():
+    root_access_key = ""
+    root_secret_key = ""
 
 # Extract the response elements from response which has the following format
 # <Key 1> = <Value 1>, <Key 2> = <Value 2> ... <Key n> = <Value n>
@@ -32,25 +33,22 @@ def before_all():
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
+# Set S3ClientConfig with root credentials
+def _use_root_credentials():
+    S3ClientConfig.access_key_id = GlobalTestState.root_access_key
+    S3ClientConfig.secret_key = GlobalTestState.root_secret_key
+
 # Test create account API
 def account_tests():
-    account_args = {}
-    account_args['AccountName'] = 's3test'
-    account_args['Email'] = 'test@seagate.com'
-
     test_msg = "Create account s3test"
+    account_args = {'AccountName': 's3test', 'Email': 'test@seagate.com'}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
-
     account_response_elements = get_response_elements(result.status.stdout)
 
-    # Set S3ClientConfig with root credentials
-    S3ClientConfig.access_key_id = account_response_elements['AccessKeyId']
-    S3ClientConfig.secret_key = account_response_elements['SecretKey']
-
-    # Add the access key id for clean up
-    access_key_id.append(account_response_elements['AccessKeyId'])
+    GlobalTestState.root_access_key = account_response_elements['AccessKeyId']
+    GlobalTestState.root_secret_key = account_response_elements['SecretKey']
 
     test_msg = "List accounts"
     accounts_response_pattern = "AccountName = [\w-]*, AccountId = [\w-]*, CanonicalId = [\w-]*, Email = [\w.@]*"
@@ -61,10 +59,10 @@ def account_tests():
 # Case 1 - Path not given (take default value).
 # Case 2 - Path given
 def user_tests():
-    user_args = {}
-    user_args['UserName'] = "s3user1"
+    _use_root_credentials()
 
     test_msg = "Create User s3user1 (default path)"
+    user_args = {'UserName': 's3user1'}
     user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
     result = AuthTest(test_msg).create_user(**user_args).execute_test()
     result.command_should_match_pattern(user1_response_pattern)
@@ -78,7 +76,7 @@ def user_tests():
     result.command_response_should_have("User Updated.")
 
     test_msg = 'List Users (path prefix = /test/)'
-    user_args['PathPrefix'] = '/test/'
+    user_args = {'PathPrefix': '/test/'}
     list_user_pattern = "UserId = [\w-]*, UserName = s3user1New, ARN = [\S]*, Path = /test/success/$"
     result = AuthTest(test_msg).list_users(**user_args).execute_test()
     result.command_should_match_pattern(list_user_pattern)
@@ -333,6 +331,38 @@ def get_federation_token_test():
     result = AuthTest(test_msg).list_users(**user_args).execute_test()
     result.command_should_match_pattern(list_user_pattern)
 
+    test_msg = 'Delete access key'
+    access_key_args = {}
+    access_key_args['AccessKeyId'] = response_elements['AccessKeyId']
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+    _use_root_credentials()
+    test_msg = 'Delete User s3root'
+    user_args = {}
+    user_args['UserName'] = "s3root"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+def delete_account_tests():
+    _use_root_credentials()
+
+    test_msg = "Create User s3user1 (default path)"
+    user_args = {'UserName': 's3user1'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    AuthTest(test_msg).create_user(**user_args).execute_test()\
+            .command_should_match_pattern(user1_response_pattern)
+
+    account_args = {'AccountName': 's3test'}
+    test_msg = "Delete account s3test should fail"
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("attempted to delete a resource that has attached subordinate entities")
+
+    test_msg = "Delete account s3test"
+    account_args = {'AccountName': 's3test', 'force': 'true'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
 #  ***MAIN ENTRY POINT
 # Do not change the order.
 before_all()
@@ -342,3 +372,4 @@ accesskey_tests()
 role_tests()
 saml_provider_tests()
 get_federation_token_test()
+delete_account_tests()

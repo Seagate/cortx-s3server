@@ -63,6 +63,10 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
                 "Accounts", accountMembers, false, "0000");
     }
 
+    public ServerResponse generateDeleteResponse() {
+        return new XMLResponseFormatter().formatDeleteResponse("DeleteAccount");
+    }
+
     @Override
     public ServerResponse entityAlreadyExists() {
         String errorMessage = "The request was rejected because it attempted "

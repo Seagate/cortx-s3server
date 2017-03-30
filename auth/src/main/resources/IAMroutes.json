@@ -1,5 +1,6 @@
 {
     "CreateAccount": "Account#create",
+    "DeleteAccount": "Account#delete",
     "ListAccounts": "Account#list",
     "CreateAccessKey": "AccessKey#create",
     "CreateGroup": "Group#create",

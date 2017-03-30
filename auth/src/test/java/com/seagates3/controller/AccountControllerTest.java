@@ -22,15 +22,19 @@ import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
+import com.seagates3.dao.RoleDAO;
 import com.seagates3.dao.UserDAO;
+import com.seagates3.dao.ldap.LDAPUtils;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
+import com.seagates3.model.Role;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.util.KeyGenUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
@@ -40,6 +44,8 @@ import org.junit.runner.RunWith;
 import static org.mockito.Matchers.any;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -54,18 +60,20 @@ public class AccountControllerTest {
     private final AccountDAO accountDAO;
     private final UserDAO userDAO;
     private final AccessKeyDAO accessKeyDAO;
+    private final RoleDAO roleDAO;
+    private Map<String, String> requestBody = new HashMap<>();
 
     public AccountControllerTest() throws Exception {
         PowerMockito.mockStatic(DAODispatcher.class);
 
         Requestor requestor = mock(Requestor.class);
-        Map<String, String> requestBody = new HashMap<>();
         requestBody.put("AccountName", "s3test");
         requestBody.put("Email", "testuser@seagate.com");
 
         accountDAO = Mockito.mock(AccountDAO.class);
         userDAO = Mockito.mock(UserDAO.class);
         accessKeyDAO = Mockito.mock(AccessKeyDAO.class);
+        roleDAO = Mockito.mock(RoleDAO.class);
 
         PowerMockito.doReturn(accountDAO).when(DAODispatcher.class,
                 "getResourceDAO", DAOResource.ACCOUNT
@@ -77,6 +85,10 @@ public class AccountControllerTest {
 
         PowerMockito.doReturn(accessKeyDAO).when(DAODispatcher.class,
                 "getResourceDAO", DAOResource.ACCESS_KEY
+        );
+
+        PowerMockito.doReturn(roleDAO).when(DAODispatcher.class,
+                "getResourceDAO", DAOResource.ROLE
         );
 
         accountController = new AccountController(requestor, requestBody);
@@ -342,5 +354,154 @@ public class AccountControllerTest {
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.CREATED,
                 response.getResponseStatus());
+    }
+
+    @Test
+    public void DeleteAccount_AccountsSearchFailed_ReturnInternalServerError()
+            throws DataAccessException {
+        Mockito.when(accountDAO.find("s3test")).thenThrow(
+                new DataAccessException("Failed to fetch accounts.\n"));
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
+                + "<Message>The request processing has failed because of an "
+                + "unknown error, exception or failure.</Message></Error>"
+                + "<RequestId>0000</RequestId>"
+                + "</ErrorResponse>";
+
+        ServerResponse response = accountController.delete();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                response.getResponseStatus());
+    }
+
+    @Test
+    public void DeleteAccount_AccountDoesNotExists_ReturnNoSuchEntity()
+            throws Exception {
+        Account account = mock(Account.class);
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.FALSE);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
+                " standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/" +
+                "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The request" +
+                " was rejected because it referenced an entity that does not exist. " +
+                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accountController.delete();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+    }
+
+    @Test
+    public void DeleteAccount_AccountExists_ReturnDeleteResponse()
+            throws Exception {
+        User[] users = new User[1];
+        users[0] = new User();
+        users[0].setName("root");
+        AccessKey[] accessKeys = new AccessKey[1];
+        accessKeys[0] = mock(AccessKey.class);
+        Account account = mock(Account.class);
+
+        Mockito.when(account.getName()).thenReturn("s3test");
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
+        Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><DeleteAccountResponse xmlns=\"https://iam.seagate" +
+                ".com/doc/2010-05-08/\"><ResponseMetadata><RequestId>0000</RequestId><" +
+                "/ResponseMetadata></DeleteAccountResponse>";
+
+        ServerResponse response = accountController.delete();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+
+        Mockito.verify(accessKeyDAO).delete(accessKeys[0]);
+        Mockito.verify(userDAO).delete(users[0]);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.USER_OU);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.ROLE_OU);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.GROUP_OU);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.POLICY_OU);
+        Mockito.verify(accountDAO).delete(account);
+    }
+
+    @Test
+    public void DeleteAccount_HasSubResources_ReturnDeleteConflict()
+            throws Exception {
+        User[] users = new User[2];
+        users[0] = new User();
+        users[0].setName("root");
+        users[1] = new User();
+        users[1].setName("s3user");
+
+        AccessKey[] accessKeys = new AccessKey[1];
+        accessKeys[0] = mock(AccessKey.class);
+        Account account = mock(Account.class);
+
+        Mockito.when(account.getName()).thenReturn("s3test");
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
+        Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
+        Mockito.doThrow(new DataAccessException("subordinate objects must be deleted first"))
+                .when(accountDAO).deleteOu(account, LDAPUtils.USER_OU);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc" +
+                "/2010-05-08/\"><Error><Code>DeleteConflict</Code><Message>The request" +
+                " was rejected because it attempted to delete a resource that has attached " +
+                "subordinate entities. The error message describes these entities.</Message>" +
+                "</Error><RequestId>0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accountController.delete();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.CONFLICT, response.getResponseStatus());
+
+        Mockito.verify(accessKeyDAO, times(0)).delete(accessKeys[0]);
+        Mockito.verify(userDAO, times(0)).delete(users[0]);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.USER_OU);
+    }
+
+    @Test
+    public void DeleteAccount_ForceDelete_ReturnDeleteResponse()
+            throws Exception {
+        requestBody.put("force", "true");
+        User[] users = new User[1];
+        users[0] = new User();
+        users[0].setName("root");
+        AccessKey[] accessKeys = new AccessKey[1];
+        accessKeys[0] = mock(AccessKey.class);
+        Role[] roles = new Role[1];
+        roles[0] = mock(Role.class);
+        Account account = mock(Account.class);
+
+        Mockito.when(account.getName()).thenReturn("s3test");
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
+        Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
+        Mockito.when(roleDAO.findAll(account, "/")).thenReturn(roles);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><DeleteAccountResponse xmlns=\"https://iam.seagate" +
+                ".com/doc/2010-05-08/\"><ResponseMetadata><RequestId>0000</RequestId><" +
+                "/ResponseMetadata></DeleteAccountResponse>";
+
+        ServerResponse response = accountController.delete();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+
+        Mockito.verify(accessKeyDAO).delete(accessKeys[0]);
+        Mockito.verify(userDAO).delete(users[0]);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.USER_OU);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.ROLE_OU);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.GROUP_OU);
+        Mockito.verify(accountDAO).deleteOu(account, LDAPUtils.POLICY_OU);
+        Mockito.verify(accountDAO).delete(account);
+        Mockito.verify(roleDAO).delete(roles[0]);
     }
 }

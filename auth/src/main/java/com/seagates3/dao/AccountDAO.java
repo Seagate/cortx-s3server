@@ -44,7 +44,17 @@ public interface AccountDAO {
     public void save(Account account) throws DataAccessException;
 
     /*
-     * fetch all accounts from the database
+     * Fetch all accounts from the database
      */
     public Account[] findAll() throws DataAccessException;
+
+    /*
+     * Delete account
+     */
+    public void delete(Account account) throws DataAccessException;
+
+    /*
+     * Delete ou under account
+     */
+    public void deleteOu(Account account, String ou) throws DataAccessException;
 }

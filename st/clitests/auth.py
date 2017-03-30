@@ -30,6 +30,18 @@ class AuthTest(PyCliTest):
         self.with_cli("python %s listaccounts" % (self.get_pyclient_dir()))
         return self
 
+    def delete_account(self, **account_args):
+        cmd = "python %s deleteaccount -n %s --access_key '%s' --secret_key '%s'" % (
+                self.get_pyclient_dir(), account_args['AccountName'], S3ClientConfig.access_key_id,
+                S3ClientConfig.secret_key)
+
+        if ('force' in account_args.keys()):
+            cmd += " --force %s" % (account_args['force'])
+
+
+        self.with_cli(cmd)
+        return self
+
     def create_user(self, **user_args):
         cmd = "python %s createuser --access_key '%s' --secret_key '%s' -n %s" % (
                 self.get_pyclient_dir(), S3ClientConfig.access_key_id,

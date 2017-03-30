@@ -385,4 +385,50 @@ public class AccountImplTest {
 
         accountImpl.findByID("98765test");
     }
+
+    @Test
+    public void DeleteAccount_DeleteAccountSuccessful()
+            throws DataAccessException, LDAPException {
+        Account account = new Account();
+        account.setName("s3test");
+
+        accountImpl.delete(account);
+
+        PowerMockito.verifyStatic();
+        LDAPUtils.delete("o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com");
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void DeleteAccount_ShouldThrowException()
+            throws Exception {
+        Account account = new Account();
+        account.setName("s3test");
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "delete",
+                "o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com");
+
+        accountImpl.delete(account);
+    }
+
+    @Test
+    public void DeleteOU_DeleteOUSuccessful()
+            throws DataAccessException, LDAPException {
+        Account account = new Account();
+        account.setName("s3test");
+
+        accountImpl.deleteOu(account, LDAPUtils.USER_OU);
+
+        PowerMockito.verifyStatic();
+        LDAPUtils.delete("ou=users,o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com");
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void DeleteOU_ShouldThrowException()
+            throws Exception {
+        Account account = new Account();
+        account.setName("s3test");
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "delete",
+                "ou=users,o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com");
+
+        accountImpl.deleteOu(account, LDAPUtils.USER_OU);
+    }
 }

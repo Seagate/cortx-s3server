@@ -1,6 +1,7 @@
 import http.client, urllib.parse
 import json
 import xmltodict
+from util import sign_request_v2
 
 class Account:
     def __init__(self, iam_client, cli_args):
@@ -87,3 +88,42 @@ class Account:
         else:
             print("Failed to list accounts!")
             print(response.reason)
+
+    # delete account
+    def delete(self):
+        if(self.cli_args.name is None):
+            print("Account name is required for Account creation")
+            return
+
+        headers = {"content-type": "application/x-www-form-urlencoded",
+                "Accept": "text/plain"}
+        account_params = {'Action': 'DeleteAccount', 'AccountName': self.cli_args.name}
+
+        force = self.cli_args.force
+        if(force is not None):
+            account_params['force'] = force
+
+        auth_header = sign_request_v2('POST', '/', {}, headers)
+        headers['Authorization'] = auth_header
+
+        try:
+            auth_endpoint = self.iam_client._endpoint.host
+        except Exception as ex:
+            print("Exception occured while getting endpoint")
+            print(str(ex))
+            return
+
+        auth_server_name = urllib.parse.urlparse(auth_endpoint).netloc
+        account_params = urllib.parse.urlencode(account_params)
+
+        conn = http.client.HTTPConnection(auth_server_name)
+        conn.request("POST", "/", account_params, headers)
+        response = conn.getresponse()
+        data = response.read()
+        conn.close();
+
+        if response.status == 200:
+            print("Account deleted successfully.")
+        else:
+            print("Account cannot be deleted.")
+            print(data)

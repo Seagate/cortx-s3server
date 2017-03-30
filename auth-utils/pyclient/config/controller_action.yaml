@@ -16,6 +16,10 @@ listaccounts:
   controller : Account
   action :  list
   service : iam
+deleteaccount:
+  controller : Account
+  action :  delete
+  service : iam
 createaccesskey:
   controller : AccessKey
   action :  create
