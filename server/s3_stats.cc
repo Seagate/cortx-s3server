@@ -18,14 +18,7 @@
  */
 
 #include "s3_stats.h"
-#include <arpa/inet.h>
-#include <assert.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <stdio.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 #include <iomanip>
@@ -34,10 +27,11 @@
 S3Stats* g_stats_instance = NULL;
 S3Stats* S3Stats::stats_instance = NULL;
 
-S3Stats* S3Stats::get_instance() {
+S3Stats* S3Stats::get_instance(SocketInterface* socket_obj) {
   if (!stats_instance) {
-    stats_instance = new S3Stats(g_option_instance->get_statsd_ip_addr(),
-                                 g_option_instance->get_statsd_port());
+    stats_instance =
+        new S3Stats(g_option_instance->get_statsd_ip_addr(),
+                    g_option_instance->get_statsd_port(), socket_obj);
     if (stats_instance->init() != 0) {
       delete stats_instance;
       stats_instance = NULL;
@@ -142,18 +136,18 @@ int S3Stats::init() {
            g_option_instance->get_stats_whitelist_filename().c_str());
     return -1;
   }
-  sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  sock = socket_obj->socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sock == -1) {
     s3_log(S3_LOG_ERROR, "socket call failed: %s\n", strerror(errno));
     return -1;
   }
-  int flags = fcntl(sock, F_GETFL, 0);
+  int flags = socket_obj->fcntl(sock, F_GETFL, 0);
   if (flags == -1) {
     s3_log(S3_LOG_ERROR, "fcntl [cmd = F_GETFL] call failed: %s\n",
            strerror(errno));
     return -1;
   }
-  if (fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
+  if (socket_obj->fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
     s3_log(S3_LOG_ERROR, "fcntl [cmd = F_SETFL] call failed: %s\n",
            strerror(errno));
     return -1;
@@ -161,7 +155,7 @@ int S3Stats::init() {
   memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
   server.sin_port = htons(port);
-  if (inet_aton(host.c_str(), &server.sin_addr) == 0) {
+  if (socket_obj->inet_aton(host.c_str(), &server.sin_addr) == 0) {
     s3_log(S3_LOG_ERROR, "inet_aton call failed for host [%s]\n", host.c_str());
     errno = EINVAL;
     return -1;
@@ -173,7 +167,7 @@ int S3Stats::init() {
 void S3Stats::finish() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (sock != -1) {
-    close(sock);
+    socket_obj->close(sock);
     sock = -1;
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -187,8 +181,8 @@ int S3Stats::send(const std::string& msg, int retry) {
     retry = 0;
   }
   while (1) {
-    if (sendto(sock, msg.c_str(), msg.length(), 0, (struct sockaddr*)&server,
-               sizeof(server)) == -1) {
+    if (socket_obj->sendto(sock, msg.c_str(), msg.length(), 0,
+                           (struct sockaddr*)&server, sizeof(server)) == -1) {
       if ((errno == EAGAIN || errno == EWOULDBLOCK) && retry > 0) {
         retry--;
         continue;

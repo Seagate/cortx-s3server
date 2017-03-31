@@ -29,10 +29,11 @@
 #include <unordered_set>
 #include "s3_log.h"
 #include "s3_option.h"
+#include "socket_wrapper.h"
 
 class S3Stats {
  public:
-  static S3Stats* get_instance();
+  static S3Stats* get_instance(SocketInterface* socket_obj = NULL);
   static void delete_instance();
 
   // Increase/decrease count for `key` by `value`
@@ -54,10 +55,16 @@ class S3Stats {
                    int retry = 1);
 
  private:
-  S3Stats(const std::string& host_addr, const unsigned short port_num)
+  S3Stats(const std::string& host_addr, const unsigned short port_num,
+          SocketInterface* socket_obj_ptr = NULL)
       : host(host_addr), port(port_num), sock(-1) {
-    metrics_whitelist.clear();
     s3_log(S3_LOG_DEBUG, "Constructor\n");
+    metrics_whitelist.clear();
+    if (socket_obj_ptr) {
+      socket_obj.reset(socket_obj_ptr);
+    } else {
+      socket_obj.reset(new SocketWrapper());
+    }
   }
 
   int init();
@@ -97,6 +104,7 @@ class S3Stats {
 
   int sock;
   struct sockaddr_in server;
+  std::unique_ptr<SocketInterface> socket_obj;
 
   // metrics whitelist
   std::unordered_set<std::string> metrics_whitelist;
