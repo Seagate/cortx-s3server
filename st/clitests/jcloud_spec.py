@@ -163,9 +163,9 @@ for i, val in enumerate(pathstyle_values):
 
     JCloudTest('Jcloud can download 3k file').get_object("seagatebucket/test", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
-    JCloudTest('Jcloud cannot download nonexistent file').get_object("seagatebucket/test", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such Object")
+    JCloudTest('Jcloud cannot download nonexistent file').get_object("seagatebucket/test", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such Bucket or Object")
 
-    JCloudTest('Jcloud cannot download file in nonexistent bucket').get_object("seagate-bucket/test", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket is not valid")
+    JCloudTest('Jcloud cannot download file in nonexistent bucket').get_object("seagate-bucket/test", "nonexistent").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such Bucket or Object")
 
     # ************ Special Char in file name TEST ************
     JCloudTest('Jcloud can upload 3k file with special chars in filename.').put_object("seagatebucket/2016-04:32:21/3kfile", "3kfile", 3000).execute_test().command_is_successful()

@@ -134,29 +134,27 @@ class S3ClovisReader {
   // struct m0_uint128 id;
   // object id for object is generated within this constructor
   S3ClovisReader(std::shared_ptr<S3RequestObject> req,
-                 std::shared_ptr<ClovisAPI> clovis_api);
+                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   // object id is generated at upper level and passed to this constructor
-  S3ClovisReader(std::shared_ptr<S3RequestObject> req,
-                 std::shared_ptr<ClovisAPI> clovis_api, struct m0_uint128 id);
-  S3ClovisReaderOpState get_state() { return state; }
+  S3ClovisReader(std::shared_ptr<S3RequestObject> req, struct m0_uint128 id,
+                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+  virtual S3ClovisReaderOpState get_state() { return state; }
+  virtual struct m0_uint128 get_oid() { return oid; }
 
-  void set_oid(struct m0_uint128 id) {
-    // TODO
-    // oid = id;
-  }
+  virtual void set_oid(struct m0_uint128 id) { oid = id; }
 
   // async read
-  void read_object_data(size_t num_of_blocks,
-                        std::function<void(void)> on_success,
-                        std::function<void(void)> on_failed);
+  virtual void read_object_data(size_t num_of_blocks,
+                                std::function<void(void)> on_success,
+                                std::function<void(void)> on_failed);
   void read_object_data_successful();
   void read_object_data_failed();
 
   // Iterate over the content.
   // Returns size of data in first block and 0 if there is no content,
   // and content in data.
-  size_t get_first_block(char** data);
-  size_t get_next_block(char** data);
+  virtual size_t get_first_block(char** data);
+  virtual size_t get_next_block(char** data);
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisReaderTest, Constructor);

@@ -22,7 +22,11 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
-S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req)
+S3GetObjectAction::S3GetObjectAction(
+    std::shared_ptr<S3RequestObject> req,
+    S3BucketMetadataFactory* bucket_meta_factory,
+    S3ObjectMetadataFactory* object_meta_factory,
+    S3ClovisReaderFactory* clovis_s3_factory)
     : S3Action(req),
       total_blocks_in_object(0),
       blocks_already_read(0),
@@ -30,6 +34,25 @@ S3GetObjectAction::S3GetObjectAction(std::shared_ptr<S3RequestObject> req)
       read_object_reply_started(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   object_list_oid = {0ULL, 0ULL};
+
+  if (bucket_meta_factory) {
+    bucket_metadata_factory.reset(bucket_meta_factory);
+  } else {
+    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+  }
+
+  if (object_meta_factory) {
+    object_metadata_factory.reset(object_meta_factory);
+  } else {
+    object_metadata_factory.reset(new S3ObjectMetadataFactory());
+  }
+
+  if (clovis_s3_factory) {
+    clovis_reader_factory.reset(clovis_s3_factory);
+  } else {
+    clovis_reader_factory.reset(new S3ClovisReaderFactory());
+  }
+
   setup_steps();
 }
 
@@ -44,7 +67,9 @@ void S3GetObjectAction::setup_steps() {
 
 void S3GetObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3GetObjectAction::next, this),
                         std::bind(&S3GetObjectAction::next, this));
   // for shutdown testcases, check FI and set shutdown signal
@@ -59,16 +84,22 @@ void S3GetObjectAction::fetch_object_info() {
     if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
       // There is no object list index, hence object doesn't exist
       s3_log(S3_LOG_DEBUG, "Object not found\n");
+      set_s3_error("NoSuchKey");
       send_response_to_s3_client();
     } else {
-      object_metadata =
-          std::make_shared<S3ObjectMetadata>(request, object_list_oid);
+      object_metadata = object_metadata_factory->create_object_metadata_obj(
+          request, object_list_oid);
 
       object_metadata->load(std::bind(&S3GetObjectAction::next, this),
                             std::bind(&S3GetObjectAction::next, this));
     }
-  } else {
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, "Bucket not found\n");
+    set_s3_error("NoSuchBucket");
+    send_response_to_s3_client();
+  } else {
+    s3_log(S3_LOG_DEBUG, "Bucket metadata fetch failed\n");
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
 }
@@ -103,12 +134,17 @@ void S3GetObjectAction::read_object() {
           (object_metadata->get_content_length() + (clovis_unit_size - 1)) /
           clovis_unit_size;
 
-      clovis_reader = std::make_shared<S3ClovisReader>(
-          request, std::make_shared<ConcreteClovisAPI>(),
-          object_metadata->get_oid());
+      clovis_reader = clovis_reader_factory->create_clovis_reader(
+          request, object_metadata->get_oid());
       read_object_data();
     }
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, "Object not found\n");
+    set_s3_error("NoSuchKey");
+    send_response_to_s3_client();
   } else {
+    s3_log(S3_LOG_DEBUG, "Object metadata fetch failed\n");
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -167,7 +203,6 @@ void S3GetObjectAction::send_data_to_client() {
     if ((data_sent_to_client + length) >= obj_size) {
       length = obj_size - data_sent_to_client;
     }
-
     data_sent_to_client += length;
     s3_log(S3_LOG_DEBUG, "Sending %zu bytes to client.\n", length);
     request->send_reply_body(data, length);
@@ -205,58 +240,34 @@ void S3GetObjectAction::send_response_to_s3_client() {
 
       request->send_response(error.get_http_status_code(), response_xml);
     }
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+  } else if (is_error_state() && !get_s3_error_code().empty()) {
     // Invalid Bucket Name
-    S3Error error("InvalidBucketName", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-    S3Error error("NoSuchKey", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata &&
-             object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    S3Error error("NoSuchKey", request->get_request_id(),
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
 
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata &&
-             (object_metadata->get_state() == S3ObjectMetadataState::failed)) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
              ((object_metadata->get_content_length() == 0) ||
               (clovis_reader->get_state() == S3ClovisReaderOpState::success))) {
     request->send_reply_end();
   } else {
-    // request->set_header_value(...)
-    request->send_response(S3HttpFailed400);
+    if (read_object_reply_started) {
+      request->send_reply_end();
+    } else {
+      S3Error error("InternalError", request->get_request_id(),
+                    request->get_object_uri());
+      std::string& response_xml = error.to_xml();
+      request->set_out_header_value("Content-Type", "application/xml");
+      request->set_out_header_value("Content-Length",
+                                    std::to_string(response_xml.length()));
+      request->set_out_header_value("Retry-After", "1");
+
+      request->send_response(error.get_http_status_code(), response_xml);
+    }
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();

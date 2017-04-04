@@ -258,9 +258,9 @@ class S3RequestObject {
 
  public:
   virtual void send_response(int code, std::string body = "");
-  void send_reply_start(int code);
-  void send_reply_body(char* data, int length);
-  void send_reply_end();
+  virtual void send_reply_start(int code);
+  virtual void send_reply_body(char* data, int length);
+  virtual void send_reply_end();
 
   void respond_error(std::string error_code,
                      const std::map<std::string, std::string>& headers =

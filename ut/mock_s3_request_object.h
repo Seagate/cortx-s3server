@@ -56,6 +56,10 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD2(set_out_header_value, void(std::string, std::string));
   MOCK_METHOD0(get_in_headers_copy, std::map<std::string, std::string> &());
   MOCK_METHOD2(send_response, void(int, std::string));
+  MOCK_METHOD1(send_reply_start, void(int code));
+  MOCK_METHOD2(send_reply_body, void(char *data, int length));
+  MOCK_METHOD0(send_reply_end, void());
+
   MOCK_METHOD2(listen_for_incoming_data,
                void(std::function<void()> callback, size_t notify_on_size));
 };

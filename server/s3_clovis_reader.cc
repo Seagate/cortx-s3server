@@ -29,20 +29,6 @@
 extern struct m0_clovis_realm clovis_uber_realm;
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
-                               std::shared_ptr<ClovisAPI> clovis_api,
-                               struct m0_uint128 id)
-    : request(req),
-      s3_clovis_api(clovis_api),
-      oid(id),
-      state(S3ClovisReaderOpState::start),
-      clovis_rw_op_context(NULL),
-      iteration_index(0),
-      num_of_blocks_read(0),
-      last_index(0) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
-}
-
-S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
                                std::shared_ptr<ClovisAPI> clovis_api)
     : request(req),
       s3_clovis_api(clovis_api),
@@ -52,7 +38,20 @@ S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
       num_of_blocks_read(0),
       last_index(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
+}
+
+S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
+                               struct m0_uint128 id,
+                               std::shared_ptr<ClovisAPI> clovis_api)
+    : S3ClovisReader(req, clovis_api) {
+  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  oid = id;  // Override the default generated above.
 }
 
 void S3ClovisReader::read_object_data(size_t num_of_blocks,

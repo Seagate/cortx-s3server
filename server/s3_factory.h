@@ -26,6 +26,7 @@
 #include "s3_async_buffer_opt.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_clovis_reader.h"
 #include "s3_clovis_writer.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
@@ -90,6 +91,25 @@ class S3ClovisWriterFactory {
       std::shared_ptr<S3RequestObject> req, m0_uint128 oid) {
     s3_log(S3_LOG_DEBUG, "S3ClovisWriterFactory::create_clovis_writer\n");
     return std::make_shared<S3ClovisWriter>(req, oid);
+  }
+};
+
+class S3ClovisReaderFactory {
+ public:
+  virtual ~S3ClovisReaderFactory() {}
+
+  virtual std::shared_ptr<S3ClovisReader> create_clovis_reader(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
+    s3_log(S3_LOG_DEBUG, "S3ClovisReaderFactory::create_clovis_reader\n");
+    return std::make_shared<S3ClovisReader>(req, clovis_api);
+  }
+
+  virtual std::shared_ptr<S3ClovisReader> create_clovis_reader(
+      std::shared_ptr<S3RequestObject> req, struct m0_uint128 id,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
+    s3_log(S3_LOG_DEBUG, "S3ClovisReaderFactory::create_clovis_reader\n");
+    return std::make_shared<S3ClovisReader>(req, id, clovis_api);
   }
 };
 

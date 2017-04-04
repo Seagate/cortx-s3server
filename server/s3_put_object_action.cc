@@ -105,9 +105,13 @@ void S3PutObjectAction::fetch_object_info() {
           std::bind(&S3PutObjectAction::fetch_object_info_status, this),
           std::bind(&S3PutObjectAction::next, this));
     }
-  } else {
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
+    send_response_to_s3_client();
+  } else {
+    s3_log(S3_LOG_DEBUG, "Bucket metadata fetch failed\n");
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");

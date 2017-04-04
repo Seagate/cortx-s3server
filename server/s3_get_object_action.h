@@ -22,11 +22,13 @@
 #ifndef __S3_SERVER_S3_GET_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_GET_OBJECT_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_reader.h"
+#include "s3_factory.h"
 #include "s3_object_metadata.h"
 
 class S3GetObjectAction : public S3Action {
@@ -41,8 +43,15 @@ class S3GetObjectAction : public S3Action {
 
   bool read_object_reply_started;
 
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
+
  public:
-  S3GetObjectAction(std::shared_ptr<S3RequestObject> req);
+  S3GetObjectAction(std::shared_ptr<S3RequestObject> req,
+                    S3BucketMetadataFactory* bucket_meta_factory = NULL,
+                    S3ObjectMetadataFactory* object_meta_factory = NULL,
+                    S3ClovisReaderFactory* clovis_s3_factory = NULL);
 
   void setup_steps();
 
@@ -54,6 +63,34 @@ class S3GetObjectAction : public S3Action {
   void read_object_data_failed();
   void send_data_to_client();
   void send_response_to_s3_client();
+
+  FRIEND_TEST(S3GetObjectActionTest, ConstructorTest);
+  FRIEND_TEST(S3GetObjectActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3GetObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
+  FRIEND_TEST(S3GetObjectActionTest, FetchObjectInfoWhenBucketFetchFailed);
+  FRIEND_TEST(S3GetObjectActionTest,
+              FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);
+  FRIEND_TEST(S3GetObjectActionTest,
+              FetchObjectInfoWhenBucketAndObjIndexPresent);
+  FRIEND_TEST(S3GetObjectActionTest,
+              ReadObjectWhenMissingObjectReportNoSuckKey);
+  FRIEND_TEST(S3GetObjectActionTest,
+              ReadObjectWhenObjInfoFetchFailedReportError);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeZero);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize);
+  FRIEND_TEST(S3GetObjectActionTest,
+              SendResponseWhenShuttingDownAndResponseStarted);
+  FRIEND_TEST(S3GetObjectActionTest,
+              SendResponseWhenShuttingDownAndResponseNotStarted);
+  FRIEND_TEST(S3GetObjectActionTest, SendInternalErrorResponse);
+  FRIEND_TEST(S3GetObjectActionTest, SendNoSuchBucketErrorResponse);
+  FRIEND_TEST(S3GetObjectActionTest, SendNoSuchKeyErrorResponse);
+  FRIEND_TEST(S3GetObjectActionTest, SendSuccessResponseForZeroSizeObject);
+  FRIEND_TEST(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject);
+  FRIEND_TEST(S3GetObjectActionTest, SendErrorResponseForErrorReadingObject);
 };
 
 #endif
