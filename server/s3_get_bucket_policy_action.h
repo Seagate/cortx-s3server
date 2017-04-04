@@ -22,20 +22,32 @@
 #ifndef __S3_SERVER_S3_GET_BUCKET_POLICY_ACTION_H__
 #define __S3_SERVER_S3_GET_BUCKET_POLICY_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_factory.h"
 
 class S3GetBucketPolicyAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
  public:
-  S3GetBucketPolicyAction(std::shared_ptr<S3RequestObject> req);
+  S3GetBucketPolicyAction(std::shared_ptr<S3RequestObject> req,
+                          S3BucketMetadataFactory* bucket_meta_factory = NULL);
 
   void setup_steps();
   void get_metadata();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3GetBucketPolicyActionTest, GetMetadata);
+  FRIEND_TEST(S3GetBucketPolicyActionTest,
+              SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3GetBucketPolicyActionTest, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3GetBucketPolicyActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3GetBucketPolicyActionTest, SendResponseToClientInternalError);
 };
 
 #endif

@@ -141,7 +141,7 @@ class S3BucketMetadata {
   std::string get_owner_name();
 
   std::string& get_encoded_bucket_acl();
-  std::string& get_policy_as_json();
+  virtual std::string& get_policy_as_json();
   std::string& get_acl_as_xml();
 
   struct m0_uint128 get_bucket_list_index_oid();

@@ -38,6 +38,7 @@ class MockS3BucketMetadata : public S3BucketMetadata {
                           std::function<void(void)> on_failed));
   MOCK_METHOD0(get_multipart_index_oid, struct m0_uint128());
   MOCK_METHOD0(get_state, S3BucketMetadataState());
+  MOCK_METHOD0(get_policy_as_json, std::string &());
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
 };

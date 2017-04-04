@@ -22,9 +22,16 @@
 #include "s3_log.h"
 
 S3GetBucketPolicyAction::S3GetBucketPolicyAction(
-    std::shared_ptr<S3RequestObject> req)
+    std::shared_ptr<S3RequestObject> req,
+    S3BucketMetadataFactory* bucket_meta_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+
+  if (bucket_meta_factory) {
+    bucket_metadata_factory.reset(bucket_meta_factory);
+  } else {
+    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+  }
   setup_steps();
 }
 
@@ -38,7 +45,9 @@ void S3GetBucketPolicyAction::setup_steps() {
 
 void S3GetBucketPolicyAction::get_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
+
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   bucket_metadata->load(std::bind(&S3GetBucketPolicyAction::next, this),
