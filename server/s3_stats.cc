@@ -91,6 +91,8 @@ int S3Stats::load_whitelist() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   std::string whitelist_filename =
       g_option_instance->get_stats_whitelist_filename();
+  s3_log(S3_LOG_DEBUG, "Loading whitelist file: %s\n",
+         whitelist_filename.c_str());
   std::ifstream fstream(whitelist_filename.c_str());
   if (!fstream.good()) {
     s3_log(S3_LOG_ERROR, "Stats whitelist file does not exist: %s\n",

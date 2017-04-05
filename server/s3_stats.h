@@ -111,6 +111,8 @@ class S3Stats {
 
   FRIEND_TEST(S3StatsTest, Init);
   FRIEND_TEST(S3StatsTest, Whitelist);
+  FRIEND_TEST(S3StatsTest, S3StatsSendMustSucceedIfSocketSendToSucceeds);
+  FRIEND_TEST(S3StatsTest, S3StatsSendMustRetryAndFailIfRetriesFail);
 };
 
 extern S3Option* g_option_instance;
