@@ -27,14 +27,17 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_factory.h"
 
 class S3PutBucketPolicyAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
   std::string new_bucket_policy;
 
  public:
-  S3PutBucketPolicyAction(std::shared_ptr<S3RequestObject> req);
+  S3PutBucketPolicyAction(std::shared_ptr<S3RequestObject> req,
+                          S3BucketMetadataFactory* bucket_meta_factory = NULL);
 
   void setup_steps();
   void validate_request();
@@ -43,6 +46,19 @@ class S3PutBucketPolicyAction : public S3Action {
   void set_policy();
   void get_metadata();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3PutBucketPolicyActionTest, GetMetadata);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, ValidateRequest);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, ValidateRequestMoreContent);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicy);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicyWhenBucketMissing);
+  FRIEND_TEST(S3PutBucketPolicyActionTest,
+              SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SendResponseToClientMalformedXML);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SendResponseToClientInternalError);
 };
 
 #endif

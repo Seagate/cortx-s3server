@@ -22,9 +22,16 @@
 #include "s3_log.h"
 
 S3PutBucketPolicyAction::S3PutBucketPolicyAction(
-    std::shared_ptr<S3RequestObject> req)
+    std::shared_ptr<S3RequestObject> req,
+    S3BucketMetadataFactory* bucket_meta_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+
+  if (bucket_meta_factory) {
+    bucket_metadata_factory.reset(bucket_meta_factory);
+  } else {
+    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+  }
   setup_steps();
 }
 
@@ -74,7 +81,7 @@ void S3PutBucketPolicyAction::validate_request_body(std::string content) {
   // if (bucket_policy.isOK()) {
   //   next();
   // } else {
-  //   invalid_request = true;
+  //   set_s3_error("MalformedXML");
   //   send_response_to_s3_client();
   // }
   next();
@@ -83,7 +90,9 @@ void S3PutBucketPolicyAction::validate_request_body(std::string content) {
 
 void S3PutBucketPolicyAction::get_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
+
   bucket_metadata->load(std::bind(&S3PutBucketPolicyAction::next, this),
                         std::bind(&S3PutBucketPolicyAction::next, this));
 
@@ -102,6 +111,7 @@ void S3PutBucketPolicyAction::set_policy() {
     bucket_metadata->save(std::bind(&S3PutBucketPolicyAction::next, this),
                           std::bind(&S3PutBucketPolicyAction::next, this));
   } else {
+    set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -122,18 +132,9 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
     request->set_out_header_value("Retry-After", "1");
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (invalid_request) {
-    S3Error error("MalformedXML", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_bucket_name());
+  } else if (is_error_state() && !get_s3_error_code().empty()) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",

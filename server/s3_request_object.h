@@ -136,13 +136,13 @@ class S3RequestObject {
   // returns x-amz-decoded-content-length OR Content-Length
   // Always prefer get_data_length*() version since it takes
   // care of both above headers (chunked and non-chunked cases)
-  size_t get_data_length();
+  virtual size_t get_data_length();
   std::string get_data_length_str();
 
   virtual size_t get_content_length();
   virtual std::string get_content_length_str();
 
-  std::string& get_full_body_content_as_string();
+  virtual std::string& get_full_body_content_as_string();
 
   virtual std::string get_query_string_value(std::string key);
   virtual bool has_query_param_key(std::string key);

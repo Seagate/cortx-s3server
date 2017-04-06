@@ -169,8 +169,9 @@ class S3BucketMetadata {
   void save_successful();
   void save_failed();
 
-  void setpolicy(std::string& policy_str);
+  virtual void setpolicy(std::string& policy_str);
   virtual void deletepolicy();
+
   void setacl(std::string& acl_str);
 
   void remove(std::function<void(void)> on_success,
