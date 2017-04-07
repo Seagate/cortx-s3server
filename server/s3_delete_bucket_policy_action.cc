@@ -22,9 +22,16 @@
 #include "s3_log.h"
 
 S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(
-    std::shared_ptr<S3RequestObject> req)
+    std::shared_ptr<S3RequestObject> req,
+    S3BucketMetadataFactory* bucket_meta_factory)
     : S3Action(req, false), delete_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+
+  if (bucket_meta_factory) {
+    bucket_metadata_factory.reset(bucket_meta_factory);
+  } else {
+    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+  }
   setup_steps();
 }
 
@@ -41,7 +48,8 @@ void S3DeleteBucketPolicyAction::fetch_bucket_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   // Trigger metadata read async operation with callback
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3DeleteBucketPolicyAction::next, this),
                         std::bind(&S3DeleteBucketPolicyAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");

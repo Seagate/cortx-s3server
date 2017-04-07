@@ -170,7 +170,7 @@ class S3BucketMetadata {
   void save_failed();
 
   void setpolicy(std::string& policy_str);
-  void deletepolicy();
+  virtual void deletepolicy();
   void setacl(std::string& acl_str);
 
   void remove(std::function<void(void)> on_success,

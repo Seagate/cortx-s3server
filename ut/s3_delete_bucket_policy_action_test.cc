@@ -17,9 +17,16 @@
  * Original creation date: 02-June-2016
  */
 
-#include "s3_delete_bucket_policy_action.h"
-#include "gtest/gtest.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "mock_s3_bucket_metadata.h"
+#include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
+#include "s3_delete_bucket_policy_action.h"
+
+using ::testing::Invoke;
+using ::testing::AtLeast;
 
 class S3DeleteBucketPolicyActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
@@ -27,16 +34,94 @@ class S3DeleteBucketPolicyActionTest : public testing::Test {
   S3DeleteBucketPolicyActionTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    bucket_policy_delete = new S3DeleteBucketPolicyAction(mock_request);
+    request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    bucket_meta_factory = new MockS3BucketMetadataFactory(request_mock);
+    action_under_test_ptr = std::make_shared<S3DeleteBucketPolicyAction>(
+        request_mock, bucket_meta_factory);
   }
 
-  ~S3DeleteBucketPolicyActionTest() { delete bucket_policy_delete; }
-
-  S3DeleteBucketPolicyAction *bucket_policy_delete;
-  std::shared_ptr<MockS3RequestObject> mock_request;
+  std::shared_ptr<MockS3RequestObject> request_mock;
+  std::shared_ptr<S3DeleteBucketPolicyAction> action_under_test_ptr;
+  MockS3BucketMetadataFactory *bucket_meta_factory;
 };
 
 TEST_F(S3DeleteBucketPolicyActionTest, Constructor) {
-  EXPECT_NE(0, bucket_policy_delete->number_of_tasks());
+  EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
+}
+
+TEST_F(S3DeleteBucketPolicyActionTest, FetchBucketMetadata) {
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
+      .Times(AtLeast(1));
+  action_under_test_ptr->fetch_bucket_metadata();
+}
+
+TEST_F(S3DeleteBucketPolicyActionTest, DeleteBucketPolicy) {
+  action_under_test_ptr->bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), deletepolicy())
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), save(_, _))
+      .Times(AtLeast(1));
+  action_under_test_ptr->delete_bucket_policy();
+}
+
+TEST_F(S3DeleteBucketPolicyActionTest, DeleteBucketPolicySuccessful) {
+  action_under_test_ptr->bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*request_mock, send_response(204, _)).Times(AtLeast(1));
+  action_under_test_ptr->delete_bucket_policy_successful();
+}
+
+TEST_F(S3DeleteBucketPolicyActionTest, DeleteBucketPolicyFailed) {
+  action_under_test_ptr->bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
+  action_under_test_ptr->delete_bucket_policy_failed();
+}
+
+TEST_F(S3DeleteBucketPolicyActionTest, SendResponseToClientNoSuchBucket) {
+  action_under_test_ptr->bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::missing));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
+  action_under_test_ptr->send_response_to_s3_client();
+}
+
+TEST_F(S3DeleteBucketPolicyActionTest, SendResponseToClientSuccess) {
+  action_under_test_ptr->bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+  action_under_test_ptr->delete_successful = true;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::deleted));
+  EXPECT_CALL(*request_mock, send_response(204, _)).Times(AtLeast(1));
+  action_under_test_ptr->send_response_to_s3_client();
+}
+
+TEST_F(S3DeleteBucketPolicyActionTest, SendResponseToClientInternalError) {
+  action_under_test_ptr->bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
+  action_under_test_ptr->send_response_to_s3_client();
 }
