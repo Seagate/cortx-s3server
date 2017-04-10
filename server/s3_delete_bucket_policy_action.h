@@ -43,7 +43,7 @@ class S3DeleteBucketPolicyAction : public S3Action {
  public:
   S3DeleteBucketPolicyAction(
       std::shared_ptr<S3RequestObject> req,
-      S3BucketMetadataFactory* bucket_meta_factory = NULL);
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
 

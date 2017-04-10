@@ -36,8 +36,9 @@ class S3PutBucketPolicyAction : public S3Action {
   std::string new_bucket_policy;
 
  public:
-  S3PutBucketPolicyAction(std::shared_ptr<S3RequestObject> req,
-                          S3BucketMetadataFactory* bucket_meta_factory = NULL);
+  S3PutBucketPolicyAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
   void validate_request();

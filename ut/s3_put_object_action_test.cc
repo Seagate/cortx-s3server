@@ -64,20 +64,22 @@ class S3PutObjectActionTest : public testing::Test {
 
     call_count_one = 0;
 
-    async_buffer_factory = new MockS3AsyncBufferOptContainerFactory(
-        S3Option::get_instance()->get_libevent_pool_buffer_size());
+    async_buffer_factory =
+        std::make_shared<MockS3AsyncBufferOptContainerFactory>(
+            S3Option::get_instance()->get_libevent_pool_buffer_size());
 
     ptr_mock_request = std::make_shared<MockS3RequestObject>(
         req, evhtp_obj_ptr, async_buffer_factory);
 
     // Owned and deleted by shared_ptr in S3PutObjectAction
-    bucket_meta_factory = new MockS3BucketMetadataFactory(ptr_mock_request);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
-    object_meta_factory =
-        new MockS3ObjectMetadataFactory(ptr_mock_request, object_list_indx_oid);
+    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
+        ptr_mock_request, object_list_indx_oid);
 
     clovis_writer_factory =
-        new MockS3ClovisWriterFactory(ptr_mock_request, oid);
+        std::make_shared<MockS3ClovisWriterFactory>(ptr_mock_request, oid);
 
     action_under_test.reset(
         new S3PutObjectAction(ptr_mock_request, bucket_meta_factory,
@@ -85,10 +87,10 @@ class S3PutObjectActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  MockS3BucketMetadataFactory *bucket_meta_factory;
-  MockS3ObjectMetadataFactory *object_meta_factory;
-  MockS3ClovisWriterFactory *clovis_writer_factory;
-  MockS3AsyncBufferOptContainerFactory *async_buffer_factory;
+  std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
+  std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
+  std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   std::shared_ptr<S3PutObjectAction> action_under_test;
 

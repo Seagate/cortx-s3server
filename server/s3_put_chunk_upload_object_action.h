@@ -22,12 +22,14 @@
 #ifndef __S3_SERVER_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_factory.h"
 #include "s3_object_metadata.h"
 #include "s3_timer.h"
 
@@ -53,12 +55,21 @@ class S3PutChunkUploadObjectAction : public S3Action {
   bool clovis_write_completed;  // full object write
   bool auth_in_progress;
   bool auth_completed;  // all chunk auth
+
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+
   void create_new_oid();
   void collision_detected();
   void send_chunk_details_if_any();
 
  public:
-  S3PutChunkUploadObjectAction(std::shared_ptr<S3RequestObject> req);
+  S3PutChunkUploadObjectAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr);
 
   void setup_steps();
 

@@ -28,12 +28,12 @@
 S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<ClovisAPI> s3_clovis_apis,
-    S3BucketMetadataFactory* bucket_meta_factory,
-    S3ObjectMultipartMetadataFactory* object_mp_meta_factory,
-    S3ObjectMetadataFactory* object_meta_factory,
-    S3PartMetadataFactory* part_meta_factory,
-    S3ClovisWriterFactory* clovis_s3_writer_factory,
-    S3ClovisKVSReaderFactory* clovis_s3_kvs_reader_factory)
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
+    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
+    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory)
     : S3Action(req, false), invalid_upload_id(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   upload_id = request->get_query_string_value("uploadId");
@@ -43,39 +43,40 @@ S3AbortMultipartAction::S3AbortMultipartAction(
   part_index_oid = {0ULL, 0ULL};
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory.reset(bucket_meta_factory);
+    bucket_metadata_factory = bucket_meta_factory;
   } else {
-    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory.reset(object_meta_factory);
+    object_metadata_factory = object_meta_factory;
   } else {
-    object_metadata_factory.reset(new S3ObjectMetadataFactory());
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (object_mp_meta_factory) {
-    object_mp_metadata_factory.reset(object_mp_meta_factory);
+    object_mp_metadata_factory = object_mp_meta_factory;
   } else {
-    object_mp_metadata_factory.reset(new S3ObjectMultipartMetadataFactory());
+    object_mp_metadata_factory =
+        std::make_shared<S3ObjectMultipartMetadataFactory>();
   }
 
   if (clovis_s3_writer_factory) {
-    clovis_writer_factory.reset(clovis_s3_writer_factory);
+    clovis_writer_factory = clovis_s3_writer_factory;
   } else {
-    clovis_writer_factory.reset(new S3ClovisWriterFactory());
+    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
   if (clovis_s3_kvs_reader_factory) {
-    clovis_kvs_reader_factory.reset(clovis_s3_kvs_reader_factory);
+    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
   } else {
-    clovis_kvs_reader_factory.reset(new S3ClovisKVSReaderFactory());
+    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
   }
 
   if (part_meta_factory) {
-    part_metadata_factory.reset(part_meta_factory);
+    part_metadata_factory = part_meta_factory;
   } else {
-    part_metadata_factory.reset(new S3PartMetadataFactory());
+    part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
   }
 
   if (s3_clovis_apis) {

@@ -48,16 +48,18 @@ class S3AbortMultipartActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("uploadId"))
         .WillRepeatedly(Return("upload_id"));
 
-    bucket_meta_factory = new MockS3BucketMetadataFactory(ptr_mock_request);
-    object_mp_meta_factory = new MockS3ObjectMultipartMetadataFactory(
-        ptr_mock_request, mp_indx_oid, true, upload_id);
-    object_meta_factory =
-        new MockS3ObjectMetadataFactory(ptr_mock_request, object_list_indx_oid);
-    part_meta_factory =
-        new MockS3PartMetadataFactory(ptr_mock_request, oid, upload_id, 0);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
+    object_mp_meta_factory =
+        std::make_shared<MockS3ObjectMultipartMetadataFactory>(
+            ptr_mock_request, mp_indx_oid, true, upload_id);
+    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
+        ptr_mock_request, object_list_indx_oid);
+    part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
+        ptr_mock_request, oid, upload_id, 0);
     clovis_writer_factory =
-        new MockS3ClovisWriterFactory(ptr_mock_request, oid);
-    clovis_kvs_reader_factory = new MockS3ClovisKVSReaderFactory(
+        std::make_shared<MockS3ClovisWriterFactory>(ptr_mock_request, oid);
+    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
     action_under_test.reset(new S3AbortMultipartAction(
@@ -68,12 +70,12 @@ class S3AbortMultipartActionTest : public testing::Test {
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
-  MockS3BucketMetadataFactory *bucket_meta_factory;
-  MockS3ObjectMetadataFactory *object_meta_factory;
-  MockS3PartMetadataFactory *part_meta_factory;
-  MockS3ObjectMultipartMetadataFactory *object_mp_meta_factory;
-  MockS3ClovisWriterFactory *clovis_writer_factory;
-  MockS3ClovisKVSReaderFactory *clovis_kvs_reader_factory;
+  std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
+  std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
+  std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
+  std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
+  std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3AbortMultipartAction> action_under_test;
   struct m0_uint128 mp_indx_oid;
   struct m0_uint128 object_list_indx_oid;

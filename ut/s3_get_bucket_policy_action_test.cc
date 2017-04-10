@@ -36,14 +36,15 @@ class S3GetBucketPolicyActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    bucket_meta_factory = new MockS3BucketMetadataFactory(request_mock);
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     action_under_test_ptr = std::make_shared<S3GetBucketPolicyAction>(
         request_mock, bucket_meta_factory);
   }
 
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3GetBucketPolicyAction> action_under_test_ptr;
-  MockS3BucketMetadataFactory *bucket_meta_factory;
+  std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
 };
 
 TEST_F(S3GetBucketPolicyActionTest, Constructor) {

@@ -99,7 +99,8 @@ class S3RequestObject {
 
  public:
   S3RequestObject(evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
-                  S3AsyncBufferOptContainerFactory* async_buf_factory = NULL);
+                  std::shared_ptr<S3AsyncBufferOptContainerFactory>
+                      async_buf_factory = nullptr);
   virtual ~S3RequestObject();
 
   // Broken into helper function primarily to allow initialisations after faking

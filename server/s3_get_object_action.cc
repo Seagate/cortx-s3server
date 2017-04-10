@@ -24,9 +24,9 @@
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
-    S3BucketMetadataFactory* bucket_meta_factory,
-    S3ObjectMetadataFactory* object_meta_factory,
-    S3ClovisReaderFactory* clovis_s3_factory)
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3ClovisReaderFactory> clovis_s3_factory)
     : S3Action(req),
       total_blocks_in_object(0),
       blocks_already_read(0),
@@ -36,21 +36,21 @@ S3GetObjectAction::S3GetObjectAction(
   object_list_oid = {0ULL, 0ULL};
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory.reset(bucket_meta_factory);
+    bucket_metadata_factory = bucket_meta_factory;
   } else {
-    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory.reset(object_meta_factory);
+    object_metadata_factory = object_meta_factory;
   } else {
-    object_metadata_factory.reset(new S3ObjectMetadataFactory());
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (clovis_s3_factory) {
-    clovis_reader_factory.reset(clovis_s3_factory);
+    clovis_reader_factory = clovis_s3_factory;
   } else {
-    clovis_reader_factory.reset(new S3ClovisReaderFactory());
+    clovis_reader_factory = std::make_shared<S3ClovisReaderFactory>();
   }
 
   setup_steps();

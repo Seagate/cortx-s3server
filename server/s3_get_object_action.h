@@ -48,10 +48,11 @@ class S3GetObjectAction : public S3Action {
   std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
 
  public:
-  S3GetObjectAction(std::shared_ptr<S3RequestObject> req,
-                    S3BucketMetadataFactory* bucket_meta_factory = NULL,
-                    S3ObjectMetadataFactory* object_meta_factory = NULL,
-                    S3ClovisReaderFactory* clovis_s3_factory = NULL);
+  S3GetObjectAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisReaderFactory> clovis_s3_factory = nullptr);
 
   void setup_steps();
 

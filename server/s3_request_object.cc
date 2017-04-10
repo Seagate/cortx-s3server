@@ -39,7 +39,7 @@ extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg) {
 
 S3RequestObject::S3RequestObject(
     evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
-    S3AsyncBufferOptContainerFactory* async_buf_factory)
+    std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory)
     : ev_req(req),
       is_paused(false),
       notify_read_watermark(0),
@@ -51,9 +51,9 @@ S3RequestObject::S3RequestObject(
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   if (async_buf_factory) {
-    async_buffer_factory.reset(async_buf_factory);
+    async_buffer_factory = async_buf_factory;
   } else {
-    async_buffer_factory.reset(new S3AsyncBufferOptContainerFactory());
+    async_buffer_factory = std::make_shared<S3AsyncBufferOptContainerFactory>();
   }
 
   buffered_input = async_buffer_factory->create_async_buffer(

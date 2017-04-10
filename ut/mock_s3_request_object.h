@@ -29,9 +29,9 @@
 
 class MockS3RequestObject : public S3RequestObject {
  public:
-  MockS3RequestObject(
-      evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr,
-      S3AsyncBufferOptContainerFactory *async_buf_factory = NULL)
+  MockS3RequestObject(evhtp_request_t *req, EvhtpInterface *evhtp_obj_ptr,
+                      std::shared_ptr<S3AsyncBufferOptContainerFactory>
+                          async_buf_factory = nullptr)
       : S3RequestObject(req, evhtp_obj_ptr, async_buf_factory) {}
   MOCK_METHOD0(c_get_full_path, const char *());
   MOCK_METHOD0(c_get_full_encoded_path, const char *());

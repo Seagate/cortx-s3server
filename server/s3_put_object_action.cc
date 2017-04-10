@@ -29,9 +29,9 @@
 
 S3PutObjectAction::S3PutObjectAction(
     std::shared_ptr<S3RequestObject> req,
-    S3BucketMetadataFactory* bucket_meta_factory,
-    S3ObjectMetadataFactory* object_meta_factory,
-    S3ClovisWriterFactory* clovis_s3_factory)
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory)
     : S3Action(req), total_data_to_stream(0), write_in_progress(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
@@ -42,21 +42,21 @@ S3PutObjectAction::S3PutObjectAction(
   salt = "uri_salt_";
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory.reset(bucket_meta_factory);
+    bucket_metadata_factory = bucket_meta_factory;
   } else {
-    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory.reset(object_meta_factory);
+    object_metadata_factory = object_meta_factory;
   } else {
-    object_metadata_factory.reset(new S3ObjectMetadataFactory());
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (clovis_s3_factory) {
-    clovis_writer_factory.reset(clovis_s3_factory);
+    clovis_writer_factory = clovis_s3_factory;
   } else {
-    clovis_writer_factory.reset(new S3ClovisWriterFactory());
+    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
   setup_steps();

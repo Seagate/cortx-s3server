@@ -55,10 +55,11 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
 
  public:
-  S3PutObjectAction(std::shared_ptr<S3RequestObject> req,
-                    S3BucketMetadataFactory* bucket_meta_factory = NULL,
-                    S3ObjectMetadataFactory* object_meta_factory = NULL,
-                    S3ClovisWriterFactory* clovis_s3_factory = NULL);
+  S3PutObjectAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr);
 
   void setup_steps();
   // void start();

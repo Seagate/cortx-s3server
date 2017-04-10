@@ -34,8 +34,9 @@ class S3GetBucketPolicyAction : public S3Action {
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
  public:
-  S3GetBucketPolicyAction(std::shared_ptr<S3RequestObject> req,
-                          S3BucketMetadataFactory* bucket_meta_factory = NULL);
+  S3GetBucketPolicyAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
   void get_metadata();

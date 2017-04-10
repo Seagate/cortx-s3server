@@ -27,7 +27,10 @@
 #include "s3_uri_to_mero_oid.h"
 
 S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
-    std::shared_ptr<S3RequestObject> req)
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory)
     : S3Action(req),
       total_data_to_stream(0),
       auth_failed(false),
@@ -48,6 +51,25 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
   tried_count = 0;
   salt = "uri_salt_";
+
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
+
+  if (object_meta_factory) {
+    object_metadata_factory = object_meta_factory;
+  } else {
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
+  }
+
+  if (clovis_s3_factory) {
+    clovis_writer_factory = clovis_s3_factory;
+  } else {
+    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+  }
+
   setup_steps();
 }
 
@@ -102,9 +124,12 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
 
 void S3PutChunkUploadObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3PutChunkUploadObjectAction::next, this),
                         std::bind(&S3PutChunkUploadObjectAction::next, this));
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -113,7 +138,7 @@ void S3PutChunkUploadObjectAction::create_object() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     create_object_timer.start();
     if (tried_count == 0) {
-      clovis_writer = std::make_shared<S3ClovisWriter>(request, oid);
+      clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
     } else {
       clovis_writer->set_oid(oid);
     }
@@ -138,7 +163,7 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
     m0_uint128 object_list_oid = bucket_metadata->get_object_list_index_oid();
     if (tried_count == 0) {
-      object_metadata = std::make_shared<S3ObjectMetadata>(
+      object_metadata = object_metadata_factory->create_object_metadata_obj(
           request, bucket_metadata->get_object_list_index_oid());
     }
 
@@ -148,7 +173,7 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
         (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL)) {
       collision_detected();
     } else {
-      object_metadata = std::make_shared<S3ObjectMetadata>(
+      object_metadata = object_metadata_factory->create_object_metadata_obj(
           request, bucket_metadata->get_object_list_index_oid());
       // Lookup metadata, if the object doesn't exist then its collision, do
       // collision resolution
@@ -390,7 +415,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
 void S3PutChunkUploadObjectAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   // xxx set attributes & save
-  object_metadata = std::make_shared<S3ObjectMetadata>(
+  object_metadata = object_metadata_factory->create_object_metadata_obj(
       request, bucket_metadata->get_object_list_index_oid());
   object_metadata->set_content_length(request->get_data_length_str());
   object_metadata->set_md5(clovis_writer->get_content_md5());

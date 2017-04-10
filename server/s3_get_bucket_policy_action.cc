@@ -23,14 +23,14 @@
 
 S3GetBucketPolicyAction::S3GetBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
-    S3BucketMetadataFactory* bucket_meta_factory)
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory.reset(bucket_meta_factory);
+    bucket_metadata_factory = bucket_meta_factory;
   } else {
-    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
   setup_steps();
 }

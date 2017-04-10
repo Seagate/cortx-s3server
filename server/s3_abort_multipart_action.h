@@ -59,13 +59,15 @@ class S3AbortMultipartAction : public S3Action {
  public:
   S3AbortMultipartAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api = NULL,
-      S3BucketMetadataFactory* bucket_meta_factory = NULL,
-      S3ObjectMultipartMetadataFactory* object_mp_meta_factory = NULL,
-      S3ObjectMetadataFactory* object_meta_factory = NULL,
-      S3PartMetadataFactory* part_meta_factory = NULL,
-      S3ClovisWriterFactory* clovis_s3_writer_factory = NULL,
-      S3ClovisKVSReaderFactory* clovis_s3_kvs_reader_factory = NULL);
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
+          nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+          nullptr);
 
   void setup_steps();
 
