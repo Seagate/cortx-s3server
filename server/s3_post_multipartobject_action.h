@@ -35,6 +35,8 @@
 
 class S3PostMultipartObjectAction : public S3Action {
   struct m0_uint128 oid;
+  struct m0_uint128 old_oid;
+  struct m0_uint128 object_list_oid;
   struct m0_uint128 multipart_index_oid;
   short tried_count;
   std::string salt;
@@ -71,6 +73,8 @@ class S3PostMultipartObjectAction : public S3Action {
   void setup_steps();
 
   void fetch_bucket_info();
+  void fetch_object_info();
+  void fetch_object_info_status();
   void check_upload_is_inprogress();
   void create_object();
   void create_object_failed();
@@ -97,12 +101,14 @@ class S3PostMultipartObjectAction : public S3Action {
   FRIEND_TEST(S3PostMultipartObjectTest, FetchBucketInfo);
   FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgressTest);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectTest2);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest);
-  FRIEND_TEST(S3PostMultipartObjectTest,
-              CreateObjectFailedTestWhileShuttingDown);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest2);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateNewOidTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoMultipartPresent);
+  FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoMultipartNotPresent);
+  FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoObjectNotPresent);
+  FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent);
+  FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectPresent);
   FRIEND_TEST(S3PostMultipartObjectTest, CollisionTest);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackTest);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackFailedTest1);

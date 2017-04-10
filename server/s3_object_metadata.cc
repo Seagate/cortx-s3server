@@ -39,6 +39,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   is_multipart = ismultipart;
   upload_id = uploadid;
   oid = M0_CLOVIS_ID_APP;
+  old_oid = {0ULL, 0ULL};
   tried_count = 0;
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
@@ -168,6 +169,15 @@ void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
       base64_encode((unsigned char const*)&oid.u_hi, sizeof(oid.u_hi));
   mero_oid_u_lo_str =
       base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
+}
+
+void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
+  old_oid = id;
+
+  mero_old_oid_u_hi_str =
+      base64_encode((unsigned char const*)&old_oid.u_hi, sizeof(old_oid.u_hi));
+  mero_old_oid_u_lo_str =
+      base64_encode((unsigned char const*)&old_oid.u_lo, sizeof(old_oid.u_lo));
 }
 
 void S3ObjectMetadata::set_part_index_oid(struct m0_uint128 id) {
@@ -468,6 +478,8 @@ std::string S3ObjectMetadata::to_json() {
     root["Upload-ID"] = upload_id;
     root["mero_part_oid_u_hi"] = mero_part_oid_u_hi_str;
     root["mero_part_oid_u_lo"] = mero_part_oid_u_lo_str;
+    root["mero_old_oid_u_hi"] = mero_old_oid_u_hi_str;
+    root["mero_old_oid_u_lo"] = mero_old_oid_u_lo_str;
   }
 
   root["mero_oid_u_hi"] = mero_oid_u_hi_str;
@@ -541,6 +553,23 @@ int S3ObjectMetadata::from_json(std::string content) {
   // std::string decoded_oid_str = base64_decode(oid_str);
   memcpy((void*)&oid.u_hi, dec_oid_u_hi_str.c_str(), dec_oid_u_hi_str.length());
   memcpy((void*)&oid.u_lo, dec_oid_u_lo_str.c_str(), dec_oid_u_lo_str.length());
+
+  //
+  // Old oid is needed to remove the OID when the object already exists
+  // during upload, this is needed in case of multipart upload only
+  // As upload happens in multiple sessions, so this old oid
+  // will be used in post complete action.
+  //
+  if (is_multipart) {
+    mero_old_oid_u_hi_str = newroot["mero_old_oid_u_hi"].asString();
+    mero_old_oid_u_lo_str = newroot["mero_old_oid_u_lo"].asString();
+    dec_oid_u_hi_str = base64_decode(mero_old_oid_u_hi_str);
+    dec_oid_u_lo_str = base64_decode(mero_old_oid_u_lo_str);
+    memcpy((void*)&old_oid.u_hi, dec_oid_u_hi_str.c_str(),
+           dec_oid_u_hi_str.length());
+    memcpy((void*)&old_oid.u_lo, dec_oid_u_lo_str.c_str(),
+           dec_oid_u_lo_str.length());
+  }
 
   dec_oid_u_hi_str = base64_decode(mero_part_oid_u_hi_str);
   dec_oid_u_lo_str = base64_decode(mero_part_oid_u_lo_str);

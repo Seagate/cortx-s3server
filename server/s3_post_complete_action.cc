@@ -27,6 +27,7 @@
 #include "s3_log.h"
 #include "s3_md5_hash.h"
 #include "s3_post_complete_action.h"
+#include "s3_uri_to_mero_oid.h"
 
 S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, false) {
@@ -52,6 +53,8 @@ void S3PostCompleteAction::setup_steps() {
   add_task(std::bind(&S3PostCompleteAction::delete_part_index, this));
   add_task(std::bind(&S3PostCompleteAction::delete_parts, this));
   add_task(std::bind(&S3PostCompleteAction::delete_multipart_metadata, this));
+  add_task(
+      std::bind(&S3PostCompleteAction::delete_old_object_if_present, this));
   add_task(std::bind(&S3PostCompleteAction::send_response_to_s3_client, this));
   // ...
 }
@@ -264,6 +267,38 @@ void S3PostCompleteAction::delete_multipart_successful() {
 void S3PostCompleteAction::delete_multipart_failed() {
   s3_log(S3_LOG_ERROR, "Delete part metadata failed\n");
   next();
+}
+
+void S3PostCompleteAction::delete_old_object_if_present() {
+  m0_uint128 old_object_oid;
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  old_object_oid = multipart_metadata->get_old_oid();
+  if ((old_object_oid.u_lo == 0ULL) && (old_object_oid.u_hi == 0ULL)) {
+    next();
+  } else {
+    s3_log(S3_LOG_DEBUG, "Deleting old object with oid %lu %lu\n",
+           old_object_oid.u_hi, old_object_oid.u_lo);
+    if (clovis_writer == NULL) {
+      clovis_writer = std::make_shared<S3ClovisWriter>(request, old_object_oid);
+    } else {
+      clovis_writer->set_oid(old_object_oid);
+    }
+    clovis_writer->delete_object(
+        std::bind(&S3PostCompleteAction::next, this),
+        std::bind(&S3PostCompleteAction::delete_old_object_failed, this));
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostCompleteAction::delete_old_object_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_ERROR, "Deletion of old object with oid %lu %lu failed\n",
+         multipart_metadata->get_old_oid().u_hi,
+         multipart_metadata->get_old_oid().u_lo);
+  s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+         S3_IEM_DELETE_OBJ_FAIL_JSON);
+  next();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::delete_part_index() {

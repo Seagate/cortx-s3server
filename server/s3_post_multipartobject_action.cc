@@ -34,6 +34,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
+  old_oid = {0ULL, 0ULL};
   tried_count = 0;
   bucket_metadata = 0;
   object_metadata = 0;
@@ -80,6 +81,7 @@ void S3PostMultipartObjectAction::setup_steps() {
   add_task(std::bind(&S3PostMultipartObjectAction::fetch_bucket_info, this));
   add_task(std::bind(&S3PostMultipartObjectAction::check_upload_is_inprogress,
                      this));
+  add_task(std::bind(&S3PostMultipartObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3PostMultipartObjectAction::create_object, this));
   add_task(
       std::bind(&S3PostMultipartObjectAction::create_part_meta_index, this));
@@ -126,19 +128,24 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3PostMultipartObjectAction::create_object() {
+void S3PostMultipartObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (object_multipart_metadata->get_state() !=
       S3ObjectMetadataState::present) {
-    create_object_timer.start();
-    if (tried_count == 0) {
-      clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
+    s3_log(S3_LOG_DEBUG, "Found bucket metadata\n");
+    object_list_oid = bucket_metadata->get_object_list_index_oid();
+    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+      s3_log(S3_LOG_DEBUG, "No existing object, Create it.\n");
+      next();
     } else {
-      clovis_writer->set_oid(oid);
+      object_metadata = object_metadata_factory->create_object_metadata_obj(
+          request, object_list_oid);
+
+      object_metadata->load(
+          std::bind(&S3PostMultipartObjectAction::fetch_object_info_status,
+                    this),
+          std::bind(&S3PostMultipartObjectAction::next, this));
     }
-    clovis_writer->create_object(
-        std::bind(&S3PostMultipartObjectAction::next, this),
-        std::bind(&S3PostMultipartObjectAction::create_object_failed, this));
   } else {
     //++
     // Bailing out in case if the multipart upload is already in progress,
@@ -152,6 +159,44 @@ void S3PostMultipartObjectAction::create_object() {
     //--
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::fetch_object_info_status() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  S3ObjectMetadataState object_state = object_metadata->get_state();
+  if (object_state == S3ObjectMetadataState::present) {
+    s3_log(S3_LOG_DEBUG, "S3ObjectMetadataState::present\n");
+    old_oid = object_metadata->get_oid();
+    s3_log(S3_LOG_DEBUG,
+           "Object with oid %lu %lu already exists, creating new oid\n",
+           old_oid.u_hi, old_oid.u_lo);
+    do {
+      create_new_oid();
+    } while ((oid.u_hi == old_oid.u_hi) && (oid.u_lo == old_oid.u_lo));
+    object_multipart_metadata->set_old_oid(old_oid);
+    next();
+  } else if (object_state == S3ObjectMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, "S3ObjectMetadataState::missing\n");
+    next();
+  } else {
+    s3_log(S3_LOG_DEBUG, "Failed to look up metadata.\n");
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::create_object() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (tried_count == 0) {
+    clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
+  } else {
+    clovis_writer->set_oid(oid);
+  }
+  clovis_writer->create_object(
+      std::bind(&S3PostMultipartObjectAction::next, this),
+      std::bind(&S3PostMultipartObjectAction::create_object_failed, this));
+
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "post_multipartobject_action_create_object_shutdown_fail");
@@ -171,25 +216,7 @@ void S3PostMultipartObjectAction::create_object_failed() {
                   create_object_timer.elapsed_time_in_millisec());
 
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
-    struct m0_uint128 object_list_indx_oid =
-        bucket_metadata->get_object_list_index_oid();
-    // If object exists, it may be due to the actual existance of object or due
-    // to oid collision.
-    if (tried_count || (object_list_indx_oid.u_hi == 0ULL &&
-                        object_list_indx_oid.u_lo == 0ULL)) {
-      // No need of lookup of metadata in case if it was oid collision before or
-      // There is no object list index(no object metadata).
       collision_occured();
-    } else {
-      object_metadata = object_metadata_factory->create_object_metadata_obj(
-          request, object_list_indx_oid);
-      // Lookup object metadata, if the object doesn't exist then its collision,
-      // do collision resolution
-      // If object exist in metadata then we overwrite it
-      object_metadata->load(
-          std::bind(&S3PostMultipartObjectAction::next, this),
-          std::bind(&S3PostMultipartObjectAction::collision_occured, this));
-    }
   } else {
     s3_log(S3_LOG_WARN, "Create object failed.\n");
     // Any other error report failure.

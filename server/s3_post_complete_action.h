@@ -78,6 +78,8 @@ class S3PostCompleteAction : public S3Action {
   void delete_parts_failed();
   void set_abort_multipart(bool abortit);
   bool is_abort_multipart();
+  void delete_old_object_if_present();
+  void delete_old_object_failed();
   void send_response_to_s3_client();
 
   std::string get_part_index_name() {
