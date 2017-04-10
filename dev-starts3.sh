@@ -73,6 +73,6 @@ do
   pid_filename='/var/run/s3server.'$counter'.pid'
   s3server --s3pidfile $pid_filename \
            --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
-           --s3port $s3port
+           --s3port $s3port --fault_injection true
   ((counter++))
 done

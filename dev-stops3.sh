@@ -20,5 +20,5 @@ do
 
   ((counter++))
 done # while
-
+echo "Waiting for S3 to shutdown..."
 sleep 10
