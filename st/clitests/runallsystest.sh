@@ -22,7 +22,6 @@ python auth_spec.py
 python s3cmd_spec.py
 python jclient_spec.py
 python jcloud_spec.py
-python s3fi_spec.py
 python rollback_spec.py
 python negative_spec.py
 python shutdown_spec.py
