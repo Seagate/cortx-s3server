@@ -24,6 +24,7 @@
 #define __S3_SERVER_S3_FACTORY_H__
 
 #include "s3_async_buffer_opt.h"
+#include "s3_auth_client.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
@@ -161,6 +162,16 @@ class S3PutBucketBodyFactory {
       std::string& xml) {
     s3_log(S3_LOG_DEBUG, "S3PutBucketBodyFactory::create_put_bucket_body\n");
     return std::make_shared<S3PutBucketBody>(xml);
+  }
+};
+
+class S3AuthClientFactory {
+ public:
+  virtual ~S3AuthClientFactory() {}
+  virtual std::shared_ptr<S3AuthClient> create_auth_client(
+      std::shared_ptr<S3RequestObject> request) {
+    s3_log(S3_LOG_DEBUG, "S3AuthClientFactory::create_auth_client\n");
+    return std::make_shared<S3AuthClient>(request);
   }
 };
 

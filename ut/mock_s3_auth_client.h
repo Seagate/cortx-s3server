@@ -42,5 +42,12 @@ class MockS3AuthClient : public S3AuthClient {
   MockS3AuthClient(std::shared_ptr<S3RequestObject> req) : S3AuthClient(req) {}
   MOCK_METHOD1(execute_authconnect_request,
                void(struct s3_auth_op_context *auth_ctx));
+  MOCK_METHOD2(init_chunk_auth_cycle,
+               void(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed));
+  MOCK_METHOD2(add_checksum_for_chunk,
+               void(std::string current_sign, std::string sha256_of_payload));
+  MOCK_METHOD2(add_last_checksum_for_chunk,
+               void(std::string current_sign, std::string sha256_of_payload));
 };
 #endif

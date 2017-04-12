@@ -25,6 +25,7 @@
 #include <memory>
 
 #include "mock_s3_async_buffer_opt_container.h"
+#include "mock_s3_auth_client.h"
 #include "mock_s3_bucket_metadata.h"
 #include "mock_s3_clovis_kvs_reader.h"
 #include "mock_s3_clovis_kvs_writer.h"
@@ -240,6 +241,21 @@ class MockS3PutBucketBodyFactory : public S3PutBucketBodyFactory {
 
   // Use this to setup your expectations.
   std::shared_ptr<MockS3PutBucketBody> mock_put_bucket_body;
+};
+
+class MockS3AuthClientFactory : public S3AuthClientFactory {
+ public:
+  MockS3AuthClientFactory(std::shared_ptr<S3RequestObject> req)
+      : S3AuthClientFactory() {
+    mock_auth_client = std::make_shared<MockS3AuthClient>(req);
+  }
+
+  std::shared_ptr<S3AuthClient> create_auth_client(
+      std::shared_ptr<S3RequestObject> req) {
+    return mock_auth_client;
+  }
+
+  std::shared_ptr<MockS3AuthClient> mock_auth_client;
 };
 
 #endif

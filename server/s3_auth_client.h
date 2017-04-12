@@ -298,14 +298,14 @@ class S3AuthClient {
   // headers auth, start = each chunk auth
   void check_chunk_auth(std::function<void(void)> on_success,
                         std::function<void(void)> on_failed);
-  void init_chunk_auth_cycle(std::function<void(void)> on_success,
-                             std::function<void(void)> on_failed);
+  virtual void init_chunk_auth_cycle(std::function<void(void)> on_success,
+                                     std::function<void(void)> on_failed);
   // Insert the signature sent in each chunk (chunk-signature=value)
   // and sha256(chunk-data) to be used in auth of chunk
-  void add_checksum_for_chunk(std::string current_sign,
-                              std::string sha256_of_payload);
-  void add_last_checksum_for_chunk(std::string current_sign,
-                                   std::string sha256_of_payload);
+  virtual void add_checksum_for_chunk(std::string current_sign,
+                                      std::string sha256_of_payload);
+  virtual void add_last_checksum_for_chunk(std::string current_sign,
+                                           std::string sha256_of_payload);
   void chunk_auth_successful();
   void chunk_auth_failed();
   void set_acl_and_policy(std::string acl, std::string policy);

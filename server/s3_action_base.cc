@@ -22,7 +22,8 @@
 #include "s3_option.h"
 #include "s3_stats.h"
 
-S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
+S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
+                   std::shared_ptr<S3AuthClientFactory> auth_factory)
     : request(req),
       invalid_request(false),
       check_shutdown_signal(check_shutdown),
@@ -35,6 +36,12 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown)
   state = S3ActionState::start;
   rollback_state = S3ActionState::start;
   mem_profile.reset(new S3MemoryProfile());
+  if (auth_factory) {
+    auth_client_factory = auth_factory;
+  } else {
+    auth_client_factory = std::make_shared<S3AuthClientFactory>();
+  }
+  auth_client = auth_client_factory->create_auth_client(req);
   setup_steps();
 }
 
@@ -267,7 +274,6 @@ void S3Action::check_authorization_failed() {
 }
 
 void S3Action::check_authentication() {
-  auth_client = std::make_shared<S3AuthClient>(request);
   auth_client->check_authentication(
       std::bind(&S3Action::check_authentication_successful, this),
       std::bind(&S3Action::check_authentication_failed, this));
@@ -297,7 +303,6 @@ void S3Action::check_authentication_failed() {
 }
 
 void S3Action::start_chunk_authentication() {
-  auth_client = std::make_shared<S3AuthClient>(request);
   auth_client->check_chunk_auth(
       std::bind(&S3Action::check_authentication_successful, this),
       std::bind(&S3Action::check_authentication_failed, this));
@@ -310,12 +315,12 @@ bool S3Action::check_shutdown_and_rollback() {
   if (!is_response_scheduled && is_s3_shutting_down) {
     s3_log(S3_LOG_DEBUG, "S3 server is about to shutdown\n");
     is_response_scheduled = true;
+    if (s3_error_code.empty()) {
+      set_s3_error("ServiceUnavailable");
+    }
     if (number_of_rollback_tasks()) {
       rollback_start();
     } else {
-      if (s3_error_code.empty()) {
-        set_s3_error("ServiceUnavailable");
-      }
       send_response_to_s3_client();
     }
   }

@@ -138,7 +138,7 @@ class S3RequestObject {
   // Always prefer get_data_length*() version since it takes
   // care of both above headers (chunked and non-chunked cases)
   virtual size_t get_data_length();
-  std::string get_data_length_str();
+  virtual std::string get_data_length_str();
 
   virtual size_t get_content_length();
   virtual std::string get_content_length_str();
@@ -222,9 +222,13 @@ class S3RequestObject {
   bool is_chunked() { return is_chunked_upload; }
 
   // pass thru functions
-  bool is_chunk_detail_ready() { return chunk_parser.is_chunk_detail_ready(); }
+  virtual bool is_chunk_detail_ready() {
+    return chunk_parser.is_chunk_detail_ready();
+  }
 
-  S3ChunkDetail pop_chunk_detail() { return chunk_parser.pop_chunk_detail(); }
+  virtual S3ChunkDetail pop_chunk_detail() {
+    return chunk_parser.pop_chunk_detail();
+  }
 
   // Streaming
   // Note: Call this only if request object has to still receive from socket

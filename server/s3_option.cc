@@ -759,6 +759,8 @@ std::string S3Option::get_auth_ip_addr() { return auth_ip_addr; }
 
 void S3Option::disable_auth() { FLAGS_disable_auth = true; }
 
+void S3Option::enable_auth() { FLAGS_disable_auth = false; }
+
 bool S3Option::is_auth_disabled() { return FLAGS_disable_auth; }
 
 unsigned short S3Option::s3_performance_enabled() { return perf_enabled; }

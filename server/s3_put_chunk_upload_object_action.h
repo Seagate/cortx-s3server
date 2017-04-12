@@ -37,7 +37,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
-  struct m0_uint128 oid;
+  struct m0_uint128 old_object_oid;
+  struct m0_uint128 new_object_oid;
   // Maximum retry count for collision resolution
   unsigned short tried_count;
   // string used for salting the uri
@@ -60,7 +61,7 @@ class S3PutChunkUploadObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
 
-  void create_new_oid();
+  void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
   void send_chunk_details_if_any();
 
@@ -69,7 +70,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr);
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();
 
@@ -77,6 +79,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void chunk_auth_failed();
 
   void fetch_bucket_info();
+  void fetch_object_info();
+  void fetch_object_info_status();
   void create_object();
   void create_object_failed();
 
@@ -87,11 +91,113 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void write_object_successful();
   void write_object_failed();
   void save_metadata();
+  void delete_old_object_if_present();
+  void delete_old_object_failed();
   void send_response_to_s3_client();
 
   // rollback functions
   void rollback_create();
   void rollback_create_failed();
+
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, ConstructorTest);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, FetchBucketInfo);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoWhenBucketNotPresent);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoWhenBucketAndObjIndexPresent);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoReturnedFoundShouldHaveNewOID);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoReturnedNotFoundShouldUseURL2OID);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoReturnedInvalidStateReportsError);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFirstAttempt);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              CreateObjectSecondAttempt);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              CreateObjectFailedTestWhileShutdown);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              CreateObjectFailedWithCollisionExceededRetry);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              CreateObjectFailedWithCollisionRetry);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedTest);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackTest);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, CreateNewOidTest);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest1);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest2);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              InitiateDataStreamingForZeroSizeObject);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              InitiateDataStreamingExpectingMoreData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              InitiateDataStreamingWeHaveAllData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              ConsumeIncomingShouldWriteIfWeAllData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              ConsumeIncomingShouldWriteIfWeExactData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              ConsumeIncomingShouldWriteIfWeHaveMoreData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              ConsumeIncomingShouldPauseWhenWeHaveTooMuch);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              ConsumeIncomingShouldNotWriteWhenWriteInprogress);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectShouldWriteContentAndMarkProgress);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectSuccessfulWhileShuttingDown);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectSuccessfulWhileShuttingDownAndRollback);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectSuccessfulShouldWriteStateAllData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectSuccessfulShouldWriteWhenExactWritableSize);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectSuccessfulShouldWriteSomeDataWhenMoreData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectSuccessfulShouldRestartReadingData);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, SaveMetadata);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectNotRequired);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              DeleteObjectSinceItsPresent);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailed);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              SendResponseWhenShuttingDown);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, SendErrorResponse);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, SendSuccessResponse);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, SendFailedResponse);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth, ConstructorTest);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              InitiateDataStreamingShouldInitChunkAuth);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              SendChunkDetailsToAuthClientWithSingleChunk);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              SendChunkDetailsToAuthClientWithTwoChunks);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              SendChunkDetailsToAuthClientWithTwoChunksAndOneZeroChunk);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              WriteObjectShouldSendChunkDetailsForAuth);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              WriteObjectSuccessfulShouldSendChunkDetailsForAuth);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              ChunkAuthSuccessfulWhileShuttingDown);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              ChunkAuthFailedWhileShuttingDown);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              ChunkAuthSuccessfulWriteInProgress);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              ChunkAuthSuccessfulWriteFailed);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              ChunkAuthSuccessfulWriteSuccessful);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              ChunkAuthFailedWriteFailed);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              ChunkAuthFailedWriteSuccessful);
 };
 
 #endif

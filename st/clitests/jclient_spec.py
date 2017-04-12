@@ -69,6 +69,10 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can upload 3k file in chunked mode').put_object("seagatebucket", "3kfilec", 3000, chunked=True).execute_test().command_is_successful()
 
+    # ************* File Overwrite Test **********
+    JClientTest('Jclient can upload 3k file in chunked mode').put_object("seagatebucket", "3kfilec", 3072, chunked=True).execute_test().command_is_successful()
+
+
     JClientTest('Jclient cannot upload file to nonexistent bucket').put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist.")
 
     JClientTest('Jclient cannot upload chunked file to nonexistent bucket').put_object("seagate-bucket", "3kfilec", 3000, chunked=True).execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist.")

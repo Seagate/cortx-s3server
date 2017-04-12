@@ -243,6 +243,7 @@ class S3Option {
   std::string get_auth_ip_addr();
   unsigned short get_auth_port();
   void disable_auth();
+  void enable_auth();
   bool is_auth_disabled();
 
   std::string get_option_file();

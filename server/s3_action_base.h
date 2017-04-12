@@ -28,6 +28,7 @@
 
 #include "s3_auth_client.h"
 #include "s3_bucket_metadata.h"
+#include "s3_factory.h"
 #include "s3_fi_common.h"
 #include "s3_log.h"
 #include "s3_memory_profile.h"
@@ -116,9 +117,11 @@ class S3Action {
 
  protected:
   std::shared_ptr<S3MemoryProfile> mem_profile;
+  std::shared_ptr<S3AuthClientFactory> auth_client_factory;
 
  public:
-  S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true);
+  S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true,
+           std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
   virtual ~S3Action();
 
   void set_s3_error(std::string code);

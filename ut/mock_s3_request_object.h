@@ -37,6 +37,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(c_get_full_encoded_path, const char *());
   MOCK_METHOD0(get_host_header, std::string());
   MOCK_METHOD0(get_data_length, size_t());
+  MOCK_METHOD0(get_data_length_str, std::string());
   MOCK_METHOD0(get_full_body_content_as_string, std::string &());
   MOCK_METHOD0(http_verb, S3HttpVerb());
   MOCK_METHOD0(c_get_uri_query, const char *());
@@ -61,6 +62,8 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD1(send_reply_start, void(int code));
   MOCK_METHOD2(send_reply_body, void(char *data, int length));
   MOCK_METHOD0(send_reply_end, void());
+  MOCK_METHOD0(is_chunk_detail_ready, bool());
+  MOCK_METHOD0(pop_chunk_detail, S3ChunkDetail());
 
   MOCK_METHOD2(listen_for_incoming_data,
                void(std::function<void()> callback, size_t notify_on_size));

@@ -92,7 +92,8 @@ void S3PutObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     s3_log(S3_LOG_DEBUG, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
+    struct m0_uint128 object_list_oid =
+        bucket_metadata->get_object_list_index_oid();
     if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
       // There is no object list index, hence object doesn't exist
       s3_log(S3_LOG_DEBUG, "No existing object, Create it.\n");
@@ -355,7 +356,8 @@ void S3PutObjectAction::write_object_successful() {
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
     next();
-  } else if (!request->get_buffered_input()->is_freezed()) {
+  }
+  if (!request->get_buffered_input()->is_freezed()) {
     // else we wait for more incoming data
     request->resume();
   }
@@ -364,6 +366,7 @@ void S3PutObjectAction::write_object_successful() {
 
 void S3PutObjectAction::write_object_failed() {
   s3_log(S3_LOG_WARN, "Failed writing to clovis.\n");
+  set_s3_error("InternalError");
   write_in_progress = false;
 
   // Trigger rollback to undo changes done and report error
@@ -414,10 +417,10 @@ void S3PutObjectAction::delete_old_object_if_present() {
 
 void S3PutObjectAction::delete_old_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Deletion of old object failed\n");
   s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
          S3_IEM_DELETE_OBJ_FAIL_JSON);
-  // TODO - print old_object_oid in S3_IEM_DELETE_OBJ_FAIL_JSON
+  s3_log(S3_LOG_ERROR, "Deletion of old object with oid %lu %lu failed\n",
+         old_object_oid.u_hi, old_object_oid.u_lo);
   next();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -425,26 +428,17 @@ void S3PutObjectAction::delete_old_object_failed() {
 void S3PutObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (reject_if_shutting_down()) {
-    // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (is_error_state() && !get_s3_error_code().empty()) {
-    // Invalid Bucket Name
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&

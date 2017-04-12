@@ -36,7 +36,6 @@
 class S3PutObjectAction : public S3Action {
   struct m0_uint128 old_object_oid;
   struct m0_uint128 new_object_oid;
-  struct m0_uint128 object_list_oid;
   // Maximum retry count for collision resolution
   unsigned short tried_count;
   // string used for salting the uri
@@ -54,6 +53,9 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
 
+  void create_new_oid(struct m0_uint128 current_oid);
+  void collision_detected();
+
  public:
   S3PutObjectAction(
       std::shared_ptr<S3RequestObject> req,
@@ -69,8 +71,6 @@ class S3PutObjectAction : public S3Action {
   void fetch_object_info_status();
   void create_object();
   void create_object_failed();
-  void create_new_oid(struct m0_uint128 current_oid);
-  void collision_detected();
 
   void initiate_data_streaming();
   void consume_incoming_content();
