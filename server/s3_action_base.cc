@@ -313,6 +313,9 @@ bool S3Action::check_shutdown_and_rollback() {
     if (number_of_rollback_tasks()) {
       rollback_start();
     } else {
+      if (s3_error_code.empty()) {
+        set_s3_error("ServiceUnavailable");
+      }
       send_response_to_s3_client();
     }
   }

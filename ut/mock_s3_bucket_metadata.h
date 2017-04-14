@@ -43,6 +43,7 @@ class MockS3BucketMetadata : public S3BucketMetadata {
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD0(deletepolicy, void());
+  MOCK_METHOD1(set_location_constraint, void(std::string location));
 };
 
 #endif

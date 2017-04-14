@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2017 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -13,27 +13,27 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original author:  Abrarahmed Momin   <abrar.habib@seagate.com>
+ * Original creation date: April-13-2017
  */
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_PUT_BUCKET_BODY_H__
-#define __S3_SERVER_S3_PUT_BUCKET_BODY_H__
+#ifndef __S3_UT_MOCK_S3_PUT_BUCKET_BODY_H__
+#define __S3_UT_MOCK_S3_PUT_BUCKET_BODY_H__
 
-#include <string>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include "s3_put_bucket_body.h"
 
-class S3PutBucketBody {
-  std::string xml_content;
-  bool is_valid;
-  std::string location_constraint;
-  bool parse_and_validate();
+using ::testing::_;
+using ::testing::Return;
 
+class MockS3PutBucketBody : public S3PutBucketBody {
  public:
-  S3PutBucketBody(std::string& xml);
-  virtual bool isOK();
-  virtual std::string get_location_constraint();
+  MockS3PutBucketBody(std::string& xml) : S3PutBucketBody(xml) {}
+  MOCK_METHOD0(isOK, bool());
+  MOCK_METHOD0(get_location_constraint, std::string());
 };
 
 #endif

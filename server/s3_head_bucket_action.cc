@@ -21,9 +21,16 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 
-S3HeadBucketAction::S3HeadBucketAction(std::shared_ptr<S3RequestObject> req)
+S3HeadBucketAction::S3HeadBucketAction(
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
   setup_steps();
 }
 
@@ -38,7 +45,8 @@ void S3HeadBucketAction::read_metadata() {
   s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
 
   // Trigger metadata read async operation with callback
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   bucket_metadata->load(std::bind(&S3HeadBucketAction::next, this),
@@ -51,7 +59,7 @@ void S3HeadBucketAction::send_response_to_s3_client() {
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");

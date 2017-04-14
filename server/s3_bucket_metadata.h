@@ -153,7 +153,7 @@ class S3BucketMetadata {
   void set_multipart_index_oid(struct m0_uint128 id);
   void set_object_list_index_oid(struct m0_uint128 id);
 
-  void set_location_constraint(std::string location);
+  virtual void set_location_constraint(std::string location);
 
   // Load attributes
   void add_system_attribute(std::string key, std::string val);

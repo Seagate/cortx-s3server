@@ -27,25 +27,46 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_factory.h"
+#include "s3_put_bucket_body.h"
 
 class S3PutBucketAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3PutBucketBodyFactory> put_bucketbody_factory;
+  std::shared_ptr<S3PutBucketBody> put_bucket_body;
 
   std::string request_content;
   std::string location_constraint;  // Received in request body.
  public:
-  S3PutBucketAction(std::shared_ptr<S3RequestObject> req);
+  S3PutBucketAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory =
+          nullptr,
+      std::shared_ptr<S3PutBucketBodyFactory> bucket_body_factory = nullptr);
 
   void setup_steps();
-
   void validate_request();
-
   void consume_incoming_content();
   void validate_request_body(std::string content);
-
   void read_metadata();
   void create_bucket();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3PutBucketActionTest, Constructor);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateRequest);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateRequestInvalid);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateRequestMoreContent);
+  FRIEND_TEST(S3PutBucketActionTest, ReadMetaData);
+  FRIEND_TEST(S3PutBucketActionTest, CreateBucketAlreadyExist);
+  FRIEND_TEST(S3PutBucketActionTest, CreateBucketSuccess);
+  FRIEND_TEST(S3PutBucketActionTest, CreateBucketFailed);
+  FRIEND_TEST(S3PutBucketActionTest, SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3PutBucketActionTest, SendResponseToClientMalformedXML);
+  FRIEND_TEST(S3PutBucketActionTest, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3PutBucketActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3PutBucketActionTest, SendResponseToClientInternalError);
 };
 
 #endif

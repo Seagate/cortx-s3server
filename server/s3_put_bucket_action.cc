@@ -22,12 +22,24 @@
 #include "s3_error_codes.h"
 #include "s3_log.h"
 #include "s3_put_bucket_action.h"
-#include "s3_put_bucket_body.h"
 
-S3PutBucketAction::S3PutBucketAction(std::shared_ptr<S3RequestObject> req)
+S3PutBucketAction::S3PutBucketAction(
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3PutBucketBodyFactory> bucket_body_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   location_constraint = "";
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
+  if (bucket_body_factory) {
+    put_bucketbody_factory = bucket_body_factory;
+  } else {
+    put_bucketbody_factory = std::make_shared<S3PutBucketBodyFactory>();
+  }
   setup_steps();
 }
 
@@ -71,12 +83,14 @@ void S3PutBucketAction::consume_incoming_content() {
 
 void S3PutBucketAction::validate_request_body(std::string content) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  S3PutBucketBody bucket(content);
-  if (bucket.isOK()) {
-    location_constraint = bucket.get_location_constraint();
+  // S3PutBucketBody bucket(content);
+  put_bucket_body = put_bucketbody_factory->create_put_bucket_body(content);
+  if (put_bucket_body->isOK()) {
+    location_constraint = put_bucket_body->get_location_constraint();
     next();
   } else {
     invalid_request = true;
+    set_s3_error("MalformedXML");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -85,7 +99,8 @@ void S3PutBucketAction::validate_request_body(std::string content) {
 void S3PutBucketAction::read_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   // Trigger metadata read async operation with callback
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3PutBucketAction::next, this),
                         std::bind(&S3PutBucketAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -100,6 +115,7 @@ void S3PutBucketAction::create_bucket() {
     s3_log(S3_LOG_WARN, "Bucket already exists\n");
 
     // Report 409 bucket exists.
+    set_s3_error("BucketAlreadyExists");
     send_response_to_s3_client();
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     // xxx set attributes & save
@@ -111,6 +127,7 @@ void S3PutBucketAction::create_bucket() {
     bucket_metadata->save(std::bind(&S3PutBucketAction::next, this),
                           std::bind(&S3PutBucketAction::next, this));
   } else {
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -119,30 +136,10 @@ void S3PutBucketAction::create_bucket() {
 void S3PutBucketAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (reject_if_shutting_down()) {
-    // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (invalid_request) {
-    S3Error error("MalformedXML", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    S3Error error("BucketAlreadyExists", request->get_request_id(),
-                  request->get_bucket_name());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",

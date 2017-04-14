@@ -24,17 +24,28 @@
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_factory.h"
 
 class S3HeadBucketAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
  public:
-  S3HeadBucketAction(std::shared_ptr<S3RequestObject> req);
+  S3HeadBucketAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
-
   void read_metadata();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3HeadBucketActionTest, Constructor);
+  FRIEND_TEST(S3HeadBucketActionTest, ReadMetaData);
+  FRIEND_TEST(S3HeadBucketActionTest, SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3HeadBucketActionTest, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3HeadBucketActionTest, SendResponseToClientInternalError);
+  FRIEND_TEST(S3HeadBucketActionTest, SendResponseToClientSuccess);
 };
 
 #endif

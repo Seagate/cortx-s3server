@@ -32,6 +32,7 @@
 #include "mock_s3_object_metadata.h"
 #include "mock_s3_object_multipart_metadata.h"
 #include "mock_s3_part_metadata.h"
+#include "mock_s3_put_bucket_body.h"
 #include "mock_s3_request_object.h"
 #include "s3_factory.h"
 
@@ -196,6 +197,20 @@ class MockS3AsyncBufferOptContainerFactory
   }
 
   std::shared_ptr<MockS3AsyncBufferOptContainer> mock_async_buffer;
+};
+
+class MockS3PutBucketBodyFactory : public S3PutBucketBodyFactory {
+ public:
+  MockS3PutBucketBodyFactory(std::string& xml) : S3PutBucketBodyFactory() {
+    mock_put_bucket_body = std::make_shared<MockS3PutBucketBody>(xml);
+  }
+
+  std::shared_ptr<S3PutBucketBody> create_put_bucket_body(std::string& xml) {
+    return mock_put_bucket_body;
+  }
+
+  // Use this to setup your expectations.
+  std::shared_ptr<MockS3PutBucketBody> mock_put_bucket_body;
 };
 
 #endif

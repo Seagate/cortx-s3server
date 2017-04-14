@@ -31,6 +31,7 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
+#include "s3_put_bucket_body.h"
 
 class S3BucketMetadataFactory {
  public:
@@ -132,6 +133,16 @@ class S3AsyncBufferOptContainerFactory {
     s3_log(S3_LOG_DEBUG,
            "S3AsyncBufferOptContainerFactory::create_async_buffer\n");
     return std::make_shared<S3AsyncBufferOptContainer>(size_of_each_buf);
+  }
+};
+
+class S3PutBucketBodyFactory {
+ public:
+  virtual ~S3PutBucketBodyFactory() {}
+  virtual std::shared_ptr<S3PutBucketBody> create_put_bucket_body(
+      std::string& xml) {
+    s3_log(S3_LOG_DEBUG, "S3PutBucketBodyFactory::create_put_bucket_body\n");
+    return std::make_shared<S3PutBucketBody>(xml);
   }
 };
 
