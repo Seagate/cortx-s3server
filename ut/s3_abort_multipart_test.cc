@@ -109,10 +109,7 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest1) {
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_multipart_index_oid())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(oid));
+  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(1);
   action_under_test->get_multipart_metadata();
@@ -126,11 +123,7 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest2) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3BucketMetadataState::present));
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_multipart_index_oid())
-      .Times(AtLeast(1))
-      .WillOnce(Return(empty_oid));
+  action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
 

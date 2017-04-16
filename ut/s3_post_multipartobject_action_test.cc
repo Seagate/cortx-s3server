@@ -106,20 +106,14 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgressTest) {
 
   ON_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillByDefault(Return(S3BucketMetadataState::present));
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_multipart_index_oid())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(oid));
+  action_under_test->bucket_metadata->set_multipart_index_oid(oid);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(1);
   action_under_test->check_upload_is_inprogress();
 
   ON_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillByDefault(Return(S3BucketMetadataState::present));
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              get_multipart_index_oid())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(empty_oid));
+  action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
   action_under_test->check_upload_is_inprogress();

@@ -56,6 +56,7 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
   last_index = offset;
   size_in_current_write = 0;
   total_written = 0;
+  oid = {0ULL, 0ULL};
   ops_count = 0;
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();

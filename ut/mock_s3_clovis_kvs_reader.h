@@ -36,6 +36,8 @@ class MockS3ClovisKVSReader : public S3ClovisKVSReader {
                         std::shared_ptr<ClovisAPI> s3clovis_api)
       : S3ClovisKVSReader(req, s3clovis_api) {}
   MOCK_METHOD0(get_state, S3ClovisKVSReaderOpState());
+  MOCK_METHOD0(get_key_values,
+               std::map<std::string, std::pair<int, std::string>> &());
   MOCK_METHOD4(get_keyval,
                void(struct m0_uint128 oid, std::vector<std::string> keys,
                     std::function<void(void)> on_success,

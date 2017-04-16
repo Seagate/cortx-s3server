@@ -119,7 +119,7 @@ class S3ClovisKVSReader {
   S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
                     std::shared_ptr<ClovisAPI> s3_clovis_api);
 
-  S3ClovisKVSReaderOpState get_state() { return state; }
+  virtual S3ClovisKVSReaderOpState get_state() { return state; }
 
   // Async get operation.
   // Note -- get_keyval() is called with oid of index
@@ -156,7 +156,7 @@ class S3ClovisKVSReader {
   void next_keyval_failed();
 
   // returns the fetched kv pairs
-  std::map<std::string, std::pair<int, std::string>>& get_key_values() {
+  virtual std::map<std::string, std::pair<int, std::string>>& get_key_values() {
     return last_result_keys_values;
   }
 

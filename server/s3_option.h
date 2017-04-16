@@ -48,6 +48,7 @@
     }                                                                       \
   } while (0)
 
+#include <gtest/gtest_prod.h>
 #include <limits.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -55,7 +56,6 @@
 #include <unistd.h>
 #include <set>
 #include <string>
-
 #include "evhtp_wrapper.h"
 #include "s3_cli_options.h"
 
@@ -128,6 +128,7 @@ class S3Option {
   evbase_t* eventbase;
 
   static S3Option* option_instance;
+  void set_clovis_idx_fetch_count(short count);
 
   S3Option() {
     cmd_opt_flag = 0;
@@ -337,5 +338,7 @@ class S3Option {
       option_instance = NULL;
     }
   }
+  FRIEND_TEST(S3DeleteBucketActionTest,
+              FetchMultipartObjectSuccessMaxFetchCountLessThanMapSize);
 };
 #endif

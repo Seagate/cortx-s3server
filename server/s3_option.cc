@@ -713,6 +713,10 @@ unsigned short S3Option::get_clovis_units_per_request() {
 
 int S3Option::get_clovis_idx_fetch_count() { return clovis_idx_fetch_count; }
 
+void S3Option::set_clovis_idx_fetch_count(short count) {
+  clovis_idx_fetch_count = count;
+}
+
 unsigned int S3Option::get_clovis_write_payload_size() {
   return clovis_unit_size * clovis_units_per_request;
 }

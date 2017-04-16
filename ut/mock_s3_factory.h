@@ -27,6 +27,7 @@
 #include "mock_s3_async_buffer_opt_container.h"
 #include "mock_s3_bucket_metadata.h"
 #include "mock_s3_clovis_kvs_reader.h"
+#include "mock_s3_clovis_kvs_writer.h"
 #include "mock_s3_clovis_reader.h"
 #include "mock_s3_clovis_writer.h"
 #include "mock_s3_object_metadata.h"
@@ -127,8 +128,18 @@ class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
     mock_clovis_writer = std::make_shared<MockS3ClovisWriter>(req, oid);
   }
 
+  MockS3ClovisWriterFactory(std::shared_ptr<S3RequestObject> req)
+      : S3ClovisWriterFactory() {
+    mock_clovis_writer = std::make_shared<MockS3ClovisWriter>(req);
+  }
+
   std::shared_ptr<S3ClovisWriter> create_clovis_writer(
       std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid) {
+    return mock_clovis_writer;
+  }
+
+  std::shared_ptr<S3ClovisWriter> create_clovis_writer(
+      std::shared_ptr<S3RequestObject> req) {
     return mock_clovis_writer;
   }
 
@@ -176,6 +187,24 @@ class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
   }
 
   std::shared_ptr<MockS3ClovisKVSReader> mock_clovis_kvs_reader;
+};
+
+class MockS3ClovisKVSWriterFactory : public S3ClovisKVSWriterFactory {
+ public:
+  MockS3ClovisKVSWriterFactory(std::shared_ptr<S3RequestObject> req,
+                               std::shared_ptr<ClovisAPI> s3_clovis_api)
+      : S3ClovisKVSWriterFactory() {
+    mock_clovis_kvs_writer =
+        std::make_shared<MockS3ClovisKVSWriter>(req, s3_clovis_api);
+  }
+
+  std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> s3_clovis_api) {
+    return mock_clovis_kvs_writer;
+  }
+
+  std::shared_ptr<MockS3ClovisKVSWriter> mock_clovis_kvs_writer;
 };
 
 class MockS3AsyncBufferOptContainerFactory

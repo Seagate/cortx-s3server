@@ -143,18 +143,18 @@ class S3ClovisKVSWriter {
                              std::function<void(void)> on_failed);
 
   // async delete
-  void delete_index(struct m0_uint128 idx_oid,
-                    std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
+  virtual void delete_index(struct m0_uint128 idx_oid,
+                            std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed);
   void delete_index(std::string index_name,
                     std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
   void delete_index_successful();
   void delete_index_failed();
 
-  void delete_indexes(std::vector<struct m0_uint128> oids,
-                      std::function<void(void)> on_success,
-                      std::function<void(void)> on_failed);
+  virtual void delete_indexes(std::vector<struct m0_uint128> oids,
+                              std::function<void(void)> on_success,
+                              std::function<void(void)> on_failed);
   void delete_indexes_successful();
   void delete_indexes_failed();
 

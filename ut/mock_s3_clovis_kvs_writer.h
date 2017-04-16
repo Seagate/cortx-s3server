@@ -30,5 +30,11 @@ class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
   MockS3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
                         std::shared_ptr<ClovisAPI> s3_clovis_api)
       : S3ClovisKVSWriter(req, s3_clovis_api) {}
+  MOCK_METHOD3(delete_index,
+               void(struct m0_uint128, std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed));
+  MOCK_METHOD3(delete_indexes, void(std::vector<struct m0_uint128> oids,
+                                    std::function<void(void)> on_success,
+                                    std::function<void(void)> on_failed));
 };
 #endif

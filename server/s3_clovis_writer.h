@@ -179,13 +179,13 @@ class S3ClovisWriter {
   void delete_object_successful();
   void delete_object_failed();
 
-  void delete_objects(std::vector<struct m0_uint128> oids,
-                      std::function<void(void)> on_success,
-                      std::function<void(void)> on_failed);
+  virtual void delete_objects(std::vector<struct m0_uint128> oids,
+                              std::function<void(void)> on_success,
+                              std::function<void(void)> on_failed);
   void delete_objects_successful();
   void delete_objects_failed();
 
-  int get_op_ret_code_for(int index) {
+  virtual int get_op_ret_code_for(int index) {
     return writer_context->get_errno_for(index);
   }
 

@@ -35,13 +35,23 @@ class MockS3ClovisWriter : public S3ClovisWriter {
   MockS3ClovisWriter(std::shared_ptr<S3RequestObject> req,
                      struct m0_uint128 oid)
       : S3ClovisWriter(req, oid) {}
+  MockS3ClovisWriter(std::shared_ptr<S3RequestObject> req)
+      : S3ClovisWriter(req) {}
+
   MOCK_METHOD0(get_state, S3ClovisWriterOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());
   MOCK_METHOD0(get_content_md5, std::string());
+  MOCK_METHOD1(get_op_ret_code_for, int(int));
   MOCK_METHOD2(create_object, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
   MOCK_METHOD2(delete_object, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
+  MOCK_METHOD3(delete_index,
+               void(struct m0_uint128 oid, std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed));
+  MOCK_METHOD3(delete_objects, void(std::vector<struct m0_uint128> oids,
+                                    std::function<void(void)> on_success,
+                                    std::function<void(void)> on_failed));
   MOCK_METHOD1(set_oid, void(struct m0_uint128 oid));
   MOCK_METHOD3(write_content,
                void(std::function<void(void)> on_success,

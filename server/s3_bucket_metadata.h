@@ -174,8 +174,8 @@ class S3BucketMetadata {
 
   void setacl(std::string& acl_str);
 
-  void remove(std::function<void(void)> on_success,
-              std::function<void(void)> on_failed);
+  virtual void remove(std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
 
