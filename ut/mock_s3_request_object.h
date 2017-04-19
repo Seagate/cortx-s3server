@@ -64,6 +64,7 @@ class MockS3RequestObject : public S3RequestObject {
 
   MOCK_METHOD2(listen_for_incoming_data,
                void(std::function<void()> callback, size_t notify_on_size));
+  MOCK_METHOD1(get_header_value, std::string(std::string key));
 };
 
 #endif

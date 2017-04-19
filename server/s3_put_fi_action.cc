@@ -48,8 +48,8 @@ void S3PutFiAction::parse_command() {
   int count = 0;
   cstring = request->get_header_value("x-seagate-faultinjection");
   if (cstring.empty()) {
-    return_error = "Malformed header";
-    send_response_to_s3_client();  // Empty fault tag, report error
+    // Empty fault tag, report error
+    set_s3_error("MalformedFICmd");
     return;
   }
 
@@ -74,20 +74,25 @@ void S3PutFiAction::parse_command() {
         break;
       default:
         s3_log(S3_LOG_DEBUG, "Too many parameters\n");
-        return_error = "Too many parameters";
-        send_response_to_s3_client();
+        set_s3_error("MalformedFICmd");
         return;
     }
     count++;
   }
   s3_log(S3_LOG_DEBUG, "parse_command:%s:%s:%s \n", fi_opcode.c_str(),
          fi_cmd.c_str(), fi_tag.c_str());
+
+  return;
 }
 
 void S3PutFiAction::set_fault_injection() {
   s3_log(S3_LOG_DEBUG, "set_fault_injection\n");
   // get tag
   parse_command();
+  if (!get_s3_error_code().empty()) {
+    send_response_to_s3_client();
+    return;
+  }
 
   if (fi_opcode.compare("enable") == 0) {
     s3_log(S3_LOG_DEBUG, " Fault enable:%s:%s\n", fi_cmd.c_str(),
@@ -103,8 +108,8 @@ void S3PutFiAction::set_fault_injection() {
     else if (fi_cmd.compare("offnonm") == 0)
       s3_fi_enable_off_n_on_m(fi_tag.c_str(), stoi(fi_param1), stoi(fi_param2));
     else {
-      return_error = "Invalid command param";
       s3_log(S3_LOG_DEBUG, "Invalid command:%s\n", fi_cmd.c_str());
+      set_s3_error("MalformedFICmd");
     }
 
   } else if (fi_opcode.compare("disable") == 0) {
@@ -120,7 +125,7 @@ void S3PutFiAction::set_fault_injection() {
     }
 
   } else {
-    return_error = "Invalid opcode";
+    set_s3_error("MalformedFICmd");
     s3_log(S3_LOG_DEBUG, "Invalid opcode:%s\n", fi_opcode.c_str());
   }
   next();
@@ -129,11 +134,11 @@ void S3PutFiAction::set_fault_injection() {
 void S3PutFiAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (return_error.empty()) {
+  if (!is_error_state() && get_s3_error_code().empty()) {
     request->send_response(S3HttpSuccess200);
   } else {
     // Invalid request
-    S3Error error("MalformedFICmd", request->get_request_id(), "");
+    S3Error error(get_s3_error_code(), request->get_request_id(), "");
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",

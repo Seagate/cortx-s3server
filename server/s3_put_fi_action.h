@@ -80,6 +80,20 @@ class S3PutFiAction : public S3Action {
   void setup_steps();
   void set_fault_injection();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3PutFiActionTest, Constructor);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionCmdEmpty);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionTooManyParam);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionEnableAlways);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionEnableOnce);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionEnableRandom);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionEnableNTime);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionEnableOffN);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionDisable);
+  FRIEND_TEST(S3PutFiActionTest, SetFaultInjectionTest);
+  FRIEND_TEST(S3PutFiActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3PutFiActionTest, SendResponseToClientMalformedFICmd);
 };
 
 #endif

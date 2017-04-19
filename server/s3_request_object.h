@@ -131,7 +131,7 @@ class S3RequestObject {
   virtual std::map<std::string, std::string>& get_in_headers_copy();
   friend int consume_header(evhtp_kv_t* kvobj, void* arg);
 
-  std::string get_header_value(std::string key);
+  virtual std::string get_header_value(std::string key);
   virtual std::string get_host_header();
 
   // returns x-amz-decoded-content-length OR Content-Length
