@@ -162,15 +162,15 @@ for i, type in enumerate(config_types):
         execute_test().command_is_successful()
 
     # ************ ACL/POLICY TEST ***************
-    S3fiTest('s3cmd enable FI put_bucket_acl_action_get_metadata_shutdown_fail').\
-        enable_fi("enable", "always", "put_bucket_acl_action_get_metadata_shutdown_fail").\
+    S3fiTest('s3cmd enable FI put_bucket_acl_action_fetch_bucket_info_shutdown_fail').\
+        enable_fi("enable", "always", "put_bucket_acl_action_fetch_bucket_info_shutdown_fail").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not set acl on bucket').\
         setacl_bucket("seagatebucket","read:123").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3fiTest('s3cmd can disable Fault injection').\
-        disable_fi("put_bucket_acl_action_get_metadata_shutdown_fail").\
+        disable_fi("put_bucket_acl_action_fetch_bucket_info_shutdown_fail").\
         execute_test().command_is_successful()
 
     S3cmdTest('s3cmd can upload 3k file').\

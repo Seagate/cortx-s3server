@@ -142,7 +142,7 @@ class S3BucketMetadata {
 
   std::string& get_encoded_bucket_acl();
   virtual std::string& get_policy_as_json();
-  std::string& get_acl_as_xml();
+  virtual std::string& get_acl_as_xml();
 
   struct m0_uint128 get_bucket_list_index_oid();
   virtual struct m0_uint128 get_multipart_index_oid();
@@ -172,7 +172,7 @@ class S3BucketMetadata {
   virtual void setpolicy(std::string& policy_str);
   virtual void deletepolicy();
 
-  void setacl(std::string& acl_str);
+  virtual void setacl(std::string& acl_str);
 
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
