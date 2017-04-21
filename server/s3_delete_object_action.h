@@ -22,11 +22,13 @@
 #ifndef __S3_SERVER_S3_DELETE_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_DELETE_OBJECT_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_factory.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 
@@ -34,19 +36,47 @@ class S3DeleteObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
-  m0_uint128 object_list_indx_oid;
+
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
 
  public:
-  S3DeleteObjectAction(std::shared_ptr<S3RequestObject> req);
+  S3DeleteObjectAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisWriterFactory> writer_factory = nullptr);
 
   void setup_steps();
 
   void fetch_bucket_info();
   void fetch_object_info();
+  void delete_metadata();
   void delete_object();
   void delete_object_failed();
-  void delete_metadata();
   void send_response_to_s3_client();
+
+  FRIEND_TEST(S3DeleteObjectActionTest, ConstructorTest);
+  FRIEND_TEST(S3DeleteObjectActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
+  FRIEND_TEST(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketFetchFailed);
+  FRIEND_TEST(S3DeleteObjectActionTest,
+              FetchObjectInfoWhenBucketAndObjIndexPresent);
+  FRIEND_TEST(S3DeleteObjectActionTest,
+              FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteMetadataWhenObjectPresent);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteMetadataWhenObjectAbsent);
+  FRIEND_TEST(S3DeleteObjectActionTest,
+              DeleteMetadataWhenObjectMetadataFetchFailed);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteFailed);
+  FRIEND_TEST(S3DeleteObjectActionTest,
+              DeleteObjectWhenMetadataDeleteSucceeded);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectMissingShouldReportDeleted);
+  FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectFailedShouldReportDeleted);
+  FRIEND_TEST(S3DeleteObjectActionTest, SendErrorResponse);
+  FRIEND_TEST(S3DeleteObjectActionTest, SendAnyFailedResponse);
+  FRIEND_TEST(S3DeleteObjectActionTest, SendSuccessResponse);
 };
 
 #endif

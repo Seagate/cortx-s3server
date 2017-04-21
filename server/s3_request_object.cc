@@ -340,8 +340,10 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
 }
 
 void S3RequestObject::send_response(int code, std::string body) {
-  // If body not empty, write to response body. TODO
+  s3_log(S3_LOG_DEBUG, "Response code: [%d]\n", code);
   s3_log(S3_LOG_DEBUG, "Sending response as: [%s]\n", body.c_str());
+
+  // If body not empty, write to response body.
   if (!body.empty()) {
     evbuffer_add_printf(ev_req->buffer_out, body.c_str());
   }

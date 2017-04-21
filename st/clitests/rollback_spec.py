@@ -142,16 +142,22 @@ S3cmdTest('s3cmd upload 3k file').upload_test("seagatebucket", "3kfile", 3000).e
 S3cmdTest('s3cmd upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
 
 # **************** OBJ DELETE FI  ****************
-S3fiTest('s3cmd enable FI OBJ Delete').enable_fi("enable", "always", "clovis_obj_delete_fail").execute_test().command_is_successful()
+S3fiTest('s3cmd enable FI OBJ Delete').enable_fi("enable", "always", "clovis_kv_delete_fail").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot delete 3k file').delete_test("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail()
 S3cmdTest('s3cmd cannot delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test(negative_case=True).command_should_fail()
-S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_delete_fail").execute_test().command_is_successful()
+S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_delete_fail").execute_test().command_is_successful()
 
 #**************** GET KV FI  ****************
 S3fiTest('s3cmd enable FI GET KV').enable_fi("enable", "always", "clovis_kv_get_fail").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot download 3k file').download_test("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail()
 S3cmdTest('s3cmd cannot download 18MB file').download_test("seagatebucket", "18MBfile").execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
+
+# **************** OBJ DELETE FI  ****************
+S3fiTest('s3cmd enable FI OBJ Delete').enable_fi("enable", "always", "clovis_obj_delete_fail").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete 18MB file').delete_test("seagatebucket", "18MBfile").execute_test().command_is_successful()
+S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_delete_fail").execute_test().command_is_successful()
 
 # ************ Multiple Delete bucket TEST ************
 file_name = "3kfile"

@@ -235,6 +235,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeZero) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str())
       .WillRepeatedly(Return("0"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_last_modified_gmt())
+      .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
+      .Times(AtLeast(1))
+      .WillOnce(Return("abcd1234abcd"));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess200)))
@@ -261,6 +267,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str())
       .WillRepeatedly(Return(std::to_string(obj_size)));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_last_modified_gmt())
+      .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
+      .Times(AtLeast(1))
+      .WillOnce(Return("abcd1234abcd"));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
@@ -301,6 +313,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str())
       .WillRepeatedly(Return(std::to_string(obj_size)));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_last_modified_gmt())
+      .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
+      .Times(AtLeast(1))
+      .WillOnce(Return("abcd1234abcd"));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
 
@@ -331,6 +349,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_last_modified_gmt())
+      .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
+      .Times(AtLeast(1))
+      .WillOnce(Return("abcd1234abcd"));
 
   // Object size less than unit size
   size_t obj_size = S3Option::get_instance()->get_clovis_unit_size() + 1;

@@ -22,25 +22,48 @@
 #ifndef __S3_SERVER_S3_HEAD_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_HEAD_OBJECT_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
+#include "s3_factory.h"
 #include "s3_object_metadata.h"
 
 class S3HeadObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
-  m0_uint128 object_list_index_oid;
+
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
 
  public:
-  S3HeadObjectAction(std::shared_ptr<S3RequestObject> req);
+  S3HeadObjectAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
   void setup_steps();
 
   void fetch_bucket_info();
   void fetch_object_info();
+  void fetch_object_info_failed();
   void send_response_to_s3_client();
+
+  FRIEND_TEST(S3HeadObjectActionTest, ConstructorTest);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoWhenBucketFetchFailed);
+  FRIEND_TEST(S3HeadObjectActionTest,
+              FetchObjectInfoWhenBucketAndObjIndexPresent);
+  FRIEND_TEST(S3HeadObjectActionTest,
+              FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoReturnedMissing);
+  FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoFailedWithError);
+  FRIEND_TEST(S3HeadObjectActionTest, SendResponseWhenShuttingDown);
+  FRIEND_TEST(S3HeadObjectActionTest, SendErrorResponse);
+  FRIEND_TEST(S3HeadObjectActionTest, SendAnyFailedResponse);
+  FRIEND_TEST(S3HeadObjectActionTest, SendSuccessResponse);
 };
 
 #endif

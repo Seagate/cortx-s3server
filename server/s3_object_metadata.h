@@ -128,7 +128,7 @@ class S3ObjectMetadata {
   virtual std::string get_content_length_str();
 
   virtual void set_md5(std::string md5);
-  std::string get_md5();
+  virtual std::string get_md5();
 
   virtual void set_oid(struct m0_uint128 id);
   void set_old_oid(struct m0_uint128 id);
@@ -153,7 +153,7 @@ class S3ObjectMetadata {
   std::string get_user_name();
   std::string get_creation_date();
   std::string get_last_modified();
-  std::string get_last_modified_gmt();
+  virtual std::string get_last_modified_gmt();
   std::string get_last_modified_iso();
   std::string get_storage_class();
   virtual std::string get_upload_id();
