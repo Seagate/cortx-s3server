@@ -99,7 +99,7 @@ static int mempool_init() {
       g_option_instance->get_libevent_pool_buffer_size();
   rc = event_use_mempool(
       libevent_pool_buffer_size, libevent_pool_buffer_size * 100,
-      libevent_pool_buffer_size * 100, libevent_pool_buffer_size * 500,
+      libevent_pool_buffer_size * 100, libevent_pool_buffer_size * 1000,
       CREATE_ALIGNED_MEMORY);
   if (rc != 0) return rc;
 

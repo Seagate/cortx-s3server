@@ -263,6 +263,8 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectFailedShouldReportDeleted) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
 
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess204, _)).Times(1);
 

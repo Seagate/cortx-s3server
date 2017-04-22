@@ -299,6 +299,8 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessIllegalJson) {
 TEST_F(S3DeleteBucketActionTest,
        FetchMultipartObjectSuccessMaxFetchCountLessThanMapSize) {
   std::map<std::string, std::pair<int, std::string>> mymap;
+  int old_idx_fetch_count =
+      S3Option::get_instance()->get_clovis_idx_fetch_count();
   S3Option::get_instance()->set_clovis_idx_fetch_count(1);
   mymap.insert(std::make_pair(
       "file1",
@@ -328,6 +330,7 @@ TEST_F(S3DeleteBucketActionTest,
   EXPECT_EQ(1, action_under_test->part_oids.size());
   EXPECT_EQ(1, action_under_test->multipart_object_oids.size());
   EXPECT_EQ(1, call_count_one);
+  S3Option::get_instance()->set_clovis_idx_fetch_count(old_idx_fetch_count);
 }
 
 TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessNoMultipart) {

@@ -84,10 +84,14 @@ class S3DeleteMultipleObjectsResponseBody {
     success.push_back(SuccessDeleteKey(key, version));
   }
 
+  size_t get_success_count() { return success.size(); }
+
   void add_failure(std::string key, std::string code,
                    std::string message = "") {
     error.push_back(ErrorDeleteKey(key, code, message));
   }
+
+  size_t get_failure_count() { return error.size(); }
 
   std::string& to_xml() {
     response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";

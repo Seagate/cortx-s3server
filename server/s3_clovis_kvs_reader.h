@@ -117,7 +117,7 @@ class S3ClovisKVSReader {
 
  public:
   S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
-                    std::shared_ptr<ClovisAPI> s3_clovis_api);
+                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   virtual S3ClovisKVSReaderOpState get_state() { return state; }
 
@@ -127,9 +127,9 @@ class S3ClovisKVSReader {
   // std::function<void(void)> on_success, std::function<void(void)> on_failed);
   // void get_keyval(std::string index_name, std::string key,
   // std::function<void(void)> on_success, std::function<void(void)> on_failed);
-  void get_keyval(struct m0_uint128 oid, std::vector<std::string> keys,
-                  std::function<void(void)> on_success,
-                  std::function<void(void)> on_failed);
+  virtual void get_keyval(struct m0_uint128 oid, std::vector<std::string> keys,
+                          std::function<void(void)> on_success,
+                          std::function<void(void)> on_failed);
   void get_keyval(struct m0_uint128 oid, std::string key,
                   std::function<void(void)> on_success,
                   std::function<void(void)> on_failed);

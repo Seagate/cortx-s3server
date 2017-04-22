@@ -148,7 +148,7 @@ class S3ObjectMetadata {
 
   std::string get_owner_name();
   std::string get_owner_id();
-  std::string get_object_name();
+  virtual std::string get_object_name();
   std::string get_user_id();
   std::string get_user_name();
   std::string get_creation_date();

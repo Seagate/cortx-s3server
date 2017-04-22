@@ -166,7 +166,7 @@ class MockS3ClovisReaderFactory : public S3ClovisReaderFactory {
 
   std::shared_ptr<S3ClovisReader> create_clovis_reader(
       std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
-      std::shared_ptr<ClovisAPI> clovis_api) {
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
     return mock_clovis_reader;
   }
 
@@ -175,8 +175,9 @@ class MockS3ClovisReaderFactory : public S3ClovisReaderFactory {
 
 class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
  public:
-  MockS3ClovisKVSReaderFactory(std::shared_ptr<S3RequestObject> req,
-                               std::shared_ptr<ClovisAPI> s3_clovis_api)
+  MockS3ClovisKVSReaderFactory(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr)
       : S3ClovisKVSReaderFactory() {
     mock_clovis_kvs_reader =
         std::make_shared<MockS3ClovisKVSReader>(req, s3_clovis_api);
@@ -184,7 +185,7 @@ class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
 
   std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api) {
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
     return mock_clovis_kvs_reader;
   }
 
@@ -193,8 +194,9 @@ class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
 
 class MockS3ClovisKVSWriterFactory : public S3ClovisKVSWriterFactory {
  public:
-  MockS3ClovisKVSWriterFactory(std::shared_ptr<S3RequestObject> req,
-                               std::shared_ptr<ClovisAPI> s3_clovis_api)
+  MockS3ClovisKVSWriterFactory(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr)
       : S3ClovisKVSWriterFactory() {
     mock_clovis_kvs_writer =
         std::make_shared<MockS3ClovisKVSWriter>(req, s3_clovis_api);
@@ -202,7 +204,7 @@ class MockS3ClovisKVSWriterFactory : public S3ClovisKVSWriterFactory {
 
   std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api) {
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
     return mock_clovis_kvs_writer;
   }
 

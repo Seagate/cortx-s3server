@@ -31,11 +31,14 @@ extern struct m0_clovis_realm clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
 
 S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
-                                     std::shared_ptr<ClovisAPI> s3clovis_api)
-    : request(req),
-      s3_clovis_api(s3clovis_api),
-      state(S3ClovisKVSWriterOpState::start) {
+                                     std::shared_ptr<ClovisAPI> clovis_api)
+    : request(req), state(S3ClovisKVSWriterOpState::start) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
   ops_count = 0;
 }
 

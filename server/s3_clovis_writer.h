@@ -138,8 +138,10 @@ class S3ClovisWriter {
  public:
   // struct m0_uint128 id;
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
-                 struct m0_uint128 object_id, uint64_t offset = 0);
-  S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0);
+                 struct m0_uint128 object_id, uint64_t offset = 0,
+                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+  S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0,
+                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   ~S3ClovisWriter();
 
   virtual S3ClovisWriterOpState get_state() { return state; }

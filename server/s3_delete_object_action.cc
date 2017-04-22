@@ -173,7 +173,8 @@ void S3DeleteObjectAction::delete_object_failed() {
     next();
   } else {
     // Any other error report failure.
-    s3_log(S3_LOG_ERROR, "Deletion of object failed\n");
+    s3_log(S3_LOG_ERROR, "Deletion of object with oid %lu %lu failed\n",
+           object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
     send_response_to_s3_client();

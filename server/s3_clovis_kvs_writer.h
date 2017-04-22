@@ -122,7 +122,7 @@ class S3ClovisKVSWriter {
 
  public:
   S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
-                    std::shared_ptr<ClovisAPI> s3_clovis_api);
+                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisKVSWriter();
 
   S3ClovisKVSWriterOpState get_state() { return state; }
@@ -179,9 +179,10 @@ class S3ClovisKVSWriter {
   void delete_keyval(std::string index_name, std::vector<std::string> keys,
                      std::function<void(void)> on_success,
                      std::function<void(void)> on_failed);
-  void delete_keyval(struct m0_uint128 oid, std::vector<std::string> keys,
-                     std::function<void(void)> on_success,
-                     std::function<void(void)> on_failed);
+  virtual void delete_keyval(struct m0_uint128 oid,
+                             std::vector<std::string> keys,
+                             std::function<void(void)> on_success,
+                             std::function<void(void)> on_failed);
 
   void delete_keyval_successful();
   void delete_keyval_failed();
@@ -189,7 +190,7 @@ class S3ClovisKVSWriter {
   void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx,
                               std::string key, std::string val);
 
-  int get_op_ret_code_for(int index) {
+  virtual int get_op_ret_code_for(int index) {
     return writer_context->get_errno_for(index);
   }
 

@@ -259,7 +259,9 @@ void S3PutObjectAction::rollback_create_failed() {
     rollback_next();
   } else {
     // Log rollback failure.
-    s3_log(S3_LOG_WARN, "Deletion of object failed\n");
+    s3_log(S3_LOG_ERROR,
+           "Rollback: Deletion of object with oid %lu %lu failed\n",
+           new_object_oid.u_hi, new_object_oid.u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
     rollback_done();

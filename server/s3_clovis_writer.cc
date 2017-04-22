@@ -35,7 +35,8 @@ extern S3Option *g_option_instance;
 extern MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
-                               struct m0_uint128 object_id, uint64_t offset)
+                               struct m0_uint128 object_id, uint64_t offset,
+                               std::shared_ptr<ClovisAPI> clovis_api)
     : request(req),
       oid(object_id),
       state(S3ClovisWriterOpState::start),
@@ -44,13 +45,18 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
       total_written(0),
       ops_count(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
   place_holder_for_last_unit = (void *)mempool_getbuffer(
       g_clovis_read_mem_pool_handle, ZEROED_ALLOCATION);
 }
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
-                               uint64_t offset)
+                               uint64_t offset,
+                               std::shared_ptr<ClovisAPI> clovis_api)
     : request(req), state(S3ClovisWriterOpState::start) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   last_index = offset;
@@ -59,7 +65,11 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
   oid = {0ULL, 0ULL};
   ops_count = 0;
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
   place_holder_for_last_unit = (void *)mempool_getbuffer(
       g_clovis_read_mem_pool_handle, ZEROED_ALLOCATION);
 }
