@@ -24,7 +24,7 @@
 	ignore = dirty
 [submodule "third_party/libevhtp"]
 	path = third_party/libevhtp
-	url = https://github.com/ellzey/libevhtp.git
+	url = https://github.com/seagate-ssg/libevhtp.git
 	branch = develop
 	ignore = dirty
 [submodule "third_party/libxml2"]

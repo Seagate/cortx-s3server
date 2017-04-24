@@ -16,8 +16,6 @@ pip install botocore==1.3.8
 pip install scripttest==1.3
 
 echo ""
-echo "Add the path of cqlsh.pl to the PATH environment variable in your shell's login script. Example PATH= /home/seagate/apache/apache-cassandra-2.2.1/bin/:\$PATH"
-echo ""
 echo "Add the following to /etc/hosts"
 echo "127.0.0.1 seagatebucket.s3.seagate.com seagate-bucket.s3.seagate.com seagatebucket123.s3.seagate.com seagate.bucket.s3.seagate.com"
 echo "127.0.0.1 s3-us-west-2.seagate.com seagatebucket.s3-us-west-2.seagate.com"

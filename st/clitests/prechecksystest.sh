@@ -17,9 +17,6 @@ trap 'abort' 0
 JCLIENTJAR='jclient.jar'
 JCLOUDJAR='jcloudclient.jar'
 
-printf "\nCheck cqlsh..."
-type cqlsh >/dev/null
-printf "OK "
 if [ -f $JCLIENTJAR ] ;then
     printf "\nCheck $JCLIENTJAR...OK"
 else
