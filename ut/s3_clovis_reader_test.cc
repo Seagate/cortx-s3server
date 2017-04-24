@@ -41,7 +41,61 @@ static void s3_test_clovis_obj_op(struct m0_clovis_obj *obj,
   *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
 }
 
-static void s3_test_free_op(struct m0_clovis_op *op) { free(op); }
+static void s3_test_free_clovis_op(struct m0_clovis_op *op) { free(op); }
+
+static void s3_test_clovis_op_launch(struct m0_clovis_op **op, uint32_t nr,
+                                     ClovisOpType type) {
+  struct s3_clovis_context_obj *ctx =
+      (struct s3_clovis_context_obj *)op[0]->op_datum;
+
+  S3ClovisReaderContext *app_ctx =
+      (S3ClovisReaderContext *)ctx->application_context;
+  struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
+
+  for (int i = 0; i < (int)nr; i++) {
+    struct m0_clovis_op *test_clovis_op = op[i];
+    s3_clovis_op_stable(test_clovis_op);
+    s3_test_free_clovis_op(test_clovis_op);
+  }
+  op_ctx->op_count = 0;
+}
+
+static void s3_test_clovis_op_launch_fail(struct m0_clovis_op **op, uint32_t nr,
+                                          ClovisOpType type) {
+  struct s3_clovis_context_obj *ctx =
+      (struct s3_clovis_context_obj *)op[0]->op_datum;
+
+  S3ClovisReaderContext *app_ctx =
+      (S3ClovisReaderContext *)ctx->application_context;
+  struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
+
+  for (int i = 0; i < (int)nr; i++) {
+    struct m0_clovis_op *test_clovis_op = op[i];
+    test_clovis_op->op_sm.sm_rc = -EPERM;
+    s3_clovis_op_failed(test_clovis_op);
+    s3_test_free_clovis_op(test_clovis_op);
+  }
+  op_ctx->op_count = 0;
+}
+
+static void s3_test_clovis_op_launch_fail_enoent(struct m0_clovis_op **op,
+                                                 uint32_t nr,
+                                                 ClovisOpType type) {
+  struct s3_clovis_context_obj *ctx =
+      (struct s3_clovis_context_obj *)op[0]->op_datum;
+
+  S3ClovisReaderContext *app_ctx =
+      (S3ClovisReaderContext *)ctx->application_context;
+  struct s3_clovis_op_context *op_ctx = app_ctx->get_clovis_op_ctx();
+
+  for (int i = 0; i < (int)nr; i++) {
+    struct m0_clovis_op *test_clovis_op = op[i];
+    test_clovis_op->op_sm.sm_rc = -ENOENT;
+    s3_clovis_op_failed(test_clovis_op);
+    s3_test_free_clovis_op(test_clovis_op);
+  }
+  op_ctx->op_count = 0;
+}
 
 class S3ClovisReaderTest : public testing::Test {
  protected:
@@ -73,16 +127,13 @@ TEST_F(S3ClovisReaderTest, Constructor) {
 
 TEST_F(S3ClovisReaderTest, ReadObjectDataTest) {
   S3CallBack s3clovisreader_callbackobj;
-  struct s3_clovis_op_context *op_ctx;
-  struct s3_clovis_rw_op_context *rw_ctx;
-  pthread_t tid;
 
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _));
-  S3Option::get_instance()->set_eventbase(evbase);
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
+      .WillOnce(Invoke(s3_test_clovis_op_launch));
 
   size_t num_of_blocks_to_read = 2;
   clovis_reader_ptr->read_object_data(
@@ -90,41 +141,19 @@ TEST_F(S3ClovisReaderTest, ReadObjectDataTest) {
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3clovisreader_callbackobj));
 
-  op_ctx = clovis_reader_ptr->reader_context->get_clovis_op_ctx();
-  rw_ctx = clovis_reader_ptr->reader_context->get_clovis_rw_op_ctx();
-
-  EXPECT_TRUE(op_ctx != NULL);
-  EXPECT_TRUE(rw_ctx != NULL);
-  EXPECT_TRUE(op_ctx->ops[0]->op_datum != NULL);
-  EXPECT_TRUE(op_ctx->cbs->oop_stable != NULL);
-  EXPECT_TRUE(op_ctx->cbs->oop_failed != NULL);
-
-  struct s3_clovis_context_obj *obj_ctx =
-      (struct s3_clovis_context_obj *)op_ctx->ops[0]->op_datum;
-  S3AsyncOpContextBase *ctx =
-      (S3AsyncOpContextBase *)obj_ctx->application_context;
-
-  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
-  pthread_create(&tid, NULL, async_success_call, (void *)op_ctx);
-  pthread_join(tid, NULL);
-  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::success);
-  op_ctx->op_count = 0;
-
-  s3_test_free_op(op_ctx->ops[0]);
+  EXPECT_TRUE(s3clovisreader_callbackobj.success_called);
+  EXPECT_FALSE(s3clovisreader_callbackobj.fail_called);
 }
 
 TEST_F(S3ClovisReaderTest, ReadObjectDataSuccessful) {
   S3CallBack s3clovisreader_callbackobj;
-  struct s3_clovis_op_context *op_ctx;
-  struct s3_clovis_rw_op_context *rw_ctx;
-  pthread_t tid;
 
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _));
-  S3Option::get_instance()->set_eventbase(evbase);
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
+      .WillOnce(Invoke(s3_test_clovis_op_launch));
 
   size_t num_of_blocks_to_read = 2;
   clovis_reader_ptr->read_object_data(
@@ -132,46 +161,21 @@ TEST_F(S3ClovisReaderTest, ReadObjectDataSuccessful) {
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3clovisreader_callbackobj));
 
-  op_ctx = clovis_reader_ptr->reader_context->get_clovis_op_ctx();
-  rw_ctx = clovis_reader_ptr->reader_context->get_clovis_rw_op_ctx();
-
-  EXPECT_TRUE(op_ctx != NULL);
-  EXPECT_TRUE(rw_ctx != NULL);
-  EXPECT_TRUE(op_ctx->ops[0]->op_datum != NULL);
-  EXPECT_TRUE(op_ctx->cbs->oop_stable != NULL);
-  EXPECT_TRUE(op_ctx->cbs->oop_failed != NULL);
-
-  struct s3_clovis_context_obj *obj_ctx =
-      (struct s3_clovis_context_obj *)op_ctx->ops[0]->op_datum;
-  S3AsyncOpContextBase *ctx =
-      (S3AsyncOpContextBase *)obj_ctx->application_context;
-
-  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
-  pthread_create(&tid, NULL, async_success_call, (void *)op_ctx);
-  pthread_join(tid, NULL);
-  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::success);
-  op_ctx->op_count = 0;
-
   clovis_reader_ptr->read_object_data_successful();
   EXPECT_TRUE(clovis_reader_ptr->get_state() == S3ClovisReaderOpState::success);
-  EXPECT_TRUE(s3clovisreader_callbackobj.success_called == TRUE);
-  EXPECT_TRUE(s3clovisreader_callbackobj.fail_called == FALSE);
-
-  s3_test_free_op(op_ctx->ops[0]);
+  EXPECT_TRUE(s3clovisreader_callbackobj.success_called);
+  EXPECT_FALSE(s3clovisreader_callbackobj.fail_called);
 }
 
 TEST_F(S3ClovisReaderTest, ReadObjectDataFailed) {
   S3CallBack s3clovisreader_callbackobj;
-  struct s3_clovis_op_context *op_ctx;
-  struct s3_clovis_rw_op_context *rw_ctx;
-  pthread_t tid;
 
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _));
-  S3Option::get_instance()->set_eventbase(evbase);
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
+      .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
 
   size_t num_of_blocks_to_read = 2;
   clovis_reader_ptr->read_object_data(
@@ -179,31 +183,30 @@ TEST_F(S3ClovisReaderTest, ReadObjectDataFailed) {
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3clovisreader_callbackobj));
 
-  op_ctx = clovis_reader_ptr->reader_context->get_clovis_op_ctx();
-  rw_ctx = clovis_reader_ptr->reader_context->get_clovis_rw_op_ctx();
+  clovis_reader_ptr->read_object_data_failed();
+  EXPECT_TRUE(clovis_reader_ptr->get_state() == S3ClovisReaderOpState::failed);
+  EXPECT_TRUE(s3clovisreader_callbackobj.fail_called);
+  EXPECT_FALSE(s3clovisreader_callbackobj.success_called);
+}
 
-  EXPECT_TRUE(op_ctx != NULL);
-  EXPECT_TRUE(rw_ctx != NULL);
-  EXPECT_TRUE(op_ctx->ops[0]->op_datum != NULL);
-  EXPECT_TRUE(op_ctx->cbs->oop_stable != NULL);
-  EXPECT_TRUE(op_ctx->cbs->oop_failed != NULL);
+TEST_F(S3ClovisReaderTest, ReadObjectDataFailedMissing) {
+  S3CallBack s3clovisreader_callbackobj;
 
-  struct s3_clovis_context_obj *obj_ctx =
-      (struct s3_clovis_context_obj *)op_ctx->ops[0]->op_datum;
-  S3AsyncOpContextBase *ctx =
-      (S3AsyncOpContextBase *)obj_ctx->application_context;
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
+      .WillOnce(Invoke(s3_test_clovis_obj_op));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
+      .WillOnce(Invoke(s3_test_clovis_op_launch_fail_enoent));
 
-  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::unknown);
-  op_ctx->ops[0]->op_sm.sm_rc = -ENOENT;
-  pthread_create(&tid, NULL, async_fail_call, (void *)op_ctx);
-  pthread_join(tid, NULL);
-  EXPECT_TRUE(ctx->get_op_status_for(0) == S3AsyncOpStatus::failed);
-  op_ctx->op_count = 0;
+  size_t num_of_blocks_to_read = 2;
+  clovis_reader_ptr->read_object_data(
+      num_of_blocks_to_read,
+      std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj),
+      std::bind(&S3CallBack::on_failed, &s3clovisreader_callbackobj));
 
   clovis_reader_ptr->read_object_data_failed();
   EXPECT_TRUE(clovis_reader_ptr->get_state() == S3ClovisReaderOpState::missing);
-  EXPECT_TRUE(s3clovisreader_callbackobj.success_called == FALSE);
-  EXPECT_TRUE(s3clovisreader_callbackobj.fail_called == TRUE);
-
-  s3_test_free_op(op_ctx->ops[0]);
+  EXPECT_TRUE(s3clovisreader_callbackobj.fail_called);
+  EXPECT_FALSE(s3clovisreader_callbackobj.success_called);
 }

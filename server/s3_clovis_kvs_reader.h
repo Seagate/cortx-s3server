@@ -166,9 +166,11 @@ class S3ClovisKVSReader {
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTestEmpty);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalSuccessfulTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailedTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailedTestMissing);
   FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalSuccessfulTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalFailedTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalFailedTestMissing);
 };
 
 #endif

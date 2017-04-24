@@ -33,12 +33,8 @@ class S3CallBack {
   void on_success() { success_called = true; }
 
   void on_failed() { fail_called = true; }
-  int success_called;
-  int fail_called;
+  bool success_called;
+  bool fail_called;
 };
-
-void* async_success_call(void* arg);
-
-void* async_fail_call(void* arg);
 
 #endif
