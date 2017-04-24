@@ -213,16 +213,16 @@ for i, type in enumerate(config_types):
         disable_fi("post_multipartobject_action_create_object_shutdown_fail").\
         execute_test().command_is_successful()
 
-    S3fiTest('s3cmd enable FI post_multipartobject_action_save_upload_metadata_shutdown_fail').\
-        enable_fi("enable", "always", "post_multipartobject_action_save_upload_metadata_shutdown_fail").\
-        execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not upload 18MB file').\
-        upload_test("seagatebucket", "18MBfile2", 18000000).\
-        execute_test(negative_case=True).command_should_fail().\
-        command_error_should_have("ServiceUnavailable")
-    S3fiTest('s3cmd can disable Fault injection').\
-        disable_fi("post_multipartobject_action_save_upload_metadata_shutdown_fail").\
-        execute_test().command_is_successful()
+    # S3fiTest('s3cmd enable FI post_multipartobject_action_save_upload_metadata_shutdown_fail').\
+    #    enable_fi("enable", "always", "post_multipartobject_action_save_upload_metadata_shutdown_fail").\
+    #    execute_test().command_is_successful()
+    # S3cmdTest('s3cmd can not upload 18MB file').\
+    #    upload_test("seagatebucket", "18MBfile2", 18000000).\
+    #    execute_test(negative_case=True).command_should_fail().\
+    #    command_error_should_have("ServiceUnavailable")
+    # S3fiTest('s3cmd can disable Fault injection').\
+    #    disable_fi("post_multipartobject_action_save_upload_metadata_shutdown_fail").\
+    #    execute_test().command_is_successful()
 
     S3fiTest('s3cmd enable FI put_multiobject_action_fetch_bucket_info_shutdown_fail').\
         enable_fi("enable", "always", "put_multiobject_action_fetch_bucket_info_shutdown_fail").\
