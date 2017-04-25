@@ -70,7 +70,7 @@ public class AccessKeyController extends AbstractController {
         }
 
         if (!user.exists()) {
-            return accessKeyResponseGenerator.noSuchEntity();
+            return accessKeyResponseGenerator.noSuchEntity("a user");
         }
 
         try {
@@ -112,7 +112,7 @@ public class AccessKeyController extends AbstractController {
         }
 
         if (!accessKey.exists()) {
-            return accessKeyResponseGenerator.noSuchEntity();
+            return accessKeyResponseGenerator.noSuchEntity("an access key");
         }
 
         /**
@@ -129,7 +129,7 @@ public class AccessKeyController extends AbstractController {
             }
 
             if (!user.exists()) {
-                return accessKeyResponseGenerator.noSuchEntity();
+                return accessKeyResponseGenerator.noSuchEntity("a user");
             }
 
             if (accessKey.getUserId().compareTo(user.getId()) != 0) {
@@ -169,7 +169,7 @@ public class AccessKeyController extends AbstractController {
         }
 
         if (!user.exists()) {
-            return accessKeyResponseGenerator.noSuchEntity();
+            return accessKeyResponseGenerator.noSuchEntity("a user");
         }
 
         AccessKey[] accessKeyList;
@@ -200,7 +200,7 @@ public class AccessKeyController extends AbstractController {
         }
 
         if (!accessKey.exists()) {
-            return accessKeyResponseGenerator.noSuchEntity();
+            return accessKeyResponseGenerator.noSuchEntity("an access key");
         }
 
         /**
@@ -215,8 +215,11 @@ public class AccessKeyController extends AbstractController {
                 return accessKeyResponseGenerator.internalServerError();
             }
 
-            if (!user.exists() || accessKey.getUserId().compareTo(user.getId()) != 0) {
-                return accessKeyResponseGenerator.noSuchEntity();
+            if (!user.exists()) {
+                return accessKeyResponseGenerator.noSuchEntity("a user");
+            } else if (accessKey.getUserId().compareTo(user.getId()) != 0) {
+                return accessKeyResponseGenerator.invalidParametervalue(
+                        "Access key does not belong to provided user.");
             }
         } else {
             try {

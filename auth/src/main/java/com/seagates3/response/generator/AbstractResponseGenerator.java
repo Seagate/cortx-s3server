@@ -121,6 +121,11 @@ public abstract class AbstractResponseGenerator {
                 "InvalidParameterValue", errorMessage);
     }
 
+    public ServerResponse invalidParametervalue(String errorMessage) {
+        return formatResponse(HttpResponseStatus.BAD_REQUEST,
+                "InvalidParameterValue", errorMessage);
+    }
+
     public ServerResponse missingParameter() {
         String errorMessage = "A required parameter for the specified action "
                 + "is not supplied.";

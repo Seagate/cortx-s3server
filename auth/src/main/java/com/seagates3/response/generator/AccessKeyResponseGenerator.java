@@ -66,10 +66,9 @@ public class AccessKeyResponseGenerator extends AbstractResponseGenerator {
         return new AccessKeyResponseFormatter().formatUpdateResponse("UpdateAccessKey");
     }
 
-    @Override
-    public ServerResponse noSuchEntity() {
-        String errorMessage = "The request was rejected because it referenced an "
-                + "access key or user that does not exist.";
+    public ServerResponse noSuchEntity(String resource) {
+        String errorMessage = "The request was rejected because it referenced "
+                + resource + " that does not exist.";
 
         return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchEntity",
                 errorMessage);

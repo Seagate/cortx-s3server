@@ -153,20 +153,17 @@ public class AccessKeyResponseGeneratorTest {
 
     @Test
     public void testNoSuchEntityResponse() {
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/" +
+                "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The request" +
+                " was rejected because it referenced an entity that does not exist. " +
+                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
         AccessKeyResponseGenerator responseGenerator = new AccessKeyResponseGenerator();
         ServerResponse response = responseGenerator.noSuchEntity();
 
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.NOT_FOUND, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
     }
 
     @Test

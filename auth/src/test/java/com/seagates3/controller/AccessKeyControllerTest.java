@@ -247,8 +247,8 @@ public class AccessKeyControllerTest {
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
                 + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
                 + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
+                + "<Message>The request was rejected because it referenced a "
+                + "user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
                 + "</ErrorResponse>";
 
@@ -475,7 +475,7 @@ public class AccessKeyControllerTest {
                 + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
                 + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
+                + "access key that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
                 + "</ErrorResponse>";
 
@@ -533,8 +533,8 @@ public class AccessKeyControllerTest {
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
                 + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
                 + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
+                + "<Message>The request was rejected because it referenced a "
+                + "user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
                 + "</ErrorResponse>";
 
@@ -681,8 +681,8 @@ public class AccessKeyControllerTest {
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
                 + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
                 + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
+                + "<Message>The request was rejected because it referenced a "
+                + "user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
                 + "</ErrorResponse>";
 
@@ -909,7 +909,7 @@ public class AccessKeyControllerTest {
                 + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
                 + "<Error><Code>NoSuchEntity</Code>"
                 + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
+                + "access key that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
                 + "</ErrorResponse>";
 
@@ -972,8 +972,8 @@ public class AccessKeyControllerTest {
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
                 + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
                 + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
+                + "<Message>The request was rejected because it referenced a "
+                + "user that does not exist.</Message></Error>"
                 + "<RequestId>0000</RequestId>"
                 + "</ErrorResponse>";
 
@@ -1001,18 +1001,15 @@ public class AccessKeyControllerTest {
         Mockito.when(userDAO.find(ACCOUNT_NAME, USER_NAME))
                 .thenReturn(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "access key or user that does not exist.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc/" +
+                "2010-05-08/\"><Error><Code>InvalidParameterValue</Code><Message>Access" +
+                " key does not belong to provided user.</Message></Error><RequestId>0000" +
+                "</RequestId></ErrorResponse>";
 
         ServerResponse response = accessKeyController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.NOT_FOUND,
+        Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                 response.getResponseStatus());
     }
 
