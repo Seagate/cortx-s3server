@@ -15,6 +15,7 @@
  *
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
  * Original author:  Rajesh Nambiar <rajesh.nambiar@seagate.com>
+ * Original author:  Abrarahmed Momin   <abrar.habib@seagate.com>
  * Original creation date: 23-May-2016
  */
 
@@ -23,9 +24,22 @@
 #include "s3_log.h"
 #include "s3_object_acl.h"
 
-S3GetObjectACLAction::S3GetObjectACLAction(std::shared_ptr<S3RequestObject> req)
+S3GetObjectACLAction::S3GetObjectACLAction(
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
+  if (object_meta_factory) {
+    object_metadata_factory = object_meta_factory;
+  } else {
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
+  }
   object_list_index_oid = {0ULL, 0ULL};
   setup_steps();
 }
@@ -40,10 +54,22 @@ void S3GetObjectACLAction::setup_steps() {
 
 void S3GetObjectACLAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
       std::bind(&S3GetObjectACLAction::next, this),
-      std::bind(&S3GetObjectACLAction::send_response_to_s3_client, this));
+      std::bind(&S3GetObjectACLAction::fetch_bucket_info_failed, this));
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3GetObjectACLAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -56,54 +82,42 @@ void S3GetObjectACLAction::get_object_metadata() {
       object_list_index_oid.u_hi == 0ULL) {
     // There is no object list index, hence object doesn't exist
     s3_log(S3_LOG_DEBUG, "Object not found\n");
+    set_s3_error("NoSuchKey");
     send_response_to_s3_client();
   } else {
-    object_metadata =
-        std::make_shared<S3ObjectMetadata>(request, object_list_index_oid);
-    object_metadata->load(std::bind(&S3GetObjectACLAction::next, this),
-                          std::bind(&S3GetObjectACLAction::next, this));
+    object_metadata = object_metadata_factory->create_object_metadata_obj(
+        request, object_list_index_oid);
+    object_metadata->load(
+        std::bind(&S3GetObjectACLAction::next, this),
+        std::bind(&S3GetObjectACLAction::get_object_metadata_failed, this));
   }
+}
+
+void S3GetObjectACLAction::get_object_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    set_s3_error("NoSuchKey");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3GetObjectACLAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (reject_if_shutting_down()) {
-    // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_list_index_oid.u_lo == 0ULL &&
-             object_list_index_oid.u_hi == 0ULL) {
-    S3Error error("NoSuchKey", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     std::string response_xml = object_metadata->get_acl_as_xml();
@@ -111,14 +125,6 @@ void S3GetObjectACLAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->send_response(S3HttpSuccess200, response_xml);
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    S3Error error("NoSuchKey", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
   } else {
     S3Error error("InternalError", request->get_request_id(),
                   request->get_object_uri());

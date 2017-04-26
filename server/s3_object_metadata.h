@@ -182,8 +182,8 @@ class S3ObjectMetadata {
   void save_metadata();
   void save_metadata_successful();
   void save_metadata_failed();
-  void save_metadata(std::function<void(void)> on_success,
-                     std::function<void(void)> on_failed);
+  virtual void save_metadata(std::function<void(void)> on_success,
+                             std::function<void(void)> on_failed);
 
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
@@ -199,7 +199,7 @@ class S3ObjectMetadata {
 
   // returns 0 on success, -1 on parsing error
   int from_json(std::string content);
-  void setacl(std::string& input_acl_str);
+  virtual void setacl(std::string& input_acl_str);
 };
 
 #endif

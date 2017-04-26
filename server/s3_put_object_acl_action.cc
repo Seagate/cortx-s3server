@@ -14,6 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
+ * Original author:  Abrarahmed Momin   <abrar.habib@seagate.com>
  * Original creation date: 19-May-2016
  */
 
@@ -22,9 +23,22 @@
 #include "s3_log.h"
 #include "s3_object_acl.h"
 
-S3PutObjectACLAction::S3PutObjectACLAction(std::shared_ptr<S3RequestObject> req)
+S3PutObjectACLAction::S3PutObjectACLAction(
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
+  if (object_meta_factory) {
+    object_metadata_factory = object_meta_factory;
+  } else {
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
+  }
   object_list_index_oid = {0ULL, 0ULL};
   setup_steps();
 }
@@ -75,6 +89,7 @@ void S3PutObjectACLAction::validate_request_body(std::string content) {
   //   next();
   // } else {
   //   invalid_request = true;
+  //   set_s3_error("MalformedXML");
   //   send_response_to_s3_client();
   // }
   next();
@@ -83,14 +98,26 @@ void S3PutObjectACLAction::validate_request_body(std::string content) {
 
 void S3PutObjectACLAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
       std::bind(&S3PutObjectACLAction::next, this),
-      std::bind(&S3PutObjectACLAction::send_response_to_s3_client, this));
+      std::bind(&S3PutObjectACLAction::fetch_bucket_info_failed, this));
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_object_acl_action_fetch_bucket_info_shutdown_fail");
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PutObjectACLAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -99,88 +126,67 @@ void S3PutObjectACLAction::get_object_metadata() {
   object_list_index_oid = bucket_metadata->get_object_list_index_oid();
   if (object_list_index_oid.u_lo == 0ULL &&
       object_list_index_oid.u_hi == 0ULL) {
+    set_s3_error("NoSuchKey");
     send_response_to_s3_client();
   } else {
-    object_metadata =
-        std::make_shared<S3ObjectMetadata>(request, object_list_index_oid);
-    object_metadata->load(std::bind(&S3PutObjectACLAction::next, this),
-                          std::bind(&S3PutObjectACLAction::next, this));
+    object_metadata = object_metadata_factory->create_object_metadata_obj(
+        request, object_list_index_oid);
+    object_metadata->load(
+        std::bind(&S3PutObjectACLAction::next, this),
+        std::bind(&S3PutObjectACLAction::get_object_metadata_failed, this));
   }
+}
+
+void S3PutObjectACLAction::get_object_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    set_s3_error("NoSuchKey");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutObjectACLAction::setacl() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
-  if (object_metadata->get_state() == S3ObjectMetadataState::present) {
-    object_metadata->setacl(new_object_acl);
-    object_metadata->save_metadata(
-        std::bind(&S3PutObjectACLAction::next, this),
-        std::bind(&S3PutObjectACLAction::next, this));
+  object_metadata->setacl(new_object_acl);
+  object_metadata->save_metadata(
+      std::bind(&S3PutObjectACLAction::next, this),
+      std::bind(&S3PutObjectACLAction::setacl_failed, this));
+}
+
+void S3PutObjectACLAction::setacl_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+    set_s3_error("NoSuchKey");
   } else {
-    next();
+    set_s3_error("InternalError");
   }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutObjectACLAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (reject_if_shutting_down()) {
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
     // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (invalid_request) {
-    S3Error error("MalformedXML", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_list_index_oid.u_lo == 0ULL &&
-             object_list_index_oid.u_hi == 0ULL) {
-    S3Error error("NoSuchKey", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
     request->send_response(S3HttpSuccess200);
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    S3Error error("NoSuchKey", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
   } else {
     S3Error error("InternalError", request->get_request_id(),
                   request->get_bucket_name());

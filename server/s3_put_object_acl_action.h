@@ -22,6 +22,7 @@
 #ifndef __S3_SERVER_S3_PUT_OBJECT_ACL_ACTION_H__
 #define __S3_SERVER_S3_PUT_OBJECT_ACL_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 #include <string>
 
@@ -31,20 +32,46 @@
 class S3PutObjectACLAction : public S3Action {
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   m0_uint128 object_list_index_oid;
   std::string new_object_acl;
 
  public:
-  S3PutObjectACLAction(std::shared_ptr<S3RequestObject> req);
+  S3PutObjectACLAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
   void setup_steps();
   void validate_request();
   void consume_incoming_content();
   void validate_request_body(std::string content);
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void get_object_metadata();
+  void get_object_metadata_failed();
   void setacl();
+  void setacl_failed();
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3PutObjectACLActionTest, Constructor);
+  FRIEND_TEST(S3PutObjectACLActionTest, ValidateRequest);
+  FRIEND_TEST(S3PutObjectACLActionTest, ValidateRequestMoreContent);
+  FRIEND_TEST(S3PutObjectACLActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3PutObjectACLActionTest, FetchBucketInfoFailedNoSuchBucket);
+  FRIEND_TEST(S3PutObjectACLActionTest, FetchBucketInfoFailedInternalError);
+  FRIEND_TEST(S3PutObjectACLActionTest, GetObjectMetadataEmpty);
+  FRIEND_TEST(S3PutObjectACLActionTest, GetObjectMetadata);
+  FRIEND_TEST(S3PutObjectACLActionTest, GetObjectMetadataFailedMissing);
+  FRIEND_TEST(S3PutObjectACLActionTest, GetObjectMetadataFailedInternalError);
+  FRIEND_TEST(S3PutObjectACLActionTest, Setacl);
+  FRIEND_TEST(S3PutObjectACLActionTest, SetaclFailedMissing);
+  FRIEND_TEST(S3PutObjectACLActionTest, SetaclFailedInternalError);
+  FRIEND_TEST(S3PutObjectACLActionTest, SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3PutObjectACLActionTest, SendResponseToClientInternalError);
+  FRIEND_TEST(S3PutObjectACLActionTest, SendResponseToClientSuccess);
 };
 
 #endif
