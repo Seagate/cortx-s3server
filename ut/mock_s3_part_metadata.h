@@ -33,12 +33,20 @@ class MockS3PartMetadata : public S3PartMetadata {
                      struct m0_uint128 oid, std::string uploadid, int part_num)
       : S3PartMetadata(req, oid, uploadid, part_num) {}
   MOCK_METHOD0(get_state, S3PartMetadataState());
+  MOCK_METHOD1(set_md5, void(std::string));
+  MOCK_METHOD1(set_content_length, void(std::string length));
+  MOCK_METHOD2(add_user_defined_attribute,
+               void(std::string key, std::string val));
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
+                          std::function<void(void)> on_failed));
+  MOCK_METHOD2(save, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(remove_index, void(std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed));
   MOCK_METHOD2(create_index, void(std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed));
+  MOCK_METHOD3(load, void(std::function<void(void)> on_success,
+                          std::function<void(void)> on_failed, int));
 };
 
 #endif

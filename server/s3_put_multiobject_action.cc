@@ -25,8 +25,13 @@
 #include "s3_perf_logger.h"
 
 S3PutMultiObjectAction::S3PutMultiObjectAction(
-    std::shared_ptr<S3RequestObject> req)
-    : S3Action(req),
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
+    std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
+    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
+    std::shared_ptr<S3AuthClientFactory> auth_factory)
+    : S3Action(req, true, auth_factory),
       total_data_to_stream(0),
       auth_failed(false),
       write_failed(false),
@@ -45,6 +50,32 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
     // auth is disabled, so assume its done.
     auth_completed = true;
   }
+
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
+
+  if (object_mp_meta_factory) {
+    object_mp_metadata_factory = object_mp_meta_factory;
+  } else {
+    object_mp_metadata_factory =
+        std::make_shared<S3ObjectMultipartMetadataFactory>();
+  }
+
+  if (part_meta_factory) {
+    part_metadata_factory = part_meta_factory;
+  } else {
+    part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
+  }
+
+  if (clovis_s3_writer_factory) {
+    clovis_writer_factory = clovis_s3_writer_factory;
+  } else {
+    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+  }
+
   setup_steps();
 }
 
@@ -66,27 +97,33 @@ void S3PutMultiObjectAction::setup_steps() {
 
 void S3PutMultiObjectAction::chunk_auth_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  auth_in_progress = false;
+  auth_completed = true;
   if (check_shutdown_and_rollback()) {
-    auth_completed = true;
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
   if (clovis_write_completed) {
-    next();
+    if (write_failed) {
+      // No need of setting error as its set when we set write_failed
+      send_response_to_s3_client();
+    } else {
+      next();
+    }
   } else {
     // wait for write to complete. do nothing here.
-    auth_completed = true;
   }
 }
 
 void S3PutMultiObjectAction::chunk_auth_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  auth_failed = true;
+  auth_completed = true;
+  set_s3_error("SignatureDoesNotMatch");
   if (check_shutdown_and_rollback()) {
-    auth_failed = true;
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
-  auth_failed = true;
   if (clovis_write_in_progress) {
     // Do nothing, handle after write returns
   } else {
@@ -96,7 +133,9 @@ void S3PutMultiObjectAction::chunk_auth_failed() {
 
 void S3PutMultiObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
+
   bucket_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::fetch_bucket_info_failed, this));
@@ -109,13 +148,20 @@ void S3PutMultiObjectAction::fetch_bucket_info() {
 
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, "Bucket does not exists\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
 }
 
 void S3PutMultiObjectAction::fetch_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_multipart_metadata = std::make_shared<S3ObjectMetadata>(
-      request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
+  object_multipart_metadata =
+      object_mp_metadata_factory->create_object_mp_metadata_obj(
+          request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
+
   object_multipart_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
       std::bind(&S3PutMultiObjectAction::fetch_multipart_failed, this));
@@ -125,12 +171,18 @@ void S3PutMultiObjectAction::fetch_multipart_metadata() {
 void S3PutMultiObjectAction::fetch_multipart_failed() {
   // Log error
   s3_log(S3_LOG_ERROR, "Failed to retrieve multipart upload metadata\n");
+  if (object_multipart_metadata->get_state() ==
+      S3ObjectMetadataState::missing) {
+    set_s3_error("NoSuchUpload");
+  } else {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
 }
 
 void S3PutMultiObjectAction::fetch_firstpart_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  part_metadata = std::make_shared<S3PartMetadata>(
+  part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_oid(), upload_id, 1);
   part_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
@@ -142,6 +194,13 @@ void S3PutMultiObjectAction::fetch_firstpart_info_failed() {
   s3_log(S3_LOG_WARN,
          "Part 1 metadata doesn't exist, cannot determine \"consistent\" part "
          "size\n");
+  if (part_metadata->get_state() == S3PartMetadataState::missing) {
+    // May happen if part 2/3... comes before part 1, in that case those part
+    // upload need to be retried(by that time part 1 meta data will get in)
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
 }
 
@@ -157,7 +216,7 @@ void S3PutMultiObjectAction::compute_part_offset() {
     s3_log(S3_LOG_DEBUG, "Offset for clovis write = %zu\n", offset);
   }
   // Create writer to write from given offset as per the partnumber
-  clovis_writer = std::make_shared<S3ClovisWriter>(
+  clovis_writer = clovis_writer_factory->create_clovis_writer(
       request, object_multipart_metadata->get_oid(), offset);
   next();
 
@@ -255,22 +314,22 @@ void S3PutMultiObjectAction::write_object(
 
 void S3PutMultiObjectAction::write_object_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  clovis_write_in_progress = false;
   if (check_shutdown_and_rollback()) {
-    clovis_write_in_progress = false;
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
   s3_log(S3_LOG_DEBUG, "Write successful\n");
-  clovis_write_in_progress = false;
   if (request->is_chunked()) {
     if (auth_failed) {
+      set_s3_error("SignatureDoesNotMatch");
       send_response_to_s3_client();
       return;
     }
   }
   if (/* buffered data len is at least equal max we can write to clovis in one
          write */
-      request->get_buffered_input()->get_content_length() >
+      request->get_buffered_input()->get_content_length() >=
           S3Option::get_instance()
               ->get_clovis_write_payload_size() || /* we have all the data
                                                       buffered and ready to
@@ -301,6 +360,7 @@ void S3PutMultiObjectAction::write_object_failed() {
   s3_log(S3_LOG_ERROR, "Write to clovis failed\n");
   clovis_write_in_progress = false;
   clovis_write_completed = true;
+  set_s3_error("InternalError");
   if (request->is_chunked()) {
     write_failed = true;
     if (!auth_in_progress) {
@@ -313,8 +373,9 @@ void S3PutMultiObjectAction::write_object_failed() {
 
 void S3PutMultiObjectAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  part_metadata =
-      std::make_shared<S3PartMetadata>(request, upload_id, part_number);
+  part_metadata = part_metadata_factory->create_part_metadata_obj(
+      request, upload_id, part_number);
+
   part_metadata->set_content_length(request->get_data_length_str());
   part_metadata->set_md5(clovis_writer->get_content_md5());
   for (auto it : request->get_in_headers_copy()) {
@@ -336,122 +397,18 @@ void S3PutMultiObjectAction::save_metadata() {
 
 void S3PutMultiObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-
-  if (reject_if_shutting_down()) {
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
     // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (request->is_chunked() && auth_failed) {
-    // Invalid Bucket Name
-    S3Error error("SignatureDoesNotMatch", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata &&
-             (bucket_metadata->get_state() == S3BucketMetadataState::missing)) {
-    s3_log(S3_LOG_ERROR,
-           "Missing bucket for multipart upload, upload id = %s, request id = "
-           "%s object uri = %s\n",
-           upload_id.c_str(), request->get_request_id().c_str(),
-           request->get_object_uri().c_str());
-    // Invalid Bucket Name
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata &&
-             (bucket_metadata->get_state() == S3BucketMetadataState::failed)) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_multipart_metadata &&
-             (object_multipart_metadata->get_state() ==
-              S3ObjectMetadataState::missing)) {
-    // The multipart upload may have been aborted
-    s3_log(S3_LOG_WARN,
-           "The metadata of multipart upload doesn't exist, upload id = %s "
-           "request id = %s object uri = %s\n",
-           upload_id.c_str(), request->get_request_id().c_str(),
-           request->get_object_uri().c_str());
-    S3Error error("NoSuchUpload", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_multipart_metadata &&
-             (object_multipart_metadata->get_state() ==
-              S3ObjectMetadataState::failed)) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (part_metadata &&
-             (part_metadata->get_state() == S3PartMetadataState::missing)) {
-    // May happen if part 2/3... comes before part 1, in that case those part
-    // upload need to be retried(by that time part 1 meta data will get in)
-    s3_log(S3_LOG_WARN,
-           "Part one metadata is not available, asking client to retry, upload "
-           "id = %s request id = %s object uri = %s\n",
-           upload_id.c_str(), request->get_request_id().c_str(),
-           request->get_object_uri().c_str());
-    S3Error error("ServiceUnavailable", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    // Let the client retry after 1 second delay
-    request->set_out_header_value("Retry-After", "1");
-    request->send_response(error.get_http_status_code(), response_xml);
-
-  } else if (part_metadata &&
-             (part_metadata->get_state() == S3PartMetadataState::failed)) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (clovis_writer &&
-             (clovis_writer->get_state() == S3ClovisWriterOpState::failed)) {
-    s3_log(S3_LOG_ERROR,
-           "Clovis failed to write for multipart upload, upload id = %s "
-           "request id = %s object uri = %s",
-           upload_id.c_str(), request->get_request_id().c_str(),
-           request->get_object_uri().c_str());
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (part_metadata &&

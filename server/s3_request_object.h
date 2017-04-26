@@ -219,7 +219,7 @@ class S3RequestObject {
 
   bool client_connected() { return is_client_connected; }
 
-  bool is_chunked() { return is_chunked_upload; }
+  virtual bool is_chunked() { return is_chunked_upload; }
 
   // pass thru functions
   virtual bool is_chunk_detail_ready() {

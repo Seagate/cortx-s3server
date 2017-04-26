@@ -63,8 +63,21 @@ class S3PutMultiObjectAction : public S3Action {
   void chunk_auth_failed();
   void send_chunk_details_if_any();
 
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
+  std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
+  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3AuthClientFactory> auth_factory;
+
  public:
-  S3PutMultiObjectAction(std::shared_ptr<S3RequestObject> req);
+  S3PutMultiObjectAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
+          nullptr,
+      std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
   void setup_steps();
   // void start();
@@ -85,6 +98,81 @@ class S3PutMultiObjectAction : public S3Action {
   void write_object_failed();
   void save_metadata();
   void send_response_to_s3_client();
+
+  // Google tests
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ConstructorTest);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ChunkAuthSucessfulShuttingDown);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthSucessfulNext);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ChunkAuthFailedWriteSuccessful);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ChunkAuthSucessfulWriteFailed);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthSucessful);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ChunkAuthSuccessShuttingDown);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ChunkAuthFailedShuttingDown);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthFailedNext);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, FetchBucketInfoTest);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              FetchBucketInfoFailedMissingTest);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              FetchBucketInfoFailedInternalErrorTest);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, FetchMultipartMetadata);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              FetchMultiPartMetadataNoSuchUploadFailed);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              FetchMultiPartMetadataInternalErrorFailed);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, FetchFirstPartInfo);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              FetchFirstPartInfoServiceUnavailableFailed);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              FetchFirstPartInfoInternalErrorFailed);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              InitiateDataStreamingForZeroSizeObject);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              InitiateDataStreamingExpectingMoreData);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              InitiateDataStreamingWeHaveAllData);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ConsumeIncomingShouldWriteIfWeAllData);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ConsumeIncomingShouldWriteIfWeExactData);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ConsumeIncomingShouldWriteIfWeHaveMoreData);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ConsumeIncomingShouldPauseWhenWeHaveTooMuch);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ConsumeIncomingShouldNotWriteWhenWriteInprogress);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              SendChunkDetailsToAuthClientWithSingleChunk);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              SendChunkDetailsToAuthClientWithTwoChunks);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              SendChunkDetailsToAuthClientWithTwoChunksAndOneZeroChunk);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, WriteObject);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              WriteObjectShouldSendChunkDetailsForAuth);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              WriteObjectSuccessfulWhileShuttingDown);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              WriteObjectSuccessfulWhileShuttingDownAndRollback);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              WriteObjectSuccessfulShouldWriteStateAllData);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              WriteObjectSuccessfulShouldWriteWhenExactWritableSize);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              WriteObjectSuccessfulDoNextStepWhenAllIsWritten);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              WriteObjectSuccessfulShouldRestartReadingData);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata);
+  FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
+              WriteObjectSuccessfulShouldSendChunkDetailsForAuth);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, SendErrorResponse);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, SendSuccessResponse);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, SendFailedResponse);
 };
 
 #endif

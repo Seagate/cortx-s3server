@@ -101,6 +101,12 @@ class S3ClovisWriterFactory {
            "S3ClovisWriterFactory::create_clovis_writer with zero offset\n");
     return std::make_shared<S3ClovisWriter>(req);
   }
+  virtual std::shared_ptr<S3ClovisWriter> create_clovis_writer(
+      std::shared_ptr<S3RequestObject> req, m0_uint128 oid, uint64_t offset) {
+    s3_log(S3_LOG_DEBUG,
+           "S3ClovisWriterFactory::create_clovis_writer with offset\n");
+    return std::make_shared<S3ClovisWriter>(req, oid, offset);
+  }
 };
 
 class S3ClovisReaderFactory {

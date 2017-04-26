@@ -106,11 +106,11 @@ class S3PartMetadata {
     return part_index_name_oid;
   }
 
-  void set_content_length(std::string length);
+  virtual void set_content_length(std::string length);
   size_t get_content_length();
   std::string get_content_length_str();
 
-  void set_md5(std::string md5);
+  virtual void set_md5(std::string md5);
   std::string get_md5();
   std::string get_object_name();
   std::string get_user_id();
@@ -126,15 +126,15 @@ class S3PartMetadata {
   std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);
   std::string get_user_defined_attribute(std::string key);
-  void add_user_defined_attribute(std::string key, std::string val);
+  virtual void add_user_defined_attribute(std::string key, std::string val);
 
-  void load(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed, int part_number);
+  virtual void load(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed, int part_number);
   void load_successful();
   void load_failed();
 
-  void save(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+  virtual void save(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   virtual void create_index(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed);
   void save_part_index(std::function<void(void)> on_success,

@@ -47,6 +47,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(get_content_length, size_t());
   MOCK_METHOD0(get_content_length_str, std::string());
   MOCK_METHOD0(has_all_body_content, bool());
+  MOCK_METHOD0(is_chunked, bool());
   MOCK_METHOD0(pause, void());
   MOCK_METHOD0(resume, void());
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
