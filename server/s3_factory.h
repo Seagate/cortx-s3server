@@ -50,7 +50,8 @@ class S3ObjectMetadataFactory {
  public:
   virtual ~S3ObjectMetadataFactory() {}
   virtual std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
-      std::shared_ptr<S3RequestObject> req, m0_uint128 indx_oid) {
+      std::shared_ptr<S3RequestObject> req,
+      m0_uint128 indx_oid = {0ULL, 0ULL}) {
     s3_log(S3_LOG_DEBUG,
            "S3ObjectMetadataFactory::create_object_metadata_obj\n");
     return std::make_shared<S3ObjectMetadata>(req, indx_oid);

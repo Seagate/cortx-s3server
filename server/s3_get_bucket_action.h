@@ -27,10 +27,14 @@
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_factory.h"
 #include "s3_object_list_response.h"
 
 class S3GetBucketAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metada_factory;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::string last_key;  // last key during each iteration
@@ -54,16 +58,42 @@ class S3GetBucketAction : public S3Action {
   size_t max_keys;
 
  public:
-  S3GetBucketAction(std::shared_ptr<S3RequestObject> req);
+  S3GetBucketAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
   void setup_steps();
-
+  void object_list_setup();
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void get_next_objects();
   void get_next_objects_successful();
   void get_next_objects_failed();
-
   void send_response_to_s3_client();
+
+  // For Testing purpose
+  FRIEND_TEST(S3GetBucketActionTest, Constructor);
+  FRIEND_TEST(S3GetBucketActionTest, ObjectListSetup);
+  FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfoFailedMissing);
+  FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfoFailedInternalError);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjects);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsWithZeroObjects);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessful);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsFailed);
+  FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsFailedNoEntries);
+  FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3GetBucketActionTest, SendResponseToClientInternalError);
 };
 
 #endif

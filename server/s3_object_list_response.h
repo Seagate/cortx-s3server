@@ -82,6 +82,7 @@ class S3ObjectListResponse {
   void add_part(std::shared_ptr<S3PartMetadata> part);
   void add_common_prefix(std::string);
   unsigned int size();
+  unsigned int common_prefixes_size();
 
   std::string& get_xml();
   std::string& get_multipart_xml();

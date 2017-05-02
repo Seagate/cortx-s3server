@@ -159,7 +159,7 @@ class S3RequestObject {
   std::string get_object_uri();
 
   virtual void set_bucket_name(const std::string& name);
-  const std::string& get_bucket_name();
+  virtual const std::string& get_bucket_name();
   virtual void set_object_name(const std::string& name);
   const std::string& get_object_name();
 

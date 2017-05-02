@@ -55,6 +55,7 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD1(setacl, void(std::string &));
   MOCK_METHOD2(save_metadata, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
+  MOCK_METHOD1(from_json, int(std::string content));
 };
 
 #endif

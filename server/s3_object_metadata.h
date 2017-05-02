@@ -198,7 +198,7 @@ class S3ObjectMetadata {
   std::string to_json();
 
   // returns 0 on success, -1 on parsing error
-  int from_json(std::string content);
+  virtual int from_json(std::string content);
   virtual void setacl(std::string& input_acl_str);
 };
 
