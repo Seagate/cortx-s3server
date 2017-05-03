@@ -15,6 +15,7 @@
  *
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
  * Author         :  Rajesh Nambiar        <rajesh.nambiar@seagate.com>
+ * Author         :  Abrarahmed Momin   <abrar.habib@seagate.com>
  * Original creation date: 13-Jan-2016
  */
 
@@ -27,12 +28,16 @@
 
 #include "s3_action_base.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_factory.h"
 #include "s3_object_list_response.h"
 
 class S3GetMultipartBucketAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::string last_key;  // last key during each iteration
   S3ObjectListResponse multipart_object_list;
   size_t return_list_size;
@@ -52,18 +57,51 @@ class S3GetMultipartBucketAction : public S3Action {
   size_t max_uploads;
 
  public:
-  S3GetMultipartBucketAction(std::shared_ptr<S3RequestObject> req);
+  S3GetMultipartBucketAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
+  void object_list_setup();
   void setup_steps();
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void get_next_objects();
   void get_next_objects_successful();
   void get_next_objects_failed();
   void get_key_object();
   void get_key_object_successful();
   void get_key_object_failed();
-
   void send_response_to_s3_client();
+
+  // For testing purpose
+  FRIEND_TEST(S3GetMultipartBucketActionTest, Constructor);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, ObjectListSetup);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, FetchBucketInfoFailedMissing);
+  FRIEND_TEST(S3GetMultipartBucketActionTest,
+              FetchBucketInfoFailedInternalError);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, GetNextObjects);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, GetNextObjectsWithZeroObjects);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, GetNextObjectsSuccessful);
+  FRIEND_TEST(S3GetMultipartBucketActionTest,
+              GetNextObjectsSuccessfulJsonError);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, GetNextObjectsSuccessfulPrefix);
+  FRIEND_TEST(S3GetMultipartBucketActionTest,
+              GetNextObjectsSuccessfulDelimiter);
+  FRIEND_TEST(S3GetMultipartBucketActionTest,
+              GetNextObjectsSuccessfulPrefixDelimiter);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, GetNextObjectsFailed);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, GetNextObjectsFailedNoEntries);
+  FRIEND_TEST(S3GetMultipartBucketActionTest,
+              SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, SendResponseToClientNoSuchBucket);
+  FRIEND_TEST(S3GetMultipartBucketActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3GetMultipartBucketActionTest,
+              SendResponseToClientInternalError);
 };
 
 #endif
