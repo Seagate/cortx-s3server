@@ -5,7 +5,7 @@
 
 cd gflags
 
-INSTALL_DIR=`pwd`/s3_dist
+INSTALL_DIR=/usr/local/seagate/gflags/
 rm -rf build/ $INSTALL_DIR
 mkdir $INSTALL_DIR
 mkdir build && cd build

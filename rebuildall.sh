@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--no-thirdparty-build][--no-check-code]'
+  echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--no-mero-build][--no-thirdparty-build][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build]'
   echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install][--help]'
@@ -11,6 +11,7 @@ usage() {
   echo '          --no-mero-rpm           : Use mero libs from source code (third_party/mero) location'
   echo '                                    Default is (false) i.e. use mero libs from pre-installed'
   echo '                                    mero rpm location (/usr/lib64)'
+  echo '          --no-mero-build         : Do not build mero, Default (false)'
   echo '          --no-thirdparty-build   : Do not build third party libs, Default (false)'
   echo '          --no-check-code         : Do not check code for formatting style, Default (false)'
   echo '          --no-clean-build        : Do not clean before build, Default (false)'
@@ -28,13 +29,14 @@ usage() {
 }
 
 # read the options
-OPTS=`getopt -o h --long no-mero-rpm,no-thirdparty-build,no-check-code,no-clean-build,\
+OPTS=`getopt -o h --long no-mero-rpm,no-mero-build,no-thirdparty-build,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3server-build,no-cloviskvscli-build,no-auth-build,\
 no-jclient-build,no-jcloudclient-build,no-install,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
 no_mero_rpm=0
+no_mero_build=0
 no_thirdparty_build=0
 no_check_code=0
 no_clean_build=0
@@ -51,6 +53,7 @@ while true; do
   case "$1" in
     --no-mero-rpm) no_mero_rpm=1; shift ;;
     --no-thirdparty-build) no_thirdparty_build=1; shift ;;
+    --no-mero-build) no_mero_build=1; shift ;;
     --no-check-code) no_check_code=1; shift ;;
     --no-clean-build)no_clean_build=1; shift ;;
     --no-s3ut-build) no_s3ut_build=1; shift ;;
@@ -69,19 +72,48 @@ done
 
 set -x
 
+
 if [ $no_check_code -eq 0 ]
 then
   ./checkcodeformat.sh
 fi
 
+# Used to store third_party build artifacts
+SEAGATE_SRC=/usr/local/seagate
+CURRENT_USER=`whoami`
 if [ $no_thirdparty_build -eq 0 ]
 then
-  if [ $no_mero_rpm -eq 0 ]
+  sudo rm -rf ${SEAGATE_SRC}
+  sudo mkdir -p ${SEAGATE_SRC} && sudo chown ${CURRENT_USER}:${CURRENT_USER} ${SEAGATE_SRC}
+  ./build_thirdparty.sh
+else
+  if [ ! -d ${SEAGATE_SRC} ]
   then
-    ./build_thirdparty.sh
-  else
-    ./build_thirdparty.sh --no-mero-rpm
+    echo "Third party sources should be rebuilt..."
+    exit 1
   fi
+fi
+
+# Create symlinks to third_party files installed in SEAGATE_SRC
+# since bazel does not seem to like absolute paths in BUILD file.
+[ -e third_party/libevent/s3_dist ] || ln -s ${SEAGATE_SRC}/libevent third_party/libevent/s3_dist
+[ -e third_party/libevhtp/s3_dist ] || ln -s ${SEAGATE_SRC}/libevhtp third_party/libevhtp/s3_dist
+[ -e third_party/libxml2/s3_dist ] || ln -s ${SEAGATE_SRC}/libxml2 third_party/libxml2/s3_dist
+[ -e third_party/googletest/s3_dist ] || ln -s ${SEAGATE_SRC}/googletest third_party/googletest/s3_dist
+[ -e third_party/googlemock/s3_dist ] || ln -s ${SEAGATE_SRC}/googlemock third_party/googlemock/s3_dist
+[ -e third_party/yaml-cpp/s3_dist ] || ln -s ${SEAGATE_SRC}/yaml-cpp third_party/yaml-cpp/s3_dist
+[ -e third_party/gflags/s3_dist ] || ln -s ${SEAGATE_SRC}/gflags third_party/gflags/s3_dist
+[ -e third_party/glog/s3_dist ] || ln -s ${SEAGATE_SRC}/glog third_party/glog/s3_dist
+[ -e third_party/jsoncpp/s3_dist ] || ln -s ${SEAGATE_SRC}/jsoncpp third_party/jsoncpp/s3_dist
+
+# We copy generated source to server for inline compilation.
+cp ${SEAGATE_SRC}/jsoncpp/jsoncpp.cc server/jsoncpp.cc
+
+if [ $no_mero_build -eq 0 ]
+then
+  cd third_party
+  ./build_mero.sh
+  cd ..
 fi
 
 if [ $no_mero_rpm -eq 0 ]

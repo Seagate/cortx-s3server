@@ -64,11 +64,12 @@ needs to be executed only once.
 The `./rebuildall.sh --no-mero-rpm` command will build third party libs, S3
 server, Auth server, UTs etc. It will also install S3 server, Auth server &
 third party libs at `/opt/seagate` location. Note the option `--no-mero-rpm`
-passed to the command. It informs the script that mero source needs to be built
-and mero libs from the source code location would be used.
-Normally third party libs needs to be built only once after fresh repo clone.
-To skip building third party libs on subsequent runs of `./rebuildall.sh`,use
-`--no-thirdparty-build` option.
+passed to the command. It informs the script that mero source was built
+and mero libs from the source code location would be used. `--no-mero-build`
+can be used to skip building mero, by default mero will be built inside
+third_party. Normally third party libs needs to be built only once after fresh
+repo clone. To skip building third party libs on subsequent runs of
+`./rebuildall.sh`,use `--no-thirdparty-build` option.
 ```sh
 ./rebuildall.sh --no-mero-rpm --no-thirdparty-build
 ```

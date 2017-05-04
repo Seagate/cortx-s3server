@@ -8,7 +8,8 @@ cc_binary(
 
     name = "s3server",
 
-    srcs = glob(["server/*.cc", "server/*.c", "server/*.h", "mempool/*.c", "mempool/*.h"]),
+    srcs = glob(["server/*.cc", "server/*.c", "server/*.h",
+                 "mempool/*.c", "mempool/*.h"]),
 
     copts = [
       "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-DGCC_VERSION=4002",
@@ -22,12 +23,12 @@ cc_binary(
 
     includes = [
       "third_party/libevent/s3_dist/include/",
-      "third_party/googletest/include/",
+      "third_party/googletest/s3_dist/include/",
       "third_party/gflags/s3_dist/include/",
       "third_party/glog/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
-      "third_party/jsoncpp/dist",
-      "third_party/yaml-cpp/include/",
+      "third_party/jsoncpp/s3_dist",
+      "third_party/yaml-cpp/s3_dist/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
       "mempool",
     ],
@@ -60,7 +61,8 @@ cc_test(
 
     name = "s3ut",
 
-    srcs = glob(["ut/*.cc", "ut/*.h", "server/*.cc", "server/*.c", "server/*.h",
+    srcs = glob(["ut/*.cc", "ut/*.h",
+                 "server/*.cc", "server/*.c", "server/*.h",
                  "mempool/*.c", "mempool/*.h"],
                  exclude = ["server/s3server.cc"]),
 
@@ -74,14 +76,14 @@ cc_test(
     ],
 
     includes = [
-      "third_party/googletest/include",
-      "third_party/googlemock/include",
+      "third_party/googletest/s3_dist/include",
+      "third_party/googlemock/s3_dist/include",
       "third_party/gflags/s3_dist/include/",
       "third_party/glog/s3_dist/include/",
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
-      "third_party/jsoncpp/dist",
-      "third_party/yaml-cpp/include/",
+      "third_party/jsoncpp/s3_dist",
+      "third_party/yaml-cpp/s3_dist/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
       "server/",
       "mempool",
@@ -94,8 +96,8 @@ cc_test(
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-Lthird_party/yaml-cpp/s3_dist/lib",
       "-Lthird_party/libxml2/s3_dist/lib",
-      "-Lthird_party/googletest/build",
-      "-Lthird_party/googlemock/build",
+      "-Lthird_party/googletest/s3_dist",
+      "-Lthird_party/googlemock/s3_dist",
       "-Lthird_party/glog/s3_dist/lib",
       "-Lthird_party/gflags/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
@@ -121,7 +123,8 @@ cc_test(
 
     name = "s3utdeathtests",
 
-    srcs = glob(["ut_death_tests/*.cc", "ut_death_tests/*.h", "server/*.cc", "server/*.c", "server/*.h",
+    srcs = glob(["ut_death_tests/*.cc", "ut_death_tests/*.h",
+                 "server/*.cc", "server/*.c", "server/*.h",
                  "mempool/*.c", "mempool/*.h"],
                  exclude = ["server/s3server.cc"]),
 
@@ -135,14 +138,14 @@ cc_test(
     ],
 
     includes = [
-      "third_party/googletest/include",
-      "third_party/googlemock/include",
+      "third_party/googletest/s3_dist/include",
+      "third_party/googlemock/s3_dist/include",
       "third_party/gflags/s3_dist/include/",
       "third_party/glog/s3_dist/include/",
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
-      "third_party/jsoncpp/dist",
-      "third_party/yaml-cpp/include/",
+      "third_party/jsoncpp/s3_dist",
+      "third_party/yaml-cpp/s3_dist/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
       "server/",
       "mempool",
@@ -155,8 +158,8 @@ cc_test(
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-Lthird_party/yaml-cpp/s3_dist/lib",
       "-Lthird_party/libxml2/s3_dist/lib",
-      "-Lthird_party/googletest/build",
-      "-Lthird_party/googlemock/build",
+      "-Lthird_party/googletest/s3_dist",
+      "-Lthird_party/googlemock/s3_dist",
       "-Lthird_party/glog/s3_dist/lib",
       "-Lthird_party/gflags/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
@@ -242,14 +245,14 @@ cc_test(
     copts = ["-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-O3"],
 
     includes = [
-      "third_party/googletest/include",
-      "third_party/googlemock/include",
+      "third_party/googletest/s3_dist/include",
+      "third_party/googlemock/s3_dist/include",
       "mempool/",
     ],
 
     linkopts = [
-      "-Lthird_party/googletest/build",
-      "-Lthird_party/googlemock/build",
+      "-Lthird_party/googletest/s3_dist",
+      "-Lthird_party/googlemock/s3_dist",
       "-lpthread -ldl -lm -lrt -lgtest -lgmock",
     ],
 

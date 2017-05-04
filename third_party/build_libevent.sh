@@ -8,7 +8,7 @@ cd libevent
 # Apply the libevent patch for memory pool support
 patch -f -p1 < ../../patches/libevent.patch
 
-INSTALL_DIR=`pwd`/s3_dist
+INSTALL_DIR=/usr/local/seagate/libevent/
 rm -rf $INSTALL_DIR
 mkdir $INSTALL_DIR
 

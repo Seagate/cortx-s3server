@@ -5,12 +5,12 @@
 
 cd glog
 
-INSTALL_DIR=`pwd`/s3_dist
+INSTALL_DIR=/usr/local/seagate/glog/
 rm -rf $INSTALL_DIR
 mkdir $INSTALL_DIR
 
-GFLAGS_HDR_DIR=../gflags/s3_dist/include
-GFLAGS_LIB_DIR=../gflags/s3_dist/lib
+GFLAGS_HDR_DIR=/usr/local/seagate/gflags/include
+GFLAGS_LIB_DIR=/usr/local/seagate/gflags/lib
 
 CXXFLAGS="-fPIC -I$GFLAGS_HDR_DIR" LDFLAGS="-L$GFLAGS_LIB_DIR" ./configure --prefix=$INSTALL_DIR
 

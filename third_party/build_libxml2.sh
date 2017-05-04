@@ -5,7 +5,7 @@
 
 cd libxml2
 
-INSTALL_DIR=`pwd`/s3_dist
+INSTALL_DIR=/usr/local/seagate/libxml2
 rm -rf $INSTALL_DIR
 mkdir $INSTALL_DIR
 

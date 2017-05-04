@@ -5,8 +5,15 @@
 
 cd jsoncpp
 
+INSTALL_DIR=/usr/local/seagate/jsoncpp/
+rm -rf $INSTALL_DIR
+mkdir $INSTALL_DIR
+
 # Generate amalgamated source for inclusion in project.
 # https://github.com/open-source-parsers/jsoncpp#using-jsoncpp-in-your-project
 python amalgamate.py
+
+cp -Rf dist/json $INSTALL_DIR/
+cp -f dist/jsoncpp.cpp $INSTALL_DIR/jsoncpp.cc
 
 cd ..
