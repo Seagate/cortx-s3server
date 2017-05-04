@@ -65,7 +65,7 @@ class S3ObjectMultipartMetadataFactory {
       std::shared_ptr<S3RequestObject> req, m0_uint128 mp_indx_oid,
       bool is_multipart, std::string upload_id) {
     s3_log(S3_LOG_DEBUG,
-           "S3ObjectMetadataFactory::create_object_mp_metadata_obj\n");
+           "S3ObjectMultipartMetadataFactory::create_object_mp_metadata_obj\n");
     return std::make_shared<S3ObjectMetadata>(req, mp_indx_oid, is_multipart,
                                               upload_id);
   }
@@ -77,13 +77,13 @@ class S3PartMetadataFactory {
   virtual std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
       std::shared_ptr<S3RequestObject> req, m0_uint128 indx_oid,
       std::string upload_id, int part_num) {
-    s3_log(S3_LOG_DEBUG, "S3ObjectMetadataFactory::create_part_metadata_obj\n");
+    s3_log(S3_LOG_DEBUG, "S3PartMetadataFactory::create_part_metadata_obj\n");
     return std::make_shared<S3PartMetadata>(req, indx_oid, upload_id, part_num);
   }
   virtual std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
       std::shared_ptr<S3RequestObject> req, std::string upload_id,
       int part_num) {
-    s3_log(S3_LOG_DEBUG, "S3ObjectMetadataFactory::create_part_metadata_obj\n");
+    s3_log(S3_LOG_DEBUG, "S3PartMetadataFactory::create_part_metadata_obj\n");
     return std::make_shared<S3PartMetadata>(req, upload_id, part_num);
   }
 };
@@ -135,7 +135,8 @@ class S3ClovisKVSReaderFactory {
   virtual std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
-    s3_log(S3_LOG_DEBUG, "S3ClovisReaderFactory::create_clovis_kvs_reader\n");
+    s3_log(S3_LOG_DEBUG,
+           "S3ClovisKVSReaderFactory::create_clovis_kvs_reader\n");
     return std::make_shared<S3ClovisKVSReader>(req, s3_clovis_api);
   }
 };
@@ -146,7 +147,8 @@ class S3ClovisKVSWriterFactory {
   virtual std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
-    s3_log(S3_LOG_DEBUG, "S3ClovisWriterFactory::create_clovis_kvs_writer\n");
+    s3_log(S3_LOG_DEBUG,
+           "S3ClovisKVSWriterFactory::create_clovis_kvs_writer\n");
     return std::make_shared<S3ClovisKVSWriter>(req, s3_clovis_api);
   }
 };

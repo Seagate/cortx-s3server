@@ -43,6 +43,11 @@ enum class S3ObjectMetadataState {
   invalid
 };
 
+// Forward declarations
+class S3ClovisKVSReaderFactory;
+class S3ClovisKVSWriterFactory;
+class S3BucketMetadataFactory;
+
 class S3ObjectMetadata {
   // Holds system-defined metadata (creation date etc)
   // Holds user-defined metadata (names must begin with "x-amz-meta-")
@@ -89,6 +94,10 @@ class S3ObjectMetadata {
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
 
+  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kv_reader_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
@@ -109,11 +118,18 @@ class S3ObjectMetadata {
   void save_object_list_index_oid_failed();
 
  public:
-  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
-                   bool ismultipart = false, std::string uploadid = "");
-  S3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
-                   struct m0_uint128 bucket_idx_id, bool ismultipart = false,
-                   std::string uploadid = "");
+  S3ObjectMetadata(
+      std::shared_ptr<S3RequestObject> req, bool ismultipart = false,
+      std::string uploadid = "",
+      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
+  S3ObjectMetadata(
+      std::shared_ptr<S3RequestObject> req, struct m0_uint128 bucket_idx_id,
+      bool ismultipart = false, std::string uploadid = "",
+      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   std::string create_default_acl();
   struct m0_uint128 get_index_oid();
