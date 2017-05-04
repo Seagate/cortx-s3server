@@ -38,7 +38,7 @@ def _extract_oid(json_keyval, bucket=True):
 
 # Helper to fetch System Test user record from kvs
 def _fetch_test_user_info():
-    result = S3kvTest('kvtest can list user records').root_index_records().execute_test()
+    result = S3kvTest('kvtest can list user records').root_index_records().execute_test(ignore_err=True)
     root_index_records = result.status.stdout.split('----------------------------------------------')
     test_record_key =  "ACCOUNTUSER/s3_test/tester"
     test_user_record = _find_record(test_record_key, root_index_records)
@@ -49,7 +49,7 @@ def _fetch_bucket_info(bucket_name):
     test_user_record = _fetch_test_user_info()
     test_user_json_keyval = _find_keyval_json(test_user_record)
     oid_decoded = _extract_oid(test_user_json_keyval, bucket=True)
-    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(oid_decoded, "", 5).execute_test()
+    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(oid_decoded, "", 5).execute_test(ignore_err=True)
     test_user_bucket_list = result.status.stdout.split('----------------------------------------------')
     bucket_record = _find_record(bucket_name, test_user_bucket_list)
     return bucket_record
@@ -64,7 +64,7 @@ def _fail_fetch_bucket_info(bucket_name):
 def _fetch_object_info(key_name, bucket_record):
     bucket_json_keyval = _find_keyval_json(bucket_record)
     oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
-    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(oid_decoded, "", 10).execute_test()
+    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(oid_decoded, "", 10).execute_test(ignore_err=True)
     bucket_entries = result.status.stdout.split('----------------------------------------------')
     file_record = _find_record(key_name, bucket_entries)
     return file_record
@@ -144,7 +144,7 @@ def delete_file_info(bucket_name,key):
     bucket_record = _fail_fetch_bucket_info(bucket_name)
     bucket_json_keyval = _find_keyval_json(bucket_record)
     oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
-    result = S3kvTest('Kvtest delete key from bucket').delete_keyval(oid_decoded,key).execute_test()
+    result = S3kvTest('Kvtest delete key from bucket').delete_keyval(oid_decoded,key).execute_test(ignore_err=True)
     file_record = _fetch_object_info(key,bucket_record)
     assert not file_record,"key:%s not deleted from bucket %s!" % key % bucket_name
     return file_record
@@ -156,13 +156,13 @@ def delete_bucket_info(bucket_name):
     oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
     # Check if bucket is empty
     if _check_bucket_not_empty(bucket_record):
-        result = S3kvTest('Kvtest delete bucket record').delete_index(oid_decoded).execute_test()
+        result = S3kvTest('Kvtest delete bucket record').delete_index(oid_decoded).execute_test(ignore_err=True)
 
     # delete bucket record from test user bucket list
     test_user_record = _fetch_test_user_info()
     test_user_json_keyval = _find_keyval_json(test_user_record)
     oid_decoded = _extract_oid(test_user_json_keyval,bucket=True)
-    result = S3kvTest('Kvtest delete bucket').delete_keyval(oid_decoded,bucket_name).execute_test()
+    result = S3kvTest('Kvtest delete bucket').delete_keyval(oid_decoded,bucket_name).execute_test(ignore_err=True)
     bucket_record = _fetch_bucket_info(bucket_name)
     assert not bucket_record,"bucket:%s entry not deleted!" % bucket_name
     return
@@ -170,5 +170,5 @@ def delete_bucket_info(bucket_name):
 # Delete User record
 def delete_user_info(user_record="ACCOUNTUSER/s3_test/tester"):
     root_oid = S3kvTest('Kvtest fetch root index').root_index()
-    result = S3kvTest('Kvtest delete user record').delete_keyval(root_oid,user_record).execute_test()
+    result = S3kvTest('Kvtest delete user record').delete_keyval(root_oid,user_record).execute_test(ignore_err=True)
     return

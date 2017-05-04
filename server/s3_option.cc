@@ -175,10 +175,6 @@ bool S3Option::load_section(std::string section_name,
       sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
              &clovis_read_pool_max_threshold);
 
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_KV_DEL_BEFORE_PUT");
-      clovis_kv_del_before_put =
-          s3_option_node["S3_CLOVIS_KV_DEL_BEFORE_PUT"].as<bool>();
-
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
       std::string libevent_pool_expandable_size_str;
@@ -386,10 +382,6 @@ bool S3Option::load_section(std::string section_name,
       sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
              &clovis_read_pool_max_threshold);
 
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_KV_DEL_BEFORE_PUT");
-      clovis_kv_del_before_put =
-          s3_option_node["S3_CLOVIS_KV_DEL_BEFORE_PUT"].as<bool>();
-
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
       std::string libevent_pool_expandable_size_str;
@@ -577,9 +569,6 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_MAX_THRESHOLD = %zu\n",
          libevent_pool_max_threshold);
 
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_KV_DEL_BEFORE_PUT = %s\n",
-         (clovis_kv_del_before_put ? "true" : "false"));
-
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n",
          FLAGS_fake_clovis_createobj);
   s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n",
@@ -740,8 +729,6 @@ unsigned int S3Option::get_clovis_max_rpc_msg_size() {
 std::string S3Option::get_clovis_process_fid() { return clovis_process_fid; }
 
 int S3Option::get_clovis_idx_service_id() { return clovis_idx_service_id; }
-
-bool S3Option::get_delete_kv_before_put() { return clovis_kv_del_before_put; }
 
 std::string S3Option::get_clovis_cass_cluster_ep() {
   return clovis_cass_cluster_ep;

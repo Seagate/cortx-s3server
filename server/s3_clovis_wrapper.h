@@ -43,12 +43,6 @@ enum class ClovisOpType {
   getkv,
   putkv,
   deletekv,
-  /* Note: This is temp workaround for negative tests*/
-  /* Remove ClovisOpType::deletebeforeputkv once */
-  /* // Jira Ticket:
-     https://jira.xyratex.com/browse/MERO-2040?filter=-3 */
-  /* is resolved */
-  deletebeforeputkv,
 };
 
 class ClovisAPI {
@@ -181,13 +175,7 @@ class ConcreteClovisAPI : public ClovisAPI {
                 s3_fi_is_enabled("clovis_idx_delete_fail")) ||
                (type == ClovisOpType::deletekv &&
                 s3_fi_is_enabled("clovis_kv_delete_fail")) ||
-               /* (type == ClovisOpType::putkv && */
-               /* Note: This is temp workaround for negative tests*/
-               /* Restore above check for ClovisOpType::putkv once */
-               /* // Jira Ticket:
-                  https://jira.xyratex.com/browse/MERO-2040?filter=-3 */
-               /* is resolved */
-               (type == ClovisOpType::deletebeforeputkv &&
+               (type == ClovisOpType::putkv &&
                 s3_fi_is_enabled("clovis_kv_put_fail")) ||
                (type == ClovisOpType::getkv &&
                 s3_fi_is_enabled("clovis_kv_get_fail"))) {

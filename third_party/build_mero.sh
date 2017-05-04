@@ -1,7 +1,7 @@
 #!/bin/sh -xe
 # Script to build mero.
 # git repo: http://es-gerrit.xyus.xyratex.com:8080/mero
-# branch: master commit: e3c7eb185f0754862d49d186e08abd1df540cb84
+# branch: master commit: dab159b9768fa415d791f3282aae4fd08696008d
 
 cd mero
 # Uncomment following line to compile mero with both KVS and Cassandra
