@@ -130,16 +130,16 @@ class S3ClovisKVSReader {
   virtual void get_keyval(struct m0_uint128 oid, std::vector<std::string> keys,
                           std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);
-  void get_keyval(struct m0_uint128 oid, std::string key,
-                  std::function<void(void)> on_success,
-                  std::function<void(void)> on_failed);
+  virtual void get_keyval(struct m0_uint128 oid, std::string key,
+                          std::function<void(void)> on_success,
+                          std::function<void(void)> on_failed);
 
   void get_keyval_successful();
   void get_keyval_failed();
 
   // When looking up for just one KV, use this else for multiple use
   // get_key_values
-  std::string get_value() { return last_value; }
+  virtual std::string get_value() { return last_value; }
 
   // Used to iterate over the key-value pairs.
   // If the input key is empty string "", it returns the first count key-value

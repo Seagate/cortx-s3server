@@ -338,5 +338,9 @@ class S3Option {
   }
   FRIEND_TEST(S3DeleteBucketActionTest,
               FetchMultipartObjectSuccessMaxFetchCountLessThanMapSize);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulListNotTruncated);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulGetMoreObjects);
 };
 #endif

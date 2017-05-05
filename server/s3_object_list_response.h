@@ -22,6 +22,7 @@
 #ifndef __S3_SERVER_S3_OBJECT_LIST_RESPONSE_H__
 #define __S3_SERVER_S3_OBJECT_LIST_RESPONSE_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -93,6 +94,21 @@ class S3ObjectListResponse {
   std::string& get_account_name();
   std::string& get_storage_class();
   std::string& get_upload_id();
+
+  // Google tests
+  FRIEND_TEST(S3GetMultipartPartActionTest, ConstructorTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetKeyObjectSuccessfulValueNotEmptyListSizeSameAsMaxAllowed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetKeyObjectSuccessfulValueNotEmptyListSizeNotSameAsMaxAllowed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetKeyObjectSuccessfulValueNotEmptyJsonFailed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulListSizeisMaxAllowed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulListNotTruncated);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulGetMoreObjects);
 };
 
 #endif

@@ -78,6 +78,8 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
 
+    keys = {"SampleDocument1.txt", "SampleDocument2.txt"};
+
     // Owned and deleted by shared_ptr in S3DeleteMultipleObjectsAction
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(mock_request);
@@ -107,6 +109,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
+  std::vector<std::string> keys;
 
   std::shared_ptr<S3DeleteMultipleObjectsAction> action_under_test;
 
@@ -262,7 +265,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, _, _, _))
+              get_keyval(_, keys, _, _))
       .Times(AtLeast(1));
 
   action_under_test->fetch_objects_info();
@@ -287,6 +290,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectInfoFailed) {
 
 TEST_F(S3DeleteMultipleObjectsActionTest,
        FetchObjectInfoFailedWithMissingAndMoreToProcess) {
+  std::vector<std::string> missing_key = {"SampleDocument2.txt"};
   CREATE_BUCKET_METADATA;
 
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
@@ -305,7 +309,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .Times(AtLeast(1))
       .WillOnce(Return(S3ClovisKVSReaderOpState::missing));
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, _, _, _))
+              get_keyval(_, missing_key, _, _))
       .Times(AtLeast(1));
 
   action_under_test->fetch_objects_info_failed();
@@ -548,6 +552,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
 TEST_F(S3DeleteMultipleObjectsActionTest,
        DeleteObjectMetadataFailedMoreToProcess) {
+  std::vector<std::string> my_keys;
+  my_keys.clear();
   CREATE_BUCKET_METADATA;
 
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
@@ -561,7 +567,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, _, _, _))
+              get_keyval(_, my_keys, _, _))
       .Times(AtLeast(1));
 
   action_under_test->objects_metadata.push_back(
@@ -599,7 +605,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, _, _, _))
+              get_keyval(_, keys, _, _))
       .Times(AtLeast(1));
 
   action_under_test->delete_objects();
@@ -654,7 +660,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, _, _, _))
+              get_keyval(_, keys, _, _))
       .Times(AtLeast(1));
 
   action_under_test->delete_objects_successful();
@@ -685,7 +691,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectsFailedMoreToProcess) {
   action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, _, _, _))
+              get_keyval(_, keys, _, _))
       .Times(AtLeast(1));
 
   action_under_test->delete_objects_failed();

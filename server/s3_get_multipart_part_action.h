@@ -23,10 +23,12 @@
 #ifndef __S3_SERVER_S3_GET_MULTIPART_PART_ACTION_H__
 #define __S3_SERVER_S3_GET_MULTIPART_PART_ACTION_H__
 
+#include <gtest/gtest_prod.h>
 #include <memory>
 
 #include "s3_action_base.h"
 #include "s3_clovis_kvs_reader.h"
+#include "s3_factory.h"
 #include "s3_object_list_response.h"
 
 class S3GetMultipartPartAction : public S3Action {
@@ -49,12 +51,25 @@ class S3GetMultipartPartAction : public S3Action {
   std::string request_marker_key;
   size_t max_parts;
 
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
+  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
+
   std::string get_part_index_name() {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;
   }
 
  public:
-  S3GetMultipartPartAction(std::shared_ptr<S3RequestObject> req);
+  S3GetMultipartPartAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> s3_clovis_apis = nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
+          nullptr,
+      std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+          nullptr);
 
   void setup_steps();
 
@@ -67,6 +82,48 @@ class S3GetMultipartPartAction : public S3Action {
   void fetch_bucket_info();
   void get_multipart_metadata();
   void send_response_to_s3_client();
+
+  // Google tests
+  FRIEND_TEST(S3GetMultipartPartActionTest, ConstructorTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest, FetchBucketInfoTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetMultiPartMetadataPresentOidPresentTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetMultiPartMetadataPresentOIDNullTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetMultiPartMetadataMissingTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetMultiPartMetadataFailedTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetkeyObjectMetadataPresentUploadMisMatchTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetkeyObjectMetadataPresentUploadIDMatchTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetkeyObjectMetadataMissing);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetkeyObjectMetadataFailed);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulShutdownSet);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulValueEmpty);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetKeyObjectSuccessfulValueNotEmptyListSizeSameAsMaxAllowed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetKeyObjectSuccessfulValueNotEmptyListSizeNotSameAsMaxAllowed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetKeyObjectSuccessfulValueNotEmptyJsonFailed);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetKeyObjectFailedNoMetadata);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetKeyObjectFailedMetadataFailed);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetNextObjectsMultipartPresent);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetNextObjectsMultipartMissing);
+  FRIEND_TEST(S3GetMultipartPartActionTest, GetNextObjectsMultipartStateFailed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulRollBackSet);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulListSizeisMaxAllowed);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulListNotTruncated);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetNextObjectsSuccessfulGetMoreObjects);
+  FRIEND_TEST(S3GetMultipartPartActionTest, SendInternalErrorResponse);
+  FRIEND_TEST(S3GetMultipartPartActionTest, SendNoSuchBucketErrorResponse);
+  FRIEND_TEST(S3GetMultipartPartActionTest, SendNoSuchUploadErrorResponse);
+  FRIEND_TEST(S3GetMultipartPartActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3GetMultipartPartActionTest, SendInternalErrorRetry);
 };
 
 #endif

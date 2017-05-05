@@ -40,6 +40,7 @@ class MockS3ClovisReader : public S3ClovisReader {
       : S3ClovisReader(req, id, clovis_api) {}
   MOCK_METHOD0(get_state, S3ClovisReaderOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());
+  MOCK_METHOD0(get_value, std::string());
   MOCK_METHOD1(set_oid, void(struct m0_uint128 oid));
   MOCK_METHOD3(read_object_data,
                void(size_t num_of_blocks, std::function<void(void)> on_success,

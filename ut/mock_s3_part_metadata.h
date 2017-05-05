@@ -35,6 +35,7 @@ class MockS3PartMetadata : public S3PartMetadata {
   MOCK_METHOD0(get_state, S3PartMetadataState());
   MOCK_METHOD1(set_md5, void(std::string));
   MOCK_METHOD1(set_content_length, void(std::string length));
+  MOCK_METHOD1(from_json, int(std::string content));
   MOCK_METHOD2(add_user_defined_attribute,
                void(std::string key, std::string val));
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
