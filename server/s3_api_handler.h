@@ -24,13 +24,22 @@
 
 #include <memory>
 
+#include "gtest/gtest_prod.h"
+
+#include "s3_action_base.h"
 #include "s3_common.h"
 #include "s3_request_object.h"
 
 class S3APIHandler {
  protected:
   std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<S3Action> action;
+
   S3OperationCode operation_code;
+
+  // Only for Unit testing
+  std::shared_ptr<S3APIHandler> _get_self_ref() { return self_ref; }
+  std::shared_ptr<S3Action> _get_action() { return action; }
 
  private:
   std::shared_ptr<S3APIHandler> self_ref;
@@ -40,12 +49,31 @@ class S3APIHandler {
       : request(req), operation_code(op_code) {}
   virtual ~S3APIHandler() {}
 
-  virtual void dispatch() = 0;
+  virtual void create_action() = 0;
+
+  virtual void dispatch() {
+    s3_log(S3_LOG_DEBUG, "Entering");
+
+    if (action) {
+      action->manage_self(action);
+      action->start();
+    } else {
+      request->respond_unsupported_api();
+    }
+    i_am_done();
+
+    s3_log(S3_LOG_DEBUG, "Exiting");
+  }
 
   // Self destructing object.
   void manage_self(std::shared_ptr<S3APIHandler> ref) { self_ref = ref; }
   // This *MUST* be the last thing on object. Called @ end of dispatch.
   void i_am_done() { self_ref.reset(); }
+
+  FRIEND_TEST(S3APIHandlerTest, ConstructorTest);
+  FRIEND_TEST(S3APIHandlerTest, ManageSelfAndReset);
+  FRIEND_TEST(S3APIHandlerTest, DispatchActionTest);
+  FRIEND_TEST(S3APIHandlerTest, DispatchUnSupportedAction);
 };
 
 class S3ServiceAPIHandler : public S3APIHandler {
@@ -54,7 +82,12 @@ class S3ServiceAPIHandler : public S3APIHandler {
                       S3OperationCode op_code)
       : S3APIHandler(req, op_code) {}
 
-  virtual void dispatch();
+  virtual void create_action();
+
+  FRIEND_TEST(S3ServiceAPIHandlerTest, ConstructorTest);
+  FRIEND_TEST(S3ServiceAPIHandlerTest, ManageSelfAndReset);
+  FRIEND_TEST(S3ServiceAPIHandlerTest, ShouldCreateS3GetServiceAction);
+  FRIEND_TEST(S3ServiceAPIHandlerTest, OperationNoneDefaultNoAction);
 };
 
 class S3BucketAPIHandler : public S3APIHandler {
@@ -63,7 +96,26 @@ class S3BucketAPIHandler : public S3APIHandler {
                      S3OperationCode op_code)
       : S3APIHandler(req, op_code) {}
 
-  virtual void dispatch();
+  virtual void create_action();
+
+  FRIEND_TEST(S3BucketAPIHandlerTest, ConstructorTest);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ManageSelfAndReset);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketlocationAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldNotCreateS3PutBucketlocationAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps);
+  FRIEND_TEST(S3BucketAPIHandlerTest,
+              ShouldCreateS3DeleteMultipleObjectsAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketACLAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketACLAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3GetMultipartBucketAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketPolicyAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketPolicyAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3DeleteBucketPolicyAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3HeadBucketAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, ShouldCreateS3DeleteBucketAction);
+  FRIEND_TEST(S3BucketAPIHandlerTest, OperationNoneDefaultNoAction);
 };
 
 class S3ObjectAPIHandler : public S3APIHandler {
@@ -72,7 +124,26 @@ class S3ObjectAPIHandler : public S3APIHandler {
                      S3OperationCode op_code)
       : S3APIHandler(req, op_code) {}
 
-  virtual void dispatch();
+  virtual void create_action();
+
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ConstructorTest);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ManageSelfAndReset);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectACLAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectACLAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PostCompleteAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PostMultipartObjectAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, DoesNotSupportCopyPart);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3GetMultipartPartAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3AbortMultipartAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3HeadObjectAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, ShouldCreateS3DeleteObjectAction);
+  FRIEND_TEST(S3ObjectAPIHandlerTest, NoAction);
 };
 
 class S3FaultinjectionAPIHandler : public S3APIHandler {
@@ -81,7 +152,7 @@ class S3FaultinjectionAPIHandler : public S3APIHandler {
                              S3OperationCode op_code)
       : S3APIHandler(req, op_code) {}
 
-  virtual void dispatch();
+  virtual void create_action();
 };
 
 class S3APIHandlerFactory {

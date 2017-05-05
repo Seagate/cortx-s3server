@@ -55,7 +55,6 @@ enum class S3ApiType {
 
 enum class S3OperationCode {
   none,  // Operation on current object.
-  list,
 
   // Common Operations
   acl,

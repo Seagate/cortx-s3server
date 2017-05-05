@@ -24,10 +24,10 @@ sleep 10
 instance=1
 while [[ $instance -le $MAX_S3_INSTANCES_NUM ]]
 do
-  statuss3=$(./iss3up.sh $instance)
+  s3port=$((8080 + $instance))
+  statuss3=$(ps -aef | grep /var/run/s3server.$s3port.pid | grep $s3port)
+  pidfile="/var/run/s3server.$s3port.pid"
   if [ "$statuss3" != "" ]; then
-    s3port=$((8080 + $instance))
-    pidfile="/var/run/s3server.$s3port.pid"
     if [[ -r $pidfile ]]; then
       pidstr=$(cat $pidfile)
       kill -9 $pidstr

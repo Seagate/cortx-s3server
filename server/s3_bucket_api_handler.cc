@@ -33,9 +33,7 @@
 #include "s3_put_bucket_policy_action.h"
 #include "s3_stats.h"
 
-void S3BucketAPIHandler::dispatch() {
-  std::shared_ptr<S3Action> action;
-
+void S3BucketAPIHandler::create_action() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_INFO, "Action operation code = %d\n", operation_code);
 
@@ -51,13 +49,8 @@ void S3BucketAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
-      break;
-    case S3OperationCode::list:
-      // action = std::make_shared<S3BucketListingAction>(request);
       break;
     case S3OperationCode::multidelete:
       action = std::make_shared<S3DeleteMultipleObjectsAction>(request);
@@ -76,8 +69,6 @@ void S3BucketAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
       break;
@@ -89,8 +80,7 @@ void S3BucketAPIHandler::dispatch() {
           s3_stats_inc("get_multipart_bucket_request_count");
           break;
         default:
-          request->respond_unsupported_api();
-          i_am_done();
+          // should never be here.
           return;
       };
       break;
@@ -111,8 +101,6 @@ void S3BucketAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
       break;
@@ -141,23 +129,12 @@ void S3BucketAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
       break;
     default:
       // should never be here.
-      request->respond_unsupported_api();
-      i_am_done();
       return;
   };  // switch operation_code
-  if (action) {
-    action->manage_self(action);
-    action->start();
-  } else {
-    request->respond_unsupported_api();
-  }
-  i_am_done();
   s3_log(S3_LOG_DEBUG, "Exiting");
 }

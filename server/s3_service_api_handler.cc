@@ -21,10 +21,10 @@
 #include "s3_get_service_action.h"
 #include "s3_stats.h"
 
-void S3ServiceAPIHandler::dispatch() {
-  std::shared_ptr<S3Action> action;
-
+void S3ServiceAPIHandler::create_action() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "Action operation code = %d\n", operation_code);
+
   switch (operation_code) {
     case S3OperationCode::none:
       // Perform operation on Service.
@@ -35,23 +35,13 @@ void S3ServiceAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
       break;
     default:
       // should never be here.
-      request->respond_unsupported_api();
-      i_am_done();
       return;
   };  // switch operation_code
 
-  if (action) {
-    action->manage_self(action);
-    action->start();
-  } else {
-    request->respond_unsupported_api();
-  }
-  i_am_done();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

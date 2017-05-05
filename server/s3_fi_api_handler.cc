@@ -21,8 +21,8 @@
 #include "s3_api_handler.h"
 #include "s3_put_fi_action.h"
 
-void S3FaultinjectionAPIHandler::dispatch() {
-  std::shared_ptr<S3Action> action;
+void S3FaultinjectionAPIHandler::create_action() {
+  s3_log(S3_LOG_DEBUG, "Entering");
   s3_log(S3_LOG_DEBUG, "Action operation code = %d\n", operation_code);
   switch (operation_code) {
     case S3OperationCode::none:
@@ -33,23 +33,12 @@ void S3FaultinjectionAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
       break;
     default:
       // should never be here.
-      request->respond_unsupported_api();
-      i_am_done();
       return;
   };  // switch operation_code
-
-  if (action) {
-    action->manage_self(action);
-    action->start();
-  } else {
-    request->respond_unsupported_api();
-  }
-  i_am_done();
+  s3_log(S3_LOG_DEBUG, "Exiting");
 }

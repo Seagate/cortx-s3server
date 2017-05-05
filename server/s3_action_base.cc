@@ -92,8 +92,10 @@ void S3Action::start() {
   }
 
   task_iteration_index = 0;
-  state = S3ActionState::running;
-  task_list[task_iteration_index++]();
+  if (task_list.size() > 0) {
+    state = S3ActionState::running;
+    task_list[task_iteration_index++]();
+  }
 }
 
 // Step to next async step.

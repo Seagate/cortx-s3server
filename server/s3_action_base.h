@@ -223,6 +223,7 @@ class S3Action {
   FRIEND_TEST(S3ActionTest, AddTaskRollback);
   FRIEND_TEST(S3ActionTest, TasklistRun);
   FRIEND_TEST(S3ActionTest, RollbacklistRun);
+  FRIEND_TEST(S3APIHandlerTest, DispatchActionTest);
 };
 
 #endif

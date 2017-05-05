@@ -33,9 +33,8 @@
 #include "s3_put_object_action.h"
 #include "s3_stats.h"
 
-void S3ObjectAPIHandler::dispatch() {
-  std::shared_ptr<S3Action> action;
-
+void S3ObjectAPIHandler::create_action() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "Operation code = %d\n", operation_code);
 
   switch (operation_code) {
@@ -51,8 +50,6 @@ void S3ObjectAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
       break;
@@ -128,22 +125,12 @@ void S3ObjectAPIHandler::dispatch() {
           break;
         default:
           // should never be here.
-          request->respond_unsupported_api();
-          i_am_done();
           return;
       };
       break;
     default:
       // should never be here.
-      request->respond_unsupported_api();
-      i_am_done();
       return;
   };  // switch operation_code
-  if (action) {
-    action->manage_self(action);
-    action->start();
-  } else {
-    request->respond_unsupported_api();
-  }
-  i_am_done();
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -42,6 +42,9 @@ std::shared_ptr<S3APIHandler> S3APIHandlerFactory::create_api_handler(
     default:
       break;
   };
+  if (handler) {
+    handler->create_action();
+  }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
   return handler;
 }
