@@ -162,7 +162,7 @@ class S3BucketMetadata {
   virtual std::string& get_policy_as_json();
   virtual std::string& get_acl_as_xml();
 
-  struct m0_uint128 get_bucket_list_index_oid();
+  virtual struct m0_uint128 get_bucket_list_index_oid();
   virtual struct m0_uint128 get_multipart_index_oid();
   virtual struct m0_uint128 get_object_list_index_oid();
   std::string get_object_list_index_oid_u_hi_str();
@@ -207,7 +207,7 @@ class S3BucketMetadata {
   std::string to_json();
 
   // returns 0 on success, -1 on parsing error
-  int from_json(std::string content);
+  virtual int from_json(std::string content);
 
   // Google tests
   FRIEND_TEST(S3BucketMetadataTest, ConstructorTest);

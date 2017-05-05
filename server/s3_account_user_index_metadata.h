@@ -105,8 +105,9 @@ class S3AccountUserIdxMetadata {
   // Load Account user info(bucket list oid)
   virtual void load(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
-  void load_successful();
-  void load_failed();
+  virtual void load_successful();
+  virtual void load_failed();
+  virtual ~S3AccountUserIdxMetadata() {}
 
   // Save Account user info(bucket list oid)
   virtual void save(std::function<void(void)> on_success,

@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include "mock_account_user_index_metadata.h"
+#include "mock_s3_account_user_idx_metadata.h"
 #include "mock_s3_async_buffer_opt_container.h"
 #include "mock_s3_auth_client.h"
 #include "mock_s3_bucket_metadata.h"

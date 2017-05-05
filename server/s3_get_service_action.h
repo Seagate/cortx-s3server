@@ -36,9 +36,11 @@ class S3GetServiceAction : public S3Action {
   std::string last_key;  // last key during each iteration
   S3ServiceListResponse bucket_list;
   std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
-
+  std::shared_ptr<S3AccountUserIdxMetadataFactory>
+      acct_user_idx_metadata_factory;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   bool fetch_successful;
-
+  std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   // Helpers
   std::string get_account_user_index_name() {
     return "ACCOUNTUSER/" + request->get_account_name() + "/" +
@@ -46,8 +48,14 @@ class S3GetServiceAction : public S3Action {
   }
 
  public:
-  S3GetServiceAction(std::shared_ptr<S3RequestObject> req);
-
+  S3GetServiceAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory =
+          nullptr,
+      std::shared_ptr<S3AccountUserIdxMetadataFactory> user_idx_md_factory =
+          nullptr);
   void setup_steps();
   void fetch_bucket_list_index_oid();
   void get_next_buckets();
@@ -55,6 +63,19 @@ class S3GetServiceAction : public S3Action {
   void get_next_buckets_failed();
 
   void send_response_to_s3_client();
+  FRIEND_TEST(S3GetServiceActionTest, ConstructorTest);
+  FRIEND_TEST(S3GetServiceActionTest,
+              GetNextBucketCallsGetBucketListIndexIfMetadataPresent);
+  FRIEND_TEST(S3GetServiceActionTest,
+              GetNextBucketDoesNotCallsGetBucketListIndexIfMetadataFailed);
+  FRIEND_TEST(S3GetServiceActionTest, GetNextBucketSuccessful);
+  FRIEND_TEST(S3GetServiceActionTest,
+              GetNextBucketFailedClovisReaderStateMissing);
+  FRIEND_TEST(S3GetServiceActionTest,
+              GetNextBucketFailedClovisReaderStatePresent);
+  FRIEND_TEST(S3GetServiceActionTest, SendResponseToClientInternalError);
+  FRIEND_TEST(S3GetServiceActionTest, SendResponseToClientServiceUnavailable);
+  FRIEND_TEST(S3GetServiceActionTest, SendResponseToClientSuccess);
 };
 
 #endif

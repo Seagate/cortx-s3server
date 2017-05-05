@@ -26,10 +26,33 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
-S3GetServiceAction::S3GetServiceAction(std::shared_ptr<S3RequestObject> req)
+S3GetServiceAction::S3GetServiceAction(
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3AccountUserIdxMetadataFactory> user_idx_md_factory)
     : S3Action(req), last_key(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
+  if (clovis_kvs_reader_factory) {
+    s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
+  } else {
+    s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+  }
+
+  if (user_idx_md_factory) {
+    acct_user_idx_metadata_factory = user_idx_md_factory;
+  } else {
+    acct_user_idx_metadata_factory =
+        std::make_shared<S3AccountUserIdxMetadataFactory>();
+  }
+
   setup_steps();
   bucket_list.set_owner_name(request->get_user_name());
   bucket_list.set_owner_id(request->get_user_id());
@@ -48,7 +71,8 @@ void S3GetServiceAction::fetch_bucket_list_index_oid() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
   account_user_index_metadata =
-      std::make_shared<S3AccountUserIdxMetadata>(request);
+      acct_user_idx_metadata_factory->create_s3_account_user_idx_metadata(
+          request);
   account_user_index_metadata->load(std::bind(&S3GetServiceAction::next, this),
                                     std::bind(&S3GetServiceAction::next, this));
 
@@ -67,6 +91,7 @@ void S3GetServiceAction::get_next_buckets() {
         account_user_index_metadata->get_bucket_list_index_oid();
   } else if (account_user_index_metadata->get_state() ==
              S3AccountUserIdxMetadataState::failed) {
+    set_s3_error("InternalError");
     send_response_to_s3_client();
     return;
   }
@@ -79,8 +104,8 @@ void S3GetServiceAction::get_next_buckets() {
     s3_log(S3_LOG_DEBUG, "Fetching bucket list from KV store\n");
     size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-    clovis_kv_reader =
-        std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
+    clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
+        request, s3_clovis_api);
     clovis_kv_reader->next_keyval(
         bucket_list_index_oid, last_key, count,
         std::bind(&S3GetServiceAction::get_next_buckets_successful, this),
@@ -103,7 +128,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
   size_t length = kvps.size();
   bool atleast_one_json_error = false;
   for (auto& kv : kvps) {
-    auto bucket = std::make_shared<S3BucketMetadata>(request);
+    auto bucket = bucket_metadata_factory->create_bucket_metadata_obj(request);
     if (bucket->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
       s3_log(S3_LOG_ERROR,
@@ -125,7 +150,6 @@ void S3GetServiceAction::get_next_buckets_successful() {
   // We ask for more if there is any.
   size_t count_we_requested =
       S3Option::get_instance()->get_clovis_idx_fetch_count();
-
   if (kvps.size() < count_we_requested) {
     // Go ahead and respond.
     fetch_successful = true;
@@ -141,6 +165,7 @@ void S3GetServiceAction::get_next_buckets_failed() {
     fetch_successful = true;  // With no entries.
   } else {
     s3_log(S3_LOG_ERROR, "Failed to fetch bucket list info\n");
+    set_s3_error("InternalError");
     fetch_successful = false;
   }
   send_response_to_s3_client();
@@ -149,16 +174,17 @@ void S3GetServiceAction::get_next_buckets_failed() {
 void S3GetServiceAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  if (reject_if_shutting_down()) {
-    // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
+    if (get_s3_error_code().compare("ServiceUnavailable")) {
+      request->set_out_header_value("Retry-After", "1");
+    }
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
