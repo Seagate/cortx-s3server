@@ -162,6 +162,11 @@ class S3APIHandlerFactory {
   virtual std::shared_ptr<S3APIHandler> create_api_handler(
       S3ApiType api_type, std::shared_ptr<S3RequestObject> request,
       S3OperationCode op_code);
+
+  FRIEND_TEST(S3APIHandlerFactoryTest, ShouldCreateS3ServiceAPIHandler);
+  FRIEND_TEST(S3APIHandlerFactoryTest, ShouldCreateS3BucketAPIHandler);
+  FRIEND_TEST(S3APIHandlerFactoryTest, ShouldCreateS3ObjectAPIHandler);
+  FRIEND_TEST(S3APIHandlerFactoryTest, ShouldCreateS3FaultinjectionAPIHandler);
 };
 
 #endif
