@@ -81,10 +81,15 @@ fi
 # Used to store third_party build artifacts
 SEAGATE_SRC=/usr/local/seagate
 CURRENT_USER=`whoami`
+USE_SUDO=
+if [[ $EUID -ne 0 ]]; then
+   USE_SUDO=sudo
+   command -v sudo || USE_SUDO=
+fi
 if [ $no_thirdparty_build -eq 0 ]
 then
-  sudo rm -rf ${SEAGATE_SRC}
-  sudo mkdir -p ${SEAGATE_SRC} && sudo chown ${CURRENT_USER}:${CURRENT_USER} ${SEAGATE_SRC}
+  $USE_SUDO rm -rf ${SEAGATE_SRC}
+  $USE_SUDO mkdir -p ${SEAGATE_SRC} && $USE_SUDO chown ${CURRENT_USER}:${CURRENT_USER} ${SEAGATE_SRC}
   ./build_thirdparty.sh
 else
   if [ ! -d ${SEAGATE_SRC} ]
@@ -200,5 +205,5 @@ fi
 if [ $no_install -eq 0 ]
 then
   # install with root privilege
-  sudo ./makeinstall
+  $USE_SUDO ./makeinstall
 fi
