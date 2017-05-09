@@ -4,21 +4,39 @@
 
 MAX_S3_INSTANCES_NUM=20
 
-counter=1
-while [[ $counter -le $MAX_S3_INSTANCES_NUM ]]
+instance=1
+while [[ $instance -le $MAX_S3_INSTANCES_NUM ]]
 do
-  pidfile="/var/run/s3server.$counter.pid"
+  s3port=$((8080 + $instance))
+  pidfile="/var/run/s3server.$s3port.pid"
   if [[ -r $pidfile ]]; then
-    pidstr=`cat $pidfile`
+    pidstr=$(cat $pidfile)
     if [ "$pidstr" != "" ]; then
       kill -s TERM $pidstr
-      if [ "$?" != "0" ]; then
-        rm $pidfile
-      fi
     fi # $pidstr
   fi # $pidfile
 
-  ((counter++))
+  ((instance++))
 done # while
 echo "Waiting for S3 to shutdown..."
 sleep 10
+
+instance=1
+while [[ $instance -le $MAX_S3_INSTANCES_NUM ]]
+do
+  statuss3=$(./iss3up.sh $instance)
+  if [ "$statuss3" != "" ]; then
+    s3port=$((8080 + $instance))
+    pidfile="/var/run/s3server.$s3port.pid"
+    if [[ -r $pidfile ]]; then
+      pidstr=$(cat $pidfile)
+      kill -9 $pidstr
+    fi
+  fi
+
+  if [[ -e $pidfile ]]; then
+    rm -f $pidfile
+  fi
+
+  ((instance++))
+done

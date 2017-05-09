@@ -11,7 +11,7 @@ MAX_S3_INSTANCES_NUM=20
 if [ $# -gt 1 ]
 then
   echo "Invalid number of arguments passed to the script"
-  echo "Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>]"
+  echo "Usage: sudo ./dev-starts3.sh [<Number of S3 server instances>]"
   exit 1
 fi
 
@@ -66,11 +66,12 @@ fi
 # Start the s3server
 export PATH=$PATH:/opt/seagate/s3/bin
 counter=1
+
 while [[ $counter -le $num_instances ]]
 do
   clovis_local_port=`expr 100 + $counter`
   s3port=`expr 8080 + $counter`
-  pid_filename='/var/run/s3server.'$counter'.pid'
+  pid_filename='/var/run/s3server.'$s3port'.pid'
   s3server --s3pidfile $pid_filename \
            --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
            --s3port $s3port --fault_injection true
