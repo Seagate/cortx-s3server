@@ -45,6 +45,9 @@
 // see s3_user_account_index_metadata.h/cc
 #define S3_ROOT_ACC_USER_IDX_OFFSET 1
 
+// Part sizes for multipart operation
+#define MINIMUM_ALLOWED_PART_SIZE 5242880
+
 enum class S3ApiType {
   service,
   bucket,

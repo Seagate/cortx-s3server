@@ -48,6 +48,8 @@ class MockS3PartMetadata : public S3PartMetadata {
                                   std::function<void(void)> on_failed));
   MOCK_METHOD3(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed, int));
+  MOCK_METHOD0(get_md5, std::string());
+  MOCK_METHOD0(get_content_length, size_t());
 };
 
 #endif

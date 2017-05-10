@@ -182,7 +182,7 @@ class S3ObjectMetadata {
   void add_system_attribute(std::string key, std::string val);
   std::string get_user_defined_attribute(std::string key);
   virtual void add_user_defined_attribute(std::string key, std::string val);
-  std::map<std::string, std::string>& get_user_attributes() {
+  virtual std::map<std::string, std::string>& get_user_attributes() {
     return user_defined_attribute;
   }
 

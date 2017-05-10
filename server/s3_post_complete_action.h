@@ -27,11 +27,18 @@
 #include "s3_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
+#include "s3_factory.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
 #include "s3_uuid.h"
 
 class S3PostCompleteAction : public S3Action {
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+  std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
+  std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+  std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
+  std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ObjectMetadata> multipart_metadata;
@@ -48,11 +55,22 @@ class S3PostCompleteAction : public S3Action {
   uint64_t object_size;
   m0_uint128 multipart_index_oid;
   bool delete_multipart_object;
-
+  bool post_successful;
   void parse_xml_str(std::string &xml_str);
 
  public:
-  S3PostCompleteAction(std::shared_ptr<S3RequestObject> req);
+  S3PostCompleteAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
+          nullptr,
+      std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory =
+          nullptr);
 
   void setup_steps();
 
@@ -60,6 +78,7 @@ class S3PostCompleteAction : public S3Action {
   void consume_incoming_content();
   bool validate_request_body(std::string &xml_str);
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void fetch_multipart_info();
   void fetch_multipart_info_failed();
 
@@ -69,11 +88,7 @@ class S3PostCompleteAction : public S3Action {
   void get_part_info(int part);
   void save_metadata();
   void delete_multipart_metadata();
-  void delete_multipart_successful();
-  void delete_multipart_failed();
   void delete_part_index();
-  void delete_part_index_successful();
-  void delete_part_index_failed();
   void delete_parts();
   void delete_parts_failed();
   void set_abort_multipart(bool abortit);
@@ -89,6 +104,46 @@ class S3PostCompleteAction : public S3Action {
   std::string get_multipart_bucket_index_name() {
     return "BUCKET/" + request->get_bucket_name() + "/Multipart";
   }
+
+  // For Testing purpose
+  FRIEND_TEST(S3PostCompleteActionTest, Constructor);
+  FRIEND_TEST(S3PostCompleteActionTest, LoadValidateRequestMoreContent);
+  FRIEND_TEST(S3PostCompleteActionTest, LoadValidateRequestMalformed);
+  FRIEND_TEST(S3PostCompleteActionTest, LoadValidateRequestNoContent);
+  FRIEND_TEST(S3PostCompleteActionTest, LoadValidateRequest);
+  FRIEND_TEST(S3PostCompleteActionTest, ConsumeIncomingContentMoreContent);
+  FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBody);
+  FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyEmpty);
+  FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyOutOrderParts);
+  FRIEND_TEST(S3PostCompleteActionTest, ValidateRequestBodyMissingTag);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfoFailedMissing);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfo);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInvalidObject);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError);
+  FRIEND_TEST(S3PostCompleteActionTest, FetchPartsInfo);
+  FRIEND_TEST(S3PostCompleteActionTest, GetPartsInfoFailed);
+  FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessful);
+  FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulInvalidPart);
+  FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall);
+  FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulJsonError);
+  FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulAbortMultiPart);
+  FRIEND_TEST(S3PostCompleteActionTest, SaveMetadata);
+  FRIEND_TEST(S3PostCompleteActionTest, SaveMetadataAbortMultipart);
+  FRIEND_TEST(S3PostCompleteActionTest, DeletePartIndex);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteParts);
+  FRIEND_TEST(S3PostCompleteActionTest, DeletePartsNext);
+  FRIEND_TEST(S3PostCompleteActionTest, DeletePartsFailed);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadata);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresent);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresentClovisWriter);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresentNULL);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectFailed);
+  FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientInternalError);
+  FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientErrorSet);
+  FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientAbortMultipart);
+  FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientSuccess);
 };
 
 #endif

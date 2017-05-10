@@ -107,11 +107,11 @@ class S3PartMetadata {
   }
 
   virtual void set_content_length(std::string length);
-  size_t get_content_length();
+  virtual size_t get_content_length();
   std::string get_content_length_str();
 
   virtual void set_md5(std::string md5);
-  std::string get_md5();
+  virtual std::string get_md5();
   std::string get_object_name();
   std::string get_user_id();
   std::string get_user_name();

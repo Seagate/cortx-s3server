@@ -44,6 +44,7 @@ class MockS3ObjectMultipartMetadata : public S3ObjectMetadata {
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(remove, void(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed));
+  MOCK_METHOD0(get_user_attributes, std::map<std::string, std::string>&());
 };
 
 #endif

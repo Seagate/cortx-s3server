@@ -29,15 +29,58 @@
 #include "s3_post_complete_action.h"
 #include "s3_uri_to_mero_oid.h"
 
-S3PostCompleteAction::S3PostCompleteAction(std::shared_ptr<S3RequestObject> req)
+S3PostCompleteAction::S3PostCompleteAction(
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
+    std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
+    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory)
     : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
+  if (bucket_meta_factory) {
+    bucket_metadata_factory = bucket_meta_factory;
+  } else {
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
+  }
+  if (clovis_kvs_reader_factory) {
+    s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
+  } else {
+    s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+  }
+  if (object_meta_factory) {
+    object_metadata_factory = object_meta_factory;
+  } else {
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
+  }
+  if (object_mp_meta_factory) {
+    object_mp_metadata_factory = object_mp_meta_factory;
+  } else {
+    object_mp_metadata_factory =
+        std::make_shared<S3ObjectMultipartMetadataFactory>();
+  }
+  if (part_meta_factory) {
+    part_metadata_factory = part_meta_factory;
+  } else {
+    part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
+  }
+  if (clovis_s3_writer_factory) {
+    clovis_writer_factory = clovis_s3_writer_factory;
+  } else {
+    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
+  }
   upload_id = request->get_query_string_value("uploadId");
   object_name = request->get_object_name();
   bucket_name = request->get_bucket_name();
   object_size = 0;
+  post_successful = false;
   set_abort_multipart(false);
   setup_steps();
 }
@@ -67,7 +110,11 @@ void S3PostCompleteAction::load_and_validate_request() {
         next();
       } else {
         invalid_request = true;
+        if (get_s3_error_code().empty()) {
+          set_s3_error("MalformedXML");
+        }
         send_response_to_s3_client();
+        return;
       }
     } else {
       request->listen_for_incoming_data(
@@ -77,7 +124,9 @@ void S3PostCompleteAction::load_and_validate_request() {
     }
   } else {
     invalid_request = true;
+    set_s3_error("MalformedXML");
     send_response_to_s3_client();
+    return;
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -89,7 +138,9 @@ void S3PostCompleteAction::consume_incoming_content() {
       next();
     } else {
       invalid_request = true;
+      set_s3_error("MalformedXML");
       send_response_to_s3_client();
+      return;
     }
   } else {
     // else just wait till entire body arrives. rare.
@@ -101,38 +152,54 @@ void S3PostCompleteAction::consume_incoming_content() {
 void S3PostCompleteAction::fetch_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  bucket_metadata = std::make_shared<S3BucketMetadata>(request);
-  bucket_metadata->load(std::bind(&S3PostCompleteAction::next, this),
-                        std::bind(&S3PostCompleteAction::next, this));
+  bucket_metadata =
+      bucket_metadata_factory->create_bucket_metadata_obj(request);
+
+  bucket_metadata->load(
+      std::bind(&S3PostCompleteAction::next, this),
+      std::bind(&S3PostCompleteAction::fetch_bucket_info_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
+}
+
+void S3PostCompleteAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_DEBUG, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
 }
 
 void S3PostCompleteAction::fetch_multipart_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    multipart_index_oid = bucket_metadata->get_multipart_index_oid();
-    multipart_metadata = std::make_shared<S3ObjectMetadata>(
-        request, multipart_index_oid, true, upload_id);
-    multipart_metadata->load(
-        std::bind(&S3PostCompleteAction::next, this),
-        std::bind(&S3PostCompleteAction::fetch_multipart_info_failed, this));
-  } else {
-    s3_log(S3_LOG_ERROR, "Missing bucket [%s]\n",
-           request->get_bucket_name().c_str());
-    send_response_to_s3_client();
-  }
+
+  multipart_index_oid = bucket_metadata->get_multipart_index_oid();
+  multipart_metadata =
+      object_mp_metadata_factory->create_object_mp_metadata_obj(
+          request, multipart_index_oid, true, upload_id);
+
+  multipart_metadata->load(
+      std::bind(&S3PostCompleteAction::next, this),
+      std::bind(&S3PostCompleteAction::fetch_multipart_info_failed, this));
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PostCompleteAction::fetch_multipart_info_failed() {
   s3_log(S3_LOG_ERROR, "Multipart info missing\n");
+  if (multipart_metadata->get_state() == S3ObjectMetadataState::missing) {
+    set_s3_error("InvalidObjectState");
+  } else {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
 }
 
 void S3PostCompleteAction::fetch_parts_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  clovis_kv_reader =
-      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
+  clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
+      request, s3_clovis_api);
   clovis_kv_reader->next_keyval(
       get_part_index_name(), "", parts.size(),
       std::bind(&S3PostCompleteAction::get_parts_successful, this),
@@ -155,11 +222,13 @@ void S3PostCompleteAction::get_parts_successful() {
   size_t prev_size = 0;
 
   auto& kvps = clovis_kv_reader->get_key_values();
-  part_metadata = std::make_shared<S3PartMetadata>(
+  part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, multipart_metadata->get_part_index_oid(), upload_id, 0);
   if (parts.size() != kvps.size()) {
     part_metadata->set_state(S3PartMetadataState::missing_partially);
+    set_s3_error("InvalidPart");
     send_response_to_s3_client();
+    return;
   }
   struct m0_uint128 part_index_oid = multipart_metadata->get_part_index_oid();
   std::map<std::string, std::string>::iterator part_kv;
@@ -169,7 +238,9 @@ void S3PostCompleteAction::get_parts_successful() {
     store_kv = kvps.find(part_kv->first);
     if (store_kv == kvps.end()) {
       part_metadata->set_state(S3PartMetadataState::missing);
+      set_s3_error("InvalidPartOrder");
       send_response_to_s3_client();
+      return;
     } else {
       s3_log(S3_LOG_DEBUG, "Metadata for key [%s] -> [%s]\n",
              store_kv->first.c_str(), store_kv->second.second.c_str());
@@ -183,6 +254,7 @@ void S3PostCompleteAction::get_parts_successful() {
 
         // part metadata is corrupted, send response and return from here
         part_metadata->set_state(S3PartMetadataState::missing_partially);
+        set_s3_error("InvalidPart");
         send_response_to_s3_client();
         return;
       }
@@ -190,26 +262,34 @@ void S3PostCompleteAction::get_parts_successful() {
              part_metadata->get_part_number().c_str());
 
       curr_size = part_metadata->get_content_length();
-      if (store_kv->first != parts.begin()->first) {
-        if (prev_size != curr_size) {
-          if (store_kv->first == total_parts) {
-            // This is the last part, ignore it after size calculation
-            object_size += part_metadata->get_content_length();
-            awsetag.add_part_etag(part_metadata->get_md5());
-            continue;
-          }
-          s3_log(S3_LOG_ERROR,
-                 "The part %s size(%zu) seems to be different "
-                 "from previous part size(%zu), Will be "
-                 "destroying the parts\n",
-                 store_kv->first.c_str(), curr_size, prev_size);
-          // Will be deleting complete object along with the part index and
-          // multipart kv
-          set_abort_multipart(true);
-          break;
-        } else {
-          prev_size = curr_size;
+      if (curr_size < MINIMUM_ALLOWED_PART_SIZE &&
+          store_kv->first != total_parts) {
+        s3_log(S3_LOG_ERROR,
+               "The part %s size(%zu) is smaller than minimum "
+               "part size allowed:%u\n",
+               store_kv->first.c_str(), curr_size, MINIMUM_ALLOWED_PART_SIZE);
+        set_s3_error("EntityTooSmall");
+        set_abort_multipart(true);
+        break;
+      }
+
+      if (store_kv->first != parts.begin()->first && prev_size != curr_size) {
+        if (store_kv->first == total_parts) {
+          // This is the last part, ignore it after size calculation
+          object_size += part_metadata->get_content_length();
+          awsetag.add_part_etag(part_metadata->get_md5());
+          continue;
         }
+        s3_log(S3_LOG_ERROR,
+               "The part %s size(%zu) is different "
+               "from previous part size(%zu), Will be "
+               "destroying the parts\n",
+               store_kv->first.c_str(), curr_size, prev_size);
+        // Will be deleting complete object along with the part index and
+        // multipart kv
+        set_s3_error("InvalidObjectState");
+        set_abort_multipart(true);
+        break;
       } else {
         prev_size = curr_size;
       }
@@ -226,13 +306,15 @@ void S3PostCompleteAction::get_parts_successful() {
 
 void S3PostCompleteAction::get_parts_failed() {
   s3_log(S3_LOG_ERROR, "Parts info missing\n");
+  set_s3_error("InternalError");
   send_response_to_s3_client();
 }
 
 void S3PostCompleteAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  object_metadata = std::make_shared<S3ObjectMetadata>(
+  object_metadata = object_metadata_factory->create_object_metadata_obj(
       request, bucket_metadata->get_object_list_index_oid());
+
   if (is_abort_multipart()) {
     next();
   } else {
@@ -253,25 +335,15 @@ void S3PostCompleteAction::save_metadata() {
 
 void S3PostCompleteAction::delete_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  multipart_metadata->remove(
-      std::bind(&S3PostCompleteAction::delete_multipart_successful, this),
-      std::bind(&S3PostCompleteAction::delete_multipart_failed, this));
+  multipart_metadata->remove(std::bind(&S3PostCompleteAction::next, this),
+                             std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3PostCompleteAction::delete_multipart_successful() {
-  s3_log(S3_LOG_DEBUG, "Deleted part metadata\n");
-  next();
-}
-
-void S3PostCompleteAction::delete_multipart_failed() {
-  s3_log(S3_LOG_ERROR, "Delete part metadata failed\n");
-  next();
 }
 
 void S3PostCompleteAction::delete_old_object_if_present() {
   m0_uint128 old_object_oid;
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  post_successful = true;
   old_object_oid = multipart_metadata->get_old_oid();
   if ((old_object_oid.u_lo == 0ULL) && (old_object_oid.u_hi == 0ULL)) {
     next();
@@ -279,7 +351,8 @@ void S3PostCompleteAction::delete_old_object_if_present() {
     s3_log(S3_LOG_DEBUG, "Deleting old object with oid %lu %lu\n",
            old_object_oid.u_hi, old_object_oid.u_lo);
     if (clovis_writer == NULL) {
-      clovis_writer = std::make_shared<S3ClovisWriter>(request, old_object_oid);
+      clovis_writer =
+          clovis_writer_factory->create_clovis_writer(request, old_object_oid);
     } else {
       clovis_writer->set_oid(old_object_oid);
     }
@@ -303,27 +376,16 @@ void S3PostCompleteAction::delete_old_object_failed() {
 
 void S3PostCompleteAction::delete_part_index() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  part_metadata->remove_index(
-      std::bind(&S3PostCompleteAction::delete_part_index_successful, this),
-      std::bind(&S3PostCompleteAction::delete_part_index_failed, this));
+  part_metadata->remove_index(std::bind(&S3PostCompleteAction::next, this),
+                              std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3PostCompleteAction::delete_part_index_successful() {
-  s3_log(S3_LOG_DEBUG, "Deleted part index\n");
-  next();
-}
-
-void S3PostCompleteAction::delete_part_index_failed() {
-  s3_log(S3_LOG_ERROR, "Delete index failed for part info\n");
-  next();
 }
 
 void S3PostCompleteAction::delete_parts() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (is_abort_multipart()) {
-    clovis_writer =
-        std::make_shared<S3ClovisWriter>(request, object_metadata->get_oid());
+    clovis_writer = clovis_writer_factory->create_clovis_writer(
+        request, object_metadata->get_oid());
     clovis_writer->delete_object(
         std::bind(&S3PostCompleteAction::next, this),
         std::bind(&S3PostCompleteAction::delete_parts_failed, this));
@@ -335,6 +397,7 @@ void S3PostCompleteAction::delete_parts() {
 
 void S3PostCompleteAction::delete_parts_failed() {
   s3_log(S3_LOG_DEBUG, "Delete parts info failed.\n");
+  set_s3_error("InternalError");
   send_response_to_s3_client();
 }
 
@@ -395,7 +458,7 @@ bool S3PostCompleteAction::validate_request_body(std::string& xml_str) {
         }
         if (previous_part > std::stoi(partnumber)) {
           // The request doesn't contain part numbers in ascending order
-          request->set_request_error(S3RequestError::InvalidPartOrder);
+          set_s3_error("InvalidPartOrder");
           xmlFreeDoc(document);
           s3_log(S3_LOG_DEBUG,
                  "The XML string doesn't contain parts in ascending order\n");
@@ -417,47 +480,14 @@ bool S3PostCompleteAction::validate_request_body(std::string& xml_str) {
 
 void S3PostCompleteAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  S3RequestError req_state = request->get_request_error();
-  S3PartMetadataState part_state = S3PartMetadataState::empty;
-  if (part_metadata) {
-    part_state = part_metadata->get_state();
-  }
-  if (invalid_request) {
-    S3Error error("MalformedXML", request->get_request_id(),
+
+  if (is_error_state() && !get_s3_error_code().empty()) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata &&
-             (bucket_metadata->get_state() == S3BucketMetadataState::missing)) {
-    // Invalid Bucket Name
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata &&
-             (bucket_metadata->get_state() == S3BucketMetadataState::failed)) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (req_state == S3RequestError::InvalidPartOrder) {
-    S3Error error("InvalidPartOrder", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (req_state == S3RequestError::EntityTooSmall) {
-    S3Error error("EntityTooSmall", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (is_abort_multipart()) {
     S3Error error("InvalidObjectState", request->get_request_id(),
@@ -465,22 +495,7 @@ void S3PostCompleteAction::send_response_to_s3_client() {
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (part_state == S3PartMetadataState::missing_partially) {
-    S3Error error("InvalidPart", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (part_state == S3PartMetadataState::missing) {
-    S3Error error("InvalidPartOrder", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata &&
-             (object_metadata->get_state() == S3ObjectMetadataState::saved) &&
-             multipart_metadata && (multipart_metadata->get_state() !=
-                                    S3ObjectMetadataState::failed)) {
+  } else if (post_successful == true) {
     std::string response;
     std::string object_name = request->get_object_name();
     std::string bucket_name = request->get_bucket_name();
