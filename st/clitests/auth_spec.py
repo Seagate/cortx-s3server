@@ -358,8 +358,36 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("attempted to delete a resource that has attached subordinate entities")
 
+    # Test: create a account s3test1 and try to delete account s3test1 using access
+    # key and secret key of account s3test. Account delete operation should fail.
+    test_msg = "Create account s3test1"
+    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com'}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+    s3test1_root_access_key = account_response_elements['AccessKeyId']
+    s3test1_root_secret_key = account_response_elements['SecretKey']
+
+    test_msg = "Delete account s3test1 using credentials of account s3test should fail."
+    account_args = {'AccountName': 's3test1'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("You are not authorized to perform this operation.")
+
+    # Test: delete account s3test with force option [recursively/forcefully]
     test_msg = "Delete account s3test"
     account_args = {'AccountName': 's3test', 'force': 'true'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    # Use access key and secret key of account s3test1
+    GlobalTestState.root_access_key = s3test1_root_access_key
+    GlobalTestState.root_secret_key = s3test1_root_secret_key
+    _use_root_credentials()
+
+    # Test: delete account without force option
+    test_msg = "Delete account s3test1"
+    account_args = {'AccountName': 's3test1'}
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 

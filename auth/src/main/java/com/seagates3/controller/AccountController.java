@@ -169,6 +169,17 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.noSuchEntity();
         }
 
+        User root;
+        try {
+            root = userDAO.find(account.getName(), "root");
+        } catch (DataAccessException e) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        if (!requestor.getId().equals(root.getId())) {
+            return accountResponseGenerator.unauthorizedOperation();
+        }
+
         boolean force = false;
         if (requestBody.containsKey("force")) {
             force = Boolean.parseBoolean(requestBody.get("force"));

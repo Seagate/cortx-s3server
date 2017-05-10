@@ -61,12 +61,13 @@ public class AccountControllerTest {
     private final UserDAO userDAO;
     private final AccessKeyDAO accessKeyDAO;
     private final RoleDAO roleDAO;
+    private final Requestor requestor;
     private Map<String, String> requestBody = new HashMap<>();
 
     public AccountControllerTest() throws Exception {
         PowerMockito.mockStatic(DAODispatcher.class);
 
-        Requestor requestor = mock(Requestor.class);
+        requestor = mock(Requestor.class);
         requestBody.put("AccountName", "s3test");
         requestBody.put("Email", "testuser@seagate.com");
 
@@ -396,11 +397,12 @@ public class AccountControllerTest {
     }
 
     @Test
-    public void DeleteAccount_AccountExists_ReturnDeleteResponse()
+    public void DeleteAccount_AccountExists_ReturnUnauthorisedResponse()
             throws Exception {
         User[] users = new User[1];
         users[0] = new User();
         users[0].setName("root");
+        users[0].setId("rootxyz");
         AccessKey[] accessKeys = new AccessKey[1];
         accessKeys[0] = mock(AccessKey.class);
         Account account = mock(Account.class);
@@ -408,6 +410,39 @@ public class AccountControllerTest {
         Mockito.when(account.getName()).thenReturn("s3test");
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
+        Mockito.when(requestor.getId()).thenReturn("abcxyz");
+        Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
+        Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc" +
+                "/2010-05-08/\"><Error><Code>UnauthorizedOperation</Code><Message>You " +
+                "are not authorized to perform this operation. Check your IAM policies" +
+                ", and ensure that you are using the correct access keys. </Message>" +
+                "</Error><RequestId>0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accountController.delete();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+    }
+
+    @Test
+    public void DeleteAccount_AccountExists_ReturnDeleteResponse()
+            throws Exception {
+        User[] users = new User[1];
+        users[0] = new User();
+        users[0].setName("root");
+        users[0].setId("rootxyz");
+        AccessKey[] accessKeys = new AccessKey[1];
+        accessKeys[0] = mock(AccessKey.class);
+        Account account = mock(Account.class);
+
+        Mockito.when(account.getName()).thenReturn("s3test");
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
+        Mockito.when(requestor.getId()).thenReturn("rootxyz");
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
 
@@ -435,6 +470,7 @@ public class AccountControllerTest {
         User[] users = new User[2];
         users[0] = new User();
         users[0].setName("root");
+        users[0].setId("rootxyz");
         users[1] = new User();
         users[1].setName("s3user");
 
@@ -446,6 +482,8 @@ public class AccountControllerTest {
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
+        Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
+        Mockito.when(requestor.getId()).thenReturn("rootxyz");
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
         Mockito.doThrow(new DataAccessException("subordinate objects must be deleted first"))
                 .when(accountDAO).deleteOu(account, LDAPUtils.USER_OU);
@@ -473,6 +511,7 @@ public class AccountControllerTest {
         User[] users = new User[1];
         users[0] = new User();
         users[0].setName("root");
+        users[0].setId("rootxyz");
         AccessKey[] accessKeys = new AccessKey[1];
         accessKeys[0] = mock(AccessKey.class);
         Role[] roles = new Role[1];
@@ -482,6 +521,8 @@ public class AccountControllerTest {
         Mockito.when(account.getName()).thenReturn("s3test");
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
+        Mockito.when(requestor.getId()).thenReturn("rootxyz");
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
         Mockito.when(roleDAO.findAll(account, "/")).thenReturn(roles);
