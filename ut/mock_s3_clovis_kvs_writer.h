@@ -30,7 +30,11 @@ class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
   MockS3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
                         std::shared_ptr<ClovisAPI> s3_clovis_api)
       : S3ClovisKVSWriter(req, s3_clovis_api) {}
+  MOCK_METHOD0(get_state, S3ClovisKVSWriterOpState());
   MOCK_METHOD1(get_op_ret_code_for, int(int index));
+  MOCK_METHOD3(create_index, void(std::string index_name,
+                                  std::function<void(void)> on_success,
+                                  std::function<void(void)> on_failed));
   MOCK_METHOD3(delete_index,
                void(struct m0_uint128, std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
@@ -39,6 +43,11 @@ class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
                                     std::function<void(void)> on_failed));
   MOCK_METHOD4(delete_keyval,
                void(struct m0_uint128 oid, std::vector<std::string> keys,
+                    std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed));
+
+  MOCK_METHOD5(put_keyval,
+               void(struct m0_uint128 oid, std::string key, std::string val,
                     std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
 };

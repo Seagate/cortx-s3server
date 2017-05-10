@@ -23,6 +23,7 @@
 #ifndef __S3_SERVER_S3_FACTORY_H__
 #define __S3_SERVER_S3_FACTORY_H__
 
+#include "s3_account_user_index_metadata.h"
 #include "s3_async_buffer_opt.h"
 #include "s3_auth_client.h"
 #include "s3_bucket_metadata.h"
@@ -181,6 +182,18 @@ class S3AuthClientFactory {
       std::shared_ptr<S3RequestObject> request) {
     s3_log(S3_LOG_DEBUG, "S3AuthClientFactory::create_auth_client\n");
     return std::make_shared<S3AuthClient>(request);
+  }
+};
+
+class S3AccountUserIdxMetadataFactory {
+ public:
+  virtual ~S3AccountUserIdxMetadataFactory() {}
+  virtual std::shared_ptr<S3AccountUserIdxMetadata>
+  create_s3_account_user_idx_metadata(std::shared_ptr<S3RequestObject> req) {
+    s3_log(S3_LOG_DEBUG,
+           "S3AccountUserIdxMetadataFactory::create_s3_account_user_idx_"
+           "metadata\n");
+    return std::make_shared<S3AccountUserIdxMetadata>(req);
   }
 };
 

@@ -125,16 +125,16 @@ class S3ClovisKVSWriter {
                     std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisKVSWriter();
 
-  S3ClovisKVSWriterOpState get_state() { return state; }
+  virtual S3ClovisKVSWriterOpState get_state() { return state; }
 
   struct m0_uint128 get_oid() {
     return id;
   }
 
   // async create
-  void create_index(std::string index_name,
-                    std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
+  virtual void create_index(std::string index_name,
+                            std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed);
   void create_index_successful();
   void create_index_failed();
 
@@ -162,9 +162,9 @@ class S3ClovisKVSWriter {
   void put_keyval(std::string index_name, std::string key, std::string val,
                   std::function<void(void)> on_success,
                   std::function<void(void)> on_failed);
-  void put_keyval(struct m0_uint128 oid, std::string key, std::string val,
-                  std::function<void(void)> on_success,
-                  std::function<void(void)> on_failed);
+  virtual void put_keyval(struct m0_uint128 oid, std::string key,
+                          std::string val, std::function<void(void)> on_success,
+                          std::function<void(void)> on_failed);
   void put_keyval_successful();
   void put_keyval_failed();
 
@@ -208,6 +208,7 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValSuccess);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValEmpty);
+  FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexSuccessful);
 };
 
 #endif

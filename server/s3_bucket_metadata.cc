@@ -22,10 +22,17 @@
 #include <string>
 #include "base64.h"
 #include "s3_datetime.h"
+#include "s3_factory.h"
 #include "s3_iem.h"
 #include "s3_uri_to_mero_oid.h"
 
-S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req)
+S3BucketMetadata::S3BucketMetadata(
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
+    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
+    std::shared_ptr<S3AccountUserIdxMetadataFactory>
+        s3_account_user_idx_metadata_factory)
     : request(req), json_parsing_error(false) {
   s3_log(S3_LOG_DEBUG, "Constructor");
   account_name = request->get_account_name();
@@ -34,7 +41,31 @@ S3BucketMetadata::S3BucketMetadata(std::shared_ptr<S3RequestObject> req)
   salted_index_name = get_account_user_index_name();
 
   state = S3BucketMetadataState::empty;
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  if (s3_clovis_apis) {
+    s3_clovis_api = s3_clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
+
+  if (clovis_s3_kvs_reader_factory) {
+    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
+  } else {
+    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+  }
+
+  if (clovis_s3_kvs_writer_factory) {
+    clovis_kvs_writer_factory = clovis_s3_kvs_writer_factory;
+  } else {
+    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+  }
+
+  if (s3_account_user_idx_metadata_factory) {
+    account_user_index_metadata_factory = s3_account_user_idx_metadata_factory;
+  } else {
+    account_user_index_metadata_factory =
+        std::make_shared<S3AccountUserIdxMetadataFactory>();
+  }
+
   bucket_policy = "";
 
   collision_salt = "index_salt_";
@@ -158,8 +189,11 @@ void S3BucketMetadata::load(std::function<void(void)> on_success,
 void S3BucketMetadata::fetch_bucket_list_index_oid() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  account_user_index_metadata =
-      std::make_shared<S3AccountUserIdxMetadata>(request);
+  if (!account_user_index_metadata) {
+    account_user_index_metadata =
+        account_user_index_metadata_factory
+            ->create_s3_account_user_idx_metadata(request);
+  }
   account_user_index_metadata->load(
       std::bind(&S3BucketMetadata::fetch_bucket_list_index_oid_success, this),
       std::bind(&S3BucketMetadata::fetch_bucket_list_index_oid_failed, this));
@@ -208,8 +242,8 @@ void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
 void S3BucketMetadata::load_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  clovis_kv_reader =
-      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
+  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+      request, s3_clovis_api);
   clovis_kv_reader->get_keyval(
       bucket_list_index_oid, bucket_name,
       std::bind(&S3BucketMetadata::load_bucket_info_successful, this),
@@ -262,7 +296,7 @@ void S3BucketMetadata::save(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
   state = S3BucketMetadataState::saving;
-  if (bucket_list_index_oid.u_lo == 0ULL ||
+  if (bucket_list_index_oid.u_lo == 0ULL &&
       bucket_list_index_oid.u_hi == 0ULL) {
     // If there is no index oid then read it
     fetch_bucket_list_index_oid();
@@ -276,8 +310,8 @@ void S3BucketMetadata::create_bucket_list_index() {
 
   state = S3BucketMetadataState::missing;
   if (collision_attempt_count == 0) {
-    clovis_kv_writer =
-        std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
   }
   clovis_kv_writer->create_index(
       salted_index_name,
@@ -309,12 +343,11 @@ void S3BucketMetadata::create_bucket_list_index_failed() {
 }
 
 void S3BucketMetadata::handle_collision() {
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists &&
-      collision_attempt_count < MAX_COLLISION_RETRY_COUNT) {
+  if (collision_attempt_count < MAX_COLLISION_RETRY_COUNT) {
     s3_log(S3_LOG_INFO, "Index ID collision happened for index %s\n",
            salted_index_name.c_str());
     // Handle Collision
-    regenerate_new_oid();
+    regenerate_new_index_name();
     collision_attempt_count++;
     if (collision_attempt_count > 5) {
       s3_log(S3_LOG_INFO, "Index ID collision happened %d times for index %s\n",
@@ -334,15 +367,18 @@ void S3BucketMetadata::handle_collision() {
   }
 }
 
-void S3BucketMetadata::regenerate_new_oid() {
+void S3BucketMetadata::regenerate_new_index_name() {
   salted_index_name = get_account_user_index_name() + collision_salt +
                       std::to_string(collision_attempt_count);
 }
 
 void S3BucketMetadata::save_bucket_list_index_oid() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  account_user_index_metadata =
-      std::make_shared<S3AccountUserIdxMetadata>(request);
+  if (!account_user_index_metadata) {
+    account_user_index_metadata =
+        account_user_index_metadata_factory
+            ->create_s3_account_user_idx_metadata(request);
+  }
   account_user_index_metadata->set_bucket_list_index_oid(bucket_list_index_oid);
 
   account_user_index_metadata->save(
@@ -379,8 +415,10 @@ void S3BucketMetadata::save_bucket_info() {
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = request->get_account_id();
 
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
   clovis_kv_writer->put_keyval(
       bucket_list_index_oid, bucket_name, this->to_json(),
       std::bind(&S3BucketMetadata::save_bucket_info_successful, this),
@@ -423,8 +461,10 @@ void S3BucketMetadata::remove(std::function<void(void)> on_success,
 void S3BucketMetadata::remove_bucket_info() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
   clovis_kv_writer->delete_keyval(
       bucket_list_index_oid, bucket_name,
       std::bind(&S3BucketMetadata::remove_bucket_info_successful, this),

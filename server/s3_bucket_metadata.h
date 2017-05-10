@@ -47,6 +47,11 @@ enum class S3BucketMetadataState {
   failed
 };
 
+// Forward declarations
+class S3ClovisKVSReaderFactory;
+class S3ClovisKVSWriterFactory;
+class S3AccountUserIdxMetadataFactory;
+
 class S3BucketMetadata {
   // Holds mainly system-defined metadata (creation date etc)
   // Partially supported on need bases, some of these are placeholders
@@ -79,6 +84,11 @@ class S3BucketMetadata {
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+
+  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
+  std::shared_ptr<S3AccountUserIdxMetadataFactory>
+      account_user_index_metadata_factory;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -129,10 +139,18 @@ class S3BucketMetadata {
   // Any other validations we want to do on metadata
   void validate();
   void handle_collision();
-  void regenerate_new_oid();
+  void regenerate_new_index_name();
 
  public:
-  S3BucketMetadata(std::shared_ptr<S3RequestObject> req);
+  S3BucketMetadata(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> s3_clovis_apii = nullptr,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =
+          nullptr,
+      std::shared_ptr<S3AccountUserIdxMetadataFactory>
+          s3_account_user_idx_metadata_factory = nullptr);
 
   std::string get_bucket_name();
   std::string get_creation_time();
@@ -190,6 +208,64 @@ class S3BucketMetadata {
 
   // returns 0 on success, -1 on parsing error
   int from_json(std::string content);
+
+  // Google tests
+  FRIEND_TEST(S3BucketMetadataTest, ConstructorTest);
+  FRIEND_TEST(S3BucketMetadataTest, GetSystemAttributesTest);
+  FRIEND_TEST(S3BucketMetadataTest, GetSetOIDsPolicyAndLocation);
+  FRIEND_TEST(S3BucketMetadataTest, DeletePolicy);
+  FRIEND_TEST(S3BucketMetadataTest, AddSystemAttribute);
+  FRIEND_TEST(S3BucketMetadataTest, AddUserDefinedAttribute);
+  FRIEND_TEST(S3BucketMetadataTest, Load);
+  FRIEND_TEST(S3BucketMetadataTest, FetchBucketListIndexOid);
+  FRIEND_TEST(S3BucketMetadataTest,
+              FetchBucketListIndexOIDSuccessStateIsSaving);
+  FRIEND_TEST(S3BucketMetadataTest,
+              FetchBucketListIndexOIDSuccessStateIsFetching);
+  FRIEND_TEST(S3BucketMetadataTest,
+              FetchBucketListIndexOIDSuccessStateIsDeleting);
+  FRIEND_TEST(S3BucketMetadataTest, FetchBucketListIndexOIDFailedState);
+  FRIEND_TEST(S3BucketMetadataTest, FetchBucketListIndexOIDFailedStateIsSaving);
+  FRIEND_TEST(S3BucketMetadataTest,
+              FetchBucketListIndexOIDFailedStateIsFetching);
+  FRIEND_TEST(S3BucketMetadataTest,
+              FetchBucketListIndexOIDFailedIndexMissingStateSaved);
+  FRIEND_TEST(S3BucketMetadataTest,
+              FetchBucketListIndexOIDFailedIndexFailedStateIsFetching);
+  FRIEND_TEST(S3BucketMetadataTest, FetchBucketListIndexOIDFailedIndexFailed);
+  FRIEND_TEST(S3BucketMetadataTest, LoadBucketInfo);
+  FRIEND_TEST(S3BucketMetadataTest, SetBucketPolicy);
+  FRIEND_TEST(S3BucketMetadataTest, SetAcl);
+  FRIEND_TEST(S3BucketMetadataTest, LoadBucketInfoFailedJsonParsingFailed);
+  FRIEND_TEST(S3BucketMetadataTest, LoadBucketInfoFailedMetadataMissing);
+  FRIEND_TEST(S3BucketMetadataTest, LoadBucketInfoFailedMetadataFailed);
+  FRIEND_TEST(S3BucketMetadataTest, SaveMeatdataMissingIndexOID);
+  FRIEND_TEST(S3BucketMetadataTest, SaveMeatdataIndexOIDPresent);
+  FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexCollisionCount0);
+  FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexCollisionCount1);
+  FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexSuccessful);
+  FRIEND_TEST(S3BucketMetadataTest,
+              CreateBucketListIndexFailedCollisionHappened);
+  FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexFailed);
+  FRIEND_TEST(S3BucketMetadataTest, HandleCollision);
+  FRIEND_TEST(S3BucketMetadataTest, HandleCollisionMaxAttemptExceeded);
+  FRIEND_TEST(S3BucketMetadataTest, RegeneratedNewIndexName);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOid);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOidSucessfulStateSaving);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOidSucessful);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOIDFailed);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfo);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfoSuccess);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfoFailed);
+  FRIEND_TEST(S3BucketMetadataTest, RemovePresentMetadata);
+  FRIEND_TEST(S3BucketMetadataTest, RemoveAfterFetchingBucketListIndexOID);
+  FRIEND_TEST(S3BucketMetadataTest, RemoveBucketInfo);
+  FRIEND_TEST(S3BucketMetadataTest, RemoveBucketInfoSuccessful);
+  FRIEND_TEST(S3BucketMetadataTest, RemoveBucketInfoFailed);
+  FRIEND_TEST(S3BucketMetadataTest, CreateDefaultAcl);
+  FRIEND_TEST(S3BucketMetadataTest, ToJson);
+  FRIEND_TEST(S3BucketMetadataTest, FromJson);
+  FRIEND_TEST(S3BucketMetadataTest, GetEncodedBucketAcl);
 };
 
 #endif

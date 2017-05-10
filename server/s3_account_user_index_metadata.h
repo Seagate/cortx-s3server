@@ -103,14 +103,14 @@ class S3AccountUserIdxMetadata {
   void create_root_account_user_index();
 
   // Load Account user info(bucket list oid)
-  void load(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+  virtual void load(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void load_successful();
   void load_failed();
 
   // Save Account user info(bucket list oid)
-  void save(std::function<void(void)> on_success,
-            std::function<void(void)> on_failed);
+  virtual void save(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
   void save_successful();
   void save_failed();
 
@@ -120,7 +120,7 @@ class S3AccountUserIdxMetadata {
   void remove_successful();
   void remove_failed();
 
-  S3AccountUserIdxMetadataState get_state() { return state; }
+  virtual S3AccountUserIdxMetadataState get_state() { return state; }
 
   // Streaming to/from json
   std::string to_json();

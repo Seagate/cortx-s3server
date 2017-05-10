@@ -24,6 +24,7 @@
 
 #include <memory>
 
+#include "mock_account_user_index_metadata.h"
 #include "mock_s3_async_buffer_opt_container.h"
 #include "mock_s3_auth_client.h"
 #include "mock_s3_bucket_metadata.h"
@@ -259,6 +260,24 @@ class MockS3AuthClientFactory : public S3AuthClientFactory {
   }
 
   std::shared_ptr<MockS3AuthClient> mock_auth_client;
+};
+
+class MockS3AccountUserIdxMetadataFactory
+    : public S3AccountUserIdxMetadataFactory {
+ public:
+  MockS3AccountUserIdxMetadataFactory(std::shared_ptr<S3RequestObject> req)
+      : S3AccountUserIdxMetadataFactory() {
+    mock_account_user_index_metadata =
+        std::make_shared<MockS3AccountUserIdxMetadata>(req);
+  }
+
+  std::shared_ptr<S3AccountUserIdxMetadata> create_s3_account_user_idx_metadata(
+      std::shared_ptr<S3RequestObject> req) {
+    return mock_account_user_index_metadata;
+  }
+
+  std::shared_ptr<MockS3AccountUserIdxMetadata>
+      mock_account_user_index_metadata;
 };
 
 #endif
