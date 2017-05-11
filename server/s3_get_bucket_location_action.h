@@ -12,8 +12,8 @@
  * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
- *
- * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
+ * Original author:  Kaustubh Deorukhkar  <kaustubh.deorukhkar@seagate.com>
+ * Original author:  Priya Saboo  <priya.chhagan@seagate.com>
  * Original creation date: 1-Oct-2015
  */
 
@@ -29,14 +29,25 @@
 
 class S3GetBucketlocationAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
  public:
-  S3GetBucketlocationAction(std::shared_ptr<S3RequestObject> req);
+  S3GetBucketlocationAction(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
 
-  void get_metadata();
-  void send_response_to_s3_client();
-};
+  virtual void fetch_bucket_info();
+  virtual void fetch_bucket_info_failed();
+  virtual void send_response_to_s3_client();
 
+  FRIEND_TEST(S3GetBucketLocationActionTest, BucketMetadataMustNotBeNull);
+  FRIEND_TEST(S3GetBucketLocationActionTest, FetchBucketInfoFailedWithMissing);
+  FRIEND_TEST(S3GetBucketLocationActionTest, FetchBucketInfoFailedWithFailed);
+  FRIEND_TEST(S3GetBucketLocationActionTest, SendResponseWhenShuttingDown);
+  FRIEND_TEST(S3GetBucketLocationActionTest, SendErrorResponse);
+  FRIEND_TEST(S3GetBucketLocationActionTest, SendAnyFailedResponse);
+  FRIEND_TEST(S3GetBucketLocationActionTest, SendAnySuccessResponse);
+};
 #endif
