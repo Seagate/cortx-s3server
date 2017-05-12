@@ -23,6 +23,7 @@
 #ifndef __S3_SERVER_S3_AUTH_RESPONSE_ERROR_H__
 #define __S3_SERVER_S3_AUTH_RESPONSE_ERROR_H__
 
+#include <gtest/gtest_prod.h>
 #include <string>
 
 class S3AuthResponseError {
@@ -42,6 +43,12 @@ class S3AuthResponseError {
   const std::string& get_code();
   const std::string& get_message();
   const std::string& get_request_id();
+
+  FRIEND_TEST(S3AuthResponseErrorTest, ConstructorTest);
+  FRIEND_TEST(S3AuthResponseErrorTest, ValidateMustFailForEmptyXML);
+  FRIEND_TEST(S3AuthResponseErrorTest, ValidateMustFailForInvalidXML);
+  FRIEND_TEST(S3AuthResponseErrorTest, ValidateMustFailForEmptyErrorCode);
+  FRIEND_TEST(S3AuthResponseErrorTest, ValidateMustFailForMissingErrorCode);
 };
 
 #endif
