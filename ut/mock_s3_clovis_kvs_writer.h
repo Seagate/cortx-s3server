@@ -35,6 +35,9 @@ class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
   MOCK_METHOD3(create_index, void(std::string index_name,
                                   std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed));
+  MOCK_METHOD3(create_index_with_oid,
+               void(struct m0_uint128, std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed));
   MOCK_METHOD3(delete_index,
                void(struct m0_uint128, std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));

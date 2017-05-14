@@ -366,8 +366,7 @@ void S3ObjectMetadata::create_bucket_index_failed() {
 }
 
 void S3ObjectMetadata::collision_detected() {
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists &&
-      tried_count < MAX_COLLISION_RETRY_COUNT) {
+  if (tried_count < MAX_COLLISION_RETRY_COUNT) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for index %s\n",
            index_name.c_str());
     // Handle Collision
@@ -402,7 +401,6 @@ void S3ObjectMetadata::create_new_oid() {
 
 void S3ObjectMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string key;
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
   system_defined_attribute["Owner-User-id"] = user_id;
@@ -420,7 +418,6 @@ void S3ObjectMetadata::save_metadata() {
 void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string key;
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
   save_metadata();

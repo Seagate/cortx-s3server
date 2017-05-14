@@ -138,9 +138,9 @@ class S3ClovisKVSWriter {
   void create_index_successful();
   void create_index_failed();
 
-  void create_index_with_oid(struct m0_uint128 idx_id,
-                             std::function<void(void)> on_success,
-                             std::function<void(void)> on_failed);
+  virtual void create_index_with_oid(struct m0_uint128 idx_id,
+                                     std::function<void(void)> on_success,
+                                     std::function<void(void)> on_failed);
 
   // async delete
   virtual void delete_index(struct m0_uint128 idx_oid,

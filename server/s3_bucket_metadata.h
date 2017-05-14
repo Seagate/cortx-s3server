@@ -22,6 +22,7 @@
 #ifndef __S3_SERVER_S3_BUCKET_METADATA_H__
 #define __S3_SERVER_S3_BUCKET_METADATA_H__
 
+#include <gtest/gtest_prod.h>
 #include <functional>
 #include <map>
 #include <memory>

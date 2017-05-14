@@ -22,6 +22,7 @@
 #ifndef __S3_SERVER_S3_OBJECT_METADATA_H__
 #define __S3_SERVER_S3_OBJECT_METADATA_H__
 
+#include <gtest/gtest_prod.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -216,6 +217,48 @@ class S3ObjectMetadata {
   // returns 0 on success, -1 on parsing error
   virtual int from_json(std::string content);
   virtual void setacl(std::string& input_acl_str);
+
+  // Google tests
+  FRIEND_TEST(S3ObjectMetadataTest, ConstructorTest);
+  FRIEND_TEST(S3MultipartObjectMetadataTest, ConstructorTest);
+  FRIEND_TEST(S3ObjectMetadataTest, GetSet);
+  FRIEND_TEST(S3MultipartObjectMetadataTest, GetUserIdUplodIdName);
+  FRIEND_TEST(S3ObjectMetadataTest, GetSetOIDsPolicyAndLocation);
+  FRIEND_TEST(S3ObjectMetadataTest, SetAcl);
+  FRIEND_TEST(S3ObjectMetadataTest, AddSystemAttribute);
+  FRIEND_TEST(S3ObjectMetadataTest, AddUserDefinedAttribute);
+  FRIEND_TEST(S3ObjectMetadataTest, Load);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessInvalidJson);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadSuccessfulInvalidJson);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedJsonParsingFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedMetadataMissing);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedMetadataFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveMeatdataMissingIndexOID);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveMeatdataIndexOIDPresent);
+  FRIEND_TEST(S3ObjectMetadataTest, CreateBucketIndex);
+  FRIEND_TEST(S3MultipartObjectMetadataTest, CreateBucketIndexSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, CreateBucketIndexSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexFailed);
+  FRIEND_TEST(S3ObjectMetadataTest,
+              CreateBucketListIndexFailedCollisionHappened);
+  FRIEND_TEST(S3ObjectMetadataTest, CreateBucketListIndexFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, CollisionDetected);
+  FRIEND_TEST(S3ObjectMetadataTest, CollisionDetectedMaxAttemptExceeded);
+  FRIEND_TEST(S3ObjectMetadataTest, CreateNewOid);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataWithoutParam);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataWithParam);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataSuccess);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, Remove);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, CreateDefaultAcl);
+  FRIEND_TEST(S3ObjectMetadataTest, ToJson);
+  FRIEND_TEST(S3ObjectMetadataTest, FromJson);
+  FRIEND_TEST(S3MultipartObjectMetadataTest, FromJson);
+  FRIEND_TEST(S3ObjectMetadataTest, GetEncodedBucketAcl);
 };
 
 #endif
