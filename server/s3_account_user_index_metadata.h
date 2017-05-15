@@ -24,11 +24,16 @@
 
 #include <string>
 
+#include "gtest/gtest_prod.h"
 #include "s3_bucket_acl.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_log.h"
 #include "s3_request_object.h"
+
+// Forward declarations
+class S3ClovisKVSReaderFactory;
+class S3ClovisKVSWriterFactory;
 
 enum class S3AccountUserIdxMetadataState {
   empty,  // Initial state, no lookup done
@@ -67,6 +72,8 @@ class S3AccountUserIdxMetadata {
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -83,7 +90,13 @@ class S3AccountUserIdxMetadata {
   }
 
  public:
-  S3AccountUserIdxMetadata(std::shared_ptr<S3RequestObject> req);
+  S3AccountUserIdxMetadata(
+      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> s3_clovis_apii = nullptr,
+      std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
+          nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =
+          nullptr);
 
   std::string get_account_name();
   std::string get_account_id();
@@ -127,6 +140,23 @@ class S3AccountUserIdxMetadata {
   std::string to_json();
   // returns 0 on success, -1 on parsing error
   int from_json(std::string content);
+
+  // For Google mocks
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, Constructor);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, Load);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadSuccessfulJsonError);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadFailed);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadFailedMissing);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, Save);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveSuccessful);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveFailed);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, Remove);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveSuccessful);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, ToJson);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, FromJson);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, FromJsonError);
 };
 
 #endif

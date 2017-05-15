@@ -14,6 +14,7 @@
  * http://www.seagate.com/contact
  *
  * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
+ * Author:  Abrarahmed Momin   <abrar.habib@seagate.com>
  * Original creation date: 20-July-2016
  */
 
@@ -22,12 +23,16 @@
 #include <string>
 #include "base64.h"
 #include "s3_datetime.h"
+#include "s3_factory.h"
 #include "s3_iem.h"
 
 extern struct m0_uint128 root_account_user_index_oid;
 
 S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(
-    std::shared_ptr<S3RequestObject> req)
+    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
+    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   s3_log(S3_LOG_DEBUG, "Constructor");
 
@@ -37,7 +42,22 @@ S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(
   user_id = request->get_user_id();
   bucket_list_index_oid = {0ULL, 0ULL};
   state = S3AccountUserIdxMetadataState::empty;
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+
+  if (s3_clovis_apis) {
+    s3_clovis_api = s3_clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
+  if (clovis_s3_kvs_reader_factory) {
+    clovis_kvs_reader_factory = clovis_s3_kvs_reader_factory;
+  } else {
+    clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+  }
+  if (clovis_s3_kvs_writer_factory) {
+    clovis_kvs_writer_factory = clovis_s3_kvs_writer_factory;
+  } else {
+    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+  }
 }
 
 std::string S3AccountUserIdxMetadata::get_account_name() {
@@ -67,8 +87,8 @@ void S3AccountUserIdxMetadata::load(std::function<void(void)> on_success,
   // Mark missing as we initiate fetch, in case it fails to load due to missing.
   state = S3AccountUserIdxMetadataState::missing;
 
-  clovis_kv_reader =
-      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
+  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+      request, s3_clovis_api);
   clovis_kv_reader->get_keyval(
       root_account_user_index_oid, get_account_user_index_name(),
       std::bind(&S3AccountUserIdxMetadata::load_successful, this),
@@ -124,9 +144,8 @@ void S3AccountUserIdxMetadata::save(std::function<void(void)> on_success,
 
   // Mark missing as we initiate write, in case it fails to write.
   state = S3AccountUserIdxMetadataState::missing;
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
-
+  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+      request, s3_clovis_api);
   clovis_kv_writer->put_keyval(
       root_account_user_index_oid, get_account_user_index_name(),
       this->to_json(),
@@ -162,8 +181,8 @@ void S3AccountUserIdxMetadata::remove(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+      request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(
       root_account_user_index_oid, get_account_user_index_name(),
       std::bind(&S3AccountUserIdxMetadata::remove_successful, this),
@@ -217,6 +236,7 @@ int S3AccountUserIdxMetadata::from_json(std::string content) {
   Json::Value root;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), root);
+
   if (!parsingSuccessful ||
       s3_fi_is_enabled("account_user_idx_metadata_corrupted")) {
     s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
