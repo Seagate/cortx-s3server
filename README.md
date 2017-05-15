@@ -63,15 +63,26 @@ needs to be executed only once.
 
 The `./rebuildall.sh --no-mero-rpm` command will build third party libs, S3
 server, Auth server, UTs etc. It will also install S3 server, Auth server &
-third party libs at `/opt/seagate` location. Note the option `--no-mero-rpm`
-passed to the command. It informs the script that mero source was built
-and mero libs from the source code location would be used. `--no-mero-build`
-can be used to skip building mero, by default mero will be built inside
-third_party. Normally third party libs needs to be built only once after fresh
-repo clone. To skip building third party libs on subsequent runs of
+third party libs at `/opt/seagate` location.
+
+Note the option `--no-mero-rpm` passed to the command. It informs the script that
+mero source was built and mero libs from the source code location would be used.
+If this option is absent, mero libs are used from mero rpm installed on system.
+
+`--no-mero-build` can be used to skip (re)building mero, by default mero will be
+built inside third_party and cached to location /usr/local/seagate/mero. It also
+indicates that previously built mero is cached inside /usr/local/seagate/mero
+and will be used in current build. If current third_party/mero revision does not
+match with previous revision cached in /usr/local/seagate, script will report to
+rebuild with mero.
+
+Normally third party libs needs to be built only once
+after fresh repo clone. To skip building third party libs on subsequent runs of
 `./rebuildall.sh`,use `--no-thirdparty-build` option.
+`--no-thirdparty-build` option indicates that previously built third_party libs
+are present in /usr/local/seagate and will be used in current build.
 ```sh
-./rebuildall.sh --no-mero-rpm --no-thirdparty-build
+./rebuildall.sh --no-mero-rpm --no-thirdparty-build --no-mero-build
 ```
 
 Steps for Release environment:
@@ -79,7 +90,7 @@ Make sure mero rpms are installed on the build machine before executing
 below commands.
 ```sh
 ./refresh_thirdparty.sh
-./rebuildall.sh
+./rebuildall.sh --no-mero-build
 ```
 
 ## How to run auth server (this current assumes all dependencies are on same local VM)

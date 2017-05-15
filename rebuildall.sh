@@ -79,6 +79,7 @@ then
 fi
 
 # Used to store third_party build artifacts
+S3_SRC_DIR=`pwd`
 SEAGATE_SRC=/usr/local/seagate
 CURRENT_USER=`whoami`
 USE_SUDO=
@@ -114,12 +115,50 @@ fi
 # We copy generated source to server for inline compilation.
 cp ${SEAGATE_SRC}/jsoncpp/jsoncpp.cc server/jsoncpp.cc
 
+MERO_SRC_DIR=`pwd`/third_party/mero
 if [ $no_mero_build -eq 0 ]
 then
   cd third_party
   ./build_mero.sh
-  cd ..
+  # After build, always copy to SEAGATE_SRC so we can reuse build in future runs
+  $USE_SUDO rm -rf $SEAGATE_SRC/mero
+  $USE_SUDO cp -R mero $SEAGATE_SRC/
+  cd mero
+  current_mero_rev=`git rev-parse HEAD`
+  $USE_SUDO echo "$current_mero_rev" > $SEAGATE_SRC/cached_mero.git.rev
+  $USE_SUDO chmod 0444 $SEAGATE_SRC/cached_mero.git.rev
+  cd $S3_SRC_DIR
+else
+  # Mero build not requested
+  # no_mero_rpm and no_mero_build = use from SEAGATE_SRC if available
+  # Check if we can reuse older mero build in SEAGATE_SRC else ask build again
+  if [ $no_mero_rpm -eq 1 ]
+  then
+    if [ ! -e $SEAGATE_SRC/mero ]
+    then
+      echo "Earlier mero build not cached. Please run WITHOUT --no-mero-build."
+      exit 1
+    fi
+
+    # Check cached mero version
+    cd third_party/mero
+    current_mero_rev=`git rev-parse HEAD` || echo "Mero not checked out at `pwd`"
+    cd $S3_SRC_DIR
+    cached_mero_rev=`cat $SEAGATE_SRC/cached_mero.git.rev` || echo "Mero not cached at $SEAGATE_SRC"
+
+    if [ "$current_mero_rev" != "$cached_mero_rev" ]
+    then
+      echo "Cached mero build is not latest. Please run WITHOUT --no-mero-build."
+      exit 1
+    fi
+
+    # cached version can be reused, copy build files (*.o/libs) to source location
+    # as starting mero inplace insource only works from original build location.
+    echo "Sync mero binaries from $SEAGATE_SRC/mero to third_party/mero..."
+    $USE_SUDO rsync -azu $SEAGATE_SRC/mero/ third_party/mero
+  fi
 fi
+echo "Using MERO_SRC_DIR = $MERO_SRC_DIR..."
 
 if [ $no_mero_rpm -eq 0 ]
 then
@@ -129,9 +168,9 @@ then
   MERO_EXTRA_LIB_="MERO_EXTRA_LIB=/usr/lib64/"
 else
   # use mero libs from source code
-  MERO_INC_="MERO_INC=`pwd`/third_party/mero/"
-  MERO_LIB_="MERO_LIB=`pwd`/third_party/mero/mero/.libs/"
-  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=`pwd`/third_party/mero/extra-libs/gf-complete/src/.libs/"
+  MERO_INC_="MERO_INC=$MERO_SRC_DIR/"
+  MERO_LIB_="MERO_LIB=$MERO_SRC_DIR/mero/.libs/"
+  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=$MERO_SRC_DIR/extra-libs/gf-complete/src/.libs/"
 fi
 
 if [ $no_clean_build -eq 0 ]
