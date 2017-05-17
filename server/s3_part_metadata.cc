@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include "s3_datetime.h"
+#include "s3_factory.h"
 #include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_part_metadata.h"
@@ -63,21 +64,49 @@ void S3PartMetadata::initialize(std::string uploadid, int part_num) {
       "";
 }
 
-S3PartMetadata::S3PartMetadata(std::shared_ptr<S3RequestObject> req,
-                               std::string uploadid, int part_num)
+S3PartMetadata::S3PartMetadata(
+    std::shared_ptr<S3RequestObject> req, std::string uploadid, int part_num,
+    std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : request(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   initialize(uploadid, part_num);
   part_index_name_oid = {0ULL, 0ULL};
+
+  if (kv_reader_factory) {
+    clovis_kv_reader_factory = kv_reader_factory;
+  } else {
+    clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+  }
+
+  if (kv_writer_factory) {
+    clovis_kv_writer_factory = kv_writer_factory;
+  } else {
+    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+  }
 }
 
-S3PartMetadata::S3PartMetadata(std::shared_ptr<S3RequestObject> req,
-                               struct m0_uint128 oid, std::string uploadid,
-                               int part_num)
+S3PartMetadata::S3PartMetadata(
+    std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
+    std::string uploadid, int part_num,
+    std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
+    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : request(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   initialize(uploadid, part_num);
   part_index_name_oid = oid;
+
+  if (kv_reader_factory) {
+    clovis_kv_reader_factory = kv_reader_factory;
+  } else {
+    clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
+  }
+
+  if (kv_writer_factory) {
+    clovis_kv_writer_factory = kv_writer_factory;
+  } else {
+    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+  }
 }
 
 std::string S3PartMetadata::get_object_name() { return object_name; }
@@ -145,8 +174,9 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  clovis_kv_reader =
-      std::make_shared<S3ClovisKVSReader>(request, s3_clovis_api);
+  clovis_kv_reader = clovis_kv_reader_factory->create_clovis_kvs_reader(
+      request, s3_clovis_api);
+
   clovis_kv_reader->get_keyval(
       part_index_name_oid, str_part_num,
       std::bind(&S3PartMetadata::load_successful, this),
@@ -211,8 +241,9 @@ void S3PartMetadata::create_part_index() {
   // Mark missing as we initiate write, in case it fails to write.
   state = S3PartMetadataState::missing;
 
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+      request, s3_clovis_api);
+
   clovis_kv_writer->create_index(
       index_name,
       std::bind(&S3PartMetadata::create_part_index_successful, this),
@@ -248,13 +279,12 @@ void S3PartMetadata::create_part_index_failed() {
 
 void S3PartMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  std::string index_name;
-  std::string key;
   // Set up system attributes
   system_defined_attribute["Upload-ID"] = upload_id;
-
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
   clovis_kv_writer->put_keyval(
       get_part_index_name(), part_number, this->to_json(),
       std::bind(&S3PartMetadata::save_metadata_successful, this),
@@ -287,8 +317,10 @@ void S3PartMetadata::remove(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, "Deleting part info for part = %s\n",
          part_removal.c_str());
 
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
   clovis_kv_writer->delete_keyval(
       part_index_name_oid, part_removal,
       std::bind(&S3PartMetadata::remove_successful, this),
@@ -314,9 +346,10 @@ void S3PartMetadata::remove_index(std::function<void(void)> on_success,
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
-
-  clovis_kv_writer =
-      std::make_shared<S3ClovisKVSWriter>(request, s3_clovis_api);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
   clovis_kv_writer->delete_index(
       part_index_name_oid,
       std::bind(&S3PartMetadata::remove_index_successful, this),
@@ -357,7 +390,6 @@ std::string S3PartMetadata::to_json() {
   }
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
-  ;
 }
 
 int S3PartMetadata::from_json(std::string content) {
@@ -394,8 +426,7 @@ void S3PartMetadata::regenerate_new_indexname() {
 }
 
 void S3PartMetadata::handle_collision() {
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists &&
-      collision_attempt_count < MAX_COLLISION_RETRY_COUNT) {
+  if (collision_attempt_count < MAX_COLLISION_RETRY_COUNT) {
     s3_log(S3_LOG_INFO, "Object ID collision happened for index %s\n",
            index_name.c_str());
     // Handle Collision

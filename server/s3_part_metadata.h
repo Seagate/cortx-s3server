@@ -24,6 +24,7 @@
 #ifndef __S3_SERVER_S3_PART_METADATA_H__
 #define __S3_SERVER_S3_PART_METADATA_H__
 
+#include <gtest/gtest_prod.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -45,6 +46,10 @@ enum class S3PartMetadataState {
   index_deleted,      // store deleted
   failed
 };
+
+// Forward declarations
+class S3ClovisKVSReaderFactory;
+class S3ClovisKVSWriterFactory;
 
 class S3PartMetadata {
   // Holds system-defined metadata (creation date etc)
@@ -85,6 +90,9 @@ class S3PartMetadata {
   // `true` in case of json parsing failure
   bool json_parsing_error;
 
+  std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kv_reader_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+
  private:
   // Any validations we want to do on metadata
   void validate();
@@ -94,10 +102,17 @@ class S3PartMetadata {
   void regenerate_new_indexname();
 
  public:
-  S3PartMetadata(std::shared_ptr<S3RequestObject> req, std::string uploadid,
-                 int part_num);
-  S3PartMetadata(std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
-                 std::string uploadid, int part_num);
+  S3PartMetadata(
+      std::shared_ptr<S3RequestObject> req, std::string uploadid, int part_num,
+      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
+
+  S3PartMetadata(
+      std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
+      std::string uploadid, int part_num,
+      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
+
   std::string get_part_index_name() {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;
   }
@@ -113,8 +128,6 @@ class S3PartMetadata {
   virtual void set_md5(std::string md5);
   virtual std::string get_md5();
   std::string get_object_name();
-  std::string get_user_id();
-  std::string get_user_name();
   std::string get_last_modified();
   std::string get_last_modified_gmt();
   std::string get_last_modified_iso();
@@ -163,6 +176,39 @@ class S3PartMetadata {
 
   // returns 0 on success, -1 on parsing error
   virtual int from_json(std::string content);
+  // Google tests
+  FRIEND_TEST(S3PartMetadataTest, ConstructorTest);
+  FRIEND_TEST(S3PartMetadataTest, GetSet);
+  FRIEND_TEST(S3PartMetadataTest, SetAcl);
+  FRIEND_TEST(S3PartMetadataTest, AddSystemAttribute);
+  FRIEND_TEST(S3PartMetadataTest, AddUserDefinedAttribute);
+  FRIEND_TEST(S3PartMetadataTest, Load);
+  FRIEND_TEST(S3PartMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3PartMetadataTest, LoadSuccessInvalidJson);
+  FRIEND_TEST(S3PartMetadataTest, LoadPartInfoFailedJsonParsingFailed);
+  FRIEND_TEST(S3PartMetadataTest, LoadPartInfoFailedMetadataMissing);
+  FRIEND_TEST(S3PartMetadataTest, LoadPartInfoFailedMetadataFailed);
+  FRIEND_TEST(S3PartMetadataTest, SaveMetadata);
+  FRIEND_TEST(S3PartMetadataTest, SaveMetadataSuccessful);
+  FRIEND_TEST(S3PartMetadataTest, SaveMetadataFailed);
+  FRIEND_TEST(S3PartMetadataTest, CreateIndex);
+  FRIEND_TEST(S3PartMetadataTest, CreatePartIndex);
+  FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessful);
+  FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata);
+  FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex);
+  FRIEND_TEST(S3PartMetadataTest, CreatePartIndexFailedCollisionHappened);
+  FRIEND_TEST(S3PartMetadataTest, CreateBucketListIndexFailed);
+  FRIEND_TEST(S3PartMetadataTest, CollisionDetected);
+  FRIEND_TEST(S3PartMetadataTest, CollisionDetectedMaxAttemptExceeded);
+  FRIEND_TEST(S3PartMetadataTest, Remove);
+  FRIEND_TEST(S3PartMetadataTest, RemoveSuccessful);
+  FRIEND_TEST(S3PartMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3PartMetadataTest, RemoveIndex);
+  FRIEND_TEST(S3PartMetadataTest, RemoveIndexSucessful);
+  FRIEND_TEST(S3PartMetadataTest, RemoveIndexFailed);
+  FRIEND_TEST(S3PartMetadataTest, ToJson);
+  FRIEND_TEST(S3PartMetadataTest, FromJsonSuccess);
+  FRIEND_TEST(S3PartMetadataTest, FromJsonFailure);
 };
 
 #endif
