@@ -39,10 +39,10 @@ class S3ObjectListResponse {
   std::map<int, std::shared_ptr<S3PartMetadata>> part_list;
 
   // We use unordered for performance as the keys are already
-  // in sorted order as stored in clovis-kv (cassandra)
+  // in sorted order as stored in clovis-kv (cassandra).
   std::unordered_set<std::string> common_prefixes;
 
-  // Generated xml response
+  // Generated xml response.
   std::string request_prefix;
   std::string request_delimiter;
   std::string request_marker_key;
@@ -95,7 +95,7 @@ class S3ObjectListResponse {
   std::string& get_storage_class();
   std::string& get_upload_id();
 
-  // Google tests
+  // Google tests.
   FRIEND_TEST(S3GetMultipartPartActionTest, ConstructorTest);
   FRIEND_TEST(S3GetMultipartPartActionTest,
               GetKeyObjectSuccessfulValueNotEmptyListSizeSameAsMaxAllowed);
@@ -109,6 +109,21 @@ class S3ObjectListResponse {
               GetNextObjectsSuccessfulListNotTruncated);
   FRIEND_TEST(S3GetMultipartPartActionTest,
               GetNextObjectsSuccessfulGetMoreObjects);
+
+  // Google test for object list response.
+  FRIEND_TEST(S3ObjectListResponseTest, ObjectListResponseConstructorTest);
+  FRIEND_TEST(S3ObjectListResponseTest, TestS3ObjectListResponseSetters);
+  FRIEND_TEST(S3ObjectListResponseTest, TestS3ObjectListResponseGetters);
+  FRIEND_TEST(S3ObjectListResponseTest,
+              ObjectListResponseWithValidObjectsNotTruncated);
+  FRIEND_TEST(S3ObjectListResponseTest,
+              ObjectListResponseWithValidObjectsTruncated);
+  FRIEND_TEST(S3ObjectListResponseTest,
+              ObjectListMultiuploadResponseWithValidObjectNotTruncated);
+  FRIEND_TEST(S3ObjectListResponseTest,
+              ObjectListMultipartResponseWithValidObjectNotTruncated);
+  FRIEND_TEST(S3ObjectListResponseTest,
+              ObjectListMultipartResponseWithValidObjectTruncated);
 };
 
 #endif

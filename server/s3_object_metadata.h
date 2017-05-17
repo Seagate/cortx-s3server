@@ -35,24 +35,24 @@
 #include "s3_request_object.h"
 
 enum class S3ObjectMetadataState {
-  empty,    // Initial state, no lookup done
-  present,  // Metadata exists and was read successfully
+  empty,    // Initial state, no lookup done.
+  present,  // Metadata exists and was read successfully.
   missing,  // Metadata not present in store.
   saved,    // Metadata saved to store.
-  deleted,  // Metadata deleted from store
+  deleted,  // Metadata deleted from store.
   failed,
   invalid
 };
 
-// Forward declarations
+// Forward declarations.
 class S3ClovisKVSReaderFactory;
 class S3ClovisKVSWriterFactory;
 class S3BucketMetadataFactory;
 
 class S3ObjectMetadata {
-  // Holds system-defined metadata (creation date etc)
-  // Holds user-defined metadata (names must begin with "x-amz-meta-")
-  // Partially supported on need bases, some of these are placeholders
+  // Holds system-defined metadata (creation date etc).
+  // Holds user-defined metadata (names must begin with "x-amz-meta-").
+  // Partially supported on need bases, some of these are placeholders.
  private:
   std::string account_name;
   std::string account_id;
@@ -62,13 +62,14 @@ class S3ObjectMetadata {
   std::string object_name;
 
   std::string upload_id;
-  // Maximum retry count for collision resolution
+  // Maximum retry count for collision resolution.
   unsigned short tried_count;
   std::string salt;
 
-  // The name for a key is a sequence of Unicode characters whose UTF-8 encoding
+  // The name for a key is a sequence of Unicode characters whose UTF-8
+  // encoding.
   // is at most 1024 bytes long.
-  // http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
+  // http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys.
   std::string object_key_uri;
 
   struct m0_uint128 oid;
@@ -99,20 +100,20 @@ class S3ObjectMetadata {
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
 
-  // Used to report to caller
+  // Used to report to caller.
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
   S3ObjectMetadataState state;
 
-  // `true` in case of json parsing failure
+  // `true` in case of json parsing failure.
   bool json_parsing_error;
 
   void initialize(bool is_multipart, std::string uploadid);
   void collision_detected();
   void create_new_oid();
 
-  // Any validations we want to do on metadata
+  // Any validations we want to do on metadata.
   void validate();
   std::string index_name;
   void save_object_list_index_oid_successful();
@@ -159,25 +160,25 @@ class S3ObjectMetadata {
     return part_index_oid;
   }
 
-  // returns base64 encoded strings
+  // returns base64 encoded strings.
   std::string get_oid_u_hi_str() { return mero_oid_u_hi_str; }
   std::string get_oid_u_lo_str() { return mero_oid_u_lo_str; }
 
   std::string get_owner_name();
   std::string get_owner_id();
   virtual std::string get_object_name();
-  std::string get_user_id();
-  std::string get_user_name();
+  virtual std::string get_user_id();
+  virtual std::string get_user_name();
   std::string get_creation_date();
   std::string get_last_modified();
   virtual std::string get_last_modified_gmt();
-  std::string get_last_modified_iso();
-  std::string get_storage_class();
+  virtual std::string get_last_modified_iso();
+  virtual std::string get_storage_class();
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
   std::string& get_acl_as_xml();
 
-  // Load attributes
+  // Load attributes.
   std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);
   std::string get_user_defined_attribute(std::string key);
@@ -214,11 +215,14 @@ class S3ObjectMetadata {
 
   std::string to_json();
 
-  // returns 0 on success, -1 on parsing error
+  // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
   virtual void setacl(std::string& input_acl_str);
 
-  // Google tests
+  // Virtual Destructor
+  virtual ~S3ObjectMetadata(){};
+
+  // Google tests.
   FRIEND_TEST(S3ObjectMetadataTest, ConstructorTest);
   FRIEND_TEST(S3MultipartObjectMetadataTest, ConstructorTest);
   FRIEND_TEST(S3ObjectMetadataTest, GetSet);

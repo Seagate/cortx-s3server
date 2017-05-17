@@ -36,25 +36,25 @@
 #include "s3_request_object.h"
 
 enum class S3PartMetadataState {
-  empty = 1,          // Initial state, no lookup done
-  present,            // Part Metadata exists and was read successfully
+  empty = 1,          // Initial state, no lookup done.
+  present,            // Part Metadata exists and was read successfully.
   missing,            // Part Metadata not present in store.
   missing_partially,  // Some of the Parts Metadata not present in store.
-  store_created,      // Created store for Parts Metadata
+  store_created,      // Created store for Parts Metadata.
   saved,              // Parts Metadata saved to store.
-  deleted,            // Metadata deleted from store
-  index_deleted,      // store deleted
+  deleted,            // Metadata deleted from store.
+  index_deleted,      // store deleted.
   failed
 };
 
-// Forward declarations
+// Forward declarations.
 class S3ClovisKVSReaderFactory;
 class S3ClovisKVSWriterFactory;
 
 class S3PartMetadata {
-  // Holds system-defined metadata (creation date etc)
-  // Holds user-defined metadata (names must begin with "x-amz-meta-")
-  // Partially supported on need bases, some of these are placeholders
+  // Holds system-defined metadata (creation date etc).
+  // Holds user-defined metadata (names must begin with "x-amz-meta-").
+  // Partially supported on need bases, some of these are placeholders.
  private:
   std::string account_name;
   std::string account_id;
@@ -80,21 +80,21 @@ class S3PartMetadata {
   bool put_metadata;
   struct m0_uint128 part_index_name_oid;
 
-  // Used to report to caller
+  // Used to report to caller.
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
   S3PartMetadataState state;
   size_t collision_attempt_count;
 
-  // `true` in case of json parsing failure
+  // `true` in case of json parsing failure.
   bool json_parsing_error;
 
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kv_reader_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
 
  private:
-  // Any validations we want to do on metadata
+  // Any validations we want to do on metadata.
   void validate();
   void initialize(std::string uploadid, int part);
   void create_new_oid();
@@ -123,19 +123,19 @@ class S3PartMetadata {
 
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
-  std::string get_content_length_str();
+  virtual std::string get_content_length_str();
 
   virtual void set_md5(std::string md5);
   virtual std::string get_md5();
-  std::string get_object_name();
+  virtual std::string get_object_name();
   std::string get_last_modified();
   std::string get_last_modified_gmt();
-  std::string get_last_modified_iso();
-  std::string get_storage_class();
-  std::string get_upload_id();
-  std::string get_part_number();
+  virtual std::string get_last_modified_iso();
+  virtual std::string get_storage_class();
+  virtual std::string get_upload_id();
+  virtual std::string get_part_number();
 
-  // Load attributes
+  // Load attributes.
   std::string get_system_attribute(std::string key);
   void add_system_attribute(std::string key, std::string val);
   std::string get_user_defined_attribute(std::string key);
@@ -174,9 +174,13 @@ class S3PartMetadata {
 
   std::string to_json();
 
-  // returns 0 on success, -1 on parsing error
+  // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
-  // Google tests
+
+  // virtual destructor.
+  virtual ~S3PartMetadata(){};
+
+  // Google tests.
   FRIEND_TEST(S3PartMetadataTest, ConstructorTest);
   FRIEND_TEST(S3PartMetadataTest, GetSet);
   FRIEND_TEST(S3PartMetadataTest, SetAcl);
