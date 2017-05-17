@@ -22,6 +22,7 @@
 #ifndef __S3_SERVER_S3_ASYNCOP_CONTEXT_BASE_H__
 #define __S3_SERVER_S3_ASYNCOP_CONTEXT_BASE_H__
 
+#include <gtest/gtest_prod.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -77,9 +78,9 @@ class S3AsyncOpContextBase {
   S3AsyncOpStatus get_op_status_for(int op_idx);
   int get_errno_for(int op_idx);
 
-  void set_op_status_for(int op_idx, S3AsyncOpStatus opstatus,
-                         std::string message);
-  void set_op_errno_for(int op_idx, int err);
+  virtual void set_op_status_for(int op_idx, S3AsyncOpStatus opstatus,
+                                 std::string message);
+  virtual void set_op_errno_for(int op_idx, int err);
 
   std::string& get_error_message_for(int op_idx);
 
@@ -95,6 +96,18 @@ class S3AsyncOpContextBase {
   // Call the logging always on main thread, so we dont need synchronisation of
   // log file.
   void log_timer();
+
+  // Google tests
+  FRIEND_TEST(S3ClovisReadWriteCommonTest, ClovisOpDoneOnMainThreadOnSuccess);
+  FRIEND_TEST(S3ClovisReadWriteCommonTest, S3ClovisOpStable);
+  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+              S3ClovisOpStableResponseCountSameAsOpCount);
+  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+              S3ClovisOpStableResponseCountNotSameAsOpCount);
+  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+              S3ClovisOpFailedResponseCountSameAsOpCount);
+  FRIEND_TEST(S3ClovisReadWriteCommonTest,
+              S3ClovisOpFailedResponseCountNotSameAsOpCount);
 };
 
 #endif

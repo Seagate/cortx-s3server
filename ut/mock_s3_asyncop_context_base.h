@@ -33,8 +33,9 @@ class MockS3AsyncOpContextBase : public S3AsyncOpContextBase {
                            std::function<void(void)> success_callback,
                            std::function<void(void)> failed_callback)
       : S3AsyncOpContextBase(req, success_callback, failed_callback) {}
-  MOCK_METHOD2(set_op_status,
-               void(S3AsyncOpStatus opstatus, std::string message));
+  MOCK_METHOD2(set_op_errno_for, void(int op_idx, int err));
+  MOCK_METHOD3(set_op_status_for,
+               void(int op_idx, S3AsyncOpStatus opstatus, std::string message));
 };
 
 #endif

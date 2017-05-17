@@ -53,8 +53,9 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
   s3_log(S3_LOG_DEBUG, "Entering\n");
   if (user_data == NULL) {
     s3_log(S3_LOG_ERROR, "Input argument user_data is NULL\n");
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
   }
-
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
   S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
@@ -95,6 +96,7 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
+
   s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);
 
   app_ctx->set_op_errno_for(ctx->op_index_in_launch, op->op_sm.sm_rc);
@@ -128,6 +130,7 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
+
   s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);
 
   app_ctx->set_op_errno_for(ctx->op_index_in_launch, op->op_sm.sm_rc);
@@ -144,7 +147,6 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
         1, sizeof(struct user_event_context));
     user_ctx->app_ctx = app_ctx;
     app_ctx->stop_timer(false);
-
 #ifdef S3_GOOGLE_TEST
     evutil_socket_t test_sock = 0;
     short events = 0;
