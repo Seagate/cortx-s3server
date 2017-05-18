@@ -61,6 +61,9 @@ TEST_F(S3PathStyleURITEST, ServiceTest) {
   EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
       .WillRepeatedly(Return(false));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path()).WillOnce(Return("/"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("x-seagate-faultinjection"))
+      .Times(1)
+      .WillRepeatedly(Return(""));
   S3PathStyleURI s3pathstyle_service(ptr_mock_request);
   EXPECT_EQ(S3ApiType::service, s3pathstyle_service.get_s3_api_type());
   EXPECT_STREQ("", s3pathstyle_service.get_bucket_name().c_str());

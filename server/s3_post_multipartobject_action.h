@@ -99,32 +99,35 @@ class S3PostMultipartObjectAction : public S3Action {
 
   FRIEND_TEST(S3PostMultipartObjectTest, ConstructorTest);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchBucketInfo);
-  FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgressTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedTest2);
-  FRIEND_TEST(S3PostMultipartObjectTest, CreateNewOidTest);
+  FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgress);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObject);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateNewOid);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoMultipartPresent);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoMultipartNotPresent);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoObjectNotPresent);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectPresent);
-  FRIEND_TEST(S3PostMultipartObjectTest, CollisionTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackFailedTest1);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackFailedTest2);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadataFailTest2);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndexTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndexFailedTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataFailedTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadataTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadataFailTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, CreatePartMetadataIndexTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataFailedTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, Send503ResponseToClientTest);
-  FRIEND_TEST(S3PostMultipartObjectTest, SendResponseToClientTest2);
+  FRIEND_TEST(S3PostMultipartObjectTest, CollisionOccured);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreate);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataMissing);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest,
+              RollbackUploadMetadataFailMetadataPresent);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndex);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadata);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndexFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadata);
+  FRIEND_TEST(S3PostMultipartObjectTest,
+              RollbackUploadMetadataFailMetadataMissing);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreatePartMetadataIndex);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadata);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, Send500ResponseToClient);
+  FRIEND_TEST(S3PostMultipartObjectTest, Send404ResponseToClient);
+  FRIEND_TEST(S3PostMultipartObjectTest, Send200ResponseToClient);
 };
 
 #endif

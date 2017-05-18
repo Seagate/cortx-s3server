@@ -86,6 +86,7 @@ TEST_F(S3PutBucketAclActionTest, ValidateOnPartialDataShouldWaitForMore) {
 
   EXPECT_CALL(*mock_request, has_all_body_content()).WillOnce(Return(false));
   EXPECT_CALL(*mock_request, listen_for_incoming_data(_, _)).Times(1);
+  EXPECT_CALL(*mock_request, get_data_length()).Times(1).WillOnce(Return(0));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();

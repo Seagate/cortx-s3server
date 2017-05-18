@@ -45,6 +45,16 @@ class S3APIHandlerFactoryTest : public testing::Test {
 
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
+
+    EXPECT_CALL(*mock_request, get_query_string_value("prefix"))
+        .WillRepeatedly(Return(""));
+    EXPECT_CALL(*mock_request, get_query_string_value("delimiter"))
+        .WillRepeatedly(Return("/"));
+    EXPECT_CALL(*mock_request, get_query_string_value("marker"))
+        .WillRepeatedly(Return(""));
+    EXPECT_CALL(*mock_request, get_query_string_value("max-keys"))
+        .WillRepeatedly(Return("1000"));
+
     factory_under_test.reset(new S3APIHandlerFactory());
 
     EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));

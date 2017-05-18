@@ -60,6 +60,8 @@ TEST_F(S3PutBucketPolicyActionTest, GetMetadata) {
 }
 
 TEST_F(S3PutBucketPolicyActionTest, ValidateRequest) {
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
+      .Times(AtLeast(1));
   EXPECT_CALL(*request_mock, has_all_body_content())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(true));

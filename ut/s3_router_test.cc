@@ -138,6 +138,10 @@ TEST_F(S3RouterTest, ReturnsFalseForEmptyEP) {
 TEST_F(S3RouterDispatchTest, InvokesServiceApi) {
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
+  EXPECT_CALL(*mock_request, get_header_value("x-seagate-faultinjection"))
+      .Times(1)
+      .WillRepeatedly(Return(""));
+
   EXPECT_CALL(*mock_request, c_get_full_path()).WillRepeatedly(Return("/"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq(""))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);

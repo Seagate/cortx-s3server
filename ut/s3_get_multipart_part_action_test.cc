@@ -414,6 +414,8 @@ TEST_F(S3GetMultipartPartActionTest,
               get_key_values())
       .Times(1)
       .WillOnce(ReturnRef(mymap));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_md5())
+      .WillRepeatedly(Return(""));
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
@@ -451,6 +453,9 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulListNotTruncated) {
               get_key_values())
       .Times(1)
       .WillOnce(ReturnRef(mymap));
+
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_md5())
+      .WillRepeatedly(Return(""));
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));

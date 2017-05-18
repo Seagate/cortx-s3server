@@ -123,6 +123,7 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
   } else {
     s3_log(S3_LOG_WARN, "Missing bucket [%s]\n",
            request->get_bucket_name().c_str());
+    set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -157,6 +158,7 @@ void S3PostMultipartObjectAction::fetch_object_info() {
     // multipart upload details
     // of the same key initiated at different times is allowed.
     //--
+    set_s3_error("InvalidObjectState");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -181,6 +183,7 @@ void S3PostMultipartObjectAction::fetch_object_info_status() {
     next();
   } else {
     s3_log(S3_LOG_DEBUG, "Failed to look up metadata.\n");
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -220,6 +223,7 @@ void S3PostMultipartObjectAction::create_object_failed() {
   } else {
     s3_log(S3_LOG_WARN, "Create object failed.\n");
     // Any other error report failure.
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -250,6 +254,7 @@ void S3PostMultipartObjectAction::collision_occured() {
       s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
              S3_IEM_COLLISION_RES_FAIL_JSON);
     }
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
 }
@@ -403,41 +408,18 @@ void S3PostMultipartObjectAction::save_multipart_metadata_failed() {
 
 void S3PostMultipartObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  if (reject_if_shutting_down()) {
-    // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    // Invalid Bucket Name
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
 
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_multipart_metadata->get_state() ==
-             S3ObjectMetadataState::present) {
-    S3Error error("InvalidObjectState", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   } else if ((object_multipart_metadata->get_state() ==
               S3ObjectMetadataState::saved) &&
