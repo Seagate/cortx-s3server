@@ -375,7 +375,7 @@ TEST_F(S3PutObjectActionTest, InitiateDataStreamingForZeroSizeObject) {
       std::bind(&S3PutObjectActionTest::func_callback_one, this));
 
   action_under_test->initiate_data_streaming();
-  EXPECT_EQ(false, action_under_test->write_in_progress);
+  EXPECT_FALSE(action_under_test->write_in_progress);
   EXPECT_EQ(1, call_count_one);
   EXPECT_EQ(1, action_under_test->number_of_rollback_tasks());
 }
@@ -391,7 +391,7 @@ TEST_F(S3PutObjectActionTest, InitiateDataStreamingExpectingMoreData) {
 
   action_under_test->initiate_data_streaming();
 
-  EXPECT_EQ(false, action_under_test->write_in_progress);
+  EXPECT_FALSE(action_under_test->write_in_progress);
 }
 
 TEST_F(S3PutObjectActionTest, InitiateDataStreamingWeHaveAllData) {
@@ -409,7 +409,7 @@ TEST_F(S3PutObjectActionTest, InitiateDataStreamingWeHaveAllData) {
 
   action_under_test->initiate_data_streaming();
 
-  EXPECT_EQ(true, action_under_test->write_in_progress);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 // Write not in progress and we have all the data
@@ -427,7 +427,7 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeAllData) {
 
   action_under_test->consume_incoming_content();
 
-  EXPECT_EQ(true, action_under_test->write_in_progress);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 // Write not in progress, expecting more, we have exact what we can write
@@ -449,7 +449,7 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeExactData) {
 
   action_under_test->consume_incoming_content();
 
-  EXPECT_EQ(true, action_under_test->write_in_progress);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 // Write not in progress, expecting more, we have more than we can write
@@ -470,7 +470,7 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeHaveMoreData) {
 
   action_under_test->consume_incoming_content();
 
-  EXPECT_EQ(true, action_under_test->write_in_progress);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 // we are expecting more data
@@ -492,7 +492,7 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldPauseWhenWeHaveTooMuch) {
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->consume_incoming_content();
 
-  EXPECT_EQ(true, action_under_test->write_in_progress);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 TEST_F(S3PutObjectActionTest,
@@ -520,7 +520,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectShouldWriteContentAndMarkProgress) {
 
   action_under_test->write_object(async_buffer_factory->get_mock_buffer());
 
-  EXPECT_EQ(action_under_test->write_in_progress, true);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
@@ -538,7 +538,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
 
   action_under_test->write_object_failed();
 
-  EXPECT_EQ(action_under_test->write_in_progress, false);
+  EXPECT_FALSE(action_under_test->write_in_progress);
   EXPECT_EQ(1, call_count_one);
 }
 
@@ -555,7 +555,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
 
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 
-  EXPECT_EQ(action_under_test->write_in_progress, false);
+  EXPECT_FALSE(action_under_test->write_in_progress);
 }
 
 TEST_F(S3PutObjectActionTest,
@@ -573,7 +573,7 @@ TEST_F(S3PutObjectActionTest,
 
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 
-  EXPECT_EQ(action_under_test->write_in_progress, false);
+  EXPECT_FALSE(action_under_test->write_in_progress);
   EXPECT_EQ(1, call_count_one);
 }
 
@@ -596,7 +596,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldWriteStateAllData) {
 
   action_under_test->write_object_successful();
 
-  EXPECT_EQ(action_under_test->write_in_progress, true);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 // We have some data but not all and exact to write
@@ -622,7 +622,7 @@ TEST_F(S3PutObjectActionTest,
 
   action_under_test->write_object_successful();
 
-  EXPECT_EQ(action_under_test->write_in_progress, true);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 // We have some data but not all and but have more to write
@@ -648,7 +648,7 @@ TEST_F(S3PutObjectActionTest,
 
   action_under_test->write_object_successful();
 
-  EXPECT_EQ(action_under_test->write_in_progress, true);
+  EXPECT_TRUE(action_under_test->write_in_progress);
 }
 
 // We have some data but not all and but have more to write
@@ -677,7 +677,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
   action_under_test->write_object_successful();
 
   EXPECT_EQ(1, call_count_one);
-  EXPECT_EQ(action_under_test->write_in_progress, false);
+  EXPECT_FALSE(action_under_test->write_in_progress);
 }
 
 // We expecting more and not enough to write
@@ -703,7 +703,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
 
   action_under_test->write_object_successful();
 
-  EXPECT_EQ(action_under_test->write_in_progress, false);
+  EXPECT_FALSE(action_under_test->write_in_progress);
 }
 
 TEST_F(S3PutObjectActionTest, SaveMetadata) {
