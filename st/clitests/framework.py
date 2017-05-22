@@ -14,6 +14,7 @@ class Config:
     config_file = 'pathstyle.s3cfg'
     time_readable_format = True
     tmp_wd = ''
+    s3cmd_max_retries = 5
 
 class CloudConfig:
     pass

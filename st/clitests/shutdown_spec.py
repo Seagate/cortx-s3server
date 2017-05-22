@@ -10,6 +10,8 @@ from s3client_config import S3ClientConfig
 # Helps debugging
 # Config.log_enabled = True
 # Config.dummy_run = True
+# Enable retry flag to limit retries on failure
+Config.s3cmd_max_retries = 2
 
 # Set time_readable_format to False if you want to display the time in milli seconds.
 # Config.time_readable_format = False

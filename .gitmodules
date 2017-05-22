@@ -43,3 +43,7 @@
 	path = third_party/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
 	ignore = dirty
+[submodule "third_party/s3cmd"]
+	path = third_party/s3cmd
+	url = https://github.com/s3tools/s3cmd.git
+	ignore = dirty

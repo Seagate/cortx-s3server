@@ -17,6 +17,16 @@ trap 'abort' 0
 JCLIENTJAR='jclient.jar'
 JCLOUDJAR='jcloudclient.jar'
 
+S3CMD_LOC=/usr/local/seagate/s3cmd/
+MERO_ST=mero_st/bin/
+if [ -f $S3CMD_LOC/s3cmd ] ;then
+    cp $S3CMD_LOC/s3cmd $MERO_ST
+    cp -rf $S3CMD_LOC/S3 $MERO_ST
+    printf "\nCheck S3CMD...OK"
+else
+    printf "\nCheck $S3CMD_LOC ...Not found"
+    abort
+fi
 if [ -f $JCLIENTJAR ] ;then
     printf "\nCheck $JCLIENTJAR...OK"
 else

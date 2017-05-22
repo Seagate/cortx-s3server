@@ -14,5 +14,6 @@ cd third_party
 ./build_yamlcpp.sh
 ./build_gflags.sh
 ./build_glog.sh
+./build_s3cmd.sh
 
 cd $S3_SRC_FOLDER
