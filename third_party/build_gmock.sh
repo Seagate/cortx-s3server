@@ -5,10 +5,6 @@
 
 cd googlemock
 
-INSTALL_DIR=/usr/local/seagate/googlemock/
-rm -rf $INSTALL_DIR
-mkdir $INSTALL_DIR
-
 rm -f gtest
 ln -s ../googletest gtest
 
@@ -18,9 +14,6 @@ mkdir build
 cd build
 CFLAGS=-fPIC CXXFLAGS=-fPIC cmake ..
 make
-
-cp -RfP * $INSTALL_DIR/
-cp -RfP ../include $INSTALL_DIR/
 
 cd ..
 cd ..

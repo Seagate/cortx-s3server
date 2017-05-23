@@ -9,7 +9,7 @@
 
 cd yaml-cpp
 
-INSTALL_DIR=/usr/local/seagate/yaml-cpp
+INSTALL_DIR=`pwd`/s3_dist
 rm -rf build/ $INSTALL_DIR
 mkdir build
 mkdir $INSTALL_DIR

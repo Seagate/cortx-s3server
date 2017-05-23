@@ -8,6 +8,4 @@ systemctl daemon-reload
 
 echo "S3 server and Auth server are setup."
 echo "Setup nginx using configuration similar to nginx.conf.sample."
-echo "Run /opt/seagate/s3/starts3.sh to start the Seagate S3 server daemon."
-echo "Run /opt/seagate/auth/startauth.sh to start the Seagate Auth server."
-echo "Run /opt/seagate/s3/stops3.sh to shutdown the Seagate S3 server daemon."
+echo "Check the README.md for how to start/stop services."

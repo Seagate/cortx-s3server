@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--no-mero-build][--no-thirdparty-build][--no-check-code]'
+  echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--use-build-cache][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build]'
   echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install][--help]'
@@ -11,8 +11,9 @@ usage() {
   echo '          --no-mero-rpm           : Use mero libs from source code (third_party/mero) location'
   echo '                                    Default is (false) i.e. use mero libs from pre-installed'
   echo '                                    mero rpm location (/usr/lib64)'
-  echo '          --no-mero-build         : Do not build mero, Default (false)'
-  echo '          --no-thirdparty-build   : Do not build third party libs, Default (false)'
+  echo '          --use-build-cache       : Use build cache for third_party and mero, Default (false)'
+  echo '                                    If cache is missing, third_party and mero will be rebuilt'
+  echo '                                    Ensuring consistency of cache is responsibility of caller'
   echo '          --no-check-code         : Do not check code for formatting style, Default (false)'
   echo '          --no-clean-build        : Do not clean before build, Default (false)'
   echo '                                    Use this option for incremental build.'
@@ -29,15 +30,14 @@ usage() {
 }
 
 # read the options
-OPTS=`getopt -o h --long no-mero-rpm,no-mero-build,no-thirdparty-build,no-check-code,no-clean-build,\
+OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3server-build,no-cloviskvscli-build,no-auth-build,\
 no-jclient-build,no-jcloudclient-build,no-install,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
 no_mero_rpm=0
-no_mero_build=0
-no_thirdparty_build=0
+use_build_cache=0
 no_check_code=0
 no_clean_build=0
 no_s3ut_build=0
@@ -48,12 +48,12 @@ no_auth_build=0
 no_jclient_build=0
 no_jcloudclient_build=0
 no_install=0
+
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
     --no-mero-rpm) no_mero_rpm=1; shift ;;
-    --no-thirdparty-build) no_thirdparty_build=1; shift ;;
-    --no-mero-build) no_mero_build=1; shift ;;
+    --use-build-cache) use_build_cache=1; shift ;;
     --no-check-code) no_check_code=1; shift ;;
     --no-clean-build)no_clean_build=1; shift ;;
     --no-s3ut-build) no_s3ut_build=1; shift ;;
@@ -80,99 +80,98 @@ fi
 
 # Used to store third_party build artifacts
 S3_SRC_DIR=`pwd`
-SEAGATE_SRC=/usr/local/seagate
-CURRENT_USER=`whoami`
-USE_SUDO=
-if [[ $EUID -ne 0 ]]; then
-   USE_SUDO=sudo
-   command -v sudo || USE_SUDO=
-fi
-if [ $no_thirdparty_build -eq 0 ]
+BUILD_CACHE_DIR=$HOME/.seagate_src_cache
+
+# Define the paths
+if [ $no_mero_rpm -eq 1 ]
 then
-  $USE_SUDO rm -rf ${SEAGATE_SRC}
-  $USE_SUDO mkdir -p ${SEAGATE_SRC} && $USE_SUDO chown ${CURRENT_USER}:${CURRENT_USER} ${SEAGATE_SRC}
-  ./build_thirdparty.sh
+  # use mero libs from source code (built location or cache)
+  MERO_INC_="MERO_INC=./third_party/mero/"
+  MERO_LIB_="MERO_LIB=./third_party/mero/mero/.libs/"
+  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=./third_party/mero/extra-libs/gf-complete/src/.libs/"
 else
-  if [ ! -d ${SEAGATE_SRC} ]
-  then
-    echo "Third party sources should be rebuilt..."
-    exit 1
-  fi
-fi
-
-# Create symlinks to third_party files installed in SEAGATE_SRC
-# since bazel does not seem to like absolute paths in BUILD file.
-[ -e third_party/libevent/s3_dist ] || ln -s ${SEAGATE_SRC}/libevent third_party/libevent/s3_dist
-[ -e third_party/libevhtp/s3_dist ] || ln -s ${SEAGATE_SRC}/libevhtp third_party/libevhtp/s3_dist
-[ -e third_party/libxml2/s3_dist ] || ln -s ${SEAGATE_SRC}/libxml2 third_party/libxml2/s3_dist
-[ -e third_party/googletest/s3_dist ] || ln -s ${SEAGATE_SRC}/googletest third_party/googletest/s3_dist
-[ -e third_party/googlemock/s3_dist ] || ln -s ${SEAGATE_SRC}/googlemock third_party/googlemock/s3_dist
-[ -e third_party/yaml-cpp/s3_dist ] || ln -s ${SEAGATE_SRC}/yaml-cpp third_party/yaml-cpp/s3_dist
-[ -e third_party/gflags/s3_dist ] || ln -s ${SEAGATE_SRC}/gflags third_party/gflags/s3_dist
-[ -e third_party/glog/s3_dist ] || ln -s ${SEAGATE_SRC}/glog third_party/glog/s3_dist
-[ -e third_party/jsoncpp/s3_dist ] || ln -s ${SEAGATE_SRC}/jsoncpp third_party/jsoncpp/s3_dist
-
-# We copy generated source to server for inline compilation.
-cp ${SEAGATE_SRC}/jsoncpp/jsoncpp.cc server/jsoncpp.cc
-
-MERO_SRC_DIR=`pwd`/third_party/mero
-if [ $no_mero_build -eq 0 ]
-then
-  cd third_party
-  ./build_mero.sh
-  # After build, always copy to SEAGATE_SRC so we can reuse build in future runs
-  $USE_SUDO rm -rf $SEAGATE_SRC/mero
-  $USE_SUDO cp -R mero $SEAGATE_SRC/
-  cd mero
-  current_mero_rev=`git rev-parse HEAD`
-  $USE_SUDO echo "$current_mero_rev" > $SEAGATE_SRC/cached_mero.git.rev
-  $USE_SUDO chmod 0444 $SEAGATE_SRC/cached_mero.git.rev
-  cd $S3_SRC_DIR
-else
-  # Mero build not requested
-  # no_mero_rpm and no_mero_build = use from SEAGATE_SRC if available
-  # Check if we can reuse older mero build in SEAGATE_SRC else ask build again
-  if [ $no_mero_rpm -eq 1 ]
-  then
-    if [ ! -e $SEAGATE_SRC/mero ]
-    then
-      echo "Earlier mero build not cached. Please run WITHOUT --no-mero-build."
-      exit 1
-    fi
-
-    # Check cached mero version
-    cd third_party/mero
-    current_mero_rev=`git rev-parse HEAD` || echo "Mero not checked out at `pwd`"
-    cd $S3_SRC_DIR
-    cached_mero_rev=`cat $SEAGATE_SRC/cached_mero.git.rev` || echo "Mero not cached at $SEAGATE_SRC"
-
-    if [ "$current_mero_rev" != "$cached_mero_rev" ]
-    then
-      echo "Cached mero build is not latest. Please run WITHOUT --no-mero-build."
-      exit 1
-    fi
-
-    # cached version can be reused, copy build files (*.o/libs) to source location
-    # as starting mero inplace insource only works from original build location.
-    echo "Sync mero binaries from $SEAGATE_SRC/mero to third_party/mero..."
-    $USE_SUDO rsync -azu $SEAGATE_SRC/mero/ third_party/mero
-  fi
-fi
-echo "Using MERO_SRC_DIR = $MERO_SRC_DIR..."
-
-if [ $no_mero_rpm -eq 0 ]
-then
   # use mero libs from pre-installed mero rpm location
   MERO_INC_="MERO_INC=/usr/include/mero/"
   MERO_LIB_="MERO_LIB=/usr/lib64/"
   MERO_EXTRA_LIB_="MERO_EXTRA_LIB=/usr/lib64/"
-else
-  # use mero libs from source code
-  MERO_INC_="MERO_INC=$MERO_SRC_DIR/"
-  MERO_LIB_="MERO_LIB=$MERO_SRC_DIR/mero/.libs/"
-  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=$MERO_SRC_DIR/extra-libs/gf-complete/src/.libs/"
 fi
 
+# Build steps for third_party and mero
+if [ $no_mero_rpm -eq 0 ]
+then
+  # RPM based build, build third_party except mero
+  ./build_thirdparty.sh --no-mero-build
+else
+  if [ $use_build_cache -eq 0 ]
+  then
+    # Rebuild all third_party
+    ./build_thirdparty.sh
+  else
+    # Use build cache
+    if [ ! -d ${BUILD_CACHE_DIR} ]
+    then
+      # Rebuild all third_party
+      ./build_thirdparty.sh
+
+      # Copy to CACHE
+      rm -rf ${BUILD_CACHE_DIR}
+      mkdir -p ${BUILD_CACHE_DIR}
+
+      echo "Sync third_party(,mero) binaries from third_party/"
+      rsync -aW $S3_SRC_DIR/third_party/mero/ $BUILD_CACHE_DIR/mero
+      cd $S3_SRC_DIR/third_party/mero/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_mero.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/gflags
+      rsync -aW $S3_SRC_DIR/third_party/gflags/s3_dist $BUILD_CACHE_DIR/gflags
+      cd $S3_SRC_DIR/third_party/gflags/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_gflags.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/glog
+      rsync -aW $S3_SRC_DIR/third_party/glog/s3_dist $BUILD_CACHE_DIR/glog
+      cd $S3_SRC_DIR/third_party/glog/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_glog.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/googlemock
+      rsync -aW $S3_SRC_DIR/third_party/googlemock/build $BUILD_CACHE_DIR/googlemock
+      rsync -aW $S3_SRC_DIR/third_party/googlemock/include $BUILD_CACHE_DIR/googlemock
+      cd $S3_SRC_DIR/third_party/googlemock/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_googlemock.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/googletest
+      rsync -aW $S3_SRC_DIR/third_party/googletest/build $BUILD_CACHE_DIR/googletest
+      rsync -aW $S3_SRC_DIR/third_party/googletest/include $BUILD_CACHE_DIR/googletest
+      cd $S3_SRC_DIR/third_party/googletest/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_googletest.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/libevent
+      rsync -aW $S3_SRC_DIR/third_party/libevent/s3_dist $BUILD_CACHE_DIR/libevent
+      cd $S3_SRC_DIR/third_party/libevent/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_libevent.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/libevhtp
+      rsync -aW $S3_SRC_DIR/third_party/libevhtp/s3_dist $BUILD_CACHE_DIR/libevhtp
+      cd $S3_SRC_DIR/third_party/libevhtp/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_libevhtp.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/libxml2
+      rsync -aW $S3_SRC_DIR/third_party/libxml2/s3_dist $BUILD_CACHE_DIR/libxml2
+      cd $S3_SRC_DIR/third_party/libxml2/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_libxml2.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/s3cmd
+      cp -f $S3_SRC_DIR/third_party/s3cmd/s3cmd $BUILD_CACHE_DIR/s3cmd/
+      rsync -aW $S3_SRC_DIR/third_party/s3cmd/S3 $BUILD_CACHE_DIR/s3cmd
+      cd $S3_SRC_DIR/third_party/s3cmd/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_s3cmd.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/yaml-cpp
+      rsync -aW $S3_SRC_DIR/third_party/yaml-cpp/s3_dist $BUILD_CACHE_DIR/yaml-cpp
+      cd $S3_SRC_DIR/third_party/yaml-cpp/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_yaml-cpp.git.rev && cd -
+
+      mkdir -p $BUILD_CACHE_DIR/jsoncpp
+      rsync -aW $S3_SRC_DIR/third_party/jsoncpp/dist $BUILD_CACHE_DIR/jsoncpp
+      cd $S3_SRC_DIR/third_party/jsoncpp/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_jsoncpp.git.rev && cd -
+    fi  # build cache not present
+    # Copy from cache
+    rsync -aW $BUILD_CACHE_DIR/ $S3_SRC_DIR/third_party/
+  fi  # if [ $use_build_cache -eq 0 ]
+fi  # if [ $no_mero_rpm -eq 0 ]
+
+cp -f $S3_SRC_DIR/third_party/jsoncpp/dist/jsoncpp.cpp $S3_SRC_DIR/server/jsoncpp.cc
+
+# Do we want a clean S3 build?
 if [ $no_clean_build -eq 0 ]
 then
   if [[ $no_s3ut_build -eq 0   || \
@@ -183,6 +182,7 @@ then
     bazel clean
   fi
 fi
+
 if [ $no_s3ut_build -eq 0 ]
 then
   bazel build //:s3ut --cxxopt="-std=c++11" --define $MERO_INC_ \
@@ -191,15 +191,18 @@ then
   bazel build //:s3utdeathtests --cxxopt="-std=c++11" --define $MERO_INC_ \
                                 --define $MERO_LIB_ --define $MERO_EXTRA_LIB_
 fi
+
 if [ $no_s3mempoolut_build -eq 0 ]
 then
   bazel build //:s3mempoolut --cxxopt="-std=c++11"
 fi
+
 if [ $no_s3server_build -eq 0 ]
 then
   bazel build //:s3server --cxxopt="-std=c++11" --define $MERO_INC_ \
                           --define $MERO_LIB_ --define $MERO_EXTRA_LIB_
 fi
+
 if [ $no_cloviskvscli_build -eq 0 ]
 then
   bazel build //:cloviskvscli --cxxopt="-std=c++11" --define $MERO_INC_ \
@@ -243,6 +246,16 @@ fi
 
 if [ $no_install -eq 0 ]
 then
-  # install with root privilege
-  $USE_SUDO ./makeinstall
+  if [[ $EUID -ne 0 ]]; then
+    command -v sudo
+    if [ $? -ne 0 ]
+    then
+      echo "sudo required to run makeinstall"
+      exit 1
+    else
+      sudo ./makeinstall
+    fi
+  else
+    ./makeinstall
+  fi
 fi

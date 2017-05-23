@@ -63,34 +63,36 @@ needs to be executed only once.
 
 The `./rebuildall.sh --no-mero-rpm` command will build third party libs, S3
 server, Auth server, UTs etc. It will also install S3 server, Auth server &
-third party libs at `/opt/seagate` location.
+third party libs at `/opt/seagate` location. To skip installing S3 use
+--no-install.
 
 Note the option `--no-mero-rpm` passed to the command. It informs the script that
 mero source was built and mero libs from the source code location would be used.
 If this option is absent, mero libs are used from mero rpm installed on system.
+To skip installing S3 use --no-install.
 
-`--no-mero-build` can be used to skip (re)building mero, by default mero will be
-built inside third_party and cached to location /usr/local/seagate/mero. It also
-indicates that previously built mero is cached inside /usr/local/seagate/mero
-and will be used in current build. If current third_party/mero revision does not
-match with previous revision cached in /usr/local/seagate, script will report to
-rebuild with mero.
+`--use-build-cache` is useful when building with third_party, mero used from
+local builds. Normally third party libs needs to be built only once after fresh
+repo clone. If builds are not already cached, it will be built.
+Note that this option is ignored in rpm based builds.
 
-Normally third party libs needs to be built only once
-after fresh repo clone. To skip building third party libs on subsequent runs of
-`./rebuildall.sh`,use `--no-thirdparty-build` option.
-`--no-thirdparty-build` option indicates that previously built third_party libs
-are present in /usr/local/seagate and will be used in current build.
+To skip rebuilding third party libs on subsequent runs of
+`./rebuildall.sh`, use `--use-build-cache` option.
+`--use-build-cache` option indicates that previously built third_party libs
+are present in $HOME/.seagate_src_cache and will be used in current build.
 ```sh
-./rebuildall.sh --no-mero-rpm --no-thirdparty-build --no-mero-build
+./rebuildall.sh --no-mero-rpm --use-build-cache
 ```
+
+If current third_party/* revision does not match with previous revision
+cached in $HOME/.seagate_src_cache/, user should clean the cache and rebuild.
 
 Steps for Release environment:
 Make sure mero rpms are installed on the build machine before executing
 below commands.
 ```sh
 ./refresh_thirdparty.sh
-./rebuildall.sh --no-mero-build
+./rebuildall.sh
 ```
 
 ## How to run auth server (this current assumes all dependencies are on same local VM)

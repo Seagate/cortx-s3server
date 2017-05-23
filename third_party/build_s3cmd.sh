@@ -8,11 +8,4 @@ cd s3cmd
 # Apply s3cmd patch
 patch -f -p1 < ../../patches/s3cmd.patch
 
-INSTALL_DIR=/usr/local/seagate/s3cmd/
-rm -rf $INSTALL_DIR
-mkdir $INSTALL_DIR
-
-cp s3cmd $INSTALL_DIR
-cp -rf S3 $INSTALL_DIR/
-
 cd ..
