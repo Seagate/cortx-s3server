@@ -353,7 +353,7 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsMultipartPresent) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(1);
   action_under_test->get_next_objects();
 }
@@ -509,7 +509,7 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulGetMoreObjects) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(1);
 
   action_under_test->get_next_objects_successful();

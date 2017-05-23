@@ -46,10 +46,10 @@ class MockS3ClovisKVSReader : public S3ClovisKVSReader {
   MOCK_METHOD4(get_keyval, void(struct m0_uint128 oid, std::string key,
                                 std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed));
-  MOCK_METHOD5(next_keyval,
+  MOCK_METHOD6(next_keyval,
                void(struct m0_uint128 oid, std::string key, size_t nr_kvp,
                     std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed));
+                    std::function<void(void)> on_failed, unsigned int flag));
 };
 
 #endif

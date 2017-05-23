@@ -114,7 +114,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
   action_under_test->bucket_metadata->set_object_list_index_oid(oid);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(1);
   action_under_test->fetch_first_object_metadata();
   EXPECT_TRUE(action_under_test->clovis_kv_reader != nullptr);
@@ -130,7 +130,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
   action_under_test->bucket_metadata->set_object_list_index_oid(zero_oid);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(0);
   action_under_test->clear_tasks();
   action_under_test->add_task(
@@ -220,7 +220,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectsMultipartPresent) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(1);
   action_under_test->fetch_multipart_objects();
 }

@@ -213,7 +213,7 @@ TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentTest2) {
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   action_under_test->part_index_oid = {0xffff, 0xffff};
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(1);
   action_under_test->check_if_any_parts_present();
 }

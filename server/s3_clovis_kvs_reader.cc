@@ -211,13 +211,11 @@ void S3ClovisKVSReader::get_keyval_failed() {
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-// NOTE: https://jts.seagate.com/browse/MERO-2309 tracks changes planned to
-// M0_CLOVIS_IC_NEXT to allow skipping rquested key in reply list. This would
-// affect all call sites and should be verified for corner cases when integrated
 void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
                                     size_t nr_kvp,
                                     std::function<void(void)> on_success,
-                                    std::function<void(void)> on_failed) {
+                                    std::function<void(void)> on_failed,
+                                    unsigned int flag) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   s3_log(S3_LOG_DEBUG, "key = %s and count = %zu\n", key.c_str(), nr_kvp);
   id = idx_oid;
@@ -262,9 +260,10 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm,
                                  &idx_oid);
+
   rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_NEXT,
                                     kvs_ctx->keys, kvs_ctx->values,
-                                    kvs_ctx->rcs, 0, &(idx_ctx->ops[0]));
+                                    kvs_ctx->rcs, flag, &(idx_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   } else {

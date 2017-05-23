@@ -348,7 +348,7 @@ TEST_F(S3PostCompleteActionTest, FetchPartsInfo) {
   CREATE_KVS_READER_OBJ;
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(1);
   action_under_test_ptr->fetch_parts_info();
 }

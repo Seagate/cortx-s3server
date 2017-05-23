@@ -160,7 +160,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjects) {
       object_list_indx_oid);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _))
+              next_keyval(_, _, _, _, _, _))
       .Times(1);
 
   action_under_test_ptr->get_next_objects();

@@ -130,6 +130,9 @@ void S3GetBucketAction::get_next_objects() {
     fetch_successful = true;
     send_response_to_s3_client();
   } else {
+    // We pass M0_OIF_EXCLUDE_START_KEY flag to Clovis. This flag skips key that
+    // is passed during listing of all keys. If this flag is not passed then
+    // input key is returned in result.
     clovis_kv_reader->next_keyval(
         object_list_index_oid, last_key, count,
         std::bind(&S3GetBucketAction::get_next_objects_successful, this),

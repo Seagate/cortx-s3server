@@ -145,10 +145,14 @@ class S3ClovisKVSReader {
   // If the input key is empty string "", it returns the first count key-value
   // pairs
   // If input key is specified, it returns the next count key-value pairs
-  // Async call resutls can be accessed using get_values()
+  // Async call resutls can be accessed using get_values().
+  // Default behaviour of this API is exclude input key from results.
+  // If input key should be included in the results, then flag should be
+  // specified as 0.
   virtual void next_keyval(struct m0_uint128 idx_oid, std::string key,
                            size_t nr_kvp, std::function<void(void)> on_success,
-                           std::function<void(void)> on_failed);
+                           std::function<void(void)> on_failed,
+                           unsigned int flag = M0_OIF_EXCLUDE_START_KEY);
   void next_keyval(std::string index_name, std::string key, size_t nr_kvp,
                    std::function<void(void)> on_success,
                    std::function<void(void)> on_failed);
