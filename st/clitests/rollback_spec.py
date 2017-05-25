@@ -345,20 +345,19 @@ for i, val in enumerate(pathstyle_values):
 
 
     # ************ OBJ DELETE FI: Multipart ************
-    S3fiTest('S3Fi enable FI delete').enable_fi("enable", "always", "clovis_obj_delete_fail")\
+    S3fiTest('S3Fi enable FI delete').enable_fi("enable", "always", "clovis_kv_delete_fail")\
             .execute_test().command_is_successful()
 
     JClientTest('Jclient cannot abort multipart upload.').abort_multipart("seagatebucket", "18MBfile", upload_id)\
-            .execute_test(negative_case=True).command_should_fail()
+            .execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 
-    S3fiTest('S3Fi disable Fault injection').disable_fi("clovis_obj_delete_fail").execute_test().command_is_successful()
+    S3fiTest('S3Fi disable Fault injection').disable_fi("clovis_kv_delete_fail").execute_test().command_is_successful()
 
 
-    """
     # ************ Abort multipart upload ************
     JClientTest('Jclient can abort multipart upload.').abort_multipart("seagatebucket", "18MBfile", upload_id)\
             .execute_test().command_is_successful()
-    """
+
 
     # ************ Delete bucket TEST ************
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
