@@ -82,6 +82,8 @@ class S3Option {
 
   std::string option_file;
   std::string log_dir;
+  std::string layout_recommendation_file;
+
   int read_ahead_multiple;
   std::string log_level;
   int log_file_max_size_mb;
@@ -90,7 +92,7 @@ class S3Option {
 
   unsigned short clovis_layout_id;
   unsigned short clovis_units_per_request;
-  unsigned int clovis_unit_size;
+  std::vector<int> clovis_unit_sizes_for_mem_pool;
   int clovis_idx_fetch_count;
   std::string clovis_local_addr;
   std::string clovis_ha_addr;
@@ -104,8 +106,8 @@ class S3Option {
   std::string clovis_cass_cluster_ep;
   std::string clovis_cass_keyspace;
   int clovis_cass_max_column_family_num;
-  size_t clovis_read_pool_initial_size;
-  size_t clovis_read_pool_expandable_size;
+  size_t clovis_read_pool_initial_buffer_count;
+  size_t clovis_read_pool_expandable_count;
   size_t clovis_read_pool_max_threshold;
 
   size_t libevent_pool_initial_size;
@@ -165,8 +167,8 @@ class S3Option {
     clovis_cass_max_column_family_num = 1;
 
     // libevent_pool_buffer_size is used for each item in this
-    clovis_read_pool_initial_size = 10485760;    // 10mb
-    clovis_read_pool_expandable_size = 1048576;  // 1mb
+    clovis_read_pool_initial_buffer_count = 10;   // 10 buffer
+    clovis_read_pool_expandable_count = 1048576;  // 1mb
     clovis_read_pool_max_threshold = 104857600;  // 100mb
 
     libevent_pool_buffer_size = 4096;
@@ -179,6 +181,8 @@ class S3Option {
     auth_port = FLAGS_authport;
 
     option_file = "/opt/seagate/s3/conf/s3config.yaml";
+    layout_recommendation_file =
+        "/opt/seagate/s3/conf/s3_obj_layout_mapping.yaml";
 
     s3_daemon_dir = "/";
     s3_daemon_redirect = 1;
@@ -186,7 +190,6 @@ class S3Option {
     perf_enabled = FLAGS_perfenable;
     perf_log_file = FLAGS_perflogfile;
 
-    clovis_unit_size = 1048576;  // One MB
     clovis_units_per_request = 1;
     clovis_idx_fetch_count = 100;
 
@@ -245,6 +248,9 @@ class S3Option {
   std::string get_option_file();
   void set_option_file(std::string filename);
 
+  std::string get_layout_recommendation_file();
+  void set_layout_recommendation_file(std::string filename);
+
   std::string get_daemon_dir();
   unsigned short do_redirection();
   void set_daemon_dir(std::string path);
@@ -263,15 +269,15 @@ class S3Option {
   std::string get_clovis_ha_addr();
   std::string get_clovis_prof();
   unsigned short get_clovis_layout_id();
-  unsigned int get_clovis_unit_size();
+  std::vector<int> get_clovis_unit_sizes_for_mem_pool();
   unsigned short get_clovis_units_per_request();
-  unsigned int get_clovis_write_payload_size();
-  unsigned int get_clovis_read_payload_size();
+  unsigned int get_clovis_write_payload_size(int layoutid);
+  unsigned int get_clovis_read_payload_size(int layoutid);
   int get_clovis_idx_fetch_count();
   unsigned short get_max_retry_count();
   unsigned short get_retry_interval_in_millisec();
-  size_t get_clovis_read_pool_initial_size();
-  size_t get_clovis_read_pool_expandable_size();
+  size_t get_clovis_read_pool_initial_buffer_count();
+  size_t get_clovis_read_pool_expandable_count();
   size_t get_clovis_read_pool_max_threshold();
 
   size_t get_libevent_pool_initial_size();

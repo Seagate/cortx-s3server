@@ -18,6 +18,7 @@
  */
 
 #include "s3_post_multipartobject_action.h"
+#include "s3_clovis_layout.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_log.h"
@@ -33,14 +34,24 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     S3ClovisWriterFactory* clovis_s3_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
-  old_oid = {0ULL, 0ULL};
   tried_count = 0;
-  bucket_metadata = 0;
-  object_metadata = 0;
-  object_multipart_metadata = 0;
-  part_metadata = 0;
-  clovis_writer = 0;
+
+  old_oid = {0ULL, 0ULL};
+  old_layout_id = -1;
+
+  // Since we cannot predict the object size during multipart init, we use the
+  // best recommended layout for better Performance
+  layout_id =
+      S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
+  bucket_metadata = nullptr;
+  object_metadata = nullptr;
+  object_multipart_metadata = nullptr;
+  part_metadata = nullptr;
+  clovis_writer = nullptr;
+
   multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
   if (bucket_meta_factory) {
@@ -170,13 +181,14 @@ void S3PostMultipartObjectAction::fetch_object_info_status() {
   if (object_state == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, "S3ObjectMetadataState::present\n");
     old_oid = object_metadata->get_oid();
+    old_layout_id = object_metadata->get_layout_id();
     s3_log(S3_LOG_DEBUG,
            "Object with oid %lu %lu already exists, creating new oid\n",
            old_oid.u_hi, old_oid.u_lo);
-    do {
-      create_new_oid();
-    } while ((oid.u_hi == old_oid.u_hi) && (oid.u_lo == old_oid.u_lo));
+    create_new_oid(old_oid);
+
     object_multipart_metadata->set_old_oid(old_oid);
+    object_multipart_metadata->set_old_layout_id(old_layout_id);
     next();
   } else if (object_state == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, "S3ObjectMetadataState::missing\n");
@@ -197,9 +209,11 @@ void S3PostMultipartObjectAction::create_object() {
   } else {
     clovis_writer->set_oid(oid);
   }
+
   clovis_writer->create_object(
       std::bind(&S3PostMultipartObjectAction::next, this),
-      std::bind(&S3PostMultipartObjectAction::create_object_failed, this));
+      std::bind(&S3PostMultipartObjectAction::create_object_failed, this),
+      layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -240,7 +254,7 @@ void S3PostMultipartObjectAction::collision_occured() {
     s3_log(S3_LOG_INFO, "Object ID collision happened for uri %s\n",
            request->get_object_uri().c_str());
     // Handle Collision
-    create_new_oid();
+    create_new_oid(oid);
     tried_count++;
     if (tried_count > 5) {
       s3_log(S3_LOG_INFO, "Object ID collision happened %d times for uri %s\n",
@@ -260,18 +274,28 @@ void S3PostMultipartObjectAction::collision_occured() {
   }
 }
 
-void S3PostMultipartObjectAction::create_new_oid() {
-  std::string salted_uri =
-      request->get_object_uri() + salt + std::to_string(tried_count);
-  S3UriToMeroOID(salted_uri.c_str(), &oid);
+void S3PostMultipartObjectAction::create_new_oid(
+    struct m0_uint128 current_oid) {
+  int salt_counter = 0;
+  std::string salted_uri;
+  do {
+    salted_uri = request->get_object_uri() + salt +
+                 std::to_string(salt_counter) + std::to_string(tried_count);
+
+    S3UriToMeroOID(salted_uri.c_str(), &oid);
+    ++salt_counter;
+  } while ((oid.u_hi == current_oid.u_hi) && (oid.u_lo == current_oid.u_lo));
+
   return;
 }
 
 void S3PostMultipartObjectAction::rollback_create() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+
   clovis_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
-      std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this));
+      std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this),
+      layout_id);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -315,6 +339,8 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   // mark rollback point
   add_task_rollback(std::bind(
       &S3PostMultipartObjectAction::rollback_create_part_meta_index, this));
+
+  object_multipart_metadata->set_layout_id(layout_id);
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -420,7 +446,6 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
-
     request->send_response(error.get_http_status_code(), response_xml);
   } else if ((object_multipart_metadata->get_state() ==
               S3ObjectMetadataState::saved) &&

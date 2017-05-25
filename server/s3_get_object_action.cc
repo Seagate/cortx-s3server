@@ -18,6 +18,7 @@
  */
 
 #include "s3_get_object_action.h"
+#include "s3_clovis_layout.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
 #include "s3_option.h"
@@ -128,14 +129,18 @@ void S3GetObjectAction::read_object() {
              object_metadata->get_content_length());
 
       size_t clovis_unit_size =
-          S3Option::get_instance()->get_clovis_unit_size();
+          S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+              object_metadata->get_layout_id());
+      s3_log(S3_LOG_DEBUG, "clovis_unit_size = %zu for layout_id = %d\n",
+             clovis_unit_size, object_metadata->get_layout_id());
       /* Count Data blocks from data size */
       total_blocks_in_object =
           (object_metadata->get_content_length() + (clovis_unit_size - 1)) /
           clovis_unit_size;
 
       clovis_reader = clovis_reader_factory->create_clovis_reader(
-          request, object_metadata->get_oid());
+          request, object_metadata->get_oid(),
+          object_metadata->get_layout_id());
       read_object_data();
     }
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
@@ -170,10 +175,14 @@ void S3GetObjectAction::read_object_data() {
     }
 
     if (blocks_to_read > 0) {
-      clovis_reader->read_object_data(
+      bool op_launched = clovis_reader->read_object_data(
           blocks_to_read,
           std::bind(&S3GetObjectAction::send_data_to_client, this),
           std::bind(&S3GetObjectAction::read_object_data_failed, this));
+      if (!op_launched) {
+        set_s3_error("InternalError");
+        send_response_to_s3_client();
+      }
     } else {
       send_response_to_s3_client();
     }

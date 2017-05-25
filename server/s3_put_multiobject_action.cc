@@ -42,6 +42,7 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
+  layout_id = -1;  // Loaded from multipart metadata
   if (request->is_chunked() && !S3Option::get_instance()->is_auth_disabled()) {
     clear_tasks();  // remove default auth
     // Add chunk style auth
@@ -218,6 +219,31 @@ void S3PutMultiObjectAction::compute_part_offset() {
   // Create writer to write from given offset as per the partnumber
   clovis_writer = clovis_writer_factory->create_clovis_writer(
       request, object_multipart_metadata->get_oid(), offset);
+  layout_id = object_multipart_metadata->get_layout_id();
+  clovis_writer->set_layout_id(layout_id);
+
+  // FIXME multipart uploads are corrupted when partsize is not aligned with
+  // clovis unit size for given layout_id. We block such uploads temporarily
+  // and it will be fixed as a bug.
+  if (part_number == 1) {
+    // Reject during first part itself
+    size_t unit_size =
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+    size_t part_size = request->get_data_length();
+    s3_log(S3_LOG_DEBUG,
+           "Check part size (%zu) and unit_size (%zu) compatibility\n",
+           part_size, unit_size);
+    if ((part_size % unit_size) != 0) {
+      s3_log(S3_LOG_DEBUG,
+             "Rejecting request as part size is not aligned w.r.t unit_size\n");
+      // part size is not multiple of unit size, block request
+      set_s3_error("InvalidPartPerS3Mero");
+      send_response_to_s3_client();
+      s3_log(S3_LOG_DEBUG, "Exiting\n");
+      return;
+    }
+  }
+
   next();
 
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -246,7 +272,7 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
           std::bind(&S3PutMultiObjectAction::consume_incoming_content, this),
-          S3Option::get_instance()->get_clovis_write_payload_size());
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id));
     }
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -260,13 +286,14 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   if (!clovis_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_clovis_write_payload_size()) {
+            S3Option::get_instance()->get_clovis_write_payload_size(
+                layout_id)) {
       write_object(request->get_buffered_input());
     }
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_clovis_write_payload_size() *
+          (S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -330,10 +357,8 @@ void S3PutMultiObjectAction::write_object_successful() {
   if (/* buffered data len is at least equal max we can write to clovis in one
          write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()
-              ->get_clovis_write_payload_size() || /* we have all the data
-                                                      buffered and ready to
-                                                      write */
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) ||
+      /* we have all the data buffered and ready to write */
       (request->get_buffered_input()->is_freezed() &&
        request->get_buffered_input()->get_content_length() > 0)) {
     write_object(request->get_buffered_input());

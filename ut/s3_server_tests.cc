@@ -28,9 +28,10 @@ extern "C" {
 }
 
 #include "clovis_helpers.h"
+#include "s3_clovis_layout.h"
 #include "s3_error_messages.h"
 #include "s3_log.h"
-#include "s3_memory_pool.h"
+#include "s3_mem_pool_manager.h"
 #include "s3_option.h"
 #include "s3_stats.h"
 
@@ -44,8 +45,6 @@ struct m0_uint128 root_account_user_index_oid;
 S3Option *g_option_instance = NULL;
 extern S3Stats *g_stats_instance;
 
-/* global Memory Pool for read from clovis */
-MemoryPoolHandle g_clovis_read_mem_pool_handle;
 struct m0 instance;
 
 static void _init_log() {
@@ -60,11 +59,21 @@ static void _fini_log() {
   google::ShutdownGoogleLogging();
 }
 
-static void _init_option_and_instance() {
+static int _init_option_and_instance() {
   g_option_instance = S3Option::get_instance();
+  g_option_instance->set_option_file("s3config-test.yaml");
+  bool force_override_from_config = true;
+  if (!g_option_instance->load_all_sections(force_override_from_config)) {
+    return -1;
+  }
+
   g_option_instance->set_stats_whitelist_filename(
       "s3stats-whitelist-test.yaml");
   g_stats_instance = S3Stats::get_instance();
+  g_option_instance->dump_options();
+  S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
+      g_option_instance->get_layout_recommendation_file());
+  return 0;
 }
 
 static void _cleanup_option_and_instance() {
@@ -74,6 +83,7 @@ static void _cleanup_option_and_instance() {
   if (g_option_instance) {
     S3Option::destroy_instance();
   }
+  S3ClovisLayoutMap::destroy_instance();
 }
 
 static int clovis_ut_init() {
@@ -103,16 +113,17 @@ static int mempool_init() {
       CREATE_ALIGNED_MEMORY);
   if (rc != 0) return rc;
 
-  size_t clovis_unit_size = g_option_instance->get_clovis_unit_size();
-  rc = mempool_create(clovis_unit_size, clovis_unit_size * 100,
-                      clovis_unit_size * 100, clovis_unit_size * 500,
-                      CREATE_ALIGNED_MEMORY, &g_clovis_read_mem_pool_handle);
+  rc = S3MempoolManager::create_pool(
+      g_option_instance->get_clovis_read_pool_max_threshold(),
+      g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
+      g_option_instance->get_clovis_read_pool_initial_buffer_count(),
+      g_option_instance->get_clovis_read_pool_expandable_count());
 
   return rc;
 }
 
 static void mempool_fini() {
-  mempool_destroy(&g_clovis_read_mem_pool_handle);
+  S3MempoolManager::destroy_instance();
   event_destroy_mempool();
 }
 
@@ -120,7 +131,12 @@ int main(int argc, char **argv) {
   int rc;
 
   _init_log();
-  _init_option_and_instance();
+  rc = _init_option_and_instance();
+  if (rc != 0) {
+    _cleanup_option_and_instance();
+    _fini_log();
+    return rc;
+  }
 
   ::testing::InitGoogleTest(&argc, argv);
   ::testing::InitGoogleMock(&argc, argv);

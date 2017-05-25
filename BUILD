@@ -257,3 +257,61 @@ cc_test(
     ],
 
 )
+
+cc_test(
+    # How to run build
+    # bazel build //:s3mempoolmgrut --cxxopt="-std=c++11"
+    #                     --define MERO_INC=<mero headers path>
+    #                     --define MERO_LIB=<mero lib path>
+    #                     --define MERO_EXTRA_LIB=<mero extra lib path>
+
+    name = "s3mempoolmgrut",
+
+    srcs = glob(["s3mempoolmgrut/*.cc", "s3mempoolmgrut/*.h",
+                 "server/*.cc", "server/*.c", "server/*.h",
+                 "mempool/*.c", "mempool/*.h"],
+                 exclude = ["server/s3server.cc"]),
+
+    copts = [
+      "-DEVHTP_DISABLE_REGEX", "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64",
+      "-DGCC_VERSION=4002", "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest",
+      "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DS3_GOOGLE_TEST",
+      "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
+      # Do NOT change the order of strings in below line
+      "-iquote", "$(MERO_INC)",
+    ],
+
+    includes = [
+      "third_party/googletest/include",
+      "third_party/googlemock/include",
+      "third_party/gflags/s3_dist/include/",
+      "third_party/glog/s3_dist/include/",
+      "third_party/libevent/s3_dist/include/",
+      "third_party/libevhtp/s3_dist/include/evhtp",
+      "third_party/jsoncpp/dist",
+      "third_party/yaml-cpp/s3_dist/include/",
+      "third_party/libxml2/s3_dist/include/libxml2",
+      "server/",
+      "mempool",
+    ],
+
+    linkopts = [
+      "-L$(MERO_LIB)",
+      "-L$(MERO_EXTRA_LIB)",
+      "-Lthird_party/libevent/s3_dist/lib/",
+      "-Lthird_party/libevhtp/s3_dist/lib",
+      "-Lthird_party/yaml-cpp/s3_dist/lib",
+      "-Lthird_party/libxml2/s3_dist/lib",
+      "-Lthird_party/googletest/build",
+      "-Lthird_party/googlemock/build",
+      "-Lthird_party/glog/s3_dist/lib",
+      "-Lthird_party/gflags/s3_dist/lib",
+      "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
+      "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
+      "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
+      "-pthread third_party/glog/s3_dist/lib/libglog.a",
+      "-Wl,-rpath,third_party/libevent/s3_dist/lib",
+      "-Wl,-rpath,third_party/libxml2/s3_dist/lib",
+      "-Wl,-rpath,third_party/yaml-cpp/s3_dist/lib",
+    ],
+)

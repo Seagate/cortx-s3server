@@ -152,22 +152,16 @@ class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
 class MockS3ClovisReaderFactory : public S3ClovisReaderFactory {
  public:
   MockS3ClovisReaderFactory(std::shared_ptr<S3RequestObject> req,
-                            std::shared_ptr<ClovisAPI> clovis_api = nullptr)
-      : S3ClovisReaderFactory() {
-    mock_clovis_reader = std::make_shared<MockS3ClovisReader>(req, clovis_api);
-  }
-
-  MockS3ClovisReaderFactory(std::shared_ptr<S3RequestObject> req,
-                            m0_uint128 oid,
+                            m0_uint128 oid, int layout_id,
                             std::shared_ptr<ClovisAPI> clovis_api = nullptr)
       : S3ClovisReaderFactory() {
     mock_clovis_reader =
-        std::make_shared<MockS3ClovisReader>(req, oid, clovis_api);
+        std::make_shared<MockS3ClovisReader>(req, oid, layout_id, clovis_api);
   }
 
   std::shared_ptr<S3ClovisReader> create_clovis_reader(
       std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
+      int layout_id, std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
     return mock_clovis_reader;
   }
 

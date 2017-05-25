@@ -99,6 +99,8 @@ class S3PostCompleteActionTest : public testing::Test {
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
     call_count_one = 0;
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
 
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
@@ -135,6 +137,7 @@ class S3PostCompleteActionTest : public testing::Test {
   std::map<std::string, std::string, S3NumStrComparator> mock_parts;
   int call_count_one;
   std::string mock_xml;
+  int layout_id;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -525,7 +528,11 @@ TEST_F(S3PostCompleteActionTest, DeleteParts) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(oid));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillOnce(Return(layout_id));
+
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(1);
   action_under_test_ptr->delete_parts();
 }
@@ -572,7 +579,8 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObjectIfPresentNULL) {
 TEST_F(S3PostCompleteActionTest, DeleteOldObjectIfPresent) {
   CREATE_MP_METADATA_OBJ;
   action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(AtLeast(1));
 
   action_under_test_ptr->delete_old_object_if_present();
@@ -585,7 +593,8 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObjectIfPresentClovisWriter) {
   action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(AtLeast(1));
 
   action_under_test_ptr->delete_old_object_if_present();

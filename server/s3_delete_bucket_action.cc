@@ -219,6 +219,7 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
 
       if (multipart_obj_oid.u_hi != 0ULL || multipart_obj_oid.u_lo != 0ULL) {
         multipart_object_oids.push_back(multipart_obj_oid);
+        multipart_object_layoutids.push_back(object->get_layout_id());
       }
     }
     return_list_size++;
@@ -248,7 +249,7 @@ void S3DeleteBucketAction::delete_multipart_objects() {
   if (multipart_object_oids.size() != 0) {
     clovis_writer = clovis_writer_factory->create_clovis_writer(request);
     clovis_writer->delete_objects(
-        multipart_object_oids,
+        multipart_object_oids, multipart_object_layoutids,
         std::bind(&S3DeleteBucketAction::delete_multipart_objects_successful,
                   this),
         std::bind(&S3DeleteBucketAction::delete_multipart_objects_failed,

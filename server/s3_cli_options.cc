@@ -23,6 +23,9 @@
 DEFINE_string(s3config, "/opt/seagate/s3/conf/s3config.yaml",
               "S3 server config file");
 
+DEFINE_string(s3layoutmap, "/opt/seagate/s3/conf/s3_obj_layout_mapping.yaml",
+              "S3 Clovis layout mapping file for different object sizes");
+
 DEFINE_string(s3host, "0.0.0.0", "S3 server bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");

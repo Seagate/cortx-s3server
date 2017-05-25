@@ -18,6 +18,7 @@
  */
 
 #include "s3_action_base.h"
+#include "s3_clovis_layout.h"
 #include "s3_error_codes.h"
 #include "s3_option.h"
 #include "s3_stats.h"
@@ -71,14 +72,11 @@ void S3Action::setup_steps() {
 void S3Action::start() {
   // Check if we have enough approx memory to proceed with request
   if (request->get_api_type() == S3ApiType::object) {
-    if (request->http_verb() == S3HttpVerb::GET &&
-        !mem_profile->we_have_enough_memory_for_get_obj()) {
-      s3_log(S3_LOG_DEBUG,
-             "Limited memory: Rejecting GET object request with retry.\n");
-      send_retry_error_to_s3_client();
-      return;
-    } else if (request->http_verb() == S3HttpVerb::PUT &&
-               !mem_profile->we_have_enough_memory_for_put_obj()) {
+    int layout_id =
+        S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
+            request->get_data_length());
+    if (request->http_verb() == S3HttpVerb::PUT &&
+        !mem_profile->we_have_enough_memory_for_put_obj(layout_id)) {
       s3_log(S3_LOG_DEBUG,
              "Limited memory: Rejecting PUT object/part request with retry.\n");
       send_retry_error_to_s3_client();

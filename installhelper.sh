@@ -55,6 +55,9 @@ cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_mess
 # Copy the S3 Config option file
 cp s3config.yaml $S3_CONFIG_FILE_LOCATION
 
+# Copy the S3 Clovis layout mapping file for different object sizes
+cp s3_obj_layout_mapping.yaml $S3_CONFIG_FILE_LOCATION
+
 # Copy the S3 Stats whitelist file
 cp s3stats-whitelist.yaml $S3_CONFIG_FILE_LOCATION
 

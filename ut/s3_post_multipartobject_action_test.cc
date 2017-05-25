@@ -42,6 +42,9 @@ class S3PostMultipartObjectTest : public testing::Test {
     object_list_indx_oid = {0x11ffff, 0x1ffff};
     upload_id = "upload_id";
     call_count_one = 0;
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
 
@@ -73,6 +76,7 @@ class S3PostMultipartObjectTest : public testing::Test {
   struct m0_uint128 oid;
   std::string upload_id;
   int call_count_one;
+  int layout_id;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -94,6 +98,7 @@ TEST_F(S3PostMultipartObjectTest, FetchBucketInfo) {
 TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
   struct m0_uint128 oid = {0xffff, 0xffff};
   struct m0_uint128 empty_oid = {0ULL, 0ULL};
+
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
 
@@ -113,10 +118,12 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
   action_under_test->check_upload_is_inprogress();
+
   EXPECT_EQ(1, call_count_one);
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   action_under_test->check_upload_is_inprogress();
@@ -193,6 +200,8 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectPresent) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(1)
       .WillOnce(Return(old_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillOnce(Return(layout_id));
 
   action_under_test->clear_tasks();
   action_under_test->add_task(
@@ -227,12 +236,14 @@ TEST_F(S3PostMultipartObjectTest, CreateObject) {
       object_mp_meta_factory->mock_object_mp_metadata;
 
   action_under_test->tried_count = 0;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
   action_under_test->create_object();
 
   action_under_test->tried_count = 1;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
@@ -243,10 +254,11 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailed) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+
   action_under_test->create_object_failed();
   EXPECT_TRUE(action_under_test->clovis_writer == NULL);
-
   S3Option::get_instance()->set_is_s3_shutting_down(false);
+
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
@@ -266,7 +278,8 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision) {
       .WillRepeatedly(Return(S3ClovisWriterOpState::exists));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
   action_under_test->tried_count = 1;
   action_under_test->create_object_failed();
@@ -277,7 +290,8 @@ TEST_F(S3PostMultipartObjectTest, CollisionOccured) {
   S3Option::get_instance()->set_is_s3_shutting_down(false);
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   action_under_test->tried_count = 1;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(AtLeast(1));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
@@ -295,14 +309,15 @@ TEST_F(S3PostMultipartObjectTest, CreateNewOid) {
   struct m0_uint128 new_oid, old_oid;
   old_oid = {0xffff, 0xffff};
   action_under_test->set_oid(old_oid);
-  action_under_test->create_new_oid();
+  action_under_test->create_new_oid(old_oid);
   new_oid = action_under_test->get_oid();
   EXPECT_OID_NE(old_oid, new_oid);
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackCreate) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(1);
   action_under_test->rollback_create();
 }
@@ -327,6 +342,7 @@ TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
   action_under_test->set_s3_error("InternalError");
+
   action_under_test->rollback_create_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);
@@ -380,6 +396,7 @@ TEST_F(S3PostMultipartObjectTest, RollbackUploadMetadataFailMetadataPresent) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   action_under_test->set_s3_error("InternalError");
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
   action_under_test->rollback_upload_metadata_failed();
@@ -420,6 +437,7 @@ TEST_F(S3PostMultipartObjectTest, Send500ResponseToClient) {
 
 TEST_F(S3PostMultipartObjectTest, Send404ResponseToClient) {
   action_under_test->set_s3_error("NoSuchBucket");
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(AtLeast(1));
   action_under_test->send_response_to_s3_client();
@@ -436,6 +454,7 @@ TEST_F(S3PostMultipartObjectTest, Send200ResponseToClient) {
       .WillRepeatedly(Return(S3ObjectMetadataState::saved));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
       .WillRepeatedly(Return(S3PartMetadataState::store_created));
+
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
   action_under_test->send_response_to_s3_client();

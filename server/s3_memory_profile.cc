@@ -21,42 +21,24 @@
 
 #include <event2/event.h>
 
+#include "s3_clovis_layout.h"
 #include "s3_log.h"
 #include "s3_memory_pool.h"
 #include "s3_memory_profile.h"
 #include "s3_option.h"
 
 extern S3Option* g_option_instance;
-extern MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
-size_t S3MemoryProfile::memory_per_get_request() {
-  return g_option_instance->get_clovis_read_payload_size();
-}
-
-size_t S3MemoryProfile::memory_per_put_request() {
-  return g_option_instance->get_clovis_write_payload_size() *
+size_t S3MemoryProfile::memory_per_put_request(int layout_id) {
+  return g_option_instance->get_clovis_write_payload_size(layout_id) *
          g_option_instance->get_read_ahead_multiple();
 }
 
-bool S3MemoryProfile::we_have_enough_memory_for_get_obj() {
-  size_t free_space_in_clovis_read_mempool = 0;
-  mempool_free_space(g_clovis_read_mem_pool_handle,
-                     &free_space_in_clovis_read_mempool);
-
-  size_t min_mem_for_get_obj = memory_per_get_request();
-
-  s3_log(S3_LOG_DEBUG, "free_space_in_clovis_read_mempool = %zu\n",
-         free_space_in_clovis_read_mempool);
-  s3_log(S3_LOG_DEBUG, "min_mem_for_get_obj = %zu\n", min_mem_for_get_obj);
-
-  return (free_space_in_clovis_read_mempool > min_mem_for_get_obj);
-}
-
-bool S3MemoryProfile::we_have_enough_memory_for_put_obj() {
+bool S3MemoryProfile::we_have_enough_memory_for_put_obj(int layout_id) {
   size_t free_space_in_libevent_mempool = 0;
   event_mempool_free_space(&free_space_in_libevent_mempool);
 
-  size_t min_mem_for_put_obj = memory_per_put_request();
+  size_t min_mem_for_put_obj = memory_per_put_request(layout_id);
 
   s3_log(S3_LOG_DEBUG, "free_space_in_libevent_mempool = %zu\n",
          free_space_in_libevent_mempool);

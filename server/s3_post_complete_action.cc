@@ -326,6 +326,8 @@ void S3PostCompleteAction::save_metadata() {
     }
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
+    object_metadata->set_layout_id(multipart_metadata->get_layout_id());
+
     object_metadata->save(
         std::bind(&S3PostCompleteAction::next, this),
         std::bind(&S3PostCompleteAction::send_response_to_s3_client, this));
@@ -345,6 +347,7 @@ void S3PostCompleteAction::delete_old_object_if_present() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   post_successful = true;
   old_object_oid = multipart_metadata->get_old_oid();
+  int old_layout_id = multipart_metadata->get_old_layout_id();
   if ((old_object_oid.u_lo == 0ULL) && (old_object_oid.u_hi == 0ULL)) {
     next();
   } else {
@@ -358,7 +361,8 @@ void S3PostCompleteAction::delete_old_object_if_present() {
     }
     clovis_writer->delete_object(
         std::bind(&S3PostCompleteAction::next, this),
-        std::bind(&S3PostCompleteAction::delete_old_object_failed, this));
+        std::bind(&S3PostCompleteAction::delete_old_object_failed, this),
+        old_layout_id);
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -388,7 +392,8 @@ void S3PostCompleteAction::delete_parts() {
         request, object_metadata->get_oid());
     clovis_writer->delete_object(
         std::bind(&S3PostCompleteAction::next, this),
-        std::bind(&S3PostCompleteAction::delete_parts_failed, this));
+        std::bind(&S3PostCompleteAction::delete_parts_failed, this),
+        object_metadata->get_layout_id());
   } else {
     next();
   }

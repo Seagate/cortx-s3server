@@ -60,6 +60,9 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
     object_list_indx_oid = {0x11ffff, 0x1ffff};
     zero_oid_idx = {0ULL, 0ULL};
 
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
     call_count_one = 0;
 
     async_buffer_factory =
@@ -91,6 +94,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
   struct m0_uint128 object_list_indx_oid;
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
+  int layout_id;
 
   int call_count_one;
 
@@ -126,7 +130,6 @@ class S3PutChunkUploadObjectActionTestWithAuth
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, ConstructorTest) {
   EXPECT_EQ(0, action_under_test->tried_count);
-  EXPECT_EQ(0, action_under_test->total_data_to_stream);
   EXPECT_FALSE(action_under_test->auth_failed);
   EXPECT_FALSE(action_under_test->write_failed);
   EXPECT_FALSE(action_under_test->clovis_write_in_progress);
@@ -209,6 +212,9 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillOnce(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(1)
+      .WillOnce(Return(layout_id));
 
   struct m0_uint128 old_oid = {0x1ffff, 0x1ffff};
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
@@ -278,15 +284,23 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFirstAttempt) {
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
+  EXPECT_CALL(*mock_request, get_data_length()).Times(1).WillOnce(Return(0));
+
   action_under_test->create_object();
   EXPECT_TRUE(action_under_test->clovis_writer != nullptr);
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectSecondAttempt) {
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(2);
+  EXPECT_CALL(*mock_request, get_data_length())
+      .Times(2)
+      .WillRepeatedly(Return(0));
+
   action_under_test->create_object();
   action_under_test->tried_count = 1;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
@@ -330,19 +344,24 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
       .WillOnce(Return(S3ClovisWriterOpState::exists));
+  EXPECT_CALL(*mock_request, get_data_length()).Times(1).WillOnce(Return(0));
 
   action_under_test->tried_count = MAX_COLLISION_RETRY_COUNT - 1;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
 
   action_under_test->create_object_failed();
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedTest) {
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
+  EXPECT_CALL(*mock_request, get_data_length()).Times(1).WillOnce(Return(0));
+
   action_under_test->create_object();
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
@@ -367,7 +386,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateNewOidTest) {
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, RollbackTest) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(1);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
@@ -471,13 +491,15 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeExactData) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .Times(AtLeast(1))
-      .WillRepeatedly(
-          Return(S3Option::get_instance()->get_clovis_write_payload_size()));
+      .WillRepeatedly(Return(
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -495,12 +517,15 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldWriteIfWeHaveMoreData) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size() + 1024));
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) +
+          1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -518,14 +543,16 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        ConsumeIncomingShouldPauseWhenWeHaveTooMuch) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
+
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
-      .WillRepeatedly(
-          Return(S3Option::get_instance()->get_clovis_write_payload_size() *
-                 S3Option::get_instance()->get_read_ahead_multiple() * 2));
+      .WillRepeatedly(Return(
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
+          S3Option::get_instance()->get_read_ahead_multiple() * 2));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -644,14 +671,15 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulShouldWriteWhenExactWritableSize) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
-      .WillRepeatedly(
-          Return(S3Option::get_instance()->get_clovis_write_payload_size()));
+      .WillRepeatedly(Return(
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -668,6 +696,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulShouldWriteSomeDataWhenMoreData) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
@@ -675,7 +704,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size() + 1024));
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) +
+          1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -692,6 +722,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
@@ -719,6 +750,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulShouldRestartReadingData) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(false));
@@ -726,7 +758,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size() - 1024));
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) -
+          1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -803,6 +836,9 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectSinceItsPresent) {
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillOnce(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(1)
+      .WillOnce(Return(layout_id));
 
   struct m0_uint128 old_oid = {0x1ffff, 0x1ffff};
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
@@ -819,7 +855,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectSinceItsPresent) {
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(AtLeast(1));
 
   action_under_test->delete_old_object_if_present();
@@ -898,7 +935,6 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendFailedResponse) {
 
 TEST_F(S3PutChunkUploadObjectActionTestWithAuth, ConstructorTest) {
   EXPECT_EQ(0, action_under_test->tried_count);
-  EXPECT_EQ(0, action_under_test->total_data_to_stream);
   EXPECT_FALSE(action_under_test->auth_failed);
   EXPECT_FALSE(action_under_test->write_failed);
   EXPECT_FALSE(action_under_test->clovis_write_in_progress);

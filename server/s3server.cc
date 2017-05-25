@@ -19,28 +19,27 @@
  */
 
 #include <openssl/md5.h>
-#include "clovis_helpers.h"
-#include "murmur3_hash.h"
-#include "s3_memory_pool.h"
-#include "s3_uri_to_mero_oid.h"
-
 #include <tuple>
 #include <vector>
-
 #include <event2/thread.h>
 
+#include "clovis_helpers.h"
 #include "evhtp_wrapper.h"
 #include "fid/fid.h"
+#include "murmur3_hash.h"
+#include "s3_clovis_layout.h"
 #include "s3_daemonize_server.h"
 #include "s3_error_codes.h"
 #include "s3_fi_common.h"
 #include "s3_log.h"
+#include "s3_mem_pool_manager.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
 #include "s3_request_object.h"
 #include "s3_router.h"
 #include "s3_stats.h"
 #include "s3_timer.h"
+#include "s3_uri_to_mero_oid.h"
 
 #define FOUR_KB 4096
 
@@ -53,9 +52,6 @@ S3Option *g_option_instance = NULL;
 evbase_t *global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
 struct m0_uint128 root_account_user_index_oid;
-
-/* global Memory Pool for read from clovis */
-MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
@@ -282,6 +278,9 @@ int main(int argc, char **argv) {
   // dump the config
   g_option_instance->dump_options();
 
+  S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
+      g_option_instance->get_layout_recommendation_file());
+
   // Init stats
   rc = s3_stats_init();
   if (rc < 0) {
@@ -337,11 +336,12 @@ int main(int argc, char **argv) {
   bind_addr = g_option_instance->get_bind_addr().c_str();
 
   // Create memory pool for clovis read operations.
-  rc = mempool_create(g_option_instance->get_clovis_unit_size(),
-                      g_option_instance->get_clovis_read_pool_initial_size(),
-                      g_option_instance->get_clovis_read_pool_expandable_size(),
-                      g_option_instance->get_clovis_read_pool_max_threshold(),
-                      CREATE_ALIGNED_MEMORY, &g_clovis_read_mem_pool_handle);
+  rc = S3MempoolManager::create_pool(
+      g_option_instance->get_clovis_read_pool_max_threshold(),
+      g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
+      g_option_instance->get_clovis_read_pool_initial_buffer_count(),
+      g_option_instance->get_clovis_read_pool_expandable_count());
+
   if (rc != 0) {
     s3_log(S3_LOG_FATAL,
            "Memory pool creation for clovis read buffers failed!\n");
@@ -390,8 +390,6 @@ int main(int argc, char **argv) {
   /* Clean-up */
   fini_clovis();
 
-  mempool_destroy(&g_clovis_read_mem_pool_handle);
-
   event_destroy_mempool();
 
   if (g_option_instance->s3_performance_enabled()) {
@@ -405,6 +403,9 @@ int main(int argc, char **argv) {
   s3_stats_fini();
   fini_log();
   finalize_cli_options();
+
+  S3MempoolManager::destroy_instance();
+  S3ClovisLayoutMap::destroy_instance();
   S3Option::destroy_instance();
 
   return 0;

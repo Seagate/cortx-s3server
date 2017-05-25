@@ -26,8 +26,8 @@ S3_AUTH_CONFIG:                                       # Section for S3 Auth Serv
    S3_AUTH_IP_ADDR: 10.10.1.2                           # Auth server IP address
    S3_AUTH_PORT: 8095                                   # Auth server port
 S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
-   S3_CLOVIS_LOCAL_ADDR: <ipaddress>@tcp:12345:33:100   # Clovis end points, replace <ipaddress> with host's ip address
-   S3_CLOVIS_HA_ADDR: <ipaddress>@tcp:12345:34:1        # Clovis end point, replace <ipaddress> with host's ip address
+   S3_CLOVIS_LOCAL_ADDR: localhost@tcp:12345:33:100   # Clovis end points, replace localhost with host's ip address
+   S3_CLOVIS_HA_ADDR: localhost@tcp:12345:34:1        # Clovis end point, replace localhost with host's ip address
    S3_CLOVIS_PROF: <0x7000000000000001:0>               # Clovis end point
    S3_CLOVIS_LAYOUT_ID: 1                               # Clovis will select a Unit size of a layout according to the
                                                         # layout id set in the configuration file, mapping is as follows:
@@ -37,7 +37,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_MAX_UNITS_PER_REQUEST: 1                  # Maximum blocks of size S3_CLOVIS_UNIT_SIZE per read/write request to clovis
    S3_CLOVIS_MAX_IDX_FETCH_COUNT: 100                   # Clovis will read from index(If not specified) at a time maximim of this many key values
    S3_CLOVIS_IS_OOSTORE: false                          # Clovis oostore mode is set when this flag is true, default is false (oostore mode is not set)
-   S3_CLOVIS_IS_READ_VERIFY: true                       # Clovis Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
+   S3_CLOVIS_IS_READ_VERIFY: false                       # Clovis Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
    S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN: 16                  # Minimum length of the 'tm' receive queue for clovis, default is 2
    S3_CLOVIS_MAX_RPC_MSG_SIZE: 65536                    # Maximum rpc message size for clovis, default is 131072 (128k)
    S3_CLOVIS_PROCESS_FID: <0x7200000000000000:0>        # FID of the Resource manager for Clovis
@@ -45,8 +45,9 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_CASS_CLUSTER_EP: 10.10.1.3                 # Cassandra cluster end point
    S3_CLOVIS_CASS_KEYSPACE: "clovis_index_keyspace"     # Cassandra keyspace
    S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM: 1                 # Cassandra max column family number, default is 1
-   S3_CLOVIS_READ_POOL_INITIAL_SIZE: 40960              # Ten 4k blocks, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
-   S3_CLOVIS_READ_POOL_EXPANDABLE_SIZE: 20480           # Five 4k blocks, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_UNIT_SIZES_FOR_MEMORY_POOL: [4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 4194304]                          # Memory pool will be created for each of this unit_size with following properties
+   S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT: 10         # 10 blocks, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_CLOVIS_READ_POOL_EXPANDABLE_COUNT: 20             # 20 blocks, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_CLOVIS_READ_POOL_MAX_THRESHOLD: 104857600         # 100 MB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 4096                   # Pool buffer size

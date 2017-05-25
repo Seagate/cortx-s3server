@@ -21,8 +21,10 @@
 #include <unistd.h>
 #include "s3_common.h"
 
+#include "s3_clovis_layout.h"
 #include "s3_clovis_rw_common.h"
 #include "s3_clovis_writer.h"
+#include "s3_mem_pool_manager.h"
 #include "s3_memory_pool.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
@@ -32,7 +34,6 @@
 
 extern struct m0_clovis_realm clovis_uber_realm;
 extern S3Option *g_option_instance;
-extern MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
                                struct m0_uint128 object_id, uint64_t offset,
@@ -50,8 +51,8 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  place_holder_for_last_unit = (void *)mempool_getbuffer(
-      g_clovis_read_mem_pool_handle, ZEROED_ALLOCATION);
+  layout_id = -1;  // mark as invalid
+  place_holder_for_last_unit = NULL;
 }
 
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
@@ -70,13 +71,15 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  place_holder_for_last_unit = (void *)mempool_getbuffer(
-      g_clovis_read_mem_pool_handle, ZEROED_ALLOCATION);
+  place_holder_for_last_unit = NULL;
 }
 
 S3ClovisWriter::~S3ClovisWriter() {
-  mempool_releasebuffer(g_clovis_read_mem_pool_handle,
-                        place_holder_for_last_unit);
+  if (place_holder_for_last_unit) {
+    S3MempoolManager::get_instance()->release_buffer_for_unit_size(
+        place_holder_for_last_unit,
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id));
+  }
 }
 
 // helper to set mock clovis apis, only used in tests.
@@ -85,10 +88,12 @@ void S3ClovisWriter::reset_clovis_api(std::shared_ptr<ClovisAPI> api) {
 }
 
 void S3ClovisWriter::create_object(std::function<void(void)> on_success,
-                                   std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+                                   std::function<void(void)> on_failed,
+                                   int layoutid) {
+  s3_log(S3_LOG_DEBUG, "Entering with layoutid = %d\n", layoutid);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
+  layout_id = layoutid;
 
   writer_context.reset(new S3ClovisWriterContext(
       request, std::bind(&S3ClovisWriter::create_object_successful, this),
@@ -106,7 +111,8 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
   ctx->cbs[0].oop_stable = s3_clovis_op_stable;
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
-  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
+  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid,
+                                 layout_id);
 
   s3_clovis_api->clovis_entity_create(&(ctx->obj[0].ob_entity), &(ctx->ops[0]));
 
@@ -139,13 +145,14 @@ void S3ClovisWriter::create_object_failed() {
 void S3ClovisWriter::write_content(
     std::function<void(void)> on_success, std::function<void(void)> on_failed,
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "Entering with layout_id = %d\n", layout_id);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
   size_t clovis_write_payload_size =
-      g_option_instance->get_clovis_write_payload_size();
-  size_t clovis_unit_size = g_option_instance->get_clovis_unit_size();
+      g_option_instance->get_clovis_write_payload_size(layout_id);
+  size_t clovis_unit_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
 
   size_t estimated_write_length = 0;
@@ -178,6 +185,9 @@ void S3ClovisWriter::write_content(
   s3_log(S3_LOG_DEBUG, "clovis_buf_count without padding: %zu\n",
          clovis_buf_count);
   int buffers_per_unit = clovis_unit_size / size_of_each_buf;
+  if (buffers_per_unit == 0) {
+    buffers_per_unit = 1;
+  }
   int buffers_in_last_unit =
       clovis_buf_count % buffers_per_unit;  // marked to send till now
   if (buffers_in_last_unit > 0) {
@@ -210,7 +220,8 @@ void S3ClovisWriter::write_content(
 
   set_up_clovis_data_buffers(rw_ctx, data_items, clovis_buf_count);
 
-  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
+  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid,
+                                 layout_id);
 
   /* Create the write request */
   s3_clovis_api->clovis_obj_op(&ctx->obj[0], M0_CLOVIS_OC_WRITE, rw_ctx->ext,
@@ -252,10 +263,12 @@ void S3ClovisWriter::write_content_failed() {
 }
 
 void S3ClovisWriter::delete_object(std::function<void(void)> on_success,
-                                   std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+                                   std::function<void(void)> on_failed,
+                                   int layoutid) {
+  s3_log(S3_LOG_DEBUG, "Entering with layoutid = %d\n", layoutid);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
+  layout_id = layoutid;
 
   writer_context.reset(new S3ClovisWriterContext(
       request, std::bind(&S3ClovisWriter::delete_object_successful, this),
@@ -273,7 +286,8 @@ void S3ClovisWriter::delete_object(std::function<void(void)> on_success,
   ctx->cbs[0].oop_stable = s3_clovis_op_stable;
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
-  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
+  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid,
+                                 layout_id);
 
   s3_clovis_api->clovis_entity_delete(&(ctx->obj[0].ob_entity), &(ctx->ops[0]));
 
@@ -307,6 +321,7 @@ void S3ClovisWriter::delete_object_failed() {
 }
 
 void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
+                                    std::vector<int> layoutids,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
@@ -334,7 +349,8 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
     ctx->cbs[i].oop_stable = s3_clovis_op_stable;
     ctx->cbs[i].oop_failed = s3_clovis_op_failed;
 
-    s3_clovis_api->clovis_obj_init(&ctx->obj[i], &clovis_uber_realm, &id);
+    s3_clovis_api->clovis_obj_init(&ctx->obj[i], &clovis_uber_realm, &id,
+                                   layoutids[i]);
 
     s3_clovis_api->clovis_entity_delete(&(ctx->obj[i].ob_entity),
                                         &(ctx->ops[i]));
@@ -380,6 +396,13 @@ void S3ClovisWriter::set_up_clovis_data_buffers(
     struct s3_clovis_rw_op_context *rw_ctx, std::deque<evbuffer *> &data_items,
     size_t clovis_buf_count) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  if (place_holder_for_last_unit == NULL) {
+    place_holder_for_last_unit =
+        (void *)S3MempoolManager::get_instance()->get_buffer_for_unit_size(
+            S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+                layout_id));
+  }
 
   size_in_current_write = 0;
   size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();

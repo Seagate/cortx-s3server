@@ -35,9 +35,11 @@
 
 class S3PutObjectAction : public S3Action {
   struct m0_uint128 old_object_oid;
+  int old_layout_id;
   struct m0_uint128 new_object_oid;
   // Maximum retry count for collision resolution
   unsigned short tried_count;
+  int layout_id;
   // string used for salting the uri
   std::string salt;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -55,6 +57,9 @@ class S3PutObjectAction : public S3Action {
 
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
+
+  // Only for use with UT
+  void _set_layout_id(int layoutid) { layout_id = layoutid; }
 
  public:
   S3PutObjectAction(

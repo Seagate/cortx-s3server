@@ -17,3 +17,5 @@ rpmsandbox/
 *.rpm
 m0trace.*
 ssl/ssl_sandbox/
+third_party/cached_*.git.rev
+core.*

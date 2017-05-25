@@ -29,8 +29,7 @@
 class MockS3MemoryProfile : public S3MemoryProfile {
  public:
   MockS3MemoryProfile() : S3MemoryProfile() {}
-  MOCK_METHOD0(we_have_enough_memory_for_get_obj, bool());
-  MOCK_METHOD0(we_have_enough_memory_for_put_obj, bool());
+  MOCK_METHOD1(we_have_enough_memory_for_put_obj, bool(int layout_id));
 };
 
 #endif

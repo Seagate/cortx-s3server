@@ -71,6 +71,9 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
 
     call_count_one = 0;
 
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
             S3Option::get_instance()->get_libevent_pool_buffer_size());
@@ -117,6 +120,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
   struct m0_uint128 oid;
 
   int call_count_one;
+  int layout_id;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -370,6 +374,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(1)
       .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillOnce(Return(layout_id));
 
   // Few expectations for delete_objects_metadata
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
@@ -414,6 +420,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(3)
       .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
 
   // Few expectations for delete_objects_metadata
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
@@ -485,7 +493,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectMetadataSucceeded) {
   action_under_test->oids_to_delete.push_back(oid);
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_objects(_, _, _))
+              delete_objects(_, _, _, _))
       .Times(1);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillOnce(Return("objname"));
@@ -627,7 +635,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectsWithObjsToDelete) {
   action_under_test->oids_to_delete.push_back(oid);
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_objects(_, _, _))
+              delete_objects(_, _, _, _))
       .Times(1);
 
   action_under_test->delete_objects();

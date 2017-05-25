@@ -134,7 +134,8 @@ void S3DeleteObjectAction::delete_object() {
         request, object_metadata->get_oid());
     clovis_writer->delete_object(
         std::bind(&S3DeleteObjectAction::next, this),
-        std::bind(&S3DeleteObjectAction::delete_object_failed, this));
+        std::bind(&S3DeleteObjectAction::delete_object_failed, this),
+        object_metadata->get_layout_id());
   } else {
     s3_log(S3_LOG_WARN, "Failed to delete Object metadata\n");
     set_s3_error("InternalError");

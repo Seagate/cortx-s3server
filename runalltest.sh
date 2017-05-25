@@ -60,12 +60,19 @@ then
   UT_BIN=`pwd`/bazel-bin/s3ut
   UT_DEATHTESTS_BIN=`pwd`/bazel-bin/s3utdeathtests
   UT_MEMPOOL_BIN=`pwd`/bazel-bin/s3mempoolut
+  UT_MEMPOOLMGR_BIN=`pwd`/bazel-bin/s3mempoolmgrut
 
   printf "\nCheck s3ut..."
   type  $UT_BIN >/dev/null
   printf "OK \n"
 
   $UT_BIN 2>&1
+
+  printf "\nCheck s3mempoolmgrut..."
+  type  $UT_MEMPOOLMGR_BIN >/dev/null
+  printf "OK \n"
+
+  $UT_MEMPOOLMGR_BIN 2>&1
 
   printf "\nCheck s3utdeathtests..."
   type  $UT_DEATHTESTS_BIN >/dev/null

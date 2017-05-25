@@ -20,6 +20,32 @@
 #include "s3_memory_pool.h"
 
 /**
+ * Return the number of buffers we can allocate w.r.t max threshold and
+ * available memory space.
+ */
+static int pool_can_expand_by(struct mempool *pool) {
+  int available_space = 0;
+
+  if (pool == NULL) {
+    return 0;
+  }
+
+  if (pool->mem_get_free_space_func) {
+    available_space = pool->mem_get_free_space_func();
+  } else {
+    if (pool->max_memory_threshold > 0) {
+      available_space =
+          pool->max_memory_threshold -
+          (pool->total_bufs_allocated_by_pool * pool->mempool_item_size);
+    }
+  }
+
+  // We can expand by at least (available_space / pool->mempool_item_size)
+  // buffer count
+  return available_space / pool->mempool_item_size;
+}
+
+/**
  * Internal function to preallocate items to memory pool.
  * args:
  * pool (in) pointer to memory pool
@@ -31,17 +57,10 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
   int i;
   int rc = 0;
   void *buf = NULL;
-  struct memory_pool_element *pool_item;
+  struct memory_pool_element *pool_item = NULL;
 
   if (pool == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
-  }
-
-  /* Bail out in case if we cross the max free ist size by adding
-   * items_count_to_allocate */
-  if ((items_count_to_allocate + pool->free_pool_items_count) >
-      pool->free_list_max_count) {
-    return S3_MEMPOOL_ERROR;
   }
 
   for (i = 0; i < items_count_to_allocate; i++) {
@@ -53,29 +72,33 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
     if (buf == NULL || rc != 0) {
       return S3_MEMPOOL_ERROR;
     }
-    pool->total_outstanding_memory_alloc++;
+    pool->total_bufs_allocated_by_pool++;
     /* Put the allocated memory into the list */
     pool_item = (struct memory_pool_element *)buf;
 
     pool_item->next = pool->free_list;
     pool->free_list = pool_item;
-    /**memory is pre appended to list */
+    /* memory is pre appended to list */
 
     /* Increase the free list count */
-    pool->free_pool_items_count++;
+    pool->free_bufs_in_pool++;
+    if (pool->mem_mark_used_space_func) {
+      pool->mem_mark_used_space_func(pool->mempool_item_size);
+    }
   }
   return 0;
 }
 
 int mempool_create(size_t pool_item_size, size_t pool_initial_size,
-                   size_t pool_expansion_size, size_t pool_max_theshold_size,
+                   size_t pool_expansion_size, size_t pool_max_threshold_size,
                    int flags, MemoryPoolHandle *handle) {
   int rc;
-  int free_list_max_count;
-  int allocate_free_list_count;
+  int bufs_to_allocate;
   struct mempool *pool = NULL;
 
-  if (pool_item_size == 0 || pool_max_theshold_size == 0 || handle == NULL) {
+  /* pool_max_threshold_size == 0 is possible when
+     func_mem_available_callback_type is used. */
+  if (pool_item_size == 0 || pool_expansion_size == 0 || handle == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
   }
 
@@ -85,16 +108,6 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
   }
 
   *handle = NULL;
-
-  /* Bail out if the user provides initial size less than maximum threshold size
-   */
-  if (pool_max_theshold_size < pool_initial_size) {
-    return S3_MEMPOOL_INVALID_ARG;
-  }
-
-  /* Calculate the number of maximum free list possible from the threshold value
-   */
-  free_list_max_count = pool_max_theshold_size / pool_item_size;
 
   pool = (struct mempool *)calloc(1, sizeof(struct mempool));
   if (pool == NULL) {
@@ -108,7 +121,6 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
   }
 
   pool->flags |= flags;
-  pool->free_list_max_count = free_list_max_count;
   pool->mempool_item_size = pool_item_size;
   if (flags & CREATE_ALIGNED_MEMORY) {
     pool->alignment = MEMORY_ALIGNMENT;
@@ -122,16 +134,17 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
     }
   }
 
-  pool->expandable_size = pool_expansion_size;
-  pool->max_memory_threshold = pool_max_theshold_size;
-  /* figure out the size of free list to be preallocated from given initial pool
-   * size */
-  allocate_free_list_count = pool_initial_size / pool_item_size;
   *handle = (MemoryPoolHandle)pool;
 
+  pool->expandable_size = pool_expansion_size;
+  pool->max_memory_threshold = pool_max_threshold_size;
+  /* Figure out the size of free list to be preallocated from given initial pool
+   * size */
+  bufs_to_allocate = pool_initial_size / pool_item_size;
+
   /* Allocate the free list */
-  if (allocate_free_list_count > 0) {
-    rc = freelist_allocate(pool, allocate_free_list_count);
+  if (bufs_to_allocate > 0) {
+    rc = freelist_allocate(pool, bufs_to_allocate);
     if (rc != 0) {
       goto fail;
     }
@@ -140,12 +153,50 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
 
 fail:
   mempool_destroy(handle);
+  *handle = NULL;
   return S3_MEMPOOL_ERROR;
+}
+
+int mempool_create_with_shared_mem(
+    size_t pool_item_size, size_t pool_initial_size, size_t pool_expansion_size,
+    func_mem_available_callback_type mem_get_free_space_func,
+    func_mark_mem_used_callback_type mem_mark_used_space_func,
+    func_mark_mem_free_callback_type mem_mark_free_space_func, int flags,
+    MemoryPoolHandle *p_handle) {
+  int rc = 0;
+  if (mem_get_free_space_func == NULL || mem_mark_used_space_func == NULL ||
+      mem_mark_free_space_func == NULL || p_handle == NULL) {
+    return S3_MEMPOOL_INVALID_ARG;
+  }
+
+  if (pool_initial_size > mem_get_free_space_func()) {
+    return S3_MEMPOOL_ERROR;
+  }
+
+  rc = mempool_create(pool_item_size, pool_initial_size, pool_expansion_size, 0,
+                      flags, p_handle);
+  if (rc != 0) {
+    return rc;
+  }
+
+  struct mempool *pool = (struct mempool *)*p_handle;
+
+  pool->mem_get_free_space_func = mem_get_free_space_func;
+  pool->mem_mark_used_space_func = mem_mark_used_space_func;
+  pool->mem_mark_free_space_func = mem_mark_free_space_func;
+
+  /* Explicitly mark used space, since mempool_create -> freelist_allocate
+     dont have the function callbacks set. */
+  pool->mem_mark_used_space_func(pool->total_bufs_allocated_by_pool *
+                                 pool->mempool_item_size);
+
+  return 0;
 }
 
 void *mempool_getbuffer(MemoryPoolHandle handle, int flags) {
   int rc;
-  int allocate_free_list_count;
+  int bufs_to_allocate;
+  int bufs_that_can_be_allocated = 0;
   struct memory_pool_element *pool_item = NULL;
   struct mempool *pool = (struct mempool *)handle;
 
@@ -157,43 +208,30 @@ void *mempool_getbuffer(MemoryPoolHandle handle, int flags) {
     pthread_mutex_lock(&pool->lock);
   }
 
-  /* If the free list is empty and pool is dynamic then expand the pool's free
-   * list */
-  if ((pool->expandable_size != 0) && (pool->free_pool_items_count == 0)) {
-    /* Check whether we reached threshold value on memory consumption */
-    if ((pool->number_of_allocation * pool->mempool_item_size) >=
-        pool->max_memory_threshold) {
+  /* If the free list is empty then expand the pool's free list */
+  if (pool->free_bufs_in_pool == 0) {
+    bufs_to_allocate = pool->expandable_size / pool->mempool_item_size;
+    bufs_that_can_be_allocated = pool_can_expand_by(pool);
+    if (bufs_that_can_be_allocated > 0) {
+      /* We can at least allocate
+         min(bufs_that_can_be_allocated, bufs_to_allocate) */
+      bufs_to_allocate = ((bufs_to_allocate > bufs_that_can_be_allocated)
+                              ? bufs_that_can_be_allocated
+                              : bufs_to_allocate);
+
+      rc = freelist_allocate(pool, bufs_to_allocate);
+      if (rc != 0) {
+        if ((pool->flags & ENABLE_LOCKING) != 0) {
+          pthread_mutex_unlock(&pool->lock);
+        }
+        return NULL;
+      }
+    } else {
+      /* We cannot allocate any more buffers, reached max threshold */
       if ((pool->flags & ENABLE_LOCKING) != 0) {
         pthread_mutex_unlock(&pool->lock);
       }
-      /* The memory consumed by the system has crossed the threshold, so return
-       * NULL */
       return NULL;
-    } else if ((pool->number_of_allocation * pool->mempool_item_size +
-                pool->expandable_size) > pool->max_memory_threshold) {
-      /* The memory consumed by system has not crossed the threshold value,
-       * however
-       * if we now expand the pool by expandable_size it will cross threshold
-       * so we can expand it by a value which is less than
-       * max_memory_threshold
-       */
-      size_t extra_freelist_allocation =
-          pool->max_memory_threshold -
-          ((pool->number_of_allocation * pool->mempool_item_size) +
-           (pool->expandable_size));
-      allocate_free_list_count =
-          extra_freelist_allocation / pool->mempool_item_size;
-    } else {
-      allocate_free_list_count =
-          pool->expandable_size / pool->mempool_item_size;
-    }
-
-    if (allocate_free_list_count != 0) {
-      /* Expand the pool */
-      rc = freelist_allocate(pool, allocate_free_list_count);
-      if (rc != 0) {
-        return NULL;
-      }
     }
   }
 
@@ -204,62 +242,19 @@ void *mempool_getbuffer(MemoryPoolHandle handle, int flags) {
   if (pool->free_list != NULL) {
     pool_item = pool->free_list;
     pool->free_list = pool_item->next;
-    pool->free_pool_items_count--;
+    pool->free_bufs_in_pool--;
 
     if ((flags & ZEROED_ALLOCATION) != 0) {
       memset(pool_item, 0, pool->mempool_item_size);
     }
   }
 
-  pool->number_of_allocation++;
+  if (pool_item) {
+    pool->number_of_bufs_shared++;
+  }
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
-  }
-
-  /* allocate a new one, if item not in pool */
-  if (pool_item == NULL) {
-    void *buf;
-
-    if (pool->total_outstanding_memory_alloc >= pool->free_list_max_count) {
-      /* Any further memory allocation will cross the max threshold value, so
-       * bail out */
-      if (flags & ENABLE_LOCKING) {
-        pthread_mutex_lock(&pool->lock);
-        /* Not successful in providing the item */
-        pool->number_of_allocation--;
-        pthread_mutex_unlock(&pool->lock);
-      } else {
-        pool->number_of_allocation--;
-      }
-
-      return NULL;
-    }
-
-    /* allocate a new one, as item not in pool */
-    if (flags & CREATE_ALIGNED_MEMORY) {
-      /* Do memory aligned allocations in case of memory aligned pools */
-      rc = posix_memalign(&buf, pool->alignment, pool->mempool_item_size);
-      if (rc != 0) {
-        return NULL;
-      }
-      pool_item = (struct memory_pool_element *)buf;
-    } else {
-      pool_item = (struct memory_pool_element *)malloc(pool->mempool_item_size);
-      if (pool_item != NULL) {
-        pool->total_outstanding_memory_alloc++;
-      }
-    }
-  }
-  if (pool_item == NULL) {
-    if (flags & ENABLE_LOCKING) {
-      pthread_mutex_lock(&pool->lock);
-      /* Not successful in providing the item */
-      pool->number_of_allocation--;
-      pthread_mutex_unlock(&pool->lock);
-    } else {
-      pool->number_of_allocation--;
-    }
   }
 
   return (void *)pool_item;
@@ -277,29 +272,18 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf) {
     pthread_mutex_lock(&pool->lock);
   }
 
-  if (pool->free_pool_items_count < pool->free_list_max_count) {
-    pool_item->next = pool->free_list;
-    pool->free_list = pool_item;
-    pool->free_pool_items_count++;
-    pool_item = NULL;
-  }
+  // Add the buffer back to pool
+  pool_item->next = pool->free_list;
+  pool->free_list = pool_item;
+  pool->free_bufs_in_pool++;
+  pool_item = NULL;
 
-  pool->number_of_allocation--;
+  pool->number_of_bufs_shared--;
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
   }
 
-  /* Implies that we have not hooked the item to the list, so free it */
-  /* This condition won't happen currently as max threshold is enforced by
-   * default */
-  if (pool_item != NULL) {
-    /* This assert need to be removed when we dont want to enforce max threshold
-     */
-    assert(pool_item == NULL);
-    free(pool_item);
-    pool->total_outstanding_memory_alloc--;
-  }
   return 0;
 }
 
@@ -315,12 +299,10 @@ int mempool_getinfo(MemoryPoolHandle handle, struct pool_info *poolinfo) {
   }
 
   poolinfo->mempool_item_size = pool->mempool_item_size;
-  poolinfo->free_list_max_count = pool->free_list_max_count;
-  poolinfo->free_pool_items_count = pool->free_pool_items_count;
-  poolinfo->number_of_allocation = pool->number_of_allocation;
+  poolinfo->free_bufs_in_pool = pool->free_bufs_in_pool;
+  poolinfo->number_of_bufs_shared = pool->number_of_bufs_shared;
   poolinfo->expandable_size = pool->expandable_size;
-  poolinfo->total_outstanding_memory_alloc =
-      pool->total_outstanding_memory_alloc;
+  poolinfo->total_bufs_allocated_by_pool = pool->total_bufs_allocated_by_pool;
   poolinfo->flags = pool->flags;
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
@@ -340,7 +322,7 @@ int mempool_free_space(MemoryPoolHandle handle, size_t *free_bytes) {
     pthread_mutex_lock(&pool->lock);
   }
 
-  *free_bytes = pool->mempool_item_size * pool->free_pool_items_count;
+  *free_bytes = pool->mempool_item_size * pool->free_bufs_in_pool;
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
@@ -359,49 +341,52 @@ int mempool_getbuffer_size(MemoryPoolHandle handle, size_t *buffer_size) {
   return 0;
 }
 
-int mempool_resize(MemoryPoolHandle handle, int new_max_threshold) {
-  int new_max_free_list_count;
-  struct memory_pool_element *pool_item;
-  struct mempool *pool = (struct mempool *)handle;
-  struct memory_pool_element *pool_item_tobe_freed = NULL;
+int mempool_downsize(MemoryPoolHandle handle, size_t mem_to_free) {
+  struct mempool *pool = NULL;
+  struct memory_pool_element *pool_item = NULL;
+  int bufs_to_free = 0;
+  int count = 0;
 
-  if (new_max_threshold <= 0) {
-    return S3_MEMPOOL_ERROR;
+  if (handle == NULL) {
+    return S3_MEMPOOL_INVALID_ARG;
   }
 
-  /* calculate new free list size for new_max_threshold */
-  new_max_free_list_count = new_max_threshold / pool->mempool_item_size;
+  pool = (struct mempool *)handle;
 
-  if (pool->flags & ENABLE_LOCKING) {
+  /* pool is NULL or mem_to_free is not multiple of pool->mempool_item_size */
+  if (pool == NULL || (mem_to_free % pool->mempool_item_size > 0)) {
+    return S3_MEMPOOL_INVALID_ARG;
+  }
+
+  if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_lock(&pool->lock);
   }
 
-  /* set the new value */
-  pool->free_list_max_count = new_max_free_list_count;
+  /* Only free what we can free */
+  bufs_to_free = mem_to_free / pool->mempool_item_size;
+  if (bufs_to_free > pool->free_bufs_in_pool) {
+    bufs_to_free = pool->free_bufs_in_pool;
+  }
 
-  /* In case if it happens that the new max-free-list value is less than the
-   * current free list then trim the free list
-   */
-
-  /* Have the list of all such excess items to be freed */
-  while ((pool->free_pool_items_count > pool->free_list_max_count) &&
-         (pool->free_list != NULL)) {
+  /* Free the items in free list */
+  if (bufs_to_free > 0) {
     pool_item = pool->free_list;
-    pool->free_list = pool_item->next;
-    pool_item->next = pool_item_tobe_freed;
-    pool_item_tobe_freed = pool_item;
-    pool->free_pool_items_count--;
+    count = 0;
+    while (count < bufs_to_free && pool_item != NULL) {
+      count++;
+      pool->free_list = pool_item->next;
+      free(pool_item);
+      pool->total_bufs_allocated_by_pool--;
+      pool->free_bufs_in_pool--;
+      pool_item = pool->free_list;
+    }
+    if (pool->mem_mark_free_space_func) {
+      pool->mem_mark_free_space_func(bufs_to_free * pool->mempool_item_size);
+    }
   }
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
-  }
-
-  /* Now free the unwanted extra items */
-  while (pool_item_tobe_freed != NULL) {
-    pool_item = pool_item_tobe_freed;
-    pool_item_tobe_freed = pool_item_tobe_freed->next;
-    free(pool_item);
   }
   return 0;
 }
@@ -409,14 +394,12 @@ int mempool_resize(MemoryPoolHandle handle, int new_max_threshold) {
 int mempool_destroy(MemoryPoolHandle *handle) {
   struct mempool *pool;
   struct memory_pool_element *pool_item;
-  struct memory_pool_element *next_item;
 
   if (handle == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
   }
 
   pool = (struct mempool *)*handle;
-
   if (pool == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
   }
@@ -426,25 +409,36 @@ int mempool_destroy(MemoryPoolHandle *handle) {
   }
 
   /* Free the items in free list */
-  for (pool_item = pool->free_list; pool_item != NULL;) {
-    next_item = pool_item->next;
+  pool_item = pool->free_list;
+  while (pool_item != NULL) {
+    pool->free_list = pool_item->next;
     free(pool_item);
-    pool->total_outstanding_memory_alloc--;
-    pool_item = next_item;
+    pool->total_bufs_allocated_by_pool--;
+    pool->free_bufs_in_pool--;
+    pool_item = pool->free_list;
   }
+  pool->free_list = NULL;
 
-  /* Assert if total memory allocation via pool and free via pool doesn't match
+  /* TODO: libevhtp/libevent seems to hold some references and not release back
+   * to pool. Bug will be logged for this to investigate.
    */
-  assert((pool->total_outstanding_memory_alloc - pool->number_of_allocation) ==
-         0);
+  /* Assert if there are leaks */
+  /*
+    assert(pool->total_bufs_allocated_by_pool == 0);
+    assert(pool->number_of_bufs_shared == 0);
+    assert(pool->free_bufs_in_pool == 0);
+  */
+
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
   }
+
   free(pool);
   /* reset the handle */
   *handle = NULL;
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_destroy(&pool->lock);
   }
+
   return 0;
 }

@@ -37,13 +37,14 @@ class S3PutChunkUploadObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
+  int layout_id;
   struct m0_uint128 old_object_oid;
+  int old_layout_id;
   struct m0_uint128 new_object_oid;
   // Maximum retry count for collision resolution
   unsigned short tried_count;
   // string used for salting the uri
   std::string salt;
-  size_t total_data_to_stream;
   S3Timer create_object_timer;
   S3Timer write_content_timer;
 
@@ -64,6 +65,9 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
   void send_chunk_details_if_any();
+
+  // Used in UT Only
+  void _set_layout_id(int layoutid) { layout_id = layoutid; }
 
  public:
   S3PutChunkUploadObjectAction(

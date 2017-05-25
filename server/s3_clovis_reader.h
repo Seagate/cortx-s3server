@@ -28,6 +28,7 @@
 
 #include "s3_asyncop_context_base.h"
 #include "s3_clovis_context.h"
+#include "s3_clovis_layout.h"
 #include "s3_clovis_wrapper.h"
 #include "s3_log.h"
 #include "s3_option.h"
@@ -44,12 +45,17 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   bool has_clovis_rw_op_context;
 
+  int layout_id;
+
  public:
   S3ClovisReaderContext(std::shared_ptr<S3RequestObject> req,
                         std::function<void()> success_callback,
-                        std::function<void()> failed_callback)
+                        std::function<void()> failed_callback, int layoutid)
       : S3AsyncOpContextBase(req, success_callback, failed_callback) {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
+    s3_log(S3_LOG_DEBUG, "Constructor: layout_id = %d\n", layoutid);
+    assert(layoutid > 0);
+
+    layout_id = layoutid;
 
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(1);
@@ -70,21 +76,33 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
     }
   }
 
-  // Call this when you want to do write op.
-  uint64_t init_read_op_ctx(size_t clovis_buf_count, uint64_t last_index) {
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count);
+  // Call this when you want to do read op.
+  // param(in/out): last_index - where next read should start
+  bool init_read_op_ctx(size_t clovis_buf_count, uint64_t* last_index) {
+    if (last_index == nullptr) {
+      return false;
+    }
+    size_t unit_size =
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, unit_size);
+    if (clovis_rw_op_context == NULL) {
+      // out of memory
+      return false;
+    }
     has_clovis_rw_op_context = true;
 
     for (size_t i = 0; i < clovis_buf_count; i++) {
-      clovis_rw_op_context->ext->iv_index[i] = last_index;
-      clovis_rw_op_context->ext->iv_vec.v_count[i] =
-          g_option_instance->get_clovis_unit_size();
-      last_index += g_option_instance->get_clovis_unit_size();
+      // Overwrite previous v_count to adapt to current layout_id's unit_size
+      clovis_rw_op_context->data->ov_vec.v_count[i] = unit_size;
+
+      clovis_rw_op_context->ext->iv_index[i] = *last_index;
+      clovis_rw_op_context->ext->iv_vec.v_count[i] = unit_size;
+      *last_index += unit_size;
 
       /* we don't want any attributes */
       clovis_rw_op_context->attr->ov_vec.v_count[i] = 0;
     }
-    return last_index;  // where next read should start
+    return true;
   }
 
   struct s3_clovis_op_context* get_clovis_op_ctx() {
@@ -119,6 +137,7 @@ class S3ClovisReader {
   std::function<void()> handler_on_failed;
 
   struct m0_uint128 oid;
+  int layout_id;
 
   S3ClovisReaderOpState state;
 
@@ -131,20 +150,19 @@ class S3ClovisReader {
   uint64_t last_index;
 
  public:
-  // struct m0_uint128 id;
-  // object id for object is generated within this constructor
-  S3ClovisReader(std::shared_ptr<S3RequestObject> req,
-                 std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   // object id is generated at upper level and passed to this constructor
   S3ClovisReader(std::shared_ptr<S3RequestObject> req, struct m0_uint128 id,
+                 int layout_id,
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+
   virtual S3ClovisReaderOpState get_state() { return state; }
   virtual struct m0_uint128 get_oid() { return oid; }
 
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
 
   // async read
-  virtual void read_object_data(size_t num_of_blocks,
+  // Returns: true = launched, false = failed to launch (out-of-memory)
+  virtual bool read_object_data(size_t num_of_blocks,
                                 std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed);
   void read_object_data_successful();

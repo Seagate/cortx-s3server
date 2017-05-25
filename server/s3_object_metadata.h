@@ -66,16 +66,19 @@ class S3ObjectMetadata {
   unsigned short tried_count;
   std::string salt;
 
-  // The name for a key is a sequence of Unicode characters whose UTF-8
-  // encoding.
+  // The name for a key is a sequence of Unicode characters whose UTF-8 encoding
   // is at most 1024 bytes long.
-  // http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys.
+  // http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
   std::string object_key_uri;
+
+  int layout_id;
+  int old_layout_id;
 
   struct m0_uint128 oid;
   struct m0_uint128 old_oid;
   struct m0_uint128 index_oid;
   struct m0_uint128 part_index_oid;
+
   std::string mero_oid_u_hi_str;
   std::string mero_oid_u_lo_str;
   std::string mero_old_oid_u_hi_str;
@@ -152,6 +155,11 @@ class S3ObjectMetadata {
   void set_old_oid(struct m0_uint128 id);
   void set_part_index_oid(struct m0_uint128 id);
   virtual struct m0_uint128 get_oid() { return oid; }
+  virtual int get_layout_id() { return layout_id; }
+  void set_layout_id(int id) { layout_id = id; }
+  int get_old_layout_id() { return old_layout_id; }
+  void set_old_layout_id(int id) { old_layout_id = id; }
+
   struct m0_uint128 get_old_oid() {
     return old_oid;
   }

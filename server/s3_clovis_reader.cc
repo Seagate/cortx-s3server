@@ -29,6 +29,7 @@
 extern struct m0_clovis_realm clovis_uber_realm;
 
 S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
+                               struct m0_uint128 id, int layoutid,
                                std::shared_ptr<ClovisAPI> clovis_api)
     : request(req),
       s3_clovis_api(clovis_api),
@@ -38,28 +39,24 @@ S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
       num_of_blocks_read(0),
       last_index(0) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
+
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
+
+  oid = id;
+  layout_id = layoutid;
 }
 
-S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
-                               struct m0_uint128 id,
-                               std::shared_ptr<ClovisAPI> clovis_api)
-    : S3ClovisReader(req, clovis_api) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
-  oid = id;  // Override the default generated above.
-}
-
-void S3ClovisReader::read_object_data(size_t num_of_blocks,
+bool S3ClovisReader::read_object_data(size_t num_of_blocks,
                                       std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "num_of_blocks = %zu from last_index = %zu\n",
-         num_of_blocks, last_index);
+  s3_log(S3_LOG_DEBUG,
+         "num_of_blocks = %zu from last_index = %zu and layout_id = %d\n",
+         num_of_blocks, last_index, layout_id);
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -67,9 +64,12 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
 
   reader_context.reset(new S3ClovisReaderContext(
       request, std::bind(&S3ClovisReader::read_object_data_successful, this),
-      std::bind(&S3ClovisReader::read_object_data_failed, this)));
+      std::bind(&S3ClovisReader::read_object_data_failed, this), layout_id));
 
-  last_index = reader_context->init_read_op_ctx(num_of_blocks, last_index);
+  if (!reader_context->init_read_op_ctx(num_of_blocks, &last_index)) {
+    // out-of-memory
+    return false;
+  }
 
   struct s3_clovis_op_context *ctx = reader_context->get_clovis_op_ctx();
   struct s3_clovis_rw_op_context *rw_ctx =
@@ -90,7 +90,8 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   /* Read the requisite number of blocks from the entity */
-  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid);
+  s3_clovis_api->clovis_obj_init(&ctx->obj[0], &clovis_uber_realm, &oid,
+                                 layout_id);
 
   /* Create the read request */
   s3_clovis_api->clovis_obj_op(&ctx->obj[0], M0_CLOVIS_OC_READ, rw_ctx->ext,
@@ -103,6 +104,7 @@ void S3ClovisReader::read_object_data(size_t num_of_blocks,
 
   s3_clovis_api->clovis_op_launch(ctx->ops, 1);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
+  return true;
 }
 
 void S3ClovisReader::read_object_data_successful() {

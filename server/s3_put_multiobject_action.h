@@ -44,6 +44,7 @@ class S3PutMultiObjectAction : public S3Action {
   S3Timer write_content_timer;
   int part_number;
   std::string upload_id;
+  int layout_id;
 
   int get_part_number() {
     return atoi((request->get_query_string_value("partNumber")).c_str());
@@ -68,6 +69,9 @@ class S3PutMultiObjectAction : public S3Action {
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3AuthClientFactory> auth_factory;
+
+  // Used only for UT
+  void _set_layout_id(int layoutid) { layout_id = layoutid; }
 
  public:
   S3PutMultiObjectAction(
@@ -129,6 +133,7 @@ class S3PutMultiObjectAction : public S3Action {
               FetchFirstPartInfoServiceUnavailableFailed);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchFirstPartInfoInternalErrorFailed);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset);
   FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
               InitiateDataStreamingForZeroSizeObject);

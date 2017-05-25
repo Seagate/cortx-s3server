@@ -41,6 +41,7 @@ class S3DeleteBucketAction : public S3Action {
   std::map<std::string, std::string> multipart_objects;
   std::vector<struct m0_uint128> part_oids;
   std::vector<struct m0_uint128> multipart_object_oids;
+  std::vector<int> multipart_object_layoutids;
   m0_uint128 object_list_index_oid;
 
   std::string last_key;  // last key during each iteration

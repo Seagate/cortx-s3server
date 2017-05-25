@@ -62,6 +62,9 @@ class S3DeleteObjectActionTest : public testing::Test {
 
     call_count_one = 0;
 
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
             S3Option::get_instance()->get_libevent_pool_buffer_size());
@@ -96,6 +99,7 @@ class S3DeleteObjectActionTest : public testing::Test {
   struct m0_uint128 oid;
 
   int call_count_one;
+  int layout_id;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -233,8 +237,11 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteSucceeded) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(1)
       .WillOnce(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillOnce(Return(layout_id));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(1);
 
   action_under_test->delete_object();

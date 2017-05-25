@@ -24,6 +24,7 @@
 #include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_request_object.h"
 #include "s3_callback_test_helpers.h"
+#include "s3_clovis_layout.h"
 #include "s3_clovis_reader.h"
 
 using ::testing::_;
@@ -100,17 +101,23 @@ static void s3_test_clovis_op_launch_fail_enoent(struct m0_clovis_op **op,
 class S3ClovisReaderTest : public testing::Test {
  protected:
   S3ClovisReaderTest() {
+    oid = {0x1ffff, 0x1ffff};
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
     evbase = event_base_new();
     req = evhtp_request_new(dummy_request_cb, evbase);
     EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
-    clovis_reader_ptr =
-        std::make_shared<S3ClovisReader>(request_mock, s3_clovis_api_mock);
+    clovis_reader_ptr = std::make_shared<S3ClovisReader>(
+        request_mock, oid, layout_id, s3_clovis_api_mock);
   }
 
   ~S3ClovisReaderTest() { event_base_free(evbase); }
 
+  struct m0_uint128 oid;
+  int layout_id;
   evbase_t *evbase;
   evhtp_request_t *req;
   std::shared_ptr<MockS3RequestObject> request_mock;
@@ -128,7 +135,7 @@ TEST_F(S3ClovisReaderTest, Constructor) {
 TEST_F(S3ClovisReaderTest, ReadObjectDataTest) {
   S3CallBack s3clovisreader_callbackobj;
 
-  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
@@ -148,7 +155,7 @@ TEST_F(S3ClovisReaderTest, ReadObjectDataTest) {
 TEST_F(S3ClovisReaderTest, ReadObjectDataSuccessful) {
   S3CallBack s3clovisreader_callbackobj;
 
-  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
@@ -170,7 +177,7 @@ TEST_F(S3ClovisReaderTest, ReadObjectDataSuccessful) {
 TEST_F(S3ClovisReaderTest, ReadObjectDataFailed) {
   S3CallBack s3clovisreader_callbackobj;
 
-  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));
@@ -192,7 +199,7 @@ TEST_F(S3ClovisReaderTest, ReadObjectDataFailed) {
 TEST_F(S3ClovisReaderTest, ReadObjectDataFailedMissing) {
   S3CallBack s3clovisreader_callbackobj;
 
-  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _, _));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _));

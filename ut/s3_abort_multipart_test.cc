@@ -251,7 +251,8 @@ TEST_F(S3AbortMultipartActionTest, DeleteObjectTest1) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(1);
   action_under_test->delete_object();
 }
@@ -262,7 +263,8 @@ TEST_F(S3AbortMultipartActionTest, DeleteObjectTest2) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::deleted));
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(1);
   action_under_test->delete_object();
 }

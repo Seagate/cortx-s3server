@@ -77,7 +77,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
 
   // Call this when you want to do write op.
   void init_write_op_ctx(size_t clovis_buf_count) {
-    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, false);
+    clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, 0, false);
     has_clovis_rw_op_context = true;
   }
 
@@ -115,6 +115,7 @@ class S3ClovisWriter {
   std::function<void()> handler_on_failed;
 
   struct m0_uint128 oid;
+  int layout_id;
 
   S3ClovisWriterOpState state;
 
@@ -148,7 +149,11 @@ class S3ClovisWriter {
 
   virtual struct m0_uint128 get_oid() { return oid; }
 
+  virtual int get_layout_id() { return layout_id; }
+
   virtual void set_oid(struct m0_uint128 id) { oid = id; }
+
+  virtual void set_layout_id(int id) { layout_id = id; }
 
   // This concludes the md5 calculation
   virtual std::string get_content_md5() {
@@ -164,7 +169,7 @@ class S3ClovisWriter {
 
   // async create
   virtual void create_object(std::function<void(void)> on_success,
-                             std::function<void(void)> on_failed);
+                             std::function<void(void)> on_failed, int layoutid);
   void create_object_successful();
   void create_object_failed();
 
@@ -177,11 +182,12 @@ class S3ClovisWriter {
 
   // Async delete operation.
   virtual void delete_object(std::function<void(void)> on_success,
-                             std::function<void(void)> on_failed);
+                             std::function<void(void)> on_failed, int layoutid);
   void delete_object_successful();
   void delete_object_failed();
 
   virtual void delete_objects(std::vector<struct m0_uint128> oids,
+                              std::vector<int> layoutids,
                               std::function<void(void)> on_success,
                               std::function<void(void)> on_failed);
   void delete_objects_successful();

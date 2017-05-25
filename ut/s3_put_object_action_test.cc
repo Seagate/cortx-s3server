@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "mock_s3_factory.h"
+#include "s3_clovis_layout.h"
 #include "s3_put_object_action.h"
 #include "s3_test_utils.h"
 
@@ -62,6 +63,9 @@ class S3PutObjectActionTest : public testing::Test {
     object_list_indx_oid = {0x11ffff, 0x1ffff};
     zero_oid_idx = {0ULL, 0ULL};
 
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
     call_count_one = 0;
 
     async_buffer_factory =
@@ -97,6 +101,7 @@ class S3PutObjectActionTest : public testing::Test {
   struct m0_uint128 object_list_indx_oid;
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
+  int layout_id;
 
   int call_count_one;
 
@@ -184,6 +189,9 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedFoundShouldHaveNewOID) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(1)
       .WillOnce(Return(old_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(1)
+      .WillOnce(Return(layout_id));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -246,14 +254,23 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedInvalidStateReportsError) {
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFirstAttempt) {
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .Times(1)
+      .WillOnce(Return(1024));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
   action_under_test->create_object();
   EXPECT_TRUE(action_under_test->clovis_writer != nullptr);
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectSecondAttempt) {
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .Times(2)
+      .WillRepeatedly(Return(1024));
+
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(2);
   action_under_test->create_object();
   action_under_test->tried_count = 1;
@@ -295,18 +312,26 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry) {
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
       .WillOnce(Return(S3ClovisWriterOpState::exists));
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .Times(1)
+      .WillOnce(Return(1024));
 
   action_under_test->tried_count = MAX_COLLISION_RETRY_COUNT - 1;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
 
   action_under_test->create_object_failed();
 }
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), create_object(_, _))
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .Times(1)
+      .WillOnce(Return(1024));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _))
       .Times(1);
   action_under_test->create_object();
 
@@ -332,7 +357,8 @@ TEST_F(S3PutObjectActionTest, CreateNewOidTest) {
 
 TEST_F(S3PutObjectActionTest, RollbackTest) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(1);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
@@ -402,6 +428,8 @@ TEST_F(S3PutObjectActionTest, InitiateDataStreamingWeHaveAllData) {
   EXPECT_CALL(*ptr_mock_request, has_all_body_content())
       .Times(1)
       .WillOnce(Return(true));
+  EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
+      .WillRepeatedly(Return(1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -438,8 +466,8 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeExactData) {
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .Times(AtLeast(1))
-      .WillRepeatedly(
-          Return(S3Option::get_instance()->get_clovis_write_payload_size()));
+      .WillRepeatedly(Return(
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -460,7 +488,8 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldWriteIfWeHaveMoreData) {
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size() + 1024));
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) +
+          1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -481,9 +510,9 @@ TEST_F(S3PutObjectActionTest, ConsumeIncomingShouldPauseWhenWeHaveTooMuch) {
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
-      .WillRepeatedly(
-          Return(S3Option::get_instance()->get_clovis_write_payload_size() *
-                 S3Option::get_instance()->get_read_ahead_multiple() * 2));
+      .WillRepeatedly(Return(
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
+          S3Option::get_instance()->get_read_ahead_multiple() * 2));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -511,6 +540,7 @@ TEST_F(S3PutObjectActionTest,
 
 TEST_F(S3PutObjectActionTest, WriteObjectShouldWriteContentAndMarkProgress) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -525,6 +555,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectShouldWriteContentAndMarkProgress) {
 
 TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
   action_under_test->write_in_progress = true;
@@ -548,6 +579,8 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
 
+  action_under_test->_set_layout_id(layout_id);
+
   // mock mark progress
   action_under_test->write_in_progress = true;
 
@@ -561,6 +594,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
 TEST_F(S3PutObjectActionTest,
        WriteObjectSuccessfulWhileShuttingDownAndRollback) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
   action_under_test->write_in_progress = true;
@@ -580,6 +614,7 @@ TEST_F(S3PutObjectActionTest,
 // We have all the data: Freezed
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldWriteStateAllData) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
   action_under_test->write_in_progress = true;
@@ -603,6 +638,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldWriteStateAllData) {
 TEST_F(S3PutObjectActionTest,
        WriteObjectSuccessfulShouldWriteWhenExactWritableSize) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
   action_under_test->write_in_progress = true;
@@ -612,8 +648,8 @@ TEST_F(S3PutObjectActionTest,
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
-      .WillRepeatedly(
-          Return(S3Option::get_instance()->get_clovis_write_payload_size()));
+      .WillRepeatedly(Return(
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -629,6 +665,7 @@ TEST_F(S3PutObjectActionTest,
 TEST_F(S3PutObjectActionTest,
        WriteObjectSuccessfulShouldWriteSomeDataWhenMoreData) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
   action_under_test->write_in_progress = true;
@@ -639,7 +676,8 @@ TEST_F(S3PutObjectActionTest,
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size() + 1024));
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) +
+          1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -654,6 +692,7 @@ TEST_F(S3PutObjectActionTest,
 // We have some data but not all and but have more to write
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
   action_under_test->write_in_progress = true;
@@ -683,6 +722,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulDoNextStepWhenAllIsWritten) {
 // We expecting more and not enough to write
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
   action_under_test->write_in_progress = true;
@@ -693,7 +733,8 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size() - 1024));
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) -
+          1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _))
@@ -712,6 +753,7 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
       object_list_indx_oid);
 
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*ptr_mock_request, get_data_length_str())
       .Times(1)
@@ -775,6 +817,9 @@ TEST_F(S3PutObjectActionTest, DeleteObjectSinceItsPresent) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
       .Times(1)
       .WillOnce(Return(old_oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .Times(1)
+      .WillOnce(Return(layout_id));
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
@@ -786,7 +831,8 @@ TEST_F(S3PutObjectActionTest, DeleteObjectSinceItsPresent) {
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), delete_object(_, _))
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
       .Times(AtLeast(1));
 
   action_under_test->delete_old_object_if_present();

@@ -195,7 +195,8 @@ void S3AbortMultipartAction::delete_object() {
         request, object_multipart_metadata->get_oid());
     clovis_writer->delete_object(
         std::bind(&S3AbortMultipartAction::next, this),
-        std::bind(&S3AbortMultipartAction::delete_object_failed, this));
+        std::bind(&S3AbortMultipartAction::delete_object_failed, this),
+        object_multipart_metadata->get_layout_id());
   } else {
     next();
   }

@@ -21,9 +21,10 @@
 #include "gtest/gtest.h"
 
 #include "clovis_helpers.h"
+#include "s3_clovis_layout.h"
 #include "s3_error_messages.h"
 #include "s3_log.h"
-#include "s3_memory_pool.h"
+#include "s3_mem_pool_manager.h"
 #include "s3_option.h"
 #include "s3_stats.h"
 
@@ -37,9 +38,6 @@ struct m0_uint128 root_account_user_index_oid;
 S3Option *g_option_instance = NULL;
 extern S3Stats *g_stats_instance;
 evbase_t *global_evbase_handle;
-
-/* global Memory Pool for read from clovis */
-MemoryPoolHandle g_clovis_read_mem_pool_handle;
 
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;
@@ -71,14 +69,15 @@ int main(int argc, char **argv) {
                     libevent_pool_buffer_size * 100,
                     libevent_pool_buffer_size * 500, CREATE_ALIGNED_MEMORY);
 
-  size_t clovis_unit_size = g_option_instance->get_clovis_unit_size();
-  mempool_create(clovis_unit_size, clovis_unit_size * 100,
-                 clovis_unit_size * 100, clovis_unit_size * 500,
-                 CREATE_ALIGNED_MEMORY, &g_clovis_read_mem_pool_handle);
+  rc = S3MempoolManager::create_pool(
+      g_option_instance->get_clovis_read_pool_max_threshold(),
+      g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
+      g_option_instance->get_clovis_read_pool_initial_buffer_count(),
+      g_option_instance->get_clovis_read_pool_expandable_count());
 
   rc = RUN_ALL_TESTS();
 
-  mempool_destroy(&g_clovis_read_mem_pool_handle);
+  S3MempoolManager::destroy_instance();
 
   _fini_log();
 

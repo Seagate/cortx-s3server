@@ -106,7 +106,8 @@ class S3ClovisWriterFactory {
   virtual std::shared_ptr<S3ClovisWriter> create_clovis_writer(
       std::shared_ptr<S3RequestObject> req, m0_uint128 oid, uint64_t offset) {
     s3_log(S3_LOG_DEBUG,
-           "S3ClovisWriterFactory::create_clovis_writer with offset\n");
+           "S3ClovisWriterFactory::create_clovis_writer with offset %zu\n",
+           offset);
     return std::make_shared<S3ClovisWriter>(req, oid, offset);
   }
 };
@@ -116,17 +117,10 @@ class S3ClovisReaderFactory {
   virtual ~S3ClovisReaderFactory() {}
 
   virtual std::shared_ptr<S3ClovisReader> create_clovis_reader(
-      std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
+      std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
+      int layout_id, std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "S3ClovisReaderFactory::create_clovis_reader\n");
-    return std::make_shared<S3ClovisReader>(req, clovis_api);
-  }
-
-  virtual std::shared_ptr<S3ClovisReader> create_clovis_reader(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 id,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
-    s3_log(S3_LOG_DEBUG, "S3ClovisReaderFactory::create_clovis_reader\n");
-    return std::make_shared<S3ClovisReader>(req, id, clovis_api);
+    return std::make_shared<S3ClovisReader>(req, oid, layout_id, clovis_api);
   }
 };
 

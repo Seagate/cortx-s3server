@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "mock_s3_factory.h"
+#include "s3_clovis_layout.h"
 #include "s3_error_codes.h"
 #include "s3_get_object_action.h"
 #include "s3_test_utils.h"
@@ -51,10 +52,11 @@ using ::testing::AtLeast;
     action_under_test->fetch_object_info();                                \
   } while (0)
 
-static void test_read_object_data_success(size_t num_of_blocks,
+static bool test_read_object_data_success(size_t num_of_blocks,
                                           std::function<void(void)> on_success,
                                           std::function<void(void)> on_failed) {
   on_success();
+  return true;
 }
 
 class S3GetObjectActionTest : public testing::Test {
@@ -85,8 +87,11 @@ class S3GetObjectActionTest : public testing::Test {
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         ptr_mock_request, object_list_indx_oid);
 
-    clovis_reader_factory =
-        std::make_shared<MockS3ClovisReaderFactory>(ptr_mock_request, oid);
+    layout_id =
+        S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
+
+    clovis_reader_factory = std::make_shared<MockS3ClovisReaderFactory>(
+        ptr_mock_request, oid, layout_id);
 
     action_under_test.reset(
         new S3GetObjectAction(ptr_mock_request, bucket_meta_factory,
@@ -103,6 +108,7 @@ class S3GetObjectActionTest : public testing::Test {
 
   struct m0_uint128 object_list_indx_oid;
   struct m0_uint128 oid;
+  int layout_id;
   struct m0_uint128 zero_oid_idx;
 
   int call_count_one;
@@ -259,8 +265,13 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
       .WillRepeatedly(Return(oid));
 
   // Object size less than unit size
-  size_t obj_size = S3Option::get_instance()->get_clovis_unit_size() - 1;
+  int layout_id = 1;
+  size_t obj_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) -
+      1;
 
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length())
       .WillRepeatedly(Return(obj_size));
@@ -305,8 +316,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
       .WillRepeatedly(Return(oid));
 
   // Object size less than unit size
-  size_t obj_size = S3Option::get_instance()->get_clovis_unit_size();
+  int layout_id = 1;
+  size_t obj_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length())
       .WillRepeatedly(Return(obj_size));
@@ -357,7 +372,13 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
       .WillOnce(Return("abcd1234abcd"));
 
   // Object size less than unit size
-  size_t obj_size = S3Option::get_instance()->get_clovis_unit_size() + 1;
+  int layout_id = 1;
+  size_t obj_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) +
+      1;
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length())

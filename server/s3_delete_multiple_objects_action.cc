@@ -255,6 +255,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
         all_had_json_error = false;  // at least one good object to delete
         objects_metadata.push_back(object);
         oids_to_delete.push_back(object->get_oid());
+        layout_id_for_objs_to_delete.push_back(object->get_layout_id());
       }
     } else {
       s3_log(S3_LOG_DEBUG, "Object metadata missing for = %s\n",
@@ -354,7 +355,7 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
   } else {
     // Now trigger the delete.
     clovis_writer->delete_objects(
-        oids_to_delete,
+        oids_to_delete, layout_id_for_objs_to_delete,
         std::bind(&S3DeleteMultipleObjectsAction::delete_objects_successful,
                   this),
         std::bind(&S3DeleteMultipleObjectsAction::delete_objects_failed, this));

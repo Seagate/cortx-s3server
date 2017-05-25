@@ -50,32 +50,32 @@ class S3OptionsTest : public testing::Test {
 TEST_F(S3OptionsTest, Constructor) {
   EXPECT_STREQ("/var/log/seagate/s3", instance->get_log_dir().c_str());
   EXPECT_STREQ("INFO", instance->get_log_level().c_str());
-  EXPECT_STREQ("0.0.0.0", instance->get_bind_addr().c_str());
+  EXPECT_STREQ("10.10.1.1", instance->get_bind_addr().c_str());
   EXPECT_STREQ("localhost@tcp:12345:33:100",
                instance->get_clovis_local_addr().c_str());
   EXPECT_STREQ("<0x7000000000000001:0>", instance->get_clovis_prof().c_str());
-  EXPECT_STREQ("127.0.0.1", instance->get_auth_ip_addr().c_str());
-  EXPECT_EQ(8081, instance->get_s3_bind_port());
+  EXPECT_STREQ("10.10.1.2", instance->get_auth_ip_addr().c_str());
+  EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
-  EXPECT_EQ(9, instance->get_clovis_layout_id());
+  EXPECT_EQ(1, instance->get_clovis_layout_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
-  EXPECT_EQ(2, instance->get_clovis_tm_recv_queue_min_len());
-  EXPECT_EQ(131072, instance->get_clovis_max_rpc_msg_size());
+  EXPECT_EQ(16, instance->get_clovis_tm_recv_queue_min_len());
+  EXPECT_EQ(65536, instance->get_clovis_max_rpc_msg_size());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
-  EXPECT_EQ(2, instance->get_clovis_idx_service_id());
-  EXPECT_EQ("127.0.0.1", instance->get_clovis_cass_cluster_ep());
+  EXPECT_EQ(1, instance->get_clovis_idx_service_id());
+  EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ("clovis_index_keyspace", instance->get_clovis_cass_keyspace());
   EXPECT_EQ(1, instance->get_clovis_cass_max_column_family_num());
-  EXPECT_EQ(100, instance->get_log_file_max_size_in_mb());
-  EXPECT_TRUE(instance->is_log_buffering_enabled());
-  EXPECT_EQ(30, instance->get_log_flush_frequency_in_sec());
-  EXPECT_EQ(10, instance->get_s3_grace_period_sec());
+  EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
+  EXPECT_FALSE(instance->is_log_buffering_enabled());
+  EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
+  EXPECT_EQ(4, instance->get_s3_grace_period_sec());
   EXPECT_FALSE(instance->get_is_s3_shutting_down());
   EXPECT_FALSE(instance->is_stats_enabled());
-  EXPECT_EQ("127.0.0.1", instance->get_statsd_ip_addr());
-  EXPECT_EQ(8125, instance->get_statsd_port());
-  EXPECT_EQ(3, instance->get_statsd_max_send_retry());
+  EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
+  EXPECT_EQ(9125, instance->get_statsd_port());
+  EXPECT_EQ(15, instance->get_statsd_max_send_retry());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
@@ -91,7 +91,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
+  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
@@ -106,7 +106,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_TRUE(instance->get_clovis_is_read_verify());
+  EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
@@ -136,7 +136,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
+  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
@@ -147,7 +147,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_TRUE(instance->get_clovis_is_read_verify());
+  EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
@@ -186,7 +186,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_TRUE(instance->get_clovis_is_read_verify());
+  EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(1, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->get_is_s3_shutting_down());
   EXPECT_FALSE(instance->is_stats_enabled());
@@ -336,14 +336,14 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
 TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_TRUE(instance->load_section("S3_CLOVIS_CONFIG", false));
 
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
+  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_TRUE(instance->get_clovis_is_read_verify());
+  EXPECT_FALSE(instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
@@ -362,14 +362,14 @@ TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
   EXPECT_TRUE(instance->load_section("S3_CLOVIS_CONFIG", true));
 
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
+  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
-  EXPECT_TRUE(instance->get_clovis_is_read_verify());
+  EXPECT_FALSE(instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());

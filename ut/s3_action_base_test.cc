@@ -30,6 +30,7 @@
 using ::testing::Mock;
 using ::testing::Return;
 using ::testing::Eq;
+using ::testing::_;
 
 // Before you create an object of this class, ensure
 // auth is disabled for unit tests.
@@ -43,9 +44,7 @@ class S3ActionTestbase : public S3Action {
   };
 
   void set_defaults() {
-    EXPECT_CALL(*profile, we_have_enough_memory_for_get_obj())
-        .WillRepeatedly(Return(true));
-    EXPECT_CALL(*profile, we_have_enough_memory_for_put_obj())
+    EXPECT_CALL(*profile, we_have_enough_memory_for_put_obj(_))
         .WillRepeatedly(Return(true));
   }
 
@@ -149,30 +148,9 @@ TEST_F(S3ActionTest, RollbacklistRun) {
   EXPECT_EQ(1, ptr_s3Actionobject->response_called);
 }
 
-TEST_F(S3ActionTest, OutOfMemoryTestForGetObject) {
-  EXPECT_CALL(*(ptr_s3Actionobject->profile),
-              we_have_enough_memory_for_get_obj())
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(*(ptr_s3Actionobject->profile),
-              we_have_enough_memory_for_put_obj())
-      .WillRepeatedly(Return(true));
-
-  EXPECT_CALL(*ptr_mock_request, get_api_type())
-      .WillRepeatedly(Return(S3ApiType::object));
-  EXPECT_CALL(*ptr_mock_request, http_verb())
-      .WillRepeatedly(Return(S3HttpVerb::GET));
-
-  EXPECT_CALL(*ptr_mock_request, respond_retry_after(Eq(1))).Times(1);
-
-  ptr_s3Actionobject->start();
-}
-
 TEST_F(S3ActionTest, OutOfMemoryTestForPutObject) {
   EXPECT_CALL(*(ptr_s3Actionobject->profile),
-              we_have_enough_memory_for_get_obj())
-      .WillRepeatedly(Return(true));
-  EXPECT_CALL(*(ptr_s3Actionobject->profile),
-              we_have_enough_memory_for_put_obj())
+              we_have_enough_memory_for_put_obj(_))
       .WillRepeatedly(Return(false));
 
   EXPECT_CALL(*ptr_mock_request, get_api_type())

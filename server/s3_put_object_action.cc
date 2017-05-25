@@ -18,6 +18,7 @@
  */
 
 #include "s3_put_object_action.h"
+#include "s3_clovis_layout.h"
 #include "s3_common.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"
@@ -36,7 +37,11 @@ S3PutObjectAction::S3PutObjectAction(
   s3_log(S3_LOG_DEBUG, "Constructor\n");
 
   old_object_oid = {0ULL, 0ULL};
+  old_layout_id = -1;
   S3UriToMeroOID(request->get_object_uri().c_str(), &new_object_oid);
+
+  // Note valid value is set during create object
+  layout_id = -1;
 
   tried_count = 0;
   salt = "uri_salt_";
@@ -123,6 +128,7 @@ void S3PutObjectAction::fetch_object_info_status() {
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, "S3ObjectMetadataState::present\n");
     old_object_oid = object_metadata->get_oid();
+    old_layout_id = object_metadata->get_layout_id();
     create_new_oid(old_object_oid);
     next();
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
@@ -145,9 +151,13 @@ void S3PutObjectAction::create_object() {
   } else {
     clovis_writer->set_oid(new_object_oid);
   }
+
+  layout_id = S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
+      request->get_content_length());
+
   clovis_writer->create_object(
       std::bind(&S3PutObjectAction::next, this),
-      std::bind(&S3PutObjectAction::create_object_failed, this));
+      std::bind(&S3PutObjectAction::create_object_failed, this), layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -249,7 +259,7 @@ void S3PutObjectAction::rollback_create() {
   clovis_writer->set_oid(new_object_oid);
   clovis_writer->delete_object(
       std::bind(&S3PutObjectAction::rollback_next, this),
-      std::bind(&S3PutObjectAction::rollback_create_failed, this));
+      std::bind(&S3PutObjectAction::rollback_create_failed, this), layout_id);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -293,7 +303,7 @@ void S3PutObjectAction::initiate_data_streaming() {
       // Start streaming, logically pausing action till we get data.
       request->listen_for_incoming_data(
           std::bind(&S3PutObjectAction::consume_incoming_content, this),
-          S3Option::get_instance()->get_clovis_write_payload_size());
+          S3Option::get_instance()->get_clovis_write_payload_size(layout_id));
     }
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -308,13 +318,14 @@ void S3PutObjectAction::consume_incoming_content() {
   if (!write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_clovis_write_payload_size()) {
+            S3Option::get_instance()->get_clovis_write_payload_size(
+                layout_id)) {
       write_object(request->get_buffered_input());
     }
   }
   if (!request->get_buffered_input()->is_freezed() &&
       request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_clovis_write_payload_size() *
+          (S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
            S3Option::get_instance()->get_read_ahead_multiple())) {
     s3_log(S3_LOG_DEBUG, "Pausing with Buffered length = %zu\n",
            request->get_buffered_input()->get_content_length());
@@ -348,10 +359,9 @@ void S3PutObjectAction::write_object_successful() {
   if (/* buffered data len is at least equal to max we can write to clovis in
          one write */
       request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()
-              ->get_clovis_write_payload_size() || /* we have all the data
-                                                      buffered and ready to
-                                                      write */
+          S3Option::get_instance()->get_clovis_write_payload_size(
+              layout_id) || /* we have all the data buffered and ready to
+                               write */
       (request->get_buffered_input()->is_freezed() &&
        request->get_buffered_input()->get_content_length() > 0)) {
     write_object(request->get_buffered_input());
@@ -388,6 +398,7 @@ void S3PutObjectAction::save_metadata() {
   object_metadata->set_content_length(request->get_data_length_str());
   object_metadata->set_md5(clovis_writer->get_content_md5());
   object_metadata->set_oid(clovis_writer->get_oid());
+  object_metadata->set_layout_id(layout_id);
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
@@ -412,7 +423,8 @@ void S3PutObjectAction::delete_old_object_if_present() {
     clovis_writer->set_oid(old_object_oid);
     clovis_writer->delete_object(
         std::bind(&S3PutObjectAction::next, this),
-        std::bind(&S3PutObjectAction::delete_old_object_failed, this));
+        std::bind(&S3PutObjectAction::delete_old_object_failed, this),
+        old_layout_id);
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -41,6 +41,8 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   upload_id = uploadid;
   oid = M0_CLOVIS_ID_APP;
   old_oid = {0ULL, 0ULL};
+  layout_id = 0;
+  old_layout_id = 0;
   tried_count = 0;
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
@@ -515,12 +517,14 @@ std::string S3ObjectMetadata::to_json() {
   root["Bucket-Name"] = bucket_name;
   root["Object-Name"] = object_name;
   root["Object-URI"] = object_key_uri;
+  root["layout_id"] = layout_id;
   if (is_multipart) {
     root["Upload-ID"] = upload_id;
     root["mero_part_oid_u_hi"] = mero_part_oid_u_hi_str;
     root["mero_part_oid_u_lo"] = mero_part_oid_u_lo_str;
     root["mero_old_oid_u_hi"] = mero_old_oid_u_hi_str;
     root["mero_old_oid_u_lo"] = mero_old_oid_u_lo_str;
+    root["old_layout_id"] = old_layout_id;
   }
 
   root["mero_oid_u_hi"] = mero_oid_u_hi_str;
@@ -569,7 +573,7 @@ std::string S3ObjectMetadata::to_json() {
  */
 
 int S3ObjectMetadata::from_json(std::string content) {
-  s3_log(S3_LOG_DEBUG, "Called\n");
+  s3_log(S3_LOG_DEBUG, "Called with content [%s]\n", content.c_str());
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
@@ -587,6 +591,7 @@ int S3ObjectMetadata::from_json(std::string content) {
 
   mero_oid_u_hi_str = newroot["mero_oid_u_hi"].asString();
   mero_oid_u_lo_str = newroot["mero_oid_u_lo"].asString();
+  layout_id = newroot["layout_id"].asInt();
 
   std::string dec_oid_u_hi_str = base64_decode(mero_oid_u_hi_str);
   std::string dec_oid_u_lo_str = base64_decode(mero_oid_u_lo_str);
@@ -610,6 +615,7 @@ int S3ObjectMetadata::from_json(std::string content) {
            dec_oid_u_hi_str.length());
     memcpy((void*)&old_oid.u_lo, dec_oid_u_lo_str.c_str(),
            dec_oid_u_lo_str.length());
+    old_layout_id = newroot["old_layout_id"].asInt();
   }
 
   dec_oid_u_hi_str = base64_decode(mero_part_oid_u_hi_str);

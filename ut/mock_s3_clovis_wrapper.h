@@ -36,9 +36,9 @@ class MockS3Clovis : public ClovisAPI {
   MOCK_METHOD3(clovis_idx_init,
                void(struct m0_clovis_idx *idx, struct m0_clovis_realm *parent,
                     const struct m0_uint128 *id));
-  MOCK_METHOD3(clovis_obj_init,
+  MOCK_METHOD4(clovis_obj_init,
                void(struct m0_clovis_obj *obj, struct m0_clovis_realm *parent,
-                    const struct m0_uint128 *id));
+                    const struct m0_uint128 *id, int layout_id));
   MOCK_METHOD2(clovis_entity_create,
                int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
   MOCK_METHOD2(clovis_entity_delete,

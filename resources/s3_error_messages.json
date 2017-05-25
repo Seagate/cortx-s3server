@@ -94,5 +94,9 @@
   "MalformedFICmd": {
     "Description": "The fault injection command token is invalid.",
     "httpcode": 400
+  },
+  "InvalidPartPerS3Mero": {
+    "Description": "Part size must be multiple of unit_size. Please check S3/Mero documentation.",
+    "httpcode": 400
   }
 }

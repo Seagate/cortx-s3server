@@ -37,6 +37,7 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
       : S3ObjectMetadata(req, oid) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
   MOCK_METHOD0(get_oid, struct m0_uint128());
+  MOCK_METHOD0(get_layout_id, int());
   MOCK_METHOD1(set_oid, void(struct m0_uint128));
   MOCK_METHOD1(set_md5, void(std::string));
   MOCK_METHOD0(get_md5, std::string());

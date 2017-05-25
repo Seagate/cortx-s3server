@@ -35,7 +35,9 @@
 
 class S3PostMultipartObjectAction : public S3Action {
   struct m0_uint128 oid;
+  int layout_id;
   struct m0_uint128 old_oid;
+  int old_layout_id;
   struct m0_uint128 object_list_oid;
   struct m0_uint128 multipart_index_oid;
   short tried_count;
@@ -79,7 +81,7 @@ class S3PostMultipartObjectAction : public S3Action {
   void create_object();
   void create_object_failed();
   virtual void collision_occured();
-  void create_new_oid();
+  void create_new_oid(struct m0_uint128 current_oid);
   void save_upload_metadata();
   void save_upload_metadata_failed();
   void create_part_meta_index();

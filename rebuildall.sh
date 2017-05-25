@@ -4,34 +4,35 @@ set -e
 
 usage() {
   echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--use-build-cache][--no-check-code]'
-  echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build]'
+  echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build][--no-s3mempoolmgrut-build]'
   echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
   echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install][--help]'
   echo 'Optional params as below:'
-  echo '          --no-mero-rpm           : Use mero libs from source code (third_party/mero) location'
-  echo '                                    Default is (false) i.e. use mero libs from pre-installed'
-  echo '                                    mero rpm location (/usr/lib64)'
-  echo '          --use-build-cache       : Use build cache for third_party and mero, Default (false)'
-  echo '                                    If cache is missing, third_party and mero will be rebuilt'
-  echo '                                    Ensuring consistency of cache is responsibility of caller'
-  echo '          --no-check-code         : Do not check code for formatting style, Default (false)'
-  echo '          --no-clean-build        : Do not clean before build, Default (false)'
-  echo '                                    Use this option for incremental build.'
-  echo '                                    This option is not recommended, use with caution.'
-  echo '          --no-s3ut-build         : Do not build S3 UT, Default (false)'
-  echo '          --no-s3mempoolut-build  : Do not build Memory pool UT, Default (false)'
-  echo '          --no-s3server-build     : Do not build S3 Server, Default (false)'
-  echo '          --no-cloviskvscli-build : Do not build cloviskvscli tool, Default (false)'
-  echo '          --no-auth-build         : Do not build Auth Server, Default (false)'
-  echo '          --no-jclient-build      : Do not build jclient, Default (false)'
-  echo '          --no-jcloudclient-build : Do not build jcloudclient, Default (false)'
-  echo '          --no-install            : Do not install binaries after build, Default (false)'
-  echo '          --help (-h)             : Display help'
+  echo '          --no-mero-rpm              : Use mero libs from source code (third_party/mero) location'
+  echo '                                       Default is (false) i.e. use mero libs from pre-installed'
+  echo '                                       mero rpm location (/usr/lib64)'
+  echo '          --use-build-cache          : Use build cache for third_party and mero, Default (false)'
+  echo '                                      If cache is missing, third_party and mero will be rebuilt'
+  echo '                                      Ensuring consistency of cache is responsibility of caller'
+  echo '          --no-check-code            : Do not check code for formatting style, Default (false)'
+  echo '          --no-clean-build           : Do not clean before build, Default (false)'
+  echo '                                       Use this option for incremental build.'
+  echo '                                       This option is not recommended, use with caution.'
+  echo '          --no-s3ut-build            : Do not build S3 UT, Default (false)'
+  echo '          --no-s3mempoolut-build     : Do not build Memory pool UT, Default (false)'
+  echo '          --no-s3mempoolmgrut-build  : Do not build Memory pool Manager UT, Default (false)'
+  echo '          --no-s3server-build        : Do not build S3 Server, Default (false)'
+  echo '          --no-cloviskvscli-build    : Do not build cloviskvscli tool, Default (false)'
+  echo '          --no-auth-build            : Do not build Auth Server, Default (false)'
+  echo '          --no-jclient-build         : Do not build jclient, Default (false)'
+  echo '          --no-jcloudclient-build    : Do not build jcloudclient, Default (false)'
+  echo '          --no-install               : Do not install binaries after build, Default (false)'
+  echo '          --help (-h)                : Display help'
 }
 
 # read the options
 OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
-no-s3ut-build,no-s3mempoolut-build,no-s3server-build,no-cloviskvscli-build,no-auth-build,\
+no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,no-cloviskvscli-build,no-auth-build,\
 no-jclient-build,no-jcloudclient-build,no-install,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
@@ -42,6 +43,7 @@ no_check_code=0
 no_clean_build=0
 no_s3ut_build=0
 no_s3mempoolut_build=0
+no_s3mempoolmgrut_build=0
 no_s3server_build=0
 no_cloviskvscli_build=0
 no_auth_build=0
@@ -58,6 +60,7 @@ while true; do
     --no-clean-build)no_clean_build=1; shift ;;
     --no-s3ut-build) no_s3ut_build=1; shift ;;
     --no-s3mempoolut-build) no_s3mempoolut_build=1; shift ;;
+    --no-s3mempoolmgrut-build) no_s3mempoolmgrut_build=1; shift ;;
     --no-s3server-build) no_s3server_build=1; shift ;;
     --no-cloviskvscli-build) no_cloviskvscli_build=1; shift ;;
     --no-auth-build) no_auth_build=1; shift ;;
@@ -177,6 +180,7 @@ then
   if [[ $no_s3ut_build -eq 0   || \
       $no_s3server_build -eq 0 || \
       $no_cloviskvscli_build -eq 0 || \
+      $no_s3mempoolmgrut_build -eq 0 || \
       $no_s3mempoolut_build -eq 0 ]]
   then
     bazel clean
@@ -195,6 +199,12 @@ fi
 if [ $no_s3mempoolut_build -eq 0 ]
 then
   bazel build //:s3mempoolut --cxxopt="-std=c++11"
+fi
+
+if [ $no_s3mempoolmgrut_build -eq 0 ]
+then
+  bazel build //:s3mempoolmgrut --cxxopt="-std=c++11" --define $MERO_INC_ \
+                      --define $MERO_LIB_ --define $MERO_EXTRA_LIB_
 fi
 
 if [ $no_s3server_build -eq 0 ]

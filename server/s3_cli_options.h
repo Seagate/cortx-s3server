@@ -25,6 +25,9 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+DECLARE_string(s3config);
+DECLARE_string(s3layoutmap);
+
 DECLARE_string(s3host);
 DECLARE_int32(s3port);
 DECLARE_string(s3pidfile);

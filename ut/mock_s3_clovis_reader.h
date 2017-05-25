@@ -33,17 +33,15 @@ using ::testing::Return;
 class MockS3ClovisReader : public S3ClovisReader {
  public:
   MockS3ClovisReader(std::shared_ptr<S3RequestObject> req,
+                     struct m0_uint128 oid, int layout_id,
                      std::shared_ptr<ClovisAPI> clovis_api = nullptr)
-      : S3ClovisReader(req, clovis_api) {}
-  MockS3ClovisReader(std::shared_ptr<S3RequestObject> req, struct m0_uint128 id,
-                     std::shared_ptr<ClovisAPI> clovis_api = nullptr)
-      : S3ClovisReader(req, id, clovis_api) {}
+      : S3ClovisReader(req, oid, layout_id, clovis_api) {}
   MOCK_METHOD0(get_state, S3ClovisReaderOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());
   MOCK_METHOD0(get_value, std::string());
   MOCK_METHOD1(set_oid, void(struct m0_uint128 oid));
   MOCK_METHOD3(read_object_data,
-               void(size_t num_of_blocks, std::function<void(void)> on_success,
+               bool(size_t num_of_blocks, std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
   MOCK_METHOD1(get_first_block, size_t(char** data));
   MOCK_METHOD1(get_next_block, size_t(char** data));
