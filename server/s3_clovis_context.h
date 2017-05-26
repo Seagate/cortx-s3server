@@ -54,6 +54,7 @@ struct s3_clovis_rw_op_context {
 struct s3_clovis_idx_op_context {
   struct m0_clovis_idx *idx;
   struct m0_clovis_op **ops;
+  struct m0_clovis_op *sync_op;
   struct m0_clovis_op_ops *cbs;
   size_t idx_count;
 };

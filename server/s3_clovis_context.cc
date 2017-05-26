@@ -204,7 +204,6 @@ struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int idx_count) {
       (struct m0_clovis_op **)calloc(idx_count, sizeof(struct m0_clovis_op *));
   ctx->cbs = (struct m0_clovis_op_ops *)calloc(idx_count,
                                                sizeof(struct m0_clovis_op_ops));
-
   ctx->idx_count = idx_count;
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 
@@ -220,6 +219,10 @@ int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
     }
     m0_clovis_op_fini(ctx->ops[i]);
     m0_clovis_op_free(ctx->ops[i]);
+  }
+  if (ctx->sync_op != NULL) {
+    m0_clovis_op_fini(ctx->sync_op);
+    m0_clovis_op_free(ctx->sync_op);
   }
   if (ctx->idx != NULL && ctx->idx->in_entity.en_sm.sm_state != 0) {
     m0_clovis_idx_fini(ctx->idx);

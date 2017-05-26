@@ -90,6 +90,7 @@ enum class S3ClovisKVSWriterOpState {
   deleted,
   exists,   // Object already exists
   missing,  // Object does not exists
+  deleting  // Object is being deleted.
 };
 
 class S3ClovisKVSWriter {
@@ -99,6 +100,7 @@ class S3ClovisKVSWriter {
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::unique_ptr<S3ClovisKVSWriterContext> writer_context;
+  std::unique_ptr<S3ClovisKVSWriterContext> sync_context;
   std::string kvs_key;
   std::string kvs_value;
 
@@ -141,6 +143,16 @@ class S3ClovisKVSWriter {
   virtual void create_index_with_oid(struct m0_uint128 idx_id,
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed);
+
+  void sync_index(std::function<void(void)> on_success,
+                  std::function<void(void)> on_failed, int index_count = 1);
+  void sync_index_successful();
+  void sync_index_failed();
+
+  void sync_keyval(std::function<void(void)> on_success,
+                   std::function<void(void)> on_failed);
+  void sync_keyval_successful();
+  void sync_keyval_failed();
 
   // async delete
   virtual void delete_index(struct m0_uint128 idx_oid,
@@ -200,10 +212,17 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexSuccessful);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFail);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFailExists);
+  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndex);
+  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexSuccessful);
+  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata);
+  FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedFailedMetadata);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyVal);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValSuccessful);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValEmpty);
+  FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyVal);
+  FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyvalSuccessful);
+  FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyValFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyVal);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValSuccess);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailed);

@@ -53,6 +53,14 @@ class ClovisAPI {
                                struct m0_clovis_realm *parent,
                                const struct m0_uint128 *id) = 0;
 
+  virtual int clovis_sync_op_init(struct m0_clovis_op **sync_op) = 0;
+
+  virtual int clovis_sync_entity_add(struct m0_clovis_op *sync_op,
+                                     struct m0_clovis_entity *entity) = 0;
+
+  virtual int clovis_sync_op_add(struct m0_clovis_op *sync_op,
+                                 struct m0_clovis_op *op) = 0;
+
   virtual void clovis_obj_init(struct m0_clovis_obj *obj,
                                struct m0_clovis_realm *parent,
                                const struct m0_uint128 *id) = 0;
@@ -121,6 +129,20 @@ class ConcreteClovisAPI : public ClovisAPI {
     S3Option *option_instance = S3Option::get_instance();
     m0_clovis_obj_init(obj, parent, id,
                        option_instance->get_clovis_layout_id());
+  }
+
+  int clovis_sync_op_init(struct m0_clovis_op **sync_op) {
+    return m0_clovis_sync_op_init(sync_op);
+  }
+
+  int clovis_sync_entity_add(struct m0_clovis_op *sync_op,
+                             struct m0_clovis_entity *entity) {
+    return m0_clovis_sync_entity_add(sync_op, entity);
+  }
+
+  int clovis_sync_op_add(struct m0_clovis_op *sync_op,
+                         struct m0_clovis_op *op) {
+    return m0_clovis_sync_op_add(sync_op, op);
   }
 
   int clovis_entity_create(struct m0_clovis_entity *entity,

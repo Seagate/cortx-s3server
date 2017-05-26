@@ -181,6 +181,7 @@ void initialize_global_var() {
 int create_s3_user_index(std::string index_name) {
   int rc;
   struct m0_clovis_op *ops[1] = {NULL};
+  struct m0_clovis_op *sync_op = NULL;
   struct m0_clovis_idx idx;
 
   memset(&idx, 0, sizeof(idx));
@@ -191,18 +192,59 @@ int create_s3_user_index(std::string index_name) {
   m0_clovis_entity_create(&idx.in_entity, &ops[0]);
   m0_clovis_op_launch(ops, 1);
 
-  rc = m0_clovis_op_wait(
-      ops[0], M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE), M0_TIME_NEVER);
+  rc = m0_clovis_op_wait(ops[0],
+                         M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
+                         m0_time_from_now(10, 0));
+  rc = (rc < 0) ? rc : ops[0]->op_sm.sm_rc;
   if (rc < 0) {
     if (rc != -EEXIST) {
-      m0_clovis_op_fini(ops[0]);
-      m0_clovis_op_free(ops[0]);
-      return rc;
+      goto FAIL;
     }
   }
-  m0_clovis_op_fini(ops[0]);
-  m0_clovis_op_free(ops[0]);
+  if (rc != -EEXIST) {
+    rc = m0_clovis_sync_op_init(&sync_op);
+    if (rc != 0) {
+      goto FAIL;
+    }
+
+    rc = m0_clovis_sync_entity_add(sync_op, &idx.in_entity);
+    if (rc != 0) {
+      goto FAIL;
+    }
+    m0_clovis_op_launch(&sync_op, 1);
+    rc = m0_clovis_op_wait(sync_op,
+                           M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
+                           m0_time_from_now(10, 0));
+    if (rc < 0) {
+      goto FAIL;
+    }
+  }
+  if (ops[0] != NULL) {
+    m0_clovis_op_fini(ops[0]);
+    m0_clovis_op_free(ops[0]);
+  }
+  if (sync_op != NULL) {
+    m0_clovis_op_fini(sync_op);
+    m0_clovis_op_free(sync_op);
+  }
+
+  if (idx.in_entity.en_sm.sm_state != 0) {
+    m0_clovis_idx_fini(&idx);
+  }
+
   return 0;
+
+FAIL:
+  if (ops[0] != NULL) {
+    m0_clovis_op_fini(ops[0]);
+    m0_clovis_op_free(ops[0]);
+  }
+  if (sync_op != NULL) {
+    m0_clovis_op_fini(sync_op);
+    m0_clovis_op_free(sync_op);
+  }
+
+  return rc;
 }
 
 int main(int argc, char **argv) {
