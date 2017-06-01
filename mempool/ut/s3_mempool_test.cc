@@ -194,6 +194,25 @@ TEST_F(MempoolSelfCreateTestSuite, MaxThresholdTest) {
   mempool_destroy(&first_handle);
 }
 
+// Test to check mempool free space
+TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpace) {
+  size_t free_bytes;
+  EXPECT_EQ(0, mempool_create(ONE_4K_BLOCK, ONE_4K_BLOCK, 0, THREE_4K_BLOCK, 0,
+                              &first_handle));
+
+  EXPECT_EQ(0, mempool_free_space(first_handle, &free_bytes));
+  EXPECT_EQ(ONE_4K_BLOCK, free_bytes);
+  mempool_destroy(&first_handle);
+}
+
+// Test to check mempool free space
+TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpaceInvalid) {
+  EXPECT_EQ(0, mempool_create(ONE_4K_BLOCK, ONE_4K_BLOCK, 0, THREE_4K_BLOCK, 0,
+                              &first_handle));
+  EXPECT_EQ(S3_MEMPOOL_INVALID_ARG, mempool_free_space(first_handle, NULL));
+  mempool_destroy(&first_handle);
+}
+
 // Test to check the pool expansion
 TEST_F(MempoolSelfCreateTestSuite, PoolExpansionTest) {
   void *first_buf;
