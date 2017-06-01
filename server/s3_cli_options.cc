@@ -37,8 +37,6 @@ DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log",
 DEFINE_string(clovislocal, "localhost@tcp:12345:33:100",
               "Clovis local address");
 DEFINE_string(clovisha, "CLOVIS_DEFAULT_HA_ADDR", "Clovis ha address");
-DEFINE_string(clovisconfd, "localhost@tcp:12345:33:100",
-              "Clovis confd address");
 DEFINE_int32(clovislayoutid, 9, "For options please see the readme");
 DEFINE_string(clovisprofilefid, "<0x7000000000000001:0>", "Clovis profile FID");
 DEFINE_string(clovisprocessfid, "<0x7200000000000000:0>", "Clovis process FID");
@@ -142,12 +140,6 @@ int parse_and_load_config_options(int argc, char **argv) {
   gflags::GetCommandLineFlagInfo("clovisha", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_OPTION_CLOVIS_HA_ADDR,
-                                        flag_info.current_value.c_str());
-  }
-
-  gflags::GetCommandLineFlagInfo("clovisconfd", &flag_info);
-  if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR,
                                         flag_info.current_value.c_str());
   }
 

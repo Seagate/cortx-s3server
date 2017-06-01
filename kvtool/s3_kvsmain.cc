@@ -68,8 +68,6 @@ DEFINE_int32(kvstore, 2, "Type of index service: 1:MERO; 2:CASSANDRA");
 DEFINE_string(clovis_local_addr, "local@tcp:12345:33:100",
               "Clovis local address");
 DEFINE_string(clovis_ha_addr, "local@tcp:12345:34:1", "Clovis ha address");
-DEFINE_string(clovis_confd_addr, "127.0.0.1@tcp:12345:44:101",
-              "Clovis confd address");
 DEFINE_string(clovis_profile, "<0x7000000000000001:0>", "Clovis profile");
 DEFINE_string(clovis_proc, "<0x7200000000000000:0>", "Clovis proc");
 DEFINE_string(clovis_kvs_keyspace, "clovis_index_keyspace", "Clovis keyspace");
@@ -96,7 +94,6 @@ static int init_clovis(void) {
   clovis_conf.cc_is_read_verify = false;
   clovis_conf.cc_local_addr = FLAGS_clovis_local_addr.c_str();
   clovis_conf.cc_ha_addr = FLAGS_clovis_ha_addr.c_str();
-  clovis_conf.cc_confd = FLAGS_clovis_confd_addr.c_str();
   clovis_conf.cc_profile = FLAGS_clovis_profile.c_str();
   clovis_conf.cc_process_fid = FLAGS_clovis_proc.c_str();
   clovis_conf.cc_tm_recv_queue_min_len = FLAGS_recv_queue_min_len;
@@ -139,7 +136,7 @@ err_exit:
   return rc;
 }
 
-static void fini_clovis(void) { m0_clovis_fini(&clovis_instance, true); }
+static void fini_clovis(void) { m0_clovis_fini(clovis_instance, true); }
 
 static int create_index(struct m0_uint128 id) {
   int rc;

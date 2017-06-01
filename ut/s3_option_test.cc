@@ -53,8 +53,6 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_STREQ("0.0.0.0", instance->get_bind_addr().c_str());
   EXPECT_STREQ("localhost@tcp:12345:33:100",
                instance->get_clovis_local_addr().c_str());
-  EXPECT_STREQ("localhost@tcp:12345:33:100",
-               instance->get_clovis_confd_addr().c_str());
   EXPECT_STREQ("<0x7000000000000001:0>", instance->get_clovis_prof().c_str());
   EXPECT_STREQ("127.0.0.1", instance->get_auth_ip_addr().c_str());
   EXPECT_EQ(8081, instance->get_s3_bind_port());
@@ -95,8 +93,6 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
@@ -127,7 +123,6 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_BIND_ADDR, "198.1.1.1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
@@ -143,8 +138,6 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(std::string("10.10.1.2"), instance->get_auth_ip_addr());
@@ -171,7 +164,6 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_BIND_ADDR, "198.1.1.1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.168.15.131");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
@@ -187,7 +179,6 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(std::string("debug"), instance->get_log_level());
   EXPECT_EQ(std::string("198.1.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("localhost@test"), instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("192.168.15.131"), instance->get_auth_ip_addr());
   EXPECT_EQ(1, instance->get_s3_bind_port());
   EXPECT_EQ(2, instance->get_auth_port());
@@ -237,8 +228,6 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   // These will come with default values.
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
@@ -275,8 +264,6 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   // These should be default values
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
@@ -301,8 +288,6 @@ TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
   EXPECT_EQ(8081, instance->get_s3_bind_port());
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
@@ -333,8 +318,6 @@ TEST_F(S3OptionsTest, LoadSelectiveAuthSectionFromFile) {
   EXPECT_EQ(8081, instance->get_s3_bind_port());
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ(9, instance->get_clovis_layout_id());
@@ -355,8 +338,6 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
 
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
@@ -379,13 +360,10 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
 
 TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, "localhost@test");
   EXPECT_TRUE(instance->load_section("S3_CLOVIS_CONFIG", true));
 
   EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
             instance->get_clovis_local_addr());
-  EXPECT_EQ(std::string("<ipaddress>@tcp:12345:33:100"),
-            instance->get_clovis_confd_addr());
   EXPECT_EQ(std::string("<0x7000000000000001:0>"), instance->get_clovis_prof());
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
@@ -411,7 +389,6 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
   instance->set_cmdline_option(S3_OPTION_BIND_ADDR, "198.1.1.1");
   instance->set_cmdline_option(S3_OPTION_BIND_PORT, "1");
   instance->set_cmdline_option(S3_OPTION_CLOVIS_LOCAL_ADDR, "localhost@test");
-  instance->set_cmdline_option(S3_OPTION_CLOVIS_CONFD_ADDR, "localhost@test");
   instance->set_cmdline_option(S3_OPTION_AUTH_IP_ADDR, "192.192.191");
   instance->set_cmdline_option(S3_OPTION_AUTH_PORT, "2");
   instance->set_cmdline_option(S3_CLOVIS_LAYOUT_ID, "123");
@@ -425,9 +402,9 @@ TEST_F(S3OptionsTest, SetCmdOptionFlag) {
                                "<0x7200000000000000:0>");
 
   flag = S3_OPTION_BIND_ADDR | S3_OPTION_BIND_PORT |
-         S3_OPTION_CLOVIS_LOCAL_ADDR | S3_OPTION_CLOVIS_CONFD_ADDR |
-         S3_OPTION_AUTH_IP_ADDR | S3_OPTION_AUTH_PORT | S3_CLOVIS_LAYOUT_ID |
-         S3_OPTION_LOG_DIR | S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE |
+         S3_OPTION_CLOVIS_LOCAL_ADDR | S3_OPTION_AUTH_IP_ADDR |
+         S3_OPTION_AUTH_PORT | S3_CLOVIS_LAYOUT_ID | S3_OPTION_LOG_DIR |
+         S3_OPTION_LOG_MODE | S3_OPTION_LOG_FILE_MAX_SIZE |
          S3_OPTION_STATSD_IP_ADDR | S3_OPTION_STATSD_PORT |
          S3_OPTION_CLOVIS_PROF | S3_OPTION_CLOVIS_PROCESS_FID;
 

@@ -24,7 +24,7 @@
 #define S3_OPTION_BIND_ADDR 0x0001
 #define S3_OPTION_BIND_PORT 0x0002
 #define S3_OPTION_CLOVIS_LOCAL_ADDR 0x0004
-#define S3_OPTION_CLOVIS_CONFD_ADDR 0x0008
+#define S3_OPTION_PLACE_HOLDER_1 0x0008
 #define S3_OPTION_CLOVIS_HA_ADDR 0x0010
 #define S3_OPTION_AUTH_IP_ADDR 0x0020
 #define S3_OPTION_AUTH_PORT 0x0040
@@ -93,7 +93,6 @@ class S3Option {
   unsigned int clovis_unit_size;
   int clovis_idx_fetch_count;
   std::string clovis_local_addr;
-  std::string clovis_confd_addr;
   std::string clovis_ha_addr;
   std::string clovis_profile;
   bool clovis_is_oostore;
@@ -153,7 +152,6 @@ class S3Option {
 
     clovis_layout_id = FLAGS_clovislayoutid;
     clovis_local_addr = FLAGS_clovislocal;
-    clovis_confd_addr = FLAGS_clovisconfd;
     clovis_ha_addr = FLAGS_clovisha;
     clovis_profile = FLAGS_clovisprofilefid;
     clovis_is_oostore = false;
@@ -262,7 +260,6 @@ class S3Option {
   std::string get_perf_log_filename();
 
   std::string get_clovis_local_addr();
-  std::string get_clovis_confd_addr();
   std::string get_clovis_ha_addr();
   std::string get_clovis_prof();
   unsigned short get_clovis_layout_id();

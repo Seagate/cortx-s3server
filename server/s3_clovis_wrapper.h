@@ -118,7 +118,9 @@ class ConcreteClovisAPI : public ClovisAPI {
   void clovis_obj_init(struct m0_clovis_obj *obj,
                        struct m0_clovis_realm *parent,
                        const struct m0_uint128 *id) {
-    m0_clovis_obj_init(obj, parent, id);
+    S3Option *option_instance = S3Option::get_instance();
+    m0_clovis_obj_init(obj, parent, id,
+                       option_instance->get_clovis_layout_id());
   }
 
   int clovis_entity_create(struct m0_clovis_entity *entity,

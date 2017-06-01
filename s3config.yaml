@@ -27,7 +27,6 @@ S3_AUTH_CONFIG:                                       # Section for S3 Auth Serv
    S3_AUTH_PORT: 8085                                   # Auth server port
 S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_LOCAL_ADDR: <ipaddress>@tcp:12345:33:100   # Clovis end points, replace <ipaddress> with host's ip address
-   S3_CLOVIS_CONFD_ADDR: <ipaddress>@tcp:12345:33:100   # Clovis end points, replace <ipaddress> with host's ip address
    S3_CLOVIS_HA_ADDR: <ipaddress>@tcp:12345:34:1        # Clovis end point, replace <ipaddress> with host's ip address
    S3_CLOVIS_PROF: <0x7000000000000001:0>               # Clovis end point
    S3_CLOVIS_LAYOUT_ID: 9                               # Clovis will select a Unit size of a layout according to the

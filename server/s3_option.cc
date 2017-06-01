@@ -102,9 +102,6 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_LOCAL_ADDR");
       clovis_local_addr =
           s3_option_node["S3_CLOVIS_LOCAL_ADDR"].as<std::string>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_CONFD_ADDR");
-      clovis_confd_addr =
-          s3_option_node["S3_CLOVIS_CONFD_ADDR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_HA_ADDR");
       clovis_ha_addr = s3_option_node["S3_CLOVIS_HA_ADDR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_PROF");
@@ -303,11 +300,6 @@ bool S3Option::load_section(std::string section_name,
         clovis_local_addr =
             s3_option_node["S3_CLOVIS_LOCAL_ADDR"].as<std::string>();
       }
-      if (!(cmd_opt_flag & S3_OPTION_CLOVIS_CONFD_ADDR)) {
-        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_CONFD_ADDR");
-        clovis_confd_addr =
-            s3_option_node["S3_CLOVIS_CONFD_ADDR"].as<std::string>();
-      }
       if (!(cmd_opt_flag & S3_OPTION_CLOVIS_HA_ADDR)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_CLOVIS_HA_ADDR");
         clovis_ha_addr = s3_option_node["S3_CLOVIS_HA_ADDR"].as<std::string>();
@@ -465,8 +457,6 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     s3_bind_port = atoi(optarg);
   } else if (option_flag & S3_OPTION_CLOVIS_LOCAL_ADDR) {
     clovis_local_addr = optarg;
-  } else if (option_flag & S3_OPTION_CLOVIS_CONFD_ADDR) {
-    clovis_confd_addr = optarg;
   } else if (option_flag & S3_OPTION_CLOVIS_HA_ADDR) {
     clovis_ha_addr = optarg;
   } else if (option_flag & S3_OPTION_AUTH_IP_ADDR) {
@@ -528,7 +518,6 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_AUTH_PORT = %d\n", auth_port);
 
   s3_log(S3_LOG_INFO, "S3_CLOVIS_LOCAL_ADDR = %s\n", clovis_local_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_CONFD_ADDR = %s\n", clovis_confd_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_CLOVIS_HA_ADDR =  %s\n", clovis_ha_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_CLOVIS_PROF = %s\n", clovis_profile.c_str());
   s3_log(S3_LOG_INFO, "S3_CLOVIS_LAYOUT_ID = %d\n", clovis_layout_id);
@@ -687,8 +676,6 @@ std::set<std::string>& S3Option::get_region_endpoints() {
 }
 
 std::string S3Option::get_clovis_local_addr() { return clovis_local_addr; }
-
-std::string S3Option::get_clovis_confd_addr() { return clovis_confd_addr; }
 
 std::string S3Option::get_clovis_ha_addr() { return clovis_ha_addr; }
 
