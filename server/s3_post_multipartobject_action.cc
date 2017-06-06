@@ -191,6 +191,7 @@ void S3PostMultipartObjectAction::fetch_object_info_status() {
 
 void S3PostMultipartObjectAction::create_object() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+  create_object_timer.start();
   if (tried_count == 0) {
     clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
   } else {
