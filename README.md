@@ -172,6 +172,14 @@ Use below command to run (ST + UT) tests in Dev environment.
 In case of Release environment, simply skip passing the option `--no-mero-rpm` to
 the script.
 
+## How to run tests for unsupported S3 APIs?
+For unsupported S3 APIs, we return 501(NotImplemented) error code.
+To run system tests for unsupported S3 APIs, S3 server needs to be run in authentication
+disabled mode. This can be done by running 'sudo ./dev-starts3-noauth.sh'.
+This script starts S3Server in bypass mode by specifying disable_auth=true.
+Then from st/clitests folder you need to run 'st/clitests/unsupported_api_check.sh'.
+This script verifies if for all unimplemented S3 APIs we are returning correct error code.
+
 ## How to run s3 server via systemctl on deployment m/c
 ```sh
 sudo systemctl start "s3server@0x7200000000000001:0x30"

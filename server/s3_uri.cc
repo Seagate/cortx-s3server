@@ -60,7 +60,32 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::lifecycle;
   } else if (request->has_query_param_key("cors")) {
     operation_code = S3OperationCode::cors;
+  } else if (request->has_query_param_key("analytics")) {
+    operation_code = S3OperationCode::analytics;
+  } else if (request->has_query_param_key("inventory")) {
+    operation_code = S3OperationCode::inventory;
+  } else if (request->has_query_param_key("metrics")) {
+    operation_code = S3OperationCode::metrics;
+  } else if (request->has_query_param_key("tagging")) {
+    operation_code = S3OperationCode::tagging;
+  } else if (request->has_query_param_key("website")) {
+    operation_code = S3OperationCode::website;
+  } else if (request->has_query_param_key("replication")) {
+    operation_code = S3OperationCode::replication;
+  } else if (request->has_query_param_key("accelerate")) {
+    operation_code = S3OperationCode::accelerate;
+  } else if (request->has_query_param_key("logging")) {
+    operation_code = S3OperationCode::logging;
+  } else if (request->has_query_param_key("notification")) {
+    operation_code = S3OperationCode::notification;
+  } else if (request->has_query_param_key("torrent")) {
+    operation_code = S3OperationCode::torrent;
+  } else if (request->has_query_param_key("versioning")) {
+    operation_code = S3OperationCode::versioning;
+  } else if (request->has_query_param_key("versions")) {
+    operation_code = S3OperationCode::versions;
   }
+
   s3_log(S3_LOG_DEBUG, "operation_code set to %d\n", operation_code);
   // Other operations - todo
 }

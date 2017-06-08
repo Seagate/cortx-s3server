@@ -75,6 +75,12 @@ enum class S3OperationCode {
   versioning,
   website,
   listuploads,
+  analytics,
+  inventory,
+  metrics,
+  replication,
+  accelerate,
+  versions,
 
   // Object Operations
   initupload,
@@ -82,7 +88,8 @@ enum class S3OperationCode {
   completeupload,
   abortupload,
   multidelete,
-  multipart
+  multipart,
+  torrent
 };
 
 enum class S3AsyncOpStatus {

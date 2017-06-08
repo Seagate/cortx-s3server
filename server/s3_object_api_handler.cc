@@ -128,6 +128,30 @@ void S3ObjectAPIHandler::create_action() {
           return;
       };
       break;
+    case S3OperationCode::torrent:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_object_torrent_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::tagging:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_object_tagging_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_object_tagging_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_object_tagging_count");
+          break;
+        default:
+          return;
+      }
+      break;
     default:
       // should never be here.
       return;

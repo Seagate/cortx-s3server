@@ -104,6 +104,158 @@ void S3BucketAPIHandler::create_action() {
           return;
       };
       break;
+
+    case S3OperationCode::analytics:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_analytics_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_analytics_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_bucket_analytics_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::inventory:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_inventory_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_inventory_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_bucket_inventory_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::metrics:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_metrics_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_metrics_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_bucket_metrics_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::tagging:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_tagging_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_tagging_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_bucket_tagging_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::website:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_website_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_website_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_bucket_website_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::replication:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_replication_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_replication_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_bucket_replication_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::accelerate:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_accelerate_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_accelerate_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::logging:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_logging_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_logging_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::versioning:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_versioning_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_versioning_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::notification:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_notification_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_notification_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::requestPayment:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_requestPayment_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_requestPayment_count");
+          break;
+        default:
+          return;
+      }
+      break;
+
     case S3OperationCode::none:
       // Perform operation on Bucket.
       switch (request->http_verb()) {
