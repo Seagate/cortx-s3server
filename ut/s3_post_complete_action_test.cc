@@ -467,11 +467,14 @@ TEST_F(S3PostCompleteActionTest, GetPartsInfoFailed) {
 TEST_F(S3PostCompleteActionTest, SaveMetadataAbortMultipart) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_METADATA_OBJ;
+  CREATE_MP_METADATA_OBJ;
 
   action_under_test_ptr->set_abort_multipart(true);
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->add_task(
       std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_oid(_))
+      .Times(AtLeast(1));
 
   action_under_test_ptr->save_metadata();
   EXPECT_EQ(1, call_count_one);

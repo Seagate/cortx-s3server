@@ -104,7 +104,6 @@ void S3Action::next() {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
-  resume();
   if (task_iteration_index < task_list.size()) {
     if (request->client_connected()) {
       task_list[task_iteration_index++]();

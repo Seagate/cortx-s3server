@@ -314,6 +314,7 @@ void S3PostCompleteAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   object_metadata = object_metadata_factory->create_object_metadata_obj(
       request, bucket_metadata->get_object_list_index_oid());
+  object_metadata->set_oid(multipart_metadata->get_oid());
 
   if (is_abort_multipart()) {
     next();
@@ -325,7 +326,6 @@ void S3PostCompleteAction::save_metadata() {
     }
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
-    object_metadata->set_oid(multipart_metadata->get_oid());
     object_metadata->save(
         std::bind(&S3PostCompleteAction::next, this),
         std::bind(&S3PostCompleteAction::send_response_to_s3_client, this));
