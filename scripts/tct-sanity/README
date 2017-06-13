@@ -14,3 +14,5 @@ REMOTE_HOSTS:
 
 5. Run the test
 `./runner.sh`
+
+6. Console logs wil be collected in `tct-logs` directory.

@@ -1,0 +1,11 @@
+### Add following entry to _/etc/hosts_ file
+`127.0.0.1   s3.seagate.com`
+
+Note: If S3 server is running on remote system, replace *127.0.0.1* with S3 server IP address.
+
+
+### Run S3 sanity test
+```
+sudo chmod +x s3-sanity-test.sh
+sudo ./s3-sanity-test.sh
+```

@@ -19,3 +19,68 @@
  ```
  Run following command to generate ssl certificate and key:  
  ` ./setup-ssl.sh --san-file dns.list`
+
+---
+
+
+### Nginx SSL Configuration steps
+
+* Generate certificates using
+  ```
+  cd scripts/ssl/
+  ./setup-ssl.sh --seagate
+  ```
+
+* Verify the certificate with  
+  `openssl x509 -text -in ssl_sandbox/s3.seagate.com.crt`  
+  Output should have DNS:s3.seagate.com, DNS:*.s3.seagate.com under X509v3 Subject Alternative Name
+
+* Copy the following certificates and key files:  
+  `cp ssl_sandbox/* /etc/nginx/ssl/seagate/`
+
+  Update following entries in /etc/nginx/nginx.conf
+  ```
+  server {
+      listen                80;
+      listen                443 reuseport ssl;
+      server_name           s3.seagate.com;
+      ssl_certificate       /etc/nginx/ssl/seagate/s3.seagate.com.crt;
+      ssl_certificate_key   /etc/nginx/ssl/seagate/s3.seagate.com.key;
+    ...
+  }
+  ```
+
+* Restart Nginx:
+  `systemctl restart nginx`
+
+* Verify the nginx ssl setup using command:  
+  `openssl s_client -connect s3.seagate.com:443 -showcerts | openssl x509 -noout -text`  
+  Output should have DNS:s3.seagate.com, DNS:*.s3.seagate.com under X509v3 Subject Alternative Name
+
+
+### To use ssl with s3cmd:
+Update following attributes in the .s3cfg files, ex: pathstyle.s3cfg
+```
+use_https = True
+ca_certs_file = /etc/nginx/ssl/seagate/ca.crt
+check_ssl_certificate = True
+check_ssl_hostname = True
+```
+
+### To use ssl with jclient/jcloud tests:
+
+Run
+```
+/opt/jdk1.8.0_91/bin/keytool -import -trustcacerts -keystore /opt/jdk1.8.0_91/jre/lib/security/cacerts \
+-storepass changeit -noprompt -alias s3server -file /etc/nginx/ssl/seagate/ca.crt
+```
+
+Note:
+- Update the endpoints in auth-utils/jcloudclient/src/main/resources/endpoints.properties
+  and auth-utils/jclient/src/main/resources/endpoints.properties to use https url
+  Rebuild jclient and jcloud clients and copy to st/clitests.
+
+
+Note:
+Currently only tests for bucket name with '.' are not supported due to s3cmd limitations.
+Comment out tests using seagate.bucket in s3cmd_specs.py
