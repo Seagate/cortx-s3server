@@ -32,6 +32,7 @@ class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
       : S3ClovisKVSWriter(req, s3_clovis_api) {}
   MOCK_METHOD0(get_state, S3ClovisKVSWriterOpState());
   MOCK_METHOD1(get_op_ret_code_for, int(int index));
+  MOCK_METHOD1(get_op_ret_code_for_del_kv, int(int index));
   MOCK_METHOD3(create_index, void(std::string index_name,
                                   std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed));

@@ -236,7 +236,7 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessful) {
   struct m0_uint128 myoid = {0xfff, 0xffff};
   metadata_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  metadata_under_test->clovis_kv_writer->id = myoid;
+  metadata_under_test->clovis_kv_writer->oid_list.push_back(myoid);
 
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _))
@@ -250,8 +250,7 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata) {
   struct m0_uint128 myoid = {0xfff, 0xffff};
   metadata_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  metadata_under_test->clovis_kv_writer->id = myoid;
-
+  metadata_under_test->clovis_kv_writer->oid_list.push_back(myoid);
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _))
       .Times(1);
@@ -260,9 +259,11 @@ TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata) {
 }
 
 TEST_F(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex) {
+  struct m0_uint128 myoid = {0xfff, 0xffff};
   metadata_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   metadata_under_test->put_metadata = false;
+  metadata_under_test->clovis_kv_writer->oid_list.push_back(myoid);
   metadata_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj);
 

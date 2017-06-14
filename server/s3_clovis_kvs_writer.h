@@ -95,7 +95,8 @@ enum class S3ClovisKVSWriterOpState {
 
 class S3ClovisKVSWriter {
  private:
-  struct m0_uint128 id;
+  std::vector<struct m0_uint128> oid_list;
+  std::vector<std::string> keys_list;  // used in delete multiple KV
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -104,23 +105,15 @@ class S3ClovisKVSWriter {
   std::string kvs_key;
   std::string kvs_value;
 
-  int ops_count;
-
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
   S3ClovisKVSWriterOpState state;
 
-  // These functions will be removed once Mero KVS Supports Metadata update in
-  // PUT
-  void del_put_keyval(std::string key, std::string val,
-                      std::function<void(void)> on_success,
-                      std::function<void(void)> on_failed);
-  void del_put_keyval_successful();
-  void del_put_keyval_failed();
-  void create_keyval();
-  //--
+  struct s3_clovis_idx_context* idx_ctx;
+
+  void clean_up_contexts();
 
  public:
   S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
@@ -130,7 +123,7 @@ class S3ClovisKVSWriter {
   virtual S3ClovisKVSWriterOpState get_state() { return state; }
 
   struct m0_uint128 get_oid() {
-    return id;
+    return oid_list[0];
   }
 
   // async create
@@ -158,9 +151,9 @@ class S3ClovisKVSWriter {
   virtual void delete_index(struct m0_uint128 idx_oid,
                             std::function<void(void)> on_success,
                             std::function<void(void)> on_failed);
-  void delete_index(std::string index_name,
-                    std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
+  // void delete_index(std::string index_name,
+  //                   std::function<void(void)> on_success,
+  //                   std::function<void(void)> on_failed);
   void delete_index_successful();
   void delete_index_failed();
 
@@ -181,16 +174,10 @@ class S3ClovisKVSWriter {
   void put_keyval_failed();
 
   // Async delete operation.
-  void delete_keyval(std::string index_name, std::string key,
-                     std::function<void(void)> on_success,
-                     std::function<void(void)> on_failed);
   void delete_keyval(struct m0_uint128 oid, std::string key,
                      std::function<void(void)> on_success,
                      std::function<void(void)> on_failed);
 
-  void delete_keyval(std::string index_name, std::vector<std::string> keys,
-                     std::function<void(void)> on_success,
-                     std::function<void(void)> on_failed);
   virtual void delete_keyval(struct m0_uint128 oid,
                              std::vector<std::string> keys,
                              std::function<void(void)> on_success,
@@ -204,6 +191,10 @@ class S3ClovisKVSWriter {
 
   virtual int get_op_ret_code_for(int index) {
     return writer_context->get_errno_for(index);
+  }
+
+  virtual int get_op_ret_code_for_del_kv(int key_i) {
+    return writer_context->get_clovis_kvs_op_ctx()->rcs[key_i];
   }
 
   // For Testing purpose
@@ -229,6 +220,7 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValEmpty);
   FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexSuccessful);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessful);
+  FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata);
 };
 

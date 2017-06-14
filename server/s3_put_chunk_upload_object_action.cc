@@ -451,9 +451,11 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
 
 void S3PutChunkUploadObjectAction::write_object_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_WARN, "Failed writing to clovis.\n");
+
   clovis_write_in_progress = false;
   write_failed = true;
+  request->pause();  // pause any further reading from client
+  get_auth_client()->abort_chunk_auth_op();
   set_s3_error("InternalError");
 
   if (check_shutdown_and_rollback()) {
@@ -465,6 +467,8 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
     // Trigger rollback to undo changes done and report error
     rollback_start();
   }
+
+  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3PutChunkUploadObjectAction::save_metadata() {

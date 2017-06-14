@@ -291,7 +291,7 @@ void S3PostMultipartObjectAction::create_new_oid(
 
 void S3PostMultipartObjectAction::rollback_create() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-
+  clovis_writer->set_oid(oid);
   clovis_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_create_failed, this),

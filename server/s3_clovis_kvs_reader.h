@@ -115,9 +115,14 @@ class S3ClovisKVSReader {
   std::map<std::string, std::pair<int, std::string>> last_result_keys_values;
   size_t iteration_index;
 
+  struct s3_clovis_idx_context* idx_ctx;
+
+  void clean_up_contexts();
+
  public:
   S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
                     std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+  virtual ~S3ClovisKVSReader();
 
   virtual S3ClovisKVSReaderOpState get_state() { return state; }
 

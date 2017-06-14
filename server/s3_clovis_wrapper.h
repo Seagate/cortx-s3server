@@ -35,6 +35,7 @@
 
 enum class ClovisOpType {
   unknown,
+  openobj,
   createobj,
   writeobj,
   deleteobj,
@@ -53,6 +54,8 @@ class ClovisAPI {
                                struct m0_clovis_realm *parent,
                                const struct m0_uint128 *id) = 0;
 
+  virtual void clovis_idx_fini(struct m0_clovis_idx *idx) = 0;
+
   virtual int clovis_sync_op_init(struct m0_clovis_op **sync_op) = 0;
 
   virtual int clovis_sync_entity_add(struct m0_clovis_op *sync_op,
@@ -64,6 +67,11 @@ class ClovisAPI {
   virtual void clovis_obj_init(struct m0_clovis_obj *obj,
                                struct m0_clovis_realm *parent,
                                const struct m0_uint128 *id, int layout_id) = 0;
+
+  virtual void clovis_obj_fini(struct m0_clovis_obj *obj) = 0;
+
+  virtual int clovis_entity_open(struct m0_clovis_entity *entity,
+                                 struct m0_clovis_op **op) = 0;
 
   virtual int clovis_entity_create(struct m0_clovis_entity *entity,
                                    struct m0_clovis_op **op) = 0;
@@ -129,6 +137,8 @@ class ConcreteClovisAPI : public ClovisAPI {
     m0_clovis_obj_init(obj, parent, id, layout_id);
   }
 
+  void clovis_obj_fini(struct m0_clovis_obj *obj) { m0_clovis_obj_fini(obj); }
+
   int clovis_sync_op_init(struct m0_clovis_op **sync_op) {
     return m0_clovis_sync_op_init(sync_op);
   }
@@ -141,6 +151,11 @@ class ConcreteClovisAPI : public ClovisAPI {
   int clovis_sync_op_add(struct m0_clovis_op *sync_op,
                          struct m0_clovis_op *op) {
     return m0_clovis_sync_op_add(sync_op, op);
+  }
+
+  int clovis_entity_open(struct m0_clovis_entity *entity,
+                         struct m0_clovis_op **op) {
+    return m0_clovis_entity_open(entity, op);
   }
 
   int clovis_entity_create(struct m0_clovis_entity *entity,
@@ -163,6 +178,8 @@ class ConcreteClovisAPI : public ClovisAPI {
                     unsigned int flags, struct m0_clovis_op **op) {
     return m0_clovis_idx_op(idx, opcode, keys, vals, rcs, flags, op);
   }
+
+  void clovis_idx_fini(struct m0_clovis_idx *idx) { m0_clovis_idx_fini(idx); }
 
   void clovis_obj_op(struct m0_clovis_obj *obj,
                      enum m0_clovis_obj_opcode opcode, struct m0_indexvec *ext,

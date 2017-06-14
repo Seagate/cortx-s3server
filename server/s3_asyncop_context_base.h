@@ -110,6 +110,8 @@ class S3AsyncOpContextBase {
               S3ClovisOpFailedResponseCountNotSameAsOpCount);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndexFailedFailedMetadata);
+  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailed);
+  FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailedMissing);
 };
 
 #endif

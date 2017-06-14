@@ -42,6 +42,7 @@ class MockS3ClovisWriter : public S3ClovisWriter {
   MOCK_METHOD0(get_oid, struct m0_uint128());
   MOCK_METHOD0(get_content_md5, std::string());
   MOCK_METHOD1(get_op_ret_code_for, int(int));
+  MOCK_METHOD1(get_op_ret_code_for_delete_op, int(int));
   MOCK_METHOD3(create_object,
                void(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed, int layout_id));

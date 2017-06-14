@@ -387,7 +387,7 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsSuccess) {
   action_under_test->add_task(
       std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              get_op_ret_code_for(_))
+              get_op_ret_code_for_delete_op(_))
       .Times(2)
       .WillOnce(Return(0))
       .WillOnce(Return(-ENOENT));
@@ -411,7 +411,7 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsFailed) {
   action_under_test->multipart_object_oids.push_back(oid);
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              get_op_ret_code_for(_))
+              get_op_ret_code_for_delete_op(_))
       .Times(2)
       .WillOnce(Return(1))
       .WillOnce(Return(-ENOENT));

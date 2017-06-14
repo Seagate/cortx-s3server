@@ -61,7 +61,7 @@ static void s3_test_clovis_op_launch(struct m0_clovis_op **op, uint32_t nr,
     s3_clovis_op_stable(test_clovis_op);
     s3_kvs_test_free_op(test_clovis_op);
   }
-  op_ctx->idx_count = 0;
+  op_ctx->op_count = 0;
 }
 
 static void s3_test_clovis_op_launch_fail(struct m0_clovis_op **op, uint32_t nr,
@@ -79,7 +79,7 @@ static void s3_test_clovis_op_launch_fail(struct m0_clovis_op **op, uint32_t nr,
     s3_clovis_op_failed(test_clovis_op);
     s3_kvs_test_free_op(test_clovis_op);
   }
-  op_ctx->idx_count = 0;
+  op_ctx->op_count = 0;
 }
 
 static void s3_test_clovis_op_launch_fail_enoent(struct m0_clovis_op **op,
@@ -98,7 +98,7 @@ static void s3_test_clovis_op_launch_fail_enoent(struct m0_clovis_op **op,
     s3_clovis_op_failed(test_clovis_op);
     s3_kvs_test_free_op(test_clovis_op);
   }
-  op_ctx->idx_count = 0;
+  op_ctx->op_count = 0;
 }
 
 class S3ClovisKvsReaderTest : public testing::Test {

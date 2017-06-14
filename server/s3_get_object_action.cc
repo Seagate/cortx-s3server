@@ -227,6 +227,7 @@ void S3GetObjectAction::send_data_to_client() {
 
 void S3GetObjectAction::read_object_data_failed() {
   s3_log(S3_LOG_DEBUG, "Failed to read object data from clovis\n");
+  set_s3_error("InternalError");
   send_response_to_s3_client();
 }
 

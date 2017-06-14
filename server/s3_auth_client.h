@@ -252,6 +252,8 @@ class S3AuthClient {
   std::string acl_str;
   bool last_chunk_added;
 
+  bool chunk_auth_aborted;
+
   void trigger_authentication(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed);
   void trigger_authentication();
@@ -308,6 +310,7 @@ class S3AuthClient {
                                            std::string sha256_of_payload);
   void chunk_auth_successful();
   void chunk_auth_failed();
+  void abort_chunk_auth_op() { chunk_auth_aborted = true; }
   void set_acl_and_policy(std::string acl, std::string policy);
   void set_event_with_retry_interval();
 

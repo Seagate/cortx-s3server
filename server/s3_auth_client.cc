@@ -205,7 +205,8 @@ S3AuthClient::S3AuthClient(std::shared_ptr<S3RequestObject> req)
     : request(req),
       state(S3AuthClientOpState::init),
       is_chunked_auth(false),
-      last_chunk_added(false) {
+      last_chunk_added(false),
+      chunk_auth_aborted(false) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   retry_count = 0;
   op_type = S3AuthClientOpType::authentication;
@@ -712,7 +713,8 @@ void S3AuthClient::chunk_auth_successful() {
   remember_auth_details_in_request();
   prev_chunk_signature_from_auth = get_signature_from_response();
 
-  if (last_chunk_added && chunk_validation_data.empty()) {
+  if (chunk_auth_aborted ||
+      (last_chunk_added && chunk_validation_data.empty())) {
     // we are done with all validations
     this->handler_on_success();
   } else {

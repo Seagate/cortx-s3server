@@ -402,7 +402,7 @@ TEST_F(S3BucketMetadataTest, CreateBucketListIndexSuccessful) {
   struct m0_uint128 oid = {0xffff, 0xffff};
   action_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  action_under_test->clovis_kv_writer->id = oid;
+  action_under_test->clovis_kv_writer->oid_list.push_back(oid);
 
   action_under_test->account_user_index_metadata =
       s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;

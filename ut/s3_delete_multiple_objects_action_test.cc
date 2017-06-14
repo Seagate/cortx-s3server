@@ -513,7 +513,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       object_meta_factory->create_object_metadata_obj(mock_request));
 
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              get_op_ret_code_for(_))
+              get_op_ret_code_for_del_kv(_))
       .Times(2)
       .WillRepeatedly(Return(-ENOENT));
 
@@ -539,7 +539,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       object_meta_factory->create_object_metadata_obj(mock_request));
 
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              get_op_ret_code_for(_))
+              get_op_ret_code_for_del_kv(_))
       .Times(2)
       .WillRepeatedly(Return(-ENETUNREACH));
 
@@ -584,7 +584,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       object_meta_factory->create_object_metadata_obj(mock_request));
 
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              get_op_ret_code_for(_))
+              get_op_ret_code_for_del_kv(_))
       .Times(2)
       .WillRepeatedly(Return(-ENOENT));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())

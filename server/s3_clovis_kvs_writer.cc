@@ -32,27 +32,43 @@ extern struct m0_clovis_container clovis_container;
 
 S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
                                      std::shared_ptr<ClovisAPI> clovis_api)
-    : request(req), state(S3ClovisKVSWriterOpState::start) {
+    : request(req), state(S3ClovisKVSWriterOpState::start), idx_ctx(nullptr) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  ops_count = 0;
+  oid_list.clear();
 }
 
 S3ClovisKVSWriter::~S3ClovisKVSWriter() {
   s3_log(S3_LOG_DEBUG, "Destructor\n");
+  clean_up_contexts();
+}
+
+void S3ClovisKVSWriter::clean_up_contexts() {
+  writer_context = nullptr;
+  sync_context = nullptr;
+  if (idx_ctx) {
+    for (size_t i = 0; i < idx_ctx->idx_count; i++) {
+      s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
+    }
+    free_idx_context(idx_ctx);
+    idx_ctx = nullptr;
+  }
 }
 
 void S3ClovisKVSWriter::create_index(std::string index_name,
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
+  s3_log(S3_LOG_DEBUG, "Entering with index_name = %s\n", index_name.c_str());
+
+  struct m0_uint128 id = {0ULL, 0ULL};
   S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
+
   create_index_with_oid(id, on_success, on_failed);
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -64,11 +80,20 @@ void S3ClovisKVSWriter::create_index_with_oid(
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
+  oid_list.clear();
+  oid_list.push_back(idx_oid);
+
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(1);
+
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::create_index_successful, this),
       std::bind(&S3ClovisKVSWriter::create_index_failed, this)));
 
-  struct s3_clovis_idx_op_context *idx_ctx =
+  struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
@@ -77,30 +102,31 @@ void S3ClovisKVSWriter::create_index_with_oid(
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  idx_ctx->cbs->oop_executed = NULL;
-  idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
-  idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
+  idx_op_ctx->cbs->oop_executed = NULL;
+  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
 
-  s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_uber_realm, &idx_oid);
+  s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_uber_realm,
+                                 &idx_oid);
 
-  rc = s3_clovis_api->clovis_entity_create(&idx_ctx->idx->in_entity,
-                                           &(idx_ctx->ops[0]));
+  rc = s3_clovis_api->clovis_entity_create(&(idx_ctx->idx[0].in_entity),
+                                           &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_entity_create failed\n");
   }
 
-  idx_ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
 
   writer_context->start_timer_for("create_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::createidx);
+  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::createidx);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSWriter::create_index_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  sync_index(this->handler_on_success, this->handler_on_failed);
+  sync_index(this->handler_on_success, this->handler_on_failed, 1);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -120,41 +146,40 @@ void S3ClovisKVSWriter::create_index_failed() {
 void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed,
                                    int index_count) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "Entering with index_count = %d\n", index_count);
   int rc = 0;
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
   sync_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::sync_index_successful, this),
-      std::bind(&S3ClovisKVSWriter::sync_index_failed, this)));
-  struct s3_clovis_idx_op_context *idx_ctx =
+      std::bind(&S3ClovisKVSWriter::sync_index_failed, this), 1));
+  struct s3_clovis_idx_op_context *idx_op_ctx =
       sync_context->get_clovis_idx_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
       1, sizeof(struct s3_clovis_context_obj));
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)sync_context.get();
-  idx_ctx->cbs->oop_executed = NULL;
-  idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
-  idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
-  rc = s3_clovis_api->clovis_sync_op_init(&idx_ctx->sync_op);
+
+  idx_op_ctx->cbs->oop_executed = NULL;
+  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
+  rc = s3_clovis_api->clovis_sync_op_init(&idx_op_ctx->sync_op);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_sync_op_init\n");
   }
-
   for (int i = 0; i < index_count; i++) {
-    rc = s3_clovis_api->clovis_sync_entity_add(
-        idx_ctx->sync_op,
-        &writer_context->get_clovis_idx_op_ctx()->idx[i].in_entity);
-
+    rc = s3_clovis_api->clovis_sync_entity_add(idx_op_ctx->sync_op,
+                                               &(idx_ctx->idx[i].in_entity));
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, "m0_clovis_sync_entity_add failed\n");
     }
   }
-  idx_ctx->sync_op->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_ctx->sync_op, idx_ctx->cbs, 0);
+  idx_op_ctx->sync_op->op_datum = (void *)op_ctx;
+
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->sync_op, idx_op_ctx->cbs, 0);
   sync_context->start_timer_for("sync_index_op");
-  s3_clovis_api->clovis_op_launch(&idx_ctx->sync_op, 1,
+  s3_clovis_api->clovis_op_launch(&idx_op_ctx->sync_op, 1,
                                   ClovisOpType::createidx);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -190,11 +215,21 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
+  oid_list.clear();
+  oid_list.push_back(idx_oid);
+  state = S3ClovisKVSWriterOpState::deleting;
+
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(1);
+
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::delete_index_successful, this),
       std::bind(&S3ClovisKVSWriter::delete_index_failed, this)));
 
-  struct s3_clovis_idx_op_context *idx_ctx =
+  struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
@@ -203,41 +238,32 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  idx_ctx->cbs->oop_executed = NULL;
-  idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
-  idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
+  idx_op_ctx->cbs->oop_executed = NULL;
+  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
 
-  s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_uber_realm, &idx_oid);
-  int rc = s3_clovis_api->clovis_entity_delete(&idx_ctx->idx->in_entity,
-                                               &(idx_ctx->ops[0]));
+  s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_uber_realm,
+                                 &idx_oid);
+  s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[0].in_entity),
+                                    &(idx_op_ctx->ops[0]));
+  int rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[0].in_entity),
+                                               &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_DEBUG, "m0_clovis_entity_delete failed\n");
   }
 
-  idx_ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
+
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
   writer_context->start_timer_for("delete_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::deleteidx);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3ClovisKVSWriter::delete_index(std::string index_name,
-                                     std::function<void(void)> on_success,
-                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
-
-  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
-
-  delete_index(id, on_success, on_failed);
+  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::deleteidx);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSWriter::delete_index_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  state = S3ClovisKVSWriterOpState::deleting;
-  sync_index(this->handler_on_success, this->handler_on_failed);
+  sync_index(this->handler_on_success, this->handler_on_failed, 1);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -262,17 +288,25 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
+  state = S3ClovisKVSWriterOpState::deleting;
+  oid_list.clear();
+  oid_list = oids;
+
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(oid_list.size());
+
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::delete_indexes_successful, this),
       std::bind(&S3ClovisKVSWriter::delete_indexes_failed, this), oids.size()));
 
-  struct s3_clovis_idx_op_context *idx_ctx =
+  struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
 
-  ops_count = oids.size();
-  struct m0_uint128 id;
-  for (int i = 0; i < ops_count; ++i) {
-    id = oids[i];
+  size_t ops_count = oid_list.size();
+  for (size_t i = 0; i < ops_count; ++i) {
     struct s3_clovis_context_obj *op_ctx =
         (struct s3_clovis_context_obj *)calloc(
             1, sizeof(struct s3_clovis_context_obj));
@@ -280,29 +314,32 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
     op_ctx->op_index_in_launch = i;
     op_ctx->application_context = (void *)writer_context.get();
 
-    idx_ctx->cbs[i].oop_executed = NULL;
-    idx_ctx->cbs[i].oop_stable = s3_clovis_op_stable;
-    idx_ctx->cbs[i].oop_failed = s3_clovis_op_failed;
+    idx_op_ctx->cbs[i].oop_executed = NULL;
+    idx_op_ctx->cbs[i].oop_stable = s3_clovis_op_stable;
+    idx_op_ctx->cbs[i].oop_failed = s3_clovis_op_failed;
 
-    s3_clovis_api->clovis_idx_init(&idx_ctx->idx[i], &clovis_uber_realm, &id);
+    s3_clovis_api->clovis_idx_init(&idx_ctx->idx[i], &clovis_uber_realm,
+                                   &oid_list[i]);
+    s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[i].in_entity),
+                                      &(idx_op_ctx->ops[i]));
     s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[i].in_entity),
-                                        &(idx_ctx->ops[i]));
+                                        &(idx_op_ctx->ops[i]));
 
-    idx_ctx->ops[i]->op_datum = (void *)op_ctx;
-    s3_clovis_api->clovis_op_setup(idx_ctx->ops[i], &idx_ctx->cbs[i], 0);
+    idx_op_ctx->ops[i]->op_datum = (void *)op_ctx;
+    s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[i], &idx_op_ctx->cbs[i], 0);
   }
 
   writer_context->start_timer_for("delete_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, oids.size(),
+  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, oids.size(),
                                   ClovisOpType::deleteidx);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSWriter::delete_indexes_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  state = S3ClovisKVSWriterOpState::deleting;
-  sync_index(this->handler_on_success, this->handler_on_failed, ops_count);
+  sync_index(this->handler_on_success, this->handler_on_failed,
+             oid_list.size());
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -318,10 +355,13 @@ void S3ClovisKVSWriter::put_keyval(std::string index_name, std::string key,
                                    std::string val,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "index_name = %s, key = %s and value = %s\n",
+  s3_log(S3_LOG_DEBUG,
+         "Entering with index_name = %s, key = %s and value = %s\n",
          index_name.c_str(), key.c_str(), val.c_str());
+
+  struct m0_uint128 id = {0ULL, 0ULL};
   S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
+
   put_keyval(id, key, val, on_success, on_failed);
 }
 
@@ -329,14 +369,22 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
                                    std::string val,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "key = %s and value = %s\n", key.c_str(), val.c_str());
+  s3_log(S3_LOG_DEBUG, "Entering with key = %s and value = %s\n", key.c_str(),
+         val.c_str());
 
-  id = oid;
+  int rc = 0;
+  oid_list.clear();
+  oid_list.push_back(oid);
+
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  int rc = 0;
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(1);
+
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::put_keyval_successful, this),
       std::bind(&S3ClovisKVSWriter::put_keyval_failed, this)));
@@ -344,7 +392,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
   // Only one key value passed
   writer_context->init_kvs_write_op_ctx(1);
 
-  struct s3_clovis_idx_op_context *idx_ctx =
+  struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
   struct s3_clovis_kvs_op_context *kvs_ctx =
       writer_context->get_clovis_kvs_op_ctx();
@@ -355,28 +403,30 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  idx_ctx->cbs->oop_executed = NULL;
-  idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
-  idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
+  idx_op_ctx->cbs->oop_executed = NULL;
+  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
 
   set_up_key_value_store(kvs_ctx, key, val);
 
-  s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
+  s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
+                                 &oid_list[0]);
+
   rc = s3_clovis_api->clovis_idx_op(
-      idx_ctx->idx, M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
-      kvs_ctx->rcs, M0_OIF_OVERWRITE, &(idx_ctx->ops[0]));
+      &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
+      kvs_ctx->rcs, M0_OIF_OVERWRITE, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op failed\n");
   } else {
     s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op suceeded\n");
   }
 
-  idx_ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
 
   writer_context->start_timer_for("put_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::putkv);
+  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::putkv);
 
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
@@ -409,31 +459,41 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
       request, std::bind(&S3ClovisKVSWriter::sync_keyval_successful, this),
       std::bind(&S3ClovisKVSWriter::sync_keyval_failed, this)));
 
-  struct s3_clovis_idx_op_context *idx_ctx =
+  struct s3_clovis_idx_op_context *idx_op_ctx =
       sync_context->get_clovis_idx_op_ctx();
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
       1, sizeof(struct s3_clovis_context_obj));
+
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)sync_context.get();
-  idx_ctx->cbs->oop_executed = NULL;
-  idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
-  idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
-  rc = s3_clovis_api->clovis_sync_op_init(&idx_ctx->sync_op);
+
+  idx_op_ctx->cbs->oop_executed = NULL;
+  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
+
+  rc = s3_clovis_api->clovis_sync_op_init(&idx_op_ctx->sync_op);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_sync_op_init\n");
   }
 
   rc = s3_clovis_api->clovis_sync_op_add(
-      idx_ctx->sync_op, writer_context->get_clovis_idx_op_ctx()->ops[0]);
+      idx_op_ctx->sync_op, writer_context->get_clovis_idx_op_ctx()->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_sync_entity_add failed\n");
   }
 
-  idx_ctx->sync_op->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_ctx->sync_op, idx_ctx->cbs, 0);
+  idx_op_ctx->sync_op->op_datum = (void *)op_ctx;
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->sync_op, idx_op_ctx->cbs, 0);
   sync_context->start_timer_for("sync_keyval_op");
-  s3_clovis_api->clovis_op_launch(&idx_ctx->sync_op, 1, ClovisOpType::putkv);
+  if (state == S3ClovisKVSWriterOpState::deleting) {
+    s3_clovis_api->clovis_op_launch(&idx_op_ctx->sync_op, 1,
+                                    ClovisOpType::deletekv);
+  } else {
+    s3_clovis_api->clovis_op_launch(&idx_op_ctx->sync_op, 1,
+                                    ClovisOpType::putkv);
+  }
+
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
@@ -450,19 +510,9 @@ void S3ClovisKVSWriter::sync_keyval_successful() {
 
 void S3ClovisKVSWriter::sync_keyval_failed() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Syncing of key value failed\n");
   state = S3ClovisKVSWriterOpState::failed;
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
-void S3ClovisKVSWriter::delete_keyval(std::string index_name, std::string key,
-                                      std::function<void(void)> on_success,
-                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
-  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
-  delete_keyval(id, key, on_success, on_failed);
 }
 
 void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid, std::string key,
@@ -476,16 +526,6 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid, std::string key,
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3ClovisKVSWriter::delete_keyval(std::string index_name,
-                                      std::vector<std::string> keys,
-                                      std::function<void(void)> on_success,
-                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "index_name = %s\n", index_name.c_str());
-  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
-  delete_keyval(id, keys, on_success, on_failed);
-}
-
 void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
                                       std::vector<std::string> keys,
                                       std::function<void(void)> on_success,
@@ -496,18 +536,29 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
     s3_log(S3_LOG_DEBUG, "key = %s\n", key.c_str());
   }
 
-  id = oid;
+  state = S3ClovisKVSWriterOpState::deleting;
+  oid_list.clear();
+  oid_list.push_back(oid);
+  keys_list.clear();
+  keys_list = keys;
+
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
+
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(1);
 
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::delete_keyval_successful, this),
       std::bind(&S3ClovisKVSWriter::delete_keyval_failed, this)));
 
   // Only one key value passed
-  writer_context->init_kvs_write_op_ctx(keys.size());
+  writer_context->init_kvs_write_op_ctx(keys_list.size());
 
-  struct s3_clovis_idx_op_context *idx_ctx =
+  struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
   struct s3_clovis_kvs_op_context *kvs_ctx =
       writer_context->get_clovis_kvs_op_ctx();
@@ -518,40 +569,40 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
   op_ctx->op_index_in_launch = 0;
   op_ctx->application_context = (void *)writer_context.get();
 
-  idx_ctx->cbs->oop_executed = NULL;
-  idx_ctx->cbs->oop_stable = s3_clovis_op_stable;
-  idx_ctx->cbs->oop_failed = s3_clovis_op_failed;
+  idx_op_ctx->cbs->oop_executed = NULL;
+  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
 
   int i = 0;
-  for (auto key : keys) {
+  for (auto key : keys_list) {
     kvs_ctx->keys->ov_vec.v_count[i] = key.length();
     kvs_ctx->keys->ov_buf[i] = calloc(1, key.length());
     memcpy(kvs_ctx->keys->ov_buf[i], (void *)key.c_str(), key.length());
     ++i;
   }
 
-  s3_clovis_api->clovis_idx_init(idx_ctx->idx, &clovis_container.co_realm, &id);
-  rc = s3_clovis_api->clovis_idx_op(idx_ctx->idx, M0_CLOVIS_IC_DEL,
+  s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
+                                 &oid_list[0]);
+  rc = s3_clovis_api->clovis_idx_op(&(idx_ctx->idx[0]), M0_CLOVIS_IC_DEL,
                                     kvs_ctx->keys, NULL, kvs_ctx->rcs, 0,
-                                    &(idx_ctx->ops[0]));
+                                    &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, "m0_clovis_idx_op failed\n");
   } else {
     s3_log(S3_LOG_DEBUG, "m0_clovis_idx_op suceeded\n");
   }
 
-  idx_ctx->ops[0]->op_datum = (void *)op_ctx;
-  s3_clovis_api->clovis_op_setup(idx_ctx->ops[0], idx_ctx->cbs, 0);
+  idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
 
   writer_context->start_timer_for("delete_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_ctx->ops, 1, ClovisOpType::deletekv);
+  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::deletekv);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
 void S3ClovisKVSWriter::delete_keyval_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  state = S3ClovisKVSWriterOpState::deleting;
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
   // do this when cassandra + mero-kvs rcs implementation completed
   // in clovis

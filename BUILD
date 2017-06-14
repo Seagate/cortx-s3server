@@ -16,7 +16,8 @@ cc_binary(
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-iquote", ".", "-include", "config.h",
+      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
+      "-iquote", ".", "-include", "config.h",
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
       "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
     ],
@@ -72,7 +73,7 @@ cc_test(
       "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DS3_GOOGLE_TEST",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)",
+      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
     ],
 
     includes = [
@@ -134,7 +135,7 @@ cc_test(
       "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)",
+      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
     ],
 
     includes = [
@@ -215,7 +216,8 @@ cc_binary(
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)", "-iquote", ".", "-include", "config.h",
+      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
+      "-iquote", ".", "-include", "config.h",
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
       "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
     ],
@@ -278,7 +280,7 @@ cc_test(
       "-D_REENTRANT", "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DS3_GOOGLE_TEST",
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
-      "-iquote", "$(MERO_INC)",
+      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
     ],
 
     includes = [

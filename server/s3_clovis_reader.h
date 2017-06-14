@@ -124,12 +124,14 @@ enum class S3ClovisReaderOpState {
   start,
   success,
   missing,  // Missing object
+  ooo,      // out-of-memory
 };
 
 class S3ClovisReader {
  private:
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3ClovisReaderContext> reader_context;
+  std::unique_ptr<S3ClovisReaderContext> open_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
 
   // Used to report to caller
@@ -145,15 +147,33 @@ class S3ClovisReader {
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   size_t iteration_index;
   // to Help iteration.
-  size_t num_of_blocks_read;
+  size_t num_of_blocks_to_read;
 
   uint64_t last_index;
+
+  bool is_object_opened;
+  struct s3_clovis_obj_context* obj_ctx;
+
+  // Internal open operation so clovis can fetch required object metadata
+  // for example object pool version
+  void open_object();
+  void open_object_successful();
+  void open_object_failed();
+
+  // This reads "num_of_blocks_to_read" blocks, and is called after object is
+  // opened.
+  virtual bool read_object();
+  void read_object_successful();
+  void read_object_failed();
+
+  void clean_up_contexts();
 
  public:
   // object id is generated at upper level and passed to this constructor
   S3ClovisReader(std::shared_ptr<S3RequestObject> req, struct m0_uint128 id,
                  int layout_id,
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+  virtual ~S3ClovisReader();
 
   virtual S3ClovisReaderOpState get_state() { return state; }
   virtual struct m0_uint128 get_oid() { return oid; }
@@ -165,8 +185,6 @@ class S3ClovisReader {
   virtual bool read_object_data(size_t num_of_blocks,
                                 std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed);
-  void read_object_data_successful();
-  void read_object_data_failed();
 
   // Iterate over the content.
   // Returns size of data in first block and 0 if there is no content,

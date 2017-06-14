@@ -100,6 +100,7 @@ class S3PutMultiObjectAction : public S3Action {
 
   void write_object_successful();
   void write_object_failed();
+
   void save_metadata();
   void send_response_to_s3_client();
 

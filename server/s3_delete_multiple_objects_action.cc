@@ -320,7 +320,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata_failed() {
 
   uint obj_index = 0;
   for (auto& obj : objects_metadata) {
-    if (clovis_kv_writer->get_op_ret_code_for(obj_index) == -ENOENT) {
+    if (clovis_kv_writer->get_op_ret_code_for_del_kv(obj_index) == -ENOENT) {
       at_least_one_delete_successful = true;
       delete_objects_response.add_success(obj->get_object_name());
     } else {
@@ -379,7 +379,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_failed() {
   uint obj_index = 0;
   bool delete_obj_failed = false;
   for (auto& obj : objects_metadata) {
-    if (clovis_writer->get_op_ret_code_for(obj_index) == -ENOENT) {
+    if (clovis_writer->get_op_ret_code_for_delete_op(obj_index) == -ENOENT) {
       // do nothing here
     } else {
       s3_log(S3_LOG_ERROR, "Deletion of object with oid %lu %lu failed\n",

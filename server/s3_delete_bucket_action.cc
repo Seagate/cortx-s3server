@@ -266,7 +266,7 @@ void S3DeleteBucketAction::delete_multipart_objects_successful() {
   int op_ret_code;
   bool atleast_one_error = false;
   for (auto& multipart_obj_oid : multipart_object_oids) {
-    op_ret_code = clovis_writer->get_op_ret_code_for(count);
+    op_ret_code = clovis_writer->get_op_ret_code_for_delete_op(count);
     if (op_ret_code == 0 || op_ret_code == -ENOENT) {
       s3_log(S3_LOG_DEBUG, "Deleted multipart object, oid is %lu %lu\n",
              multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
@@ -293,7 +293,7 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
   int op_ret_code;
   bool atleast_one_error = false;
   for (auto& multipart_obj_oid : multipart_object_oids) {
-    op_ret_code = clovis_writer->get_op_ret_code_for(count);
+    op_ret_code = clovis_writer->get_op_ret_code_for_delete_op(count);
     if (op_ret_code != -ENOENT && op_ret_code != 0) {
       s3_log(S3_LOG_ERROR,
              "Failed to delete multipart object, this will be stale in Mero: "

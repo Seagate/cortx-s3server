@@ -388,6 +388,8 @@ void S3PutMultiObjectAction::write_object_failed() {
   set_s3_error("InternalError");
   if (request->is_chunked()) {
     write_failed = true;
+    request->pause();  // pause any further reading from client.
+    get_auth_client()->abort_chunk_auth_op();
     if (!auth_in_progress) {
       send_response_to_s3_client();
     }

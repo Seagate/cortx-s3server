@@ -412,12 +412,12 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
 }
 
 TEST_F(S3GetObjectActionTest, ReadObjectFailedJustEndResponse) {
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(0);
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(0);
-  EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
   action_under_test->read_object_reply_started = true;
   action_under_test->read_object_data_failed();
+  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3GetObjectActionTest, SendResponseWhenShuttingDownAndResponseStarted) {

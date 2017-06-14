@@ -42,9 +42,6 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   bool has_clovis_rw_op_context;
 
-  // buffer currently used to write, will be freed on completion
-  std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;
-
  public:
   S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req,
                         std::function<void()> success_callback,
@@ -84,22 +81,18 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
     return clovis_rw_op_context;
   }
-
-  void remember_async_buf(std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
-    write_async_buffer = buffer;
-  }
-
-  std::shared_ptr<S3AsyncBufferOptContainer> get_write_async_buffer() {
-    return write_async_buffer;
-  }
 };
 
 enum class S3ClovisWriterOpState {
   failed,
   start,
+  creating,
   created,
   saved,
+  writing,
+  deleting,
   deleted,
+  success,
   exists,   // Object already exists
   missing,  // Object does not exists
 };
@@ -107,15 +100,18 @@ enum class S3ClovisWriterOpState {
 class S3ClovisWriter {
  private:
   std::shared_ptr<S3RequestObject> request;
+  std::unique_ptr<S3ClovisWriterContext> open_context;
+  std::unique_ptr<S3ClovisWriterContext> create_context;
   std::unique_ptr<S3ClovisWriterContext> writer_context;
+  std::unique_ptr<S3ClovisWriterContext> delete_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
-  struct m0_uint128 oid;
-  int layout_id;
+  std::vector<struct m0_uint128> oid_list;
+  std::vector<int> layout_ids;
 
   S3ClovisWriterOpState state;
 
@@ -130,11 +126,28 @@ class S3ClovisWriter {
   size_t total_written;
 
   int ops_count;
+  bool is_object_opened;
+  struct s3_clovis_obj_context* obj_ctx;
 
   void* place_holder_for_last_unit;
 
-  // helper to set mock clovis apis, only used in tests.
-  void reset_clovis_api(std::shared_ptr<ClovisAPI> api);
+  // buffer currently used to write, will be freed on completion
+  std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;
+
+  // Write - single object, delete - multiple objects supported
+  void open_objects();
+  void open_objects_successful();
+  void open_objects_failed();
+
+  void write_content();
+  void write_content_successful();
+  void write_content_failed();
+
+  void delete_objects();
+  void delete_objects_successful();
+  void delete_objects_failed();
+
+  void clean_up_contexts();
 
  public:
   // struct m0_uint128 id;
@@ -143,17 +156,30 @@ class S3ClovisWriter {
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0,
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  ~S3ClovisWriter();
+  virtual ~S3ClovisWriter();
 
   virtual S3ClovisWriterOpState get_state() { return state; }
 
-  virtual struct m0_uint128 get_oid() { return oid; }
+  virtual struct m0_uint128 get_oid() {
+    assert(oid_list.size() == 1);
+    return oid_list[0];
+  }
 
-  virtual int get_layout_id() { return layout_id; }
+  virtual int get_layout_id() {
+    assert(layout_ids.size() == 1);
+    return layout_ids[0];
+  }
 
-  virtual void set_oid(struct m0_uint128 id) { oid = id; }
+  virtual void set_oid(struct m0_uint128 id) {
+    is_object_opened = false;
+    oid_list.clear();
+    oid_list.push_back(id);
+  }
 
-  virtual void set_layout_id(int id) { layout_id = id; }
+  virtual void set_layout_id(int id) {
+    layout_ids.clear();
+    layout_ids.push_back(id);
+  }
 
   // This concludes the md5 calculation
   virtual std::string get_content_md5() {
@@ -177,24 +203,22 @@ class S3ClovisWriter {
   virtual void write_content(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed,
                              std::shared_ptr<S3AsyncBufferOptContainer> buffer);
-  void write_content_successful();
-  void write_content_failed();
 
   // Async delete operation.
   virtual void delete_object(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed, int layoutid);
-  void delete_object_successful();
-  void delete_object_failed();
 
   virtual void delete_objects(std::vector<struct m0_uint128> oids,
                               std::vector<int> layoutids,
                               std::function<void(void)> on_success,
                               std::function<void(void)> on_failed);
-  void delete_objects_successful();
-  void delete_objects_failed();
 
   virtual int get_op_ret_code_for(int index) {
     return writer_context->get_errno_for(index);
+  }
+
+  virtual int get_op_ret_code_for_delete_op(int index) {
+    return delete_context->get_errno_for(index);
   }
 
   void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
