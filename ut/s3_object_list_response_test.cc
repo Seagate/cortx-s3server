@@ -226,6 +226,12 @@ TEST_F(S3ObjectListResponseTest,
 
   EXPECT_CALL(*mock_obj, get_object_name()).WillOnce(Return("object_name"));
   EXPECT_CALL(*mock_obj, get_upload_id()).WillOnce(Return("upload_id"));
+  EXPECT_CALL(*mock_obj, get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
+  EXPECT_CALL(*mock_obj, get_user_id()).WillRepeatedly(Return("1"));
+  EXPECT_CALL(*mock_obj, get_user_name()).WillRepeatedly(Return("s3user"));
+  EXPECT_CALL(*mock_obj, get_storage_class())
+      .WillRepeatedly(Return("STANDARD"));
   std::string response = response_under_test->get_multiupload_xml();
 
   CHECK_MULTIUPLOAD_XML_RESPONSE;
@@ -250,6 +256,12 @@ TEST_F(S3ObjectListResponseTest,
 
   EXPECT_CALL(*mock_obj, get_object_name()).WillOnce(Return("object_name"));
   EXPECT_CALL(*mock_obj, get_upload_id()).WillOnce(Return("upload_id"));
+  EXPECT_CALL(*mock_obj, get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
+  EXPECT_CALL(*mock_obj, get_user_id()).WillRepeatedly(Return("1"));
+  EXPECT_CALL(*mock_obj, get_user_name()).WillRepeatedly(Return("s3user"));
+  EXPECT_CALL(*mock_obj, get_storage_class())
+      .WillRepeatedly(Return("STANDARD"));
 
   std::string response = response_under_test->get_multiupload_xml();
 
@@ -272,6 +284,8 @@ TEST_F(S3ObjectListResponseTest,
 
   EXPECT_CALL(*mock_part, get_md5()).WillOnce(Return("abcd"));
   EXPECT_CALL(*mock_part, get_content_length_str()).WillOnce(Return("1024"));
+  EXPECT_CALL(*mock_part, get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
 
   std::string response = response_under_test->get_multipart_xml();
 
@@ -293,6 +307,8 @@ TEST_F(S3ObjectListResponseTest,
 
   EXPECT_CALL(*mock_part, get_md5()).WillOnce(Return("abcd"));
   EXPECT_CALL(*mock_part, get_content_length_str()).WillOnce(Return("1024"));
+  EXPECT_CALL(*mock_part, get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
 
   std::string response = response_under_test->get_multipart_xml();
 

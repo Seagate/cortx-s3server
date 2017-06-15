@@ -416,6 +416,11 @@ TEST_F(S3GetMultipartPartActionTest,
       .WillOnce(ReturnRef(mymap));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_md5())
       .WillRepeatedly(Return(""));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
+              get_content_length_str())
+      .WillRepeatedly(Return("1024"));
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
@@ -459,6 +464,11 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulListNotTruncated) {
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_last_modified_iso())
+      .WillRepeatedly(Return("last_modified"));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
+              get_content_length_str())
+      .WillRepeatedly(Return("1024"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(1);
 

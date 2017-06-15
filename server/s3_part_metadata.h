@@ -133,7 +133,7 @@ class S3PartMetadata {
   virtual std::string get_last_modified_iso();
   virtual std::string get_storage_class();
   virtual std::string get_upload_id();
-  virtual std::string get_part_number();
+  std::string get_part_number();
 
   // Load attributes.
   std::string get_system_attribute(std::string key);

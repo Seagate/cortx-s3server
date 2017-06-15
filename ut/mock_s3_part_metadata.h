@@ -51,7 +51,6 @@ class MockS3PartMetadata : public S3PartMetadata {
   MOCK_METHOD0(get_md5, std::string());
   MOCK_METHOD0(get_content_length, size_t());
   MOCK_METHOD0(get_content_length_str, std::string());
-  MOCK_METHOD0(get_part_number, std::string());
   MOCK_METHOD0(get_last_modified_iso, std::string());
   MOCK_METHOD0(get_storage_class, std::string());
   MOCK_METHOD0(get_object_name, std::string());

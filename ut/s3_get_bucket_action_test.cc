@@ -81,6 +81,22 @@ using ::testing::_;
     EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));      \
   } while (0)
 
+#define OBJ_METADATA_EXPECTATIONS                                              \
+  do {                                                                         \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())       \
+        .WillRepeatedly(Return(""));                                           \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_user_name()) \
+        .WillRepeatedly(Return("s3user"));                                     \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_user_id())   \
+        .WillRepeatedly(Return("1"));                                          \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata),                  \
+                get_storage_class())                                           \
+        .WillRepeatedly(Return("STANDARD"));                                   \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata),                  \
+                get_last_modified_iso())                                       \
+        .WillRepeatedly(Return("last_modified"));                              \
+  } while (0)
+
 class S3GetBucketActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
@@ -236,8 +252,9 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessful) {
       .WillOnce(Return("testkey0"))
       .WillOnce(Return("testkey1"))
       .WillOnce(Return("testkey2"));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
-      .WillRepeatedly(Return(""));
+
+  OBJ_METADATA_EXPECTATIONS;
+
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -297,10 +314,9 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillOnce(Return("testkey0"))
       .WillOnce(Return("testkey1"));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
-      .WillRepeatedly(Return(""));
-
+  OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
+
   action_under_test_ptr->get_next_objects_successful();
   EXPECT_EQ(2, action_under_test_ptr->object_list.size());
 }
@@ -323,9 +339,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillOnce(Return("testkey0"))
       .WillOnce(Return("testkey1"));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
-      .WillRepeatedly(Return(""));
-
+  OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
@@ -350,9 +364,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillOnce(Return("test/some/key"));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
-      .WillRepeatedly(Return(""));
-
+  OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
