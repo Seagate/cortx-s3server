@@ -165,10 +165,10 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
   op->op_sm.sm_rc = 0;  // fake success
 
-  free(user_data);
   // Free user event
   event_free((struct event *)user_context->user_event);
   s3_clovis_op_stable(op);
+  free(user_data);
 }
 
 void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
@@ -181,8 +181,8 @@ void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
 
   op->op_sm.sm_rc = -ETIMEDOUT;  // fake network failure
   ctx->is_fake_failure = 1;
-  free(user_data);
   // Free user event
   event_free((struct event *)user_context->user_event);
   s3_clovis_op_failed(op);
+  free(user_data);
 }

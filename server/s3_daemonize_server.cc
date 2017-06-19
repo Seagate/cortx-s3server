@@ -40,7 +40,7 @@ void s3_terminate_sig_handler(int signum) {
   // When a daemon has been told to shutdown, there is a possibility of OS
   // sending SIGTERM when s3server runs as service hence ignore subsequent
   // SIGTERM signal.
-  struct sigaction sigterm_action;
+  struct sigaction sigterm_action = {0};
   sigterm_action.sa_handler = SIG_IGN;
   sigterm_action.sa_flags = 0;
   sigaction(SIGTERM, &sigterm_action, NULL);
