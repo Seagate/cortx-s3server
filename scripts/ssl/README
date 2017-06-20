@@ -1,0 +1,21 @@
+### Generate SSL certificate
+ * Seagate  
+ For Seagate domain run   
+ `./setup-ssl.sh --seagate`
+
+
+ * AWS  
+ `./setup-ssl.sh --aws`
+
+
+ * For Custom domain:  
+ Create a file with list of domain names (including wildcard domains). The first domain name in this file will be used as common name(CN) in certificates.
+ ```
+ $ cat dns.list
+ s3.example.com
+ *.s3.example.com
+ s3-us.example.com
+ *.s3-us.example.com
+ ```
+ Run following command to generate ssl certificate and key:  
+ ` ./setup-ssl.sh --san-file dns.list`
