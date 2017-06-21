@@ -28,37 +28,71 @@ class S3cmdTest(S3PyCliTest):
     def teardown(self):
         super(S3cmdTest, self).teardown()
 
-    def create_bucket(self, bucket_name, region=None):
+    def create_bucket(self, bucket_name, region=None, host=None):
         self.bucket_name = bucket_name
-        if region:
-            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " mb " + " s3://" + self.bucket_name + " --bucket-location=" + region)
+        if host:
+            if region:
+                self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + "--host=" +
+                               host + " --host-bucket=" + bucket_name + "." + host + " mb " +
+                               " s3://" + self.bucket_name + " --bucket-location=" + region)
+            else:
+                self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+                              "--host=" + host + " --host-bucket=" + host
+                              + "." + host +" mb " + " s3://" + self.bucket_name)
         else:
-            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " mb " + " s3://" + self.bucket_name)
+            if region:
+                self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " mb " + " s3://" + self.bucket_name + " --bucket-location=" + region)
+            else:
+                self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " mb " + " s3://" + self.bucket_name)
         return self
 
-    def list_buckets(self):
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " ls ")
+    def list_buckets(self, host=None):
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+            "--host=" + host + " --host-bucket=" + host + " ls ")
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " ls ")
         return self
 
-    def info_bucket(self, bucket_name):
+    def info_bucket(self, bucket_name, host=None):
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " info " + " s3://" + self.bucket_name)
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+             "--host=" + host + " --host-bucket=" + bucket_name + "." + host +
+             " info " + " s3://" + self.bucket_name)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " info " + " s3://" + self.bucket_name)
         return self
 
-    def info_object(self, bucket_name, filename):
+    def info_object(self, bucket_name, filename, host=None):
         self.bucket_name = bucket_name
         self.filename = filename
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " info " + " s3://" + self.bucket_name + "/" + self.filename)
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+            "--host=" + host + " --host-bucket=" + bucket_name + "." + host +
+            " info " + " s3://" + self.bucket_name + "/" + self.filename)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " info " + " s3://" + self.bucket_name + "/" + self.filename)
         return self
 
-    def delete_bucket(self, bucket_name):
+    def delete_bucket(self, bucket_name, host=None):
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " rb " + " s3://" + self.bucket_name)
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+            "--host=" + host + " --host-bucket=" + bucket_name + "." + host +
+            " rb " + " s3://" + self.bucket_name)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " rb " + " s3://" + self.bucket_name)
         return self
 
-    def list_objects(self, bucket_name):
+    def list_objects(self, bucket_name, host=None):
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " ls " + " s3://" + self.bucket_name)
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+            "--host=" + host + " --host-bucket=" + bucket_name + "." + host +
+            " ls " + " s3://" + self.bucket_name)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " ls " + " s3://" + self.bucket_name)
         return self
 
     def list_all_objects(self):
@@ -76,11 +110,16 @@ class S3cmdTest(S3PyCliTest):
         self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " du " + " s3://" + self.bucket_name)
         return self
 
-    def upload_test(self, bucket_name, filename, filesize):
+    def upload_test(self, bucket_name, filename, filesize, host=None):
         self.filename = filename
         self.filesize = filesize
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " put " + self.filename + " s3://" + self.bucket_name)
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+            "--host=" + host + " --host-bucket=" + bucket_name + "." + host +
+            " put " + self.filename + " s3://" + self.bucket_name)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " put " + self.filename + " s3://" + self.bucket_name)
         return self
 
     def upload_copy_test(self, bucket_name, srcfile, destfile):
@@ -118,10 +157,15 @@ class S3cmdTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def download_test(self, bucket_name, filename):
+    def download_test(self, bucket_name, filename, host=None):
         self.filename = filename
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " get " + "s3://" + self.bucket_name + "/" + self.filename)
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+            "--host=" + host + " --host-bucket=" + bucket_name + "." + host +
+            " get " + "s3://" + self.bucket_name + "/" + self.filename)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " get " + "s3://" + self.bucket_name + "/" + self.filename)
         return self
 
     def setacl_bucket(self, bucket_name, acl_perm):
@@ -176,10 +220,15 @@ class S3cmdTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
-    def delete_test(self, bucket_name, filename):
+    def delete_test(self, bucket_name, filename, host=None):
         self.filename = filename
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " del " + "s3://" + self.bucket_name + "/" + self.filename)
+        if host:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries +
+            "--host=" + host + " --host-bucket=" + bucket_name + "." + host +
+            " del " + "s3://" + self.bucket_name + "/" + self.filename)
+        else:
+            self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " del " + "s3://" + self.bucket_name + "/" + self.filename)
         return self
 
     def multi_delete_test(self, bucket_name):

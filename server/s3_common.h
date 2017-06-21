@@ -92,6 +92,55 @@ enum class S3OperationCode {
   torrent
 };
 
+inline std::string operation_code_to_str(S3OperationCode code) {
+  switch (code) {
+    case S3OperationCode::none:
+      return "S3OperationCode::none";
+    case S3OperationCode::acl:
+      return "S3OperationCode::acl";
+    case S3OperationCode::policy:
+      return "S3OperationCode::policy";
+    case S3OperationCode::location:
+      return "S3OperationCode::location";
+    case S3OperationCode::multipart:
+      return "S3OperationCode::multipart";
+    case S3OperationCode::multidelete:
+      return "S3OperationCode::multidelete";
+    case S3OperationCode::requestPayment:
+      return "S3OperationCode::requestPayment";
+    case S3OperationCode::lifecycle:
+      return "S3OperationCode::lifecycle";
+    case S3OperationCode::cors:
+      return "S3OperationCode::cors";
+    case S3OperationCode::analytics:
+      return "S3OperationCode::analytics";
+    case S3OperationCode::inventory:
+      return "S3OperationCode::inventory";
+    case S3OperationCode::metrics:
+      return "S3OperationCode::metrics";
+    case S3OperationCode::tagging:
+      return "S3OperationCode::tagging";
+    case S3OperationCode::website:
+      return "S3OperationCode::website";
+    case S3OperationCode::replication:
+      return "S3OperationCode::replication";
+    case S3OperationCode::accelerate:
+      return "S3OperationCode::accelerate";
+    case S3OperationCode::logging:
+      return "S3OperationCode::logging";
+    case S3OperationCode::notification:
+      return "S3OperationCode::notification";
+    case S3OperationCode::torrent:
+      return "S3OperationCode::torrent";
+    case S3OperationCode::versioning:
+      return "S3OperationCode::versioning";
+    case S3OperationCode::versions:
+      return "S3OperationCode::versions";
+    default:
+      return "S3OperationCode::Unknown";
+  }
+}
+
 enum class S3AsyncOpStatus {
   unknown,
   inprogress,

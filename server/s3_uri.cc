@@ -54,8 +54,6 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::multidelete;
   } else if (request->has_query_param_key("requestPayment")) {
     operation_code = S3OperationCode::requestPayment;
-  } else if (request->has_query_param_key("policy")) {
-    operation_code = S3OperationCode::policy;
   } else if (request->has_query_param_key("lifecycle")) {
     operation_code = S3OperationCode::lifecycle;
   } else if (request->has_query_param_key("cors")) {
@@ -86,14 +84,14 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::versions;
   }
 
-  s3_log(S3_LOG_DEBUG, "operation_code set to %d\n", operation_code);
+  s3_log(S3_LOG_DEBUG, "Operation code %s\n",
+         operation_code_to_str(operation_code).c_str());
   // Other operations - todo
 }
 
 S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
     : S3URI(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
-
   std::string full_uri(request->c_get_full_path());
   // Strip the query params
   std::size_t qparam_start = full_uri.find("?");
@@ -103,10 +101,11 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
     // FaultInjection request check
     std::string header_value =
         request->get_header_value("x-seagate-faultinjection");
-    if (S3Option::get_instance()->is_fi_enabled() && !header_value.empty())
+    if (S3Option::get_instance()->is_fi_enabled() && !header_value.empty()) {
       s3_api_type = S3ApiType::faultinjection;
-    else
+    } else {
       s3_api_type = S3ApiType::service;
+    }
   } else {
     // Find the second forward slash.
     std::size_t pos =
@@ -136,7 +135,8 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(
     std::shared_ptr<S3RequestObject> req)
     : S3URI(req) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
-  host_header = request->get_host_header();
+  host_header = request->get_host_name();
+
   setup_bucket_name();
 
   std::string full_uri(request->c_get_full_path());

@@ -69,20 +69,20 @@ bool S3Router::is_subdomain_match(std::string& endpoint) {
 
 void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-
   std::shared_ptr<S3APIHandler> handler;
 
   std::string bucket_name, object_name;
+  std::string host_name = request->get_host_name();
 
-  std::string host_header = request->get_host_header();
-  s3_log(S3_LOG_DEBUG, "host_header = %s\n", host_header.c_str());
+  s3_log(S3_LOG_DEBUG, "host_name = %s\n", host_name.c_str());
   s3_log(S3_LOG_DEBUG, "uri = %s\n", request->c_get_full_path());
 
   std::unique_ptr<S3URI> uri;
   S3UriType uri_type = S3UriType::unsupported;
 
-  if (host_header.empty() || is_exact_valid_endpoint(host_header) ||
-      !is_subdomain_match(host_header)) {
+  if (host_name.empty() || is_exact_valid_endpoint(host_name) ||
+      request->is_valid_ipaddress(host_name) ||
+      !is_subdomain_match(host_name)) {
     // Path style API
     // Bucket for the request will be the first slash-delimited component of the
     // Request-URI

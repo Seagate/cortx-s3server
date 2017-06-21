@@ -126,6 +126,16 @@ TEST_F(S3RequestObjectTest, ReturnsValidHeadersCopy) {
   EXPECT_TRUE(input_headers == request->get_in_headers_copy());
 }
 
+TEST_F(S3RequestObjectTest, IsValidIpAddress) {
+  std::string ipaddr;
+  ipaddr = "127.0.0.1";
+  EXPECT_TRUE(request->is_valid_ipaddress(ipaddr));
+  ipaddr = "1234";
+  EXPECT_FALSE(request->is_valid_ipaddress(ipaddr));
+  ipaddr = "::1";
+  EXPECT_TRUE(request->is_valid_ipaddress(ipaddr));
+}
+
 TEST_F(S3RequestObjectTest, ReturnsValidHeaderValue) {
   std::map<std::string, std::string> input_headers;
   input_headers["Content-Type"] = "application/xml";
@@ -145,6 +155,79 @@ TEST_F(S3RequestObjectTest, ReturnsValidHostHeaderValue) {
   fake_in_headers(input_headers);
 
   EXPECT_EQ(std::string("s3.seagate.com"), request->get_host_header());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsHostName) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "s3.seagate.com";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("s3.seagate.com"), request->get_host_name());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsHostNameWithPortStripped) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "s3.seagate.com:8081";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("s3.seagate.com"), request->get_host_name());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsIPV4Address) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "127.0.0.1";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("127.0.0.1"), request->get_host_name());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsIPV4AddressWithPortStripped) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "127.0.0.1:8081";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("127.0.0.1"), request->get_host_name());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsIPV6Address) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "2001:db8::1";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("2001:db8::1"), request->get_host_name());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsIPV6AddressWithPortStripped) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "2001:db8:1f70::999:de8:7648:6e8:8081";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("2001:db8:1f70::999:de8:7648:6e8"),
+            request->get_host_name());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsIPV6loopbackAddress) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "::1";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("::1"), request->get_host_name());
+}
+
+TEST_F(S3RequestObjectTest, ReturnsIPV6loopbackAddressWithStrippedPort) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Type"] = "application/xml";
+  input_headers["Host"] = "::1:8081";
+
+  fake_in_headers(input_headers);
+  EXPECT_EQ(std::string("::1"), request->get_host_name());
 }
 
 TEST_F(S3RequestObjectTest, ReturnsValidContentLengthHeaderValue) {

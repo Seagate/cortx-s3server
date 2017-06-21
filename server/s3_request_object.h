@@ -109,11 +109,13 @@ class S3RequestObject {
 
   virtual const char* c_get_uri_query();
   virtual S3HttpVerb http_verb();
+  virtual const char* get_http_verb_str(S3HttpVerb method);
   virtual const char* c_get_full_path();
   virtual const char* c_get_full_encoded_path();
   const char* c_get_file_name();
   void set_api_type(S3ApiType apitype);
   virtual S3ApiType get_api_type();
+  virtual bool is_valid_ipaddress(std::string& ipaddr);
 
  protected:
   // protected so mocks can override
@@ -133,6 +135,7 @@ class S3RequestObject {
 
   virtual std::string get_header_value(std::string key);
   virtual std::string get_host_header();
+  virtual std::string get_host_name();
 
   // returns x-amz-decoded-content-length OR Content-Length
   // Always prefer get_data_length*() version since it takes

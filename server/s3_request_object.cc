@@ -123,6 +123,10 @@ S3RequestObject::~S3RequestObject() {
 
 S3HttpVerb S3RequestObject::http_verb() { return (S3HttpVerb)ev_req->method; }
 
+const char* S3RequestObject::get_http_verb_str(S3HttpVerb method) {
+  return htparser_get_methodstr_m((htp_method)method);
+}
+
 void S3RequestObject::set_full_path(const char* full_path) {
   full_path_decoded_uri = full_path;
 }
@@ -172,9 +176,49 @@ std::string S3RequestObject::get_header_value(std::string key) {
   }
 }
 
+bool S3RequestObject::is_valid_ipaddress(std::string& ipaddr) {
+  int ret;
+  unsigned char buf[sizeof(struct in6_addr)];
+  size_t pos = ipaddr.find(":");
+
+  if (pos != std::string::npos) {
+    // Its IPV6
+    ret = inet_pton(AF_INET6, ipaddr.c_str(), buf);
+  } else {
+    // Its IPV4
+    ret = inet_pton(AF_INET, ipaddr.c_str(), buf);
+  }
+  return ret != 0;
+}
+
 std::string S3RequestObject::get_host_header() {
   std::string host = "Host";
   return get_header_value(host);
+}
+
+std::string S3RequestObject::get_host_name() {
+  size_t pos;
+  std::string host_name;
+  std::string original_host_header = get_host_header();
+  host_name = original_host_header;
+  // Host may have port along with it hostname:port, if it has then strip it
+  pos = original_host_header.rfind(":");
+  if (pos != std::string::npos) {
+    host_name = original_host_header.substr(0, pos);
+    if (!is_valid_ipaddress(host_name)) {
+      pos = host_name.find(":");
+      if (pos == std::string::npos) {
+        // This is IPV4 or DNS style name, hence return with stripped port #
+        return host_name;
+      }
+      // IPV6, Check with original IP
+      if (is_valid_ipaddress(original_host_header)) {
+        // The original host header contains only IP (IPV6) so revert to it.
+        host_name = original_host_header;
+      }
+    }
+  }
+  return host_name;
 }
 
 void S3RequestObject::set_out_header_value(std::string key, std::string value) {
@@ -346,6 +390,8 @@ void S3RequestObject::send_response(int code, std::string body) {
   // If body not empty, write to response body.
   if (!body.empty()) {
     evbuffer_add_printf(ev_req->buffer_out, body.c_str());
+  } else {
+    set_out_header_value("Content-Length", "0");
   }
   set_out_header_value("x-amzn-RequestId", request_id);
   evhtp_obj->http_send_reply(ev_req, code);

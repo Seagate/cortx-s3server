@@ -25,24 +25,29 @@ std::shared_ptr<S3APIHandler> S3APIHandlerFactory::create_api_handler(
     S3OperationCode op_code) {
   std::shared_ptr<S3APIHandler> handler;
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "api_type = %d\n", api_type);
   switch (api_type) {
     case S3ApiType::service:
+      s3_log(S3_LOG_DEBUG, "api_type = S3ApiType::service\n");
       handler = std::make_shared<S3ServiceAPIHandler>(request, op_code);
       break;
     case S3ApiType::bucket:
+      s3_log(S3_LOG_DEBUG, "api_type = S3ApiType::bucket\n");
       handler = std::make_shared<S3BucketAPIHandler>(request, op_code);
       break;
     case S3ApiType::object:
+      s3_log(S3_LOG_DEBUG, "api_type = S3ApiType::object\n");
       handler = std::make_shared<S3ObjectAPIHandler>(request, op_code);
       break;
     case S3ApiType::faultinjection:
+      s3_log(S3_LOG_DEBUG, "api_type = S3ApiType::faultinjection\n");
       handler = std::make_shared<S3FaultinjectionAPIHandler>(request, op_code);
       break;
     default:
       break;
   };
   if (handler) {
+    s3_log(S3_LOG_DEBUG, "HTTP Action is %s\n",
+           request->get_http_verb_str(request->http_verb()));
     handler->create_action();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");
