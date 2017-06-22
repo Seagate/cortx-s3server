@@ -240,6 +240,7 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulShutdownSet) {
       std::bind(&S3GetMultipartPartActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->get_key_object_successful();
   EXPECT_EQ(1, call_count_one);
   action_under_test->check_shutdown_signal_for_next_task(false);
@@ -389,6 +390,7 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulRollBackSet) {
       std::bind(&S3GetMultipartPartActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->get_next_objects_successful();
   EXPECT_EQ(1, call_count_one);
   action_under_test->check_shutdown_signal_for_next_task(false);

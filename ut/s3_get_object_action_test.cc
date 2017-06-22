@@ -424,6 +424,7 @@ TEST_F(S3GetObjectActionTest, SendResponseWhenShuttingDownAndResponseStarted) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   action_under_test->read_object_reply_started = true;
 
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(0);
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(0);
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
@@ -438,6 +439,7 @@ TEST_F(S3GetObjectActionTest,
        SendResponseWhenShuttingDownAndResponseNotStarted) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
 
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request,
               set_out_header_value(Eq("Retry-After"), Eq("1")))

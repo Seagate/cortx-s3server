@@ -263,10 +263,10 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd enable FI put_chunk_upload_object_action_consume_incoming_content_shutdown_fail').\
         enable_fi_enablen("enable", "put_chunk_upload_object_action_consume_incoming_content_shutdown_fail", "2").\
         execute_test().command_is_successful()
-    #JClientTest('Jclient can not upload 4MB file in chunked mode').\
-    #    put_object("seagatebucket", "4MBfilec", 4000000, chunked=True).\
-    #    execute_test(negative_case=True).command_should_fail().\
-    #    command_error_should_have("ServiceUnavailable")
+    JClientTest('Jclient can not upload 4MB file in chunked mode').\
+        put_object("seagatebucket", "4MBfilec", 4000000, chunked=True).\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
     S3fiTest('s3cmd can disable Fault injection').\
         disable_fi("put_chunk_upload_object_action_consume_incoming_content_shutdown_fail").\
         execute_test().command_is_successful()

@@ -150,10 +150,12 @@ class S3Action {
 
   int number_of_rollback_tasks() { return rollback_list.size(); }
 
+  S3ActionState get_rollback_state() { return rollback_state; }
+
   // Checks whether S3 is shutting down. If yes then triggers rollback and
   // schedules a response.
   // Return value: true, in case of shutdown.
-  virtual bool check_shutdown_and_rollback();
+  virtual bool check_shutdown_and_rollback(bool check_auth_op_aborted = false);
 
   bool reject_if_shutting_down() { return is_response_scheduled; }
 

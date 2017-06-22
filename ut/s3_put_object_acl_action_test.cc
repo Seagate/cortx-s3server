@@ -223,6 +223,7 @@ TEST_F(S3PutObjectACLActionTest, SendResponseToClientServiceUnavailable) {
   CREATE_BUCKET_METADATA;
 
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*request_mock, pause()).Times(1);
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
   action_under_test_ptr->check_shutdown_and_rollback();

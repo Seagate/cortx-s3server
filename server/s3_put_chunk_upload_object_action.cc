@@ -99,7 +99,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   auth_in_progress = false;
   auth_completed = true;
-  if (check_shutdown_and_rollback()) {
+  if (check_shutdown_and_rollback(true)) {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
@@ -120,7 +120,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
   auth_failed = true;
   auth_completed = true;
   set_s3_error("SignatureDoesNotMatch");
-  if (check_shutdown_and_rollback()) {
+  if (check_shutdown_and_rollback(true)) {
     s3_log(S3_LOG_DEBUG, "Exiting\n");
     return;
   }
@@ -527,6 +527,13 @@ void S3PutChunkUploadObjectAction::delete_old_object_failed() {
 
 void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
+
+  if ((auth_in_progress) &&
+      (get_auth_client()->get_state() == S3AuthClientOpState::started)) {
+    get_auth_client()->abort_chunk_auth_op();
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return;
+  }
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

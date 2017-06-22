@@ -252,6 +252,7 @@ TEST_F(S3PostMultipartObjectTest, CreateObject) {
 
 TEST_F(S3PostMultipartObjectTest, CreateObjectFailed) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
 

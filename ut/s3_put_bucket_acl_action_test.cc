@@ -144,6 +144,7 @@ TEST_F(S3PutBucketAclActionTest, SetAclShouldUpdateMetadata) {
 TEST_F(S3PutBucketAclActionTest, SendResponseWhenShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
 
+  EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, set_out_header_value(Eq("Retry-After"), Eq("1")))
       .Times(1);

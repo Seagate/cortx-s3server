@@ -282,6 +282,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectSecondAttempt) {
 
 TEST_F(S3PutObjectActionTest, CreateObjectFailedTestWhileShutdown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
@@ -575,6 +576,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
 
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
@@ -594,6 +596,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
 TEST_F(S3PutObjectActionTest,
        WriteObjectSuccessfulWhileShuttingDownAndRollback) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->_set_layout_id(layout_id);
 
   // mock mark progress
@@ -852,6 +855,7 @@ TEST_F(S3PutObjectActionTest, DeleteObjectFailed) {
 TEST_F(S3PutObjectActionTest, SendResponseWhenShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
 
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request,
               set_out_header_value(Eq("Retry-After"), Eq("1")))

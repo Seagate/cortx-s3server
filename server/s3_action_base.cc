@@ -307,12 +307,23 @@ void S3Action::start_chunk_authentication() {
       std::bind(&S3Action::check_authentication_failed, this));
 }
 
-bool S3Action::check_shutdown_and_rollback() {
+bool S3Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   bool is_s3_shutting_down =
       S3Option::get_instance()->get_is_s3_shutting_down();
+  if (is_s3_shutting_down && check_auth_op_aborted &&
+      get_auth_client()->is_chunk_auth_op_aborted()) {
+    if (get_rollback_state() == S3ActionState::start) {
+      rollback_start();
+    } else {
+      send_response_to_s3_client();
+    }
+    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    return is_s3_shutting_down;
+  }
   if (!is_response_scheduled && is_s3_shutting_down) {
     s3_log(S3_LOG_DEBUG, "S3 server is about to shutdown\n");
+    request->pause();
     is_response_scheduled = true;
     if (s3_error_code.empty()) {
       set_s3_error("ServiceUnavailable");

@@ -311,6 +311,7 @@ class S3AuthClient {
   void chunk_auth_successful();
   void chunk_auth_failed();
   void abort_chunk_auth_op() { chunk_auth_aborted = true; }
+  bool is_chunk_auth_op_aborted() { return chunk_auth_aborted; }
   void set_acl_and_policy(std::string acl, std::string policy);
   void set_event_with_retry_interval();
 

@@ -312,6 +312,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectSecondAttempt) {
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        CreateObjectFailedTestWhileShutdown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
@@ -609,6 +610,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
 
+  EXPECT_CALL(*mock_request, pause()).Times(1);
+
   action_under_test->write_object_failed();
 
   EXPECT_FALSE(action_under_test->clovis_write_in_progress);
@@ -618,6 +621,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulWhileShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
@@ -632,6 +636,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        WriteObjectSuccessfulWhileShuttingDownAndRollback) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*mock_request, pause()).Times(1);
 
   // Mock out the rollback calls on action.
   action_under_test->clear_tasks_rollback();
@@ -876,6 +881,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailed) {
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendResponseWhenShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
 
+  EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, set_out_header_value(Eq("Retry-After"), Eq("1")))
       .Times(1);
@@ -1119,6 +1125,7 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
 TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
        ChunkAuthSuccessfulWhileShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
@@ -1133,6 +1140,7 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
 TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
        ChunkAuthFailedWhileShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(403, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);

@@ -143,6 +143,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->chunk_auth_successful();
   EXPECT_EQ(1, call_count_one);
   EXPECT_TRUE(action_under_test->auth_completed == true);
@@ -181,6 +182,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthSuccessShuttingDown) {
       std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->chunk_auth_successful();
   EXPECT_EQ(1, call_count_one);
   EXPECT_TRUE(action_under_test->auth_completed);
@@ -193,6 +195,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthFailedShuttingDown) {
       std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->chunk_auth_failed();
   EXPECT_EQ(1, call_count_one);
   action_under_test->check_shutdown_signal_for_next_task(false);
@@ -664,6 +667,7 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulWhileShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
@@ -678,6 +682,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulWhileShuttingDownAndRollback) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
 
   // Mock out the rollback calls on action.
   action_under_test->clear_tasks_rollback();

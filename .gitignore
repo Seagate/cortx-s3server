@@ -7,6 +7,7 @@ auth-utils/jcloudclient/target/
 auth/dependency-reduced-pom.xml
 auth/target/
 bazel-*
+s3mempoolmgrut.*
 s3ut.*
 server/jsoncpp.cc
 st/clitests/jclient.jar

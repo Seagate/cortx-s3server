@@ -200,6 +200,7 @@ TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentTest1) {
       std::bind(&S3AbortMultipartActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->check_if_any_parts_present();
   EXPECT_EQ(1, call_count_one);
   action_under_test->check_shutdown_signal_for_next_task(false);
@@ -225,6 +226,7 @@ TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentFailedTest1) {
       .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
   action_under_test->check_if_any_parts_present_failed();
@@ -277,6 +279,7 @@ TEST_F(S3AbortMultipartActionTest, DeleteObjectTest3) {
 
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
   action_under_test->delete_object();
@@ -295,6 +298,7 @@ TEST_F(S3AbortMultipartActionTest, DeleteObjectFailedTest1) {
 
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   action_under_test->check_shutdown_signal_for_next_task(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
@@ -309,6 +313,7 @@ TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest1) {
 
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   action_under_test->delete_part_index_with_parts();
@@ -326,6 +331,7 @@ TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest2) {
 TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailed) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   action_under_test->check_shutdown_signal_for_next_task(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
