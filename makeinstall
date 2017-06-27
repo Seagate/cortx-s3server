@@ -7,5 +7,5 @@ echo "Installing S3/Auth server files..."
 systemctl daemon-reload
 
 echo "S3 server and Auth server are setup."
-echo "Setup nginx using configuration similar to nginx.conf.sample."
+echo "Setup nginx using configuration similar to scripts/nginx/nginx.conf.sample."
 echo "Check the README.md for how to start/stop services."
