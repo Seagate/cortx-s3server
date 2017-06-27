@@ -194,10 +194,17 @@ class S3ClovisReader {
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisReaderTest, Constructor);
+  FRIEND_TEST(S3ClovisReaderTest, OpenObjectDataTest);
   FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataTest);
   FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataSuccessful);
   FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailed);
+  FRIEND_TEST(S3ClovisReaderTest, CleanupContexts);
+  FRIEND_TEST(S3ClovisReaderTest, OpenObjectTest);
+  FRIEND_TEST(S3ClovisReaderTest, OpenObjectFailedTest);
   FRIEND_TEST(S3ClovisReaderTest, ReadObjectDataFailedMissing);
+  FRIEND_TEST(S3ClovisReaderTest, OpenObjectMissingTest);
+  FRIEND_TEST(S3ClovisReaderTest, OpenObjectErrFailedTest);
+  FRIEND_TEST(S3ClovisReaderTest, OpenObjectSuccessTest);
 };
 
 #endif

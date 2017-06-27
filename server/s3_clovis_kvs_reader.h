@@ -171,12 +171,15 @@ class S3ClovisKVSReader {
 
   // friends declaration for Unit test
   FRIEND_TEST(S3ClovisKvsReaderTest, Constructor);
+  FRIEND_TEST(S3ClovisKvsReaderTest, CleanupContexts);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalIdxPresentTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTestEmpty);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalSuccessfulTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailedTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailedTestMissing);
   FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalIdxPresentTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalSuccessfulTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalFailedTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, NextKeyvalFailedTestMissing);

@@ -101,8 +101,10 @@ class S3AccountUserIdxMetadataTest : public testing::Test {
 
 TEST_F(S3AccountUserIdxMetadataTest, Constructor) {
   struct m0_uint128 zero_oid = {0ULL, 0ULL};
-  EXPECT_NE(nullptr, idx_metadata_under_test_ptr->clovis_kvs_reader_factory);
-  EXPECT_NE(nullptr, idx_metadata_under_test_ptr->clovis_kvs_writer_factory);
+  EXPECT_TRUE(idx_metadata_under_test_ptr->clovis_kvs_reader_factory !=
+              nullptr);
+  EXPECT_TRUE(idx_metadata_under_test_ptr->clovis_kvs_writer_factory !=
+              nullptr);
   EXPECT_OID_EQ(zero_oid, idx_metadata_under_test_ptr->bucket_list_index_oid);
   EXPECT_STREQ(account_name.c_str(),
                idx_metadata_under_test_ptr->account_name.c_str());

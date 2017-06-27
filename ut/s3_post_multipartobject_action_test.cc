@@ -320,6 +320,8 @@ TEST_F(S3PostMultipartObjectTest, RollbackCreate) {
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               delete_object(_, _, _))
       .Times(1);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(1);
   action_under_test->rollback_create();
 }
 

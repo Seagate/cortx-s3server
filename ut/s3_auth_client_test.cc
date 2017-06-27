@@ -294,6 +294,7 @@ TEST_F(S3AuthClientTest, Constructor) {
   EXPECT_TRUE(p_authclienttest->get_state() == S3AuthClientOpState::init);
   EXPECT_FALSE(p_authclienttest->is_chunked_auth);
   EXPECT_FALSE(p_authclienttest->last_chunk_added);
+  EXPECT_FALSE(p_authclienttest->chunk_auth_aborted);
 }
 
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {

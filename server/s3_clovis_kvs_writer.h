@@ -199,6 +199,8 @@ class S3ClovisKVSWriter {
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisKvsWritterTest, Constructor);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CleanupContexts);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexIdxPresent);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndex);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexSuccessful);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFail);
@@ -211,6 +213,8 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValSuccessful);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValEmpty);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexIdxPresent);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyVal);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyvalSuccessful);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyValFailed);

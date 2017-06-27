@@ -129,9 +129,9 @@ class S3GetBucketActionTest : public testing::Test {
 TEST_F(S3GetBucketActionTest, Constructor) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
-  EXPECT_NE(nullptr, action_under_test_ptr->bucket_metadata_factory);
-  EXPECT_NE(nullptr, action_under_test_ptr->s3_clovis_kvs_reader_factory);
-  EXPECT_NE(nullptr, action_under_test_ptr->object_metada_factory);
+  EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
+  EXPECT_TRUE(action_under_test_ptr->s3_clovis_kvs_reader_factory != nullptr);
+  EXPECT_TRUE(action_under_test_ptr->object_metada_factory != nullptr);
   EXPECT_STREQ("marker", action_under_test_ptr->last_key.c_str());
   EXPECT_FALSE(action_under_test_ptr->fetch_successful);
 }

@@ -65,8 +65,8 @@ class S3PutBucketActionTest : public testing::Test {
 
 TEST_F(S3PutBucketActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
-  EXPECT_NE(nullptr, action_under_test_ptr->bucket_metadata_factory);
-  EXPECT_NE(nullptr, action_under_test_ptr->put_bucketbody_factory);
+  EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
+  EXPECT_TRUE(action_under_test_ptr->put_bucketbody_factory != nullptr);
   EXPECT_STREQ("", action_under_test_ptr->location_constraint.c_str());
 }
 
