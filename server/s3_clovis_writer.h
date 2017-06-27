@@ -125,7 +125,6 @@ class S3ClovisWriter {
   size_t size_in_current_write;
   size_t total_written;
 
-  int ops_count;
   bool is_object_opened;
   struct s3_clovis_obj_context* obj_ctx;
 
@@ -237,7 +236,9 @@ class S3ClovisWriter {
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsSuccessfulTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsFailedTest);
-  FRIEND_TEST(S3ClovisWriterTest, WriteContentTest);
+  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsTest);
+  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsFailedTest);
+  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsFailedMissingTest);
   FRIEND_TEST(S3ClovisWriterTest, WriteContentSuccessfulTest);
   FRIEND_TEST(S3ClovisWriterTest, WriteContentFailedTest);
 };
