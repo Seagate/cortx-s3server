@@ -50,6 +50,8 @@ local_nid=`lctl list_nids | head -1`
 local_ep=$local_nid:12345:33
 ha_ep=$local_nid:12345:34:1
 
+ulimit -c unlimited
+
 # Run m0dixinit
 set +e
 ./third_party/mero/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \

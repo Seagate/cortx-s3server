@@ -9,15 +9,23 @@ echo $PATH
 
 S3_BUILD_DIR=`pwd`
 
+USE_SUDO=
+if [[ $EUID -ne 0 ]]; then
+  command -v sudo || (echo "Script should be run as root or sudo required." && exit 1)
+  USE_SUDO=sudo
+fi
+
+ulimit -c unlimited
+
 # Set up the python virtualenv for System tests
 cd st/clitests
 ./setup.sh
 cd $S3_BUILD_DIR
 
-systemctl stop s3authserver || echo "Cannot stop s3authserver services"
+$USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 
 # nginx used as reverse-proxy for s3 service.
-systemctl restart nginx || echo "Cannot restart nginx service."
+$USE_SUDO systemctl restart nginx || echo "Cannot restart nginx service."
 
 # Check if mero build is cached and is latest, else rebuild mero as well
 THIRD_PARTY=$S3_BUILD_DIR/third_party
@@ -38,25 +46,26 @@ fi
 # Stop any old running mero
 cd $MERO_SRC
 echo "Stopping any old running mero services"
-./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
+$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
 cd $S3_BUILD_DIR
 
 # Stop any old running S3 instances
 echo "Stopping any old running s3 services"
-./dev-stops3.sh
+$USE_SUDO ./dev-stops3.sh
 
 # Clean up mero and S3 log and data dirs
-rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* /var/log/seagate/s3/* /var/log/seagate/auth/*
+$USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* /var/log/seagate/s3/* /var/log/seagate/auth/*
+$USE_SUDO rm -rf /m0trace.* /core.*
 
 # Start mero for new tests
 cd $MERO_SRC
 echo "Starting new built mero services"
-./m0t1fs/../clovis/st/utils/mero_services.sh start
+$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh start
 cd $S3_BUILD_DIR
 
 # Start S3 auth
 echo "Starting new built s3 auth services"
-systemctl restart s3authserver
+$USE_SUDO systemctl restart s3authserver
 
 # Start S3 gracefully, with max 3 attempts
 echo "Starting new built s3 services"
@@ -66,7 +75,7 @@ statuss3=0
 while [[ $retry -le $max_retries ]]
 do
   statuss3=0
-  ./dev-starts3.sh
+  $USE_SUDO ./dev-starts3.sh
   # Give it a second to start
   sleep 1
   ./iss3up.sh 1 || statuss3=$?
@@ -77,7 +86,7 @@ do
   else
     # Sometimes if mero is not ready, S3 may fail to connect
     # cleanup and restart
-    ./dev-stops3.sh
+    $USE_SUDO ./dev-stops3.sh
     sleep 1
   fi
   retry=$((retry+1))
@@ -90,15 +99,21 @@ if [ "$statuss3" != "0" ]; then
 fi
 
 # Run Unit tests and System tests
-./runalltest.sh --no-mero-rpm || (tail -50 /var/log/seagate/s3/s3server.INFO && exit 1)
+S3_TEST_RET_CODE=0
+./runalltest.sh --no-mero-rpm || (echo "S3 Tests failed." && S3_TEST_RET_CODE=1)
+
+$USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
+
+$USE_SUDO ./dev-stops3.sh || echo "Cannot stop s3 services"
+
+# Dump last log lines for easy lookup in jenkins
+tail -50 /var/log/seagate/s3/s3server.INFO
 
 # To debug if there are any errors
 tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
 
-systemctl stop s3authserver || echo "Cannot stop s3authserver services"
-
-./dev-stops3.sh || echo "Cannot stop s3 services"
-
 cd $MERO_SRC
-./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
+$USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
 cd $S3_BUILD_DIR
+
+exit $S3_TEST_RET_CODE
