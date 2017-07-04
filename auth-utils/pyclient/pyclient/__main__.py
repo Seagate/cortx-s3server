@@ -5,9 +5,12 @@ import sys
 import os
 import imp
 import botocore
+import logging
 
 from boto3.session import Session
 from config import Credentials
+from config import Config
+
 
 def iam_usage():
     return '''
@@ -51,6 +54,35 @@ def iam_usage():
 def get_conf_dir():
     return os.path.join(os.path.dirname(__file__), '../', 'config')
 
+def load_config(cli_args):
+    conf_file = os.path.join(get_conf_dir(), 'pycli_config.yaml')
+    with open(conf_file, 'r') as f:
+        config = yaml.safe_load(f)
+
+    service = Config.service.upper()
+
+    if cli_args.use_ssl:
+        Config.use_ssl = True
+        service = service + '_HTTPS'
+        Config.ca_cert_file = config['SSL']['CA_CERT_FILE']
+        Config.check_ssl_hostname = config['SSL']['CHECK_SSL_HOSTNAME']
+        Config.verify_ssl_cert = config['SSL']['VERIFY_SSL_CERT']
+
+    if Config.endpoint != None:
+        Config.endpoint = config['ENDPOINTS'][service]
+
+    Credentials.access_key = cli_args.access_key
+    Credentials.secret_key = cli_args.secret_key
+
+    if config['BOTO']['ENABLE_LOGGER']:
+        logging.basicConfig(filename=config['BOTO']['LOG_FILE_PATH'],
+                level=config['BOTO']['LOG_LEVEL'])
+
+def load_controller_action():
+    controller_action_file = os.path.join(get_conf_dir(), 'controller_action.yaml')
+    with open(controller_action_file, 'r') as f:
+        return yaml.safe_load(f)
+
 # Import module
 def import_module(module_name):
     fp, pathname, description = imp.find_module(module_name) #, sys.path)
@@ -72,12 +104,13 @@ def get_session(access_key, secret_key, session_token = None):
                       aws_session_token=session_token)
 
 # Create an IAM client.
-def get_client(session, service):
-    endpoints_file = os.path.join(get_conf_dir(), 'endpoints.yaml')
-    with open(endpoints_file, 'r') as f:
-        endpoints = yaml.safe_load(f)
-
-    return session.client(service, use_ssl='false', endpoint_url=endpoints[service])
+def get_client(session):
+    if Config.use_ssl:
+        if Config.verify_ssl_cert:
+            return session.client(Config.service, endpoint_url=Config.endpoint, verify=Config.ca_cert_file)
+        return session.client(Config.service, endpoint_url=Config.endpoint, verify=False)
+    else:
+        return session.client(Config.service, endpoint_url=Config.endpoint, use_ssl=False)
 
 parser = argparse.ArgumentParser(usage = iam_usage())
 parser.add_argument("action", help="Action to be performed.")
@@ -88,7 +121,7 @@ parser.add_argument("-f", "--file", help="File Path.")
 parser.add_argument("-d", "--duration", help="Access Key Duration.", type = int)
 parser.add_argument("-k", "--access_key_update", help="Access Key to be updated or deleted.")
 parser.add_argument("-s", "--status", help="Active/Inactive")
-parser.add_argument("-r", "--force", help="true/false")
+parser.add_argument("--force", help="Delete account forcefully.", action='store_true')
 parser.add_argument("--access_key", help="Access Key Id.")
 parser.add_argument("--secret_key", help="Secret Key.")
 parser.add_argument("--session_token", help="Session Token.")
@@ -98,12 +131,10 @@ parser.add_argument("--saml_principal_arn", help="SAML Principal ARN.")
 parser.add_argument("--saml_role_arn", help="SAML Role ARN.")
 parser.add_argument("--saml_assertion", help="File conataining SAML assertion.")
 parser.add_argument("--new_user", help="New user name.")
+parser.add_argument("--use-ssl", help="Use HTTPS protocol.", action='store_true')
 cli_args = parser.parse_args()
 
-controller_action_file = os.path.join(get_conf_dir(), 'controller_action.yaml')
-with open(controller_action_file, 'r') as f:
-    controller_action = yaml.safe_load(f)
-
+controller_action = load_controller_action()
 """
 Check if the action is valid.
 Note - class name and module name are the same
@@ -124,20 +155,20 @@ if(cli_args.action.lower() not in ["createaccount", "listaccounts"] ):
         print("Provide secret key")
         sys.exit()
 
-    Credentials.access_key = cli_args.access_key
-    Credentials.secret_key = cli_args.secret_key
-
+# Get service for the action
 if(not 'service' in controller_action[cli_args.action.lower()].keys()):
     print("Set the service(iam/s3/sts) for the action in the controller_action.yml.")
     sys.exit()
+Config.service = controller_action[cli_args.action.lower()]['service']
 
-service_name = controller_action[cli_args.action.lower()]['service']
+# Load configurations
+load_config(cli_args)
 
 # Create boto3.session object using the access key id and the secret key
 session = get_session(cli_args.access_key, cli_args.secret_key, cli_args.session_token)
 
 # Create boto3.client object.
-client = get_client(session, service_name)
+client = get_client(session)
 
 # If module is not specified in the controller_action.yaml, then assume
 # class name as the module name.

@@ -21,13 +21,22 @@ class AuthTest(PyCliTest):
     def get_pyclient_dir(self):
         return os.path.join(os.path.dirname(__file__), '../../', 'auth-utils', 'pyclient', 'pyclient')
 
+    def with_cli(self, cmd):
+        if Config.use_ssl and 'pyclient' in cmd:
+            cmd = cmd + ' --use-ssl'
+        super(AuthTest, self).with_cli(cmd)
+
     def create_account(self, **account_args):
-        self.with_cli("python %s createaccount -n %s -e %s" % (self.get_pyclient_dir(),
-                        account_args['AccountName'], account_args['Email']))
+        cmd = "python %s createaccount -n %s -e %s" % (
+                self.get_pyclient_dir(), account_args['AccountName'], account_args['Email'])
+
+        self.with_cli(cmd)
         return self
 
     def list_account(self):
-        self.with_cli("python %s listaccounts" % (self.get_pyclient_dir()))
+        cmd = "python %s listaccounts" % (self.get_pyclient_dir())
+
+        self.with_cli(cmd)
         return self
 
     def delete_account(self, **account_args):
@@ -35,9 +44,8 @@ class AuthTest(PyCliTest):
                 self.get_pyclient_dir(), account_args['AccountName'], S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key)
 
-        if ('force' in account_args.keys()):
-            cmd += " --force %s" % (account_args['force'])
-
+        if ('force' in account_args.keys() and account_args['force']):
+            cmd += " --force"
 
         self.with_cli(cmd)
         return self

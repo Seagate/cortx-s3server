@@ -1,8 +1,14 @@
 import os
+import sys
 from framework import Config
 from framework import S3PyCliTest
 from auth import AuthTest
 from s3client_config import S3ClientConfig
+
+# To run auth_spec.py over HTTPS connection only, pass --https-only param to script
+# $ python auth_spec.py --https-only
+# To run auth_spec.py over both HTTP and HTTPS connections, pass --all param to script
+# $ python auth_spec.py --all
 
 # Helps debugging
 # Config.log_enabled = True
@@ -376,7 +382,7 @@ def delete_account_tests():
 
     # Test: delete account s3test with force option [recursively/forcefully]
     test_msg = "Delete account s3test"
-    account_args = {'AccountName': 's3test', 'force': 'true'}
+    account_args = {'AccountName': 's3test', 'force': True}
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
@@ -391,13 +397,37 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
-#  ***MAIN ENTRY POINT
-# Do not change the order.
-before_all()
-account_tests()
-user_tests()
-accesskey_tests()
-role_tests()
-saml_provider_tests()
-get_federation_token_test()
-delete_account_tests()
+def execute_tests_over_http_connection():
+    print('Executing auth system tests over HTTP connection')
+    # Do not change the order.
+    before_all()
+    account_tests()
+    user_tests()
+    accesskey_tests()
+    role_tests()
+    saml_provider_tests()
+    get_federation_token_test()
+    delete_account_tests()
+
+def execute_tests_over_https_connection():
+    print('Executing auth system tests over HTTPS connection')
+    Config.use_ssl = True
+    # Do not change the order.
+    before_all()
+    account_tests()
+    user_tests()
+    accesskey_tests()
+    role_tests()
+    saml_provider_tests()
+    get_federation_token_test()
+    delete_account_tests()
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        execute_tests_over_http_connection()
+    else:
+        if sys.argv[1] == '--https-only':
+            execute_tests_over_https_connection()
+        elif sys.argv[1] == '--all':
+            execute_tests_over_http_connection()
+            execute_tests_over_https_connection()

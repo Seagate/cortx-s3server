@@ -19,7 +19,7 @@ sh ./prechecksystest.sh
 source mero_st/bin/activate
 
 echo "`date -u`: Running auth_spec.py..."
-python auth_spec.py
+python auth_spec.py --all
 
 echo "`date -u`: Running s3cmd_spec.py..."
 python s3cmd_spec.py

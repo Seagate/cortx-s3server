@@ -1,0 +1,18 @@
+ENDPOINTS:
+    IAM: http://iam.seagate.com:8085
+    IAM_HTTPS: https://iam.seagate.com:8086
+    STS: http://sts.seagate.com:8085
+    STS_HTTPS: https://sts.seagate.com:8086
+    S3: http://s3.seagate.com
+    S3_HTTPS: https://s3.seagate.com
+
+# SSL section configurations are read only in case of https connection.
+SSL:
+    CA_CERT_FILE: /opt/seagate/auth/resources/iam.seagate.com.crt
+    CHECK_SSL_HOSTNAME: True
+    VERIFY_SSL_CERT: True
+
+BOTO:
+    ENABLE_LOGGER: False
+    LOG_LEVEL: DEBUG
+    LOG_FILE_PATH: /var/log/seagate/auth/boto.log

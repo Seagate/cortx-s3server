@@ -15,6 +15,7 @@ class Config:
     time_readable_format = True
     tmp_wd = ''
     s3cmd_max_retries = 5
+    use_ssl = False
 
 class CloudConfig:
     pass
@@ -26,7 +27,7 @@ def logit(str):
 class PyCliTest(object):
     'Base class for all test cases.'
 
-    def __init__(self, description, tmp_wd = 'tests-out', clear_base_dir = 'True'):
+    def __init__(self, description, tmp_wd = 'tests-out', clear_base_dir = True):
         self.description = description
         self.command = ''
         self.negative_case = False
@@ -190,7 +191,7 @@ class S3PyCliTest(PyCliTest):
 
 class TCTPyCliTest(PyCliTest):
 
-    def __init__(self, description, clear_base_dir = 'True'):
+    def __init__(self, description, clear_base_dir = True):
         super(TCTPyCliTest, self).__init__(description, tmp_wd = Config.tmp_wd, clear_base_dir = clear_base_dir)
 
     def before_all(self):
