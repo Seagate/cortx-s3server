@@ -357,18 +357,26 @@ void S3RequestObject::send_response(int code, std::string body) {
 
 void S3RequestObject::send_reply_start(int code) {
   set_out_header_value("x-amzn-RequestId", request_id);
-  evhtp_obj->http_send_reply_start(ev_req, code);
-  reply_buffer = evbuffer_new();
+  if (client_connected()) {
+    evhtp_obj->http_send_reply_start(ev_req, code);
+    reply_buffer = evbuffer_new();
+  }
 }
 
 void S3RequestObject::send_reply_body(char* data, int length) {
-  evbuffer_add(reply_buffer, data, length);
-  evhtp_obj->http_send_reply_body(ev_req, reply_buffer);
+  if (client_connected()) {
+    evbuffer_add(reply_buffer, data, length);
+    evhtp_obj->http_send_reply_body(ev_req, reply_buffer);
+  }
 }
 
 void S3RequestObject::send_reply_end() {
-  evhtp_obj->http_send_reply_end(ev_req);
-  evbuffer_free(reply_buffer);
+  if (client_connected()) {
+    evhtp_obj->http_send_reply_end(ev_req);
+  }
+  if (reply_buffer != NULL) {
+    evbuffer_free(reply_buffer);
+  }
   reply_buffer = NULL;
 }
 

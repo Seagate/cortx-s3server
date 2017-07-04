@@ -39,6 +39,7 @@ static void s3_bufvec_free_aligned(struct m0_bufvec *bufvec, size_t unit_size,
         for (uint32_t i = 0; i < bufvec->ov_vec.v_nr; ++i) {
           S3MempoolManager::get_instance()->release_buffer_for_unit_size(
               bufvec->ov_buf[i], unit_size);
+          bufvec->ov_buf[i] = NULL;
         }
       }
       free(bufvec->ov_buf);
