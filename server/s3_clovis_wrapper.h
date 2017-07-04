@@ -206,6 +206,8 @@ class ConcreteClovisAPI : public ClovisAPI {
       clovis_fake_op_launch(op, nr);
     } else if ((type == ClovisOpType::createobj &&
                 s3_fi_is_enabled("clovis_obj_create_fail")) ||
+               (type == ClovisOpType::openobj &&
+                s3_fi_is_enabled("clovis_obj_open_fail")) ||
                (type == ClovisOpType::writeobj &&
                 s3_fi_is_enabled("clovis_obj_write_fail")) ||
                (type == ClovisOpType::deleteobj &&

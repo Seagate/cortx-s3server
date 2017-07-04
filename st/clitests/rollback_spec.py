@@ -127,6 +127,34 @@ S3cmdTest('Stop s3authserver service').stop_s3authserver_test().execute_test().c
 S3cmdTest('s3cmd cannot upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail().command_error_should_have("ServiceUnavailable")
 S3cmdTest('Start s3authserver service').start_s3authserver_test().execute_test().command_is_successful().command_is_successful()
 
+# ************  OBJ open FI ***************
+S3fiTest('s3cmd enable FI Obj open').enable_fi("enable", "always", "clovis_obj_open_fail").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail()
+S3cmdTest('s3cmd cannot download 18MB nonexistent file').download_test("seagatebucket", "18MBfile").download_test("seagatebucket", "18MBfile").execute_test(negative_case=True).command_should_fail().command_error_should_have("Not Found")
+S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_open_fail").execute_test().command_is_successful()
+
+result = S3cmdTest('s3cmd can list multipart uploads in progress').list_multipart_uploads("seagatebucket").execute_test()
+result.command_response_should_have('18MBfile')
+
+upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
+
+S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id).    execute_test().command_is_successful()
+
+# ************  OBJ open FI ***************
+S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+S3fiTest('s3cmd enable FI Obj open').enable_fi("enable", "always", "clovis_obj_open_fail").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot download 3k file').download_test("seagatebucket", "3kfile").execute_test(negative_case=True).command_error_should_have("Download failed")
+S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_open_fail").execute_test().command_is_successful()
+S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
+
+# ************  OBJ open FI ***************
+S3cmdTest('s3cmd can upload file-overwrite file').upload_test("seagatebucket", "file-overwrite", 3000).execute_test().command_is_successful()
+S3fiTest('s3cmd enable FI Obj open').enable_fi("enable", "always", "clovis_obj_open_fail").execute_test().command_is_successful()
+S3cmdTest('s3cmd cannot upload file-overwrite file').upload_test("seagatebucket", "file-overwrite", 18000000).execute_test(negative_case=True).command_should_fail()
+S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_open_fail").execute_test().command_is_successful()
+S3cmdTest('s3cmd list old file-overwrite object').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_have('3000')
+S3cmdTest('s3cmd can delete file-overwrite file').delete_test("seagatebucket", "file-overwrite").execute_test().command_is_successful()
+
 # ************  OBJ create FI ***************
 S3fiTest('s3cmd enable FI Obj create').enable_fi("enable", "always", "clovis_obj_create_fail").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()
@@ -198,6 +226,17 @@ S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test
 S3fiTest('s3cmd enable FI Obj create').enable_fi("enable", "always", "clovis_obj_create_fail").execute_test().command_is_successful()
 JClientTest('Jclient cannot upload partial parts.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test(negative_case=True).command_should_fail()
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_create_fail").execute_test().command_is_successful()
+
+S3fiTest('s3cmd enable FI Obj open').enable_fi("enable", "always", "clovis_obj_open_fail").execute_test().command_is_successful()
+JClientTest('Jclient cannot upload partial parts.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test(negative_case=True).command_should_fail()
+S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_open_fail").execute_test().command_is_successful()
+result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket").execute_test()
+result.command_response_should_have('18MBfile')
+
+upload_id = result.status.stdout.split("id - ")[1]
+
+JClientTest('Jclient can abort multipart upload').abort_multipart("seagatebucket", "18MBfile", upload_id)\
+            .execute_test().command_is_successful()
 
 S3fiTest('s3cmd enable FI PUT KV').enable_fi("enable", "always", "clovis_kv_put_fail").execute_test().command_is_successful()
 JClientTest('Jclient cannot upload partial parts.').partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).execute_test(negative_case=True).command_should_fail()
@@ -309,6 +348,14 @@ for i, val in enumerate(pathstyle_values):
 
     S3fiTest('S3Fi disable Fault injection').disable_fi("clovis_obj_create_fail").execute_test().command_is_successful()
 
+
+    # ************ OBJ Open FI ************
+    S3fiTest('S3Fi enable FI Obj open').enable_fi("enable", "always", "clovis_obj_open_fail")\
+            .execute_test().command_is_successful()
+
+    JClientTest('Jclient cannot download non existent 3kfile file').get_object("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchKey")
+
+    S3fiTest('S3Fi disable Fault injection').disable_fi("clovis_obj_open_fail").execute_test().command_is_successful()
 
     # ************ OBJ Write FI: Multipart ************
     S3fiTest('S3Fi enable FI Obj write').enable_fi("enable", "always", "clovis_obj_write_fail")\

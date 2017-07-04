@@ -126,7 +126,7 @@ void S3ClovisReader::open_object() {
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
-  s3_clovis_api->clovis_op_launch(ctx->ops, 1);
+  s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::openobj);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
