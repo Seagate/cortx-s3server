@@ -16,6 +16,9 @@ class Config:
     tmp_wd = ''
     s3cmd_max_retries = 5
     use_ssl = False
+    client_execution_timeout = None
+    request_timeout = None
+    socket_timeout = None
 
 class CloudConfig:
     pass

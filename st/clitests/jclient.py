@@ -35,6 +35,16 @@ class JClientTest(S3PyCliTest):
                         S3ClientConfig.secret_key)
         return config
 
+    def with_cli(self, cmd):
+        if 'jclient.jar' in cmd:
+            if Config.client_execution_timeout != None:
+                cmd = cmd + " --cli-exec-timeout %s" % (Config.client_execution_timeout)
+            if Config.request_timeout != None:
+                cmd = cmd + " --req-timeout %s" % (Config.request_timeout)
+            if Config.socket_timeout != None:
+                cmd = cmd + " --sock-timeout %s" % (Config.socket_timeout)
+        super(JClientTest, self).with_cli(cmd)
+
     def run(self):
         super(JClientTest, self).run()
 

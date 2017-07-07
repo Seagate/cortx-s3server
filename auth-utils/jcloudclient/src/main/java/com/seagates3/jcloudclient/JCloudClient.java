@@ -31,6 +31,7 @@ import java.util.HashMap;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -122,7 +123,16 @@ public class JCloudClient {
                         "Size of chunk in MB.")
                 .addOption("a", "aws", false, "Run operation on AWS S3.")
                 .addOption("e", "etag-enable", true, "{True|False}")
-                .addOption("h", "help", false, "Show usage");
+                .addOption("h", "help", false, "Show usage")
+                .addOption(OptionBuilder.withLongOpt("cli-exec-timeout")
+                        .withDescription("Set Client Execution Timeout").hasArg()
+                        .withArgName("TIMEOUT-VALUE").create())
+                .addOption(OptionBuilder.withLongOpt("req-timeout")
+                        .withDescription("Set Request Timeout").hasArg()
+                        .withArgName("TIMEOUT-VALUE").create())
+                .addOption(OptionBuilder.withLongOpt("sock-timeout")
+                        .withDescription("Set Socket Timeout").hasArg()
+                        .withArgName("TIMEOUT-VALUE").create());
 
         return options;
     }

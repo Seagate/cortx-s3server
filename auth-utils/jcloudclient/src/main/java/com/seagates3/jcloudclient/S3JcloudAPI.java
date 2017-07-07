@@ -56,6 +56,10 @@ import org.jclouds.s3.domain.AccessControlList.GroupGranteeURI;
 import org.jclouds.s3.domain.AccessControlList.Permission;
 import org.jclouds.s3.domain.ObjectMetadata;
 import org.jclouds.s3.domain.ObjectMetadataBuilder;
+
+import static org.jclouds.Constants.PROPERTY_CONNECTION_TIMEOUT;
+import static org.jclouds.Constants.PROPERTY_REQUEST_TIMEOUT;
+import static org.jclouds.Constants.PROPERTY_SO_TIMEOUT;
 import static org.jclouds.blobstore.options.PutOptions.Builder.multipart;
 
 public class S3JcloudAPI {
@@ -107,6 +111,16 @@ public class S3JcloudAPI {
         if (cmd.hasOption("m")) {
             int partSize = Integer.parseInt(cmd.getOptionValue("m")) * 1024 * 1024;
             properties.setProperty("jclouds.mpu.parts.size", String.valueOf(partSize));
+        }
+
+        if (cmd.hasOption("cli-exec-timeout")) {
+            properties.setProperty(PROPERTY_CONNECTION_TIMEOUT, cmd.getOptionValue("cli-exec-timeout"));
+        }
+        if (cmd.hasOption("req-timeout")) {
+            properties.setProperty(PROPERTY_REQUEST_TIMEOUT, cmd.getOptionValue("req-timeout"));
+        }
+        if (cmd.hasOption("sock-timeout")) {
+            properties.setProperty(PROPERTY_SO_TIMEOUT, cmd.getOptionValue("sock-timeout"));
         }
 
         builder.overrides(properties);

@@ -87,6 +87,17 @@ public class S3API {
         verifyCreds();
 
         ClientConfiguration config = getClientConfiguration();
+        if (cmd.hasOption("cli-exec-timeout")) {
+            config.setClientExecutionTimeout(Integer.parseInt(cmd.getOptionValue("cli-exec-timeout")));
+        }
+        if (cmd.hasOption("req-timeout")) {
+            config.setRequestTimeout(Integer.parseInt(cmd.getOptionValue("req-timeout")));
+        }
+        if (cmd.hasOption("sock-timeout")) {
+            config.setSocketTimeout(Integer.parseInt(cmd.getOptionValue("sock-timeout")));
+        }
+
+
         AWSCredentials creds;
 
         if (cmd.hasOption("t")) {

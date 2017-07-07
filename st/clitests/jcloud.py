@@ -40,6 +40,16 @@ class JCloudTest(S3PyCliTest):
     def teardown(self):
         super(JCloudTest, self).teardown()
 
+    def with_cli(self, cmd):
+        if 'jcloudclient.jar' in cmd:
+            if Config.client_execution_timeout != None:
+                cmd = cmd + " --cli-exec-timeout %s" % (Config.client_execution_timeout)
+            if Config.request_timeout != None:
+                cmd = cmd + " --req-timeout %s" % (Config.request_timeout)
+            if Config.socket_timeout != None:
+                cmd = cmd + " --sock-timeout %s" % (Config.socket_timeout)
+        super(JCloudTest, self).with_cli(cmd)
+
     def create_bucket(self, bucket_name, region=None):
         if region:
             cmd =  "%s mb s3://%s -l %s %s" % (self.jcloud_cmd,
