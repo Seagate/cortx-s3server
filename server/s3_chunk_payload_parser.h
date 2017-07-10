@@ -111,6 +111,7 @@ class S3ChunkPayloadParser {
 
  public:
   S3ChunkPayloadParser();
+  virtual ~S3ChunkPayloadParser();
 
   void setup_content_length(size_t len) { content_length = len; }
 

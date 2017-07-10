@@ -89,6 +89,16 @@ S3ChunkPayloadParser::S3ChunkPayloadParser()
   s3_log(S3_LOG_DEBUG, "spare_buffers.size(%zu)\n", spare_buffers.size());
 }
 
+S3ChunkPayloadParser::~S3ChunkPayloadParser() {
+  s3_log(S3_LOG_DEBUG, "Destructor\n");
+  evbuf_t *buf = NULL;
+  while (!spare_buffers.empty()) {
+    buf = spare_buffers.front();
+    spare_buffers.pop_front();
+    evbuffer_free(buf);
+  }
+}
+
 void S3ChunkPayloadParser::reset_parser_state() {
   chunk_data_size_to_read = 0;
   current_chunk_size = "";
