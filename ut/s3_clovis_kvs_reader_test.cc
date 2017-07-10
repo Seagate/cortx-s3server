@@ -362,7 +362,7 @@ TEST_F(S3ClovisKvsReaderTest, NextKeyvalSuccessfulTest) {
       .WillOnce(Invoke(s3_test_clovis_op_launch));
 
   ptr_cloviskvs_reader->next_keyval(
-      index_name, test_key, nr_kvp,
+      index_oid, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
 
@@ -389,7 +389,7 @@ TEST_F(S3ClovisKvsReaderTest, NextKeyvalFailedTest) {
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
 
   ptr_cloviskvs_reader->next_keyval(
-      index_name, test_key, nr_kvp,
+      index_oid, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
 
@@ -415,7 +415,7 @@ TEST_F(S3ClovisKvsReaderTest, NextKeyvalFailedTestMissing) {
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail_enoent));
 
   ptr_cloviskvs_reader->next_keyval(
-      index_name, test_key, nr_kvp,
+      index_oid, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
 

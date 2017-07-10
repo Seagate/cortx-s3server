@@ -164,9 +164,6 @@ class S3ClovisKVSWriter {
   void delete_indexes_failed();
 
   // Async save operation.
-  void put_keyval(std::string index_name, std::string key, std::string val,
-                  std::function<void(void)> on_success,
-                  std::function<void(void)> on_failed);
   virtual void put_keyval(struct m0_uint128 oid, std::string key,
                           std::string val, std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);

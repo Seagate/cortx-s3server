@@ -795,6 +795,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
 
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
 

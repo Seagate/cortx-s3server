@@ -349,6 +349,7 @@ TEST_F(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError) {
 
 TEST_F(S3PostCompleteActionTest, FetchPartsInfo) {
   CREATE_KVS_READER_OBJ;
+  CREATE_MP_METADATA_OBJ;
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _))

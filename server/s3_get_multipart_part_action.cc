@@ -189,14 +189,14 @@ void S3GetMultipartPartAction::get_key_object_successful() {
   std::string key_name = last_key;
   value = clovis_kv_reader->get_value();
   if (!(value.empty())) {
+    struct m0_uint128 part_index_oid =
+        object_multipart_metadata->get_part_index_oid();
     s3_log(S3_LOG_DEBUG, "Read Part = %s\n", key_name.c_str());
     std::shared_ptr<S3PartMetadata> part =
-        part_metadata_factory->create_part_metadata_obj(request, upload_id,
-                                                        atoi(key_name.c_str()));
+        part_metadata_factory->create_part_metadata_obj(
+            request, part_index_oid, upload_id, atoi(key_name.c_str()));
 
     if (part->from_json(value) != 0) {
-      struct m0_uint128 part_index_oid =
-          object_multipart_metadata->get_part_index_oid();
       s3_log(S3_LOG_ERROR,
              "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
              part_index_oid.u_hi, part_index_oid.u_lo, key_name.c_str(),
@@ -274,7 +274,7 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
   for (auto& kv : kvps) {
     s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
     auto part = part_metadata_factory->create_part_metadata_obj(
-        request, upload_id, atoi(kv.first.c_str()));
+        request, part_index_oid, upload_id, atoi(kv.first.c_str()));
 
     if (part->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;

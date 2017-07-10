@@ -264,6 +264,8 @@ TEST_F(S3GetMultipartPartActionTest,
        GetKeyObjectSuccessfulValueNotEmptyListSizeSameAsMaxAllowed) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
       .WillRepeatedly(Return(
           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
@@ -282,6 +284,8 @@ TEST_F(S3GetMultipartPartActionTest,
        GetKeyObjectSuccessfulValueNotEmptyListSizeNotSameAsMaxAllowed) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
       .WillRepeatedly(Return(
           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));

@@ -401,7 +401,8 @@ void S3PutMultiObjectAction::write_object_failed() {
 void S3PutMultiObjectAction::save_metadata() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
   part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, upload_id, part_number);
+      request, object_multipart_metadata->get_part_index_oid(), upload_id,
+      part_number);
 
   part_metadata->set_content_length(request->get_data_length_str());
   part_metadata->set_md5(clovis_writer->get_content_md5());

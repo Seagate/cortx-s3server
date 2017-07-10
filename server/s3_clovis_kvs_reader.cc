@@ -278,21 +278,6 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
 
-void S3ClovisKVSReader::next_keyval(std::string index_name, std::string key,
-                                    size_t nr_kvp,
-                                    std::function<void(void)> on_success,
-                                    std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG,
-         "Entering with index_name = %s, key = %s and count = %zu\n",
-         index_name.c_str(), key.c_str(), nr_kvp);
-
-  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
-
-  next_keyval(id, key, nr_kvp, on_success, on_failed);
-
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
-}
-
 void S3ClovisKVSReader::next_keyval_successful() {
   s3_log(S3_LOG_DEBUG, "Entering\n");
 

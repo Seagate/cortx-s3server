@@ -286,7 +286,7 @@ void S3PartMetadata::save_metadata() {
         request, s3_clovis_api);
   }
   clovis_kv_writer->put_keyval(
-      get_part_index_name(), part_number, this->to_json(),
+      part_index_name_oid, part_number, this->to_json(),
       std::bind(&S3PartMetadata::save_metadata_successful, this),
       std::bind(&S3PartMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");

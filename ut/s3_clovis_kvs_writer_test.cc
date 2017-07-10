@@ -371,7 +371,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyVal) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
 
   action_under_test->put_keyval(
-      "BUCKET/seagate_bucket", "3kfile",
+      oid, "3kfile",
       "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
@@ -395,7 +395,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValEmpty) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
 
   action_under_test->put_keyval(
-      "", "", "", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
+      oid, "", "", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
 
   EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
@@ -436,7 +436,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailed) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
   action_under_test->put_keyval(
-      "BUCKET/seagate_bucket", "3kfile",
+      oid, "3kfile",
       "{\"ACL\":\"\",\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":"
       "\"3kfile\"}",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),

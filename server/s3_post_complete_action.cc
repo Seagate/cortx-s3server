@@ -201,7 +201,7 @@ void S3PostCompleteAction::fetch_parts_info() {
   clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
   clovis_kv_reader->next_keyval(
-      get_part_index_name(), "", parts.size(),
+      multipart_metadata->get_part_index_oid(), "", parts.size(),
       std::bind(&S3PostCompleteAction::get_parts_successful, this),
       std::bind(&S3PostCompleteAction::get_parts_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");

@@ -158,9 +158,6 @@ class S3ClovisKVSReader {
                            size_t nr_kvp, std::function<void(void)> on_success,
                            std::function<void(void)> on_failed,
                            unsigned int flag = M0_OIF_EXCLUDE_START_KEY);
-  void next_keyval(std::string index_name, std::string key, size_t nr_kvp,
-                   std::function<void(void)> on_success,
-                   std::function<void(void)> on_failed);
   void next_keyval_successful();
   void next_keyval_failed();
 
