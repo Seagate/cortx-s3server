@@ -61,7 +61,13 @@ http {
             proxy_next_upstream error timeout http_502 http_503 http_504;
             # We dont want clients to be held too long when retrying upstreams
             proxy_next_upstream_timeout 5;
-            proxy_set_header Host            $host;
+            # http_host is required, since if client sends ip:port or
+            # domain:port in http 'Host' header, nginx should forward that
+            # as-is to backend s3 server.
+            # Nginx has limitation that if domain:80 or ip:80 is used,
+            # 80 being default port nginx strips it, but its unlikely for
+            # client to specify explicit port as 80.
+            proxy_set_header Host            $http_host;
             proxy_pass_request_headers      on;
             proxy_send_timeout  300;
             proxy_read_timeout  300;
