@@ -100,7 +100,7 @@ fi
 
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
-./runalltest.sh --no-mero-rpm || (echo "S3 Tests failed." && S3_TEST_RET_CODE=1)
+./runalltest.sh --no-mero-rpm || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 
