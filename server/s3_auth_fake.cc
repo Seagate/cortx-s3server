@@ -51,6 +51,8 @@ void s3_auth_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   evbuffer_add(req_body_buffer, xml_error.c_str(), xml_error.length());
   on_auth_response(req, req_body_buffer, context);
   evbuffer_free(req_body_buffer);
+  // Free user event
+  event_free((struct event *)user_context->user_event);
   free(user_data);
   s3_log(S3_LOG_DEBUG, "Exiting\n");
 }
