@@ -49,6 +49,7 @@
 #include <unistd.h>
 
 S3Option *g_option_instance = NULL;
+evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
 struct m0_uint128 root_account_user_index_oid;
@@ -171,6 +172,27 @@ void initialize_global_var() {
                                          root_account_user_index_oid.u_lo);
   root_account_user_index_oid.u_hi = index_fid.f_container;
   root_account_user_index_oid.u_lo = index_fid.f_key;
+}
+
+bool init_auth_ssl() {
+  const char *cert_file = g_option_instance->get_iam_cert_file();
+  SSL_library_init();
+  ERR_load_crypto_strings();
+  SSL_load_error_strings();
+  g_ssl_auth_ctx = SSL_CTX_new(SSLv23_method());
+  if (!SSL_CTX_load_verify_locations(g_ssl_auth_ctx, cert_file, NULL)) {
+    s3_log(S3_LOG_ERROR, "SSL_CTX_load_verify_locations\n");
+    return false;
+  }
+  SSL_CTX_set_verify(g_ssl_auth_ctx, SSL_VERIFY_PEER, NULL);
+  SSL_CTX_set_verify_depth(g_ssl_auth_ctx, 1);
+  return true;
+}
+
+void fini_auth_ssl() {
+  if (g_ssl_auth_ctx) {
+    SSL_CTX_free(g_ssl_auth_ctx);
+  }
 }
 
 // This index will be holding the ids for the Account, User index
@@ -319,6 +341,13 @@ int main(int argc, char **argv) {
   }
   evhtp_t *htp = evhtp_new(global_evbase_handle, NULL);
   event_set_fatal_callback(fatal_libevent);
+  if (g_option_instance->is_s3_ssl_auth_enabled()) {
+    if (!init_auth_ssl()) {
+      s3_log(S3_LOG_FATAL,
+             "SSL initialization for communication with Auth server failed!\n");
+      return 1;
+    }
+  }
 
   S3Router *router =
       new S3Router(new S3APIHandlerFactory(), new S3UriFactory());
@@ -346,6 +375,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL,
            "Memory pool creation for clovis read buffers failed!\n");
     s3daemon.delete_pidfile();
+    fini_auth_ssl();
     return rc;
   }
 
@@ -354,12 +384,14 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "clovis_init failed!\n");
     s3daemon.delete_pidfile();
+    fini_auth_ssl();
     return rc;
   }
 
   rc = create_s3_user_index(ACCOUNT_USER_INDEX_NAME);
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "Failed to create a KVS index\n");
+    fini_auth_ssl();
     return rc;
   }
 
@@ -386,6 +418,7 @@ int main(int argc, char **argv) {
   evhtp_unbind_socket(htp);
   evhtp_free(htp);
   event_base_free(global_evbase_handle);
+  fini_auth_ssl();
 
   /* Clean-up */
   fini_clovis();

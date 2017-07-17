@@ -50,6 +50,8 @@ class S3OptionsTest : public testing::Test {
 TEST_F(S3OptionsTest, Constructor) {
   EXPECT_STREQ("/var/log/seagate/s3", instance->get_log_dir().c_str());
   EXPECT_STREQ("INFO", instance->get_log_level().c_str());
+  EXPECT_STREQ("/opt/seagate/auth/resources/iam.seagate.com.crt",
+               instance->get_iam_cert_file());
   EXPECT_STREQ("10.10.1.1", instance->get_bind_addr().c_str());
   EXPECT_STREQ("localhost@tcp:12345:33:100",
                instance->get_clovis_local_addr().c_str());
@@ -89,6 +91,8 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_STREQ("/opt/seagate/auth/resources/iam.seagate.com.crt",
+               instance->get_iam_cert_file());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(std::string("localhost@tcp:12345:33:100"),
@@ -213,6 +217,8 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", false));
 
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
+  EXPECT_STREQ("/opt/seagate/auth/resources/iam.seagate.com.crt",
+               instance->get_iam_cert_file());
   EXPECT_EQ(std::string("INFO"), instance->get_log_level());
   EXPECT_EQ(std::string("10.10.1.1"), instance->get_bind_addr());
   EXPECT_EQ(9081, instance->get_s3_bind_port());

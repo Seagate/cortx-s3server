@@ -43,6 +43,7 @@ uint16_t auth_port = 8095;
 extern int s3log_level;
 struct m0_uint128 root_account_user_index_oid;
 S3Option *g_option_instance = NULL;
+evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 extern S3Stats *g_stats_instance;
 
 struct m0 instance;
@@ -127,6 +128,21 @@ static void mempool_fini() {
   event_destroy_mempool();
 }
 
+static bool init_auth_ssl() {
+  const char *cert_file = g_option_instance->get_iam_cert_file();
+  SSL_library_init();
+  ERR_load_crypto_strings();
+  SSL_load_error_strings();
+  g_ssl_auth_ctx = SSL_CTX_new(SSLv23_method());
+  if (!SSL_CTX_load_verify_locations(g_ssl_auth_ctx, cert_file, NULL)) {
+    s3_log(S3_LOG_ERROR, "SSL_CTX_load_verify_locations\n");
+    return false;
+  }
+  SSL_CTX_set_verify(g_ssl_auth_ctx, SSL_VERIFY_PEER, NULL);
+  SSL_CTX_set_verify_depth(g_ssl_auth_ctx, 1);
+  return true;
+}
+
 int main(int argc, char **argv) {
   int rc;
 
@@ -154,6 +170,15 @@ int main(int argc, char **argv) {
   // Mempool Initialization
   rc = mempool_init();
   if (rc != 0) {
+    clovis_ut_fini();
+    _cleanup_option_and_instance();
+    _fini_log();
+    return rc;
+  }
+
+  // SSL initialization
+  if (init_auth_ssl() != true) {
+    mempool_fini();
     clovis_ut_fini();
     _cleanup_option_and_instance();
     _fini_log();

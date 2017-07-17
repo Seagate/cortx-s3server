@@ -24,6 +24,8 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
+extern evhtp_ssl_ctx_t *g_ssl_auth_ctx;
+
 // To Create a auth client operation
 struct s3_auth_op_context *create_basic_auth_op_ctx(
     struct event_base *eventbase) {
@@ -36,10 +38,15 @@ struct s3_auth_op_context *create_basic_auth_op_ctx(
   // TODO do we really need this?
   // if (evthread_make_base_notifiable(ctx->evbase) < 0)
   //   s3_log(S3_LOG_ERROR, "evthread_make_base_notifiable failed\n");
-
-  ctx->conn = evhtp_connection_new(ctx->evbase,
-                                   option_instance->get_auth_ip_addr().c_str(),
-                                   option_instance->get_auth_port());
+  if (option_instance->is_s3_ssl_auth_enabled()) {
+    ctx->conn = evhtp_connection_ssl_new(
+        ctx->evbase, option_instance->get_auth_ip_addr().c_str(),
+        option_instance->get_auth_port(), g_ssl_auth_ctx);
+  } else {
+    ctx->conn = evhtp_connection_new(
+        ctx->evbase, option_instance->get_auth_ip_addr().c_str(),
+        option_instance->get_auth_port());
+  }
   ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
   ctx->authorization_request = NULL;
 

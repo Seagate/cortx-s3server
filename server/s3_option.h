@@ -83,10 +83,12 @@ class S3Option {
   std::string option_file;
   std::string log_dir;
   std::string layout_recommendation_file;
+  std::string s3_iam_cert_file;
 
   int read_ahead_multiple;
   std::string log_level;
   int log_file_max_size_mb;
+  bool s3_enable_auth_ssl;
   bool log_buffering_enable;
   int log_flush_frequency_sec;
 
@@ -143,6 +145,7 @@ class S3Option {
     s3_region_endpoints.insert("s3-us.seagate.com");
     s3_region_endpoints.insert("s3-europe.seagate.com");
     s3_region_endpoints.insert("s3-asia.seagate.com");
+    s3_iam_cert_file = "/opt/seagate/auth/resources/iam.seagate.com.crt";
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
 
@@ -259,6 +262,8 @@ class S3Option {
   std::string get_log_dir();
   std::string get_log_level();
   int get_log_file_max_size_in_mb();
+  bool is_s3_ssl_auth_enabled();
+  const char* get_iam_cert_file();
   bool is_log_buffering_enabled();
   int get_log_flush_frequency_in_sec();
 

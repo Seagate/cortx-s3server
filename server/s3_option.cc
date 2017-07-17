@@ -43,6 +43,8 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_DAEMON_DO_REDIRECTION");
       s3_daemon_redirect =
           s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
+      s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
+      s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
       s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
@@ -267,6 +269,9 @@ bool S3Option::load_section(std::string section_name,
         s3_region_endpoints.insert(
             s3_option_node["S3_SERVER_REGION_ENDPOINTS"][i].as<std::string>());
       }
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_AUTH_SSL");
+      s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
+      s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
@@ -513,6 +518,9 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_LOG_ENABLE_BUFFERING = %s\n",
          (log_buffering_enable ? "true" : "false"));
   s3_log(S3_LOG_INFO, "S3_LOG_FLUSH_FREQUENCY = %d\n", log_flush_frequency_sec);
+  s3_log(S3_LOG_INFO, "S3_ENABLE_AUTH_SSL = %s\n",
+         (s3_enable_auth_ssl) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
   s3_log(S3_LOG_INFO, "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
@@ -688,6 +696,10 @@ int S3Option::get_log_flush_frequency_in_sec() {
 }
 
 bool S3Option::is_log_buffering_enabled() { return log_buffering_enable; }
+
+bool S3Option::is_s3_ssl_auth_enabled() { return s3_enable_auth_ssl; }
+
+const char* S3Option::get_iam_cert_file() { return s3_iam_cert_file.c_str(); }
 
 std::string S3Option::get_perf_log_filename() { return perf_log_file; }
 
