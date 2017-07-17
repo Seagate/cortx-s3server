@@ -117,6 +117,10 @@ class S3ClovisKVSReader {
 
   struct s3_clovis_idx_context* idx_ctx;
 
+  // save reference of key buffer in case of next_keyval op. It needs to be
+  // freed post op if any keys were returned successfully.
+  void* key_ref_copy;
+
   void clean_up_contexts();
 
  public:

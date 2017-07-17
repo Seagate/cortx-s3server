@@ -35,6 +35,7 @@ using ::testing::Return;
 using ::testing::Invoke;
 
 static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
+static enum m0_clovis_idx_opcode g_opcode;
 
 int s3_kvs_test_clovis_idx_op(struct m0_clovis_idx *idx,
                               enum m0_clovis_idx_opcode opcode,
@@ -42,6 +43,7 @@ int s3_kvs_test_clovis_idx_op(struct m0_clovis_idx *idx,
                               int *rcs, unsigned int flags,
                               struct m0_clovis_op **op) {
   *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+  g_opcode = opcode;
   return 0;
 }
 
@@ -55,6 +57,16 @@ static void s3_test_clovis_op_launch(struct m0_clovis_op **op, uint32_t nr,
   S3ClovisKVSReaderContext *app_ctx =
       (S3ClovisKVSReaderContext *)ctx->application_context;
   struct s3_clovis_idx_op_context *op_ctx = app_ctx->get_clovis_idx_op_ctx();
+
+  if (M0_CLOVIS_IC_NEXT == g_opcode) {
+    // For M0_CLOVIS_IC_NEXT op, if there are any keys to be returned to the
+    // application, clovis overwrites the input key buffer ptr.
+    struct s3_clovis_kvs_op_context *kvs_ctx = app_ctx->get_clovis_kvs_op_ctx();
+    std::string ret_key = "random";
+    kvs_ctx->keys->ov_vec.v_count[0] = ret_key.length();
+    kvs_ctx->keys->ov_buf[0] = malloc(ret_key.length());
+    memcpy(kvs_ctx->keys->ov_buf[0], (void *)ret_key.c_str(), ret_key.length());
+  }
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
@@ -366,7 +378,6 @@ TEST_F(S3ClovisKvsReaderTest, NextKeyvalSuccessfulTest) {
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
 
-  ptr_cloviskvs_reader->next_keyval_successful();
   EXPECT_TRUE(ptr_cloviskvs_reader->get_state() ==
               S3ClovisKVSReaderOpState::present);
   EXPECT_EQ(ptr_cloviskvs_reader->last_result_keys_values.size(), 1);

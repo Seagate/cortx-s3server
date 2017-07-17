@@ -37,7 +37,8 @@ S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
       state(S3ClovisKVSReaderOpState::start),
       last_value(""),
       iteration_index(0),
-      idx_ctx(nullptr) {
+      idx_ctx(nullptr),
+      key_ref_copy(nullptr) {
   s3_log(S3_LOG_DEBUG, "Constructor\n");
   last_result_keys_values.clear();
   if (clovis_api) {
@@ -253,7 +254,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
     kvs_ctx->keys->ov_buf[0] = NULL;
   } else {
     kvs_ctx->keys->ov_vec.v_count[0] = key.length();
-    kvs_ctx->keys->ov_buf[0] = malloc(key.length());
+    key_ref_copy = kvs_ctx->keys->ov_buf[0] = malloc(key.length());
     memcpy(kvs_ctx->keys->ov_buf[0], (void *)key.c_str(), key.length());
   }
 
@@ -293,15 +294,17 @@ void S3ClovisKVSReader::next_keyval_successful() {
     if (kvs_ctx->keys->ov_buf[i] == NULL) {
       break;
     }
-    key = std::string((char *)kvs_ctx->keys->ov_buf[i],
-                      kvs_ctx->keys->ov_vec.v_count[i]);
-    if (kvs_ctx->values->ov_buf[i] != NULL) {
-      val = std::string((char *)kvs_ctx->values->ov_buf[i],
-                        kvs_ctx->values->ov_vec.v_count[i]);
-    } else {
-      val = "";
+    if (kvs_ctx->rcs[i] == 0) {
+      key = std::string((char *)kvs_ctx->keys->ov_buf[i],
+                        kvs_ctx->keys->ov_vec.v_count[i]);
+      if (kvs_ctx->values->ov_buf[i] != NULL) {
+        val = std::string((char *)kvs_ctx->values->ov_buf[i],
+                          kvs_ctx->values->ov_vec.v_count[i]);
+      } else {
+        val = "";
+      }
+      last_result_keys_values[key] = std::make_pair(0, val);
     }
-    last_result_keys_values[key] = std::make_pair(0, val);
   }
   if (last_result_keys_values.empty()) {
     // no keys retrieved
@@ -311,6 +314,10 @@ void S3ClovisKVSReader::next_keyval_successful() {
     next_keyval_failed();
   } else {
     // at least one key successfully retrieved
+    if (key_ref_copy) {
+      free(key_ref_copy);
+      key_ref_copy = nullptr;
+    }
     this->handler_on_success();
   }
   s3_log(S3_LOG_DEBUG, "Exiting\n");

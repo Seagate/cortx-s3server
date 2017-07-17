@@ -267,6 +267,8 @@ static int kv_next(struct m0_uint128 id, const char *keystring, int nr_kvp) {
   struct m0_bufvec *vals;
   int *rc_keys = NULL;
   int keylen = strlen(keystring);
+  void *key_ref_copy = NULL;
+  int ret_key_cnt = 0;
 
   /* Allocate bufvec's for keys and vals. */
   keys = idx_bufvec_alloc(nr_kvp);
@@ -284,7 +286,7 @@ static int kv_next(struct m0_uint128 id, const char *keystring, int nr_kvp) {
     keys->ov_buf[0] = NULL;
   } else {
     keys->ov_vec.v_count[0] = keylen;
-    keys->ov_buf[0] = malloc(keylen + 1);
+    key_ref_copy = keys->ov_buf[0] = malloc(keylen + 1);
     memcpy(keys->ov_buf[0], keystring, keylen);
   }
 
@@ -295,17 +297,22 @@ static int kv_next(struct m0_uint128 id, const char *keystring, int nr_kvp) {
   }
 
   for (i = 0; i < nr_kvp && keys->ov_buf[i] != NULL; i++) {
-    fprintf(stdout, "Index: %" PRIx64 ":%" PRIx64 "\n", id.u_hi, id.u_lo);
-    fprintf(stdout, "Key: %.*s\n", (int)keys->ov_vec.v_count[i],
-            (char *)keys->ov_buf[i]);
-    if (vals->ov_buf[i] == NULL) {
-      fprintf(stdout, "Val: \n");
-    } else {
-      fprintf(stdout, "Val: %.*s\n", (int)vals->ov_vec.v_count[i],
-              (char *)vals->ov_buf[i]);
+    if (rc_keys[i] == 0) {
+      ret_key_cnt++;
+      fprintf(stdout, "Index: %" PRIx64 ":%" PRIx64 "\n", id.u_hi, id.u_lo);
+      fprintf(stdout, "Key: %.*s\n", (int)keys->ov_vec.v_count[i],
+              (char *)keys->ov_buf[i]);
+      if (vals->ov_buf[i] == NULL) {
+        fprintf(stdout, "Val: \n");
+      } else {
+        fprintf(stdout, "Val: %.*s\n", (int)vals->ov_vec.v_count[i],
+                (char *)vals->ov_buf[i]);
+      }
+      fprintf(stdout, "----------------------------------------------\n");
     }
-    fprintf(stdout, "----------------------------------------------\n");
   }
+
+  if (ret_key_cnt && key_ref_copy) free(key_ref_copy);
 
   idx_bufvec_free(keys);
   idx_bufvec_free(vals);
