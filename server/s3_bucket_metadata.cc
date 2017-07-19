@@ -36,9 +36,11 @@ S3BucketMetadata::S3BucketMetadata(
     : request(req), json_parsing_error(false) {
   s3_log(S3_LOG_DEBUG, "Constructor");
   account_name = request->get_account_name();
+  account_id = request->get_account_id();
   user_name = request->get_user_name();
+  user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
-  salted_index_name = get_account_user_index_name();
+  salted_index_name = get_account_index_id();
 
   state = S3BucketMetadataState::empty;
   if (s3_clovis_apis) {
@@ -368,7 +370,7 @@ void S3BucketMetadata::handle_collision() {
 }
 
 void S3BucketMetadata::regenerate_new_index_name() {
-  salted_index_name = get_account_user_index_name() + collision_salt +
+  salted_index_name = get_account_index_id() + collision_salt +
                       std::to_string(collision_attempt_count);
 }
 
@@ -411,9 +413,9 @@ void S3BucketMetadata::save_bucket_info() {
 
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
-  system_defined_attribute["Owner-User-id"] = request->get_user_id();
+  system_defined_attribute["Owner-User-id"] = user_id;
   system_defined_attribute["Owner-Account"] = account_name;
-  system_defined_attribute["Owner-Account-id"] = request->get_account_id();
+  system_defined_attribute["Owner-Account-id"] = account_id;
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
@@ -580,7 +582,9 @@ int S3BucketMetadata::from_json(std::string content) {
     user_defined_attribute[it.c_str()] = newroot["User-Defined"][it].asString();
   }
   user_name = system_defined_attribute["Owner-User"];
+  user_id = system_defined_attribute["Owner-User-id"];
   account_name = system_defined_attribute["Owner-Account"];
+  account_id = system_defined_attribute["Owner-Account-id"];
   object_list_index_oid_u_hi_str =
       newroot["mero_object_list_index_oid_u_hi"].asString();
   object_list_index_oid_u_lo_str =

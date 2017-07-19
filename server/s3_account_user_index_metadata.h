@@ -54,7 +54,7 @@ class S3AccountUserIdxMetadata {
   // Holds mainly system-defined metadata
   // Partially supported on need basis, some of these are placeholders
   // ACCOUNTUSERINDEX  (Account User Index)
-  //    Key = "ACCOUNTUSER/<Account id>/<user id>" | Value = "Account user Index
+  //    Key = "ACCOUNTUSER/<Account id>" | Value = "Account user Index
   //    OID", account and user info
   // "Account user Index OID" = OID of index containing bucket list
  private:
@@ -85,9 +85,7 @@ class S3AccountUserIdxMetadata {
   bool json_parsing_error;
 
  private:
-  std::string get_account_user_index_name() {
-    return "ACCOUNTUSER/" + account_name + "/" + user_name;
-  }
+  std::string get_account_index_id() { return "ACCOUNTUSER/" + account_id; }
 
  public:
   S3AccountUserIdxMetadata(

@@ -42,9 +42,8 @@ class S3GetServiceAction : public S3Action {
   bool fetch_successful;
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   // Helpers
-  std::string get_account_user_index_name() {
-    return "ACCOUNTUSER/" + request->get_account_name() + "/" +
-           request->get_user_name();
+  std::string get_account_index_id() {
+    return "ACCOUNTUSER/" + request->get_account_id();
   }
 
  public:

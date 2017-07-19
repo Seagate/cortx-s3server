@@ -90,7 +90,7 @@ void S3AccountUserIdxMetadata::load(std::function<void(void)> on_success,
   clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
   clovis_kv_reader->get_keyval(
-      root_account_user_index_oid, get_account_user_index_name(),
+      root_account_user_index_oid, get_account_index_id(),
       std::bind(&S3AccountUserIdxMetadata::load_successful, this),
       std::bind(&S3AccountUserIdxMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "Exiting\n");
@@ -103,7 +103,7 @@ void S3AccountUserIdxMetadata::load_successful() {
     s3_log(S3_LOG_ERROR,
            "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
            root_account_user_index_oid.u_hi, root_account_user_index_oid.u_lo,
-           get_account_user_index_name().c_str(),
+           get_account_index_id().c_str(),
            clovis_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
@@ -147,8 +147,7 @@ void S3AccountUserIdxMetadata::save(std::function<void(void)> on_success,
   clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
       request, s3_clovis_api);
   clovis_kv_writer->put_keyval(
-      root_account_user_index_oid, get_account_user_index_name(),
-      this->to_json(),
+      root_account_user_index_oid, get_account_index_id(), this->to_json(),
       std::bind(&S3AccountUserIdxMetadata::save_successful, this),
       std::bind(&S3AccountUserIdxMetadata::save_failed, this));
 
@@ -184,7 +183,7 @@ void S3AccountUserIdxMetadata::remove(std::function<void(void)> on_success,
   clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
       request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(
-      root_account_user_index_oid, get_account_user_index_name(),
+      root_account_user_index_oid, get_account_index_id(),
       std::bind(&S3AccountUserIdxMetadata::remove_successful, this),
       std::bind(&S3AccountUserIdxMetadata::remove_failed, this));
 

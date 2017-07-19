@@ -58,7 +58,9 @@ class S3BucketMetadata {
   // Partially supported on need bases, some of these are placeholders
  private:
   std::string account_name;
+  std::string account_id;
   std::string user_name;
+  std::string user_id;
   std::string salted_index_name;
 
   // Maximum retry count for collision resolution
@@ -103,9 +105,7 @@ class S3BucketMetadata {
   bool json_parsing_error;
 
  private:
-  std::string get_account_user_index_name() {
-    return "ACCOUNTUSER/" + account_name + "/" + user_name;
-  }
+  std::string get_account_index_id() { return "ACCOUNTUSER/" + account_id; }
 
   void fetch_bucket_list_index_oid();
   void fetch_bucket_list_index_oid_success();

@@ -40,7 +40,7 @@ def _extract_oid(json_keyval, bucket=True):
 def _fetch_test_user_info():
     result = S3kvTest('kvtest can list user records').root_index_records().execute_test(ignore_err=True)
     root_index_records = result.status.stdout.split('----------------------------------------------')
-    test_record_key =  "ACCOUNTUSER/s3_test/tester"
+    test_record_key =  "ACCOUNTUSER/12345"
     test_user_record = _find_record(test_record_key, root_index_records)
     return test_user_record
 
@@ -168,7 +168,7 @@ def delete_bucket_info(bucket_name):
     return
 
 # Delete User record
-def delete_user_info(user_record="ACCOUNTUSER/s3_test/tester"):
+def delete_user_info(user_record="ACCOUNTUSER/12345"):
     root_oid = S3kvTest('Kvtest fetch root index').root_index()
     result = S3kvTest('Kvtest delete user record').delete_keyval(root_oid,user_record).execute_test(ignore_err=True)
     return

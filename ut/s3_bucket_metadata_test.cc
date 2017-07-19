@@ -71,7 +71,9 @@ class S3BucketMetadataTest : public testing::Test {
         std::make_shared<MockS3AccountUserIdxMetadataFactory>(ptr_mock_request);
 
     ptr_mock_request->set_account_name("s3account");
+    ptr_mock_request->set_account_id("s3accountid");
     ptr_mock_request->set_user_name("s3user");
+    ptr_mock_request->set_user_id("s3userid");
 
     action_under_test.reset(new S3BucketMetadata(
         ptr_mock_request, ptr_mock_s3_clovis_api, clovis_kvs_reader_factory,
@@ -96,7 +98,7 @@ TEST_F(S3BucketMetadataTest, ConstructorTest) {
   struct m0_uint128 zero_oid = {0ULL, 0ULL};
   EXPECT_STREQ("s3user", action_under_test->user_name.c_str());
   EXPECT_STREQ("s3account", action_under_test->account_name.c_str());
-  EXPECT_STREQ("ACCOUNTUSER/s3account/s3user",
+  EXPECT_STREQ("ACCOUNTUSER/s3accountid",
                action_under_test->salted_index_name.c_str());
   EXPECT_STREQ("", action_under_test->bucket_policy.c_str());
   EXPECT_STREQ("index_salt_", action_under_test->collision_salt.c_str());
@@ -452,7 +454,7 @@ TEST_F(S3BucketMetadataTest, HandleCollision) {
               create_index(_, _, _))
       .Times(1);
   action_under_test->handle_collision();
-  EXPECT_STREQ("ACCOUNTUSER/s3account/s3userindex_salt_1",
+  EXPECT_STREQ("ACCOUNTUSER/s3accountidindex_salt_1",
                action_under_test->salted_index_name.c_str());
   EXPECT_EQ(2, action_under_test->collision_attempt_count);
 }
@@ -470,7 +472,7 @@ TEST_F(S3BucketMetadataTest, HandleCollisionMaxAttemptExceeded) {
 TEST_F(S3BucketMetadataTest, RegeneratedNewIndexName) {
   action_under_test->collision_attempt_count = 2;
   action_under_test->regenerate_new_index_name();
-  EXPECT_STREQ("ACCOUNTUSER/s3account/s3userindex_salt_2",
+  EXPECT_STREQ("ACCOUNTUSER/s3accountidindex_salt_2",
                action_under_test->salted_index_name.c_str());
 }
 
@@ -527,13 +529,13 @@ TEST_F(S3BucketMetadataTest, SaveBucketInfo) {
       "s3user",
       action_under_test->system_defined_attribute["Owner-User"].c_str());
   EXPECT_STREQ(
-      "123",
+      "s3userid",
       action_under_test->system_defined_attribute["Owner-User-id"].c_str());
   EXPECT_STREQ(
       "s3account",
       action_under_test->system_defined_attribute["Owner-Account"].c_str());
   EXPECT_STREQ(
-      "12345",
+      "s3accountid",
       action_under_test->system_defined_attribute["Owner-Account-id"].c_str());
 }
 
@@ -628,16 +630,17 @@ TEST_F(S3BucketMetadataTest, FromJson) {
   std::string json_str =
       "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\",\"System-"
       "Defined\":{\"Date\":\"2016-10-18T16:01:00.000Z\",\"Owner-Account\":\"s3_"
-      "test\",\"Owner-Account-id\":\"12345\",\"Owner-User\":\"tester\",\"Owner-"
-      "User-id\":\"123\"},\"mero_multipart_index_oid_u_hi\":\"g1qTetGfvWk=\","
-      "\"mero_multipart_index_oid_u_lo\":\"lvH6Q65xFAI=\",\"mero_object_list_"
-      "index_oid_u_hi\":\"AAAAAAAAAAA=\",\"mero_object_list_index_oid_u_lo\":"
-      "\"AAAAAAAAAAA=\"}";
+      "test\",\"Owner-Account-id\":\"s3accountid\",\"Owner-User\":\"tester\",\""
+      "Owner-User-id\":\"s3userid\"},\"mero_multipart_index_oid_u_hi\":\""
+      "g1qTetGfvWk=\",\"mero_multipart_index_oid_u_lo\":\"lvH6Q65xFAI=\","
+      "\"mero_object_list_index_oid_u_hi\":\"AAAAAAAAAAA=\","
+      "\"mero_object_list_index_oid_u_lo\":\"AAAAAAAAAAA=\"}";
 
   action_under_test->from_json(json_str);
   EXPECT_STREQ("seagatebucket", action_under_test->bucket_name.c_str());
   EXPECT_STREQ("tester", action_under_test->user_name.c_str());
   EXPECT_STREQ("s3_test", action_under_test->account_name.c_str());
+  EXPECT_STREQ("s3accountid", action_under_test->account_id.c_str());
   EXPECT_OID_NE(zero_oid, action_under_test->multipart_index_oid);
 }
 

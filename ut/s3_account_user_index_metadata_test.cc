@@ -116,9 +116,8 @@ TEST_F(S3AccountUserIdxMetadataTest, Constructor) {
 }
 
 TEST_F(S3AccountUserIdxMetadataTest, Load) {
-  EXPECT_CALL(
-      *(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-      get_keyval(_, "ACCOUNTUSER/" + account_name + "/" + user_name, _, _))
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_keyval(_, "ACCOUNTUSER/" + account_id, _, _))
       .Times(AtLeast(1));
   idx_metadata_under_test_ptr->load(
       std::bind(&S3CallBack::on_success, &s3accountuserindex_callbackobj),
