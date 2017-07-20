@@ -23,6 +23,7 @@
 
 #include "mock_evhtp_wrapper.h"
 #include "mock_s3_asyncop_context_base.h"
+#include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_request_object.h"
 #include "s3_callback_test_helpers.h"
 
@@ -32,11 +33,6 @@ using ::testing::Invoke;
 using ::testing::_;
 using ::testing::AtLeast;
 
-struct user_event_context {
-  void *app_ctx;
-  void *user_event;
-};
-
 class S3ClovisReadWriteCommonTest : public testing::Test {
  protected:
   S3ClovisReadWriteCommonTest() {
@@ -44,10 +40,12 @@ class S3ClovisReadWriteCommonTest : public testing::Test {
     evhtp_request_t *req = evhtp_request_new(NULL, evbase);
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, new EvhtpWrapper());
+    ptr_mock_s3clovis = std::make_shared<MockS3Clovis>();
     ptr_mock_s3_async_context = std::make_shared<MockS3AsyncOpContextBase>(
         ptr_mock_request,
         std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),
-        std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj));
+        std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj),
+        ptr_mock_s3clovis);
     s3user_event =
         event_new(evbase, -1, EV_WRITE | EV_READ | EV_TIMEOUT, NULL, NULL);
     user_context = (struct user_event_context *)calloc(
@@ -57,6 +55,7 @@ class S3ClovisReadWriteCommonTest : public testing::Test {
     user_context->user_event = (void *)s3user_event;
   }
 
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3clovis;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3AsyncOpContextBase> ptr_mock_s3_async_context;
   S3CallBack s3objectmetadata_callbackobj;
@@ -89,6 +88,7 @@ TEST_F(S3ClovisReadWriteCommonTest,
   EXPECT_CALL(*ptr_mock_s3_async_context,
               set_op_status_for(_, S3AsyncOpStatus::success, "Success."))
       .Times(1);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillOnce(Return(0));
   ptr_mock_s3_async_context->response_received_count = 0;
   ptr_mock_s3_async_context->ops_count = 1;
   s3_clovis_op_stable(&op);
@@ -109,6 +109,9 @@ TEST_F(S3ClovisReadWriteCommonTest,
   EXPECT_CALL(*ptr_mock_s3_async_context,
               set_op_status_for(_, S3AsyncOpStatus::success, "Success."))
       .Times(1);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillOnce(Return(0))
+      .WillRepeatedly(Return(-EPERM));
   ptr_mock_s3_async_context->response_received_count = 1;
   ptr_mock_s3_async_context->ops_count = 3;
   s3_clovis_op_stable(&op);

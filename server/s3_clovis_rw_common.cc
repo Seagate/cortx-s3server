@@ -89,20 +89,25 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
 // Clovis callbacks, run in clovis thread
 void s3_clovis_op_stable(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "Return code = %d\n", op->op_sm.sm_rc);
-
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
+  int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
+  s3_log(S3_LOG_DEBUG, "Return code = %d\n", clovis_rc);
 
   s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);
 
-  app_ctx->set_op_errno_for(ctx->op_index_in_launch, op->op_sm.sm_rc);
-  app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::success,
-                             "Success.");
+  app_ctx->set_op_errno_for(ctx->op_index_in_launch, clovis_rc);
 
+  if (0 == clovis_rc) {
+    app_ctx->set_op_status_for(ctx->op_index_in_launch,
+                               S3AsyncOpStatus::success, "Success.");
+  } else {
+    app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::failed,
+                               "Operation Failed.");
+  }
   free(ctx);
   if (app_ctx->incr_response_count() == app_ctx->get_ops_count()) {
     struct user_event_context *user_ctx = (struct user_event_context *)calloc(
@@ -123,22 +128,23 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
 
 void s3_clovis_op_failed(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "Error code = %d\n", op->op_sm.sm_rc);
-
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
 
+  int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
+  s3_log(S3_LOG_DEBUG, "Error code = %d\n", clovis_rc);
+
   s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);
 
-  app_ctx->set_op_errno_for(ctx->op_index_in_launch, op->op_sm.sm_rc);
+  app_ctx->set_op_errno_for(ctx->op_index_in_launch, clovis_rc);
   app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::failed,
                              "Operation Failed.");
   // If we faked failure reset clovis internal code.
   if (ctx->is_fake_failure) {
-    op->op_sm.sm_rc = 0;
+    op->op_rc = 0;
     ctx->is_fake_failure = 0;
   }
   free(ctx);
@@ -163,7 +169,9 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
   struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
-  op->op_sm.sm_rc = 0;  // fake success
+  // This can be mocked from GTest but system tests call this method too,
+  // where m0_clovis_rc can't be mocked.
+  op->op_rc = 0;  // fake success
 
   // Free user event
   event_free((struct event *)user_context->user_event);
@@ -179,7 +187,9 @@ void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
 
-  op->op_sm.sm_rc = -ETIMEDOUT;  // fake network failure
+  // This can be mocked from GTest but system tests call this method too
+  // where m0_clovis_rc can't be mocked.
+  op->op_rc = -ETIMEDOUT;  // fake network failure
   ctx->is_fake_failure = 1;
   // Free user event
   event_free((struct event *)user_context->user_event);

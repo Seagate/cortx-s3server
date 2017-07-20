@@ -191,7 +191,7 @@ int create_s3_user_index(std::string index_name) {
   rc = m0_clovis_op_wait(ops[0],
                          M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
                          m0_time_from_now(10, 0));
-  rc = (rc < 0) ? rc : ops[0]->op_sm.sm_rc;
+  rc = (rc < 0) ? rc : m0_clovis_rc(ops[0]);
   if (rc < 0) {
     if (rc != -EEXIST) {
       goto FAIL;

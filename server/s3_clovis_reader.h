@@ -50,8 +50,11 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
  public:
   S3ClovisReaderContext(std::shared_ptr<S3RequestObject> req,
                         std::function<void()> success_callback,
-                        std::function<void()> failed_callback, int layoutid)
-      : S3AsyncOpContextBase(req, success_callback, failed_callback) {
+                        std::function<void()> failed_callback, int layoutid,
+                        std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+      // Passing default value of opcount explicitly.
+      : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
+                             clovis_api) {
     s3_log(S3_LOG_DEBUG, "Constructor: layout_id = %d\n", layoutid);
     assert(layoutid > 0);
 

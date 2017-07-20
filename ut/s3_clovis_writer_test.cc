@@ -96,7 +96,6 @@ static void s3_test_clovis_op_launch_fail(struct m0_clovis_op **op, uint32_t nr,
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
-    test_clovis_op->op_sm.sm_rc = -EPERM;
     s3_clovis_op_failed(test_clovis_op);
     s3_test_free_clovis_op(test_clovis_op);
   }
@@ -258,7 +257,8 @@ TEST_F(S3ClovisWriterTest, DeleteObjectFailedTest) {
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
-
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
   S3Option::get_instance()->set_eventbase(evbase);
 
   clovis_writer_ptr->delete_object(
@@ -296,6 +296,7 @@ TEST_F(S3ClovisWriterTest, DeleteObjectsSuccessfulTest) {
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(oids.size());
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
 
   S3Option::get_instance()->set_eventbase(evbase);
 
@@ -330,7 +331,8 @@ TEST_F(S3ClovisWriterTest, DeleteObjectsFailedTest) {
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(oids.size());
-
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
   S3Option::get_instance()->set_eventbase(evbase);
 
   clovis_writer_ptr->delete_objects(
@@ -463,7 +465,8 @@ TEST_F(S3ClovisWriterTest, WriteContentFailedTest) {
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
-
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
   S3Option::get_instance()->set_eventbase(evbase);
 
   buffer->add_content(get_evbuf_t_with_data(fourk_buffer), is_last_buf);

@@ -57,7 +57,8 @@ class S3APIHandlerFactoryTest : public testing::Test {
 
     factory_under_test.reset(new S3APIHandlerFactory());
 
-    EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
+    EXPECT_CALL(*(mock_request), http_verb())
+        .WillRepeatedly(Return(S3HttpVerb::GET));
   }
 
   std::shared_ptr<MockS3RequestObject> mock_request;

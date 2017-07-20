@@ -96,7 +96,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   reader_context.reset(new S3ClovisKVSReaderContext(
       request, std::bind(&S3ClovisKVSReader::get_keyval_successful, this),
-      std::bind(&S3ClovisKVSReader::get_keyval_failed, this)));
+      std::bind(&S3ClovisKVSReader::get_keyval_failed, this), s3_clovis_api));
 
   reader_context->init_kvs_read_op_ctx(keys.size());
 
@@ -227,7 +227,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   reader_context.reset(new S3ClovisKVSReaderContext(
       request, std::bind(&S3ClovisKVSReader::next_keyval_successful, this),
-      std::bind(&S3ClovisKVSReader::next_keyval_failed, this)));
+      std::bind(&S3ClovisKVSReader::next_keyval_failed, this), s3_clovis_api));
 
   reader_context->init_kvs_read_op_ctx(nr_kvp);
 

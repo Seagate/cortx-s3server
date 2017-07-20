@@ -272,9 +272,10 @@ TEST_F(S3ClovisReaderTest, OpenObjectFailedTest) {
 TEST_F(S3ClovisReaderTest, OpenObjectMissingTest) {
   S3CallBack s3clovisreader_callbackobj;
 
-  clovis_reader_ptr->open_context.reset(
-      new S3ClovisReaderContext(request_mock, NULL, NULL, 1));
-
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
+      .WillRepeatedly(Return(-ENOENT));
+  clovis_reader_ptr->open_context.reset(new S3ClovisReaderContext(
+      request_mock, NULL, NULL, 1, s3_clovis_api_mock));
   clovis_reader_ptr->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj);
   clovis_reader_ptr->handler_on_failed =
@@ -291,9 +292,10 @@ TEST_F(S3ClovisReaderTest, OpenObjectMissingTest) {
 TEST_F(S3ClovisReaderTest, OpenObjectErrFailedTest) {
   S3CallBack s3clovisreader_callbackobj;
 
-  clovis_reader_ptr->open_context.reset(
-      new S3ClovisReaderContext(request_mock, NULL, NULL, 1));
-
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EACCES));
+  clovis_reader_ptr->open_context.reset(new S3ClovisReaderContext(
+      request_mock, NULL, NULL, 1, s3_clovis_api_mock));
   clovis_reader_ptr->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3clovisreader_callbackobj);
   clovis_reader_ptr->handler_on_failed =
@@ -314,7 +316,9 @@ TEST_F(S3ClovisReaderTest, OpenObjectSuccessTest) {
   clovis_reader_ptr->obj_ctx->objs =
       (struct m0_clovis_obj *)calloc(1, sizeof(struct m0_clovis_obj));
   clovis_reader_ptr->obj_ctx->obj_count = 1;
-
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
+  clovis_reader_ptr->open_context.reset(new S3ClovisReaderContext(
+      request_mock, NULL, NULL, 1, s3_clovis_api_mock));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));

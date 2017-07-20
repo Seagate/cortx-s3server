@@ -91,7 +91,8 @@ void S3ClovisKVSWriter::create_index_with_oid(
 
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::create_index_successful, this),
-      std::bind(&S3ClovisKVSWriter::create_index_failed, this)));
+      std::bind(&S3ClovisKVSWriter::create_index_failed, this), 1,
+      s3_clovis_api));
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
@@ -152,7 +153,8 @@ void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
   this->handler_on_failed = on_failed;
   sync_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::sync_index_successful, this),
-      std::bind(&S3ClovisKVSWriter::sync_index_failed, this), 1));
+      std::bind(&S3ClovisKVSWriter::sync_index_failed, this), 1,
+      s3_clovis_api));
   struct s3_clovis_idx_op_context *idx_op_ctx =
       sync_context->get_clovis_idx_op_ctx();
 
@@ -227,7 +229,8 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
 
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::delete_index_successful, this),
-      std::bind(&S3ClovisKVSWriter::delete_index_failed, this)));
+      std::bind(&S3ClovisKVSWriter::delete_index_failed, this), 1,
+      s3_clovis_api));
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
@@ -300,7 +303,8 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
 
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::delete_indexes_successful, this),
-      std::bind(&S3ClovisKVSWriter::delete_indexes_failed, this), oids.size()));
+      std::bind(&S3ClovisKVSWriter::delete_indexes_failed, this), oids.size(),
+      s3_clovis_api));
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       writer_context->get_clovis_idx_op_ctx();
@@ -373,7 +377,8 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::put_keyval_successful, this),
-      std::bind(&S3ClovisKVSWriter::put_keyval_failed, this)));
+      std::bind(&S3ClovisKVSWriter::put_keyval_failed, this), 1,
+      s3_clovis_api));
 
   // Only one key value passed
   writer_context->init_kvs_write_op_ctx(1);
@@ -443,7 +448,8 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
 
   sync_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::sync_keyval_successful, this),
-      std::bind(&S3ClovisKVSWriter::sync_keyval_failed, this)));
+      std::bind(&S3ClovisKVSWriter::sync_keyval_failed, this), 1,
+      s3_clovis_api));
 
   struct s3_clovis_idx_op_context *idx_op_ctx =
       sync_context->get_clovis_idx_op_ctx();
@@ -539,7 +545,8 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
 
   writer_context.reset(new S3ClovisKVSWriterContext(
       request, std::bind(&S3ClovisKVSWriter::delete_keyval_successful, this),
-      std::bind(&S3ClovisKVSWriter::delete_keyval_failed, this)));
+      std::bind(&S3ClovisKVSWriter::delete_keyval_failed, this), 1,
+      s3_clovis_api));
 
   // Only one key value passed
   writer_context->init_kvs_write_op_ctx(keys_list.size());

@@ -109,7 +109,8 @@ void S3ClovisWriter::open_objects() {
 
   open_context.reset(new S3ClovisWriterContext(
       request, std::bind(&S3ClovisWriter::open_objects_successful, this),
-      std::bind(&S3ClovisWriter::open_objects_failed, this), oid_list.size()));
+      std::bind(&S3ClovisWriter::open_objects_failed, this), oid_list.size(),
+      s3_clovis_api));
 
   struct s3_clovis_op_context *ctx = open_context->get_clovis_op_ctx();
 
@@ -423,8 +424,8 @@ void S3ClovisWriter::delete_objects() {
 
   delete_context.reset(new S3ClovisWriterContext(
       request, std::bind(&S3ClovisWriter::delete_objects_successful, this),
-      std::bind(&S3ClovisWriter::delete_objects_failed, this),
-      oid_list.size()));
+      std::bind(&S3ClovisWriter::delete_objects_failed, this), oid_list.size(),
+      s3_clovis_api));
 
   struct s3_clovis_op_context *ctx = delete_context->get_clovis_op_ctx();
 

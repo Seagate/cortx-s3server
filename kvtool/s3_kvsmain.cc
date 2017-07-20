@@ -122,12 +122,6 @@ static int init_clovis(void) {
   /* And finally, clovis root realm */
   m0_clovis_container_init(&clovis_container, NULL, &M0_CLOVIS_UBER_REALM,
                            clovis_instance);
-  rc = clovis_container.co_realm.re_entity.en_sm.sm_rc;
-
-  if (rc != 0) {
-    fprintf(stderr, "Failed to open uber realm\n");
-    goto err_exit;
-  }
 
   clovis_uber_realm = clovis_container.co_realm;
   return 0;
@@ -252,7 +246,7 @@ static int execute_kv_query(struct m0_uint128 id, struct m0_bufvec *keys,
     return rc;
   }
 
-  rc = ops[0]->op_sm.sm_rc;
+  rc = m0_clovis_rc(ops[0]);
   /* fini and release */
   m0_clovis_op_fini(ops[0]);
   m0_clovis_op_free(ops[0]);

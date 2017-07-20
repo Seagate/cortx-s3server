@@ -46,9 +46,10 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req,
                         std::function<void()> success_callback,
                         std::function<void()> failed_callback,
-                        int ops_count = 1)
-      : S3AsyncOpContextBase(req, success_callback, failed_callback,
-                             ops_count) {
+                        int ops_count = 1,
+                        std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+      : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
+                             clovis_api) {
     s3_log(S3_LOG_DEBUG, "Constructor\n");
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(ops_count);

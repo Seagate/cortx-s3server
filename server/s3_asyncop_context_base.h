@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 
+#include "s3_clovis_wrapper.h"
 #include "s3_common.h"
 #include "s3_request_object.h"
 #include "s3_timer.h"
@@ -62,10 +63,14 @@ class S3AsyncOpContextBase {
   // To measure performance
   S3Timer timer;
   std::string operation_key;  // used to identify operation(metric) name
+  // Used for mocking clovis return calls.
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
+
  public:
   S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req,
                        std::function<void(void)> success,
-                       std::function<void(void)> failed, int ops_cnt = 1);
+                       std::function<void(void)> failed, int ops_cnt = 1,
+                       std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3AsyncOpContextBase() {}
 
   std::shared_ptr<S3RequestObject> get_request();
@@ -96,7 +101,7 @@ class S3AsyncOpContextBase {
   // Call the logging always on main thread, so we dont need synchronisation of
   // log file.
   void log_timer();
-
+  std::shared_ptr<ClovisAPI> get_clovis_api();
   // Google tests
   FRIEND_TEST(S3ClovisReadWriteCommonTest, ClovisOpDoneOnMainThreadOnSuccess);
   FRIEND_TEST(S3ClovisReadWriteCommonTest, S3ClovisOpStable);

@@ -89,7 +89,6 @@ static void s3_test_clovis_op_launch_fail(struct m0_clovis_op **op, uint32_t nr,
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
-    test_clovis_op->op_sm.sm_rc = -EPERM;
     s3_clovis_op_failed(test_clovis_op);
     s3_test_free_clovis_op(test_clovis_op);
   }
@@ -108,7 +107,6 @@ static void s3_test_clovis_op_launch_fail_exists(struct m0_clovis_op **op,
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
-    test_clovis_op->op_sm.sm_rc = -EEXIST;
     s3_clovis_op_failed(test_clovis_op);
     s3_test_free_clovis_op(test_clovis_op);
   }
@@ -250,7 +248,8 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFail) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
-
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
   action_under_test->create_index(
       "BUCKET/seagate_bucket",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -272,7 +271,8 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFailExists) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail_exists));
-
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EEXIST));
   action_under_test->create_index(
       "BUCKET/seagate_bucket",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -293,9 +293,9 @@ TEST_F(S3ClovisKvsWritterTest, SyncIndex) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
       .WillOnce(Invoke(s3_test_alloc_sync_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
-  action_under_test->writer_context.reset(
-      new S3ClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
-
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
+  action_under_test->writer_context.reset(new S3ClovisKVSWriterContext(
+      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
   action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(
       1, sizeof(struct s3_clovis_idx_context));
   action_under_test->idx_ctx->idx =
@@ -317,6 +317,9 @@ TEST_F(S3ClovisKvsWritterTest, SyncIndex) {
 
 TEST_F(S3ClovisKvsWritterTest, SyncIndexSuccessful) {
   S3CallBack s3cloviskvscallbackobj;
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
+  action_under_test->writer_context.reset(new S3ClovisKVSWriterContext(
+      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
   action_under_test->sync_index_successful();
@@ -326,9 +329,11 @@ TEST_F(S3ClovisKvsWritterTest, SyncIndexSuccessful) {
 
 TEST_F(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata) {
   S3CallBack s3cloviskvscallbackobj;
-  action_under_test->sync_context.reset(
-      new S3ClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
+  action_under_test->sync_context.reset(new S3ClovisKVSWriterContext(
+      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
 
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-ENOENT));
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
   action_under_test->handler_on_failed =
@@ -435,6 +440,10 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailed) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
+  action_under_test->writer_context.reset(new S3ClovisKVSWriterContext(
+      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
   action_under_test->put_keyval(
       oid, "3kfile",
       "{\"ACL\":\"\",\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":"
@@ -569,7 +578,8 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailed) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
-
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
   action_under_test->delete_keyval(
       oid, "3kfile",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),

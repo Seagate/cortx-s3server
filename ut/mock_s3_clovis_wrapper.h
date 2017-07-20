@@ -67,5 +67,6 @@ class MockS3Clovis : public ClovisAPI {
                                            struct m0_clovis_entity *entity));
   MOCK_METHOD2(clovis_sync_op_add,
                int(struct m0_clovis_op *sync_op, struct m0_clovis_op *op));
+  MOCK_METHOD1(clovis_op_rc, int(const struct m0_clovis_op *op));
 };
 #endif

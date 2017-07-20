@@ -97,6 +97,8 @@ class ClovisAPI {
 
   virtual void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr,
                                 ClovisOpType type = ClovisOpType::unknown) = 0;
+
+  virtual int clovis_op_rc(const struct m0_clovis_op *op) = 0;
 };
 
 class ConcreteClovisAPI : public ClovisAPI {
@@ -227,5 +229,7 @@ class ConcreteClovisAPI : public ClovisAPI {
       m0_clovis_op_launch(op, nr);
     }
   }
+
+  int clovis_op_rc(const struct m0_clovis_op *op) { return m0_clovis_rc(op); }
 };
 #endif

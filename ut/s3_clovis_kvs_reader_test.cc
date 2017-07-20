@@ -87,7 +87,6 @@ static void s3_test_clovis_op_launch_fail(struct m0_clovis_op **op, uint32_t nr,
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
-    test_clovis_op->op_sm.sm_rc = -EPERM;
     s3_clovis_op_failed(test_clovis_op);
     s3_kvs_test_free_op(test_clovis_op);
   }
@@ -106,7 +105,6 @@ static void s3_test_clovis_op_launch_fail_enoent(struct m0_clovis_op **op,
 
   for (int i = 0; i < (int)nr; i++) {
     struct m0_clovis_op *test_clovis_op = op[i];
-    test_clovis_op->op_sm.sm_rc = -ENOENT;
     s3_clovis_op_failed(test_clovis_op);
     s3_kvs_test_free_op(test_clovis_op);
   }
@@ -270,7 +268,10 @@ TEST_F(S3ClovisKvsReaderTest, GetKeyvalFailedTest) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
-
+  ptr_cloviskvs_reader->reader_context.reset(new S3ClovisKVSReaderContext(
+      ptr_mock_s3request, NULL, NULL, ptr_mock_s3clovis));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -294,7 +295,10 @@ TEST_F(S3ClovisKvsReaderTest, GetKeyvalFailedTestMissing) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail_enoent));
-
+  ptr_cloviskvs_reader->reader_context.reset(new S3ClovisKVSReaderContext(
+      ptr_mock_s3request, NULL, NULL, ptr_mock_s3clovis));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-ENOENT));
   ptr_cloviskvs_reader->get_keyval(
       index_oid, test_key,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -319,7 +323,6 @@ TEST_F(S3ClovisKvsReaderTest, NextKeyvalTest) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch));
-
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -399,6 +402,10 @@ TEST_F(S3ClovisKvsReaderTest, NextKeyvalFailedTest) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
 
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-EPERM));
+  ptr_cloviskvs_reader->reader_context.reset(new S3ClovisKVSReaderContext(
+      ptr_mock_s3request, NULL, NULL, ptr_mock_s3clovis));
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -424,7 +431,8 @@ TEST_F(S3ClovisKvsReaderTest, NextKeyvalFailedTestMissing) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _))
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail_enoent));
-
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
+      .WillRepeatedly(Return(-ENOENT));
   ptr_cloviskvs_reader->next_keyval(
       index_oid, test_key, nr_kvp,
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
