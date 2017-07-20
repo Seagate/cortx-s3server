@@ -119,6 +119,10 @@ S3RequestObject::~S3RequestObject() {
   if (ev_req) {
     ev_req->cbarg = NULL;
   }
+  if (reply_buffer != NULL) {
+    evbuffer_free(reply_buffer);
+    reply_buffer = NULL;
+  }
 }
 
 S3HttpVerb S3RequestObject::http_verb() { return (S3HttpVerb)ev_req->method; }
