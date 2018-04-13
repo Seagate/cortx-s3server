@@ -31,6 +31,7 @@ cc_binary(
       "third_party/jsoncpp/dist",
       "third_party/yaml-cpp/s3_dist/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
+      "$(MERO_INC)",
       "mempool",
     ],
 
@@ -86,6 +87,7 @@ cc_test(
       "third_party/jsoncpp/dist",
       "third_party/yaml-cpp/s3_dist/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
+      "$(MERO_INC)",
       "server/",
       "mempool",
     ],
@@ -148,6 +150,7 @@ cc_test(
       "third_party/jsoncpp/dist",
       "third_party/yaml-cpp/s3_dist/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
+      "$(MERO_INC)",
       "server/",
       "mempool",
     ],
@@ -224,6 +227,7 @@ cc_binary(
 
     includes = [
       "third_party/gflags/s3_dist/include/",
+      "$(MERO_INC)",
     ],
 
     linkopts = [
@@ -293,6 +297,7 @@ cc_test(
       "third_party/jsoncpp/dist",
       "third_party/yaml-cpp/s3_dist/include/",
       "third_party/libxml2/s3_dist/include/libxml2",
+      "$(MERO_INC)",
       "server/",
       "mempool",
     ],
