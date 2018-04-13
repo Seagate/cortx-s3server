@@ -26,6 +26,9 @@ while true; do
   esac
 done
 
+# Always refresh to ensure thirdparty patches can be applied.
+./refresh_thirdparty.sh
+
 # Before we build s3, get all dependencies built.
 S3_SRC_FOLDER=`pwd`
 cd third_party
