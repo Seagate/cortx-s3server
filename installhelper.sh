@@ -28,8 +28,6 @@ rm -rf $S3_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/libevent
-mkdir -p $S3_INSTALL_LOCATION/libxml2
-mkdir -p $S3_INSTALL_LOCATION/libyaml-cpp/lib
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $SERVICE_FILE_LOCATION
@@ -40,8 +38,6 @@ mkdir -p $NODEJS_DIR_LOCATION
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
-cp -R third_party/libxml2/s3_dist/lib/* $S3_INSTALL_LOCATION/libxml2/
-cp -P third_party/yaml-cpp/s3_dist/lib/libyaml-cpp.so* $S3_INSTALL_LOCATION/libyaml-cpp/lib/
 
 # Copy the s3 server
 cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/

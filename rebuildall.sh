@@ -124,14 +124,6 @@ else
       rsync -aW $S3_SRC_DIR/third_party/mero/ $BUILD_CACHE_DIR/mero
       cd $S3_SRC_DIR/third_party/mero/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_mero.git.rev && cd -
 
-      mkdir -p $BUILD_CACHE_DIR/gflags
-      rsync -aW $S3_SRC_DIR/third_party/gflags/s3_dist $BUILD_CACHE_DIR/gflags
-      cd $S3_SRC_DIR/third_party/gflags/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_gflags.git.rev && cd -
-
-      mkdir -p $BUILD_CACHE_DIR/glog
-      rsync -aW $S3_SRC_DIR/third_party/glog/s3_dist $BUILD_CACHE_DIR/glog
-      cd $S3_SRC_DIR/third_party/glog/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_glog.git.rev && cd -
-
       mkdir -p $BUILD_CACHE_DIR/googlemock
       rsync -aW $S3_SRC_DIR/third_party/googlemock/build $BUILD_CACHE_DIR/googlemock
       rsync -aW $S3_SRC_DIR/third_party/googlemock/include $BUILD_CACHE_DIR/googlemock
@@ -150,18 +142,10 @@ else
       rsync -aW $S3_SRC_DIR/third_party/libevhtp/s3_dist $BUILD_CACHE_DIR/libevhtp
       cd $S3_SRC_DIR/third_party/libevhtp/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_libevhtp.git.rev && cd -
 
-      mkdir -p $BUILD_CACHE_DIR/libxml2
-      rsync -aW $S3_SRC_DIR/third_party/libxml2/s3_dist $BUILD_CACHE_DIR/libxml2
-      cd $S3_SRC_DIR/third_party/libxml2/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_libxml2.git.rev && cd -
-
       mkdir -p $BUILD_CACHE_DIR/s3cmd
       cp -f $S3_SRC_DIR/third_party/s3cmd/s3cmd $BUILD_CACHE_DIR/s3cmd/
       rsync -aW $S3_SRC_DIR/third_party/s3cmd/S3 $BUILD_CACHE_DIR/s3cmd
       cd $S3_SRC_DIR/third_party/s3cmd/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_s3cmd.git.rev && cd -
-
-      mkdir -p $BUILD_CACHE_DIR/yaml-cpp
-      rsync -aW $S3_SRC_DIR/third_party/yaml-cpp/s3_dist $BUILD_CACHE_DIR/yaml-cpp
-      cd $S3_SRC_DIR/third_party/yaml-cpp/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_yaml-cpp.git.rev && cd -
 
       mkdir -p $BUILD_CACHE_DIR/jsoncpp
       rsync -aW $S3_SRC_DIR/third_party/jsoncpp/dist $BUILD_CACHE_DIR/jsoncpp

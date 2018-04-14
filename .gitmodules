@@ -1,11 +1,3 @@
-[submodule "third_party/gflags"]
-	path = third_party/gflags
-	url = https://github.com/gflags/gflags.git
-	ignore = dirty
-[submodule "third_party/glog"]
-	path = third_party/glog
-	url = https://github.com/google/glog.git
-	ignore = dirty
 [submodule "third_party/googlemock"]
 	path = third_party/googlemock
 	url = https://github.com/google/googlemock.git
@@ -27,10 +19,6 @@
 	url = https://github.com/seagate-ssg/libevhtp.git
 	branch = develop
 	ignore = dirty
-[submodule "third_party/libxml2"]
-	path = third_party/libxml2
-	url = https://github.com/GNOME/libxml2.git
-	ignore = dirty
 [submodule "third_party/mero"]
 	path = third_party/mero
 	url = ../mero
@@ -38,10 +26,6 @@
 [submodule "third_party/statsd"]
 	path = third_party/statsd
 	url = https://github.com/etsy/statsd.git
-	ignore = dirty
-[submodule "third_party/yaml-cpp"]
-	path = third_party/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
 	ignore = dirty
 [submodule "third_party/s3cmd"]
 	path = third_party/s3cmd
