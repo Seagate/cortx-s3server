@@ -35,8 +35,6 @@ cd third_party
 ./build_libevent.sh
 ./build_libevhtp.sh
 ./setup_jsoncpp.sh
-./build_gtest.sh
-./build_gmock.sh
 ./build_s3cmd.sh
 
 if [ $no_mero_build -eq 0 ]

@@ -24,7 +24,6 @@ cc_binary(
 
     includes = [
       "third_party/libevent/s3_dist/include/",
-      "third_party/googletest/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
       "$(MERO_INC)",
@@ -69,8 +68,6 @@ cc_test(
     ],
 
     includes = [
-      "third_party/googletest/include",
-      "third_party/googlemock/include",
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
@@ -84,8 +81,6 @@ cc_test(
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
-      "-Lthird_party/googletest/build",
-      "-Lthird_party/googlemock/build",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
       "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
@@ -123,8 +118,6 @@ cc_test(
     ],
 
     includes = [
-      "third_party/googletest/include",
-      "third_party/googlemock/include",
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
@@ -138,8 +131,6 @@ cc_test(
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
-      "-Lthird_party/googletest/build",
-      "-Lthird_party/googlemock/build",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
       "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
@@ -219,14 +210,10 @@ cc_test(
     copts = ["-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-O3"],
 
     includes = [
-      "third_party/googletest/include",
-      "third_party/googlemock/include",
       "mempool/",
     ],
 
     linkopts = [
-      "-Lthird_party/googletest/build",
-      "-Lthird_party/googlemock/build",
       "-lpthread -ldl -lm -lrt -lgtest -lgmock",
     ],
 
@@ -257,8 +244,6 @@ cc_test(
     ],
 
     includes = [
-      "third_party/googletest/include",
-      "third_party/googlemock/include",
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
@@ -272,8 +257,6 @@ cc_test(
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
-      "-Lthird_party/googletest/build",
-      "-Lthird_party/googlemock/build",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
       "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
