@@ -124,16 +124,6 @@ else
       rsync -aW $S3_SRC_DIR/third_party/mero/ $BUILD_CACHE_DIR/mero
       cd $S3_SRC_DIR/third_party/mero/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_mero.git.rev && cd -
 
-      mkdir -p $BUILD_CACHE_DIR/googlemock
-      rsync -aW $S3_SRC_DIR/third_party/googlemock/build $BUILD_CACHE_DIR/googlemock
-      rsync -aW $S3_SRC_DIR/third_party/googlemock/include $BUILD_CACHE_DIR/googlemock
-      cd $S3_SRC_DIR/third_party/googlemock/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_googlemock.git.rev && cd -
-
-      mkdir -p $BUILD_CACHE_DIR/googletest
-      rsync -aW $S3_SRC_DIR/third_party/googletest/build $BUILD_CACHE_DIR/googletest
-      rsync -aW $S3_SRC_DIR/third_party/googletest/include $BUILD_CACHE_DIR/googletest
-      cd $S3_SRC_DIR/third_party/googletest/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_googletest.git.rev && cd -
-
       mkdir -p $BUILD_CACHE_DIR/libevent
       rsync -aW $S3_SRC_DIR/third_party/libevent/s3_dist $BUILD_CACHE_DIR/libevent
       cd $S3_SRC_DIR/third_party/libevent/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_libevent.git.rev && cd -
