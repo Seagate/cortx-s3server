@@ -42,8 +42,12 @@ http {
 
     # S3 Configurations
     upstream s3server {
-        server localhost:8081;
-        server localhost:8082;
+        # By default max_fails is 1, its number of failed attempts that happen
+        # during the specified time (fail_timeout, default is 10 sec) for NGINX
+        # to consider the server unavailable.
+        server localhost:8081 max_fails=3;
+        # Below s3server needs to be enabled when not running in standalone mode
+        #server localhost:8082;
     }
 
     server {
