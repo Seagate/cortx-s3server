@@ -1,5 +1,7 @@
 [Unit]
 Description=Mero-S3 Core Server
+Requires=mero-kernel.service
+After=mero-kernel.service
 
 [Service]
 Type=forking
