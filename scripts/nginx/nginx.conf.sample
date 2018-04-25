@@ -42,7 +42,16 @@ http {
 
     # S3 Configurations
     upstream s3server {
-        server localhost:8081;
+        # By default max_fails is 1, its number of failed attempts that happen
+        # during the specified time (fail_timeout, default is 10 sec) for NGINX
+        # to consider the server unavailable.
+
+        # Using 0.0.0.0 for upstream servers to explicitly use ipv4.
+        # S3 backend only support (listen's on) ipv4 for now.
+        server 0.0.0.0:8081 max_fails=3;
+
+        # Below s3server needs to be enabled when not running in standalone mode
+        #server 0.0.0.0:8082 max_fails=3;
     }
 
     server {
