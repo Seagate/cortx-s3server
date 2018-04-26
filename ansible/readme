@@ -1,0 +1,22 @@
+******** Follow steps mentioned below on your laptop to configure your devvm ******
+
+1. Install ansible on you laptop
+ - http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
+ Mac : http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#latest-releases-on-mac-osx
+ Update Mac OS maintenance release if you are facing any issues for 'pip install ansible'
+
+2. Create a VM using sage 73 and test ssh access
+
+** Here onwards assumption is that you are in "<you s3server code>/ansible folder"
+
+3. Download a folder named 'files' which is currently available in google drive location:
+        https://drive.google.com/open?id=1QMPLcHjOT4q8xwDrCxZzsUPHPgMizu3R
+
+4. Copy the downloaded folders from "files" to <your s3server code>/ansible/files directory
+
+5. Update hosts file with IP address of your new VM, [s3devvm] is just a ansible group name and NOT dev vm hostname
+
+6. Run ansible to setup the dev vm
+   # ansible-playbook -i hosts setups3devm.yml -v  -k
+   It will prompt for ssh password
+   Your dev vm should be ready after successful run
