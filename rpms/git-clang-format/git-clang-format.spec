@@ -14,22 +14,15 @@ Requires:	git
 %description -n git-clang-format
 clang-format integration for git.
 
-
 %prep
-rm -rf %{_sourcedir}/%{name}-%{version}
-mkdir -p %{_sourcedir}/%{name}-%{version}
-cd %{_sourcedir}/%{name}-%{version}
-wget https://raw.githubusercontent.com/llvm-mirror/clang/release_60/tools/clang-format/git-clang-format
-wget https://raw.githubusercontent.com/llvm-mirror/clang/release_60/LICENSE.TXT
-cd %{_sourcedir}
-tar -zcvf %{name}-%{version}.tar.gz %{name}-%{version}
-
 %setup -q
 
 %install
-cd %{_sourcedir}/%{name}-%{version}
-mkdir -p %{buildroot}/usr/bin
-cp git-clang-format %{buildroot}/usr/bin
+rm -rf %{buildroot}
+
+install -d $RPM_BUILD_ROOT%{_bindir}/
+
+cp git-clang-format $RPM_BUILD_ROOT%{_bindir}/
 cp LICENSE.TXT %{_builddir}
 
 %clean
