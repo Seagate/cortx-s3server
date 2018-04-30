@@ -38,7 +38,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_UNIT_SIZE: 1048576                         # Clovis unit size w.r.t layout id for an IO operation
    S3_CLOVIS_MAX_UNITS_PER_REQUEST: 1                   # Maximum units per read/write request to clovis
    S3_CLOVIS_MAX_IDX_FETCH_COUNT: 100                   # Clovis will read from index(If not specified) at a time maximim of this many key values
-   S3_CLOVIS_IS_OOSTORE: false                          # Clovis oostore mode is set when this flag is true, default is false (oostore mode is not set)
+   S3_CLOVIS_IS_OOSTORE: true                           # Clovis oostore mode is set when this flag is true, default is false (oostore mode is not set)
    S3_CLOVIS_IS_READ_VERIFY: false                      # Clovis Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
    S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN: 16                  # Minimum length of the 'tm' receive queue for clovis, default is 2
    S3_CLOVIS_MAX_RPC_MSG_SIZE: 65536                    # Maximum rpc message size for clovis, default is 131072 (128k)
