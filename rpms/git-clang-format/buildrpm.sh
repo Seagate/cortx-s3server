@@ -2,7 +2,9 @@
 
 set -e
 
-BASEDIR=$(dirname $0)
+SCRIPT_PATH=$(readlink -f "$0")
+BASEDIR=$(dirname "$SCRIPT_PATH")
+
 VERSION=6.0
 GIT_RELEASE_BRANCH=release_60
 

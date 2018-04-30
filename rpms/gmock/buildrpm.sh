@@ -2,7 +2,9 @@
 
 set -e
 
-BASEDIR=$(dirname $0)
+SCRIPT_PATH=$(readlink -f "$0")
+BASEDIR=$(dirname "$SCRIPT_PATH")
+
 VERSION=1.7.0
 
 cd ~/rpmbuild/SOURCES/

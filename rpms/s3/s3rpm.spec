@@ -10,7 +10,7 @@ Release:    1%{?dist}
 Summary:    s3server for Mero
 
 Group:      Development/Tools
-License:    Apache
+License:    Seagate
 URL:        http://gerrit-sage.dco.colo.seagate.com:8080/s3server
 Source0:    %{name}-%{version}.tar.gz
 
