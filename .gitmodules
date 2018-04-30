@@ -1,14 +1,14 @@
 [submodule "third_party/jsoncpp"]
 	path = third_party/jsoncpp
-	url = https://github.com/open-source-parsers/jsoncpp.git
+	url = http://gerrit-sage.dco.colo.seagate.com:8080/jsoncpp.git
 	ignore = dirty
 [submodule "third_party/libevent"]
 	path = third_party/libevent
-	url = https://github.com/libevent/libevent.git
+	url = http://gerrit-sage.dco.colo.seagate.com:8080/libevent.git
 	ignore = dirty
 [submodule "third_party/libevhtp"]
 	path = third_party/libevhtp
-	url = https://github.com/seagate-ssg/libevhtp.git
+	url = http://gerrit-sage.dco.colo.seagate.com:8080/libevhtp.git
 	branch = develop
 	ignore = dirty
 [submodule "third_party/mero"]
@@ -21,5 +21,5 @@
 	ignore = dirty
 [submodule "third_party/s3cmd"]
 	path = third_party/s3cmd
-	url = https://github.com/s3tools/s3cmd.git
+	url = http://gerrit-sage.dco.colo.seagate.com:8080/s3cmd.git
 	ignore = dirty
