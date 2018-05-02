@@ -228,3 +228,4 @@ rm -rf %{buildroot}
 
 %post
 systemctl daemon-reload
+systemctl enable s3authserver
