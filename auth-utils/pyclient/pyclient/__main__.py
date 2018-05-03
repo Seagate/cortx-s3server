@@ -78,6 +78,11 @@ def load_config(cli_args):
         logging.basicConfig(filename=config['BOTO']['LOG_FILE_PATH'],
                 level=config['BOTO']['LOG_LEVEL'])
 
+    if 'DEFAULT_REGION' in config and config['DEFAULT_REGION']:
+        Config.default_region = config['DEFAULT_REGION']
+    else:
+        Config.default_region = 'us-west2'
+
 def load_controller_action():
     controller_action_file = os.path.join(get_conf_dir(), 'controller_action.yaml')
     with open(controller_action_file, 'r') as f:
@@ -107,10 +112,10 @@ def get_session(access_key, secret_key, session_token = None):
 def get_client(session):
     if Config.use_ssl:
         if Config.verify_ssl_cert:
-            return session.client(Config.service, endpoint_url=Config.endpoint, verify=Config.ca_cert_file)
-        return session.client(Config.service, endpoint_url=Config.endpoint, verify=False)
+            return session.client(Config.service, endpoint_url=Config.endpoint, verify=Config.ca_cert_file, region_name=Config.default_region)
+        return session.client(Config.service, endpoint_url=Config.endpoint, verify=False, region_name=Config.default_region)
     else:
-        return session.client(Config.service, endpoint_url=Config.endpoint, use_ssl=False)
+        return session.client(Config.service, endpoint_url=Config.endpoint, use_ssl=False, region_name=Config.default_region)
 
 parser = argparse.ArgumentParser(usage = iam_usage())
 parser.add_argument("action", help="Action to be performed.")
