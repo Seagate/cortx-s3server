@@ -34,6 +34,7 @@ DEFINE_string(s3loglevel, "INFO",
               "options: DEBUG | INFO | WARN | ERROR | FATAL");
 
 DEFINE_bool(perfenable, false, "Enable performance log");
+DEFINE_bool(reuseport, false, "Enable reusing s3 server port");
 DEFINE_string(perflogfile, "/var/log/seagate/s3/perf.log",
               "Performance log path");
 
@@ -125,6 +126,12 @@ int parse_and_load_config_options(int argc, char **argv) {
   gflags::GetCommandLineFlagInfo("s3loglevel", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_OPTION_LOG_MODE,
+                                        flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("reuseport", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_REUSEPORT,
                                         flag_info.current_value.c_str());
   }
 

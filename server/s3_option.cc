@@ -44,6 +44,7 @@ bool S3Option::load_section(std::string section_name,
       s3_daemon_redirect =
           s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
+      s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
       s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
@@ -271,6 +272,8 @@ bool S3Option::load_section(std::string section_name,
       }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_AUTH_SSL");
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REUSEPORT");
+      s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
@@ -498,6 +501,12 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     clovis_profile = optarg;
   } else if (option_flag & S3_OPTION_CLOVIS_PROCESS_FID) {
     clovis_process_fid = optarg;
+  } else if (option_flag & S3_OPTION_REUSEPORT) {
+    if (strcmp(optarg, "true") == 0) {
+      s3_reuseport = true;
+    } else {
+      s3_reuseport = false;
+    }
   }
   cmd_opt_flag |= option_flag;
   return;
@@ -520,6 +529,7 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "S3_LOG_FLUSH_FREQUENCY = %d\n", log_flush_frequency_sec);
   s3_log(S3_LOG_INFO, "S3_ENABLE_AUTH_SSL = %s\n",
          (s3_enable_auth_ssl) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "S3_REUSEPORT = %s\n", (s3_reuseport) ? "true" : "false");
   s3_log(S3_LOG_INFO, "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
@@ -836,5 +846,9 @@ void S3Option::set_stats_whitelist_filename(std::string filename) {
 evbase_t* S3Option::get_eventbase() { return eventbase; }
 
 void S3Option::enable_fault_injection() { FLAGS_fault_injection = true; }
+
+void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
+
+bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
 
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }

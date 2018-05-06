@@ -38,6 +38,7 @@
 #define S3_OPTION_STATSD_PORT 0x4000
 #define S3_OPTION_CLOVIS_PROF 0x8000
 #define S3_OPTION_CLOVIS_PROCESS_FID 0x10000
+#define S3_OPTION_REUSEPORT 0x20000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -89,6 +90,7 @@ class S3Option {
   std::string log_level;
   int log_file_max_size_mb;
   bool s3_enable_auth_ssl;
+  bool s3_reuseport;
   bool log_buffering_enable;
   int log_flush_frequency_sec;
 
@@ -263,6 +265,7 @@ class S3Option {
   std::string get_log_level();
   int get_log_file_max_size_in_mb();
   bool is_s3_ssl_auth_enabled();
+  bool is_s3_reuseport_enabled();
   const char* get_iam_cert_file();
   bool is_log_buffering_enabled();
   int get_log_flush_frequency_in_sec();
@@ -328,6 +331,7 @@ class S3Option {
   // Fault injection Option
   void enable_fault_injection();
   bool is_fi_enabled();
+  void enable_reuseport();
 
   void dump_options();
 

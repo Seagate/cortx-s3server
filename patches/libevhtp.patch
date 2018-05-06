@@ -1,5 +1,5 @@
 diff --git a/evhtp.c b/evhtp.c
-index a97c836..1a612ab 100644
+index a97c836..497f179 100644
 --- a/evhtp.c
 +++ b/evhtp.c
 @@ -69,6 +69,7 @@ static evhtp_path_t       * _evhtp_path_new(const char * data, size_t len);
@@ -70,7 +70,19 @@ index a97c836..1a612ab 100644
      } else if (nread < avail) {
          /* we still have more data to read (piped request probably) */
          evhtp_connection_resume(c);
-@@ -4439,3 +4480,9 @@ evhtp_request_status(evhtp_request_t * r) {
+@@ -3255,6 +3296,11 @@ evhtp_bind_sockaddr(evhtp_t * htp, struct sockaddr * sa, size_t sin_len, int bac
+ 
+     setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&on, sizeof(on));
+     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on));
++#if defined SO_REUSEPORT
++    if (htp->enable_reuseport) {
++        setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (void *)&on, sizeof(on));
++    }
++#endif
+ 
+     if (sa->sa_family == AF_INET6) {
+         int rc;
+@@ -4439,3 +4485,9 @@ evhtp_request_status(evhtp_request_t * r) {
      return htparser_get_status(r->conn->parser);
  }
  

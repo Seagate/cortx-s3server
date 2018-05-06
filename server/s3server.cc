@@ -340,6 +340,18 @@ int main(int argc, char **argv) {
     return 1;
   }
   evhtp_t *htp = evhtp_new(global_evbase_handle, NULL);
+#if defined SO_REUSEPORT
+  if (g_option_instance->is_s3_reuseport_enabled()) {
+    htp->enable_reuseport = 1;
+  }
+#else
+  if (g_option_instance->is_s3_reuseport_enabled()) {
+    s3_log(
+        S3_LOG_ERROR,
+        "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
+    return 1;
+  }
+#endif
   event_set_fatal_callback(fatal_libevent);
   if (g_option_instance->is_s3_ssl_auth_enabled()) {
     if (!init_auth_ssl()) {
@@ -406,7 +418,13 @@ int main(int argc, char **argv) {
 #endif
   s3_log(S3_LOG_INFO, "Starting S3 listener on host = %s and port = %d!\n",
          bind_addr, bind_port);
-  evhtp_bind_socket(htp, bind_addr, bind_port, 1024);
+  if ((rc = evhtp_bind_socket(htp, bind_addr, bind_port, 1024)) < 0) {
+    s3_log(S3_LOG_FATAL, "Could not bind socket: %s\n", strerror(errno));
+    fini_auth_ssl();
+    evhtp_free(htp);
+    fini_clovis();
+    return rc;
+  }
   rc = event_base_loop(global_evbase_handle, 0);
   if (rc == 0) {
     s3_log(S3_LOG_DEBUG, "Event base loop exited normally\n");

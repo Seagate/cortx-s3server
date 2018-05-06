@@ -135,6 +135,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
   instance->set_cmdline_option(S3_OPTION_STATSD_PORT, "1234");
+  instance->set_cmdline_option(S3_OPTION_REUSEPORT, "true");
   // load from Config file, overriding the command options
   EXPECT_TRUE(instance->load_all_sections(true));
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
@@ -162,6 +163,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
   EXPECT_EQ("s3stats-whitelist-test.yaml",
             instance->get_stats_whitelist_filename());
+  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
@@ -176,6 +178,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
   instance->set_cmdline_option(S3_OPTION_STATSD_PORT, "1234");
+  instance->set_cmdline_option(S3_OPTION_REUSEPORT, "true");
   instance->set_is_s3_shutting_down(true);
   EXPECT_TRUE(instance->load_all_sections(false));
   EXPECT_EQ(std::string("s3config-test.yaml"), instance->get_option_file());
@@ -199,6 +202,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
   EXPECT_EQ("s3stats-whitelist-test.yaml",
             instance->get_stats_whitelist_filename());
+  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadThirdPartySectionFromFile) {
@@ -243,6 +247,7 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
+  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
@@ -252,6 +257,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   instance->set_cmdline_option(S3_OPTION_LOG_MODE, "debug");
   instance->set_cmdline_option(S3_OPTION_LOG_FILE_MAX_SIZE, "1");
   instance->set_cmdline_option(S3_OPTION_STATSD_IP_ADDR, "192.168.0.9");
+  instance->set_cmdline_option(S3_OPTION_REUSEPORT, "true");
   EXPECT_TRUE(instance->load_section("S3_SERVER_CONFIG", true));
 
   EXPECT_EQ(std::string("/var/log/seagate/s3"), instance->get_log_dir());
@@ -279,6 +285,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
+  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {
