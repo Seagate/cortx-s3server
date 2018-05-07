@@ -275,6 +275,11 @@ $ ./setup.sh
 ```
 
 ## StatsD configuration
+Install statsd using
+```sh
+sudo yum install statsd
+```
+
 By default, Stats feature is disabled. To enable the same, edit the S3 server
 config file /opt/seagate/s3/conf/s3config.yaml & set the S3_ENABLE_STATS to true.
 After above config change, s3server needs to be restarted.
@@ -282,14 +287,15 @@ After above config change, s3server needs to be restarted.
 Before starting StatsD daemon, select backends to be used. StatsD can send data
 to multiple backends. By default, through config file, StatsD is configured to
 send data only to console backend. To enable sending data to Graphite backend,
-after s3server installation, edit the file /opt/seagate/s3/statsd/s3statsd-config.js
+after s3server installation, edit the file /etc/statsd/config.js
+Refer to s3statsd-config.js file in our source repo and copy if required.
 Un-comment lines having Graphite variables (graphiteHost & graphitePort) and set their
 values. Also add graphite to the backends variable as shown in the comment in the
 s3statsd-config.js file.
 
 Once above config is done, run StatsD daemon as below
 ```sh
-sudo systemctl restart s3statsd
+sudo systemctl restart statsd
 ```
 
 ## Viewing StatsD data

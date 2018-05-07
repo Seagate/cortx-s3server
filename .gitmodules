@@ -15,11 +15,3 @@
 	path = third_party/mero
 	url = ../mero
 	ignore = dirty
-[submodule "third_party/statsd"]
-	path = third_party/statsd
-	url = https://github.com/etsy/statsd.git
-	ignore = dirty
-[submodule "third_party/s3cmd"]
-	path = third_party/s3cmd
-	url = http://gerrit-sage.dco.colo.seagate.com:8080/s3cmd.git
-	ignore = dirty

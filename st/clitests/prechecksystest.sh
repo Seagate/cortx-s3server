@@ -23,14 +23,15 @@ fi
 JCLIENTJAR='jclient.jar'
 JCLOUDJAR='jcloudclient.jar'
 
-S3CMD_DIR=../../third_party/s3cmd/
-MERO_ST=mero_st/bin/
-if [ -f $S3CMD_DIR/s3cmd ] ;then
-    cp $S3CMD_DIR/s3cmd $MERO_ST
-    cp -rf $S3CMD_DIR/S3 $MERO_ST
+# Installed s3cmd should have support for --max-retries
+# This support is available in patched s3cmd rpm built by our team
+# See <s3 server source>/rpms/s3cmd/buildrpm.sh
+s3cmd --help | grep max-retries
+if [ "$?" == "0"  ] ;then
     printf "\nCheck S3CMD...OK"
 else
-    printf "\nCheck $S3CMD_DIR ...Not found"
+    printf "\nInstalled s3cmd version does not support --max-retries."
+    printf "\nPlease install patched version built from <s3server src>/rpms/s3cmd/"
     abort
 fi
 
