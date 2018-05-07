@@ -17,9 +17,6 @@ fi
 
 ulimit -c unlimited
 
-# Set up the python virtualenv for System tests
-cd st/clitests
-./setup.sh
 cd $S3_BUILD_DIR
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"

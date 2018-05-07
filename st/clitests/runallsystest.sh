@@ -16,31 +16,29 @@ trap 'abort' 0
 
 sh ./prechecksystest.sh
 
-source mero_st/bin/activate
+#Using Python 3.4 version for Running System Tests
+PythonV="python3.4"
 
 echo "`date -u`: Running auth_spec.py..."
-python auth_spec.py --all
+$PythonV auth_spec.py --all
 
 echo "`date -u`: Running s3cmd_spec.py..."
-python s3cmd_spec.py
+$PythonV s3cmd_spec.py
 
 echo "`date -u`: Running jclient_spec.py..."
-python jclient_spec.py
+$PythonV jclient_spec.py
 
 echo "`date -u`: Running jcloud_spec.py..."
-python jcloud_spec.py
+$PythonV jcloud_spec.py
 
 echo "`date -u`: Running rollback_spec.py..."
-python rollback_spec.py
+$PythonV rollback_spec.py
 
 echo "`date -u`: Running negative_spec.py..."
-python negative_spec.py
+$PythonV negative_spec.py
 
 echo "`date -u`: Running shutdown_spec.py..."
-python shutdown_spec.py
-
-# undo the virtualenv
-deactivate
+$PythonV shutdown_spec.py
 
 echo >&2 '
 **************************

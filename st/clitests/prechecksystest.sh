@@ -14,6 +14,12 @@ abort()
 }
 trap 'abort' 0
 
+pyv=`python3 -c "import platform;print(platform.python_version())";`
+if [ "$pyv" != "3.4.8" ]; then
+   echo "You need Python 3.4.8 to run system tests"
+   abort
+fi
+
 JCLIENTJAR='jclient.jar'
 JCLOUDJAR='jcloudclient.jar'
 

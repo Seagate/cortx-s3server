@@ -19,6 +19,7 @@ class Config:
     client_execution_timeout = None
     request_timeout = None
     socket_timeout = None
+    python = 'python3.4'
 
 class CloudConfig:
     pass

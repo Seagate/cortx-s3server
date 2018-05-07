@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3.4
 
 from framework import Config
 from framework import S3PyCliTest
