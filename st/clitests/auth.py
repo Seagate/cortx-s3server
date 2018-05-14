@@ -18,30 +18,30 @@ class AuthTest(PyCliTest):
     def teardown(self):
         super(AuthTest, self).teardown()
 
-    def get_pyclient_dir(self):
-        return os.path.join(os.path.dirname(__file__), '../../', 'auth-utils', 'pyclient', 'pyclient')
+    def get_s3iamcli_dir(self):
+        return os.path.join(os.path.dirname(__file__), '../../', 'auth-utils', 's3iamcli', 'src', 's3iamcli')
 
     def with_cli(self, cmd):
-        if Config.use_ssl and 'pyclient' in cmd:
+        if Config.use_ssl and 's3iamcli' in cmd:
             cmd = cmd + ' --use-ssl'
         super(AuthTest, self).with_cli(cmd)
 
     def create_account(self, **account_args):
         cmd = Config.python + " %s createaccount -n %s -e %s" % (
-                self.get_pyclient_dir(), account_args['AccountName'], account_args['Email'])
+                self.get_s3iamcli_dir(), account_args['AccountName'], account_args['Email'])
 
         self.with_cli(cmd)
         return self
 
     def list_account(self):
-        cmd = Config.python + " %s listaccounts" % (self.get_pyclient_dir())
+        cmd = Config.python + " %s listaccounts" % (self.get_s3iamcli_dir())
 
         self.with_cli(cmd)
         return self
 
     def delete_account(self, **account_args):
         cmd = Config.python + " %s deleteaccount -n %s --access_key '%s' --secret_key '%s'" % (
-                self.get_pyclient_dir(), account_args['AccountName'], S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), account_args['AccountName'], S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key)
 
         if ('force' in account_args.keys() and account_args['force']):
@@ -52,7 +52,7 @@ class AuthTest(PyCliTest):
 
     def create_user(self, **user_args):
         cmd = Config.python + " %s createuser --access_key '%s' --secret_key '%s' -n %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, user_args['UserName'])
 
         if(not S3ClientConfig.token is ""):
@@ -66,7 +66,7 @@ class AuthTest(PyCliTest):
 
     def update_user(self, **user_args):
         cmd = Config.python + " %s updateuser --access_key '%s' --secret_key '%s' -n %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, user_args['UserName'])
 
         if(not S3ClientConfig.token is ""):
@@ -83,7 +83,7 @@ class AuthTest(PyCliTest):
 
     def delete_user(self, **user_args):
         cmd = Config.python + " %s deleteuser --access_key '%s' --secret_key '%s' -n %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, user_args['UserName'])
 
         if(not S3ClientConfig.token is ""):
@@ -94,7 +94,7 @@ class AuthTest(PyCliTest):
 
     def list_users(self, **user_args):
         cmd = Config.python + " %s listusers --access_key '%s' --secret_key '%s'" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key)
 
         if(not S3ClientConfig.token is ""):
@@ -108,7 +108,7 @@ class AuthTest(PyCliTest):
 
     def create_access_key(self, **access_key_args):
         cmd = Config.python + " %s createaccesskey --access_key '%s' --secret_key '%s' " % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key)
 
         if(not S3ClientConfig.token is ""):
@@ -122,7 +122,7 @@ class AuthTest(PyCliTest):
 
     def delete_access_key(self, **access_key_args):
         cmd = Config.python + " %s deleteaccesskey --access_key '%s' --secret_key '%s' -k %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, access_key_args['AccessKeyId'])
 
         if(not S3ClientConfig.token is ""):
@@ -136,7 +136,7 @@ class AuthTest(PyCliTest):
 
     def update_access_key(self, **access_key_args):
         cmd = Config.python + " %s updateaccesskey --access_key '%s' --secret_key '%s' -k %s -s %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, access_key_args['AccessKeyId'],
                 access_key_args['Status'])
 
@@ -151,7 +151,7 @@ class AuthTest(PyCliTest):
 
     def list_access_keys(self, **access_key_args):
         cmd = Config.python + " %s listaccesskeys --access_key '%s' --secret_key '%s'" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key)
 
         if(not S3ClientConfig.token is ""):
@@ -165,7 +165,7 @@ class AuthTest(PyCliTest):
 
     def create_role(self, **role_args):
         cmd = Config.python + " %s createrole --access_key '%s' --secret_key '%s' -n %s -f %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, role_args['RoleName'],
                 role_args['AssumeRolePolicyDocument'])
 
@@ -180,7 +180,7 @@ class AuthTest(PyCliTest):
 
     def delete_role(self, **role_args):
         cmd = Config.python + " %s deleterole --access_key '%s' --secret_key '%s' -n %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, role_args['RoleName'])
 
         if(not S3ClientConfig.token is ""):
@@ -191,7 +191,7 @@ class AuthTest(PyCliTest):
 
     def list_roles(self, **role_args):
         cmd = Config.python + " %s listroles --access_key '%s' --secret_key '%s'" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key)
 
         if(not S3ClientConfig.token is ""):
@@ -205,7 +205,7 @@ class AuthTest(PyCliTest):
 
     def create_saml_provider(self, **saml_provider_args):
         cmd = Config.python + " %s createsamlprovider --access_key '%s' --secret_key '%s' -n %s -f %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, saml_provider_args['Name'],
                 saml_provider_args['SAMLMetadataDocument'])
 
@@ -218,7 +218,7 @@ class AuthTest(PyCliTest):
     def update_saml_provider(self, **saml_provider_args):
         cmd = Config.python + " %s updatesamlprovider --access_key '%s' --secret_key '%s' \
                 --arn '%s' -f %s" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, saml_provider_args['SAMLProviderArn'],
                 saml_provider_args['SAMLMetadataDocument'])
 
@@ -230,7 +230,7 @@ class AuthTest(PyCliTest):
 
     def list_saml_providers(self, **saml_provider_args):
         cmd = Config.python + " %s listsamlproviders --access_key '%s' --secret_key '%s'" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key)
 
         if(not S3ClientConfig.token is ""):
@@ -242,7 +242,7 @@ class AuthTest(PyCliTest):
     def delete_saml_provider(self, **saml_provider_args):
         cmd = Config.python + " %s deletesamlprovider --access_key '%s' --secret_key '%s' \
                 --arn '%s'" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, saml_provider_args['SAMLProviderArn'])
 
         if(not S3ClientConfig.token is ""):
@@ -254,7 +254,7 @@ class AuthTest(PyCliTest):
     def get_federation_token(self, **federation_token_args):
         cmd = Config.python + " %s getfederationtoken --access_key '%s' --secret_key '%s' \
                 -n '%s'" % (
-                self.get_pyclient_dir(), S3ClientConfig.access_key_id,
+                self.get_s3iamcli_dir(), S3ClientConfig.access_key_id,
                 S3ClientConfig.secret_key, federation_token_args['Name'])
 
         if(not S3ClientConfig.token is ""):

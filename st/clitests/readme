@@ -27,8 +27,8 @@ and 'SEAGATEBUCKET123'.
 Following access key pair is assumed, if your setup has different,
 please update below mentioned s3cfg files.
 
-System tests for auth server uses the python client 'pyclient'.
-Ensure you have all the dependencies installed for pyclient.
+System tests for auth server uses the python client 's3iamcli'.
+Ensure you have all the dependencies installed for s3iamcli.
 
 Python Version 3.4.8.
 Installing python34 and required packages to run S3 Auth cli and ST tests
