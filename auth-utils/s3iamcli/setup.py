@@ -1,39 +1,33 @@
-from distutils.core import setup
-
-requires = [
-    'boto3==1.2.2',
-    'xmltodict==0.9.2'
-]
-
+from setuptools import setup
+files = ["config/*"]
 setup(
     # Application name:
-    name="pyclient",
+    name="s3iamcli",
 
     # Version number (initial):
-    version="0.1.0",
+    version="1.0.0",
 
     # Application author details:
-    author="Arjun Hariharan",
-    author_email="arjun.hariharan@seagate.com",
+    author="Seagate",
 
     # Packages
-    packages=["pyclient"],
+    packages=["s3iamcli"],
 
     # Include additional files into the package
     include_package_data=True,
-    package_data={
-        'config': [
-            '*',
-        ]
-    },
 
     # Details
-    url="",
+    scripts =['s3iamcli/s3iamcli'],
 
-    #
     # license="LICENSE.txt",
-    description="AWS Python client",
+    description="Seaget S3 IAM CLI.",
+
+    package_data = { 's3iamcli': files},
 
     # Dependent packages (distributions)
-    install_requires=requires
+    install_requires=[
+    'boto3',
+    'botocore',
+    'xmltodict'
+  ]
 )

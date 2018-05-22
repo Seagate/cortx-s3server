@@ -1,8 +1,8 @@
 import http.client, urllib.parse
 import json
 import xmltodict
-from util import sign_request_v2
-from conn_manager import ConnMan
+from s3iamcli.util import sign_request_v2
+from s3iamcli.conn_manager import ConnMan
 
 class Account:
     def __init__(self, iam_client, cli_args):

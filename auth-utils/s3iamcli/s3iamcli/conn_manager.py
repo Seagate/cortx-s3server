@@ -8,7 +8,7 @@ import sys
 import os
 import urllib
 
-from config import Config
+from s3iamcli.config import Config
 
 class ConnMan:
 

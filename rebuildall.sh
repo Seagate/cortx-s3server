@@ -26,6 +26,7 @@ usage() {
   echo '          --no-auth-build            : Do not build Auth Server, Default (false)'
   echo '          --no-jclient-build         : Do not build jclient, Default (false)'
   echo '          --no-jcloudclient-build    : Do not build jcloudclient, Default (false)'
+  echo '          --no-s3iamcli-build        : Do not build s3iamcli, Default (false)'
   echo '          --no-install               : Do not install binaries after build, Default (false)'
   echo '          --help (-h)                : Display help'
 }
@@ -33,7 +34,7 @@ usage() {
 # read the options
 OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,no-cloviskvscli-build,no-auth-build,\
-no-jclient-build,no-jcloudclient-build,no-install,help -n 'rebuildall.sh' -- "$@"`
+no-jclient-build,no-jcloudclient-build,no-s3iamcli-build,no-install,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
@@ -49,6 +50,7 @@ no_cloviskvscli_build=0
 no_auth_build=0
 no_jclient_build=0
 no_jcloudclient_build=0
+no_s3iamcli_build=0
 no_install=0
 
 # extract options and their arguments into variables.
@@ -66,6 +68,7 @@ while true; do
     --no-auth-build) no_auth_build=1; shift ;;
     --no-jclient-build) no_jclient_build=1; shift ;;
     --no-jcloudclient-build) no_jcloudclient_build=1; shift ;;
+    --no-s3iamcli-build) no_s3iamcli_build=1; shift ;;
     --no-install) no_install=1; shift ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
@@ -230,6 +233,18 @@ then
   fi
   mvn package
   cp target/jcloudclient.jar ../../st/clitests/
+  cd -
+fi
+
+if [ $no_s3iamcli_build -eq 0 ]
+then
+  cd auth-utils/s3iamcli/
+  if [ $no_clean_build -eq 0 ]
+  then
+    python3 setup.py install --force
+  else
+    python3 setup.py install
+  fi
   cd -
 fi
 

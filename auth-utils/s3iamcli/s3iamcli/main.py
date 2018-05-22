@@ -6,11 +6,12 @@ import os
 import imp
 import botocore
 import logging
+import shutil
 
 from boto3.session import Session
-from config import Credentials
-from config import Config
-from account import Account
+from s3iamcli.config import Credentials
+from s3iamcli.config import Config
+from s3iamcli.account import Account
 
 class S3IamCli:
     def iam_usage(self):
@@ -53,10 +54,21 @@ class S3IamCli:
         '''
 
     def get_conf_dir(self):
-        return os.path.join(os.path.dirname(__file__), '../', 'config')
+        return os.path.join(os.path.dirname(__file__),'config')
 
     def load_config(self, cli_args):
-        conf_file = os.path.join(self.get_conf_dir(), 'pycli_config.yaml')
+        conf_home_dir = os.path.join(os.path.expanduser('~'), '.sgs3iamcli')
+        conf_file = os.path.join(conf_home_dir,'config.yaml')
+        if not os.path.isfile(conf_file):
+            try:
+               os.stat(conf_home_dir)
+            except:
+               os.mkdir(conf_home_dir)
+            shutil.copy(os.path.join(self.get_conf_dir(),'s3iamclicfg.yaml'), conf_file)
+
+        if not os.access(conf_file, os.R_OK):
+            print("Failed to read " + conf_file + " it doesn't have read access")
+            sys.exit()
         with open(conf_file, 'r') as f:
             config = yaml.safe_load(f)
 

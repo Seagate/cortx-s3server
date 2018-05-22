@@ -22,6 +22,38 @@ or built from S3server Repo s3server/rpms/python34/buildrpms.sh script.
   - python34-s3transfer
   - python34-boto3
 
+Installing s3iamcli
+s3iamcli RPM can be downloaded from internal release management RPM repository location
+or built from s3server repo s3server/rpms/s3iamcli
+   yum localinstall s3iamcli-1.0.0-1.noarch.rpm
+
+s3iamcli reads config.yaml from home dir ~/.sgs3iamcli/config.xml
+
+Sample content of config.yaml file
+'''
+ENDPOINTS:
+    IAM: http://iam.seagate.com:8085
+    IAM_HTTPS: https://iam.seagate.com:8086
+    STS: http://sts.seagate.com:8085
+    STS_HTTPS: https://sts.seagate.com:8086
+    S3: http://s3.seagate.com
+    S3_HTTPS: https://s3.seagate.com
+
+DEFAULT_REGION: us-west2
+
+# SSL section configurations are read only in case of https connection.
+SSL:
+    CA_CERT_FILE: ~/.sgs3iamcli/ssl/iam.seagate.com.crt
+    CHECK_SSL_HOSTNAME: True
+    VERIFY_SSL_CERT: True
+
+BOTO:
+    ENABLE_LOGGER: False
+    LOG_LEVEL: DEBUG
+    LOG_FILE_PATH: /var/log/seagate/auth/boto.log
+'''
+
+
 Update /etc/hosts:
 Add the following entries to /etc/hosts.
 127.0.0.1    iam.seagate.com

@@ -3,7 +3,7 @@ import string
 import hmac
 import base64
 from hashlib import sha1, sha256
-from config import Credentials
+from s3iamcli.config import Credentials
 
 def utf8_encode(msg):
     return msg.encode('UTF-8')

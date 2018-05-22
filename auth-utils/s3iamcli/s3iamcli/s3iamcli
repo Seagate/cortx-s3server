@@ -1,8 +1,8 @@
-#!/usr/bin/python3.4
+#!/usr/bin/python3
 
 import sys
 import os
-from main import S3IamCli
+from s3iamcli.main import S3IamCli
 
 #Call s3iamcli command interface
 
