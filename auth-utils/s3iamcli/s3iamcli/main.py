@@ -16,13 +16,35 @@ from s3iamcli.account import Account
 class S3IamCli:
     def iam_usage(self):
         return '''
-        AssumeRoleWithSAML --saml_principal_arn <SAML IDP ARN> --saml_role_arn <Role ARN> \
-        --saml_assertion <File containing SAML Assertion>
-            -f <Policy Document> -d <Duration in seconds>
         CreateAccount -n <Account Name> -e <Email Id>
         ListAccounts
         CreateAccessKey
             -n <User Name>
+        CreateUser -n <User Name>
+            -p <Path (Optional)
+        DeleteAccount -n <Account Name> -r <true|false>
+        DeleteAccesskey -k <Access Key Id to be deleted>
+            -n <User Name>
+        DeleteUser -n <User Name>
+        ListAccessKeys
+            -n <User Name>
+        ListUsers
+            -p <Path Prefix>
+        UpdateUser -n <Old User Name>
+            --new_user <New User Name> -p <New Path>
+        UpdateAccessKey -k <access key to be updated> -s <Active/Inactive>
+            -n <User Name>
+        '''
+    def iam_usage_hidden(self):
+        return '''
+
+        -----------------------------------
+        *** hidden_help options ****
+        -----------------------------------
+
+        AssumeRoleWithSAML --saml_principal_arn <SAML IDP ARN> --saml_role_arn <Role ARN>
+        --saml_assertion <File containing SAML Assertion>
+            -f <Policy Document> -d <Duration in seconds>
         CreateGroup -n <Group Name>
             -p <Path>
         CreatePolicy -n <Policy Name> -f <Path of the policy document>
@@ -30,27 +52,13 @@ class S3IamCli:
         CreateRole -n <Role Name> -f <Path of role policy document>
             -p <Path>
         CreateSAMLProvider -n <Name of saml provider> -f <Path of metadata file>
-        CreateUser -n <User Name>
-            -p <Path (Optional)
-        DeleteAccount -n <Account Name> -r <true|false>
-        DeleteAccesskey -k <Access Key Id to be deleted>
-            -n <User Name>
         Delete Role -n <Role Name>
         DeleteSamlProvider --arn <Saml Provider ARN>
-        DeleteUser -n <User Name>
         GetFederationToken -n <User Name>
             -d <Duration in second> -f <Policiy Document File>
-        ListAccessKeys
-            -n <User Name>
         ListRoles -p <Path Prefix>
         ListSamlProviders
-        ListUsers
-            -p <Path Prefix>
         UpdateSAMLProvider --arn <SAML Provider ARN> -f <Path of metadata file>
-        UpdateUser -n <Old User Name>
-            --new_user <New User Name> -p <New Path>
-        UpdateAccessKey -k <access key to be updated> -s <Active/Inactive>
-            -n <User Name>
         '''
 
     def get_conf_dir(self):
@@ -151,8 +159,14 @@ class S3IamCli:
         parser.add_argument("--saml_role_arn", help="SAML Role ARN.")
         parser.add_argument("--saml_assertion", help="File conataining SAML assertion.")
         parser.add_argument("--new_user", help="New user name.")
-        parser.add_argument("--use-ssl", help="Use HTTPS protocol.", action='store_true')
+        parser.add_argument("--use-ssl", help="Use HTTPS protocol.", action ='store_true')
+        parser.add_argument("--hidden_help",dest = 'hidden_help', action ='store_true', help=argparse.SUPPRESS)
         cli_args = parser.parse_args()
+
+        if cli_args.hidden_help is True and cli_args.action == 'show':
+            parser.print_help()
+            print(self.iam_usage_hidden())
+            sys.exit()
 
         controller_action = self.load_controller_action()
         """
