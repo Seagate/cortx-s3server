@@ -60,7 +60,7 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(8095, instance->get_auth_port());
   EXPECT_EQ(1, instance->get_clovis_layout_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
+  EXPECT_TRUE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(16, instance->get_clovis_tm_recv_queue_min_len());
   EXPECT_EQ(65536, instance->get_clovis_max_rpc_msg_size());
@@ -109,7 +109,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ(0, instance->s3_performance_enabled());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
+  EXPECT_TRUE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
@@ -151,7 +151,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(1, instance->get_clovis_layout_id());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
+  EXPECT_TRUE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
@@ -192,7 +192,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(123, instance->get_clovis_layout_id());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
+  EXPECT_TRUE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(1, instance->get_log_file_max_size_in_mb());
   EXPECT_TRUE(instance->get_is_s3_shutting_down());
@@ -355,7 +355,7 @@ TEST_F(S3OptionsTest, LoadClovisSectionFromFile) {
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
+  EXPECT_TRUE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
@@ -381,7 +381,7 @@ TEST_F(S3OptionsTest, LoadSelectiveClovisSectionFromFile) {
   EXPECT_EQ("<0x7200000000000000:0>", instance->get_clovis_process_fid());
   EXPECT_EQ("10.10.1.3", instance->get_clovis_cass_cluster_ep());
   EXPECT_EQ(1, instance->get_clovis_idx_service_id());
-  EXPECT_FALSE(instance->get_clovis_is_oostore());
+  EXPECT_TRUE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
 
   // Others should not be loaded
