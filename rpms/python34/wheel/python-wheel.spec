@@ -18,7 +18,7 @@ Source0:        https://pypi.python.org/packages/source/w/%{pypi_name}/%{pypi_na
 # https://bitbucket.org/dholth/wheel/pull-request/34 (Patch0 below)
 # (version 0.22 doesn't have a tag, so we're using commit hash to point to the
 #  correct testing wheel)
-Source1:        https://bitbucket.org/dholth/wheel/src/099352e/wheel/test/test-1.0-py2.py3-none-win32.whl
+Source1:        https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/test-1.0-py2.py3-none-win32.whl
 Source2:        https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/pydist-schema.json
 BuildArch:      noarch
 

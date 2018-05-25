@@ -22,6 +22,8 @@ rm -rf boto3*
 
 
 #wheel
+wget https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/test-1.0-py2.py3-none-win32.whl
+wget https://bitbucket.org/dholth/wheel/raw/099352e/wheel/test/pydist-schema.json
 wget https://pypi.python.org/packages/source/w/wheel/wheel-${WHEEL_VERSION}.tar.gz
 
 #jmespath
