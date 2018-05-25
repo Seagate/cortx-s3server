@@ -20,6 +20,9 @@ else
   source $ha_config
 fi
 
+s3_log_dir="/var/log/seagate/s3/s3server-$1"
+mkdir -p $s3_log_dir
+
 # Restart nginx
 SERVICE='nginx'
 if ps ax | grep -v grep | grep $SERVICE > /dev/null
@@ -41,4 +44,4 @@ pid_filename='/var/run/s3server.'$1'.pid'
 s3server --s3pidfile $pid_filename \
          --clovislocal $local_ep --clovisha $ha_ep \
          --clovisprofilefid $profile_fid --clovisprocessfid $process_fid \
-         --s3port $s3port
+         --s3port $s3port --log_dir $s3_log_dir
