@@ -20,3 +20,18 @@
    # ansible-playbook -i hosts setups3devm.yml -v  -k
    It will prompt for ssh password
    Your dev vm should be ready after successful run
+
+***************************** END Dev Vm setup ***************************************
+
+******** Follow steps mentioned below on your laptop to configure your *openldap* node ******
+
+1. For ansible install, see above steps.
+
+2. Update hosts file with IP address of your openldap node in section [s3ldapnode]
+
+3. Run ansible to setup the openldap, enter the openldap password you want to setup.
+   # ansible-playbook -i hosts setup_openldap.yml -v  -k
+   It will prompt for ssh password, followed by new openldap password.
+   Your openldap should be ready after successful run
+
+******************************* END OpenLDAP setup **************************************

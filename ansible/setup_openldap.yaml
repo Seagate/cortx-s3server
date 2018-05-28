@@ -1,0 +1,99 @@
+---
+- name: Openldap setup for S3 Auth server (not idempotent, only use for fresh setup)
+  hosts: s3ldapnode
+  remote_user: root
+  gather_facts: yes
+  vars_prompt:
+    - name: "openldappasswd"
+      prompt: "Enter new password for openldap:"
+      private: yes
+
+  tasks:
+
+      - name: Upgrade selinux-policy to latest (required by openldap)
+        yum: pkg=selinux-policy state=latest
+
+      - name: Install Openldap pacakges
+        yum: pkg={{item}} state=installed
+        with_items:
+          - openldap-servers
+          - openldap-clients
+
+      - name: Install ntp
+        yum: pkg=ntp state=installed
+
+      - name: Configure ntp (required for ldap replication)
+        command: ntpdate time.seagate.com
+        notify:
+          - restart ntpd
+
+      - name: Enable slapd service
+        command: systemctl enable slapd
+
+      - name: Ensures temp /tmp/s3ldap dir exists
+        file: path=/tmp/s3ldap state=directory
+
+      - name: Generate slappasswd
+        shell: slappasswd -s {{ openldappasswd }}
+        register: slapdpasswdhash
+        no_log: true
+
+      - name: Copy Initial ldap config using "slapdpasswdhash" above
+        template:
+          src: files/ldap/cfg_ldap.ldif
+          dest: /tmp/s3ldap/cfg_ldap.ldif
+
+      - name: Copy ldap schema/data files
+        copy: src={{ item.src }} dest={{ item.dest }}
+        with_items:
+          - { src: 'ldap/cn={1}s3user.ldif', dest: '/tmp/s3ldap/cn={1}s3user.ldif' }
+          - { src: 'ldap/ldap-init.ldif', dest: '/tmp/s3ldap/ldap-init.ldif' }
+
+      - name: Clean up old ldap files
+        file:
+          state: absent
+          path: /etc/openldap/slapd.d/cn=config/cn=schema/cn={1}s3user.ldif
+
+      - name: Start slapd
+        service:
+          name: slapd
+          state: restarted
+          enabled: yes
+
+      - name: Remove old ldap files
+        file:
+          name: /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+          state: absent
+
+      - name: Configure OpenLDAP - Base config
+        command: ldapmodify -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/cfg_ldap.ldif
+        no_log: true
+
+      - name: Remove Base ldap config file
+        file:
+          name: /tmp/s3ldap/cfg_ldap.ldif
+          state: absent
+
+      - name: restart slapd
+        service:
+          name: slapd
+          state: restarted
+
+      - name: Configure OpenLDAP - Schema
+        command: ldapadd -x -D "cn=admin,cn=config" -w {{ openldappasswd }} -f /tmp/s3ldap/cn={1}s3user.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Base data
+        command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/ldap-init.ldif
+        no_log: true
+
+      - name: Delete temp directory
+        file:
+          name: /tmp/s3ldap
+          state: absent
+
+  handlers:
+      - name: restart ntpd
+        service:
+          name: ntpd
+          state: restarted

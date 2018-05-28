@@ -37,11 +37,11 @@ echo $PASSWORD
 # generate encrypted password
 SHA=$(slappasswd -s $PASSWORD)
 ESC_SHA=$(echo $SHA | sed 's/[/]/\\\//g')
-EXPR='s/$PASSWD/'$ESC_SHA'/g'
+EXPR='s/{{ slapdpasswdhash.stdout }}/'$ESC_SHA'/g'
 
 CFG_FILE=$(mktemp XXXX.ldif)
 cp -f cfg_ldap.ldif $CFG_FILE
-sed -i $EXPR $CFG_FILE
+sed -i "$EXPR" $CFG_FILE
 
 chkconfig slapd on
 

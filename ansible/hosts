@@ -1,3 +1,7 @@
 [s3devvm]
 # Change ip to your Dev VMs ip
 172.16.221.135
+
+[s3ldapnode]
+# Change ip to ldap node to be configured
+172.16.221.146
