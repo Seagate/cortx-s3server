@@ -99,7 +99,7 @@ TEST_F(S3BucketMetadataTest, ConstructorTest) {
   EXPECT_STREQ("s3user", action_under_test->user_name.c_str());
   EXPECT_STREQ("s3account", action_under_test->account_name.c_str());
   EXPECT_STREQ("ACCOUNTUSER/s3accountid",
-               action_under_test->salted_index_name.c_str());
+               action_under_test->salted_bucket_list_index_name.c_str());
   EXPECT_STREQ("", action_under_test->bucket_policy.c_str());
   EXPECT_STREQ("index_salt_", action_under_test->collision_salt.c_str());
   EXPECT_EQ(0, action_under_test->collision_attempt_count);
@@ -371,9 +371,21 @@ TEST_F(S3BucketMetadataTest, SaveMeatdataMissingIndexOID) {
 
 TEST_F(S3BucketMetadataTest, SaveMeatdataIndexOIDPresent) {
   action_under_test->bucket_list_index_oid = {0x111f, 0xffff};
+  action_under_test->object_list_index_oid = {0x11ff, 0x1fff};
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _))
       .Times(1);
+  action_under_test->save(
+      std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
+      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
+  EXPECT_EQ(S3BucketMetadataState::saving, action_under_test->state);
+}
+
+TEST_F(S3BucketMetadataTest, CreateObjectIndexOIDNotPresent) {
+  action_under_test->bucket_list_index_oid = {0x111f, 0xffff};
+  action_under_test->object_list_index_oid = {0x0000, 0x0000};
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              create_index_with_oid(_, _, _)).Times(1);
   action_under_test->save(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
@@ -387,6 +399,20 @@ TEST_F(S3BucketMetadataTest, CreateBucketListIndexCollisionCount0) {
       .Times(1);
   action_under_test->create_bucket_list_index();
   EXPECT_EQ(S3BucketMetadataState::missing, action_under_test->state);
+}
+
+TEST_F(S3BucketMetadataTest, CreateObjectListIndexCollisionCount0) {
+  action_under_test->collision_attempt_count = 0;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              create_index_with_oid(_, _, _)).Times(1);
+  action_under_test->create_object_list_index();
+}
+
+TEST_F(S3BucketMetadataTest, CreateMultipartListIndexCollisionCount0) {
+  action_under_test->collision_attempt_count = 0;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              create_index_with_oid(_, _, _)).Times(1);
+  action_under_test->create_multipart_list_index();
 }
 
 TEST_F(S3BucketMetadataTest, CreateBucketListIndexCollisionCount1) {
@@ -411,11 +437,17 @@ TEST_F(S3BucketMetadataTest, CreateBucketListIndexSuccessful) {
 
   EXPECT_CALL(
       *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      save(_, _))
-      .Times(1);
+      save(_, _)).Times(1);
   action_under_test->create_bucket_list_index_successful();
   EXPECT_OID_EQ(oid, action_under_test->account_user_index_metadata
                          ->get_bucket_list_index_oid());
+}
+
+TEST_F(S3BucketMetadataTest, CreateObjectListIndexSuccessful) {
+  action_under_test->collision_attempt_count = 0;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              create_index_with_oid(_, _, _)).Times(1);
+  action_under_test->create_object_list_index_successful();
 }
 
 TEST_F(S3BucketMetadataTest, CreateBucketListIndexFailedCollisionHappened) {
@@ -434,6 +466,36 @@ TEST_F(S3BucketMetadataTest, CreateBucketListIndexFailedCollisionHappened) {
   EXPECT_EQ(2, action_under_test->collision_attempt_count);
 }
 
+TEST_F(S3BucketMetadataTest, CreateObjectListIndexFailedCollisionHappened) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->collision_attempt_count = 1;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::exists));
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              create_index_with_oid(_, _, _)).Times(1);
+
+  action_under_test->create_object_list_index_failed();
+  EXPECT_EQ(2, action_under_test->collision_attempt_count);
+}
+
+TEST_F(S3BucketMetadataTest, CreateMultipartListIndexFailedCollisionHappened) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->collision_attempt_count = 1;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::exists));
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              create_index_with_oid(_, _, _)).Times(1);
+
+  action_under_test->create_multipart_list_index_failed();
+  EXPECT_EQ(2, action_under_test->collision_attempt_count);
+}
+
 TEST_F(S3BucketMetadataTest, CreateBucketListIndexFailed) {
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
@@ -446,34 +508,67 @@ TEST_F(S3BucketMetadataTest, CreateBucketListIndexFailed) {
   EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
 }
 
-TEST_F(S3BucketMetadataTest, HandleCollision) {
-  action_under_test->collision_attempt_count = 1;
+TEST_F(S3BucketMetadataTest, CreateObjectListIndexFailed) {
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
   action_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              create_index(_, _, _))
-      .Times(1);
-  action_under_test->handle_collision();
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+  action_under_test->create_object_list_index_failed();
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
+}
+
+TEST_F(S3BucketMetadataTest, CreateMultipartListIndexFailed) {
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+  action_under_test->create_multipart_list_index_failed();
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
+}
+
+TEST_F(S3BucketMetadataTest, HandleCollision) {
+  action_under_test->collision_attempt_count = 1;
+  std::string base_index_name = "ACCOUNTUSER/s3accountid";
+  action_under_test->salted_bucket_list_index_name =
+      "ACCOUNTUSER/s3accountid_salt_0";
+  action_under_test->handle_collision(
+      base_index_name, action_under_test->salted_bucket_list_index_name,
+      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
   EXPECT_STREQ("ACCOUNTUSER/s3accountidindex_salt_1",
-               action_under_test->salted_index_name.c_str());
+               action_under_test->salted_bucket_list_index_name.c_str());
   EXPECT_EQ(2, action_under_test->collision_attempt_count);
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3BucketMetadataTest, HandleCollisionMaxAttemptExceeded) {
+  std::string base_index_name = "ACCOUNTUSER/s3account";
+  action_under_test->salted_bucket_list_index_name =
+      "ACCOUNTUSER/s3accountid_salt_0";
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
   action_under_test->collision_attempt_count = MAX_COLLISION_RETRY_COUNT + 1;
-  action_under_test->handle_collision();
+  action_under_test->handle_collision(
+      base_index_name, action_under_test->salted_bucket_list_index_name,
+      std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj));
   EXPECT_EQ(S3BucketMetadataState::failed, action_under_test->state);
   EXPECT_EQ(MAX_COLLISION_RETRY_COUNT + 1,
             action_under_test->collision_attempt_count);
 }
 
 TEST_F(S3BucketMetadataTest, RegeneratedNewIndexName) {
+  std::string base_index_name = "ACCOUNTUSER/1234/seagatebucket";
+  action_under_test->salted_bucket_list_index_name = "ACCOUNTUSER/s3accountid";
   action_under_test->collision_attempt_count = 2;
-  action_under_test->regenerate_new_index_name();
-  EXPECT_STREQ("ACCOUNTUSER/s3accountidindex_salt_2",
-               action_under_test->salted_index_name.c_str());
+  action_under_test->regenerate_new_index_name(
+      base_index_name, action_under_test->salted_bucket_list_index_name);
+  EXPECT_STREQ("ACCOUNTUSER/1234/seagatebucketindex_salt_2",
+               action_under_test->salted_bucket_list_index_name.c_str());
 }
 
 TEST_F(S3BucketMetadataTest, SaveBucketListIndexOid) {
@@ -496,9 +591,7 @@ TEST_F(S3BucketMetadataTest, SaveBucketListIndexOidSucessfulStateSaving) {
   action_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              put_keyval(_, _, _, _, _))
-      .Times(1);
-
+              create_index_with_oid(_, _, _)).Times(1);
   action_under_test->save_bucket_list_index_oid_successful();
 }
 

@@ -89,6 +89,7 @@ S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_idx_create_fail").e
 S3fiTest('s3cmd enable FI PUT KV').enable_fi_offnonm("enable", "clovis_kv_put_fail", "2", "99").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_put_fail").execute_test().command_is_successful()
+clean_18mb_multipart()
 
 S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "clovis_kv_get_fail", "3", "99").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
@@ -309,13 +310,6 @@ for i, val in enumerate(pathstyle_values):
 
     # ************ List buckets ************
     JClientTest('Jclient can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('seagatebucket')
-
-    # ************ 8k FILE TEST ************
-    S3fiTest('s3cmd enable FI create index fail').enable_fi("enable", "always", "clovis_idx_create_fail").execute_test().command_is_successful()
-    JClientTest('Jclient can upload 8k file').put_object("seagatebucket", "8kfile", 8192).execute_test(negative_case=True).command_should_fail()
-
-    JClientTest('Jclient should not have object after rollback').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('8kfile')
-    S3fiTest('s3cmd can disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
 
     # ************ OBJ Create FI: CHUNK UPLOAD ************
     S3fiTest('S3Fi enable FI Obj create').enable_fi("enable", "always", "clovis_obj_create_fail")\

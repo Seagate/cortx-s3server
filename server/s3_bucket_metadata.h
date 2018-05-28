@@ -61,7 +61,9 @@ class S3BucketMetadata {
   std::string account_id;
   std::string user_name;
   std::string user_id;
-  std::string salted_index_name;
+  std::string salted_bucket_list_index_name;
+  std::string salted_object_list_index_name;
+  std::string salted_multipart_list_index_name;
 
   // Maximum retry count for collision resolution
   unsigned short collision_attempt_count;
@@ -119,6 +121,14 @@ class S3BucketMetadata {
   void create_bucket_list_index_successful();
   void create_bucket_list_index_failed();
 
+  void create_object_list_index();
+  void create_object_list_index_successful();
+  void create_object_list_index_failed();
+
+  void create_multipart_list_index();
+  void create_multipart_list_index_successful();
+  void create_multipart_list_index_failed();
+
   void save_bucket_list_index_oid();
   void save_bucket_list_index_oid_successful();
   void save_bucket_list_index_oid_failed();
@@ -139,8 +149,11 @@ class S3BucketMetadata {
 
   // Any other validations we want to do on metadata
   void validate();
-  void handle_collision();
-  void regenerate_new_index_name();
+  void handle_collision(std::string base_index_name,
+                        std::string& salted_index_name,
+                        std::function<void(void)> callback);
+  void regenerate_new_index_name(std::string base_index_name,
+                                 std::string& salted_index_name);
 
  public:
   S3BucketMetadata(
@@ -171,6 +184,10 @@ class S3BucketMetadata {
   void set_bucket_list_index_oid(struct m0_uint128 id);
   void set_multipart_index_oid(struct m0_uint128 id);
   void set_object_list_index_oid(struct m0_uint128 id);
+  std::string get_object_list_index_name() { return "BUCKET/" + bucket_name; }
+  std::string get_multipart_index_name() {
+    return "BUCKET/" + bucket_name + "/" + "Multipart";
+  }
 
   virtual void set_location_constraint(std::string location);
 
@@ -242,6 +259,7 @@ class S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataTest, LoadBucketInfoFailedMetadataFailed);
   FRIEND_TEST(S3BucketMetadataTest, SaveMeatdataMissingIndexOID);
   FRIEND_TEST(S3BucketMetadataTest, SaveMeatdataIndexOIDPresent);
+  FRIEND_TEST(S3BucketMetadataTest, CreateObjectIndexOIDNotPresent);
   FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexCollisionCount0);
   FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexCollisionCount1);
   FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexSuccessful);
@@ -267,6 +285,15 @@ class S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataTest, ToJson);
   FRIEND_TEST(S3BucketMetadataTest, FromJson);
   FRIEND_TEST(S3BucketMetadataTest, GetEncodedBucketAcl);
+  FRIEND_TEST(S3BucketMetadataTest, CreateMultipartListIndexCollisionCount0);
+  FRIEND_TEST(S3BucketMetadataTest, CreateObjectListIndexCollisionCount0);
+  FRIEND_TEST(S3BucketMetadataTest, CreateObjectListIndexSuccessful);
+  FRIEND_TEST(S3BucketMetadataTest,
+              CreateObjectListIndexFailedCollisionHappened);
+  FRIEND_TEST(S3BucketMetadataTest,
+              CreateMultipartListIndexFailedCollisionHappened);
+  FRIEND_TEST(S3BucketMetadataTest, CreateObjectListIndexFailed);
+  FRIEND_TEST(S3BucketMetadataTest, CreateMultipartListIndexFailed);
 };
 
 #endif

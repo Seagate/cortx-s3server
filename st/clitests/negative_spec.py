@@ -42,6 +42,22 @@ config_types = ["pathstyle.s3cfg", "virtualhoststyle.s3cfg"]
 for i, type in enumerate(config_types):
     Config.config_file = type
 
+    # Create bucket list index failure when creating bucket
+    S3fiTest('s3cmd enable FI create index fail').enable_fi("enable", "always", "clovis_idx_create_fail").execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+    S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
+
+    # Create object list index failure when creating bucket
+    S3fiTest('s3cmd enable FI create index fail').enable_fi_offnonm("enable", "clovis_idx_create_fail", "1", "1").execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+    S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
+
+    # Create multipart list index failure when creating bucket
+    S3fiTest('s3cmd enable FI create index fail').enable_fi_offnonm("enable", "clovis_idx_create_fail", "2", "1").execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
+    S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
+
+
     # ************ Create bucket ************
     S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").\
         execute_test().command_is_successful()
