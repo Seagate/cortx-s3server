@@ -38,6 +38,9 @@ import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
 import org.powermock.core.classloader.annotations.MockPolicy;
@@ -79,14 +82,18 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
         Paths.class, Configurator.class, FaultPoints.class})
 @MockPolicy(Slf4jMockPolicy.class)
 @PowerMockIgnore({"javax.management.*"})
+
 public class AuthServerTest {
 
+    @Rule
+        public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
     private int bossGroupThreads = 1;
     private int workerGroupThreads = 2;
     private int eventExecutorThreads = 4;
     private int httpPort = 8085;
     private int httpsPort = 8086;
     private boolean https = false;
+    private boolean http = true;
     private boolean enableFaultInjection = false;
     private String logLevel = "DEBUG";
     private String logConfigFilePath = "/path/to/log/config/file";
@@ -109,6 +116,7 @@ public class AuthServerTest {
         doReturn(workerGroupThreads).when(AuthServerConfig.class, "getWorkerGroupThreads");
         doReturn(eventExecutorThreads).when(AuthServerConfig.class, "getEventExecutorThreads");
         doReturn(httpPort).when(AuthServerConfig.class, "getHttpPort");
+        doReturn(http).when(AuthServerConfig.class, "isHttpEnabled");
         doReturn(https).when(AuthServerConfig.class, "isHttpsEnabled");
         doReturn(httpsPort).when(AuthServerConfig.class, "getHttpsPort");
         doReturn(logConfigFilePath).when(AuthServerConfig.class, "getLogConfigFile");
@@ -141,6 +149,7 @@ public class AuthServerTest {
     public void mainTest_HttpAndHttpsEnabled() throws Exception {
         mainTestHelper();
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpsEnabled");
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpEnabled");
         doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
                 any(EventExecutorGroup.class), anyInt());
@@ -162,6 +171,74 @@ public class AuthServerTest {
 
         verify(serverChannel, times(2)).closeFuture();
         verify(channelFuture, times(2)).sync();
+    }
+
+    @Test
+    public void mainTest_HttpEnabledAndHttpsDisabled() throws Exception {
+        mainTestHelper();
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpsEnabled");
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpEnabled");
+        doReturn(serverChannel).when(AuthServer.class, "httpServerBootstrap",
+                any(EventLoopGroup.class), any(EventLoopGroup.class),
+                any(EventExecutorGroup.class), anyInt());
+
+        AuthServer.main(new String[]{});
+
+        verifyStatic();
+        SSLContextProvider.init();
+        verifyStatic();
+        IAMResourceMapper.init();
+        verifyStatic();
+        DAODispatcher.init();
+        verifyStatic();
+        S3Perf.init();
+
+        verifyPrivate(AuthServer.class).invoke("readConfig");
+        verifyPrivate(AuthServer.class).invoke("logInit");
+        verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
+
+        verify(serverChannel, times(2)).closeFuture();
+        verify(channelFuture, times(2)).sync();
+    }
+
+
+    @Test
+    public void mainTest_HttpDisabledAndHttpsEnabled() throws Exception {
+        mainTestHelper();
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpEnabled");
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpsEnabled");
+        doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
+                any(EventLoopGroup.class), any(EventLoopGroup.class),
+                any(EventExecutorGroup.class), anyInt());
+
+        AuthServer.main(new String[]{});
+
+        verifyStatic();
+        SSLContextProvider.init();
+        verifyStatic();
+        IAMResourceMapper.init();
+        verifyStatic();
+        DAODispatcher.init();
+        verifyStatic();
+        S3Perf.init();
+
+        verifyPrivate(AuthServer.class).invoke("readConfig");
+        verifyPrivate(AuthServer.class).invoke("logInit");
+        verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
+
+        verify(serverChannel, times(2)).closeFuture();
+        verify(channelFuture, times(2)).sync();
+    }
+
+    @Test
+    public void mainTest_HttpAndHttpsDisabled() throws Exception {
+        mainTestHelper();
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpEnabled");
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpsEnabled");
+
+        AuthServer.main(new String[]{});
+        assertEquals("Both HTTP and HTTPS are disabled. At least one channel should be enabled.", systemOutRule.getLog());
+
     }
 
     @Test
@@ -193,6 +270,82 @@ public class AuthServerTest {
         verify(serverChannel, times(2)).closeFuture();
         verify(channelFuture, times(2)).sync();
     }
+
+    @Test
+    public void mainTest_HttpEnabledAndHttpsDisabled_FiEnabled() throws Exception {
+        mainTestHelper();
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpsEnabled");
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpEnabled");
+        doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
+                any(EventLoopGroup.class), any(EventLoopGroup.class),
+                any(EventExecutorGroup.class), anyInt());
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
+
+        AuthServer.main(new String[]{});
+
+        verifyStatic();
+        FaultPoints.init();
+        verifyStatic();
+        SSLContextProvider.init();
+        verifyStatic();
+        IAMResourceMapper.init();
+        verifyStatic();
+        DAODispatcher.init();
+        verifyStatic();
+        S3Perf.init();
+
+        verifyPrivate(AuthServer.class).invoke("readConfig");
+        verifyPrivate(AuthServer.class).invoke("logInit");
+        verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
+
+        verify(serverChannel, times(2)).closeFuture();
+        verify(channelFuture, times(2)).sync();
+    }
+
+    @Test
+    public void mainTest_HttpDisabledAndHttpsEnabled_FiEnabled() throws Exception {
+        mainTestHelper();
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpEnabled");
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpsEnabled");
+        doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
+                any(EventLoopGroup.class), any(EventLoopGroup.class),
+                any(EventExecutorGroup.class), anyInt());
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
+
+        AuthServer.main(new String[]{});
+
+        verifyStatic();
+        FaultPoints.init();
+        verifyStatic();
+        SSLContextProvider.init();
+        verifyStatic();
+        IAMResourceMapper.init();
+        verifyStatic();
+        DAODispatcher.init();
+        verifyStatic();
+        S3Perf.init();
+
+        verifyPrivate(AuthServer.class).invoke("readConfig");
+        verifyPrivate(AuthServer.class).invoke("logInit");
+        verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
+
+        verify(serverChannel, times(2)).closeFuture();
+        verify(channelFuture, times(2)).sync();
+    }
+
+
+    @Test
+    public void mainTest_HttpAndHttpsDisabled_FiEnabled() throws Exception {
+        mainTestHelper();
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpEnabled");
+        doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpsEnabled");
+        doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
+
+        AuthServer.main(new String[]{});
+        assertEquals("Both HTTP and HTTPS are disabled. At least one channel should be enabled.", systemOutRule.getLog()); 
+
+    }
+
 
     private  void mainTestHelper() throws Exception {
         spy(AuthServer.class);

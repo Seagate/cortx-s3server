@@ -62,6 +62,8 @@ cd $S3_BUILD_DIR
 
 # Start S3 auth
 echo "Starting new built s3 auth services"
+cp /opt/seagate/auth/resources/authserver.properties /opt/seagate/auth/resources/backup.authserver.properties
+\cp -r $S3_BUILD_DIR/auth/resources/test.authserver.properties /opt/seagate/auth/resources/authserver.properties
 $USE_SUDO systemctl restart s3authserver
 
 # Start S3 gracefully, with max 3 attempts
@@ -100,6 +102,7 @@ S3_TEST_RET_CODE=0
 ./runalltest.sh --no-mero-rpm || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
+\cp -r /opt/seagate/auth/resources/backup.authserver.properties /opt/seagate/auth/resources/authserver.properties
 
 $USE_SUDO ./dev-stops3.sh || echo "Cannot stop s3 services"
 

@@ -98,8 +98,12 @@ public class AuthServerConfig {
         return authServerConfig.getProperty("s3KeyPassword");
     }
 
+    public static boolean isHttpEnabled() {
+        return Boolean.valueOf(authServerConfig.getProperty("enable_http"));
+    }
+
     public static boolean isHttpsEnabled() {
-        return Boolean.valueOf(authServerConfig.getProperty("https"));
+        return Boolean.valueOf(authServerConfig.getProperty("enable_https"));
     }
 
     public static String getDataSource() {

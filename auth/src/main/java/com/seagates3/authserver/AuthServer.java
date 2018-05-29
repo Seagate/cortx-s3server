@@ -128,6 +128,12 @@ public class AuthServer {
 
         logger = LoggerFactory.getLogger(AuthServer.class.getName());
 
+        if (! (AuthServerConfig.isHttpEnabled() || AuthServerConfig.isHttpsEnabled())) {
+            logger.error("Both HTTP and HTTPS are disabled. At least one channel should be enabled.");
+            System.exit(1);
+        }
+
+
         SSLContextProvider.init();
         IAMResourceMapper.init();
         DAODispatcher.init();
@@ -159,20 +165,24 @@ public class AuthServer {
                 + AuthServerConfig.getEventExecutorThreads() + " threads");
 
         ArrayList<Channel> serverChannels = new ArrayList<>();
-        int httpPort = AuthServerConfig.getHttpPort();
-        Channel serverChannel = httpServerBootstrap(bossGroup, workerGroup,
-                executorGroup, httpPort
-        );
-        serverChannels.add(serverChannel);
-        logger.info("Auth server is listening on port " + httpPort);
+
+        if (AuthServerConfig.isHttpEnabled()) {
+            int httpPort = AuthServerConfig.getHttpPort();
+            Channel serverChannel = httpServerBootstrap(bossGroup, workerGroup,
+                    executorGroup, httpPort
+            );
+            serverChannels.add(serverChannel);
+            logger.info("Auth server is listening on HTTP port " + httpPort);
+        }
+
 
         if (AuthServerConfig.isHttpsEnabled()) {
             int httpsPort = AuthServerConfig.getHttpsPort();
-            serverChannel = httpsServerBootstrap(bossGroup, workerGroup,
+            Channel serverChannel = httpsServerBootstrap(bossGroup, workerGroup,
                     executorGroup, httpsPort
             );
             serverChannels.add(serverChannel);
-            logger.info("Auth server is listening on port " + httpsPort);
+            logger.info("Auth server is listening on HTTPS port " + httpsPort);
         }
 
         for (Channel ch : serverChannels) {
