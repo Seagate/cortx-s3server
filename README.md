@@ -172,6 +172,16 @@ Use below command to run (ST + UT) tests in Dev environment.
 In case of Release environment, simply skip passing the option `--no-mero-rpm` to
 the script.
 
+## How to run S3 server ossperf tests in Dev environment?
+```sh
+./runalltest.sh --no-mero-rpm --no-st-run --no-ut-run
+```
+Above command runs S3 server ossperf tool tests(Parallel/Sequential workloads).
+Note the option `--no-mero-rpm` passed to the command. It informs the script
+to use mero libs from the source code location at the run time.
+In case of Release environment, simply skip passing the option to the script.
+
+
 ## How to run tests for unsupported S3 APIs?
 For unsupported S3 APIs, we return 501(NotImplemented) error code.
 To run system tests for unsupported S3 APIs, S3 server needs to be run in authentication

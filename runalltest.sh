@@ -3,30 +3,34 @@
 set -e
 
 usage() {
-  echo 'Usage: ./runalltest.sh [--no-mero-rpm][--no-ut-run][--no-st-run][--help]'
+  echo 'Usage: ./runalltest.sh [--no-mero-rpm][--no-ut-run][--no-st-run][--no-ossperf-run]'
+  echo '                       [--help]'
   echo 'Optional params as below:'
   echo '          --no-mero-rpm    : Use mero libs from source code (third_party/mero)'
   echo '                             Default is (false) i.e. use mero libs from pre-installed'
   echo '                             mero rpm location (/usr/lib64)'
   echo '          --no-ut-run      : Do not run UTs, Default (false)'
   echo '          --no-st-run      : Do not run STs, Default (false)'
+  echo '          --no-ossperf-run : Do not run parallel/sequential perf tests by ossperf tool, Default (false)'
   echo '          --help (-h)      : Display help'
 }
 
 # read the options
-OPTS=`getopt -o h --long no-mero-rpm,no-ut-run,no-st-run,help -n 'runalltest.sh' -- "$@"`
+OPTS=`getopt -o h --long no-mero-rpm,no-ut-run,no-st-run,no-ossperf-run,help -n 'runalltest.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
 no_mero_rpm=0
 no_ut_run=0
 no_st_run=0
+no_ossperf_run=0
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
     --no-mero-rpm) no_mero_rpm=1; shift ;;
     --no-ut-run) no_ut_run=1; shift ;;
     --no-st-run) no_st_run=1; shift ;;
+    --no-ossperf-run) no_ossperf_run=1; shift ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
     *) echo "Internal error!" ; exit 1 ;;
@@ -93,6 +97,38 @@ then
   cd $CLITEST_SRC
 
   sh ./runallsystest.sh
+fi
+
+if [ $no_ossperf_run -eq 0 ]
+then
+  PERF_SRC=`pwd`/perf
+  cd $PERF_SRC
+
+  if [ -d "testfiles" ]
+  then
+    rm -rf testfiles
+  fi
+
+  echo "Parallel worload of 5 files each of size 5000 bytes"
+  ossperf.sh -n 5 -s 5000 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg -p 2>&1
+  if [ $? -ne 0 ]; then
+    echo "ossperf -- parallel workload test succeeded"
+  fi
+  echo "Sequential workload of 5 files each of size 5000 bytes"
+  ossperf.sh -n 5 -s 5000 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg 2>&1
+  if [ $? -ne 0 ]; then
+     echo "ossperf -- sequential workload test succeeded"
+  fi
+  # Parallel multipart workload
+  ossperf.sh -n 2 -s 18874368 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg 2>&1 -p
+  if [ $? -ne 0 ]; then
+     echo "ossperf --  parallel workload(Multipart) succeeded"
+  fi
+  # Sequential multipart workload
+  ossperf.sh -n 2 -s 18874368 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg 2>&1
+  if [ $? -ne 0 ]; then
+     echo "ossperf -- sequential workload(Multipart) succeeded"
+  fi
 fi
 
 cd $WORKING_DIR

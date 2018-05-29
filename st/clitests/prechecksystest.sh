@@ -58,6 +58,30 @@ else
     abort
 fi
 
+# Check parallel is installed
+if command -v parallel >/dev/null 2>&1; then
+    printf "\nCheck parallel...OK"
+else
+    printf "\nparallel not installed, needed by ossperf tool"
+    abort
+fi
+
+# Check bc tool is installed
+if command -v bc >/dev/null 2>&1; then
+    printf "\Check bc...OK"
+else
+    printf "\nbc not installed, its needed by ossperf tool"
+    abort
+fi
+
+# Check md5sum is installed
+if command -v md5sum >/dev/null 2>&1;
+    printf "\nCheck md5sum...OK"
+else
+    printf "\nmd5sum not installed"
+    abort
+fi
+
 printf "\nCheck seagate host entries for system test..."
 getent hosts seagatebucket.s3.seagate.com seagate-bucket.s3.seagate.com >/dev/null
 getent hosts seagatebucket123.s3.seagate.com seagate.bucket.s3.seagate.com >/dev/null
