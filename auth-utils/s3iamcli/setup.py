@@ -20,7 +20,7 @@ setup(
     scripts =['s3iamcli/s3iamcli'],
 
     # license="LICENSE.txt",
-    description="Seaget S3 IAM CLI.",
+    description="Seagate S3 IAM CLI.",
 
     package_data = { 's3iamcli': files},
 
