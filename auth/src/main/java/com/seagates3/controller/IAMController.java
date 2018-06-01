@@ -22,12 +22,14 @@ import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
 import com.seagates3.authorization.Authorizer;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.authserver.IAMResourceMapper;
 import com.seagates3.authserver.ResourceMap;
 import com.seagates3.exception.AuthResourceNotFoundException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidRequestorException;
+import com.seagates3.model.AccessKey;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
@@ -63,71 +65,95 @@ public class IAMController {
      * @return
      */
     public ServerResponse serve(FullHttpRequest httpRequest,
-            Map<String, String> requestBody) {
+      Map<String, String> requestBody) {
 
         String requestAction = requestBody.get("Action");
         ClientRequestToken clientRequestToken;
         Requestor requestor;
         ServerResponse serverResponse;
+        // CreateAccount needs to be authenticated with Ldap credentials
+        if (requestAction.equals("CreateAccount") || requestAction.equals("ListAccounts")) {
+             LOGGER.debug("Parsing Client Request");
+             clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
+             if (clientRequestToken == null) {
+                  return responseGenerator.badRequest();
+             }
+             AccessKey akey = new AccessKey();
+             String ldapUser = AuthServerConfig.getLdapLoginCN();
+             if (!ldapUser.equals(clientRequestToken.getAccessKeyId())) {
+                  LOGGER.error("Invalid ldap user, authentication failed");
+                  AuthenticationResponseGenerator responseGenerator
+                            = new AuthenticationResponseGenerator();
+                  serverResponse = responseGenerator.invalidLdapUserId();
+                  return serverResponse;
+             }
+             akey.setId(ldapUser);
+             akey.setSecretKey(AuthServerConfig.getLdapLoginPassword());
+             requestor = new Requestor();
+             requestor.setAccessKey(akey);
+             LOGGER.debug("Calling signature validator.");
 
-        if (!requestAction.equals("CreateAccount")
-                && !requestAction.equals("ListAccounts")
-                && !requestAction.equals("AssumeRoleWithSAML")) {
-            LOGGER.debug("Parsing Client Request");
-            clientRequestToken = ClientRequestParser.parse(httpRequest,
-                    requestBody);
+             perf.startClock();
+             serverResponse = new SignatureValidator().validate(clientRequestToken, requestor);
+             perf.endClock();
+             perf.printTime("Request validation");
 
-            /*
-             * Client Request Token will be null if the request is incorrect.
+             if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+                  LOGGER.debug("Incorrect signature. Request not authenticated");
+                  return serverResponse;
+             }
+        } else if (!requestAction.equals("AssumeRoleWithSAML")) {
+             LOGGER.debug("Parsing Client Request");
+             clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
+             /*
+               * Client Request Token will be null if the request is incorrect.
              */
-            if (clientRequestToken == null) {
-                return responseGenerator.badRequest();
-            }
+             if (clientRequestToken == null) {
+                  return responseGenerator.badRequest();
+             }
+             try {
+                  requestor = RequestorService.getRequestor(clientRequestToken);
+             } catch (InvalidAccessKeyException ex) {
+                  LOGGER.debug(ex.getServerResponse().getResponseBody());
+                  return ex.getServerResponse();
+             } catch (InternalServerException ex) {
+                  LOGGER.debug(ex.getServerResponse().getResponseBody());
+                  return ex.getServerResponse();
+             } catch (InvalidRequestorException ex) {
+                  LOGGER.debug(ex.getServerResponse().getResponseBody());
+                  return ex.getServerResponse();
+             }
 
-            try {
-                requestor = RequestorService.getRequestor(clientRequestToken);
-            } catch (InvalidAccessKeyException ex) {
-                LOGGER.debug(ex.getServerResponse().getResponseBody());
-                return ex.getServerResponse();
-            } catch (InternalServerException ex) {
-                LOGGER.debug(ex.getServerResponse().getResponseBody());
-                return ex.getServerResponse();
-            } catch (InvalidRequestorException ex) {
-                LOGGER.debug(ex.getServerResponse().getResponseBody());
-                return ex.getServerResponse();
-            }
+             LOGGER.debug("Requestor is valid.");
 
-            LOGGER.debug("Requestor is valid.");
+             if (requestAction.equals("AuthorizeUser")) {
+                  serverResponse = new Authorizer().authorize(requestor);
+                  return serverResponse;
+             }
 
-            if (requestAction.equals("AuthorizeUser")) {
-                serverResponse = new Authorizer().authorize(requestor);
-                return serverResponse;
-            }
+             LOGGER.debug("Calling signature validator.");
 
-            LOGGER.debug("Calling signature validator.");
+             perf.startClock();
+             serverResponse = new SignatureValidator().validate(clientRequestToken, requestor);
+             perf.endClock();
+             perf.printTime("Request validation");
 
-            perf.startClock();
-            serverResponse = new SignatureValidator().validate(
-                    clientRequestToken, requestor);
-            perf.endClock();
-            perf.printTime("Request validation");
+             if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+                  LOGGER.debug("Incorrect signature.Request not authenticated");
+                  return serverResponse;
+             }
 
-            if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
-                LOGGER.debug("Incorrect signature.Request not authenticated");
-                return serverResponse;
-            }
+             if (requestAction.equals("AuthenticateUser")) {
+                  serverResponse = responseGenerator.generateAuthenticatedResponse(requestor,
+                                   clientRequestToken);
 
-            if (requestAction.equals("AuthenticateUser")) {
-                serverResponse = responseGenerator.generateAuthenticatedResponse(
-                        requestor, clientRequestToken);
+                  LOGGER.debug("Request is authenticated. Authenticate user " + "response - "
+                                                          + serverResponse.getResponseBody());
 
-                LOGGER.debug("Request is authenticated. Authenticate user "
-                        + "response - " + serverResponse.getResponseBody());
-
-                return serverResponse;
-            }
+                  return serverResponse;
+             }
         } else {
-            requestor = new Requestor();
+             requestor = new Requestor();
         }
 
         ResourceMap resourceMap;

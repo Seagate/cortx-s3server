@@ -24,14 +24,14 @@ class AuthTest(PyCliTest):
         super(AuthTest, self).with_cli(cmd)
 
     def create_account(self, **account_args):
-        cmd = "s3iamcli createaccount -n %s -e %s" % (
-                 account_args['AccountName'], account_args['Email'])
+        cmd = "s3iamcli createaccount -n %s -e %s --ldapuser %s --ldappasswd %s" % (
+                 account_args['AccountName'], account_args['Email'], account_args['ldapuser'], account_args['ldappasswd'])
 
         self.with_cli(cmd)
         return self
 
-    def list_account(self):
-        cmd = "s3iamcli listaccounts"
+    def list_account(self, **account_args):
+        cmd = "s3iamcli listaccounts --ldapuser %s --ldappasswd %s" % (account_args['ldapuser'], account_args['ldappasswd'])
 
         self.with_cli(cmd)
         return self

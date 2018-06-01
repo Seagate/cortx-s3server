@@ -20,7 +20,10 @@ class Account:
 
         body = urllib.parse.urlencode({'Action' : 'CreateAccount',
             'AccountName' : self.cli_args.name, 'Email' : self.cli_args.email})
-        response = ConnMan.send_post_request(body)
+        headers = {'content-type': 'application/x-www-form-urlencoded',
+                'Accept': 'text/plain'}
+        headers['Authorization'] = sign_request_v2('POST', '/', {}, headers)
+        response = ConnMan.send_post_request(body, headers)
         if(response['status'] == 201):
             account_response = json.loads(json.dumps(xmltodict.parse(response['body'])))
             account = account_response['CreateAccountResponse']['CreateAccountResult']['Account']
@@ -38,7 +41,10 @@ class Account:
     # list all accounts
     def list(self):
         body = urllib.parse.urlencode({'Action' : 'ListAccounts'})
-        response = ConnMan.send_post_request(body)
+        headers = {'content-type': 'application/x-www-form-urlencoded',
+                'Accept': 'text/plain'}
+        headers['Authorization'] = sign_request_v2('POST', '/', {}, headers)
+        response = ConnMan.send_post_request(body, headers)
 
         if response['status'] == 200:
             accounts_response = json.loads(json.dumps(xmltodict.parse(response['body'])))

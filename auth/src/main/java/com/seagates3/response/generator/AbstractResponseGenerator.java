@@ -72,6 +72,12 @@ public abstract class AbstractResponseGenerator {
                 "InvalidAccessKeyId", errorMessage);
     }
 
+    public ServerResponse invalidLdapUserId() {
+        String errorMessage = "The Ldap user id you provided does not exist.";
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                "InvalidLdapUserId", errorMessage);
+    }
+
     public ServerResponse signatureDoesNotMatch() {
         String errorMessage = "The request signature we calculated does not "
                 + "match the signature you provided. Check your AWS secret "

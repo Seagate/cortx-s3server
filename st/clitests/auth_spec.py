@@ -1,5 +1,6 @@
 import os
 import sys
+import yaml
 from framework import Config
 from framework import S3PyCliTest
 from auth import AuthTest
@@ -34,8 +35,17 @@ def get_response_elements(response):
 
     return response_elements
 
+# Load test config file
+def load_test_config():
+    conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
+    with open(conf_file, 'r') as f:
+            config = yaml.safe_load(f)
+            S3ClientConfig.ldapuser = config['ldapuser']
+            S3ClientConfig.ldappasswd = config['ldappasswd']
+
 # Run before all to setup the test environment.
 def before_all():
+    load_test_config()
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
@@ -47,7 +57,7 @@ def _use_root_credentials():
 # Test create account API
 def account_tests():
     test_msg = "Create account s3test"
-    account_args = {'AccountName': 's3test', 'Email': 'test@seagate.com'}
+    account_args = {'AccountName': 's3test', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
@@ -57,8 +67,9 @@ def account_tests():
     GlobalTestState.root_secret_key = account_response_elements['SecretKey']
 
     test_msg = "List accounts"
+    account_args = {'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     accounts_response_pattern = "AccountName = [\w-]*, AccountId = [\w-]*, CanonicalId = [\w-]*, Email = [\w.@]*"
-    result = AuthTest(test_msg).list_account().execute_test()
+    result = AuthTest(test_msg).list_account(**account_args).execute_test()
     result.command_should_match_pattern(accounts_response_pattern)
 
 # Test create user API
@@ -367,7 +378,7 @@ def delete_account_tests():
     # Test: create a account s3test1 and try to delete account s3test1 using access
     # key and secret key of account s3test. Account delete operation should fail.
     test_msg = "Create account s3test1"
-    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com'}
+    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)

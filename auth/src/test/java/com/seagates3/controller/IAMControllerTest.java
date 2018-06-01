@@ -75,18 +75,22 @@ public class IAMControllerTest {
     private ServerResponse serverResponse;
     private ResourceMap resourceMap;
     private Requestor requestor;
-
+    private ClientRequestToken clientRequestToken;
+    private SignatureValidator signatureValidator;
     @Before
     public void setUp() throws Exception {
         mockStatic(IAMResourceMapper.class);
         mockStatic(RequestorService.class);
         mockStatic(ClientRequestParser.class);
         mockStatic(AuthServerConfig.class);
+        mockStatic(ClientRequestToken.class);
 
         resourceMap = mock(ResourceMap.class);
         httpRequest = mock(FullHttpRequest.class);
         serverResponse = mock(ServerResponse.class);
         requestor = mock(Requestor.class);
+        clientRequestToken = mock(ClientRequestToken.class);
+        signatureValidator = mock(SignatureValidator.class);
 
         controller = new IAMController();
         requestBody = new TreeMap<>();
@@ -97,6 +101,12 @@ public class IAMControllerTest {
         requestBody.put("Action", "CreateAccount");
         IAMController controllerSpy = spy(controller);
         when(IAMResourceMapper.getResourceMap("CreateAccount")).thenReturn(resourceMap);
+        when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+        whenNew(SignatureValidator.class).withNoArguments().thenReturn(signatureValidator);
+        when(signatureValidator.validate(clientRequestToken, requestor)).thenReturn(serverResponse);
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenReturn(clientRequestToken);
+        when(clientRequestToken.getAccessKeyId()).thenReturn("admin");
+        when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
         whenNew(Requestor.class).withNoArguments().thenReturn(requestor);
         doReturn(Boolean.TRUE).when(controllerSpy, "validateRequest", resourceMap, requestBody);
         doReturn(serverResponse).when(
@@ -269,6 +279,13 @@ public class IAMControllerTest {
         requestBody.put("Action", "ListAccounts");
         IAMController controllerSpy = spy(controller);
         when(IAMResourceMapper.getResourceMap("ListAccounts")).thenReturn(resourceMap);
+        when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+        whenNew(SignatureValidator.class).withNoArguments().thenReturn(signatureValidator);
+        when(signatureValidator.validate(clientRequestToken, requestor)).thenReturn(serverResponse);
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenReturn(clientRequestToken);
+        when(clientRequestToken.getAccessKeyId()).thenReturn("admin");
+        when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
+        whenNew(Requestor.class).withNoArguments().thenReturn(requestor);
         doReturn(Boolean.FALSE).when(controllerSpy, "validateRequest", resourceMap, requestBody);
 
         ServerResponse response = controllerSpy.serve(httpRequest, requestBody);
@@ -281,14 +298,37 @@ public class IAMControllerTest {
 
     @Test
     public void serveTest_AuthResourceNotFoundException() throws Exception {
-        requestBody.put("Action", "CreateAccount");
-        when(IAMResourceMapper.getResourceMap("CreateAccount"))
+        requestBody.put("Action", "ListAccounts");
+        IAMController controllerSpy = spy(controller);
+        when(IAMResourceMapper.getResourceMap("ListAccounts"))
                 .thenThrow(AuthResourceNotFoundException.class);
+        when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+        whenNew(SignatureValidator.class).withNoArguments().thenReturn(signatureValidator);
+        when(signatureValidator.validate(clientRequestToken, requestor)).thenReturn(serverResponse);
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenReturn(clientRequestToken);
+        when(clientRequestToken.getAccessKeyId()).thenReturn("admin");
+        when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
+        whenNew(Requestor.class).withNoArguments().thenReturn(requestor);
+        doReturn(Boolean.FALSE).when(controllerSpy, "validateRequest", resourceMap, requestBody);
 
         ServerResponse response = controller.serve(httpRequest, requestBody);
 
         assertThat(response.getResponseBody(),
                 containsString("The requested operation is not supported."));
+        assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+    }
+
+    @Test
+    public void serveTest_InvalidLdapUser() throws Exception {
+        requestBody.put("Action", "CreateAccount");
+        when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenReturn(clientRequestToken);
+        when(clientRequestToken.getAccessKeyId()).thenReturn("user");
+
+        ServerResponse response = controller.serve(httpRequest, requestBody);
+
+        assertThat(response.getResponseBody(),
+                containsString("The Ldap user id you provided does not exist."));
         assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
     }
 

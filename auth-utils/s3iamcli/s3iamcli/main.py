@@ -86,6 +86,9 @@ class S3IamCli:
             Config.use_ssl = True
             service = service + '_HTTPS'
             Config.ca_cert_file = config['SSL']['CA_CERT_FILE']
+            if('~' == Config.ca_cert_file[0]):
+               Config.ca_cert_file = os.path.expanduser('~') + Config.ca_cert_file[1:len(Config.ca_cert_file)]
+
             Config.check_ssl_hostname = config['SSL']['CHECK_SSL_HOSTNAME']
             Config.verify_ssl_cert = config['SSL']['VERIFY_SSL_CERT']
 
@@ -152,6 +155,8 @@ class S3IamCli:
         parser.add_argument("--force", help="Delete account forcefully.", action='store_true')
         parser.add_argument("--access_key", help="Access Key Id.")
         parser.add_argument("--secret_key", help="Secret Key.")
+        parser.add_argument("--ldapuser", help="Ldap User Id.")
+        parser.add_argument("--ldappasswd", help="Ldap Password.")
         parser.add_argument("--session_token", help="Session Token.")
         parser.add_argument("--arn", help="ARN.")
         parser.add_argument("--description", help="Description of the entity.")
@@ -176,18 +181,28 @@ class S3IamCli:
         try:
             class_name = controller_action[cli_args.action.lower()]['controller']
         except Exception as ex:
-            print("Action not found")
+            print("Action not found.")
             print(str(ex))
-            sys.exit()
+            sys.exit(1)
 
-        if(cli_args.action.lower() not in ["createaccount", "listaccounts"] ):
+        if(cli_args.action.lower() in ["createaccount","listaccounts"] ):
+            if(cli_args.ldapuser is None):
+                print("Provide Ldap User Id.")
+                sys.exit(1)
+
+            if(cli_args.ldappasswd is None):
+                print("Provide Ldap password.")
+                sys.exit(1)
+            cli_args.access_key = cli_args.ldapuser
+            cli_args.secret_key = cli_args.ldappasswd
+        else:
             if(cli_args.access_key is None):
-                print("Provide access key")
-                sys.exit()
+                print("Provide access key.")
+                sys.exit(1)
 
             if(cli_args.secret_key is None):
-                print("Provide secret key")
-                sys.exit()
+                print("Provide secret key.")
+                sys.exit(1)
 
          # Get service for the action
         if(not 'service' in controller_action[cli_args.action.lower()].keys()):
@@ -216,7 +231,7 @@ class S3IamCli:
         except Exception as ex:
             print("Internal error. Module %s not found" % class_name)
             print(str(ex))
-            sys.exit()
+            sys.exit(1)
 
         # Create an object of the controller (user, role etc)
         try:
@@ -224,7 +239,7 @@ class S3IamCli:
         except Exception as ex:
             print("Internal error. Class %s not found" % class_name)
             print(str(ex))
-            sys.exit()
+            sys.exit(1)
 
         action = controller_action[cli_args.action.lower()]['action']
 
@@ -233,4 +248,4 @@ class S3IamCli:
             getattr(controller_obj, action)()
         except Exception as ex:
             print(str(ex))
-            sys.exit()
+            sys.exit(1)

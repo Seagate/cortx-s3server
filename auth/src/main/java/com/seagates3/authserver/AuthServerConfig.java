@@ -130,6 +130,12 @@ public class AuthServerConfig {
         return authServerConfig.getProperty("ldapLoginDN");
     }
 
+    public static String getLdapLoginCN() {
+        String ldapLoginDN = authServerConfig.getProperty("ldapLoginDN");
+        String ldapLoginCN = ldapLoginDN.substring(ldapLoginDN.indexOf("cn=") + 3, ldapLoginDN.indexOf(','));
+        return ldapLoginCN;
+    }
+
     public static String getLdapLoginPassword() {
         return authServerConfig.getProperty("ldapLoginPW");
     }
