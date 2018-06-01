@@ -23,11 +23,11 @@ S3AsyncBufferContainer::S3AsyncBufferContainer()
     : buffered_input_length(0),
       is_expecting_more(true),
       count_bufs_shared_for_read(0) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
 }
 
 S3AsyncBufferContainer::~S3AsyncBufferContainer() {
-  s3_log(S3_LOG_DEBUG, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
   // clear buffered_input
   evbuf_t* buf = NULL;
   while (!buffered_input.empty()) {
@@ -45,12 +45,12 @@ bool S3AsyncBufferContainer::is_freezed() { return !is_expecting_more; }
 size_t S3AsyncBufferContainer::length() { return buffered_input_length; }
 
 void S3AsyncBufferContainer::add_content(evbuf_t* buf) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "add_content with len %zu at address %p\n",
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "add_content with len %zu at address %p\n",
          evbuffer_get_length(buf), buf);
   buffered_input.push_back(buf);
   buffered_input_length += evbuffer_get_length(buf);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // Call this to get at least expected_content_size of data buffers.
@@ -60,8 +60,8 @@ void S3AsyncBufferContainer::add_content(evbuf_t* buf) {
 // expected_content_size = -1 and all data is available, returns all buffers
 std::deque<std::tuple<void*, size_t> > S3AsyncBufferContainer::get_buffers_ref(
     size_t expected_content_size) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "get_buffers_ref with expected_content_size = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "get_buffers_ref with expected_content_size = %zu\n",
          expected_content_size);
 
   std::deque<std::tuple<void*, size_t> > data_items;
@@ -86,7 +86,7 @@ std::deque<std::tuple<void*, size_t> > S3AsyncBufferContainer::get_buffers_ref(
       vec_in = (struct evbuffer_iovec*)calloc(num_of_extents,
                                               sizeof(struct evbuffer_iovec));
       if (vec_in == NULL) {
-        s3_log(S3_LOG_ERROR, "Fatal: Out of memory.\n");
+        s3_log(S3_LOG_ERROR, "", "Fatal: Out of memory.\n");
         break;
       }
 
@@ -129,13 +129,13 @@ std::deque<std::tuple<void*, size_t> > S3AsyncBufferContainer::get_buffers_ref(
       free(vec_in);
     }
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return data_items;
 }
 
 void S3AsyncBufferContainer::mark_size_of_data_consumed(size_t size_consumed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "mark_size_of_data_consumed size_consumed = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "mark_size_of_data_consumed size_consumed = %zu\n",
          size_consumed);
 
   for (size_t i = 0;
@@ -158,12 +158,12 @@ void S3AsyncBufferContainer::mark_size_of_data_consumed(size_t size_consumed) {
       }
     }
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }
 
 std::string S3AsyncBufferContainer::get_content_as_string() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   std::string content = "";
 
   if (is_freezed()) {
@@ -184,7 +184,7 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
       vec_in = (struct evbuffer_iovec*)calloc(num_of_extents,
                                               sizeof(struct evbuffer_iovec));
       if (vec_in == NULL) {
-        s3_log(S3_LOG_ERROR, "Fatal: Out of memory.\n");
+        s3_log(S3_LOG_ERROR, "", "Fatal: Out of memory.\n");
         out_of_memory = true;
         content = "";  // we dont return partial data
         evbuffer_free(buf);
@@ -209,7 +209,7 @@ std::string S3AsyncBufferContainer::get_content_as_string() {
     }
   }
   buffered_input_length = 0;  // Everything is returned.
-  s3_log(S3_LOG_DEBUG, "Content size = %zu\n", content.length());
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Content size = %zu\n", content.length());
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return content;
 }

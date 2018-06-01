@@ -28,10 +28,10 @@ void S3PostToMainLoop::operator()(user_event_on_main_loop callback) {
   struct event_base *base = S3Option::get_instance()->get_eventbase();
 
   if (base == NULL) {
-    s3_log(S3_LOG_ERROR, "ERROR: event base is NULL\n");
+    s3_log(S3_LOG_ERROR, "", "ERROR: event base is NULL\n");
     return;
   }
-  s3_log(S3_LOG_DEBUG, "Raise event to switch to main thread.\n");
+  s3_log(S3_LOG_DEBUG, "", "Raise event to switch to main thread.\n");
 
   ev_user = event_new(base, -1, EV_WRITE | EV_READ | EV_TIMEOUT, callback,
                       (void *)(user_context));

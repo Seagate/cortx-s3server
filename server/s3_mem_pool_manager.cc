@@ -41,7 +41,7 @@ S3MempoolManager::S3MempoolManager(size_t max_mem)
 int S3MempoolManager::initialize(std::vector<int> unit_sizes,
                                  int initial_buffer_count_per_pool,
                                  size_t expandable_count) {
-  s3_log(S3_LOG_DEBUG,
+  s3_log(S3_LOG_DEBUG, "",
          "initial_buffer_count_per_pool = %d, expandable_count = %zu",
          initial_buffer_count_per_pool, expandable_count);
   // S3MempoolManager::free_space must be init before pool creation as pool
@@ -50,7 +50,7 @@ int S3MempoolManager::initialize(std::vector<int> unit_sizes,
 
   for (auto unit_size : unit_sizes) {
     MemoryPoolHandle handle;
-    s3_log(S3_LOG_INFO, "Creating memory pool for unit_size = %d.\n",
+    s3_log(S3_LOG_INFO, "", "Creating memory pool for unit_size = %d.\n",
            unit_size);
     int rc = mempool_create_with_shared_mem(
         unit_size, initial_buffer_count_per_pool * unit_size,
@@ -59,35 +59,36 @@ int S3MempoolManager::initialize(std::vector<int> unit_sizes,
         CREATE_ALIGNED_MEMORY, &handle);
 
     if (rc != 0) {
-      s3_log(S3_LOG_DEBUG, "FATAL: Memory pool creation failed!\n");
+      s3_log(S3_LOG_DEBUG, "", "FATAL: Memory pool creation failed!\n");
       return rc;
     }
     pool_of_mem_pool[unit_size] = handle;
 
     struct pool_info poolinfo = {0};
     mempool_getinfo(handle, &poolinfo);
-    s3_log(S3_LOG_DEBUG, "Created pool with [[ \n");
-    s3_log(S3_LOG_DEBUG, "poolinfo.mempool_item_size = %zu\n",
+    s3_log(S3_LOG_DEBUG, "", "Created pool with [[ \n");
+    s3_log(S3_LOG_DEBUG, "", "poolinfo.mempool_item_size = %zu\n",
            poolinfo.mempool_item_size);
-    s3_log(S3_LOG_DEBUG, "poolinfo.free_bufs_in_pool = %d\n",
+    s3_log(S3_LOG_DEBUG, "", "poolinfo.free_bufs_in_pool = %d\n",
            poolinfo.free_bufs_in_pool);
-    s3_log(S3_LOG_DEBUG, "poolinfo.number_of_bufs_shared = %d\n",
+    s3_log(S3_LOG_DEBUG, "", "poolinfo.number_of_bufs_shared = %d\n",
            poolinfo.number_of_bufs_shared);
-    s3_log(S3_LOG_DEBUG, "poolinfo.expandable_size = %zu\n",
+    s3_log(S3_LOG_DEBUG, "", "poolinfo.expandable_size = %zu\n",
            poolinfo.expandable_size);
-    s3_log(S3_LOG_DEBUG, "poolinfo.total_bufs_allocated_by_pool = %d\n",
+    s3_log(S3_LOG_DEBUG, "", "poolinfo.total_bufs_allocated_by_pool = %d\n",
            poolinfo.total_bufs_allocated_by_pool);
-    s3_log(S3_LOG_DEBUG, "poolinfo.flags = %d ]]\n", poolinfo.flags);
+    s3_log(S3_LOG_DEBUG, "", "poolinfo.flags = %d ]]\n", poolinfo.flags);
   }
   return 0;
 }
 
 void S3MempoolManager::free_pools() {
   for (auto &mem_pool : pool_of_mem_pool) {
-    s3_log(S3_LOG_DEBUG, "Freeing memory pool for unit_size = %zu.\n",
+    s3_log(S3_LOG_DEBUG, "", "Freeing memory pool for unit_size = %zu.\n",
            mem_pool.first);
     mempool_destroy(&(mem_pool.second));
-    s3_log(S3_LOG_DEBUG, "Free memory pool successful for unit_size = %zu.\n",
+    s3_log(S3_LOG_DEBUG, "",
+           "Free memory pool successful for unit_size = %zu.\n",
            mem_pool.first);
   }
   pool_of_mem_pool.clear();
@@ -95,7 +96,7 @@ void S3MempoolManager::free_pools() {
 
 //  Return the buffer of give unit_size
 void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
-  s3_log(S3_LOG_DEBUG, "Entering with unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_DEBUG, "", "Entering with unit_size[%zu]\n", unit_size);
   auto item = pool_of_mem_pool.find(unit_size);
   if (item != pool_of_mem_pool.end()) {
     // We have required memory pool.
@@ -105,7 +106,7 @@ void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
       void *buffer = (void *)mempool_getbuffer(handle, ZEROED_ALLOCATION);
       // If buffer is NULL, check if other pool can release some memory
       if (buffer == NULL) {
-        s3_log(S3_LOG_DEBUG, "Allocation error for unit_size[%zu]\n",
+        s3_log(S3_LOG_DEBUG, "", "Allocation error for unit_size[%zu]\n",
                unit_size);
         if (free_any_unused()) {
           max_retries--;
@@ -118,7 +119,7 @@ void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
       return buffer;
     }
   }
-  s3_log(S3_LOG_DEBUG, "Failed allocation for unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_DEBUG, "", "Failed allocation for unit_size[%zu]\n", unit_size);
   // Should never be here
   return NULL;
 }
@@ -126,16 +127,16 @@ void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
 // Releases the give buffer back to pool
 int S3MempoolManager::release_buffer_for_unit_size(void *buf,
                                                    size_t unit_size) {
-  s3_log(S3_LOG_DEBUG, "Entering with unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_DEBUG, "", "Entering with unit_size[%zu]\n", unit_size);
   auto item = pool_of_mem_pool.find(unit_size);
   if (item != pool_of_mem_pool.end()) {
-    s3_log(S3_LOG_DEBUG, "Found pool for unit_size[%zu] to release memory\n",
-           unit_size);
+    s3_log(S3_LOG_DEBUG, "",
+           "Found pool for unit_size[%zu] to release memory\n", unit_size);
     // We have required memory pool.
     MemoryPoolHandle handle = item->second;
     return mempool_releasebuffer(handle, buf);
   }
-  s3_log(S3_LOG_DEBUG, "Exiting: Not found unit_size[%zu]\n", unit_size);
+  s3_log(S3_LOG_DEBUG, "", "Exiting: Not found unit_size[%zu]\n", unit_size);
   // Should never be here
   return S3_MEMPOOL_ERROR;
 }
@@ -171,7 +172,7 @@ bool S3MempoolManager::free_any_unused() {
   } else {
     struct pool_info poolinfo = {0};
     mempool_getinfo(free_space_map.rbegin()->second, &poolinfo);
-    s3_log(S3_LOG_DEBUG, "Downsizing mempool with unit_size = %zu\n",
+    s3_log(S3_LOG_DEBUG, "", "Downsizing mempool with unit_size = %zu\n",
            poolinfo.mempool_item_size);
 
     size_t size_to_reduce = free_space_map.rbegin()->first / 2;

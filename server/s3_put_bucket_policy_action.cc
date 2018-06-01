@@ -25,7 +25,7 @@ S3PutBucketPolicyAction::S3PutBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -36,7 +36,7 @@ S3PutBucketPolicyAction::S3PutBucketPolicyAction(
 }
 
 void S3PutBucketPolicyAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3PutBucketPolicyAction::validate_request, this));
   add_task(std::bind(&S3PutBucketPolicyAction::get_metadata, this));
   add_task(std::bind(&S3PutBucketPolicyAction::set_policy, this));
@@ -46,7 +46,7 @@ void S3PutBucketPolicyAction::setup_steps() {
 }
 
 void S3PutBucketPolicyAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
@@ -59,11 +59,11 @@ void S3PutBucketPolicyAction::validate_request() {
         );
   }
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketPolicyAction::consume_incoming_content() {
-  s3_log(S3_LOG_DEBUG, "Consume data\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
   if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
     validate_request_body(new_bucket_policy);
@@ -74,7 +74,7 @@ void S3PutBucketPolicyAction::consume_incoming_content() {
 }
 
 void S3PutBucketPolicyAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   // TODO: ACL implementation is partial, fix this when adding full support.
   // S3PutBucketPolicyBody bucket_policy(content);
@@ -85,11 +85,11 @@ void S3PutBucketPolicyAction::validate_request_body(std::string content) {
   //   send_response_to_s3_client();
   // }
   next();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketPolicyAction::get_metadata() {
-  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
 
@@ -102,7 +102,7 @@ void S3PutBucketPolicyAction::get_metadata() {
 }
 
 void S3PutBucketPolicyAction::set_policy() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     bucket_metadata->setpolicy(new_bucket_policy);
@@ -114,15 +114,16 @@ void S3PutBucketPolicyAction::set_policy() {
     set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    s3_log(S3_LOG_DEBUG, request_id,
+           "sending 'Service Unavailable' response...\n");
     S3Error error("ServiceUnavailable", request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
@@ -156,6 +157,6 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

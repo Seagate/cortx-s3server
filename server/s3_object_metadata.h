@@ -61,6 +61,8 @@ class S3ObjectMetadata {
   std::string bucket_name;
   std::string object_name;
 
+  std::string request_id;
+
   std::string upload_id;
   // Maximum retry count for collision resolution.
   unsigned short tried_count;

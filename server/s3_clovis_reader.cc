@@ -40,7 +40,8 @@ S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
       last_index(0),
       is_object_opened(false),
       obj_ctx(nullptr) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (clovis_api) {
     s3_clovis_api = clovis_api;
@@ -70,7 +71,7 @@ void S3ClovisReader::clean_up_contexts() {
 bool S3ClovisReader::read_object_data(size_t num_of_blocks,
                                       std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG,
+  s3_log(S3_LOG_DEBUG, request_id,
          "Entering with num_of_blocks = %zu from last_index = %zu\n",
          num_of_blocks, last_index);
 
@@ -87,12 +88,12 @@ bool S3ClovisReader::read_object_data(size_t num_of_blocks,
     open_object();
   }
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return rc;
 }
 
 void S3ClovisReader::open_object() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   is_object_opened = false;
 
@@ -127,11 +128,11 @@ void S3ClovisReader::open_object() {
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::openobj);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ClovisReader::open_object_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   is_object_opened = true;
   if (!read_object()) {
@@ -140,28 +141,28 @@ void S3ClovisReader::open_object_successful() {
     this->handler_on_failed();
   }
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ClovisReader::open_object_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering with errno = %d\n",
+  s3_log(S3_LOG_DEBUG, request_id, "Entering with errno = %d\n",
          open_context->get_errno_for(0));
 
   is_object_opened = false;
   if (open_context->get_errno_for(0) == -ENOENT) {
     state = S3ClovisReaderOpState::missing;
-    s3_log(S3_LOG_DEBUG, "Object doesn't exists\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Object doesn't exists\n");
   } else {
     state = S3ClovisReaderOpState::failed;
-    s3_log(S3_LOG_ERROR, "Object initialization failed\n");
+    s3_log(S3_LOG_ERROR, request_id, "Object initialization failed\n");
   }
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 bool S3ClovisReader::read_object() {
-  s3_log(S3_LOG_DEBUG,
+  s3_log(S3_LOG_DEBUG, request_id,
          "Entering with num_of_blocks_to_read = %zu from last_index = %zu\n",
          num_of_blocks_to_read, last_index);
 
@@ -206,26 +207,26 @@ bool S3ClovisReader::read_object() {
   reader_context->start_timer_for("read_object_data");
 
   s3_clovis_api->clovis_op_launch(ctx->ops, 1);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return true;
 }
 
 void S3ClovisReader::read_object_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   state = S3ClovisReaderOpState::success;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ClovisReader::read_object_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering with errno = %d\n",
+  s3_log(S3_LOG_DEBUG, request_id, "Entering with errno = %d\n",
          reader_context->get_errno_for(0));
 
   if (reader_context->get_errno_for(0) == -ENOENT) {
-    s3_log(S3_LOG_DEBUG, "Object doesn't exist\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Object doesn't exist\n");
     state = S3ClovisReaderOpState::missing;
   } else {
-    s3_log(S3_LOG_ERROR, "Reading of object failed\n");
+    s3_log(S3_LOG_ERROR, request_id, "Reading of object failed\n");
     state = S3ClovisReaderOpState::failed;
   }
   this->handler_on_failed();
@@ -240,19 +241,19 @@ size_t S3ClovisReader::get_first_block(char **data) {
 
 // Returns size of data in next block and -1 if there is no content or done
 size_t S3ClovisReader::get_next_block(char **data) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG,
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id,
          "num_of_blocks_to_read = %zu from iteration_index = %zu\n",
          num_of_blocks_to_read, iteration_index);
   size_t data_read = 0;
   if (iteration_index == num_of_blocks_to_read) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return 0;
   }
 
   *data = (char *)clovis_rw_op_context->data->ov_buf[iteration_index];
   data_read = clovis_rw_op_context->data->ov_vec.v_count[iteration_index];
   iteration_index++;
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return data_read;
 }

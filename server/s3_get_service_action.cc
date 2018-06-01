@@ -32,7 +32,7 @@ S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3AccountUserIdxMetadataFactory> user_idx_md_factory)
     : S3Action(req), last_key(""), fetch_successful(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
   if (bucket_meta_factory) {
@@ -60,7 +60,7 @@ S3GetServiceAction::S3GetServiceAction(
 }
 
 void S3GetServiceAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3GetServiceAction::fetch_bucket_list_index_oid, this));
   add_task(std::bind(&S3GetServiceAction::get_next_buckets, this));
   add_task(std::bind(&S3GetServiceAction::send_response_to_s3_client, this));
@@ -68,7 +68,7 @@ void S3GetServiceAction::setup_steps() {
 }
 
 void S3GetServiceAction::fetch_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   account_user_index_metadata =
       acct_user_idx_metadata_factory->create_s3_account_user_idx_metadata(
@@ -76,13 +76,13 @@ void S3GetServiceAction::fetch_bucket_list_index_oid() {
   account_user_index_metadata->load(std::bind(&S3GetServiceAction::next, this),
                                     std::bind(&S3GetServiceAction::next, this));
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetServiceAction::get_next_buckets() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
   if (account_user_index_metadata->get_state() ==
@@ -101,7 +101,7 @@ void S3GetServiceAction::get_next_buckets() {
     fetch_successful = true;  // With no entries.
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, "Fetching bucket list from KV store\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket list from KV store\n");
     size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
     clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
@@ -118,12 +118,12 @@ void S3GetServiceAction::get_next_buckets() {
 }
 
 void S3GetServiceAction::get_next_buckets_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  s3_log(S3_LOG_DEBUG, "Found buckets listing\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Found buckets listing\n");
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   bool atleast_one_json_error = false;
@@ -131,7 +131,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
     auto bucket = bucket_metadata_factory->create_bucket_metadata_obj(request);
     if (bucket->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
-      s3_log(S3_LOG_ERROR,
+      s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
              bucket_list_index_oid.u_hi, bucket_list_index_oid.u_lo,
              kv.first.c_str(), kv.second.second.c_str());
@@ -161,10 +161,10 @@ void S3GetServiceAction::get_next_buckets_successful() {
 
 void S3GetServiceAction::get_next_buckets_failed() {
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, "Buckets list is empty\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Buckets list is empty\n");
     fetch_successful = true;  // With no entries.
   } else {
-    s3_log(S3_LOG_ERROR, "Failed to fetch bucket list info\n");
+    s3_log(S3_LOG_ERROR, request_id, "Failed to fetch bucket list info\n");
     set_s3_error("InternalError");
     fetch_successful = false;
   }
@@ -172,7 +172,7 @@ void S3GetServiceAction::get_next_buckets_failed() {
 }
 
 void S3GetServiceAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -192,7 +192,7 @@ void S3GetServiceAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, "Bucket list response_xml = %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Bucket list response_xml = %s\n",
            response_xml.c_str());
     request->send_response(S3HttpSuccess200, response_xml);
   } else {
@@ -206,6 +206,6 @@ void S3GetServiceAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

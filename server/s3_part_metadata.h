@@ -68,6 +68,8 @@ class S3PartMetadata {
   std::string salt;
   std::string str_part_num;
 
+  std::string request_id;
+
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
 

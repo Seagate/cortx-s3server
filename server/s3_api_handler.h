@@ -40,19 +40,22 @@ class S3APIHandler {
   // Only for Unit testing
   std::shared_ptr<S3APIHandler> _get_self_ref() { return self_ref; }
   std::shared_ptr<S3Action> _get_action() { return action; }
+  std::string request_id;
 
  private:
   std::shared_ptr<S3APIHandler> self_ref;
 
  public:
   S3APIHandler(std::shared_ptr<S3RequestObject> req, S3OperationCode op_code)
-      : request(req), operation_code(op_code) {}
+      : request(req), operation_code(op_code) {
+    request_id = request->get_request_id();
+  }
   virtual ~S3APIHandler() {}
 
   virtual void create_action() = 0;
 
   virtual void dispatch() {
-    s3_log(S3_LOG_DEBUG, "Entering");
+    s3_log(S3_LOG_DEBUG, request_id, "Entering");
 
     if (action) {
       action->manage_self(action);
@@ -62,7 +65,7 @@ class S3APIHandler {
     }
     i_am_done();
 
-    s3_log(S3_LOG_DEBUG, "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "Exiting");
   }
 
   // Self destructing object.

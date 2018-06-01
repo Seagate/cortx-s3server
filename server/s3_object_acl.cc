@@ -36,7 +36,7 @@ void S3ObjectACL::set_display_name(std::string name) { display_name = name; }
 std::string S3ObjectACL::get_owner_name() { return owner_name; }
 
 void S3ObjectACL::from_json(std::string acl_json_str) {
-  s3_log(S3_LOG_DEBUG, "Called\n");
+  s3_log(S3_LOG_DEBUG, "", "Called\n");
   acl_metadata = acl_json_str;
   acl_xml_str = base64_decode(acl_metadata);
 }

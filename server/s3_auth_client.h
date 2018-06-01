@@ -63,11 +63,11 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
         is_auth_successful(false),
         is_authorization_successful(false),
         auth_response_xml("") {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   }
 
   ~S3AuthClientOpContext() {
-    s3_log(S3_LOG_DEBUG, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
     if (has_auth_op_context) {
       free_basic_auth_client_op_ctx(auth_op_context);
       auth_op_context = NULL;
@@ -75,7 +75,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   }
 
   void set_auth_response_xml(const char* xml, bool success = true) {
-    s3_log(S3_LOG_DEBUG, "Entering\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
     auth_response_xml = xml;
     is_auth_successful = success;
     if (is_auth_successful) {
@@ -91,11 +91,11 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     } else {
       error_obj.reset(new S3AuthResponseError(auth_response_xml));
     }
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   }
 
   void set_authorization_response(const char* resp, bool success = true) {
-    s3_log(S3_LOG_DEBUG, "Entering\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
     authorization_response = resp;
     is_authorization_successful = success;
   }
@@ -226,6 +226,7 @@ class S3AuthClient {
  private:
   std::shared_ptr<S3RequestObject> request;
   std::unique_ptr<S3AuthClientOpContext> auth_context;
+  std::string request_id;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -261,7 +262,7 @@ class S3AuthClient {
 
  public:
   S3AuthClient(std::shared_ptr<S3RequestObject> req);
-  virtual ~S3AuthClient() { s3_log(S3_LOG_DEBUG, "Destructor\n"); }
+  virtual ~S3AuthClient() { s3_log(S3_LOG_DEBUG, "", "Destructor\n"); }
 
   S3AuthClientOpState get_state() { return state; }
 

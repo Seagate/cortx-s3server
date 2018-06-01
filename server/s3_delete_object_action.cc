@@ -27,7 +27,7 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> writer_factory)
     : S3Action(req, false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -51,7 +51,7 @@ S3DeleteObjectAction::S3DeleteObjectAction(
 }
 
 void S3DeleteObjectAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setup the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
   add_task(std::bind(&S3DeleteObjectAction::fetch_bucket_info, this));
   add_task(std::bind(&S3DeleteObjectAction::fetch_object_info, this));
   // We delete metadata first followed by object, since if we delete
@@ -69,25 +69,25 @@ void S3DeleteObjectAction::setup_steps() {
 }
 
 void S3DeleteObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3DeleteObjectAction::next, this),
                         std::bind(&S3DeleteObjectAction::next, this));
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     struct m0_uint128 object_list_indx_oid =
         bucket_metadata->get_object_list_index_oid();
     if (object_list_indx_oid.u_hi == 0ULL &&
         object_list_indx_oid.u_lo == 0ULL) {
       // There is no object list index, hence object doesn't exist
-      s3_log(S3_LOG_DEBUG, "Object not found\n");
+      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
       send_response_to_s3_client();
     } else {
       object_metadata = object_metadata_factory->create_object_metadata_obj(
@@ -97,37 +97,37 @@ void S3DeleteObjectAction::fetch_object_info() {
                             std::bind(&S3DeleteObjectAction::next, this));
     }
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_WARN, "Bucket not found\n");
+    s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_WARN, "Failed to look up Bucket metadata\n");
+    s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteObjectAction::delete_metadata() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     object_metadata->remove(std::bind(&S3DeleteObjectAction::next, this),
                             std::bind(&S3DeleteObjectAction::next, this));
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_WARN, "Object not found\n");
+    s3_log(S3_LOG_WARN, request_id, "Object not found\n");
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_WARN, "Failed to look up Object metadata\n");
+    s3_log(S3_LOG_WARN, request_id, "Failed to look up Object metadata\n");
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteObjectAction::delete_object() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (object_metadata->get_state() == S3ObjectMetadataState::deleted) {
     clovis_writer = clovis_writer_factory->create_clovis_writer(
@@ -137,12 +137,12 @@ void S3DeleteObjectAction::delete_object() {
         std::bind(&S3DeleteObjectAction::delete_object_failed, this),
         object_metadata->get_layout_id());
   } else {
-    s3_log(S3_LOG_WARN, "Failed to delete Object metadata\n");
+    s3_log(S3_LOG_WARN, request_id, "Failed to delete Object metadata\n");
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 /*
@@ -169,23 +169,24 @@ void S3DeleteObjectAction::delete_object() {
  */
 
 void S3DeleteObjectAction::delete_object_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     next();
   } else {
     // Any other error report failure.
-    s3_log(S3_LOG_ERROR, "Deletion of object with oid %lu %lu failed\n",
+    s3_log(S3_LOG_ERROR, request_id,
+           "Deletion of object with oid %lu %lu failed\n",
            object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 
 void S3DeleteObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
@@ -204,6 +205,6 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
   }
 
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

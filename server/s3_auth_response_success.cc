@@ -26,7 +26,7 @@
 
 S3AuthResponseSuccess::S3AuthResponseSuccess(std::string &xml)
     : xml_content(xml), is_valid(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   is_valid = parse_and_validate();
 }
 
@@ -53,25 +53,25 @@ const std::string &S3AuthResponseSuccess::get_request_id() {
 }
 
 bool S3AuthResponseSuccess::parse_and_validate() {
-  s3_log(S3_LOG_DEBUG, "Parsing Auth server response\n");
+  s3_log(S3_LOG_DEBUG, "", "Parsing Auth server response\n");
 
   if (xml_content.empty()) {
-    s3_log(S3_LOG_ERROR, "XML response is NULL\n");
+    s3_log(S3_LOG_ERROR, "", "XML response is NULL\n");
     is_valid = false;
     return false;
   }
 
-  s3_log(S3_LOG_DEBUG, "Parsing xml = %s\n", xml_content.c_str());
+  s3_log(S3_LOG_DEBUG, "", "Parsing xml = %s\n", xml_content.c_str());
   xmlDocPtr document = xmlParseDoc((const xmlChar *)xml_content.c_str());
   if (document == NULL) {
-    s3_log(S3_LOG_ERROR, "Auth response xml body is invalid.\n");
+    s3_log(S3_LOG_ERROR, "", "Auth response xml body is invalid.\n");
     is_valid = false;
     return is_valid;
   }
 
   xmlNodePtr root_node = xmlDocGetRootElement(document);
   if (root_node == NULL) {
-    s3_log(S3_LOG_ERROR, "Auth response xml body is invalid.\n");
+    s3_log(S3_LOG_ERROR, "", "Auth response xml body is invalid.\n");
     xmlFreeDoc(document);
     is_valid = false;
     return is_valid;
@@ -86,23 +86,23 @@ bool S3AuthResponseSuccess::parse_and_validate() {
            child_node = child_node->next) {
         key = xmlNodeGetContent(child_node);
         if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
-          s3_log(S3_LOG_DEBUG, "UserId = %s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
           user_id = (const char *)key;
         } else if ((!xmlStrcmp(child_node->name,
                                (const xmlChar *)"UserName"))) {
-          s3_log(S3_LOG_DEBUG, "UserName = %s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
           user_name = (const char *)key;
         } else if ((!xmlStrcmp(child_node->name,
                                (const xmlChar *)"AccountName"))) {
-          s3_log(S3_LOG_DEBUG, "AccountName = %s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
           account_name = (const char *)key;
         } else if ((!xmlStrcmp(child_node->name,
                                (const xmlChar *)"AccountId"))) {
-          s3_log(S3_LOG_DEBUG, "AccountId =%s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
           account_id = (const char *)key;
         } else if ((!xmlStrcmp(child_node->name,
                                (const xmlChar *)"SignatureSHA256"))) {
-          s3_log(S3_LOG_DEBUG, "SignatureSHA256 =%s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "SignatureSHA256 =%s\n", (const char *)key);
           signature_SHA256 = (const char *)key;
         }
 
@@ -116,7 +116,7 @@ bool S3AuthResponseSuccess::parse_and_validate() {
            child_node = child_node->next) {
         key = xmlNodeGetContent(child_node);
         if ((!xmlStrcmp(child_node->name, (const xmlChar *)"RequestId"))) {
-          s3_log(S3_LOG_DEBUG, "RequestId = %s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "RequestId = %s\n", (const char *)key);
           request_id = (const char *)key;
         }
         if (key != NULL) {
@@ -130,19 +130,19 @@ bool S3AuthResponseSuccess::parse_and_validate() {
            child_node = child_node->next) {
         key = xmlNodeGetContent(child_node);
         if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
-          s3_log(S3_LOG_DEBUG, "UserId = %s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
           user_id = (const char *)key;
         } else if ((!xmlStrcmp(child_node->name,
                                (const xmlChar *)"UserName"))) {
-          s3_log(S3_LOG_DEBUG, "UserName = %s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
           user_name = (const char *)key;
         } else if ((!xmlStrcmp(child_node->name,
                                (const xmlChar *)"AccountName"))) {
-          s3_log(S3_LOG_DEBUG, "AccountName = %s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
           account_name = (const char *)key;
         } else if ((!xmlStrcmp(child_node->name,
                                (const xmlChar *)"AccountId"))) {
-          s3_log(S3_LOG_DEBUG, "AccountId =%s\n", (const char *)key);
+          s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
           account_id = (const char *)key;
         }
 
@@ -159,11 +159,11 @@ bool S3AuthResponseSuccess::parse_and_validate() {
       account_id.empty()) {
     // We dont have enough user info from auth server.
     s3_log(
-        S3_LOG_ERROR,
+        S3_LOG_ERROR, "-",
         "Auth server returned partial User info for authorization result.\n");
     is_valid = false;
   } else {
-    s3_log(S3_LOG_DEBUG, "Auth server returned complete User info.\n");
+    s3_log(S3_LOG_DEBUG, "", "Auth server returned complete User info.\n");
     is_valid = true;
   }
   return is_valid;

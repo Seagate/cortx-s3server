@@ -28,7 +28,7 @@
 
 void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
                     S3ClovisEntityType type) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   /* MurMur Hash */
   S3Timer timer;
@@ -40,14 +40,14 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
 
   object_id->u_hi = object_id->u_lo = 0;
   if (name == NULL) {
-    s3_log(S3_LOG_ERROR, "The input parameter 'name' is NULL\n");
+    s3_log(S3_LOG_ERROR, "", "The input parameter 'name' is NULL\n");
     return;
   }
 
   len = strlen(name);
   if (len == 0) {
     // oid should not be 0
-    s3_log(S3_LOG_ERROR, "The input parameter 'name' is empty string\n");
+    s3_log(S3_LOG_ERROR, "", "The input parameter 'name' is empty string\n");
     return;
   }
   MurmurHash3_x64_128(name, len, 0, &hash128_64);
@@ -72,7 +72,7 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
   if (rc >= 0) {
     struct m0_uint128 res;
     // ID should be more than M0_CLOVIS_ID_APP
-    s3_log(S3_LOG_DEBUG,
+    s3_log(S3_LOG_DEBUG, "",
            "Id from Murmur hash algorithm less than M0_CLOVIS_ID_APP\n");
     m0_uint128_add(&res, &reserved_range, &tmp_uint128);
     tmp_uint128.u_hi = res.u_hi;
@@ -86,13 +86,13 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
   }
 
   *object_id = tmp_uint128;
-  s3_log(S3_LOG_DEBUG, "ID for %s is %lu %lu\n", name, object_id->u_hi,
+  s3_log(S3_LOG_DEBUG, "", "ID for %s is %lu %lu\n", name, object_id->u_hi,
          object_id->u_lo);
 
   timer.stop();
   LOG_PERF("S3UriToMeroOID_ns", timer.elapsed_time_in_nanosec());
   s3_stats_timing("uri_to_mero_oid", timer.elapsed_time_in_millisec());
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }

@@ -29,7 +29,7 @@ extern evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 // To Create a auth client operation
 struct s3_auth_op_context *create_basic_auth_op_ctx(
     struct event_base *eventbase) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   S3Option *option_instance = S3Option::get_instance();
   struct s3_auth_op_context *ctx =
       (struct s3_auth_op_context *)calloc(1, sizeof(struct s3_auth_op_context));
@@ -37,7 +37,7 @@ struct s3_auth_op_context *create_basic_auth_op_ctx(
   ctx->evbase = eventbase;
   // TODO do we really need this?
   // if (evthread_make_base_notifiable(ctx->evbase) < 0)
-  //   s3_log(S3_LOG_ERROR, "evthread_make_base_notifiable failed\n");
+  //   s3_log(S3_LOG_ERROR, "", "evthread_make_base_notifiable failed\n");
   if (option_instance->is_s3_ssl_auth_enabled()) {
     ctx->conn = evhtp_connection_ssl_new(
         ctx->evbase, option_instance->get_auth_ip_addr().c_str(),
@@ -50,12 +50,12 @@ struct s3_auth_op_context *create_basic_auth_op_ctx(
   ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
   ctx->authorization_request = NULL;
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
 
 int free_basic_auth_client_op_ctx(struct s3_auth_op_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Called\n");
+  s3_log(S3_LOG_DEBUG, "", "Called\n");
   free(ctx);
   return 0;
 }

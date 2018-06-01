@@ -106,6 +106,8 @@ class S3BucketMetadata {
   // `true` in case of json parsing failure
   bool json_parsing_error;
 
+  std::string request_id;
+
  private:
   std::string get_account_index_id() { return "ACCOUNTUSER/" + account_id; }
 

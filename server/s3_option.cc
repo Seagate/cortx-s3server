@@ -515,109 +515,117 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
 int S3Option::get_cmd_opt_flag() { return cmd_opt_flag; }
 
 void S3Option::dump_options() {
-  s3_log(S3_LOG_INFO, "option_file = %s\n", option_file.c_str());
-  s3_log(S3_LOG_INFO, "layout_recommendation_file = %s\n",
+  s3_log(S3_LOG_INFO, "", "option_file = %s\n", option_file.c_str());
+  s3_log(S3_LOG_INFO, "", "layout_recommendation_file = %s\n",
          layout_recommendation_file.c_str());
-  s3_log(S3_LOG_INFO, "S3_DAEMON_WORKING_DIR = %s\n", s3_daemon_dir.c_str());
-  s3_log(S3_LOG_INFO, "S3_DAEMON_DO_REDIRECTION = %d\n", s3_daemon_redirect);
-  s3_log(S3_LOG_INFO, "S3_PIDFILENAME = %s\n", s3_pidfile.c_str());
-  s3_log(S3_LOG_INFO, "S3_LOG_DIR = %s\n", log_dir.c_str());
-  s3_log(S3_LOG_INFO, "S3_LOG_MODE = %s\n", log_level.c_str());
-  s3_log(S3_LOG_INFO, "S3_LOG_FILE_MAX_SIZE = %d\n", log_file_max_size_mb);
-  s3_log(S3_LOG_INFO, "S3_LOG_ENABLE_BUFFERING = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_DAEMON_WORKING_DIR = %s\n",
+         s3_daemon_dir.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_DAEMON_DO_REDIRECTION = %d\n",
+         s3_daemon_redirect);
+  s3_log(S3_LOG_INFO, "", "S3_PIDFILENAME = %s\n", s3_pidfile.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_LOG_DIR = %s\n", log_dir.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_LOG_MODE = %s\n", log_level.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_LOG_FILE_MAX_SIZE = %d\n", log_file_max_size_mb);
+  s3_log(S3_LOG_INFO, "", "S3_LOG_ENABLE_BUFFERING = %s\n",
          (log_buffering_enable ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "S3_LOG_FLUSH_FREQUENCY = %d\n", log_flush_frequency_sec);
-  s3_log(S3_LOG_INFO, "S3_ENABLE_AUTH_SSL = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_LOG_FLUSH_FREQUENCY = %d\n",
+         log_flush_frequency_sec);
+  s3_log(S3_LOG_INFO, "", "S3_ENABLE_AUTH_SSL = %s\n",
          (s3_enable_auth_ssl) ? "true" : "false");
-  s3_log(S3_LOG_INFO, "S3_REUSEPORT = %s\n", (s3_reuseport) ? "true" : "false");
-  s3_log(S3_LOG_INFO, "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
-  s3_log(S3_LOG_INFO, "S3_SERVER_BIND_ADDR = %s\n", s3_bind_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
-  s3_log(S3_LOG_INFO, "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_REUSEPORT = %s\n",
+         (s3_reuseport) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_BIND_ADDR = %s\n", s3_bind_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
-  s3_log(S3_LOG_INFO, "S3_ENABLE_PERF = %d\n", perf_enabled);
-  s3_log(S3_LOG_INFO, "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
-  s3_log(S3_LOG_INFO, "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
-  s3_log(S3_LOG_INFO, "S3_SERVER_DEFAULT_ENDPOINT = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
+  s3_log(S3_LOG_INFO, "", "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
+  s3_log(S3_LOG_INFO, "", "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_DEFAULT_ENDPOINT = %s\n",
          s3_default_endpoint.c_str());
   for (auto endpoint : s3_region_endpoints) {
-    s3_log(S3_LOG_INFO, "S3 Server region endpoint = %s\n", endpoint.c_str());
+    s3_log(S3_LOG_INFO, "", "S3 Server region endpoint = %s\n",
+           endpoint.c_str());
   }
 
-  s3_log(S3_LOG_INFO, "S3_AUTH_IP_ADDR = %s\n", auth_ip_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_AUTH_PORT = %d\n", auth_port);
+  s3_log(S3_LOG_INFO, "", "S3_AUTH_IP_ADDR = %s\n", auth_ip_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_AUTH_PORT = %d\n", auth_port);
 
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_LOCAL_ADDR = %s\n", clovis_local_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_HA_ADDR =  %s\n", clovis_ha_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_PROF = %s\n", clovis_profile.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_LAYOUT_ID = %d\n", clovis_layout_id);
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_LOCAL_ADDR = %s\n",
+         clovis_local_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_HA_ADDR =  %s\n", clovis_ha_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_PROF = %s\n", clovis_profile.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_LAYOUT_ID = %d\n", clovis_layout_id);
 
   std::string unit_sizes = "";
   for (auto unit_size : clovis_unit_sizes_for_mem_pool) {
     unit_sizes += std::to_string(unit_size) + ", ";
   }
-  s3_log(S3_LOG_INFO, "S3_UNIT_SIZES_FOR_MEMORY_POOL = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_UNIT_SIZES_FOR_MEMORY_POOL = %s\n",
          unit_sizes.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_UNITS_PER_REQUEST = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_MAX_UNITS_PER_REQUEST = %d\n",
          clovis_units_per_request);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_MAX_IDX_FETCH_COUNT = %d\n",
          clovis_idx_fetch_count);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_IS_OOSTORE = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_IS_OOSTORE = %s\n",
          (clovis_is_oostore ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_IS_READ_VERIFY = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_IS_READ_VERIFY = %s\n",
          (clovis_is_read_verify ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN = %d\n",
          clovis_tm_recv_queue_min_len);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_MAX_RPC_MSG_SIZE = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_MAX_RPC_MSG_SIZE = %d\n",
          clovis_max_rpc_msg_size);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_PROCESS_FID = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_PROCESS_FID = %s\n",
          clovis_process_fid.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_IDX_SERVICE_ID = %d\n", clovis_idx_service_id);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_CLUSTER_EP = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_IDX_SERVICE_ID = %d\n",
+         clovis_idx_service_id);
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_CASS_CLUSTER_EP = %s\n",
          clovis_cass_cluster_ep.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_KEYSPACE = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_CASS_KEYSPACE = %s\n",
          clovis_cass_keyspace.c_str());
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM = %d\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM = %d\n",
          clovis_cass_max_column_family_num);
 
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
          clovis_read_pool_initial_buffer_count);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_READ_POOL_EXPANDABLE_COUNT = %zu\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_POOL_EXPANDABLE_COUNT = %zu\n",
          clovis_read_pool_expandable_count);
-  s3_log(S3_LOG_INFO, "S3_CLOVIS_READ_POOL_MAX_THRESHOLD = %zu\n",
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_POOL_MAX_THRESHOLD = %zu\n",
          clovis_read_pool_max_threshold);
 
-  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_INITIAL_SIZE = %zu\n",
+  s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_INITIAL_SIZE = %zu\n",
          libevent_pool_initial_size);
-  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_EXPANDABLE_SIZE = %zu\n",
+  s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_EXPANDABLE_SIZE = %zu\n",
          libevent_pool_expandable_size);
-  s3_log(S3_LOG_INFO, "S3_LIBEVENT_POOL_MAX_THRESHOLD = %zu\n",
+  s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_MAX_THRESHOLD = %zu\n",
          libevent_pool_max_threshold);
 
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createobj = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_createobj = %d\n",
          FLAGS_fake_clovis_createobj);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_writeobj = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_writeobj = %d\n",
          FLAGS_fake_clovis_writeobj);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteobj = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deleteobj = %d\n",
          FLAGS_fake_clovis_deleteobj);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_createidx = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_createidx = %d\n",
          FLAGS_fake_clovis_createidx);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deleteidx = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deleteidx = %d\n",
          FLAGS_fake_clovis_deleteidx);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_getkv = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_getkv = %d\n",
          FLAGS_fake_clovis_getkv);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_putkv = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_putkv = %d\n",
          FLAGS_fake_clovis_putkv);
-  s3_log(S3_LOG_INFO, "FLAGS_fake_clovis_deletekv = %d\n",
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deletekv = %d\n",
          FLAGS_fake_clovis_deletekv);
-  s3_log(S3_LOG_INFO, "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
+  s3_log(S3_LOG_INFO, "", "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
 
-  s3_log(S3_LOG_INFO, "S3_ENABLE_STATS = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_ENABLE_STATS = %s\n",
          (stats_enable ? "true" : "false"));
-  s3_log(S3_LOG_INFO, "S3_STATSD_IP_ADDR = %s\n", statsd_ip_addr.c_str());
-  s3_log(S3_LOG_INFO, "S3_STATSD_PORT = %d\n", statsd_port);
-  s3_log(S3_LOG_INFO, "S3_STATSD_MAX_SEND_RETRY = %d\n", statsd_max_send_retry);
-  s3_log(S3_LOG_INFO, "S3_STATS_WHITELIST_FILENAME = %s\n",
+  s3_log(S3_LOG_INFO, "", "S3_STATSD_IP_ADDR = %s\n", statsd_ip_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_STATSD_PORT = %d\n", statsd_port);
+  s3_log(S3_LOG_INFO, "", "S3_STATSD_MAX_SEND_RETRY = %d\n",
+         statsd_max_send_retry);
+  s3_log(S3_LOG_INFO, "", "S3_STATS_WHITELIST_FILENAME = %s\n",
          stats_whitelist_filename.c_str());
 
   return;

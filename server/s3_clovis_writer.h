@@ -41,6 +41,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   // Read/Write Operation context.
   struct s3_clovis_rw_op_context* clovis_rw_op_context;
   bool has_clovis_rw_op_context;
+  std::string request_id;
 
  public:
   S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req,
@@ -50,7 +51,8 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
                         std::shared_ptr<ClovisAPI> clovis_api = nullptr)
       : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
                              clovis_api) {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
+    request_id = request->get_request_id();
+    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(ops_count);
     has_clovis_op_context = true;
@@ -60,7 +62,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   }
 
   ~S3ClovisWriterContext() {
-    s3_log(S3_LOG_DEBUG, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
     if (has_clovis_op_context) {
       free_basic_op_ctx(clovis_op_context);
     }
@@ -118,7 +120,7 @@ class S3ClovisWriter {
 
   std::string content_md5;
   uint64_t last_index;
-
+  std::string request_id;
   // md5 for the content written to clovis.
   MD5hash md5crypt;
 
@@ -188,7 +190,7 @@ class S3ClovisWriter {
       md5crypt.Finalize();
       content_md5 = md5crypt.get_md5_string();
     }
-    s3_log(S3_LOG_DEBUG, "content_md5 of data written = %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "content_md5 of data written = %s\n",
            content_md5.c_str());
     return content_md5;
   }

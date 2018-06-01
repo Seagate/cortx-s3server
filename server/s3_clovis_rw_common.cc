@@ -50,21 +50,21 @@
 // This is run on main thread.
 void clovis_op_done_on_main_thread(evutil_socket_t, short events,
                                    void *user_data) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   if (user_data == NULL) {
-    s3_log(S3_LOG_ERROR, "Input argument user_data is NULL\n");
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_ERROR, "", "Input argument user_data is NULL\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
   S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
   if (context == NULL) {
-    s3_log(S3_LOG_ERROR, "context pointer is NULL\n");
+    s3_log(S3_LOG_ERROR, "", "context pointer is NULL\n");
   }
   struct event *s3user_event = (struct event *)user_context->user_event;
   if (s3user_event == NULL) {
-    s3_log(S3_LOG_ERROR, "User event is NULL\n");
+    s3_log(S3_LOG_ERROR, "", "User event is NULL\n");
   }
   context->log_timer();
 
@@ -83,21 +83,22 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
   free(user_data);
   // Free user event
   if (s3user_event) event_free(s3user_event);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // Clovis callbacks, run in clovis thread
 void s3_clovis_op_stable(struct m0_clovis_op *op) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
   int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
-  s3_log(S3_LOG_DEBUG, "Return code = %d\n", clovis_rc);
+  s3_log(S3_LOG_DEBUG, "", "Return code = %d\n", clovis_rc);
 
-  s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);
+  s3_log(S3_LOG_DEBUG, "", "op_index_in_launch = %d\n",
+         ctx->op_index_in_launch);
 
   app_ctx->set_op_errno_for(ctx->op_index_in_launch, clovis_rc);
 
@@ -123,11 +124,11 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
     S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread);
 #endif  // S3_GOOGLE_TEST
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void s3_clovis_op_failed(struct m0_clovis_op *op) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
 
@@ -135,9 +136,10 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
       (S3AsyncOpContextBase *)ctx->application_context;
 
   int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
-  s3_log(S3_LOG_DEBUG, "Error code = %d\n", clovis_rc);
+  s3_log(S3_LOG_DEBUG, "", "Error code = %d\n", clovis_rc);
 
-  s3_log(S3_LOG_DEBUG, "op_index_in_launch = %d\n", ctx->op_index_in_launch);
+  s3_log(S3_LOG_DEBUG, "", "op_index_in_launch = %d\n",
+         ctx->op_index_in_launch);
 
   app_ctx->set_op_errno_for(ctx->op_index_in_launch, clovis_rc);
   app_ctx->set_op_status_for(ctx->op_index_in_launch, S3AsyncOpStatus::failed,
@@ -161,11 +163,11 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
     S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread);
 #endif  // S3_GOOGLE_TEST
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
   struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;
@@ -180,7 +182,7 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
 }
 
 void s3_clovis_dummy_op_failed(evutil_socket_t, short events, void *user_data) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct user_event_context *user_context =
       (struct user_event_context *)user_data;
   struct m0_clovis_op *op = (struct m0_clovis_op *)user_context->app_ctx;

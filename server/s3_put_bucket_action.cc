@@ -28,7 +28,7 @@ S3PutBucketAction::S3PutBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3PutBucketBodyFactory> bucket_body_factory)
     : S3Action(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   location_constraint = "";
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -44,7 +44,7 @@ S3PutBucketAction::S3PutBucketAction(
 }
 
 void S3PutBucketAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3PutBucketAction::validate_request, this));
   add_task(std::bind(&S3PutBucketAction::read_metadata, this));
   add_task(std::bind(&S3PutBucketAction::create_bucket, this));
@@ -53,7 +53,7 @@ void S3PutBucketAction::setup_steps() {
 }
 
 void S3PutBucketAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
@@ -68,11 +68,11 @@ void S3PutBucketAction::validate_request() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_bucket_action_validate_request_shutdown_fail");
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketAction::consume_incoming_content() {
-  s3_log(S3_LOG_DEBUG, "Consume data\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
   } else {
@@ -82,7 +82,7 @@ void S3PutBucketAction::consume_incoming_content() {
 }
 
 void S3PutBucketAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // S3PutBucketBody bucket(content);
   put_bucket_body = put_bucketbody_factory->create_put_bucket_body(content);
   if (put_bucket_body->isOK()) {
@@ -93,26 +93,26 @@ void S3PutBucketAction::validate_request_body(std::string content) {
     set_s3_error("MalformedXML");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketAction::read_metadata() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Trigger metadata read async operation with callback
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3PutBucketAction::next, this),
                         std::bind(&S3PutBucketAction::next, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketAction::create_bucket() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   // Trigger metadata write async operation with callback
   // XXX Check if last step was successful.
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_WARN, "Bucket already exists\n");
+    s3_log(S3_LOG_WARN, request_id, "Bucket already exists\n");
 
     // Report 409 bucket exists.
     set_s3_error("BucketAlreadyExists");
@@ -130,11 +130,11 @@ void S3PutBucketAction::create_bucket() {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -164,6 +164,6 @@ void S3PutBucketAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

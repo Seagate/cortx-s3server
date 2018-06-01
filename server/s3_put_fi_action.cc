@@ -29,14 +29,14 @@
 
 S3PutFiAction::S3PutFiAction(std::shared_ptr<S3RequestObject> req)
     : S3Action(req, false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   clear_tasks();
   setup_steps();
 }
 
 void S3PutFiAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3PutFiAction::set_fault_injection, this));
   add_task(std::bind(&S3PutFiAction::send_response_to_s3_client, this));
   // ...
@@ -73,20 +73,20 @@ void S3PutFiAction::parse_command() {
         fi_param2 = token;
         break;
       default:
-        s3_log(S3_LOG_DEBUG, "Too many parameters\n");
+        s3_log(S3_LOG_DEBUG, request_id, "Too many parameters\n");
         set_s3_error("MalformedFICmd");
         return;
     }
     count++;
   }
-  s3_log(S3_LOG_DEBUG, "parse_command:%s:%s:%s \n", fi_opcode.c_str(),
-         fi_cmd.c_str(), fi_tag.c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "parse_command:%s:%s:%s \n",
+         fi_opcode.c_str(), fi_cmd.c_str(), fi_tag.c_str());
 
   return;
 }
 
 void S3PutFiAction::set_fault_injection() {
-  s3_log(S3_LOG_DEBUG, "set_fault_injection\n");
+  s3_log(S3_LOG_DEBUG, request_id, "set_fault_injection\n");
   // get tag
   parse_command();
   if (!get_s3_error_code().empty()) {
@@ -95,7 +95,7 @@ void S3PutFiAction::set_fault_injection() {
   }
 
   if (fi_opcode.compare("enable") == 0) {
-    s3_log(S3_LOG_DEBUG, " Fault enable:%s:%s\n", fi_cmd.c_str(),
+    s3_log(S3_LOG_DEBUG, request_id, " Fault enable:%s:%s\n", fi_cmd.c_str(),
            fi_tag.c_str());
     if (fi_cmd.compare("once") == 0)
       s3_fi_enable_once(fi_tag.c_str());
@@ -108,31 +108,31 @@ void S3PutFiAction::set_fault_injection() {
     else if (fi_cmd.compare("offnonm") == 0)
       s3_fi_enable_off_n_on_m(fi_tag.c_str(), stoi(fi_param1), stoi(fi_param2));
     else {
-      s3_log(S3_LOG_DEBUG, "Invalid command:%s\n", fi_cmd.c_str());
+      s3_log(S3_LOG_DEBUG, request_id, "Invalid command:%s\n", fi_cmd.c_str());
       set_s3_error("MalformedFICmd");
     }
 
   } else if (fi_opcode.compare("disable") == 0) {
-    s3_log(S3_LOG_DEBUG, " Fault disable:%s:%s\n", fi_cmd.c_str(),
+    s3_log(S3_LOG_DEBUG, request_id, " Fault disable:%s:%s\n", fi_cmd.c_str(),
            fi_tag.c_str());
     s3_fi_disable(fi_tag.c_str());
 
   } else if (fi_opcode.compare("test") == 0) {
     if (s3_fi_is_enabled(fi_tag.c_str())) {
-      s3_log(S3_LOG_DEBUG, " Fault:%s enabled \n", fi_tag.c_str());
+      s3_log(S3_LOG_DEBUG, request_id, " Fault:%s enabled \n", fi_tag.c_str());
     } else {
-      s3_log(S3_LOG_DEBUG, " Fault:%s disabled \n", fi_tag.c_str());
+      s3_log(S3_LOG_DEBUG, request_id, " Fault:%s disabled \n", fi_tag.c_str());
     }
 
   } else {
     set_s3_error("MalformedFICmd");
-    s3_log(S3_LOG_DEBUG, "Invalid opcode:%s\n", fi_opcode.c_str());
+    s3_log(S3_LOG_DEBUG, request_id, "Invalid opcode:%s\n", fi_opcode.c_str());
   }
   next();
 }
 
 void S3PutFiAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (!is_error_state() && get_s3_error_code().empty()) {
     request->send_response(S3HttpSuccess200);
@@ -151,5 +151,5 @@ void S3PutFiAction::send_response_to_s3_client() {
 
   done();
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

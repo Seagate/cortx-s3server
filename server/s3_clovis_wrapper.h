@@ -105,7 +105,7 @@ class ConcreteClovisAPI : public ClovisAPI {
  private:
   // xxx This currently assumes only one fake operation is invoked.
   void clovis_fake_op_launch(struct m0_clovis_op **op, uint32_t nr) {
-    s3_log(S3_LOG_DEBUG, "Called\n");
+    s3_log(S3_LOG_DEBUG, "", "Called\n");
     struct user_event_context *user_ctx = (struct user_event_context *)calloc(
         1, sizeof(struct user_event_context));
     user_ctx->app_ctx = op[0];
@@ -114,7 +114,7 @@ class ConcreteClovisAPI : public ClovisAPI {
   }
 
   void clovis_fi_op_launch(struct m0_clovis_op **op, uint32_t nr) {
-    s3_log(S3_LOG_DEBUG, "Called\n");
+    s3_log(S3_LOG_DEBUG, "", "Called\n");
     for (uint32_t i = 0; i < nr; ++i) {
       struct user_event_context *user_ctx = (struct user_event_context *)calloc(
           1, sizeof(struct user_event_context));

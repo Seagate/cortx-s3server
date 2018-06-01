@@ -26,14 +26,14 @@ S3AsyncBufferOptContainer::S3AsyncBufferOptContainer(size_t size_of_each_buf)
       content_length(0),
       is_expecting_more(true),
       count_bufs_shared_for_read(0) {
-  s3_log(S3_LOG_DEBUG, "Constructor with size_of_each_buf = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "Constructor with size_of_each_buf = %zu\n",
          size_of_each_buf);
   // Should be multiple of 4k (Clovis requirement)
   assert(size_of_each_evbuf % 4096 == 0);
 }
 
 S3AsyncBufferOptContainer::~S3AsyncBufferOptContainer() {
-  s3_log(S3_LOG_DEBUG, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
   // release all memory
   evbuf_t* buf = NULL;
   while (!ready_q.empty()) {
@@ -50,7 +50,7 @@ S3AsyncBufferOptContainer::~S3AsyncBufferOptContainer() {
 
 // Call this to indicate that no more data will be added to buffer.
 void S3AsyncBufferOptContainer::freeze() {
-  s3_log(S3_LOG_DEBUG, "Async buffer freezed\n");
+  s3_log(S3_LOG_DEBUG, "", "Async buffer freezed\n");
   is_expecting_more = false;
 }
 
@@ -61,9 +61,9 @@ size_t S3AsyncBufferOptContainer::get_content_length() {
 }
 
 void S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_last_buf) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   size_t len = evbuffer_get_length(buf);
-  s3_log(S3_LOG_DEBUG, "buf with len %zu\n", len);
+  s3_log(S3_LOG_DEBUG, "", "buf with len %zu\n", len);
   if (is_last_buf) {
     freeze();
   } else {
@@ -71,7 +71,7 @@ void S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_last_buf) {
   }
   ready_q.push_back(buf);
   content_length += len;
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // Call this to get at least expected_content_size of data buffers.
@@ -82,8 +82,8 @@ void S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_last_buf) {
 // except for the last payload
 std::pair<std::deque<evbuf_t*>, size_t> S3AsyncBufferOptContainer::get_buffers(
     size_t expected_content_size) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "get_buffers with expected_content_size = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "get_buffers with expected_content_size = %zu\n",
          expected_content_size);
 
   size_t size_of_bufs_returned = 0;
@@ -95,7 +95,7 @@ std::pair<std::deque<evbuf_t*>, size_t> S3AsyncBufferOptContainer::get_buffers(
   count_bufs_shared_for_read = 0;
 
   size_t size_we_can_share = get_content_length();
-  s3_log(S3_LOG_DEBUG, "get_buffers with size_we_can_share = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "get_buffers with size_we_can_share = %zu\n",
          size_we_can_share);
   if (size_we_can_share >= expected_content_size || !(is_expecting_more)) {
     // Count how many bufs to return.
@@ -119,13 +119,13 @@ std::pair<std::deque<evbuf_t*>, size_t> S3AsyncBufferOptContainer::get_buffers(
       content_length -= len;
     }
   }
-  s3_log(S3_LOG_DEBUG, "Exiting with size_of_bufs_returned = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "Exiting with size_of_bufs_returned = %zu\n",
          size_of_bufs_returned);
   return std::make_pair(processing_q, size_of_bufs_returned);
 }
 
 void S3AsyncBufferOptContainer::flush_used_buffers() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   assert(!processing_q.empty());
 
@@ -140,14 +140,14 @@ void S3AsyncBufferOptContainer::flush_used_buffers() {
     evbuffer_free(buf);
     --count_bufs_shared_for_read;
   }
-  s3_log(S3_LOG_DEBUG, "Freed evbuffer of len = %zu\n", size_consumed);
+  s3_log(S3_LOG_DEBUG, "", "Freed evbuffer of len = %zu\n", size_consumed);
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }
 
 std::string S3AsyncBufferOptContainer::get_content_as_string() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   std::string content = "";
 
   // We should not have returned any bufs out for processing.
@@ -171,7 +171,7 @@ std::string S3AsyncBufferOptContainer::get_content_as_string() {
       vec_in = (struct evbuffer_iovec*)calloc(num_of_extents,
                                               sizeof(struct evbuffer_iovec));
       if (vec_in == NULL) {
-        s3_log(S3_LOG_ERROR, "Fatal: Out of memory.\n");
+        s3_log(S3_LOG_ERROR, "", "Fatal: Out of memory.\n");
         out_of_memory = true;
         content = "";  // we dont return partial data
         evbuffer_free(buf);
@@ -195,7 +195,7 @@ std::string S3AsyncBufferOptContainer::get_content_as_string() {
     }
   }
   content_length = 0;  // Everything is returned.
-  s3_log(S3_LOG_DEBUG, "Content size = %zu\n", content.length());
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Content size = %zu\n", content.length());
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return content;
 }

@@ -29,7 +29,7 @@ S3GetObjectACLAction::S3GetObjectACLAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3Action(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
   } else {
@@ -45,7 +45,7 @@ S3GetObjectACLAction::S3GetObjectACLAction(
 }
 
 void S3GetObjectACLAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3GetObjectACLAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetObjectACLAction::get_object_metadata, this));
   add_task(std::bind(&S3GetObjectACLAction::send_response_to_s3_client, this));
@@ -53,35 +53,35 @@ void S3GetObjectACLAction::setup_steps() {
 }
 
 void S3GetObjectACLAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
       std::bind(&S3GetObjectACLAction::next, this),
       std::bind(&S3GetObjectACLAction::fetch_bucket_info_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetObjectACLAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetObjectACLAction::get_object_metadata() {
-  s3_log(S3_LOG_DEBUG, "Fetching object metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching object metadata\n");
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   object_list_index_oid = bucket_metadata->get_object_list_index_oid();
   if (object_list_index_oid.u_lo == 0ULL &&
       object_list_index_oid.u_hi == 0ULL) {
     // There is no object list index, hence object doesn't exist
-    s3_log(S3_LOG_DEBUG, "Object not found\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
     send_response_to_s3_client();
   } else {
@@ -94,18 +94,18 @@ void S3GetObjectACLAction::get_object_metadata() {
 }
 
 void S3GetObjectACLAction::get_object_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("NoSuchKey");
   } else {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetObjectACLAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -136,6 +136,6 @@ void S3GetObjectACLAction::send_response_to_s3_client() {
   }
 
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -47,7 +47,7 @@ S3ClovisLayoutMap::S3ClovisLayoutMap() {
 }
 
 bool S3ClovisLayoutMap::load_layout_recommendations(std::string filename) {
-  s3_log(S3_LOG_DEBUG, "Entering with filename = %s\n", filename.c_str());
+  s3_log(S3_LOG_DEBUG, "", "Entering with filename = %s\n", filename.c_str());
   try {
     YAML::Node root_node = YAML::LoadFile(filename);
     if (root_node.IsNull()) {
@@ -133,29 +133,30 @@ int S3ClovisLayoutMap::get_best_layout_for_object_size() {
 
 // Returns the <layout id and unit size> recommended for give object size.
 int S3ClovisLayoutMap::get_layout_for_object_size(size_t obj_size) {
-  s3_log(S3_LOG_DEBUG, "Entering with obj_size = %zu\n", obj_size);
+  s3_log(S3_LOG_DEBUG, "", "Entering with obj_size = %zu\n", obj_size);
 
   if (obj_size == 0 || obj_size <= obj_layout_map.begin()->first) {
     // obj_size is zero OR less than the smallest UP_TO_OBJ_SIZE
-    s3_log(S3_LOG_DEBUG, "USE_LAYOUT_ID = %d\n",
+    s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n",
            obj_layout_map.begin()->second);
     return obj_layout_map.begin()->second;  // layout
   }
 
   if (obj_size >= obj_size_cap) {
-    s3_log(S3_LOG_DEBUG, "USE_LAYOUT_ID = %d\n", layout_id_cap);
+    s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n", layout_id_cap);
     return layout_id_cap;
   }
 
   for (auto item = obj_layout_map.rbegin(); item != obj_layout_map.rend();
        ++item) {
     if (obj_size >= item->first) {
-      s3_log(S3_LOG_DEBUG, "USE_LAYOUT_ID = %d\n", item->second);
+      s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n", item->second);
       return item->second;  // layout
     }
   }
 
   // Redundant w.r.t first check in this method, but for sake of it
-  s3_log(S3_LOG_DEBUG, "USE_LAYOUT_ID = %d\n", obj_layout_map.begin()->second);
+  s3_log(S3_LOG_DEBUG, "", "USE_LAYOUT_ID = %d\n",
+         obj_layout_map.begin()->second);
   return obj_layout_map.begin()->second;
 }

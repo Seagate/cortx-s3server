@@ -41,6 +41,7 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   // Read/Write Operation context.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
+  std::string request_id;
 
  public:
   S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,
@@ -50,7 +51,8 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
                            std::shared_ptr<ClovisAPI> clovis_api = nullptr)
       : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
                              clovis_api) {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
+    request_id = request->get_request_id();
+    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
     // Create or write, we need op context
     clovis_idx_op_context = create_basic_idx_op_ctx(ops_count);
     has_clovis_idx_op_context = true;
@@ -59,7 +61,7 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   }
 
   ~S3ClovisKVSWriterContext() {
-    s3_log(S3_LOG_DEBUG, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
     if (has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
     }
@@ -106,6 +108,7 @@ class S3ClovisKVSWriter {
   std::string kvs_key;
   std::string kvs_value;
 
+  std::string request_id;
   // Used to report to caller
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;

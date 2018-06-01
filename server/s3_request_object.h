@@ -176,7 +176,7 @@ class S3RequestObject {
   void set_account_id(const std::string& id);
   const std::string& get_account_id();
 
-  const std::string& get_request_id();
+  inline std::string get_request_id() { return request_id; }
 
   S3RequestError get_request_error() { return request_error; }
 
@@ -202,7 +202,7 @@ class S3RequestObject {
   // we dont flood with data coming from socket in user buffers.
   virtual void pause() {
     if (!is_paused) {
-      s3_log(S3_LOG_DEBUG, "Pausing the request for sock %d...\n",
+      s3_log(S3_LOG_DEBUG, "", "Pausing the request for sock %d...\n",
              ev_req->conn->sock);
       evhtp_obj->http_request_pause(ev_req);
       is_paused = true;
@@ -211,7 +211,7 @@ class S3RequestObject {
 
   virtual void resume() {
     if (is_paused) {
-      s3_log(S3_LOG_DEBUG, "Resuming the request for sock %d...\n",
+      s3_log(S3_LOG_DEBUG, "", "Resuming the request for sock %d...\n",
              ev_req->conn->sock);
       evhtp_obj->http_request_resume(ev_req);
       is_paused = false;

@@ -20,7 +20,7 @@
 #include "s3_service_list_response.h"
 
 S3ServiceListResponse::S3ServiceListResponse() {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   bucket_list.clear();
 }
 

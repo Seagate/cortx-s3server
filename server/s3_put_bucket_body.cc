@@ -25,7 +25,7 @@
 
 S3PutBucketBody::S3PutBucketBody(std::string &xml)
     : xml_content(xml), is_valid(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   parse_and_validate();
 }
 
@@ -37,7 +37,7 @@ bool S3PutBucketBody::parse_and_validate() {
     <LocationConstraint>EU</LocationConstraint>
   </CreateBucketConfiguration >
   */
-  s3_log(S3_LOG_DEBUG, "Parsing put bucket body\n");
+  s3_log(S3_LOG_DEBUG, "", "Parsing put bucket body\n");
 
   if (xml_content.empty()) {
     // Default location intended.
@@ -45,10 +45,10 @@ bool S3PutBucketBody::parse_and_validate() {
     is_valid = true;
     return true;
   }
-  s3_log(S3_LOG_DEBUG, "Parsing xml request = %s\n", xml_content.c_str());
+  s3_log(S3_LOG_DEBUG, "", "Parsing xml request = %s\n", xml_content.c_str());
   xmlDocPtr document = xmlParseDoc((const xmlChar *)xml_content.c_str());
   if (document == NULL) {
-    s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
+    s3_log(S3_LOG_WARN, "", "S3PutBucketBody XML request body Invalid.\n");
     is_valid = false;
     return false;
   }
@@ -59,7 +59,7 @@ bool S3PutBucketBody::parse_and_validate() {
   if (root_node == NULL ||
       xmlStrcmp(root_node->name,
                 (const xmlChar *)"CreateBucketConfiguration")) {
-    s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
+    s3_log(S3_LOG_WARN, "", "S3PutBucketBody XML request body Invalid.\n");
     xmlFreeDoc(document);
     is_valid = false;
     return false;
@@ -72,7 +72,7 @@ bool S3PutBucketBody::parse_and_validate() {
     if ((!xmlStrcmp(child->name, (const xmlChar *)"LocationConstraint"))) {
       key = xmlNodeGetContent(child);
       if (key == NULL) {
-        s3_log(S3_LOG_WARN, "S3PutBucketBody XML request body Invalid.\n");
+        s3_log(S3_LOG_WARN, "", "S3PutBucketBody XML request body Invalid.\n");
         xmlFree(key);
         xmlFreeDoc(document);
         is_valid = false;

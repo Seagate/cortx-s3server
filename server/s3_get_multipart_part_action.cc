@@ -39,7 +39,7 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
       return_list_size(0),
       fetch_successful(false),
       invalid_upload_id(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -77,7 +77,8 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
     request_marker_key = "0";
   }
   multipart_part_list.set_request_marker_key(request_marker_key);
-  s3_log(S3_LOG_DEBUG, "part-number-marker = %s\n", request_marker_key.c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "part-number-marker = %s\n",
+         request_marker_key.c_str());
 
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
@@ -103,7 +104,7 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
 void S3GetMultipartPartAction::setup_steps() {
   add_task(std::bind(&S3GetMultipartPartAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetMultipartPartAction::get_multipart_metadata, this));
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   if (!request_marker_key.empty()) {
     add_task(std::bind(&S3GetMultipartPartAction::get_key_object, this));
   }
@@ -114,21 +115,22 @@ void S3GetMultipartPartAction::setup_steps() {
 }
 
 void S3GetMultipartPartAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3GetMultipartPartAction::next, this),
                         std::bind(&S3GetMultipartPartAction::next, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetMultipartPartAction::get_multipart_metadata() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   S3BucketMetadataState bucket_state = bucket_metadata->get_state();
   if (bucket_state == S3BucketMetadataState::present) {
     multipart_oid = bucket_metadata->get_multipart_index_oid();
     if (multipart_oid.u_hi == 0ULL && multipart_oid.u_lo == 0ULL) {
-      s3_log(S3_LOG_DEBUG, "No such upload in progress within the bucket\n");
+      s3_log(S3_LOG_DEBUG, request_id,
+             "No such upload in progress within the bucket\n");
       set_s3_error("NoSuchUpload");
       send_response_to_s3_client();
     } else {
@@ -148,11 +150,11 @@ void S3GetMultipartPartAction::get_multipart_metadata() {
     }
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetMultipartPartAction::get_key_object() {
-  s3_log(S3_LOG_DEBUG, "Fetching part listing\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching part listing\n");
   S3ObjectMetadataState multipart_object_state =
       object_multipart_metadata->get_state();
   if (multipart_object_state == S3ObjectMetadataState::present) {
@@ -179,25 +181,25 @@ void S3GetMultipartPartAction::get_key_object() {
 }
 
 void S3GetMultipartPartAction::get_key_object_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   std::string value;
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  s3_log(S3_LOG_DEBUG, "Found part listing\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Found part listing\n");
   std::string key_name = last_key;
   value = clovis_kv_reader->get_value();
   if (!(value.empty())) {
     struct m0_uint128 part_index_oid =
         object_multipart_metadata->get_part_index_oid();
-    s3_log(S3_LOG_DEBUG, "Read Part = %s\n", key_name.c_str());
+    s3_log(S3_LOG_DEBUG, request_id, "Read Part = %s\n", key_name.c_str());
     std::shared_ptr<S3PartMetadata> part =
         part_metadata_factory->create_part_metadata_obj(
             request, part_index_oid, upload_id, atoi(key_name.c_str()));
 
     if (part->from_json(value) != 0) {
-      s3_log(S3_LOG_ERROR,
+      s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
              part_index_oid.u_hi, part_index_oid.u_lo, key_name.c_str(),
              value.c_str());
@@ -220,7 +222,7 @@ void S3GetMultipartPartAction::get_key_object_successful() {
 }
 
 void S3GetMultipartPartAction::get_key_object_failed() {
-  s3_log(S3_LOG_DEBUG, "Failed to find part listing\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Failed to find part listing\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     fetch_successful = true;  // With no entries.
     next();
@@ -232,12 +234,12 @@ void S3GetMultipartPartAction::get_key_object_failed() {
 }
 
 void S3GetMultipartPartAction::get_next_objects() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  s3_log(S3_LOG_DEBUG, "Fetching next part listing\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching next part listing\n");
   S3ObjectMetadataState multipart_object_state =
       object_multipart_metadata->get_state();
   if (multipart_object_state == S3ObjectMetadataState::present) {
@@ -260,25 +262,25 @@ void S3GetMultipartPartAction::get_next_objects() {
 }
 
 void S3GetMultipartPartAction::get_next_objects_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  s3_log(S3_LOG_DEBUG, "Found part listing\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Found part listing\n");
   struct m0_uint128 part_index_oid =
       object_multipart_metadata->get_part_index_oid();
   bool atleast_one_json_error = false;
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
-    s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
+    s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     auto part = part_metadata_factory->create_part_metadata_obj(
         request, part_index_oid, upload_id, atoi(kv.first.c_str()));
 
     if (part->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
-      s3_log(S3_LOG_ERROR,
+      s3_log(S3_LOG_ERROR, request_id,
              "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
              part_index_oid.u_hi, part_index_oid.u_lo, kv.first.c_str(),
              kv.second.second.c_str());
@@ -315,10 +317,10 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
 
 void S3GetMultipartPartAction::get_next_objects_failed() {
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, "Missing part listing\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Missing part listing\n");
     fetch_successful = true;  // With no entries.
   } else {
-    s3_log(S3_LOG_DEBUG, "Failed to find part listing\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Failed to find part listing\n");
     fetch_successful = false;
     set_s3_error("InternalError");
   }
@@ -326,7 +328,7 @@ void S3GetMultipartPartAction::get_next_objects_failed() {
 }
 
 void S3GetMultipartPartAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -353,7 +355,7 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
            response_xml.c_str());
 
     request->send_response(S3HttpSuccess200, response_xml);
@@ -367,6 +369,6 @@ void S3GetMultipartPartAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

@@ -25,7 +25,7 @@ S3GetBucketPolicyAction::S3GetBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -36,7 +36,7 @@ S3GetBucketPolicyAction::S3GetBucketPolicyAction(
 }
 
 void S3GetBucketPolicyAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3GetBucketPolicyAction::get_metadata, this));
   add_task(
       std::bind(&S3GetBucketPolicyAction::send_response_to_s3_client, this));
@@ -44,7 +44,7 @@ void S3GetBucketPolicyAction::setup_steps() {
 }
 
 void S3GetBucketPolicyAction::get_metadata() {
-  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
 
@@ -55,11 +55,12 @@ void S3GetBucketPolicyAction::get_metadata() {
 }
 
 void S3GetBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    s3_log(S3_LOG_DEBUG, request_id,
+           "sending 'Service Unavailable' response...\n");
     S3Error error("ServiceUnavailable", request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
@@ -101,6 +102,6 @@ void S3GetBucketPolicyAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

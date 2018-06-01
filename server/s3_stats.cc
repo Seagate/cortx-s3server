@@ -61,7 +61,7 @@ int S3Stats::timing(const std::string& key, int time_ms, int retry,
 
 int S3Stats::set_gauge(const std::string& key, int value, int retry) {
   if (value < 0) {
-    s3_log(S3_LOG_ERROR,
+    s3_log(S3_LOG_ERROR, "",
            "Invalid gauge value: Initial gauge value can not be negative. Key "
            "[%s], Value[%d]\n",
            key.c_str(), value);
@@ -88,21 +88,21 @@ int S3Stats::count_unique(const std::string& key, const std::string& value,
 }
 
 int S3Stats::load_whitelist() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   std::string whitelist_filename =
       g_option_instance->get_stats_whitelist_filename();
-  s3_log(S3_LOG_DEBUG, "Loading whitelist file: %s\n",
+  s3_log(S3_LOG_DEBUG, "", "Loading whitelist file: %s\n",
          whitelist_filename.c_str());
   std::ifstream fstream(whitelist_filename.c_str());
   if (!fstream.good()) {
-    s3_log(S3_LOG_ERROR, "Stats whitelist file does not exist: %s\n",
+    s3_log(S3_LOG_ERROR, "", "Stats whitelist file does not exist: %s\n",
            whitelist_filename.c_str());
     return -1;
   }
   try {
     YAML::Node root_node = YAML::LoadFile(whitelist_filename);
     if (root_node.IsNull()) {
-      s3_log(S3_LOG_DEBUG, "Stats whitelist file is empty: %s\n",
+      s3_log(S3_LOG_DEBUG, "", "Stats whitelist file is empty: %s\n",
              whitelist_filename.c_str());
       return 0;
     }
@@ -110,47 +110,47 @@ int S3Stats::load_whitelist() {
       metrics_whitelist.insert(it->as<std::string>());
     }
   } catch (const YAML::RepresentationException& e) {
-    s3_log(S3_LOG_ERROR, "YAML::RepresentationException caught: %s\n",
+    s3_log(S3_LOG_ERROR, "", "YAML::RepresentationException caught: %s\n",
            e.what());
-    s3_log(S3_LOG_ERROR, "Yaml file [%s] is incorrect\n",
+    s3_log(S3_LOG_ERROR, "", "Yaml file [%s] is incorrect\n",
            whitelist_filename.c_str());
     return -1;
   } catch (const YAML::ParserException& e) {
-    s3_log(S3_LOG_ERROR, "YAML::ParserException caught: %s\n", e.what());
-    s3_log(S3_LOG_ERROR, "Parsing Error in yaml file %s\n",
+    s3_log(S3_LOG_ERROR, "", "YAML::ParserException caught: %s\n", e.what());
+    s3_log(S3_LOG_ERROR, "", "Parsing Error in yaml file %s\n",
            whitelist_filename.c_str());
     return -1;
   } catch (const YAML::EmitterException& e) {
-    s3_log(S3_LOG_ERROR, "YAML::EmitterException caught: %s\n", e.what());
+    s3_log(S3_LOG_ERROR, "", "YAML::EmitterException caught: %s\n", e.what());
     return -1;
   } catch (YAML::Exception& e) {
-    s3_log(S3_LOG_ERROR, "YAML::Exception caught: %s\n", e.what());
+    s3_log(S3_LOG_ERROR, "", "YAML::Exception caught: %s\n", e.what());
     return -1;
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
 
 int S3Stats::init() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   if (load_whitelist() == -1) {
-    s3_log(S3_LOG_ERROR, "load_whitelist failed parsing the file: %s\n",
+    s3_log(S3_LOG_ERROR, "", "load_whitelist failed parsing the file: %s\n",
            g_option_instance->get_stats_whitelist_filename().c_str());
     return -1;
   }
   sock = socket_obj->socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sock == -1) {
-    s3_log(S3_LOG_ERROR, "socket call failed: %s\n", strerror(errno));
+    s3_log(S3_LOG_ERROR, "", "socket call failed: %s\n", strerror(errno));
     return -1;
   }
   int flags = socket_obj->fcntl(sock, F_GETFL, 0);
   if (flags == -1) {
-    s3_log(S3_LOG_ERROR, "fcntl [cmd = F_GETFL] call failed: %s\n",
+    s3_log(S3_LOG_ERROR, "", "fcntl [cmd = F_GETFL] call failed: %s\n",
            strerror(errno));
     return -1;
   }
   if (socket_obj->fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
-    s3_log(S3_LOG_ERROR, "fcntl [cmd = F_SETFL] call failed: %s\n",
+    s3_log(S3_LOG_ERROR, "", "fcntl [cmd = F_SETFL] call failed: %s\n",
            strerror(errno));
     return -1;
   }
@@ -158,25 +158,26 @@ int S3Stats::init() {
   server.sin_family = AF_INET;
   server.sin_port = htons(port);
   if (socket_obj->inet_aton(host.c_str(), &server.sin_addr) == 0) {
-    s3_log(S3_LOG_ERROR, "inet_aton call failed for host [%s]\n", host.c_str());
+    s3_log(S3_LOG_ERROR, "", "inet_aton call failed for host [%s]\n",
+           host.c_str());
     errno = EINVAL;
     return -1;
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
 
 void S3Stats::finish() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   if (sock != -1) {
     socket_obj->close(sock);
     sock = -1;
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 int S3Stats::send(const std::string& msg, int retry) {
-  s3_log(S3_LOG_DEBUG, "msg: %s\n", msg.c_str());
+  s3_log(S3_LOG_DEBUG, "", "msg: %s\n", msg.c_str());
   if (retry > g_option_instance->get_statsd_max_send_retry()) {
     retry = g_option_instance->get_statsd_max_send_retry();
   } else if (retry < 0) {
@@ -189,7 +190,7 @@ int S3Stats::send(const std::string& msg, int retry) {
         retry--;
         continue;
       } else {
-        s3_log(S3_LOG_ERROR, "sendto call failed: msg [%s], error [%s]\n",
+        s3_log(S3_LOG_ERROR, "", "sendto call failed: msg [%s], error [%s]\n",
                msg.c_str(), strerror(errno));
         return -1;
       }
@@ -209,7 +210,8 @@ int S3Stats::form_and_send_msg(const std::string& key, const std::string& type,
 
   // check if metric is present in the whitelist
   if (!is_allowed_to_publish(key)) {
-    s3_log(S3_LOG_DEBUG, "Metric not found in whitelist: [%s]\n", key.c_str());
+    s3_log(S3_LOG_DEBUG, "", "Metric not found in whitelist: [%s]\n",
+           key.c_str());
     return 0;
   }
 
@@ -227,7 +229,7 @@ int S3Stats::form_and_send_msg(const std::string& key, const std::string& type,
       buf = key + ":" + value + "|" + type + "|@" + str_stream.str();
     }
   } else {
-    s3_log(S3_LOG_ERROR, "Invalid type: key [%s], type [%s]\n", key.c_str(),
+    s3_log(S3_LOG_ERROR, "", "Invalid type: key [%s], type [%s]\n", key.c_str(),
            type.c_str());
     errno = EINVAL;
     return -1;

@@ -31,7 +31,7 @@ S3ObjectListResponse::S3ObjectListResponse()
       response_xml(""),
       max_uploads(""),
       next_marker_uploadid("") {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   object_list.clear();
   part_list.clear();
 }

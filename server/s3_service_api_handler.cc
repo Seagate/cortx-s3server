@@ -22,8 +22,9 @@
 #include "s3_stats.h"
 
 void S3ServiceAPIHandler::create_action() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "Action operation code = %d\n", operation_code);
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Action operation code = %d\n",
+         operation_code);
 
   switch (operation_code) {
     case S3OperationCode::none:
@@ -43,5 +44,5 @@ void S3ServiceAPIHandler::create_action() {
       return;
   };  // switch operation_code
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

@@ -45,8 +45,8 @@ void s3_terminate_sig_handler(int signum) {
   sigterm_action.sa_flags = 0;
   sigaction(SIGTERM, &sigterm_action, NULL);
 
-  s3_log(S3_LOG_INFO, "Recieved signal %d, shutting down s3 server daemon\n",
-         signum);
+  s3_log(S3_LOG_INFO, "",
+         "Recieved signal %d, shutting down s3 server daemon\n", signum);
 
   S3Option *option_instance = S3Option::get_instance();
   int grace_period_sec = option_instance->get_s3_grace_period_sec();
@@ -66,9 +66,9 @@ void s3_terminate_sig_handler(int signum) {
   // served and then the event loop breaks.
   int rc = event_base_loopexit(global_evbase_handle, &loopexit_timeout);
   if (rc == 0) {
-    s3_log(S3_LOG_DEBUG, "event_base_loopexit returns SUCCESS\n");
+    s3_log(S3_LOG_DEBUG, "", "event_base_loopexit returns SUCCESS\n");
   } else {
-    s3_log(S3_LOG_ERROR, "event_base_loopexit returns FAILURE\n");
+    s3_log(S3_LOG_ERROR, "", "event_base_loopexit returns FAILURE\n");
   }
 
   return;
@@ -99,7 +99,7 @@ void s3_terminate_sig_handler(int signum) {
  */
 
 void s3_terminate_fatal_handler(int signum) {
-  s3_log(S3_LOG_INFO, "Recieved signal %d\n", signum);
+  s3_log(S3_LOG_INFO, "", "Recieved signal %d\n", signum);
   s3_iem(LOG_ALERT, S3_IEM_FATAL_HANDLER, S3_IEM_FATAL_HANDLER_STR,
          S3_IEM_FATAL_HANDLER_JSON, signum);
 
@@ -113,7 +113,7 @@ void s3_terminate_fatal_handler(int signum) {
   for (int i = 0; i < rc; i++) {
     bt_str += buf[i] + newline_str;
   }
-  s3_log(S3_LOG_ERROR, "Backtrace:\n%s\n", bt_str.c_str());
+  s3_log(S3_LOG_ERROR, "", "Backtrace:\n%s\n", bt_str.c_str());
   free(buf);
   S3Daemonize s3daemon;
   s3daemon.delete_pidfile();
@@ -137,20 +137,21 @@ void S3Daemonize::daemonize() {
   s3hup_act.sa_handler = SIG_IGN;
   rc = daemon(1, noclose);
   if (rc) {
-    s3_log(S3_LOG_FATAL, "Failed to daemonize s3 server, errno = %d\n", errno);
+    s3_log(S3_LOG_FATAL, "", "Failed to daemonize s3 server, errno = %d\n",
+           errno);
     exit(1);
   }
   sigaction(SIGHUP, &s3hup_act, NULL);
 
   daemon_wd = option_instance->get_daemon_dir();
   if (access(daemon_wd.c_str(), F_OK) != 0) {
-    s3_log(S3_LOG_FATAL, "The directory %s doesn't exist, errno = %d\n",
+    s3_log(S3_LOG_FATAL, "", "The directory %s doesn't exist, errno = %d\n",
            daemon_wd.c_str(), errno);
     exit(1);
   }
 
   if (::chdir(daemon_wd.c_str())) {
-    s3_log(S3_LOG_FATAL, "Failed to chdir to %s, errno = %d\n",
+    s3_log(S3_LOG_FATAL, "", "Failed to chdir to %s, errno = %d\n",
            daemon_wd.c_str(), errno);
     exit(1);
   }
@@ -163,12 +164,12 @@ int S3Daemonize::write_to_pidfile() {
   pidstr = std::to_string(getpid());
   pidfile.open(pidfilename);
   if (pidfile.fail()) {
-    s3_log(S3_LOG_ERROR, "Failed to open pid file %s\n errno = %d",
+    s3_log(S3_LOG_ERROR, "", "Failed to open pid file %s\n errno = %d",
            pidfilename.c_str(), errno);
     goto FAIL;
   }
   if (!(pidfile << pidstr)) {
-    s3_log(S3_LOG_ERROR, "Failed to write to pid file %s errno = %d\n",
+    s3_log(S3_LOG_ERROR, "", "Failed to write to pid file %s errno = %d\n",
            pidfilename.c_str(), errno);
     goto FAIL;
   }
@@ -182,47 +183,48 @@ int S3Daemonize::delete_pidfile() {
   char pidstr_read[100];
   int rc;
   std::ifstream pidfile_read;
-  s3_log(S3_LOG_DEBUG, "Entering");
+  s3_log(S3_LOG_DEBUG, "", "Entering");
   if (pidfilename == "") {
-    s3_log(S3_LOG_ERROR, "pid filename %s doesn't exist\n",
+    s3_log(S3_LOG_ERROR, "", "pid filename %s doesn't exist\n",
            pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "Exiting");
     return 0;
   }
   pidfile_read.open(S3Daemonize::pidfilename);
   if (pidfile_read.fail()) {
     if (errno == 2) {
-      s3_log(S3_LOG_DEBUG, "Exiting");
+      s3_log(S3_LOG_DEBUG, "", "Exiting");
       return 0;
     } else {
-      s3_log(S3_LOG_ERROR, "Failed to open pid file %s errno = %d\n",
+      s3_log(S3_LOG_ERROR, "", "Failed to open pid file %s errno = %d\n",
              pidfilename.c_str(), errno);
     }
-    s3_log(S3_LOG_DEBUG, "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "Exiting");
     return -1;
   }
   pidfile_read.getline(pidstr_read, 100);
   if (strlen(pidstr_read) == 0) {
-    s3_log(S3_LOG_ERROR, "Pid doesn't exist within %s\n", pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "Exiting");
+    s3_log(S3_LOG_ERROR, "", "Pid doesn't exist within %s\n",
+           pidfilename.c_str());
+    s3_log(S3_LOG_DEBUG, "", "Exiting");
     return -1;
   }
   pidfile_read.close();
   if (pidstr_read != std::to_string(getpid())) {
     s3_log(
-        S3_LOG_WARN,
+        S3_LOG_WARN, "-",
         "The pid(%d) of process does match to the pid(%s) in the pid file %s\n",
         getpid(), pidstr_read, pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "Exiting");
+    s3_log(S3_LOG_DEBUG, "", "Exiting");
     return -1;
   }
   rc = ::unlink(pidfilename.c_str());
   if (rc) {
-    s3_log(S3_LOG_WARN, "File %s deletion failed\n", pidfilename.c_str());
-    s3_log(S3_LOG_DEBUG, "Exiting");
+    s3_log(S3_LOG_WARN, "", "File %s deletion failed\n", pidfilename.c_str());
+    s3_log(S3_LOG_DEBUG, "", "Exiting");
     return rc;
   }
-  s3_log(S3_LOG_DEBUG, "Exiting");
+  s3_log(S3_LOG_DEBUG, "", "Exiting");
   return 0;
 }
 

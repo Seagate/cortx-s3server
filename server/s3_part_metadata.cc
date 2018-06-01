@@ -69,7 +69,8 @@ S3PartMetadata::S3PartMetadata(
     std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : request(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   initialize(uploadid, part_num);
   part_index_name_oid = {0ULL, 0ULL};
 
@@ -92,7 +93,8 @@ S3PartMetadata::S3PartMetadata(
     std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : request(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   initialize(uploadid, part_num);
   part_index_name_oid = oid;
 
@@ -166,7 +168,7 @@ void S3PartMetadata::add_user_defined_attribute(std::string key,
 void S3PartMetadata::load(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed,
                           int part_num = 1) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   str_part_num = "";
   if (part_num > 0) {
     str_part_num = std::to_string(part_num);
@@ -181,13 +183,13 @@ void S3PartMetadata::load(std::function<void(void)> on_success,
       part_index_name_oid, str_part_num,
       std::bind(&S3PartMetadata::load_successful, this),
       std::bind(&S3PartMetadata::load_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::load_successful() {
-  s3_log(S3_LOG_DEBUG, "Found part metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Found part metadata\n");
   if (this->from_json(clovis_kv_reader->get_value()) != 0) {
-    s3_log(S3_LOG_ERROR,
+    s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
            part_index_name_oid.u_hi, part_index_name_oid.u_lo,
            str_part_num.c_str(), clovis_kv_reader->get_value().c_str());
@@ -203,7 +205,7 @@ void S3PartMetadata::load_successful() {
 }
 
 void S3PartMetadata::load_failed() {
-  s3_log(S3_LOG_WARN, "Missing part metadata\n");
+  s3_log(S3_LOG_WARN, request_id, "Missing part metadata\n");
   if (json_parsing_error) {
     state = S3PartMetadataState::failed;
   } else if (clovis_kv_reader->get_state() ==
@@ -217,27 +219,27 @@ void S3PartMetadata::load_failed() {
 
 void S3PartMetadata::create_index(std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
   put_metadata = false;
   create_part_index();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::save(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
   put_metadata = true;
   save_metadata();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::create_part_index() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Mark missing as we initiate write, in case it fails to write.
   state = S3PartMetadataState::missing;
 
@@ -248,11 +250,11 @@ void S3PartMetadata::create_part_index() {
       index_name,
       std::bind(&S3PartMetadata::create_part_index_successful, this),
       std::bind(&S3PartMetadata::create_part_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::create_part_index_successful() {
-  s3_log(S3_LOG_DEBUG, "Created index for part info\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Created index for part info\n");
   part_index_name_oid = clovis_kv_writer->get_oid();
   if (put_metadata) {
     save_metadata();
@@ -263,12 +265,12 @@ void S3PartMetadata::create_part_index_successful() {
 }
 
 void S3PartMetadata::create_part_index_failed() {
-  s3_log(S3_LOG_DEBUG, "Failed to create index for part info\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Failed to create index for part info\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
     // Since part index name comprises of bucket name + object name + upload id,
     // upload id is unique
     // hence if clovis returns exists then its due to collision, resolve it
-    s3_log(S3_LOG_WARN, "Collision detected for Index %s\n",
+    s3_log(S3_LOG_WARN, request_id, "Collision detected for Index %s\n",
            index_name.c_str());
     handle_collision();
   } else {
@@ -278,7 +280,7 @@ void S3PartMetadata::create_part_index_failed() {
 }
 
 void S3PartMetadata::save_metadata() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Set up system attributes
   system_defined_attribute["Upload-ID"] = upload_id;
   if (!clovis_kv_writer) {
@@ -289,18 +291,18 @@ void S3PartMetadata::save_metadata() {
       part_index_name_oid, part_number, this->to_json(),
       std::bind(&S3PartMetadata::save_metadata_successful, this),
       std::bind(&S3PartMetadata::save_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::save_metadata_successful() {
-  s3_log(S3_LOG_DEBUG, "Saved part metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Saved part metadata\n");
   state = S3PartMetadataState::saved;
   this->handler_on_success();
 }
 
 void S3PartMetadata::save_metadata_failed() {
   // TODO - do anything more for failure?
-  s3_log(S3_LOG_DEBUG, "Failed to save part metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Failed to save part metadata\n");
   state = S3PartMetadataState::failed;
   this->handler_on_failed();
 }
@@ -308,13 +310,13 @@ void S3PartMetadata::save_metadata_failed() {
 void S3PartMetadata::remove(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed,
                             int remove_part = 0) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   std::string part_removal = std::to_string(remove_part);
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  s3_log(S3_LOG_DEBUG, "Deleting part info for part = %s\n",
+  s3_log(S3_LOG_DEBUG, request_id, "Deleting part info for part = %s\n",
          part_removal.c_str());
 
   if (!clovis_kv_writer) {
@@ -325,24 +327,24 @@ void S3PartMetadata::remove(std::function<void(void)> on_success,
       part_index_name_oid, part_removal,
       std::bind(&S3PartMetadata::remove_successful, this),
       std::bind(&S3PartMetadata::remove_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::remove_successful() {
-  s3_log(S3_LOG_DEBUG, "Deleted part info\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Deleted part info\n");
   state = S3PartMetadataState::deleted;
   this->handler_on_success();
 }
 
 void S3PartMetadata::remove_failed() {
-  s3_log(S3_LOG_WARN, "Failed to delete part info\n");
+  s3_log(S3_LOG_WARN, request_id, "Failed to delete part info\n");
   state = S3PartMetadataState::failed;
   this->handler_on_failed();
 }
 
 void S3PartMetadata::remove_index(std::function<void(void)> on_success,
                                   std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -354,17 +356,17 @@ void S3PartMetadata::remove_index(std::function<void(void)> on_success,
       part_index_name_oid,
       std::bind(&S3PartMetadata::remove_index_successful, this),
       std::bind(&S3PartMetadata::remove_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PartMetadata::remove_index_successful() {
-  s3_log(S3_LOG_DEBUG, "Deleted index for part info\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Deleted index for part info\n");
   state = S3PartMetadataState::index_deleted;
   this->handler_on_success();
 }
 
 void S3PartMetadata::remove_index_failed() {
-  s3_log(S3_LOG_WARN, "Failed to remove index for part info\n");
+  s3_log(S3_LOG_WARN, request_id, "Failed to remove index for part info\n");
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
          S3_IEM_DELETE_IDX_FAIL_JSON);
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::failed) {
@@ -375,7 +377,7 @@ void S3PartMetadata::remove_index_failed() {
 
 // Streaming to json
 std::string S3PartMetadata::to_json() {
-  s3_log(S3_LOG_DEBUG, "\n");
+  s3_log(S3_LOG_DEBUG, request_id, "\n");
   Json::Value root;
   root["Bucket-Name"] = bucket_name;
   root["Object-Name"] = object_name;
@@ -393,12 +395,12 @@ std::string S3PartMetadata::to_json() {
 }
 
 int S3PartMetadata::from_json(std::string content) {
-  s3_log(S3_LOG_DEBUG, "\n");
+  s3_log(S3_LOG_DEBUG, request_id, "\n");
   Json::Value newroot;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), newroot);
   if (!parsingSuccessful || s3_fi_is_enabled("part_metadata_corrupted")) {
-    s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
+    s3_log(S3_LOG_ERROR, request_id, "Json Parsing failed.\n");
     return -1;
   }
 
@@ -427,20 +429,20 @@ void S3PartMetadata::regenerate_new_indexname() {
 
 void S3PartMetadata::handle_collision() {
   if (collision_attempt_count < MAX_COLLISION_RETRY_COUNT) {
-    s3_log(S3_LOG_INFO, "Object ID collision happened for index %s\n",
-           index_name.c_str());
+    s3_log(S3_LOG_INFO, request_id,
+           "Object ID collision happened for index %s\n", index_name.c_str());
     // Handle Collision
     regenerate_new_indexname();
     collision_attempt_count++;
     if (collision_attempt_count > 5) {
-      s3_log(S3_LOG_INFO,
+      s3_log(S3_LOG_INFO, request_id,
              "Object ID collision happened %zu times for index %s\n",
              collision_attempt_count, index_name.c_str());
     }
     create_part_index();
   } else {
     if (collision_attempt_count >= MAX_COLLISION_RETRY_COUNT) {
-      s3_log(S3_LOG_ERROR,
+      s3_log(S3_LOG_ERROR, request_id,
              "Failed to resolve object id collision %zu times for index %s\n",
              collision_attempt_count, index_name.c_str());
       s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,

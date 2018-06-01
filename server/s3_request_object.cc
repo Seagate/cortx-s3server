@@ -48,7 +48,9 @@ S3RequestObject::S3RequestObject(
       is_chunked_upload(false),
       in_headers_copied(false),
       reply_buffer(NULL) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  S3Uuid uuid;
+  request_id = uuid.get_string_uuid();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (async_buf_factory) {
     async_buffer_factory = async_buf_factory;
@@ -70,8 +72,6 @@ S3RequestObject::S3RequestObject(
     user_id = "123";
   }
 
-  S3Uuid uuid;
-  request_id = uuid.get_string_uuid();
   request_error = S3RequestError::None;
   evhtp_obj.reset(evhtp_obj_ptr);
   if (ev_req != NULL && ev_req->uri != NULL) {
@@ -97,7 +97,7 @@ S3RequestObject::S3RequestObject(
 }
 
 void S3RequestObject::initialise() {
-  s3_log(S3_LOG_DEBUG, "Initializing the request.\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Initializing the request.\n");
   if (get_header_value("x-amz-content-sha256") ==
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
     is_chunked_upload = true;
@@ -111,7 +111,7 @@ void S3RequestObject::initialise() {
 }
 
 S3RequestObject::~S3RequestObject() {
-  s3_log(S3_LOG_DEBUG, "Destructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
   request_timer.stop();
   LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
   s3_stats_timing("total_request_time",
@@ -321,11 +321,10 @@ void S3RequestObject::set_account_name(const std::string& name) {
 
 const std::string& S3RequestObject::get_account_name() { return account_name; }
 
-const std::string& S3RequestObject::get_request_id() { return request_id; }
-
 void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "pending_in_flight (before): %zu\n", pending_in_flight);
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "pending_in_flight (before): %zu\n",
+         pending_in_flight);
   // Keep buffering till someone starts listening.
   size_t data_bytes_received = 0;
   S3Timer buffering_timer;
@@ -334,11 +333,12 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
   if (is_chunked_upload) {
     auto bufs = chunk_parser.run(buf);
     if (chunk_parser.get_state() == ChunkParserState::c_error) {
-      s3_log(S3_LOG_DEBUG, "ChunkParserState::c_error\n");
+      s3_log(S3_LOG_DEBUG, request_id, "ChunkParserState::c_error\n");
       set_request_error(S3RequestError::InvalidChunkFormat);
     } else if (!bufs.empty()) {
       for (auto b : bufs) {
-        s3_log(S3_LOG_DEBUG, "Adding data length to async buffer: %zu\n",
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Adding data length to async buffer: %zu\n",
                evhtp_obj->evbuffer_get_length(b));
         data_bytes_received += evhtp_obj->evbuffer_get_length(b);
         buffered_input->add_content(
@@ -350,16 +350,18 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
     buffered_input->add_content(buf,
                                 (pending_in_flight - data_bytes_received) == 0);
   }
-  s3_log(S3_LOG_DEBUG, "Buffering data to be consumed: %zu\n",
+  s3_log(S3_LOG_DEBUG, request_id, "Buffering data to be consumed: %zu\n",
          data_bytes_received);
 
   if (data_bytes_received > pending_in_flight) {
-    s3_log(S3_LOG_ERROR, "Received too much unexpected data\n");
+    s3_log(S3_LOG_ERROR, request_id, "Received too much unexpected data\n");
   }
   pending_in_flight -= data_bytes_received;
-  s3_log(S3_LOG_DEBUG, "pending_in_flight (after): %zu\n", pending_in_flight);
+  s3_log(S3_LOG_DEBUG, request_id, "pending_in_flight (after): %zu\n",
+         pending_in_flight);
   if (pending_in_flight == 0) {
-    s3_log(S3_LOG_DEBUG, "Buffering complete for data to be consumed.\n");
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Buffering complete for data to be consumed.\n");
     buffered_input->freeze();
   }
   buffering_timer.stop();
@@ -373,7 +375,7 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
   if (incoming_data_callback &&
       ((buffered_input->get_content_length() >= notify_read_watermark) ||
        (pending_in_flight == 0))) {
-    s3_log(S3_LOG_DEBUG, "Sending data to be consumed...\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Sending data to be consumed...\n");
     incoming_data_callback();
   }
   // Pause if we have read enough in buffers for this request,
@@ -384,12 +386,12 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
            g_option_instance->get_read_ahead_multiple())) {
     pause();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3RequestObject::send_response(int code, std::string body) {
-  s3_log(S3_LOG_DEBUG, "Response code: [%d]\n", code);
-  s3_log(S3_LOG_DEBUG, "Sending response as: [%s]\n", body.c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "Response code: [%d]\n", code);
+  s3_log(S3_LOG_DEBUG, request_id, "Sending response as: [%s]\n", body.c_str());
 
   // If body not empty, write to response body.
   if (!body.empty()) {
@@ -448,7 +450,7 @@ void S3RequestObject::respond_error(
     for (auto& header : headers) {
       set_out_header_value(header.first.c_str(), header.second.c_str());
     }
-    s3_log(S3_LOG_DEBUG, "Error response to client: [%s]",
+    s3_log(S3_LOG_DEBUG, request_id, "Error response to client: [%s]",
            response_xml.c_str());
 
     send_response(error.get_http_status_code(), response_xml);
@@ -456,20 +458,20 @@ void S3RequestObject::respond_error(
 }
 
 void S3RequestObject::respond_unsupported_api() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   respond_error("NotImplemented");
 
   s3_stats_inc("unsupported_api_count");
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3RequestObject::respond_retry_after(int retry_after_in_secs) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   std::map<std::string, std::string> headers;
   headers["Retry-After"] = std::to_string(retry_after_in_secs);
 
   respond_error("ServiceUnavailable", headers);
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

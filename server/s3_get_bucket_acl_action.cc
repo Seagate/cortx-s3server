@@ -26,7 +26,7 @@ S3GetBucketACLAction::S3GetBucketACLAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -38,14 +38,14 @@ S3GetBucketACLAction::S3GetBucketACLAction(
 }
 
 void S3GetBucketACLAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3GetBucketACLAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetBucketACLAction::send_response_to_s3_client, this));
   // ...
 }
 
 void S3GetBucketACLAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
 
@@ -57,20 +57,20 @@ void S3GetBucketACLAction::fetch_bucket_info() {
 }
 
 void S3GetBucketACLAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_WARN, "Bucket not found\n");
+    s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
   } else {
-    s3_log(S3_LOG_WARN, "Failed to fetch Bucket metadata\n");
+    s3_log(S3_LOG_WARN, request_id, "Failed to fetch Bucket metadata\n");
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetBucketACLAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -102,6 +102,6 @@ void S3GetBucketACLAction::send_response_to_s3_client() {
   }
 
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

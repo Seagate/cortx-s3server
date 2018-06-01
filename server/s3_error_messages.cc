@@ -31,9 +31,9 @@ S3ErrorMessages::S3ErrorMessages(std::string config_file) {
   std::ifstream json_file(config_file.c_str(), std::ifstream::binary);
   bool parsingSuccessful = reader.parse(json_file, jsonroot);
   if (!parsingSuccessful) {
-    s3_log(S3_LOG_FATAL, "Json Parsing failed for file: %s.\n",
+    s3_log(S3_LOG_FATAL, "", "Json Parsing failed for file: %s.\n",
            config_file.c_str());
-    s3_log(S3_LOG_FATAL, "Error: %s\n",
+    s3_log(S3_LOG_FATAL, "", "Error: %s\n",
            reader.getFormattedErrorMessages().c_str());
     exit(1);
     return;

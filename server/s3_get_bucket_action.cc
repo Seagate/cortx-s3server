@@ -32,7 +32,7 @@ S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3Action(req), last_key(""), fetch_successful(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (clovis_api) {
     s3_clovis_api = clovis_api;
@@ -61,7 +61,7 @@ S3GetBucketAction::S3GetBucketAction(
 }
 
 void S3GetBucketAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3GetBucketAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetBucketAction::get_next_objects, this));
   add_task(std::bind(&S3GetBucketAction::send_response_to_s3_client, this));
@@ -69,22 +69,24 @@ void S3GetBucketAction::setup_steps() {
 }
 
 void S3GetBucketAction::object_list_setup() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   object_list.set_bucket_name(request->get_bucket_name());
   request_prefix = request->get_query_string_value("prefix");
   object_list.set_request_prefix(request_prefix);
-  s3_log(S3_LOG_DEBUG, "prefix = %s\n", request_prefix.c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "prefix = %s\n", request_prefix.c_str());
 
   request_delimiter = request->get_query_string_value("delimiter");
   object_list.set_request_delimiter(request_delimiter);
-  s3_log(S3_LOG_DEBUG, "delimiter = %s\n", request_delimiter.c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "delimiter = %s\n",
+         request_delimiter.c_str());
 
   request_marker_key = request->get_query_string_value("marker");
   if (!request_marker_key.empty()) {
     object_list.set_request_marker_key(request_marker_key);
   }
-  s3_log(S3_LOG_DEBUG, "request_marker_key = %s\n", request_marker_key.c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "request_marker_key = %s\n",
+         request_marker_key.c_str());
 
   last_key = request_marker_key;  // as requested by user
   std::string max_k = request->get_query_string_value("max-keys");
@@ -95,11 +97,11 @@ void S3GetBucketAction::object_list_setup() {
     max_keys = std::stoul(max_k);
     object_list.set_max_keys(max_k);
   }
-  s3_log(S3_LOG_DEBUG, "max-keys = %s\n", max_k.c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "max-keys = %s\n", max_k.c_str());
 }
 
 void S3GetBucketAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
@@ -108,7 +110,7 @@ void S3GetBucketAction::fetch_bucket_info() {
 }
 
 void S3GetBucketAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else {
@@ -118,7 +120,7 @@ void S3GetBucketAction::fetch_bucket_info_failed() {
 }
 
 void S3GetBucketAction::get_next_objects() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
@@ -142,30 +144,31 @@ void S3GetBucketAction::get_next_objects() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "get_bucket_action_get_next_objects_shutdown_fail");
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetBucketAction::get_next_objects_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  s3_log(S3_LOG_DEBUG, "Found Object listing\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Found Object listing\n");
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
   bool atleast_one_json_error = false;
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   for (auto& kv : kvps) {
-    s3_log(S3_LOG_DEBUG, "Read Object = %s\n", kv.first.c_str());
-    s3_log(S3_LOG_DEBUG, "Read Object Value = %s\n", kv.second.second.c_str());
+    s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
+    s3_log(S3_LOG_DEBUG, request_id, "Read Object Value = %s\n",
+           kv.second.second.c_str());
     auto object = object_metada_factory->create_object_metadata_obj(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {
       if (object->from_json(kv.second.second) != 0) {
         atleast_one_json_error = true;
-        s3_log(S3_LOG_ERROR,
+        s3_log(S3_LOG_ERROR, request_id,
                "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                kv.first.c_str(), kv.second.second.c_str());
@@ -177,7 +180,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       if (kv.first.find(request_prefix) == 0) {
         if (object->from_json(kv.second.second) != 0) {
           atleast_one_json_error = true;
-          s3_log(S3_LOG_ERROR,
+          s3_log(S3_LOG_ERROR, request_id,
                  "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                  object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                  kv.first.c_str(), kv.second.second.c_str());
@@ -190,7 +193,7 @@ void S3GetBucketAction::get_next_objects_successful() {
       if (delimiter_pos == std::string::npos) {
         if (object->from_json(kv.second.second) != 0) {
           atleast_one_json_error = true;
-          s3_log(S3_LOG_ERROR,
+          s3_log(S3_LOG_ERROR, request_id,
                  "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                  object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                  kv.first.c_str(), kv.second.second.c_str());
@@ -199,7 +202,8 @@ void S3GetBucketAction::get_next_objects_successful() {
         }
       } else {
         // Roll up
-        s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+        s3_log(S3_LOG_DEBUG, request_id,
+               "Delimiter %s found at pos %zu in string %s\n",
                request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
         object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
       }
@@ -213,7 +217,7 @@ void S3GetBucketAction::get_next_objects_successful() {
           if (object->from_json(kv.second.second) != 0) {
             atleast_one_json_error = true;
             s3_log(
-                S3_LOG_ERROR,
+                S3_LOG_ERROR, request_id.c_str(),
                 "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
                 object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                 kv.first.c_str(), kv.second.second.c_str());
@@ -221,7 +225,8 @@ void S3GetBucketAction::get_next_objects_successful() {
             object_list.add_object(object);
           }
         } else {
-          s3_log(S3_LOG_DEBUG, "Delimiter %s found at pos %zu in string %s\n",
+          s3_log(S3_LOG_DEBUG, request_id,
+                 "Delimiter %s found at pos %zu in string %s\n",
                  request_delimiter.c_str(), delimiter_pos, kv.first.c_str());
           object_list.add_common_prefix(kv.first.substr(0, delimiter_pos + 1));
         }
@@ -259,10 +264,10 @@ void S3GetBucketAction::get_next_objects_successful() {
 
 void S3GetBucketAction::get_next_objects_failed() {
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, "No Objects found in Object listing\n");
+    s3_log(S3_LOG_DEBUG, request_id, "No Objects found in Object listing\n");
     fetch_successful = true;  // With no entries.
   } else {
-    s3_log(S3_LOG_DEBUG, "Failed to find Object listing\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Failed to find Object listing\n");
     set_s3_error("InternalError");
     fetch_successful = false;
   }
@@ -270,11 +275,11 @@ void S3GetBucketAction::get_next_objects_failed() {
 }
 
 void S3GetBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
-    s3_log(S3_LOG_DEBUG, "Sending %s response...\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Sending %s response...\n",
            get_s3_error_code().c_str());
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
@@ -292,7 +297,7 @@ void S3GetBucketAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, "Object list response_xml = %s\n",
+    s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
            response_xml.c_str());
 
     request->send_response(S3HttpSuccess200, response_xml);
@@ -308,6 +313,6 @@ void S3GetBucketAction::send_response_to_s3_client() {
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

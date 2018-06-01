@@ -37,19 +37,19 @@
 
 #ifdef ENABLE_FAULT_INJECTION
 
-#define S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(tag)                    \
-  do {                                                              \
-    if (s3_fi_is_enabled(tag)) {                                    \
-      s3_log(S3_LOG_DEBUG, "set shutdown signal for testing...\n"); \
-      set_is_fi_hit(true);                                          \
-      S3Option::get_instance()->set_is_s3_shutting_down(true);      \
-    }                                                               \
+#define S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(tag)                        \
+  do {                                                                  \
+    if (s3_fi_is_enabled(tag)) {                                        \
+      s3_log(S3_LOG_DEBUG, "", "set shutdown signal for testing...\n"); \
+      set_is_fi_hit(true);                                              \
+      S3Option::get_instance()->set_is_s3_shutting_down(true);          \
+    }                                                                   \
   } while (0)
 
 #define S3_RESET_SHUTDOWN_SIGNAL                                \
   do {                                                          \
     if (get_is_fi_hit()) {                                      \
-      s3_log(S3_LOG_DEBUG, "reset shutdown signal ...\n");      \
+      s3_log(S3_LOG_DEBUG, "", "reset shutdown signal ...\n");  \
       S3Option::get_instance()->set_is_s3_shutting_down(false); \
       set_is_fi_hit(false);                                     \
     }                                                           \
@@ -80,6 +80,7 @@ enum class S3ActionState {
 class S3Action {
  protected:
   std::shared_ptr<S3RequestObject> request;
+  std::string request_id;
   bool invalid_request;
   // Allow class object instiantiation without support for authentication
   bool disable_auth;

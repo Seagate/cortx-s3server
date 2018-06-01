@@ -30,7 +30,8 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
       check_shutdown_signal(check_shutdown),
       is_response_scheduled(false),
       is_fi_hit(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   task_iteration_index = 0;
   rollback_index = 0;
   s3_error_code = "";
@@ -46,7 +47,7 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
   setup_steps();
 }
 
-S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, "Destructor\n"); }
+S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
 
 void S3Action::set_s3_error(std::string code) {
   state = S3ActionState::error;
@@ -58,7 +59,7 @@ std::string& S3Action::get_s3_error_code() { return s3_error_code; }
 bool S3Action::is_error_state() { return state == S3ActionState::error; }
 
 void S3Action::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setup the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
 
   if (!S3Option::get_instance()->is_auth_disabled()) {
     add_task(std::bind(&S3Action::check_authentication, this));
@@ -77,7 +78,7 @@ void S3Action::start() {
             request->get_data_length());
     if (request->http_verb() == S3HttpVerb::PUT &&
         !mem_profile->we_have_enough_memory_for_put_obj(layout_id)) {
-      s3_log(S3_LOG_DEBUG,
+      s3_log(S3_LOG_DEBUG, request_id,
              "Limited memory: Rejecting PUT object/part request with retry.\n");
       send_retry_error_to_s3_client();
       return;
@@ -85,7 +86,7 @@ void S3Action::start() {
   }
 
   if (check_shutdown_signal && check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
 
@@ -99,7 +100,7 @@ void S3Action::start() {
 // Step to next async step.
 void S3Action::next() {
   if (check_shutdown_signal && check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
   if (task_iteration_index < task_list.size()) {
@@ -136,41 +137,41 @@ void S3Action::abort() {
 
 // rollback async steps
 void S3Action::rollback_start() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   rollback_index = 0;
   rollback_state = S3ActionState::running;
   if (rollback_list.size())
     rollback_list[rollback_index++]();
   else {
-    s3_log(S3_LOG_ERROR, "Rollback triggered on empty list\n");
+    s3_log(S3_LOG_ERROR, request_id, "Rollback triggered on empty list\n");
     rollback_done();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3Action::rollback_next() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (rollback_index < rollback_list.size()) {
     // Call step and move index to next
     rollback_list[rollback_index++]();
   } else {
     rollback_done();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3Action::rollback_done() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   rollback_index = 0;
   rollback_state = S3ActionState::complete;
   rollback_exit();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3Action::rollback_exit() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // TODO -- When this function is enabled, for object we need to
@@ -179,7 +180,7 @@ void S3Action::rollback_exit() {
 // of S3Objectmetadata else load() will result in crash
 //
 // void S3Action::fetch_acl_policies() {
-//  s3_log(S3_LOG_DEBUG, "Entering\n");
+//  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 //  if (request->get_api_type() == S3ApiType::object) {
 //    object_metadata = std::make_shared<S3ObjectMetadata>(request);
 //    object_metadata->load(std::bind( &S3Action::next, this), std::bind(
@@ -194,9 +195,10 @@ void S3Action::rollback_exit() {
 //}
 
 // void S3Action::fetch_acl_object_policies_failed() {
-//  s3_log(S3_LOG_DEBUG, "Entering\n");
+//  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 //  if (object_metadata->get_state() != S3ObjectMetadataState::missing) {
-//    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies
+//    s3_log(S3_LOG_ERROR, request_id, "Metadata lookup error: failed to load
+// acl/policies
 //    from object\n");
 //    S3Error error("InternalError", request->get_request_id(),
 //    request->get_object_uri());
@@ -207,7 +209,7 @@ void S3Action::rollback_exit() {
 //    request->send_response(error.get_http_status_code(), response_xml);
 
 //    done();
-//    s3_log(S3_LOG_DEBUG, "Exiting\n");
+//    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 //    i_am_done();
 //  } else {
 //    next();
@@ -215,9 +217,10 @@ void S3Action::rollback_exit() {
 //}
 
 // void S3Action::fetch_acl_bucket_policies_failed() {
-//  s3_log(S3_LOG_DEBUG, "Entering\n");
+//  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 //  if (bucket_metadata->get_state() != S3BucketMetadataState::missing) {
-//    s3_log(S3_LOG_ERROR, "Metadata lookup error: failed to load acl/policies
+//    s3_log(S3_LOG_ERROR, request_id, "Metadata lookup error: failed to load
+// acl/policies
 //    from bucket\n");
 //    S3Error error("InternalError", request->get_request_id(),
 //    request->get_object_uri());
@@ -228,7 +231,7 @@ void S3Action::rollback_exit() {
 //    request->send_response(error.get_http_status_code(), response_xml);
 
 //    done();
-//    s3_log(S3_LOG_DEBUG, "Exiting\n");
+//    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 //    i_am_done();
 //  } else {
 //    next();
@@ -236,7 +239,7 @@ void S3Action::rollback_exit() {
 //}
 
 void S3Action::check_authorization() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (request->get_api_type() == S3ApiType::bucket) {
     auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                     bucket_metadata->get_policy_as_json());
@@ -250,13 +253,13 @@ void S3Action::check_authorization() {
 }
 
 void S3Action::check_authorization_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   next();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3Action::check_authorization_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (request->client_connected()) {
     std::string error_code = auth_client->get_error_code();
     if (error_code == "InvalidAccessKeyId") {
@@ -264,11 +267,12 @@ void S3Action::check_authorization_failed() {
     } else if (error_code == "SignatureDoesNotMatch") {
       s3_stats_inc("authorization_failed_signature_mismatch_count");
     }
-    s3_log(S3_LOG_ERROR, "Authorization failure: %s\n", error_code.c_str());
+    s3_log(S3_LOG_ERROR, request_id, "Authorization failure: %s\n",
+           error_code.c_str());
     request->respond_error(error_code);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();
 }
 
@@ -279,13 +283,13 @@ void S3Action::check_authentication() {
 }
 
 void S3Action::check_authentication_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   next();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3Action::check_authentication_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (request->client_connected()) {
     std::string error_code = auth_client->get_error_code();
     if (error_code == "InvalidAccessKeyId") {
@@ -293,11 +297,12 @@ void S3Action::check_authentication_failed() {
     } else if (error_code == "SignatureDoesNotMatch") {
       s3_stats_inc("authentication_failed_signature_mismatch_count");
     }
-    s3_log(S3_LOG_ERROR, "Authentication failure: %s\n", error_code.c_str());
+    s3_log(S3_LOG_ERROR, request_id, "Authentication failure: %s\n",
+           error_code.c_str());
     request->respond_error(error_code);
   }
   done();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();
 }
 
@@ -308,7 +313,7 @@ void S3Action::start_chunk_authentication() {
 }
 
 bool S3Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   bool is_s3_shutting_down =
       S3Option::get_instance()->get_is_s3_shutting_down();
   if (is_s3_shutting_down && check_auth_op_aborted &&
@@ -318,11 +323,11 @@ bool S3Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
     } else {
       send_response_to_s3_client();
     }
-    s3_log(S3_LOG_DEBUG, "Exiting\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return is_s3_shutting_down;
   }
   if (!is_response_scheduled && is_s3_shutting_down) {
-    s3_log(S3_LOG_DEBUG, "S3 server is about to shutdown\n");
+    s3_log(S3_LOG_DEBUG, request_id, "S3 server is about to shutdown\n");
     request->pause();
     is_response_scheduled = true;
     if (s3_error_code.empty()) {
@@ -334,12 +339,12 @@ bool S3Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
       send_response_to_s3_client();
     }
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return is_s3_shutting_down;
 }
 
 void S3Action::send_retry_error_to_s3_client(int retry_after_in_secs) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   request->respond_retry_after(1);
   done();
   i_am_done();

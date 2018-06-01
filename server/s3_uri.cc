@@ -29,6 +29,7 @@ S3URI::S3URI(std::shared_ptr<S3RequestObject> req)
       s3_api_type(S3ApiType::unsupported),
       bucket_name(""),
       object_name("") {
+  request_id = request->get_request_id();
   setup_operation_code();
 }
 
@@ -84,14 +85,14 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::versions;
   }
 
-  s3_log(S3_LOG_DEBUG, "Operation code %s\n",
+  s3_log(S3_LOG_DEBUG, request_id, "Operation code %s\n",
          operation_code_to_str(operation_code).c_str());
   // Other operations - todo
 }
 
 S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
     : S3URI(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   std::string full_uri(request->c_get_full_path());
   // Strip the query params
   std::size_t qparam_start = full_uri.find("?");
@@ -134,7 +135,7 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
 S3VirtualHostStyleURI::S3VirtualHostStyleURI(
     std::shared_ptr<S3RequestObject> req)
     : S3URI(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   host_header = request->get_host_name();
 
   setup_bucket_name();
@@ -157,7 +158,7 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(
 }
 
 void S3VirtualHostStyleURI::setup_bucket_name() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (host_header.find(S3Option::get_instance()->get_default_endpoint()) !=
       std::string::npos) {
     bucket_name = host_header.substr(
@@ -172,5 +173,5 @@ void S3VirtualHostStyleURI::setup_bucket_name() {
           host_header.substr(0, (host_header.length() - (*it).length() - 1));
     }
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }

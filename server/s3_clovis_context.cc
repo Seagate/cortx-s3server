@@ -27,7 +27,7 @@
 // Memory buffers from custom memory pool
 static void s3_bufvec_free_aligned(struct m0_bufvec *bufvec, size_t unit_size,
                                    bool free_bufs = true) {
-  s3_log(S3_LOG_DEBUG,
+  s3_log(S3_LOG_DEBUG, "",
          "s3_bufvec_free_aligned unit_size = %zu, free_bufs = %s\n", unit_size,
          (free_bufs ? "true" : "false"));
   if (free_bufs) {
@@ -57,7 +57,7 @@ static void s3_bufvec_free_aligned(struct m0_bufvec *bufvec, size_t unit_size,
 static int s3_bufvec_alloc_aligned(struct m0_bufvec *bufvec, uint32_t num_segs,
                                    size_t unit_size,
                                    bool allocate_bufs = true) {
-  s3_log(S3_LOG_DEBUG,
+  s3_log(S3_LOG_DEBUG, "",
          "s3_bufvec_alloc_aligned unit_size = %zu, allocate_bufs = %s\n",
          unit_size, (allocate_bufs ? "true" : "false"));
   M0_PRE(num_segs > 0);
@@ -97,7 +97,7 @@ static int s3_bufvec_alloc_aligned(struct m0_bufvec *bufvec, uint32_t num_segs,
 }
 
 struct s3_clovis_obj_context *create_obj_context(size_t count) {
-  s3_log(S3_LOG_DEBUG, "Entering with object count = %zu\n", count);
+  s3_log(S3_LOG_DEBUG, "", "Entering with object count = %zu\n", count);
 
   struct s3_clovis_obj_context *ctx = (struct s3_clovis_obj_context *)calloc(
       1, sizeof(struct s3_clovis_obj_context));
@@ -106,23 +106,23 @@ struct s3_clovis_obj_context *create_obj_context(size_t count) {
       (struct m0_clovis_obj *)calloc(count, sizeof(struct m0_clovis_obj));
   ctx->obj_count = count;
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
 
 int free_obj_context(struct s3_clovis_obj_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   free(ctx->objs);
   free(ctx);
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
 
 // To create a basic clovis operation
 struct s3_clovis_op_context *create_basic_op_ctx(size_t op_count) {
-  s3_log(S3_LOG_DEBUG, "Entering with op_count = %zu\n", op_count);
+  s3_log(S3_LOG_DEBUG, "", "Entering with op_count = %zu\n", op_count);
 
   struct s3_clovis_op_context *ctx = (struct s3_clovis_op_context *)calloc(
       1, sizeof(struct s3_clovis_op_context));
@@ -133,12 +133,12 @@ struct s3_clovis_op_context *create_basic_op_ctx(size_t op_count) {
                                                sizeof(struct m0_clovis_op_ops));
   ctx->op_count = op_count;
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
 
 int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   for (size_t i = 0; i < ctx->op_count; i++) {
     if (ctx->ops[i] != NULL) {
@@ -150,7 +150,7 @@ int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
   free(ctx->cbs);
   free(ctx);
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
 
@@ -159,7 +159,7 @@ int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
 struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(size_t clovis_buf_count,
                                                        size_t unit_size,
                                                        bool allocate_bufs) {
-  s3_log(S3_LOG_DEBUG, "Entering clovis_buf_count = %zu, unit_size = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "Entering clovis_buf_count = %zu, unit_size = %zu\n",
          clovis_buf_count, unit_size);
 
   struct s3_clovis_rw_op_context *ctx =
@@ -179,7 +179,7 @@ struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(size_t clovis_buf_count,
     free(ctx->data);
     free(ctx->attr);
     free(ctx);
-    s3_log(S3_LOG_DEBUG, "Exiting with NULL - possible out-of-memory\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting with NULL - possible out-of-memory\n");
     return NULL;
   }
 
@@ -190,7 +190,7 @@ struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(size_t clovis_buf_count,
     free(ctx->attr);
     free(ctx->ext);
     free(ctx);
-    s3_log(S3_LOG_DEBUG, "Exiting with NULL - possible out-of-memory\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting with NULL - possible out-of-memory\n");
     return NULL;
   }
 
@@ -202,15 +202,15 @@ struct s3_clovis_rw_op_context *create_basic_rw_op_ctx(size_t clovis_buf_count,
     free(ctx->attr);
     free(ctx->ext);
     free(ctx);
-    s3_log(S3_LOG_DEBUG, "Exiting with NULL - possible out-of-memory\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting with NULL - possible out-of-memory\n");
     return NULL;
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
 
 int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   s3_bufvec_free_aligned(ctx->data, ctx->unit_size, ctx->allocated_bufs);
   m0_bufvec_free(ctx->attr);
@@ -219,13 +219,13 @@ int free_basic_rw_op_ctx(struct s3_clovis_rw_op_context *ctx) {
   free(ctx->data);
   free(ctx->attr);
   free(ctx);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
 
 /* Clovis index API */
 struct s3_clovis_idx_context *create_idx_context(size_t idx_count) {
-  s3_log(S3_LOG_DEBUG, "Entering with idx_count = %zu\n", idx_count);
+  s3_log(S3_LOG_DEBUG, "", "Entering with idx_count = %zu\n", idx_count);
 
   struct s3_clovis_idx_context *ctx = (struct s3_clovis_idx_context *)calloc(
       1, sizeof(struct s3_clovis_idx_context));
@@ -233,22 +233,22 @@ struct s3_clovis_idx_context *create_idx_context(size_t idx_count) {
       (struct m0_clovis_idx *)calloc(idx_count, sizeof(struct m0_clovis_idx));
   ctx->idx_count = idx_count;
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
 
 int free_idx_context(struct s3_clovis_idx_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   free(ctx->idx);
   free(ctx);
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
 
 struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int op_count) {
-  s3_log(S3_LOG_DEBUG, "Entering with op_count = %d\n", op_count);
+  s3_log(S3_LOG_DEBUG, "", "Entering with op_count = %d\n", op_count);
 
   struct s3_clovis_idx_op_context *ctx =
       (struct s3_clovis_idx_op_context *)calloc(
@@ -259,12 +259,12 @@ struct s3_clovis_idx_op_context *create_basic_idx_op_ctx(int op_count) {
                                                sizeof(struct m0_clovis_op_ops));
   ctx->op_count = op_count;
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 }
 
 int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   for (size_t i = 0; i < ctx->op_count; i++) {
     if (ctx->ops[i] == NULL) {
@@ -283,7 +283,7 @@ int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
   free(ctx->cbs);
   free(ctx);
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }
 
@@ -329,8 +329,8 @@ void index_bufvec_free(struct m0_bufvec *bv) {
 }
 
 struct s3_clovis_kvs_op_context *create_basic_kvs_op_ctx(int no_of_keys) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_DEBUG, "no of keys = %d\n", no_of_keys);
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "no of keys = %d\n", no_of_keys);
 
   struct s3_clovis_kvs_op_context *ctx =
       (struct s3_clovis_kvs_op_context *)calloc(
@@ -342,7 +342,7 @@ struct s3_clovis_kvs_op_context *create_basic_kvs_op_ctx(int no_of_keys) {
   if (ctx->values == NULL) goto FAIL;
   ctx->rcs = (int *)calloc(no_of_keys, sizeof(int));
   if (ctx->rcs == NULL) goto FAIL;
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;
 
 FAIL:
@@ -362,12 +362,12 @@ FAIL:
 }
 
 int free_basic_kvs_op_ctx(struct s3_clovis_kvs_op_context *ctx) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
 
   index_bufvec_free(ctx->keys);
   index_bufvec_free(ctx->values);
   free(ctx->rcs);
   free(ctx);
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return 0;
 }

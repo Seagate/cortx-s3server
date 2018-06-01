@@ -65,7 +65,7 @@ class S3AccountUserIdxMetadata {
 
   // The name for a AccountUserIndex
   std::string account_user_index_name;
-
+  std::string request_id;
   struct m0_uint128 bucket_list_index_oid;
 
   std::shared_ptr<S3RequestObject> request;

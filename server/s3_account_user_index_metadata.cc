@@ -34,7 +34,8 @@ S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor");
+  request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor");
 
   account_name = request->get_account_name();
   account_id = request->get_account_id();
@@ -80,7 +81,7 @@ void S3AccountUserIdxMetadata::set_bucket_list_index_oid(struct m0_uint128 id) {
 
 void S3AccountUserIdxMetadata::load(std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
@@ -93,14 +94,14 @@ void S3AccountUserIdxMetadata::load(std::function<void(void)> on_success,
       root_account_user_index_oid, get_account_index_id(),
       std::bind(&S3AccountUserIdxMetadata::load_successful, this),
       std::bind(&S3AccountUserIdxMetadata::load_failed, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::load_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (this->from_json(clovis_kv_reader->get_value()) != 0) {
-    s3_log(S3_LOG_ERROR,
+    s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
            root_account_user_index_oid.u_hi, root_account_user_index_oid.u_lo,
            get_account_index_id().c_str(),
@@ -114,30 +115,32 @@ void S3AccountUserIdxMetadata::load_successful() {
     state = S3AccountUserIdxMetadataState::present;
     this->handler_on_success();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::load_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (json_parsing_error) {
     state = S3AccountUserIdxMetadataState::failed;
   } else if (clovis_kv_reader->get_state() ==
              S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, "Account User index metadata is missing\n");
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Account User index metadata is missing\n");
     state = S3AccountUserIdxMetadataState::missing;
   } else {
-    s3_log(S3_LOG_ERROR, "Loading of account user index metadata failed\n");
+    s3_log(S3_LOG_ERROR, request_id,
+           "Loading of account user index metadata failed\n");
     state = S3AccountUserIdxMetadataState::failed;
   }
 
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::save(std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -151,31 +154,31 @@ void S3AccountUserIdxMetadata::save(std::function<void(void)> on_success,
       std::bind(&S3AccountUserIdxMetadata::save_successful, this),
       std::bind(&S3AccountUserIdxMetadata::save_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::save_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   state = S3AccountUserIdxMetadataState::saved;
   this->handler_on_success();
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::save_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Saving of Account user metadata failed\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id, "Saving of Account user metadata failed\n");
 
   state = S3AccountUserIdxMetadataState::failed;
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::remove(std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -187,31 +190,31 @@ void S3AccountUserIdxMetadata::remove(std::function<void(void)> on_success,
       std::bind(&S3AccountUserIdxMetadata::remove_successful, this),
       std::bind(&S3AccountUserIdxMetadata::remove_failed, this));
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::remove_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   state = S3AccountUserIdxMetadataState::deleted;
   this->handler_on_success();
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AccountUserIdxMetadata::remove_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Removal of Account User metadata failed\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id, "Removal of Account User metadata failed\n");
 
   state = S3AccountUserIdxMetadataState::failed;
   this->handler_on_failed();
 
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // Streaming to json
 std::string S3AccountUserIdxMetadata::to_json() {
-  s3_log(S3_LOG_DEBUG, "Called\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
 
   root["account_name"] = account_name;
@@ -231,14 +234,14 @@ std::string S3AccountUserIdxMetadata::to_json() {
 }
 
 int S3AccountUserIdxMetadata::from_json(std::string content) {
-  s3_log(S3_LOG_DEBUG, "Called\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Called\n");
   Json::Value root;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(content.c_str(), root);
 
   if (!parsingSuccessful ||
       s3_fi_is_enabled("account_user_idx_metadata_corrupted")) {
-    s3_log(S3_LOG_ERROR, "Json Parsing failed.\n");
+    s3_log(S3_LOG_ERROR, request_id, "Json Parsing failed.\n");
     return -1;
   }
 

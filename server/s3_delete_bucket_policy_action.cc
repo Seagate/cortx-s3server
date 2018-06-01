@@ -25,7 +25,7 @@ S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req, false), delete_successful(false) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -36,7 +36,7 @@ S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(
 }
 
 void S3DeleteBucketPolicyAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3DeleteBucketPolicyAction::fetch_bucket_metadata, this));
   add_task(std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy, this));
   add_task(
@@ -45,18 +45,18 @@ void S3DeleteBucketPolicyAction::setup_steps() {
 }
 
 void S3DeleteBucketPolicyAction::fetch_bucket_metadata() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   // Trigger metadata read async operation with callback
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3DeleteBucketPolicyAction::next, this),
                         std::bind(&S3DeleteBucketPolicyAction::next, this));
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteBucketPolicyAction::delete_bucket_policy() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     bucket_metadata->deletepolicy();
     bucket_metadata->save(
@@ -67,26 +67,26 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy() {
   } else {
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteBucketPolicyAction::delete_bucket_policy_successful() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   delete_successful = true;
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteBucketPolicyAction::delete_bucket_policy_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_ERROR, "Bucket policy deletion failed\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id, "Bucket policy deletion failed\n");
   delete_successful = false;
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Trigger metadata read async operation with callback
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     S3Error error("NoSuchBucket", request->get_request_id(),
@@ -118,6 +118,6 @@ void S3DeleteBucketPolicyAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

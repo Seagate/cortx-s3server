@@ -46,6 +46,7 @@ class S3AsyncOpResponse {
 };
 
 class S3AsyncOpContextBase {
+ protected:
   std::shared_ptr<S3RequestObject> request;
   std::function<void(void)> on_success;
   std::function<void(void)> on_failed;
@@ -65,6 +66,8 @@ class S3AsyncOpContextBase {
   std::string operation_key;  // used to identify operation(metric) name
   // Used for mocking clovis return calls.
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+
+  std::string request_id;
 
  public:
   S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req,

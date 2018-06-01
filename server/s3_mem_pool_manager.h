@@ -90,7 +90,7 @@ class S3MempoolManager {
 
   static S3MempoolManager* get_instance() {
     if (!instance) {
-      s3_log(S3_LOG_FATAL,
+      s3_log(S3_LOG_FATAL, "",
              "Memory pool for clovis read buffers not initialized!\n");
     }
     return instance;

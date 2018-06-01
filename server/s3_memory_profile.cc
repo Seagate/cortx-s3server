@@ -40,9 +40,9 @@ bool S3MemoryProfile::we_have_enough_memory_for_put_obj(int layout_id) {
 
   size_t min_mem_for_put_obj = memory_per_put_request(layout_id);
 
-  s3_log(S3_LOG_DEBUG, "free_space_in_libevent_mempool = %zu\n",
+  s3_log(S3_LOG_DEBUG, "", "free_space_in_libevent_mempool = %zu\n",
          free_space_in_libevent_mempool);
-  s3_log(S3_LOG_DEBUG, "min_mem_for_put_obj = %zu\n", min_mem_for_put_obj);
+  s3_log(S3_LOG_DEBUG, "", "min_mem_for_put_obj = %zu\n", min_mem_for_put_obj);
 
   return (free_space_in_libevent_mempool > min_mem_for_put_obj);
 }

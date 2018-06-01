@@ -41,9 +41,10 @@ extern S3Option *g_option_instance;
                         "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",    \
               timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(), \
               getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                    \
-    s3_log(S3_LOG_INFO, "IEC: " event_code ": " event_description              \
-                        ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "    \
-                        "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",    \
+    s3_log(S3_LOG_INFO, "",                                                    \
+           "IEC: " event_code ": " event_description                           \
+           ": { \"time\": \"%s\", \"node\": \"%s\", \"pid\": "                 \
+           "%d, \"file\": \"%s\", \"line\": %d" json_fmt " }",                 \
            timestamp.c_str(), g_option_instance->get_s3_nodename().c_str(),    \
            getpid(), __FILE__, __LINE__, ##__VA_ARGS__);                       \
   } while (0)

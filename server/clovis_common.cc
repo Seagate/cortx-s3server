@@ -36,7 +36,7 @@ const char *clovis_indices = "./indices";
 // extern struct m0_addb_ctx m0_clovis_addb_ctx;
 
 int init_clovis(void) {
-  s3_log(S3_LOG_INFO, "Entering!\n");
+  s3_log(S3_LOG_INFO, "", "Entering!\n");
   int rc;
   S3Option *option_instance = S3Option::get_instance();
   /* CLOVIS_DEFAULT_EP, CLOVIS_DEFAULT_HA_ADDR*/
@@ -61,20 +61,22 @@ int init_clovis(void) {
       clovis_conf.cc_idx_service_id        = M0_CLOVIS_IDX_MOCK;
       clovis_conf.cc_idx_service_conf      = (void *)clovis_indices;
 #endif
-      s3_log(S3_LOG_FATAL, "KVS Index service Id [%d] not supported\n",
+      s3_log(S3_LOG_FATAL, "", "KVS Index service Id [%d] not supported\n",
              idx_service_id);
       return -1;
       break;
 
     case 1:
-      s3_log(S3_LOG_INFO, "KVS Index service Id M0_CLOVIS_IDX_DIX selected\n");
+      s3_log(S3_LOG_INFO, "",
+             "KVS Index service Id M0_CLOVIS_IDX_DIX selected\n");
       clovis_conf.cc_idx_service_id = M0_CLOVIS_IDX_DIX;
       dix_conf.kc_create_meta = false;
       clovis_conf.cc_idx_service_conf = &dix_conf;
       break;
 
     case 2:
-      s3_log(S3_LOG_INFO, "KVS Index service Id M0_CLOVIS_IDX_CASS selected\n");
+      s3_log(S3_LOG_INFO, "",
+             "KVS Index service Id M0_CLOVIS_IDX_CASS selected\n");
       cass_conf.cc_cluster_ep = const_cast<char *>(
           option_instance->get_clovis_cass_cluster_ep().c_str());
       cass_conf.cc_keyspace = const_cast<char *>(
@@ -86,7 +88,7 @@ int init_clovis(void) {
       break;
 
     default:
-      s3_log(S3_LOG_FATAL, "KVS Index service Id [%d] not supported\n",
+      s3_log(S3_LOG_FATAL, "", "KVS Index service Id [%d] not supported\n",
              idx_service_id);
       return -1;
   }
@@ -95,7 +97,7 @@ int init_clovis(void) {
   rc = m0_clovis_init(&clovis_instance, &clovis_conf, true);
 
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "Failed to initilise Clovis: %d\n", rc);
+    s3_log(S3_LOG_FATAL, "", "Failed to initilise Clovis: %d\n", rc);
     return rc;
   }
 
@@ -105,7 +107,7 @@ int init_clovis(void) {
   rc = clovis_container.co_realm.re_entity.en_sm.sm_rc;
 
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "Failed to open uber scope\n");
+    s3_log(S3_LOG_FATAL, "", "Failed to open uber scope\n");
     fini_clovis();
     return rc;
   }
@@ -115,6 +117,6 @@ int init_clovis(void) {
 }
 
 void fini_clovis(void) {
-  s3_log(S3_LOG_INFO, "Entering!\n");
+  s3_log(S3_LOG_INFO, "", "Entering!\n");
   m0_clovis_fini(clovis_instance, true);
 }

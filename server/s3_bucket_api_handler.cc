@@ -34,8 +34,9 @@
 #include "s3_stats.h"
 
 void S3BucketAPIHandler::create_action() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
-  s3_log(S3_LOG_INFO, "Action operation code = %d\n", operation_code);
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Action operation code = %d\n",
+         operation_code);
 
   switch (operation_code) {
     case S3OperationCode::location:
@@ -288,5 +289,5 @@ void S3BucketAPIHandler::create_action() {
       // should never be here.
       return;
   };  // switch operation_code
-  s3_log(S3_LOG_DEBUG, "Exiting");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting");
 }

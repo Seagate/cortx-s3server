@@ -26,7 +26,7 @@ S3HeadObjectAction::S3HeadObjectAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3Action(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -44,7 +44,7 @@ S3HeadObjectAction::S3HeadObjectAction(
 }
 
 void S3HeadObjectAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3HeadObjectAction::fetch_bucket_info, this));
   add_task(std::bind(&S3HeadObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3HeadObjectAction::send_response_to_s3_client, this));
@@ -52,7 +52,7 @@ void S3HeadObjectAction::setup_steps() {
 }
 
 void S3HeadObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3HeadObjectAction::next, this),
@@ -61,7 +61,7 @@ void S3HeadObjectAction::fetch_bucket_info() {
 
 void S3HeadObjectAction::fetch_object_info() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, "Found bucket metadata\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
     struct m0_uint128 object_list_index_oid =
         bucket_metadata->get_object_list_index_oid();
     // bypass shutdown signal check for next task
@@ -70,7 +70,7 @@ void S3HeadObjectAction::fetch_object_info() {
     if (object_list_index_oid.u_lo == 0ULL &&
         object_list_index_oid.u_hi == 0ULL) {
       // There is no object list index, hence object doesn't exist
-      s3_log(S3_LOG_DEBUG, "Object not found\n");
+      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
       set_s3_error("NoSuchKey");
       send_response_to_s3_client();
     } else {
@@ -82,31 +82,31 @@ void S3HeadObjectAction::fetch_object_info() {
           std::bind(&S3HeadObjectAction::fetch_object_info_failed, this));
     }
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_WARN, "Bucket not found\n");
+    s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_WARN, "Failed to look up Bucket metadata\n");
+    s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
 }
 
 void S3HeadObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_WARN, "Object not found\n");
+    s3_log(S3_LOG_WARN, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
   } else {
-    s3_log(S3_LOG_WARN, "Failed to look up Object metadata\n");
+    s3_log(S3_LOG_WARN, request_id, "Failed to look up Object metadata\n");
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3HeadObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
@@ -145,6 +145,6 @@ void S3HeadObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

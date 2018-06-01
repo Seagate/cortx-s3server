@@ -42,7 +42,7 @@ class S3PostToMainLoop {
 
  public:
   S3PostToMainLoop(void *ctx) : context(ctx) {
-    s3_log(S3_LOG_DEBUG, "Constructor\n");
+    s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   }
 
   void operator()(user_event_on_main_loop callback);

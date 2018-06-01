@@ -34,6 +34,7 @@ S3AsyncOpContextBase::S3AsyncOpContextBase(
       s3_clovis_api(clovis_api != nullptr
                         ? clovis_api
                         : std::make_shared<ConcreteClovisAPI>()) {
+  request_id = request->get_request_id();
   ops_response.resize(ops_count);
 }
 

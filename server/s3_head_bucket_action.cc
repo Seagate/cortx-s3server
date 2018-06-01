@@ -25,7 +25,7 @@ S3HeadBucketAction::S3HeadBucketAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
     : S3Action(req) {
-  s3_log(S3_LOG_DEBUG, "Constructor\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
   } else {
@@ -35,14 +35,14 @@ S3HeadBucketAction::S3HeadBucketAction(
 }
 
 void S3HeadBucketAction::setup_steps() {
-  s3_log(S3_LOG_DEBUG, "Setting up the action\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3HeadBucketAction::read_metadata, this));
   add_task(std::bind(&S3HeadBucketAction::send_response_to_s3_client, this));
   // ...
 }
 
 void S3HeadBucketAction::read_metadata() {
-  s3_log(S3_LOG_DEBUG, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
 
   // Trigger metadata read async operation with callback
   bucket_metadata =
@@ -54,11 +54,12 @@ void S3HeadBucketAction::read_metadata() {
 }
 
 void S3HeadBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, "sending 'Service Unavailable' response...\n");
+    s3_log(S3_LOG_DEBUG, request_id,
+           "sending 'Service Unavailable' response...\n");
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
@@ -89,6 +90,6 @@ void S3HeadBucketAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete
-  s3_log(S3_LOG_DEBUG, "Exiting\n");
 }

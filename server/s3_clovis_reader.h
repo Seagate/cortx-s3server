@@ -46,6 +46,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   bool has_clovis_rw_op_context;
 
   int layout_id;
+  std::string request_id;
 
  public:
   S3ClovisReaderContext(std::shared_ptr<S3RequestObject> req,
@@ -55,7 +56,8 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
       // Passing default value of opcount explicitly.
       : S3AsyncOpContextBase(req, success_callback, failed_callback, 1,
                              clovis_api) {
-    s3_log(S3_LOG_DEBUG, "Constructor: layout_id = %d\n", layoutid);
+    request_id = request->get_request_id();
+    s3_log(S3_LOG_DEBUG, request_id, "Constructor: layout_id = %d\n", layoutid);
     assert(layoutid > 0);
 
     layout_id = layoutid;
@@ -69,7 +71,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   }
 
   ~S3ClovisReaderContext() {
-    s3_log(S3_LOG_DEBUG, "Destructor\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
 
     if (has_clovis_op_context) {
       free_basic_op_ctx(clovis_op_context);
@@ -136,6 +138,8 @@ class S3ClovisReader {
   std::unique_ptr<S3ClovisReaderContext> reader_context;
   std::unique_ptr<S3ClovisReaderContext> open_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+
+  std::string request_id;
 
   // Used to report to caller
   std::function<void()> handler_on_success;

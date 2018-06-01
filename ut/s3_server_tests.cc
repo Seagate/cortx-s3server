@@ -135,7 +135,7 @@ static bool init_auth_ssl() {
   SSL_load_error_strings();
   g_ssl_auth_ctx = SSL_CTX_new(SSLv23_method());
   if (!SSL_CTX_load_verify_locations(g_ssl_auth_ctx, cert_file, NULL)) {
-    s3_log(S3_LOG_ERROR, "SSL_CTX_load_verify_locations\n");
+    s3_log(S3_LOG_ERROR, "", "SSL_CTX_load_verify_locations\n");
     return false;
   }
   SSL_CTX_set_verify(g_ssl_auth_ctx, SSL_VERIFY_PEER, NULL);
