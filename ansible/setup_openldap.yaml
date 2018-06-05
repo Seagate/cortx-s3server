@@ -43,11 +43,13 @@
           src: files/ldap/cfg_ldap.ldif
           dest: /tmp/s3ldap/cfg_ldap.ldif
 
-      - name: Copy ldap schema/data files
+      - name: Copy ldap schema, data, replication-config files
         copy: src={{ item.src }} dest={{ item.dest }}
         with_items:
           - { src: 'ldap/cn={1}s3user.ldif', dest: '/tmp/s3ldap/cn={1}s3user.ldif' }
           - { src: 'ldap/ldap-init.ldif', dest: '/tmp/s3ldap/ldap-init.ldif' }
+          - { src: 'ldap/syncprov_mod.ldif', dest: '/tmp/s3ldap/syncprov_mod.ldif' }
+          - { src: 'ldap/syncprov.ldif', dest: '/tmp/s3ldap/syncprov.ldif' }
 
       - name: Clean up old ldap files
         file:
@@ -85,6 +87,14 @@
 
       - name: Configure OpenLDAP - Base data
         command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/ldap-init.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Set syncrepl as a provider
+        command: ldapadd -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/syncprov_mod.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - setup sync config
+        command: ldapadd -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/syncprov.ldif
         no_log: true
 
       - name: Delete temp directory

@@ -22,3 +22,4 @@ third_party/cached_*.git.rev
 core.*
 ansible/ansible-run.log
 ansible/*.retry
+.DS_Store

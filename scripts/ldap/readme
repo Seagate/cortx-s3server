@@ -63,3 +63,17 @@ rm cn\=config.ldif
 ```sh
   ldapmodify -Y EXTERNAL  -H ldapi:/// -f replicate.ldif
 ```
+
+# For Configuring custom data dir for openldap we need to do following
+
+# Perform steps to setup dir and add below to cg_ldap.ldif
+# 1. It's owned by ldap (chown -R ldap:ldap /var/seagate/ldap)
+# 2. Proper permissions are setup (chmod 700 /var/seagate/ldap)
+# 3. Proper selinux context is setup. (chcon -R -u system_u -t slapd_db_t /var/seagate/ldap)
+# 4. Verify permissions ls -ldZ /var/seagate/ldap
+# drwx------. ldap ldap system_u:object_r:slapd_db_t:s0  /var/seagate/ldap
+# More details https://www.systutorials.com/docs/linux/man/8-slapd_selinux/
+dn: olcDatabase={2}hdb,cn=config
+changetype: modify
+replace: olcDbDirectory
+olcDbDirectory: /var/seagate/ldap
