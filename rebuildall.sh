@@ -135,11 +135,6 @@ else
       rsync -aW $S3_SRC_DIR/third_party/libevhtp/s3_dist $BUILD_CACHE_DIR/libevhtp
       cd $S3_SRC_DIR/third_party/libevhtp/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_libevhtp.git.rev && cd -
 
-      mkdir -p $BUILD_CACHE_DIR/s3cmd
-      cp -f $S3_SRC_DIR/third_party/s3cmd/s3cmd $BUILD_CACHE_DIR/s3cmd/
-      rsync -aW $S3_SRC_DIR/third_party/s3cmd/S3 $BUILD_CACHE_DIR/s3cmd
-      cd $S3_SRC_DIR/third_party/s3cmd/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_s3cmd.git.rev && cd -
-
       mkdir -p $BUILD_CACHE_DIR/jsoncpp
       rsync -aW $S3_SRC_DIR/third_party/jsoncpp/dist $BUILD_CACHE_DIR/jsoncpp
       cd $S3_SRC_DIR/third_party/jsoncpp/ && git rev-parse HEAD > $BUILD_CACHE_DIR/cached_jsoncpp.git.rev && cd -
