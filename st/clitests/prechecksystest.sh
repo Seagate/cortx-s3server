@@ -75,7 +75,7 @@ else
 fi
 
 # Check md5sum is installed
-if command -v md5sum >/dev/null 2>&1;
+if command -v md5sum >/dev/null 2>&1; then
     printf "\nCheck md5sum...OK"
 else
     printf "\nmd5sum not installed"
