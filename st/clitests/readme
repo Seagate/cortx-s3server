@@ -38,7 +38,7 @@ Installing python34 and required packages to run S3 Auth cli and ST tests
    yum -y install python34-scripttest
 
 Below python modules can be downloaded from internal release management RPM Repository location 
-or built from S3server Repo s3server/rpms/python34/buildrpms.sh script.
+or built from S3server Repo s3server/rpms/python34/buildrpm.sh script.
   - python34-xmltodict
   - python34-jmespath
   - python34-botocore
@@ -50,6 +50,14 @@ or built from S3server Repo s3server/rpms/python34/buildrpms.sh script.
    yum localinstall python34-botocore-1.6.0-1.el7.centos.noarch.rpm
    yum localinstall python34-s3transfer-0.1.10-1.el7.centos.noarch.rpm
    yum localinstall python34-boto3-1.4.6-1.el7.centos.noarch.rpm
+
+System tests with ossperf uses tools like bc, parallel, md5sum and s3cmd
+Ensure that you have all dependencies installed for ossperf
+   yum install parallel
+   yum install bc
+   yum install coreutils
+Install s3cmd rpm after building it from S3server Repo
+s3server/rpms/s3cmd/buildrpm.sh script
 
 Build Jcloud and Jclient and copy jcloud.jar and jclient.jar to the
 current directory i.e st/clitests from the respective build directories.
