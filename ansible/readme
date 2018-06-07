@@ -1,3 +1,10 @@
+Notes:
+1. If you hit gpg check errors, you can temporarily disable gpg checks by updating
+repo files.
+For example
+Add gpgcheck=0 to file /etc/yum.repos.d/epel-x86_64.repo
+
+
 ******** Follow steps mentioned below on your laptop to configure your devvm ******
 
 1. Install ansible on you laptop

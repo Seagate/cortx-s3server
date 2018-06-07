@@ -77,3 +77,14 @@ dn: olcDatabase={2}hdb,cn=config
 changetype: modify
 replace: olcDbDirectory
 olcDbDirectory: /var/seagate/ldap
+
+# Useful commands
+Run following command to check if ldap was setup:
+```sh
+ldapsearch -b "dc=s3,dc=seagate,dc=com" -x -w seagate -D "cn=admin,dc=seagate,dc=com"
+```
+
+Run following command to clean up old data
+```sh
+ldapdelete -x -D "cn=admin,dc=seagate,dc=com" -r "dc=seagate,dc=com" -w seagate
+```
