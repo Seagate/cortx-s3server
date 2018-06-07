@@ -107,7 +107,8 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("ldapLoginDN", "cn=admin,dc=seagate,dc=com");
         authServerConfig.setProperty("ldapLoginPW", "seagate");
         authServerConfig.setProperty("consoleURL", "https://console.s3.seagate.com:9292/sso");
-        authServerConfig.setProperty("https", "true");
+        authServerConfig.setProperty("enable_https", "true");
+        authServerConfig.setProperty("enable_http", "false");
         authServerConfig.setProperty("enableFaultInjection", "false");
         authServerConfig.setProperty("perfEnabled", "false");
         authServerConfig.setProperty("perfLogFile", "/var/log/seagate/auth/perf.log");
