@@ -11,6 +11,8 @@ cc_binary(
     srcs = glob(["server/*.cc", "server/*.c", "server/*.h",
                  "mempool/*.c", "mempool/*.h"]),
 
+    # In case of release mode we may have to remove option -ggdb3
+    # In case of debug mode we may have to remove option -O3
     copts = [
       "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-DGCC_VERSION=4002",
       "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
@@ -30,7 +32,11 @@ cc_binary(
       "mempool",
     ],
 
+    # For the core file to show symbols and also for backtrace call
+    # in s3server code to show the stack trace we need -rdynamic flag
+    # https://www.gnu.org/software/libc/manual/html_node/Backtraces.html
     linkopts = [
+      "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
@@ -77,6 +83,7 @@ cc_test(
     ],
 
     linkopts = [
+      "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
@@ -127,6 +134,7 @@ cc_test(
     ],
 
     linkopts = [
+      "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
@@ -191,6 +199,7 @@ cc_binary(
     ],
 
     linkopts = [
+      "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
@@ -214,7 +223,7 @@ cc_test(
     ],
 
     linkopts = [
-      "-lpthread -ldl -lm -lrt -lgtest -lgmock",
+      "-lpthread -ldl -lm -lrt -lgtest -lgmock -rdynamic",
     ],
 
 )
@@ -253,6 +262,7 @@ cc_test(
     ],
 
     linkopts = [
+      "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
