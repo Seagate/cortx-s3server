@@ -101,7 +101,7 @@ fi
 
 if [ $no_ossperf_run -eq 0 ]
 then
-  PERF_SRC=`pwd`/perf
+  PERF_SRC=$WORKING_DIR/perf
   cd $PERF_SRC
 
   if [ -d "testfiles" ]
@@ -109,6 +109,7 @@ then
     rm -rf testfiles
   fi
 
+  echo "ossperf tests..."
   echo "Parallel worload of 5 files each of size 5000 bytes"
   ossperf.sh -n 5 -s 5000 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg -p 2>&1
   if [ $? -ne 0 ]; then
@@ -129,6 +130,10 @@ then
   if [ $? -ne 0 ]; then
      echo "ossperf -- sequential workload(Multipart) succeeded"
   fi
+echo "*************************************************"
+echo "*** System tests with ossperf Runs Successful ***"
+echo "*************************************************"
+
 fi
 
 cd $WORKING_DIR
