@@ -23,3 +23,7 @@ core.*
 ansible/ansible-run.log
 ansible/*.retry
 .DS_Store
+auth-utils/s3iamcli/build/
+auth-utils/s3iamcli/dist/
+auth-utils/s3iamcli/s3iamcli.egg-info/
+st/clitests/tests-out/

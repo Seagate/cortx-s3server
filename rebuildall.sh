@@ -155,6 +155,7 @@ then
       $no_s3mempoolmgrut_build -eq 0 || \
       $no_s3mempoolut_build -eq 0 ]]
   then
+    bazel shutdown
     bazel clean
   fi
 fi
