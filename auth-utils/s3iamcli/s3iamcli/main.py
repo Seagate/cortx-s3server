@@ -95,8 +95,29 @@ class S3IamCli:
         if Config.endpoint != None:
             Config.endpoint = config['ENDPOINTS'][service]
 
-        Credentials.access_key = cli_args.access_key
-        Credentials.secret_key = cli_args.secret_key
+        """
+
+        SG_ACCESS_KEY, SG_SECRET_KEY, SG_LDAP_USER, SG_LDAP_PASSWD credentials are taken from one of the
+        following sources in descending order of priority.
+        1. CLI options
+        2. Declared environment variables
+        3. '~/.sgs3iamcli/config.yaml' file
+        4. Asking user to enter i.e prompt
+
+        """
+        # Take credentials from '~/.sgs3iamcli/config.yaml' file
+        if (cli_args.access_key == None and cli_args.secret_key == None):
+            if 'SG_ACCESS_KEY' in config and config['SG_ACCESS_KEY'] and \
+               'SG_SECRET_KEY' in config and config['SG_SECRET_KEY']:
+                cli_args.access_key = config['SG_ACCESS_KEY']
+                cli_args.secret_key = config['SG_SECRET_KEY']
+
+        if (cli_args.ldapuser == None and cli_args.ldappasswd == None):
+            if ('SG_LDAP_USER' in config and config['SG_LDAP_USER']) and \
+               ('SG_LDAP_PASSWD' in config and config['SG_LDAP_PASSWD']):
+                cli_args.ldapuser = config['SG_LDAP_USER']
+                cli_args.ldappasswd = config['SG_LDAP_PASSWD']
+
 
         if config['BOTO']['ENABLE_LOGGER']:
             logging.basicConfig(filename=config['BOTO']['LOG_FILE_PATH'],
@@ -185,25 +206,6 @@ class S3IamCli:
             print(str(ex))
             sys.exit(1)
 
-        if(cli_args.action.lower() in ["createaccount","listaccounts"] ):
-            if(cli_args.ldapuser is None):
-                print("Provide Ldap User Id.")
-                sys.exit(1)
-
-            if(cli_args.ldappasswd is None):
-                print("Provide Ldap password.")
-                sys.exit(1)
-            cli_args.access_key = cli_args.ldapuser
-            cli_args.secret_key = cli_args.ldappasswd
-        else:
-            if(cli_args.access_key is None):
-                print("Provide access key.")
-                sys.exit(1)
-
-            if(cli_args.secret_key is None):
-                print("Provide secret key.")
-                sys.exit(1)
-
          # Get service for the action
         if(not 'service' in controller_action[cli_args.action.lower()].keys()):
             print("Set the service(iam/s3/sts) for the action in the controller_action.yml.")
@@ -212,6 +214,53 @@ class S3IamCli:
 
         # Load configurations
         self.load_config(cli_args)
+
+        if(cli_args.action.lower() in ["createaccount","listaccounts"] ):
+
+            # Take credentials from declared environment variables
+            if ('SG_LDAP_USER' in os.environ) and ('SG_LDAP_PASSWD' in os.environ):
+                cli_args.ldapuser = os.environ['SG_LDAP_USER']
+                cli_args.ldappasswd = os.environ['SG_LDAP_PASSWD']
+
+            # Take credentials by asking user to enter i.e prompt
+            if(cli_args.ldapuser is None) and (cli_args.ldappasswd is None):
+
+                cli_args.ldapuser = input("Enter Ldap User Id: ")
+                if not cli_args.ldapuser:
+                    print("Provide Ldap User Id.")
+                    sys.exit(1)
+
+                cli_args.ldappasswd = input("Enter Ldap password: ")
+                if not cli_args.ldappasswd:
+                    print("Provide Ldap password.")
+                    sys.exit(1)
+
+            cli_args.access_key = cli_args.ldapuser
+            cli_args.secret_key = cli_args.ldappasswd
+
+        else:
+
+            # Take credentials from declared environment variables
+            if ('SG_ACCESS_KEY' in os.environ) and ('SG_SECRET_KEY' in os.environ):
+                cli_args.access_key = os.environ['SG_ACCESS_KEY']
+                cli_args.secret_key = os.environ['SG_SECRET_KEY']
+
+            # Take credentials by asking user to enter i.e prompt
+            if (cli_args.access_key is None) and (cli_args.secret_key is None):
+
+                cli_args.access_key = input("Enter Access Key: ")
+                if not cli_args.access_key:
+                    print("Provide access key.")
+                    sys.exit(1)
+
+                cli_args.secret_key = input("Enter Secret Key: ")
+                if not cli_args.secret_key:
+                    print("Provide secret key.")
+                    sys.exit(1)
+
+        Credentials.access_key = cli_args.access_key
+        Credentials.secret_key = cli_args.secret_key
+
 
         # Create boto3.session object using the access key id and the secret key
         session = self.get_session(cli_args.access_key, cli_args.secret_key, cli_args.session_token)
@@ -249,3 +298,4 @@ class S3IamCli:
         except Exception as ex:
             print(str(ex))
             sys.exit(1)
+
