@@ -23,9 +23,9 @@ Add gpgcheck=0 to file /etc/yum.repos.d/epel-x86_64.repo
 
 5. Update hosts file with IP address of your new VM, [s3devvm] is just a ansible group name and NOT dev vm hostname
 
-6. Run ansible to setup the dev vm
-   # ansible-playbook -i hosts setups3devm.yml -v  -k
-   It will prompt for ssh password
+6. Run ansible to setup the dev vm using appropriate .yml file
+   # ansible-playbook -i hosts setup_s3dev_centos7[3 or 4].yml -v  -k
+   It will prompt for ssh password and ldap password
    Your dev vm should be ready after successful run
 
 ***************************** END Dev Vm setup ***************************************
