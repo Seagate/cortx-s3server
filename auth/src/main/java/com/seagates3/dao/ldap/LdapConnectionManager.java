@@ -71,12 +71,17 @@ public class LdapConnectionManager {
             lc = ldapPool.getBoundConnection(
                     ldapLoginDN, ldapLoginPW.getBytes("UTF-8"));
         } catch (LDAPException ex) {
+            LOGGER.error("LDAPException Cause: " + ex.getCause()
+                         + ". Message: " + ex.getMessage());
             IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
                     String.format("\"cause\": \"%s\"", ex.getCause()));
         } catch (InterruptedException ex) {
             LOGGER.error("Failed to connect to LDAP server. Cause: "
-                    + ex.getCause());
+                    + ex.getCause() + ". Message: "
+                    + ex.getMessage());
         } catch (UnsupportedEncodingException ex) {
+            LOGGER.error("UnsupportedEncodingException Cause: " + ex.getCause()
+                       + ". Message: " + ex.getMessage());
             IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
                     "UTF-8 encoding is not supported", null);
         }

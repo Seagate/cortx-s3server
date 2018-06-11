@@ -4,8 +4,8 @@ from subprocess import call
 
 class LdapOps:
     def __init__(self):
-        self.tools_dir = os.path.join(os.path.dirname(__file__), 'tools')
-        ldap_config_file = os.path.join(self.tools_dir, 'ldap_config.yaml')
+        self.test_data_dir = os.path.join(os.path.dirname(__file__), 'test_data')
+        ldap_config_file = os.path.join(self.test_data_dir, 'ldap_config.yaml')
         with open(ldap_config_file, 'r') as f:
             self.ldap_config = yaml.safe_load(f)
 

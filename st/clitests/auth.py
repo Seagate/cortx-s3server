@@ -6,7 +6,7 @@ from s3client_config import S3ClientConfig
 
 class AuthTest(PyCliTest):
     def __init__(self, description):
-        self.tools_dir = os.path.join(os.path.dirname(__file__), "tools")
+        self.test_data_dir = os.path.join(os.path.dirname(__file__), "test_data")
         super(AuthTest, self).__init__(description)
 
     def setup(self):

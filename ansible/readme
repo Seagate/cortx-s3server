@@ -7,6 +7,9 @@ Add gpgcheck=0 to file /etc/yum.repos.d/epel-x86_64.repo
 
 ******** Follow steps mentioned below on your laptop to configure your devvm ******
 
+Centos 74 VM image is available at
+    https://drive.google.com/open?id=1mTktNQI7HDp1-N02LLl4ul-DsqqUtR6D
+
 1. Install ansible on you laptop
  - http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
  Mac : http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#latest-releases-on-mac-osx
@@ -18,15 +21,21 @@ Add gpgcheck=0 to file /etc/yum.repos.d/epel-x86_64.repo
 
 3. Download a folder named 'files' which is currently available in google drive location:
         https://drive.google.com/open?id=1QMPLcHjOT4q8xwDrCxZzsUPHPgMizu3R
+   For Centos 74, additionally download lustre rpms from
+        https://drive.google.com/open?id=1mTktNQI7HDp1-N02LLl4ul-DsqqUtR6D
 
-4. Copy the downloaded folders from "files" to <your s3server code>/ansible/files directory
-
+4. Copy the downloaded folders from "files" to <your s3server code>/ansible/files/ directory
+   Copy lustre rpms for Centos74 to <your s3server code>/ansible/files/lustre/
 5. Update hosts file with IP address of your new VM, [s3devvm] is just a ansible group name and NOT dev vm hostname
 
 6. Run ansible to setup the dev vm using appropriate .yml file
-   # ansible-playbook -i hosts setup_s3dev_centos7[3 or 4].yml -v  -k
-   It will prompt for ssh password and ldap password
-   Your dev vm should be ready after successful run
+   $ ansible-playbook -i hosts setup_s3dev_centos73.yml -v  -k
+   # For Centos 74 use setup_s3dev_centos74.yml
+   It will prompt for ssh password and ldap password.
+   For ldap password on dev vm, use "seagate" for rootDN and "ldapadmin" for IAM admin. These
+   password values should be same as dev VM configs use above values.
+
+   Your dev vm should be ready after successful run.
 
 ***************************** END Dev Vm setup ***************************************
 

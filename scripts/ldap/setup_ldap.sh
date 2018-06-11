@@ -25,17 +25,19 @@ esac
 # install openldap server and client
 yum install -y openldap-servers openldap-clients
 
-PASSWORD="seagate"
+ROOTDNPASSWORD="seagate"
+LDAPADMINPASS="seagate"
 if [[ $defaultpasswd == false ]]
 then
-    echo -n "Enter Password for LDAP: "
-    read -s PASSWORD && [[ -z $PASSWORD ]] && echo 'Password can not be null.' && exit 1
+    echo -en "\nEnter Password for LDAP rootDN: "
+    read -s ROOTDNPASSWORD && [[ -z $ROOTDNPASSWORD ]] && echo 'Password can not be null.' && exit 1
+
+    echo -en "\nEnter Password for LDAP IAM admin: "
+    read -s LDAPADMINPASS && [[ -z $LDAPADMINPASS ]] && echo 'Password can not be null.' && exit 1
 fi
 
-echo $PASSWORD
-
-# generate encrypted password
-SHA=$(slappasswd -s $PASSWORD)
+# generate encrypted password for rootDN
+SHA=$(slappasswd -s $ROOTDNPASSWORD)
 ESC_SHA=$(echo $SHA | sed 's/[/]/\\\//g')
 EXPR='s/{{ slapdpasswdhash.stdout }}/'$ESC_SHA'/g'
 
@@ -43,13 +45,22 @@ CFG_FILE=$(mktemp XXXX.ldif)
 cp -f cfg_ldap.ldif $CFG_FILE
 sed -i "$EXPR" $CFG_FILE
 
+# generate encrypted password for ldap admin
+SHA=$(slappasswd -s $LDAPADMINPASS)
+ESC_SHA=$(echo $SHA | sed 's/[/]/\\\//g')
+EXPR='s/{{ ldapadminpasswdhash.stdout }}/'$ESC_SHA'/g'
+
+ADMIN_USERS_FILE=$(mktemp XXXX.ldif)
+cp -f iam-admin.ldif $ADMIN_USERS_FILE
+sed -i "$EXPR" $ADMIN_USERS_FILE
+
 chkconfig slapd on
 
 # restart slapd
 systemctl start slapd
 
 # configure LDAP
-ldapmodify -Y EXTERNAL -H ldapi:/// -w $PASSWORD -f $CFG_FILE
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f $CFG_FILE
 rm -f $CFG_FILE
 
 # restart slapd
@@ -59,7 +70,13 @@ systemctl start slapd
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 
 # add S3 schema
-ldapadd -x -D "cn=admin,cn=config" -w $PASSWORD -f cn\=\{1\}s3user.ldif
+ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f cn\=\{1\}s3user.ldif
 
 # initialize ldap
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $PASSWORD -f ldap-init.ldif
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f ldap-init.ldif
+
+# Setup iam admin and necessary permissions
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE
+rm -f $ADMIN_USERS_FILE
+
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif

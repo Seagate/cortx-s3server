@@ -137,7 +137,9 @@ public class LDAPUtils {
                         filter, attrs, false);
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while searching for entry. Cause: "
-                        + ldapException.getCause());
+                        + ldapException.getCause() + ". Message: "
+                        + ldapException.getMessage());
+                LOGGER.debug("Stacktrace: " + ldapException);
                 IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX,
                         "LDAP exception occurred",
                         String.format("\"cause\": \"%s\"", ldapException.getCause()));
@@ -170,7 +172,9 @@ public class LDAPUtils {
                 lc.add(newEntry);
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while adding new entry. Cause: "
-                        + ldapException.getCause());
+                        + ldapException.getCause() + ". Message: "
+                        + ldapException.getMessage());
+                LOGGER.debug("Stacktrace: " + ldapException);
                 IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
                         String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
@@ -200,7 +204,9 @@ public class LDAPUtils {
                 lc.delete(dn);
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while deleting entry. Cause: "
-                        + ldapException.getCause());
+                        + ldapException.getCause() + ". Message: "
+                        + ldapException.getMessage());
+                LOGGER.debug("Stacktrace: " + ldapException);
                 IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
                         String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
@@ -232,7 +238,9 @@ public class LDAPUtils {
                 lc.modify(dn, modification);
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while updating entry. Cause: "
-                        + ldapException.getCause());
+                        + ldapException.getCause() + ". Message: "
+                        + ldapException.getMessage());
+                LOGGER.debug("Stacktrace: " + ldapException);
                 IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
                         String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;
@@ -266,7 +274,9 @@ public class LDAPUtils {
                 lc.modify(dn, modifications);
             } catch (LDAPException ldapException) {
                 LOGGER.error("Error occurred while updating entry. Cause: "
-                        + ldapException.getCause());
+                        + ldapException.getCause() + ". Message: "
+                        + ldapException.getMessage());
+                LOGGER.debug("Stacktrace: " + ldapException);
                 IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
                         String.format("\"cause\": \"%s\"", ldapException.getCause()));
                 throw ldapException;

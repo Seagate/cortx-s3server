@@ -5,7 +5,11 @@
   gather_facts: yes
   vars_prompt:
     - name: "openldappasswd"
-      prompt: "Enter new password for openldap:"
+      prompt: "Enter new password for openldap rootDN:"
+      private: yes
+
+    - name: "ldapiamadminpasswd"
+      prompt: "Enter new password for openldap IAM admin:"
       private: yes
 
   tasks:
@@ -13,7 +17,7 @@
       - name: Upgrade selinux-policy to latest (required by openldap)
         yum: pkg=selinux-policy state=latest
 
-      - name: Install Openldap pacakges
+      - name: Install Openldap packages
         yum: pkg={{item}} state=installed
         with_items:
           - openldap-servers
@@ -33,7 +37,7 @@
       - name: Ensures temp /tmp/s3ldap dir exists
         file: path=/tmp/s3ldap state=directory
 
-      - name: Generate slappasswd
+      - name: Generate slappasswd for rootDN
         shell: slappasswd -s {{ openldappasswd }}
         register: slapdpasswdhash
         no_log: true
@@ -43,11 +47,22 @@
           src: files/ldap/cfg_ldap.ldif
           dest: /tmp/s3ldap/cfg_ldap.ldif
 
+      - name: Generate slappasswd for IAM admin
+        shell: slappasswd -s {{ ldapiamadminpasswd }}
+        register: ldapadminpasswdhash
+        no_log: true
+
+      - name: Copy ldap config using "ldapadminpasswdhash" above
+        template:
+          src: files/ldap/iam-admin.ldif
+          dest: /tmp/s3ldap/iam-admin.ldif
+
       - name: Copy ldap schema, data, replication-config files
         copy: src={{ item.src }} dest={{ item.dest }}
         with_items:
           - { src: 'ldap/cn={1}s3user.ldif', dest: '/tmp/s3ldap/cn={1}s3user.ldif' }
           - { src: 'ldap/ldap-init.ldif', dest: '/tmp/s3ldap/ldap-init.ldif' }
+          - { src: 'ldap/iam-admin-access.ldif', dest: '/tmp/s3ldap/iam-admin-access.ldif' }
           - { src: 'ldap/syncprov_mod.ldif', dest: '/tmp/s3ldap/syncprov_mod.ldif' }
           - { src: 'ldap/syncprov.ldif', dest: '/tmp/s3ldap/syncprov.ldif' }
 
@@ -87,6 +102,14 @@
 
       - name: Configure OpenLDAP - Base data
         command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/ldap-init.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Add IAM admin
+        command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/iam-admin.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Setup permissions for IAM admin
+        command: ldapmodify -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/iam-admin-access.ldif
         no_log: true
 
       - name: Configure OpenLDAP - Set syncrepl as a provider
