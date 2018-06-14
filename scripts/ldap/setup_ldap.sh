@@ -23,10 +23,11 @@ case "$1" in
 esac
 
 # install openldap server and client
+yum list installed selinux-policy && yum update -y selinux-policy
 yum install -y openldap-servers openldap-clients
 
 ROOTDNPASSWORD="seagate"
-LDAPADMINPASS="seagate"
+LDAPADMINPASS="ldapadmin"
 if [[ $defaultpasswd == false ]]
 then
     echo -en "\nEnter Password for LDAP rootDN: "
@@ -80,3 +81,8 @@ ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FI
 rm -f $ADMIN_USERS_FILE
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
+
+echo "************************************************************"
+echo "You may have to redo any selinux settings as selinux-policy package was updated."
+echo "Example for nginx: setsebool httpd_can_network_connect on -P"
+echo "************************************************************"
