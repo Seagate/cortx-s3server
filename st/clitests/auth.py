@@ -12,8 +12,8 @@ class AuthTest(PyCliTest):
     def setup(self):
         super(AuthTest, self).setup()
 
-    def run(self):
-        super(AuthTest, self).run()
+    def run(self, cmd_args = None):
+        super(AuthTest, self).run(cmd_args)
 
     def teardown(self):
         super(AuthTest, self).teardown()
@@ -31,7 +31,11 @@ class AuthTest(PyCliTest):
         return self
 
     def list_account(self, **account_args):
-        cmd = "s3iamcli listaccounts --ldapuser %s --ldappasswd %s" % (account_args['ldapuser'], account_args['ldappasswd'])
+        if ('ldapuser' in account_args) and 'ldappasswd' in account_args:
+            if (account_args['ldapuser'] != None) and (account_args['ldappasswd'] != None):
+                cmd = "s3iamcli listaccounts --ldapuser %s --ldappasswd %s" % (account_args['ldapuser'], account_args['ldappasswd'])
+        else:
+            cmd = "s3iamcli listaccounts"
 
         self.with_cli(cmd)
         return self
@@ -90,9 +94,13 @@ class AuthTest(PyCliTest):
         return self
 
     def list_users(self, **user_args):
-        cmd = "s3iamcli listusers --access_key '%s' --secret_key '%s'" % (
-                 S3ClientConfig.access_key_id,
-                 S3ClientConfig.secret_key)
+        if (S3ClientConfig.access_key_id != None) and \
+           (S3ClientConfig.secret_key != None):
+            cmd = "s3iamcli listusers --access_key '%s' --secret_key '%s'" % (
+                     S3ClientConfig.access_key_id,
+                     S3ClientConfig.secret_key)
+        else:
+            cmd = "s3iamcli listusers"
 
         if(not S3ClientConfig.token is ""):
             cmd += " --session_token '%s'" % S3ClientConfig.token

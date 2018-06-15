@@ -5,6 +5,12 @@ from framework import Config
 from framework import S3PyCliTest
 from auth import AuthTest
 from s3client_config import S3ClientConfig
+import shutil
+
+home_dir = os.path.expanduser("~")
+original_config_file = os.path.join(home_dir,  '.sgs3iamcli/config.yaml')
+backup_config_file = os.path.join(home_dir, '.sgs3iamcli/backup_config.yaml')
+
 
 # To run auth_spec.py over HTTPS connection only, pass --https-only param to script
 # $ python auth_spec.py --https-only
@@ -19,6 +25,23 @@ from s3client_config import S3ClientConfig
 # Config.time_readable_format = False
 
 # global params required for suit
+
+def update_config_yaml(new_config_entries):
+    shutil.copy2(original_config_file, backup_config_file)
+
+    with open(original_config_file, 'r') as f:
+        cur_yaml = yaml.load(f)
+        cur_yaml.update(new_config_entries)
+
+    with open(original_config_file, 'w') as f:
+        yaml.dump(cur_yaml, f, default_flow_style = False)
+
+def restore_config_yaml():
+    # Restore original ~/.sgs3iamcli/config.yaml file
+    shutil.copy2(backup_config_file, original_config_file)
+
+
+
 class GlobalTestState():
     root_access_key = ""
     root_secret_key = ""
@@ -43,6 +66,7 @@ def load_test_config():
             S3ClientConfig.ldapuser = config['ldapuser']
             S3ClientConfig.ldappasswd = config['ldappasswd']
 
+
 # Run before all to setup the test environment.
 def before_all():
     load_test_config()
@@ -53,6 +77,8 @@ def before_all():
 def _use_root_credentials():
     S3ClientConfig.access_key_id = GlobalTestState.root_access_key
     S3ClientConfig.secret_key = GlobalTestState.root_secret_key
+
+
 
 # Test create account API
 def account_tests():
@@ -71,6 +97,47 @@ def account_tests():
     accounts_response_pattern = "AccountName = [\w-]*, AccountId = [\w-]*, CanonicalId = [\w-]*, Email = [\w.@]*"
     result = AuthTest(test_msg).list_account(**account_args).execute_test()
     result.command_should_match_pattern(accounts_response_pattern)
+
+
+    test_msg = "List accounts - Take ldapuser and ldappasswd from config"
+
+    # Put SG_LDAP_PASSWD and SG_LDAP_USER in ~/.sgs3iamcli/config.yaml file
+    new_config_entries = {'SG_LDAP_PASSWD' : S3ClientConfig.ldappasswd, 'SG_LDAP_USER': S3ClientConfig.ldapuser}
+    update_config_yaml(new_config_entries)
+
+    accounts_response_pattern = "AccountName = [\w-]*, AccountId = [\w-]*, CanonicalId = [\w-]*, Email = [\w.@]*"
+    result = AuthTest(test_msg).list_account().execute_test()
+    result.command_should_match_pattern(accounts_response_pattern)
+
+    restore_config_yaml()
+
+
+    test_msg = "List accounts - Take ldapuser and ldappasswd from env"
+
+    # Declare SG_LDAP_USER and SG_LDAP_PASSWD environment variables
+    os.environ['SG_LDAP_USER'] = S3ClientConfig.ldapuser
+    os.environ['SG_LDAP_PASSWD'] = S3ClientConfig.ldappasswd
+
+    accounts_response_pattern = "AccountName = [\w-]*, AccountId = [\w-]*, CanonicalId = [\w-]*, Email = [\w.@]*"
+    result = AuthTest(test_msg).list_account().execute_test()
+    result.command_should_match_pattern(accounts_response_pattern)
+
+    # Remove environment variables declared above
+    os.environ.pop("SG_LDAP_USER")
+    os.environ.pop("SG_LDAP_PASSWD")
+
+    test_msg = "List accounts - Take ldapuser and ldappasswd from prompt"
+
+    _use_root_credentials()
+    accounts_response_pattern = "Enter Ldap User Id: Enter Ldap password: AccountName = [\w-]*, AccountId = [\w-]*, CanonicalId = [\w-]*, Email = [\w.@]*"
+    stdin_values =  S3ClientConfig.ldapuser + '\n' + S3ClientConfig.ldappasswd
+    S3ClientConfig.ldapuser = None
+    S3ClientConfig.ldappasswd =  None
+    result = AuthTest(test_msg).list_account().execute_test(False, False, stdin_values)
+    result.command_should_match_pattern(accounts_response_pattern)
+
+    load_test_config()
+
 
 # Test create user API
 # Case 1 - Path not given (take default value).
@@ -98,6 +165,48 @@ def user_tests():
     result = AuthTest(test_msg).list_users(**user_args).execute_test()
     result.command_should_match_pattern(list_user_pattern)
 
+
+    test_msg = "List Users - Take access key and secret key from config"
+
+    new_config_entries = {'SG_ACCESS_KEY' : S3ClientConfig.access_key_id, 'SG_SECRET_KEY': S3ClientConfig.secret_key}
+    update_config_yaml(new_config_entries)
+    list_user_pattern = "UserId = [\w-]*, UserName = s3user1New, ARN = [\S]*, Path = /test/success/$"
+    result = AuthTest(test_msg).list_users(**user_args).execute_test()
+    result.command_should_match_pattern(list_user_pattern)
+
+    restore_config_yaml()
+
+
+    test_msg = "List users - Take access key and secret key from env"
+    _use_root_credentials()
+
+    # Declare SG_LDAP_USER and SG_LDAP_PASSWD environment variables
+    os.environ['SG_ACCESS_KEY'] = S3ClientConfig.access_key_id
+    os.environ['SG_SECRET_KEY'] = S3ClientConfig.secret_key
+
+    user_args = {'PathPrefix': '/test/'}
+    list_user_pattern = "UserId = [\w-]*, UserName = s3user1New, ARN = [\S]*, Path = /test/success/$"
+    result = AuthTest(test_msg).list_users(**user_args).execute_test()
+    result.command_should_match_pattern(list_user_pattern)
+
+    # Remove environment variables declared above
+    os.environ.pop('SG_ACCESS_KEY')
+    os.environ.pop('SG_SECRET_KEY')
+
+
+    test_msg = "List users - Take access key and secret key from prompt"
+
+    user_args = {'PathPrefix': '/test/'}
+    list_user_pattern = "Enter Access Key: Enter Secret Key: UserId = [\w-]*, UserName = s3user1New, ARN = [\S]*, Path = /test/success/$"
+
+    stdin_values = S3ClientConfig.access_key_id + '\n' + S3ClientConfig.secret_key
+    S3ClientConfig.access_key_id = None
+    S3ClientConfig.secret_key =  None
+    result = AuthTest(test_msg).list_users(**user_args).execute_test(False, False, stdin_values)
+    result.command_should_match_pattern(list_user_pattern)
+
+
+    _use_root_credentials()
     test_msg = 'Reset s3user1 user attributes (path and name)'
     user_args = {}
     user_args['UserName'] = "s3user1New"
@@ -156,7 +265,6 @@ def user_tests():
     user_args['NewPath'] = "/"
     result = AuthTest(test_msg).update_user(**user_args).execute_test()
     result.command_response_should_have("User Updated.")
-
 
 # Test create user API
 # Each user can have only 2 access keys. Hence test all the APIs in the same function.
@@ -378,6 +486,7 @@ def delete_account_tests():
     # Test: create a account s3test1 and try to delete account s3test1 using access
     # key and secret key of account s3test. Account delete operation should fail.
     test_msg = "Create account s3test1"
+
     account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()

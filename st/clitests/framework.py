@@ -55,24 +55,32 @@ class PyCliTest(object):
         logit("Setting up the test [%s]" % (self.description))
         return self
 
-    def run(self):
+    def run(self, stdin_values = None):
         # Execute the test.
         logit("Running command: [%s]" % (self.command))
+
+        stdin_param= None
+        expect_error_value = False
+        expect_stderr_value = False
 
         start_time = time.time()
         if Config.dummy_run:
             self.status = self.env.run("echo [%s]" % (self.command))
         else:
+
+            if stdin_values != None:
+                stdin_param = bytearray(stdin_values, 'utf-8')
             if(self.negative_case):
-              self.status = self.env.run(self.command, expect_stderr=True, expect_error=True)
+                expect_error_value = True
+                expect_stderr_value = True
             elif(self.ignore_err):
-              self.status = self.env.run(self.command, expect_error=False, expect_stderr=True)
-            else:
-              self.status = self.env.run(self.command)
+                expect_error_value = False
+                expect_stderr_value = True
+
+            self.status = self.env.run(self.command, expect_error=expect_error_value, stdin=stdin_param, expect_stderr=expect_stderr_value)
 
         end_time = time.time()
         self.print_time(round(end_time - start_time, 3))
-
         logit("returncode: [%d]" % (self.status.returncode))
         logit("stdout: [%s]" % (self.status.stdout))
         logit("stderr: [%s]" % (self.status.stderr))
@@ -99,12 +107,15 @@ class PyCliTest(object):
         shutil.rmtree(self.working_dir, ignore_errors=True)
         return self
 
-    def execute_test(self, negative_case = False, ignore_err = False):
+    def execute_test(self, negative_case = False, ignore_err = False, stdin_values = None):
         print("\nTest case [%s] - " % (self.description), end="")
         self.negative_case = negative_case
         self.ignore_err = ignore_err
         self.setup()
-        self.run()
+        if stdin_values != None:
+            self.run(stdin_values)
+        else:
+            self.run()
         self.teardown()
         return self
 
