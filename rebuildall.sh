@@ -248,17 +248,20 @@ then
   fi
 fi
 
-if [ $no_s3iamcli_build -eq 0 ]
+if [ $no_mero_rpm -eq 1 ]
 then
-  cd auth-utils/s3iamcli/
-  if [ $no_clean_build -eq 0 ]
+  if [ $no_s3iamcli_build -eq 0 ]
   then
-    python3 setup.py install --force
-  else
-    python3 setup.py install
+    cd auth-utils/s3iamcli/
+    if [ $no_clean_build -eq 0 ]
+    then
+      python3 setup.py install --force
+    else
+      python3 setup.py install
+    fi
+    # Copy ca cert file required by s3iamcli st tests
+    mkdir -p ~/.sgs3iamcli/ssl
+    cp -f /opt/seagate/auth/resources/iam.seagate.com.crt ~/.sgs3iamcli/ssl/
+    cd -
   fi
-  # Copy ca cert file required by s3iamcli st tests
-  mkdir -p ~/.sgs3iamcli/ssl
-  cp -f /opt/seagate/auth/resources/iam.seagate.com.crt ~/.sgs3iamcli/ssl/
-  cd -
 fi

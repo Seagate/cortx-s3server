@@ -1,26 +1,17 @@
 #!/bin/sh
-# Script to generate S3 sepcs tar
+# Script to generate tar containing S3 specs (S3 system tests scripts)
 set -e
 
 TAR_NAME=s3-specs
 TARGET_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/$TAR_NAME"
 SRC_ROOT="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) " )"
-AUTH_CLI_DIR="$TARGET_DIR/auth-utils/pyclient"
 TEST_DIR="$TARGET_DIR/st/clitests"
 
-mkdir -p $AUTH_CLI_DIR/pyclient
-mkdir -p $AUTH_CLI_DIR/config
 mkdir -p $TEST_DIR/cfg
 mkdir -p $TEST_DIR/resources
-mkdir -p $TEST_DIR/tools
+mkdir -p $TEST_DIR/test_data
 
 working_dir=$(pwd)
-cd $SRC_ROOT/auth-utils/pyclient
-auth_cli_files=$(git ls-files)
-for file in $auth_cli_files
-do
-    cp -f $file $AUTH_CLI_DIR/$file
-done
 
 # copy jclient.jar
 cp $SRC_ROOT/auth-utils/jclient/target/jclient.jar $TEST_DIR
