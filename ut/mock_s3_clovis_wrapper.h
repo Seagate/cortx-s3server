@@ -68,5 +68,6 @@ class MockS3Clovis : public ClovisAPI {
   MOCK_METHOD2(clovis_sync_op_add,
                int(struct m0_clovis_op *sync_op, struct m0_clovis_op *op));
   MOCK_METHOD1(clovis_op_rc, int(const struct m0_clovis_op *op));
+  MOCK_METHOD1(m0_h_ufid_next, int(struct m0_uint128 *ufid));
 };
 #endif

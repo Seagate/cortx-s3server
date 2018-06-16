@@ -44,7 +44,6 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   layout_id = 0;
   old_layout_id = 0;
   tried_count = 0;
-  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
   object_key_uri = bucket_name + "\\" + object_name;
 
@@ -89,11 +88,18 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::string uploadid,
     std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<ClovisAPI> clovis_api)
     : request(req) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   initialize(ismultipart, uploadid);
+
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -119,7 +125,8 @@ S3ObjectMetadata::S3ObjectMetadata(
     bool ismultipart, std::string uploadid,
     std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<ClovisAPI> clovis_api)
     : request(req) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -127,6 +134,12 @@ S3ObjectMetadata::S3ObjectMetadata(
   initialize(ismultipart, uploadid);
   index_oid.u_hi = bucket_idx_oid.u_hi;
   index_oid.u_lo = bucket_idx_oid.u_lo;
+
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
   } else {
@@ -305,7 +318,8 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
   if (index_oid.u_lo == 0 && index_oid.u_hi == 0) {
-    S3UriToMeroOID(index_name.c_str(), &index_oid, S3ClovisEntityType::index);
+    S3UriToMeroOID(s3_clovis_api, index_name.c_str(), request_id, &index_oid,
+                   S3ClovisEntityType::index);
     // Index table doesn't exist so create it
     create_bucket_index();
   } else {
@@ -401,8 +415,8 @@ void S3ObjectMetadata::collision_detected() {
 void S3ObjectMetadata::create_new_oid() {
   std::string salted_index_name =
       index_name + salt + std::to_string(tried_count);
-  S3UriToMeroOID(salted_index_name.c_str(), &index_oid,
-                 S3ClovisEntityType::index);
+  S3UriToMeroOID(s3_clovis_api, salted_index_name.c_str(), request_id,
+                 &index_oid, S3ClovisEntityType::index);
   return;
 }
 

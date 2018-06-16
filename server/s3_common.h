@@ -170,4 +170,17 @@ struct S3NumStrComparator {
   }
 };
 
+inline std::string clovis_entity_type_to_string(S3ClovisEntityType type) {
+  switch (type) {
+    case S3ClovisEntityType::realm:
+      return "realm";
+    case S3ClovisEntityType::object:
+      return "object";
+    case S3ClovisEntityType::index:
+      return "index";
+    default:
+      return "Unknown entity type";
+  }
+}
+
 #endif

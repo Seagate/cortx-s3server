@@ -54,6 +54,7 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
 
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
@@ -64,6 +65,7 @@ class S3PutObjectAction : public S3Action {
  public:
   S3PutObjectAction(
       std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr);

@@ -46,6 +46,7 @@ EXTERN_C_BLOCK_BEGIN
 
 #include "clovis/clovis.h"
 #include "clovis/clovis_idx.h"
+#include "helpers/helpers.h"
 
 /* For htonl */
 #include <arpa/inet.h>
@@ -54,5 +55,4 @@ EXTERN_C_BLOCK_END
 
 int init_clovis(void);
 void fini_clovis(void);
-
 #endif

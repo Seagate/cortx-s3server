@@ -62,7 +62,8 @@ class S3GetMultipartPartActionTest : public testing::Test {
         ptr_mock_request, oid, upload_id, 0);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, mp_indx_oid, true, upload_id);
+            ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
+            upload_id);
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
@@ -75,7 +76,7 @@ class S3GetMultipartPartActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;

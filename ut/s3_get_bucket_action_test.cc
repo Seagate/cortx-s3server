@@ -107,8 +107,8 @@ class S3GetBucketActionTest : public testing::Test {
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
 
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(request_mock);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        request_mock, s3_clovis_api_mock);
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         request_mock, s3_clovis_api_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
@@ -120,7 +120,7 @@ class S3GetBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
 
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;

@@ -120,6 +120,7 @@ class S3ClovisKvsReaderTest : public testing::Test {
     ptr_mock_s3request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     ptr_mock_s3clovis = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
     ptr_cloviskvs_reader = std::make_shared<S3ClovisKVSReader>(
         ptr_mock_s3request, ptr_mock_s3clovis);
     index_oid = {0ULL, 0ULL};

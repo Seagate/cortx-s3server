@@ -92,6 +92,7 @@ class S3Option {
   bool s3_enable_auth_ssl;
   bool s3_reuseport;
   bool log_buffering_enable;
+  bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
 
   unsigned short clovis_layout_id;
@@ -268,6 +269,7 @@ class S3Option {
   bool is_s3_reuseport_enabled();
   const char* get_iam_cert_file();
   bool is_log_buffering_enabled();
+  bool is_murmurhash_oid_enabled();
   int get_log_flush_frequency_in_sec();
 
   unsigned short s3_performance_enabled();
@@ -332,6 +334,8 @@ class S3Option {
   void enable_fault_injection();
   bool is_fi_enabled();
   void enable_reuseport();
+  void enable_murmurhash_oid();
+  void disable_murmurhash_oid();
 
   void dump_options();
 

@@ -29,7 +29,7 @@
 #include "s3_uri_to_mero_oid.h"
 
 S3PutObjectAction::S3PutObjectAction(
-    std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory)
@@ -42,8 +42,14 @@ S3PutObjectAction::S3PutObjectAction(
 
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
-  S3UriToMeroOID(request->get_object_uri().c_str(), &new_object_oid);
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
 
+  S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+                 &new_object_oid);
   // Note valid value is set during create object
   layout_id = -1;
 
@@ -251,7 +257,9 @@ void S3PutObjectAction::create_new_oid(struct m0_uint128 current_oid) {
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMeroOID(salted_uri.c_str(), &new_object_oid);
+    S3UriToMeroOID(s3_clovis_api, salted_uri.c_str(), request_id,
+                   &new_object_oid);
+
     ++salt_counter;
   } while ((new_object_oid.u_hi == current_oid.u_hi) &&
            (new_object_oid.u_lo == current_oid.u_lo));

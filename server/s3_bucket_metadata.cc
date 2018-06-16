@@ -462,8 +462,9 @@ void S3BucketMetadata::create_object_list_index() {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
   }
-  S3UriToMeroOID(salted_object_list_index_name.c_str(), &object_list_index_oid,
-                 S3ClovisEntityType::index);
+  S3UriToMeroOID(s3_clovis_api, salted_object_list_index_name.c_str(),
+                 request_id, &object_list_index_oid, S3ClovisEntityType::index);
+
   clovis_kv_writer->create_index_with_oid(
       object_list_index_oid,
       std::bind(&S3BucketMetadata::create_object_list_index_successful, this),
@@ -477,8 +478,10 @@ void S3BucketMetadata::create_multipart_list_index() {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
   }
-  S3UriToMeroOID(salted_multipart_list_index_name.c_str(), &multipart_index_oid,
-                 S3ClovisEntityType::index);
+
+  S3UriToMeroOID(s3_clovis_api, salted_multipart_list_index_name.c_str(),
+                 request_id, &multipart_index_oid, S3ClovisEntityType::index);
+
   clovis_kv_writer->create_index_with_oid(
       multipart_index_oid,
       std::bind(&S3BucketMetadata::create_multipart_list_index_successful,

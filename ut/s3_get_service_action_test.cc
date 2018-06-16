@@ -69,7 +69,7 @@ class S3GetServiceActionTest : public testing::Test {
                                bucket_meta_factory, user_idx_md_factory));
   }
 
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
   std::shared_ptr<S3GetServiceAction> action_under_test;
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;

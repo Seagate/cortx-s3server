@@ -41,6 +41,7 @@ class S3ClovisReadWriteCommonTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, new EvhtpWrapper());
     ptr_mock_s3clovis = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
     ptr_mock_s3_async_context = std::make_shared<MockS3AsyncOpContextBase>(
         ptr_mock_request,
         std::bind(&S3CallBack::on_success, &s3objectmetadata_callbackobj),

@@ -130,13 +130,15 @@ class S3ObjectMetadata {
       std::string uploadid = "",
       std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   S3ObjectMetadata(
       std::shared_ptr<S3RequestObject> req, struct m0_uint128 bucket_idx_id,
       bool ismultipart = false, std::string uploadid = "",
       std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   std::string create_default_acl();
   struct m0_uint128 get_index_oid();

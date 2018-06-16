@@ -54,6 +54,7 @@ if [ $no_mero_rpm -eq 1 ]
 then
 # use mero libs from source code
 export LD_LIBRARY_PATH="$(pwd)/third_party/mero/mero/.libs/:"\
+"$(pwd)/third_party/mero/helpers/.libs/:"\
 "$(pwd)/third_party/mero/extra-libs/gf-complete/src/.libs/"
 fi
 

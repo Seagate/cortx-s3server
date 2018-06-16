@@ -71,6 +71,7 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ(1, instance->get_clovis_cass_max_column_family_num());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
+  EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
   EXPECT_FALSE(instance->get_is_s3_shutting_down());
@@ -113,6 +114,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
+  EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
   EXPECT_FALSE(instance->is_stats_enabled());
@@ -155,6 +157,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
+  EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
   EXPECT_EQ(3, instance->get_log_flush_frequency_in_sec());
   EXPECT_EQ(4, instance->get_s3_grace_period_sec());
   EXPECT_FALSE(instance->is_stats_enabled());
@@ -228,6 +231,7 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
+  EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
@@ -266,6 +270,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ(9081, instance->get_s3_bind_port());
   EXPECT_EQ(10, instance->get_log_file_max_size_in_mb());
   EXPECT_FALSE(instance->is_log_buffering_enabled());
+  EXPECT_FALSE(instance->is_murmurhash_oid_enabled());
   EXPECT_FALSE(instance->is_stats_enabled());
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());

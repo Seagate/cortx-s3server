@@ -110,6 +110,9 @@ class S3ClovisWriterTest : public testing::Test {
     EvhtpWrapper *evhtp_obj_ptr = new EvhtpWrapper();
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
+    EXPECT_CALL(*s3_clovis_api_mock, m0_h_ufid_next(_))
+        .WillRepeatedly(Return(0));
     buffer = std::make_shared<S3AsyncBufferOptContainer>(
         g_option_instance->get_libevent_pool_buffer_size());
     fourk_buffer.assign(g_option_instance->get_libevent_pool_buffer_size(),
@@ -147,7 +150,8 @@ class S3ClovisWriterTest : public testing::Test {
 };
 
 TEST_F(S3ClovisWriterTest, Constructor) {
-  clovis_writer_ptr = std::make_shared<S3ClovisWriter>(request_mock, obj_oid);
+  clovis_writer_ptr = std::make_shared<S3ClovisWriter>(request_mock, obj_oid, 0,
+                                                       s3_clovis_api_mock);
   EXPECT_EQ(S3ClovisWriterOpState::start, clovis_writer_ptr->get_state());
   EXPECT_EQ(request_mock, clovis_writer_ptr->request);
   EXPECT_EQ(0, clovis_writer_ptr->size_in_current_write);
@@ -158,7 +162,8 @@ TEST_F(S3ClovisWriterTest, Constructor) {
 }
 
 TEST_F(S3ClovisWriterTest, Constructor2) {
-  clovis_writer_ptr = std::make_shared<S3ClovisWriter>(request_mock);
+  clovis_writer_ptr =
+      std::make_shared<S3ClovisWriter>(request_mock, 0, s3_clovis_api_mock);
   EXPECT_EQ(S3ClovisWriterOpState::start, clovis_writer_ptr->get_state());
   EXPECT_EQ(request_mock, clovis_writer_ptr->request);
   EXPECT_EQ(0, clovis_writer_ptr->size_in_current_write);

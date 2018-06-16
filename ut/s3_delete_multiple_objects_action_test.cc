@@ -19,10 +19,12 @@
 
 #include <memory>
 
+#include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
 #include "s3_delete_multiple_objects_action.h"
 #include "s3_error_codes.h"
 #include "s3_test_utils.h"
+#include "s3_ut_common.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -81,23 +83,28 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     keys = {"SampleDocument1.txt", "SampleDocument2.txt"};
 
     // Owned and deleted by shared_ptr in S3DeleteMultipleObjectsAction
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(mock_request);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        mock_request, ptr_mock_s3_clovis_api);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        mock_request, object_list_indx_oid);
+        mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
 
-    clovis_writer_factory =
-        std::make_shared<MockS3ClovisWriterFactory>(mock_request, oid);
+    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+        mock_request, oid, ptr_mock_s3_clovis_api);
 
-    clovis_kvs_reader_factory =
-        std::make_shared<MockS3ClovisKVSReaderFactory>(mock_request);
+    clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
+        mock_request, ptr_mock_s3_clovis_api);
 
-    clovis_kvs_writer_factory =
-        std::make_shared<MockS3ClovisKVSWriterFactory>(mock_request);
+    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+        mock_request, ptr_mock_s3_clovis_api);
 
     action_under_test.reset(new S3DeleteMultipleObjectsAction(
         mock_request, bucket_meta_factory, object_meta_factory,
@@ -106,6 +113,7 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> mock_request;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;

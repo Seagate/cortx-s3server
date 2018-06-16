@@ -18,11 +18,12 @@
  */
 
 #include <memory>
-
+#include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
 #include "s3_clovis_layout.h"
 #include "s3_put_object_action.h"
 #include "s3_test_utils.h"
+#include "s3_ut_common.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -68,6 +69,10 @@ class S3PutObjectActionTest : public testing::Test {
 
     call_count_one = 0;
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
             S3Option::get_instance()->get_libevent_pool_buffer_size());
@@ -80,17 +85,18 @@ class S3PutObjectActionTest : public testing::Test {
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, object_list_indx_oid);
+        ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
 
-    clovis_writer_factory =
-        std::make_shared<MockS3ClovisWriterFactory>(ptr_mock_request, oid);
+    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+        ptr_mock_request, oid, ptr_mock_s3_clovis_api);
 
-    action_under_test.reset(
-        new S3PutObjectAction(ptr_mock_request, bucket_meta_factory,
-                              object_meta_factory, clovis_writer_factory));
+    action_under_test.reset(new S3PutObjectAction(
+        ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
+        object_meta_factory, clovis_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;

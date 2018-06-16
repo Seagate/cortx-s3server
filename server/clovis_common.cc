@@ -24,6 +24,7 @@
 #include "s3_option.h"
 
 static struct m0_clovis *clovis_instance = NULL;
+struct m0_ufid_generator s3_ufid_generator;
 struct m0_clovis_container clovis_container;
 struct m0_clovis_realm clovis_uber_realm;
 static struct m0_clovis_config clovis_conf;
@@ -113,10 +114,17 @@ int init_clovis(void) {
   }
 
   clovis_uber_realm = clovis_container.co_realm;
+  rc = m0_ufid_init(clovis_instance, &s3_ufid_generator);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "", "Failed to initialize ufid generator: %d\n", rc);
+    return rc;
+  }
+
   return 0;
 }
 
 void fini_clovis(void) {
   s3_log(S3_LOG_INFO, "", "Entering!\n");
+  m0_ufid_fini(&s3_ufid_generator);
   m0_clovis_fini(clovis_instance, true);
 }

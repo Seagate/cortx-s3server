@@ -31,7 +31,8 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     S3ObjectMultipartMetadataFactory* object_mp_meta_factory,
     S3ObjectMetadataFactory* object_meta_factory,
     S3PartMetadataFactory* part_meta_factory,
-    S3ClovisWriterFactory* clovis_s3_factory)
+    S3ClovisWriterFactory* clovis_s3_factory,
+    std::shared_ptr<ClovisAPI> clovis_api)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -41,7 +42,15 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
-  S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
+
+  S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+                 &oid);
+
   tried_count = 0;
 
   old_oid = {0ULL, 0ULL};
@@ -290,7 +299,7 @@ void S3PostMultipartObjectAction::create_new_oid(
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMeroOID(salted_uri.c_str(), &oid);
+    S3UriToMeroOID(s3_clovis_api, salted_uri.c_str(), request_id, &oid);
     ++salt_counter;
   } while ((oid.u_hi == current_oid.u_hi) && (oid.u_lo == current_oid.u_lo));
 

@@ -24,6 +24,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "mock_s3_clovis_wrapper.h"
+#include "mock_s3_clovis_wrapper.h"
 #include "s3_clovis_writer.h"
 #include "s3_request_object.h"
 
@@ -33,10 +35,12 @@ using ::testing::Return;
 class MockS3ClovisWriter : public S3ClovisWriter {
  public:
   MockS3ClovisWriter(std::shared_ptr<S3RequestObject> req,
-                     struct m0_uint128 oid)
-      : S3ClovisWriter(req, oid) {}
-  MockS3ClovisWriter(std::shared_ptr<S3RequestObject> req)
-      : S3ClovisWriter(req) {}
+                     struct m0_uint128 oid,
+                     std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
+      : S3ClovisWriter(req, oid, 0, s3_clovis_mock_ptr) {}
+  MockS3ClovisWriter(std::shared_ptr<S3RequestObject> req,
+                     std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
+      : S3ClovisWriter(req, 0, s3_clovis_mock_ptr) {}
 
   MOCK_METHOD0(get_state, S3ClovisWriterOpState());
   MOCK_METHOD0(get_oid, struct m0_uint128());

@@ -25,6 +25,7 @@
 #include "s3_callback_test_helpers.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_option.h"
+#include "s3_ut_common.h"
 
 #include "mock_s3_clovis_kvs_writer.h"
 #include "mock_s3_clovis_wrapper.h"
@@ -122,6 +123,11 @@ class S3ClovisKvsWritterTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     ptr_mock_s3clovis = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3clovis, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
+    EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
+
     action_under_test = std::make_shared<S3ClovisKVSWriter>(ptr_mock_request,
                                                             ptr_mock_s3clovis);
     oid = {0xffff, 0xfff1f};

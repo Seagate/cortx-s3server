@@ -31,6 +31,7 @@ fi
 set -x
 
 export LD_LIBRARY_PATH="$(pwd)/third_party/mero/mero/.libs/:"\
+"$(pwd)/third_party/mero/helpers/.libs/:"\
 "$(pwd)/third_party/mero/extra-libs/gf-complete/src/.libs/"
 
 # Get local address

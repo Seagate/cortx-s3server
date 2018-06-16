@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2018 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -13,25 +13,24 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
  * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
- * Original creation date: 1-Oct-2015
+ * Original creation date: 29-August-2018
  */
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_URI_TO_MERO_OID_H__
-#define __S3_SERVER_S3_URI_TO_MERO_OID_H__
+#ifndef __S3_UT_COMMON_H__
+#define __S3_UT_COMMON_H__
 
-#include "s3_common.h"
-#include "s3_clovis_wrapper.h"
+#include "clovis_helpers.h"
 
-EXTERN_C_BLOCK_BEGIN
-#include "clovis/clovis.h"
-EXTERN_C_BLOCK_END
+// Common functions for ut
 
-void S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api,
-                    const char *uri_name, std::string &request_id,
-                    m0_uint128 *ufid,
-                    S3ClovisEntityType type = S3ClovisEntityType::object);
+static int dummy_helpers_ufid_next(struct m0_uint128 *ufid) {
+  unsigned int rand1 = rand();
+  unsigned int rand2 = rand();
+  *ufid = {rand1, rand2};
+  return 0;
+}
+
 #endif

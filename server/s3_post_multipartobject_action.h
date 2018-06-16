@@ -56,6 +56,7 @@ class S3PostMultipartObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
 
  protected:
   void set_oid(struct m0_uint128 new_oid) { oid = new_oid; }
@@ -70,7 +71,8 @@ class S3PostMultipartObjectAction : public S3Action {
       S3ObjectMultipartMetadataFactory* object_mp_meta_factory = NULL,
       S3ObjectMetadataFactory* object_meta_factory = NULL,
       S3PartMetadataFactory* part_meta_factory = NULL,
-      S3ClovisWriterFactory* clovis_writer_factory = NULL);
+      S3ClovisWriterFactory* clovis_writer_factory = NULL,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   void setup_steps();
 

@@ -18,11 +18,13 @@
  * Original creation date: 24-March-2017
  */
 
+#include "mock_s3_clovis_wrapper.h"
 #include "s3_put_multiobject_action.h"
 #include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_clovis_layout.h"
+#include "s3_ut_common.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -60,23 +62,30 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     ptr_mock_request = std::make_shared<MockS3RequestObject>(
         req, evhtp_obj_ptr, async_buffer_factory);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("uploadId"))
         .WillRepeatedly(Return("upload_id"));
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("partNumber"))
         .WillRepeatedly(Return("1"));
 
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        ptr_mock_request, ptr_mock_s3_clovis_api);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, mp_indx_oid, true, upload_id);
+            ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
+            upload_id);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
-    clovis_writer_factory =
-        std::make_shared<MockS3ClovisWriterFactory>(ptr_mock_request, oid);
+    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+        ptr_mock_request, oid, ptr_mock_s3_clovis_api);
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
@@ -102,6 +111,9 @@ class S3PutMultipartObjectActionTestNoMockAuth
   S3PutMultipartObjectActionTestNoMockAuth()
       : S3PutMultipartObjectActionTest() {
     S3Option::get_instance()->disable_auth();
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(false));
     action_under_test.reset(new S3PutMultiObjectAction(
         ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
@@ -342,6 +354,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
 
   size_t unit_size =
       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);

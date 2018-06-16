@@ -60,7 +60,7 @@ class S3AccountDeleteMetadataActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3AccountUserIdxMetadataFactory>

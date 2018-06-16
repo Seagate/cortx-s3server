@@ -61,6 +61,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
       log_buffering_enable =
           s3_option_node["S3_LOG_ENABLE_BUFFERING"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_MURMURHASH_OID");
+      s3_enable_murmurhash_oid =
+          s3_option_node["S3_ENABLE_MURMURHASH_OID"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FLUSH_FREQUENCY");
       log_flush_frequency_sec =
           s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
@@ -288,6 +291,9 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
       log_buffering_enable =
           s3_option_node["S3_LOG_ENABLE_BUFFERING"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_MURMURHASH_OID");
+      s3_enable_murmurhash_oid =
+          s3_option_node["S3_ENABLE_MURMURHASH_OID"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FLUSH_FREQUENCY");
       log_flush_frequency_sec =
           s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
@@ -528,6 +534,8 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_LOG_FILE_MAX_SIZE = %d\n", log_file_max_size_mb);
   s3_log(S3_LOG_INFO, "", "S3_LOG_ENABLE_BUFFERING = %s\n",
          (log_buffering_enable ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "", "S3_ENABLE_MURMURHASH_OID = %s\n",
+         (s3_enable_murmurhash_oid ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_LOG_FLUSH_FREQUENCY = %d\n",
          log_flush_frequency_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_AUTH_SSL = %s\n",
@@ -715,6 +723,8 @@ int S3Option::get_log_flush_frequency_in_sec() {
 
 bool S3Option::is_log_buffering_enabled() { return log_buffering_enable; }
 
+bool S3Option::is_murmurhash_oid_enabled() { return s3_enable_murmurhash_oid; }
+
 bool S3Option::is_s3_ssl_auth_enabled() { return s3_enable_auth_ssl; }
 
 const char* S3Option::get_iam_cert_file() { return s3_iam_cert_file.c_str(); }
@@ -854,6 +864,10 @@ void S3Option::set_stats_whitelist_filename(std::string filename) {
 evbase_t* S3Option::get_eventbase() { return eventbase; }
 
 void S3Option::enable_fault_injection() { FLAGS_fault_injection = true; }
+
+void S3Option::enable_murmurhash_oid() { s3_enable_murmurhash_oid = true; }
+
+void S3Option::disable_murmurhash_oid() { s3_enable_murmurhash_oid = false; }
 
 void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
 

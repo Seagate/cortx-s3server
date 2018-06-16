@@ -42,6 +42,7 @@ class S3PartMetadataTest : public testing::Test {
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
 
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
@@ -60,7 +61,7 @@ class S3PartMetadataTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   S3CallBack s3objectmetadata_callbackobj;

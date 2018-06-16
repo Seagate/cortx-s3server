@@ -84,7 +84,7 @@ class S3AccountUserIdxMetadataTest : public testing::Test {
   std::shared_ptr<S3AccountUserIdxMetadata> idx_metadata_under_test_ptr;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
 
   S3CallBack s3accountuserindex_callbackobj;
   std::string account_name;

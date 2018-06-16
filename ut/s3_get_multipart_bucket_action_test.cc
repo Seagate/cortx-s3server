@@ -124,7 +124,7 @@ class S3GetMultipartBucketActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
-  std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
+  std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
 
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;

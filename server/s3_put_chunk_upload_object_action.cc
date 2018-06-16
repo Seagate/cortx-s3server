@@ -32,7 +32,8 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
-    std::shared_ptr<S3AuthClientFactory> auth_factory)
+    std::shared_ptr<S3AuthClientFactory> auth_factory,
+    std::shared_ptr<ClovisAPI> clovis_api)
     : S3Action(req, true, auth_factory),
       auth_failed(false),
       write_failed(false),
@@ -48,6 +49,12 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
+  } else {
+    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  }
+
   clear_tasks();  // remove default auth
   if (!S3Option::get_instance()->is_auth_disabled()) {
     // Add chunk style auth
@@ -62,8 +69,8 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
 
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
-  S3UriToMeroOID(request->get_object_uri().c_str(), &new_object_oid);
-
+  S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+                 &new_object_oid);
   tried_count = 0;
   salt = "uri_salt_";
 
@@ -285,7 +292,9 @@ void S3PutChunkUploadObjectAction::create_new_oid(
     salted_uri = request->get_object_uri() + salt +
                  std::to_string(salt_counter) + std::to_string(tried_count);
 
-    S3UriToMeroOID(salted_uri.c_str(), &new_object_oid);
+    S3UriToMeroOID(s3_clovis_api, salted_uri.c_str(), request_id,
+                   &new_object_oid);
+
     ++salt_counter;
   } while ((new_object_oid.u_hi == current_oid.u_hi) &&
            (new_object_oid.u_lo == current_oid.u_lo));

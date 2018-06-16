@@ -26,6 +26,7 @@
 #include "s3_callback_test_helpers.h"
 #include "s3_common.h"
 #include "s3_test_utils.h"
+#include "s3_ut_common.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -61,6 +62,10 @@ class S3BucketMetadataTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
@@ -81,7 +86,7 @@ class S3BucketMetadataTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3AccountUserIdxMetadataFactory>
@@ -384,6 +389,9 @@ TEST_F(S3BucketMetadataTest, SaveMeatdataIndexOIDPresent) {
 TEST_F(S3BucketMetadataTest, CreateObjectIndexOIDNotPresent) {
   action_under_test->bucket_list_index_oid = {0x111f, 0xffff};
   action_under_test->object_list_index_oid = {0x0000, 0x0000};
+  EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+      .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index_with_oid(_, _, _)).Times(1);
   action_under_test->save(

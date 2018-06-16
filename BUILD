@@ -4,6 +4,7 @@ cc_binary(
     # bazel build //:s3server --cxxopt="-std=c++11"
     #                         --define MERO_INC=<mero headers path>
     #                         --define MERO_LIB=<mero lib path>
+    #                         --define MERO_HELPERS_LIB=<mero helpers lib path>
     #                         --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "s3server",
@@ -38,11 +39,12 @@ cc_binary(
     linkopts = [
       "-rdynamic",
       "-L$(MERO_LIB)",
+      "-L$(MERO_HELPERS_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
-      "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgflags",
       "-pthread -lglog",
       "-Wl,-rpath,/opt/seagate/s3/libevent",
@@ -54,6 +56,7 @@ cc_test(
     # bazel build //:s3ut --cxxopt="-std=c++11"
     #                     --define MERO_INC=<mero headers path>
     #                     --define MERO_LIB=<mero lib path>
+    #                     --define MERO_HELPERS_LIB=<mero helpers lib path>
     #                     --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "s3ut",
@@ -85,11 +88,12 @@ cc_test(
     linkopts = [
       "-rdynamic",
       "-L$(MERO_LIB)",
+      "-L$(MERO_HELPERS_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
-      "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
+      "-lpthread -ldl -lm -lrt -lmero -lmero-helpers -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -105,6 +109,7 @@ cc_test(
     # bazel build //:s3utdeathtests --cxxopt="-std=c++11"
     #                               --define MERO_INC=<mero headers path>
     #                               --define MERO_LIB=<mero lib path>
+    #                               --define MERO_HELPERS_LIB=<mero helpers lib path>
     #                               --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "s3utdeathtests",
@@ -137,11 +142,12 @@ cc_test(
     linkopts = [
       "-rdynamic",
       "-L$(MERO_LIB)",
+      "-L$(MERO_HELPERS_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
-      "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -178,6 +184,7 @@ cc_binary(
     # bazel build //:cloviskvscli --cxxopt="-std=c++11"
     #                             --define MERO_INC=<mero headers path>
     #                             --define MERO_LIB=<mero lib path>
+    #                             --define MERO_HELPERS_LIB=<mero helpers lib path>
     #                             --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "cloviskvscli",
@@ -202,8 +209,9 @@ cc_binary(
     linkopts = [
       "-rdynamic",
       "-L$(MERO_LIB)",
+      "-L$(MERO_HELPERS_LIB)",
       "-L$(MERO_EXTRA_LIB)",
-      "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -lgf_complete -laio",
       "-lgflags",
       "-pthread -lglog",
     ],
@@ -234,6 +242,7 @@ cc_test(
     # bazel build //:s3mempoolmgrut --cxxopt="-std=c++11"
     #                     --define MERO_INC=<mero headers path>
     #                     --define MERO_LIB=<mero lib path>
+    #                     --define MERO_HELPERS_LIB=<mero helpers lib path>
     #                     --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "s3mempoolmgrut",
@@ -265,11 +274,12 @@ cc_test(
     linkopts = [
       "-rdynamic",
       "-L$(MERO_LIB)",
+      "-L$(MERO_HELPERS_LIB)",
       "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto",
-      "-lpthread -ldl -lm -lrt -lmero -lgf_complete -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",

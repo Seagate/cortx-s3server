@@ -18,10 +18,11 @@
  */
 
 #include <memory>
-
+#include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
 #include "s3_put_chunk_upload_object_action.h"
 #include "s3_test_utils.h"
+#include "s3_ut_common.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -72,15 +73,20 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     // Owned and deleted by shared_ptr in S3PutChunkUploadObjectAction
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(mock_request);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        mock_request, ptr_mock_s3_clovis_api);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        mock_request, object_list_indx_oid);
+        mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
 
-    clovis_writer_factory =
-        std::make_shared<MockS3ClovisWriterFactory>(mock_request, oid);
+    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+        mock_request, oid, ptr_mock_s3_clovis_api);
   }
 
   std::shared_ptr<MockS3RequestObject> mock_request;
@@ -88,6 +94,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
 
   std::shared_ptr<S3PutChunkUploadObjectAction> action_under_test;
 
@@ -110,7 +117,7 @@ class S3PutChunkUploadObjectActionTestNoAuth
     S3Option::get_instance()->disable_auth();
     action_under_test.reset(new S3PutChunkUploadObjectAction(
         mock_request, bucket_meta_factory, object_meta_factory,
-        clovis_writer_factory));
+        clovis_writer_factory, nullptr, ptr_mock_s3_clovis_api));
   }
 };
 
@@ -123,7 +130,7 @@ class S3PutChunkUploadObjectActionTestWithAuth
     mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(mock_request);
     action_under_test.reset(new S3PutChunkUploadObjectAction(
         mock_request, bucket_meta_factory, object_meta_factory,
-        clovis_writer_factory, mock_auth_factory));
+        clovis_writer_factory, mock_auth_factory, ptr_mock_s3_clovis_api));
   }
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
 };

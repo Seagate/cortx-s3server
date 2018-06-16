@@ -26,6 +26,7 @@
 #include "s3_common.h"
 #include "s3_object_metadata.h"
 #include "s3_test_utils.h"
+#include "s3_ut_common.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -57,14 +58,18 @@ class S3ObjectMetadataTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
     clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        ptr_mock_request, ptr_mock_s3_clovis_api);
 
     ptr_mock_request->set_account_name("s3account");
     ptr_mock_request->set_user_name("s3user");
@@ -72,14 +77,16 @@ class S3ObjectMetadataTest : public testing::Test {
 
     action_under_test.reset(new S3ObjectMetadata(
         ptr_mock_request, false, "", clovis_kvs_reader_factory,
-        clovis_kvs_writer_factory, bucket_meta_factory));
+        clovis_kvs_writer_factory, bucket_meta_factory,
+        ptr_mock_s3_clovis_api));
     action_under_test_with_oid.reset(new S3ObjectMetadata(
         ptr_mock_request, bucket_indx_oid, false, "", clovis_kvs_reader_factory,
-        clovis_kvs_writer_factory, bucket_meta_factory));
+        clovis_kvs_writer_factory, bucket_meta_factory,
+        ptr_mock_s3_clovis_api));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
@@ -102,6 +109,8 @@ class S3MultipartObjectMetadataTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
@@ -116,16 +125,17 @@ class S3MultipartObjectMetadataTest : public testing::Test {
     bucket_indx_oid = {0xffff, 0xffff};
     action_under_test.reset(new S3ObjectMetadata(
         ptr_mock_request, true, "1234-1234", clovis_kvs_reader_factory,
-        clovis_kvs_writer_factory, bucket_meta_factory));
+        clovis_kvs_writer_factory, bucket_meta_factory,
+        ptr_mock_s3_clovis_api));
 
-    action_under_test_with_oid.reset(
-        new S3ObjectMetadata(ptr_mock_request, bucket_indx_oid, true,
-                             "1234-1234", clovis_kvs_reader_factory,
-                             clovis_kvs_writer_factory, bucket_meta_factory));
+    action_under_test_with_oid.reset(new S3ObjectMetadata(
+        ptr_mock_request, bucket_indx_oid, true, "1234-1234",
+        clovis_kvs_reader_factory, clovis_kvs_writer_factory,
+        bucket_meta_factory, ptr_mock_s3_clovis_api));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;

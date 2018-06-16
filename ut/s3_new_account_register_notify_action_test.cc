@@ -59,7 +59,7 @@ class S3NewAccountRegisterNotifyActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3AccountUserIdxMetadataFactory>
       s3_account_user_idx_metadata_factory;

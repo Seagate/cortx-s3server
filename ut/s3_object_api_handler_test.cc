@@ -65,6 +65,7 @@ class S3ObjectAPIHandlerTest : public testing::Test {
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   std::shared_ptr<S3ObjectAPIHandler> handler_under_test;
+  S3Option *instance = NULL;
 };
 
 TEST_F(S3ObjectAPIHandlerTest, ConstructorTest) {
@@ -145,6 +146,7 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PostCompleteAction) {
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PostMultipartObjectAction) {
+  S3Option::get_instance()->enable_murmurhash_oid();
   // Creation handler per test as it will be specific
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
@@ -158,6 +160,7 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PostMultipartObjectAction) {
   EXPECT_FALSE((dynamic_cast<S3PostMultipartObjectAction *>(
                    handler_under_test->_get_action().get())) == nullptr);
   handler_under_test->_get_action()->i_am_done();
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyPart) {
@@ -241,6 +244,8 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3HeadObjectAction) {
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction) {
+  S3Option::get_instance()->enable_murmurhash_oid();
+  // Creation handler per test as it will be specific
   // Creation handler per test as it will be specific
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
@@ -254,6 +259,7 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction) {
   EXPECT_FALSE((dynamic_cast<S3PutChunkUploadObjectAction *>(
                    handler_under_test->_get_action().get())) == nullptr);
   handler_under_test->_get_action()->i_am_done();
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject) {
@@ -273,6 +279,7 @@ TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject) {
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction) {
+  S3Option::get_instance()->enable_murmurhash_oid();
   // Creation handler per test as it will be specific
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
@@ -288,6 +295,7 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction) {
   EXPECT_FALSE((dynamic_cast<S3PutObjectAction *>(
                    handler_under_test->_get_action().get())) == nullptr);
   handler_under_test->_get_action()->i_am_done();
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectAction) {

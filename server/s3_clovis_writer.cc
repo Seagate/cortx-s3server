@@ -48,17 +48,19 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   struct m0_uint128 oid = {0ULL, 0ULL};
-  S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
-
-  oid_list.clear();
-  oid_list.push_back(oid);
-  layout_ids.clear();
 
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
+  S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
+                 &oid);
+
+  oid_list.clear();
+  oid_list.push_back(oid);
+  layout_ids.clear();
+
   place_holder_for_last_unit = NULL;
 }
 

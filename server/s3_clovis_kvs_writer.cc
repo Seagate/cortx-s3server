@@ -67,7 +67,8 @@ void S3ClovisKVSWriter::create_index(std::string index_name,
          index_name.c_str());
 
   struct m0_uint128 id = {0ULL, 0ULL};
-  S3UriToMeroOID(index_name.c_str(), &id, S3ClovisEntityType::index);
+  S3UriToMeroOID(s3_clovis_api, index_name.c_str(), request_id, &id,
+                 S3ClovisEntityType::index);
 
   create_index_with_oid(id, on_success, on_failed);
 

@@ -21,6 +21,8 @@
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_abort_multipart_action.h"
+#include "s3_ut_common.h"
+#include <cstdlib>
 
 using ::testing::Return;
 using ::testing::ReturnRef;
@@ -48,17 +50,21 @@ class S3AbortMultipartActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("uploadId"))
         .WillRepeatedly(Return("upload_id"));
 
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillOnce(Invoke(dummy_helpers_ufid_next));
+
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        ptr_mock_request, ptr_mock_s3_clovis_api);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, mp_indx_oid, true, upload_id);
+            ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
+            upload_id);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, object_list_indx_oid);
+        ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
-    clovis_writer_factory =
-        std::make_shared<MockS3ClovisWriterFactory>(ptr_mock_request, oid);
+    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+        ptr_mock_request, oid, ptr_mock_s3_clovis_api);
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
@@ -69,7 +75,7 @@ class S3AbortMultipartActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
@@ -248,6 +254,9 @@ TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentFailedTest2) {
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteObjectTest1) {
+  int layout_id = 1;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
+              get_layout_id()).WillRepeatedly(Return(layout_id));
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
@@ -260,6 +269,10 @@ TEST_F(S3AbortMultipartActionTest, DeleteObjectTest1) {
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteObjectTest2) {
+  int layout_id = 1;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
+              get_layout_id()).WillRepeatedly(Return(layout_id));
+
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())

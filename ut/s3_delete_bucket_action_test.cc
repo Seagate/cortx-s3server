@@ -19,10 +19,12 @@
 
 #include <memory>
 
+#include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
 #include "mock_s3_request_object.h"
 #include "s3_common.h"
 #include "s3_delete_bucket_action.h"
+#include "s3_ut_common.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -45,11 +47,16 @@ class S3DeleteBucketActionTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     // Owned and deleted by shared_ptr in S3PostMultipartObjectAction
-    bucket_meta_factory =
-        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
-    clovis_writer_factory =
-        std::make_shared<MockS3ClovisWriterFactory>(ptr_mock_request);
+    bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
+        ptr_mock_request, ptr_mock_s3_clovis_api);
+    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
+        ptr_mock_request, ptr_mock_s3_clovis_api);
 
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
@@ -59,9 +66,10 @@ class S3DeleteBucketActionTest : public testing::Test {
 
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, mp_indx_oid, true, upload_id);
+            ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
+            upload_id);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, object_list_indx_oid);
+        ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
 
     action_under_test.reset(new S3DeleteBucketAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
@@ -70,7 +78,7 @@ class S3DeleteBucketActionTest : public testing::Test {
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
-  std::shared_ptr<ClovisAPI> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;

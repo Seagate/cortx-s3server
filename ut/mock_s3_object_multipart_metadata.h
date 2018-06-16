@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_request_object.h"
 #include "s3_object_metadata.h"
 
@@ -33,9 +34,11 @@ using ::testing::Return;
 class MockS3ObjectMultipartMetadata : public S3ObjectMetadata {
  public:
   MockS3ObjectMultipartMetadata(std::shared_ptr<S3RequestObject> req,
-                                struct m0_uint128 oid, bool is_mp,
-                                std::string upload_id)
-      : S3ObjectMetadata(req, oid, is_mp, upload_id) {}
+                                struct m0_uint128 oid,
+                                std::shared_ptr<MockS3Clovis> clovis_api,
+                                bool is_mp, std::string upload_id)
+      : S3ObjectMetadata(req, oid, is_mp, upload_id, nullptr, nullptr, nullptr,
+                         clovis_api) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
   MOCK_METHOD0(get_upload_id, std::string());
   MOCK_METHOD0(get_layout_id, int());

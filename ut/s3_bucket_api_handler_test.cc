@@ -124,7 +124,9 @@ TEST_F(S3BucketAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps) {
 }
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3DeleteMultipleObjectsAction) {
+  S3Option::get_instance()->enable_murmurhash_oid();
   // Creation handler per test as it will be specific
+
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::multidelete));
 
@@ -133,6 +135,7 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3DeleteMultipleObjectsAction) {
   EXPECT_FALSE((dynamic_cast<S3DeleteMultipleObjectsAction *>(
                    handler_under_test->_get_action().get())) == nullptr);
   handler_under_test->_get_action()->i_am_done();
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketACLAction) {

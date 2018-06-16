@@ -23,6 +23,7 @@
 #include "mock_s3_request_object.h"
 #include "s3_common.h"
 #include "s3_test_utils.h"
+#include "s3_ut_common.h"
 
 using ::testing::Return;
 using ::testing::Invoke;
@@ -48,23 +49,30 @@ class S3PostMultipartObjectTest : public testing::Test {
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
 
+    ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
+
+    EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
+        .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+
     // Owned and deleted by shared_ptr in S3PostMultipartObjectAction
     bucket_meta_factory = new MockS3BucketMetadataFactory(ptr_mock_request);
     object_mp_meta_factory = new MockS3ObjectMultipartMetadataFactory(
-        ptr_mock_request, mp_indx_oid, true, upload_id);
-    object_meta_factory =
-        new MockS3ObjectMetadataFactory(ptr_mock_request, object_list_indx_oid);
+        ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true, upload_id);
+    object_meta_factory = new MockS3ObjectMetadataFactory(
+        ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
     part_meta_factory =
         new MockS3PartMetadataFactory(ptr_mock_request, oid, upload_id, 0);
-    clovis_writer_factory =
-        new MockS3ClovisWriterFactory(ptr_mock_request, oid);
+    clovis_writer_factory = new MockS3ClovisWriterFactory(
+        ptr_mock_request, oid, ptr_mock_s3_clovis_api);
 
     action_under_test.reset(new S3PostMultipartObjectAction(
         ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
-        object_meta_factory, part_meta_factory, clovis_writer_factory));
+        object_meta_factory, part_meta_factory, clovis_writer_factory,
+        ptr_mock_s3_clovis_api));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
+  std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   MockS3BucketMetadataFactory *bucket_meta_factory;
   MockS3ObjectMetadataFactory *object_meta_factory;
   MockS3PartMetadataFactory *part_meta_factory;
@@ -308,11 +316,13 @@ TEST_F(S3PostMultipartObjectTest, CollisionOccured) {
 
 TEST_F(S3PostMultipartObjectTest, CreateNewOid) {
   struct m0_uint128 new_oid, old_oid;
+  S3Option::get_instance()->enable_murmurhash_oid();
   old_oid = {0xffff, 0xffff};
   action_under_test->set_oid(old_oid);
   action_under_test->create_new_oid(old_oid);
   new_oid = action_under_test->get_oid();
   EXPECT_OID_NE(old_oid, new_oid);
+  S3Option::get_instance()->disable_murmurhash_oid();
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackCreate) {

@@ -33,6 +33,8 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
+extern struct m0_ufid_generator s3_ufid_generator;
+
 enum class ClovisOpType {
   unknown,
   openobj,
@@ -99,6 +101,7 @@ class ClovisAPI {
                                 ClovisOpType type = ClovisOpType::unknown) = 0;
 
   virtual int clovis_op_rc(const struct m0_clovis_op *op) = 0;
+  virtual int m0_h_ufid_next(struct m0_uint128 *ufid) = 0;
 };
 
 class ConcreteClovisAPI : public ClovisAPI {
@@ -231,5 +234,8 @@ class ConcreteClovisAPI : public ClovisAPI {
   }
 
   int clovis_op_rc(const struct m0_clovis_op *op) { return m0_clovis_rc(op); }
+  int m0_h_ufid_next(struct m0_uint128 *ufid) {
+    return m0_ufid_next(&s3_ufid_generator, 1, ufid);
+  }
 };
 #endif
