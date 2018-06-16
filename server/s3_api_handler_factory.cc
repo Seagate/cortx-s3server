@@ -44,6 +44,10 @@ std::shared_ptr<S3APIHandler> S3APIHandlerFactory::create_api_handler(
              "api_type = S3ApiType::faultinjection\n");
       handler = std::make_shared<S3FaultinjectionAPIHandler>(request, op_code);
       break;
+    case S3ApiType::management:
+      s3_log(S3_LOG_DEBUG, request_id, "api_type = S3ApiType::management\n");
+      handler = std::make_shared<S3ManagementAPIHandler>(request, op_code);
+      break;
     default:
       break;
   };

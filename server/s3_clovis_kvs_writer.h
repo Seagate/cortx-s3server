@@ -227,6 +227,8 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessful);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata);
+  FRIEND_TEST(S3NewAccountRegisterNotifyActionTest,
+              CreateBucketListIndexSuccessful);
 };
 
 #endif

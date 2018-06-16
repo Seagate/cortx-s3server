@@ -107,6 +107,10 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
     } else {
       s3_api_type = S3ApiType::service;
     }
+  } else if (request->get_header_value("x-seagate-mgmt-api") ==
+             "true") {  // management api check check
+    s3_log(S3_LOG_DEBUG, request_id, "x-seagate-mgmt-api is enabled.\n");
+    s3_api_type = S3ApiType::management;
   } else {
     // Find the second forward slash.
     std::size_t pos =

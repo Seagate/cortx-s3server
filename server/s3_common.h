@@ -52,6 +52,7 @@ enum class S3ApiType {
   service,
   bucket,
   object,
+  management,      // Currently only used by Auth Server
   faultinjection,  // Non S3 Apitype used internally for system tests
   unsupported      // Invalid or Unsupported API
 };

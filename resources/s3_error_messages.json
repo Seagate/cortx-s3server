@@ -11,6 +11,10 @@
     "Description": "The bucket you tried to delete is not empty.",
     "httpcode": 409
   },
+  "AccountNotEmpty": {
+    "Description": "The Account you tried to delete is not empty and has at least one bucket.",
+    "httpcode": 409
+  },
   "InternalError": {
     "Description": "We encountered an internal error. Please try again.",
     "httpcode": 500
@@ -41,6 +45,10 @@
   },
   "InvalidBucketName": {
     "Description": "The specified bucket is not valid.",
+    "httpcode": 400
+  },
+  "InvalidAccountForMgmtApi": {
+    "Description": "Supplied credentials are not owned by account id specified in action URI.",
     "httpcode": 400
   },
   "NoSuchBucket": {
