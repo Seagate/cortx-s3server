@@ -63,7 +63,7 @@ cd $S3_BUILD_DIR
 # Start S3 auth
 echo "Starting new built s3 auth services"
 cp /opt/seagate/auth/resources/authserver.properties /opt/seagate/auth/resources/backup.authserver.properties
-\cp -r $S3_BUILD_DIR/auth/tests/resources/test.authserver.properties /opt/seagate/auth/resources/authserver.properties
+\cp -r $S3_BUILD_DIR/auth/server/tests/resources/test.authserver.properties /opt/seagate/auth/resources/authserver.properties
 $USE_SUDO systemctl restart s3authserver
 
 # Start S3 gracefully, with max 3 attempts

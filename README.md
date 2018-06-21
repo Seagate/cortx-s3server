@@ -209,13 +209,14 @@ sudo systemctl status "s3server@0x7200000000000001:0x30"
 ```
 
 ## Steps to create Java key store and Certificate.
+## Required JDK 1.8.0_91 to be installed to run "keytool"
 ```sh
-/opt/jdk1.8.0_91/bin/keytool -genkeypair -keyalg RSA -alias s3auth -keystore s3_auth.jks -storepass seagate -keypass seagate -validity 3600 -keysize 2048 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
+keytool -genkeypair -keyalg RSA -alias s3auth -keystore s3_auth.jks -storepass seagate -keypass seagate -validity 3600 -keysize 2048 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
 ```
 
 ## Steps to generate crt from Key store
 ```sh
-/opt/jdk1.8.0_91/bin/keytool -importkeystore -srckeystore s3_auth.jks -destkeystore s3_auth.p12 -srcstoretype jks -deststoretype pkcs12 -srcstorepass seagate -deststorepass seagate
+keytool -importkeystore -srckeystore s3_auth.jks -destkeystore s3_auth.p12 -srcstoretype jks -deststoretype pkcs12 -srcstorepass seagate -deststorepass seagate
 ```
 
 ```sh
@@ -224,6 +225,11 @@ openssl pkcs12 -in s3_auth.p12 -out s3_auth.jks.pem -passin pass:seagate -passou
 
 ```sh
 openssl x509 -in s3_auth.jks.pem -out iam.seagate.com.crt
+```
+## Steps to create Key Pair for password encryption and store it in java keystore
+## This key pair will be used by AuthPassEncryptCLI and AuthServer for encryption and decryption of ldap password respectively
+```sh
+keytool -genkeypair -keyalg RSA -alias s3auth_pass -keystore s3_auth.jks -storepass seagate -keypass seagate -validity 3600 -keysize 512 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
 ```
 
 ## How to generate S3 server RPM

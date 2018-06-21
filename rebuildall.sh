@@ -205,9 +205,9 @@ then
   cd auth
   if [ $no_clean_build -eq 0 ]
   then
-    mvn clean
+    ./mvnbuild.sh clean
   fi
-  mvn package
+  ./mvnbuild.sh package
   cd -
 fi
 

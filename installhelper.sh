@@ -32,6 +32,8 @@ mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $SERVICE_FILE_LOCATION
 mkdir -p $LOG_DIR_LOCATION/s3
 mkdir -p $LOG_DIR_LOCATION/auth
+mkdir -p $LOG_DIR_LOCATION/auth/server
+mkdir -p $LOG_DIR_LOCATION/auth/tools
 mkdir -p $NODEJS_DIR_LOCATION
 
 # Copy the s3 dependencies
@@ -65,7 +67,10 @@ cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION
 
 # Copy Auth server jar to install location
-cp -f auth/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION
+cp -f auth/server/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION/
+
+# Copy Auth Password Encrypt Tool
+cp -f auth/encryptcli/target/AuthPassEncryptCLI-1.0-0.jar $AUTH_INSTALL_LOCATION/
 
 #Copy Auth Server resources to install location
 cp -ru auth/resources/ $AUTH_INSTALL_LOCATION/
@@ -74,7 +79,7 @@ cp -ru auth/resources/ $AUTH_INSTALL_LOCATION/
 cp startauth.sh $AUTH_INSTALL_LOCATION/
 
 # Copy the auth service file for systemctl support.
-cp auth/s3authserver.service $SERVICE_FILE_LOCATION
+cp auth/server/s3authserver.service $SERVICE_FILE_LOCATION
 
 # Copy nodejs binary
 #cp third_party/nodejs/s3_dist/bin/node $NODEJS_DIR_LOCATION/

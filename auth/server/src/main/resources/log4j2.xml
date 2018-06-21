@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="AuthServer" monitorInterval="30">
+    <Properties>
+        <Property name="baseDir">/var/log/seagate/auth/server</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="STDOUT">
+            <PatternLayout pattern="%d [%p] %m%n"/>
+            <filters>
+                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY" />
+            </filters>
+        </Console>
+
+        <RollingFile name="ROLLINGFILE" fileName="${baseDir}/app.log"
+                     filePattern="${baseDir}/$${date:yyyy-MM}/app-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="%d %p %C{1.} [%t] %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
+        <Socket name="RFC5424" host="localhost" port="514" protocol="UDP">
+            <RFC5424Layout facility="local5"/>
+            <filters>
+                <RegexFilter regex=".*IEC.*" onMatch="ACCEPT" onMismatch="DENY" />
+            </filters>
+        </Socket>
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="ROLLINGFILE"/>
+            <AppenderRef ref="RFC5424"/>
+        </Root>
+
+        <Logger name="io.netty" level="error" additivity="false" >
+            <AppenderRef ref="STDOUT"/>
+        </Logger>
+    </Loggers>
+</Configuration>

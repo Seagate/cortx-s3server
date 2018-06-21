@@ -72,17 +72,21 @@ rm -rf %{buildroot}
 %clean
 bazel clean
 cd auth
-mvn clean
+./mvnbuild.sh clean
 cd ..
 rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
 %config(noreplace) /opt/seagate/auth/resources/authserver.properties
+%config(noreplace) /opt/seagate/auth/resources/keystore.properties
 %config(noreplace) /opt/seagate/auth/resources/static/saml-metadata.xml
 %config(noreplace) /opt/seagate/s3/conf/s3config.yaml
 %config(noreplace) /opt/seagate/s3/conf/s3_obj_layout_mapping.yaml
 %config(noreplace) /opt/seagate/s3/conf/s3stats-whitelist.yaml
+
+%attr(4600, root, root) /opt/seagate/auth/resources/authserver.properties
+%attr(4600, root, root) /opt/seagate/auth/resources/keystore.properties
 
 %dir /opt/seagate/
 %dir /opt/seagate/auth
@@ -101,6 +105,7 @@ rm -rf %{buildroot}
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /opt/seagate/auth/AuthServer-1.0-0.jar
+/opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/auth/resources/s3_auth.jks
 /opt/seagate/auth/resources/signin.seagate.com.crt
 /opt/seagate/auth/resources/iam.seagate.com.crt

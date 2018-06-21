@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="AuthPassEncryptCLI" monitorInterval="30">
+    <Properties>
+        <Property name="baseDir">/var/log/seagate/auth/tools</Property>
+    </Properties>
+
+    <Appenders>
+
+        <RollingFile name="ROLLINGFILE" fileName="${baseDir}/encryptcli.log"
+                     filePattern="${baseDir}/$${date:yyyy-MM}/app-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="%d %p %C{1.} [%t] %m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="ROLLINGFILE"/>
+        </Root>
+    </Loggers>
+</Configuration>

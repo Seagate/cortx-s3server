@@ -40,6 +40,10 @@ $PythonV negative_spec.py
 echo "`date -u`: Running shutdown_spec.py..."
 $PythonV shutdown_spec.py
 
+
+echo "`date -u`: Running authpassencryptcli_spec.py..."
+$PythonV authpassencryptcli_spec.py
+
 echo >&2 '
 **************************
 *** ST Runs Successful ***
