@@ -128,6 +128,7 @@ cc_test(
       "third_party/libevent/s3_dist/include/",
       "third_party/libevhtp/s3_dist/include/evhtp",
       "third_party/jsoncpp/dist",
+      "ut/",
       "$(MERO_INC)",
       "server/",
       "mempool",

@@ -120,6 +120,7 @@ class S3RequestObject {
  protected:
   // protected so mocks can override
   std::map<std::string, std::string> in_headers_copy;
+  std::map<std::string, std::string> out_headers_copy;
   bool in_headers_copied;
 
  private:

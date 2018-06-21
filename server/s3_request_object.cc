@@ -226,9 +226,18 @@ std::string S3RequestObject::get_host_name() {
 }
 
 void S3RequestObject::set_out_header_value(std::string key, std::string value) {
-  evhtp_obj->http_headers_add_header(
-      ev_req->headers_out,
-      evhtp_obj->http_header_new(key.c_str(), value.c_str(), 1, 1));
+  if (out_headers_copy.find(key) == out_headers_copy.end()) {
+    evhtp_obj->http_headers_add_header(
+        ev_req->headers_out,
+        evhtp_obj->http_header_new(key.c_str(), value.c_str(), 1, 1));
+    out_headers_copy.insert(std::pair<std::string, std::string>(key, value));
+  } else {
+    // Single code path should not have a need to call this method for same key
+    // more then once, which can also point to a code problem.
+    // Example: set_out_header_value("Content-Length", "50"); <some more code>;
+    // set_out_header_value("Content-Length", "5"); is usually error prone.
+    assert(out_headers_copy.find(key) == out_headers_copy.end());
+  }
 }
 
 std::string S3RequestObject::get_data_length_str() {
@@ -396,7 +405,11 @@ void S3RequestObject::send_response(int code, std::string body) {
   // If body not empty, write to response body.
   if (!body.empty()) {
     evbuffer_add_printf(ev_req->buffer_out, body.c_str());
-  } else {
+  } else if (out_headers_copy.find("Content-Length") ==
+             out_headers_copy.end()) {  // Content-Length was already set for
+                                        // this request, which could be. case
+                                        // like HEAD object request, so dont
+                                        // add/update again
     set_out_header_value("Content-Length", "0");
   }
   set_out_header_value("x-amzn-RequestId", request_id);

@@ -16,11 +16,16 @@
  * Original author:  Kaustubh Deorukhkar   <kaustubh.deorukhkar@seagate.com>
  * Original creation date: 9-Nov-2015
  */
-
+#include <gmock/gmock.h>
 #include "gtest/gtest.h"
-
 #include "s3_error_codes.h"
 #include "s3_request_object.h"
+#include "mock_evhtp_wrapper.h"
+
+using ::testing::_;
+using ::testing::Mock;
+using ::testing::Return;
+using ::testing::StrEq;
 
 static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 
@@ -35,10 +40,21 @@ class S3RequestObjectTest : public testing::Test {
     ev_request = evhtp_request_new(dummy_request_cb, evbase);
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     request = new S3RequestObject(ev_request, evhtp_obj_ptr);
+
+    mock_evhtp_obj_ptr = new MockEvhtpWrapper();
+    EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_find(_, _))
+        .Times(3)
+        .WillRepeatedly(Return(""));
+    request_with_mock_http =
+        new S3RequestObject(ev_request, mock_evhtp_obj_ptr);
   }
 
   ~S3RequestObjectTest() {
     delete request;
+
+    mock_evhtp_obj_ptr = NULL;
+    delete request_with_mock_http;
+
     event_base_free(evbase);
   }
 
@@ -102,6 +118,8 @@ class S3RequestObjectTest : public testing::Test {
   S3RequestObject *request;
   evhtp_request_t *ev_request;  // To fill test data
   evbase_t *evbase;
+  MockEvhtpWrapper *mock_evhtp_obj_ptr;
+  S3RequestObject *request_with_mock_http;
 };
 
 TEST_F(S3RequestObjectTest, ReturnsValidRawQuery) {
@@ -329,4 +347,30 @@ TEST_F(S3RequestObjectTest, SetsAccountID) {
   std::string account_id = "bikrant";
   request->set_account_id(account_id);
   EXPECT_EQ(std::string("bikrant"), request->get_account_id());
+}
+
+TEST_F(S3RequestObjectTest,
+       ValidateContentLengthSetOnceOnlyForEmptySendResponse) {
+  // Content-Length Header should be set only once
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_new(_, _, _, _)).Times(1);
+  EXPECT_CALL(*mock_evhtp_obj_ptr,
+              http_header_new(StrEq("Content-Length"), _, _, _)).Times(1);
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(2);
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_send_reply(_, _)).Times(1);
+
+  // Set once like HEAD obect test
+  request_with_mock_http->set_out_header_value("Content-Length", "0");
+
+  request_with_mock_http->send_response(S3HttpSuccess200);
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentLengthSendResponseOnce) {
+  // Content-Length Header should be set only once
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_new(_, _, _, _)).Times(1);
+  EXPECT_CALL(*mock_evhtp_obj_ptr,
+              http_header_new(StrEq("Content-Length"), _, _, _)).Times(1);
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(2);
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_send_reply(_, _)).Times(1);
+
+  request_with_mock_http->send_response(S3HttpSuccess200);
 }

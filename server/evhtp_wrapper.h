@@ -35,6 +35,7 @@ EXTERN_C_BLOCK_END
 // c functions in tests. For Prod (non-test) this will just forward the calls.
 class EvhtpInterface {
  public:
+  virtual ~EvhtpInterface() {}
   virtual void http_request_pause(evhtp_request_t *request) = 0;
   virtual void http_request_resume(evhtp_request_t *request) = 0;
 
