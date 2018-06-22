@@ -28,7 +28,7 @@
 
 S3BucketMetadata::S3BucketMetadata(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
     std::shared_ptr<S3AccountUserIdxMetadataFactory>
@@ -44,8 +44,8 @@ S3BucketMetadata::S3BucketMetadata(
   salted_bucket_list_index_name = get_account_index_id();
   salted_multipart_list_index_name = get_multipart_index_name();
   state = S3BucketMetadataState::empty;
-  if (s3_clovis_apis) {
-    s3_clovis_api = s3_clovis_api;
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }

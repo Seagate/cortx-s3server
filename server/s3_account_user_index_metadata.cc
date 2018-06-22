@@ -30,7 +30,7 @@ extern struct m0_uint128 root_account_user_index_oid;
 
 S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
@@ -44,8 +44,8 @@ S3AccountUserIdxMetadata::S3AccountUserIdxMetadata(
   bucket_list_index_oid = {0ULL, 0ULL};
   state = S3AccountUserIdxMetadataState::empty;
 
-  if (s3_clovis_apis) {
-    s3_clovis_api = s3_clovis_api;
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
