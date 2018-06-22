@@ -156,7 +156,7 @@ then
       $no_s3mempoolut_build -eq 0 ]]
   then
     bazel shutdown
-    bazel clean
+    bazel clean --expunge
   fi
 fi
 
@@ -196,6 +196,9 @@ then
                               --define $MERO_LIB_ --define $MERO_EXTRA_LIB_ \
                               --spawn_strategy=standalone
 fi
+
+# Just to free up resources
+bazel shutdown
 
 if [ $no_auth_build -eq 0 ]
 then

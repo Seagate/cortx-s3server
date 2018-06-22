@@ -30,7 +30,7 @@ index 75e376d..43e761b 100644
  verify: check
  
 diff --git a/buffer.c b/buffer.c
-index 8510955..62596c6 100644
+index 8510955..ab0b915 100644
 --- a/buffer.c
 +++ b/buffer.c
 @@ -135,6 +135,7 @@ static int use_mmap = 1;
@@ -122,6 +122,15 @@ index 8510955..62596c6 100644
  	mm_free(chain);
  }
  
+@@ -2013,7 +2036,7 @@ evbuffer_expand(struct evbuffer *buf, size_t datlen)
+ #endif
+ #define NUM_READ_IOVEC 4
+ 
+-#define EVBUFFER_MAX_READ	4096
++#define EVBUFFER_MAX_READ	16384
+ 
+ /** Helper function to figure out which space to use for reading data into
+     an evbuffer.  Internal use only.
 @@ -2074,12 +2097,23 @@ get_n_bytes_readable_on_socket(evutil_socket_t fd)
  	/* Can overflow, but mostly harmlessly. XXXX */
  	return (int)lng;
