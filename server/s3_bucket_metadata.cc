@@ -27,8 +27,7 @@
 #include "s3_uri_to_mero_oid.h"
 
 S3BucketMetadata::S3BucketMetadata(
-    std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
     std::shared_ptr<S3AccountUserIdxMetadataFactory>
