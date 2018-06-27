@@ -23,6 +23,7 @@ import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
 import com.seagates3.authorization.Authorizer;
+import com.seagates3.authorization.IAMApiAuthorizer;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.authserver.IAMResourceMapper;
 import com.seagates3.authserver.ResourceMap;
@@ -77,6 +78,7 @@ public class IAMControllerTest {
     private Requestor requestor;
     private ClientRequestToken clientRequestToken;
     private SignatureValidator signatureValidator;
+    private IAMApiAuthorizer iamApiAuthorizer;
     @Before
     public void setUp() throws Exception {
         mockStatic(IAMResourceMapper.class);
@@ -91,6 +93,7 @@ public class IAMControllerTest {
         requestor = mock(Requestor.class);
         clientRequestToken = mock(ClientRequestToken.class);
         signatureValidator = mock(SignatureValidator.class);
+        iamApiAuthorizer = mock(IAMApiAuthorizer.class);
 
         controller = new IAMController();
         requestBody = new TreeMap<>();
@@ -378,6 +381,106 @@ public class IAMControllerTest {
                 resourceMap, requestBody);
 
         assertFalse(result);
+    }
+
+    /*
+     * Test for the scenario:
+     *
+     * When root user's access key and secret key are given
+     * for creating access key for any non root user.
+     */
+    @Test
+    public void serveTest_ValidUserRoot() throws Exception {
+        requestBody.put("UserName", "usr1");
+
+        IAMController controllerSpy = spy(controller);
+        requestBody.put("Action", "CreateAccessKey");
+
+        ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
+        SignatureValidator signatureValidator = mock(SignatureValidator.class);
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenReturn(clientRequestToken);
+        when(RequestorService.getRequestor(clientRequestToken)).thenReturn(requestor);
+        whenNew(SignatureValidator.class).withNoArguments().thenReturn(signatureValidator);
+        when(signatureValidator.validate(clientRequestToken, requestor))
+                .thenReturn(serverResponse);
+        when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
+        when(IAMResourceMapper.getResourceMap("CreateAccessKey")).thenReturn(resourceMap);
+        doReturn(Boolean.TRUE).when(controllerSpy, "validateRequest", resourceMap, requestBody);
+
+        when(requestor.getName()).thenReturn("root");
+        doReturn(serverResponse).when(
+                controllerSpy, "performAction", resourceMap, requestBody,requestor);
+        ServerResponse response = controllerSpy.serve(httpRequest, requestBody);
+
+        assertEquals(serverResponse, response);
+        assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    }
+
+    /*
+     * Test for the scenario:
+     *
+     * When non root user (i.e. usr1)'s access key and secret key are given
+     * for creating access key for other non root user(i.e. usr2).
+     */
+    @Test
+    public void serveTest_InvalidUserException() throws Exception {
+        IAMController controllerSpy = spy(controller);
+        requestBody.put("Action", "CreateAccessKey");
+        requestBody.put("UserName", "usr2");
+
+        ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
+        SignatureValidator signatureValidator = mock(SignatureValidator.class);
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenReturn(clientRequestToken);
+        when(RequestorService.getRequestor(clientRequestToken)).thenReturn(requestor);
+        whenNew(SignatureValidator.class).withNoArguments().thenReturn(signatureValidator);
+        when(signatureValidator.validate(clientRequestToken, requestor))
+                .thenReturn(serverResponse);
+        when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
+        when(IAMResourceMapper.getResourceMap("CreateAccessKey")).thenReturn(resourceMap);
+        doReturn(Boolean.TRUE).when(controllerSpy, "validateRequest", resourceMap, requestBody);
+
+        when(requestor.getName()).thenReturn("usr1");
+        doReturn(serverResponse).when(
+                controllerSpy, "performAction", resourceMap, requestBody,requestor);
+        ServerResponse response = controllerSpy.serve(httpRequest, requestBody);
+
+        assertThat(response.getResponseBody(), containsString(
+              "User is not authorized to perform invoked action"));
+        assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+    }
+
+
+    /*
+     * Test for the scenario:
+     *
+     * When non root user (i.e. usr1)'s access key and secret key are given
+     * for creating access key for self.
+     */
+    @Test
+    public void serveTest_ValidUserSelf() throws Exception {
+        IAMController controllerSpy = spy(controller);
+        requestBody.put("Action", "CreateAccessKey");
+        requestBody.put("UserName", "usr1");
+
+        ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
+        SignatureValidator signatureValidator = mock(SignatureValidator.class);
+        when(ClientRequestParser.parse(httpRequest, requestBody))
+                 .thenReturn(clientRequestToken);
+        when(RequestorService.getRequestor(clientRequestToken)).thenReturn(requestor);
+        whenNew(SignatureValidator.class).withNoArguments().thenReturn(signatureValidator);
+        when(signatureValidator.validate(clientRequestToken, requestor))
+                .thenReturn(serverResponse);
+        when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
+        when(IAMResourceMapper.getResourceMap("CreateAccessKey")).thenReturn(resourceMap);
+        doReturn(Boolean.TRUE).when(controllerSpy, "validateRequest", resourceMap, requestBody);
+
+        when(requestor.getName()).thenReturn("usr1");
+        doReturn(serverResponse).when(
+                controllerSpy, "performAction", resourceMap, requestBody,requestor);
+        ServerResponse response = controllerSpy.serve(httpRequest, requestBody);
+
+        assertEquals(serverResponse, response);
+        assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
 
     @Test

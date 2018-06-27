@@ -72,6 +72,12 @@ public abstract class AbstractResponseGenerator {
                 "InvalidAccessKeyId", errorMessage);
     }
 
+    public ServerResponse invalidUser() {
+        String errorMessage = "User is not authorized to perform invoked action. ";
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                "InvalidUser", errorMessage);
+    }
+
     public ServerResponse invalidLdapUserId() {
         String errorMessage = "The Ldap user id you provided does not exist.";
         return formatResponse(HttpResponseStatus.UNAUTHORIZED,

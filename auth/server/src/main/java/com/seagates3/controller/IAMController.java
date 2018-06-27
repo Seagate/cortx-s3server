@@ -22,6 +22,7 @@ import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
 import com.seagates3.authorization.Authorizer;
+import com.seagates3.authorization.IAMApiAuthorizer;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.authserver.IAMResourceMapper;
 import com.seagates3.authserver.ResourceMap;
@@ -29,6 +30,7 @@ import com.seagates3.exception.AuthResourceNotFoundException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidRequestorException;
+import com.seagates3.exception.InvalidUserException;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
@@ -169,6 +171,21 @@ public class IAMController {
         if (!validateRequest(resourceMap, requestBody)) {
             LOGGER.debug("Input parameters are not valid.");
             return responseGenerator.invalidParametervalue();
+        }
+
+        /*
+         * Check if User is authorized to perform invoked action.
+         * Only ldap credentials are allowed for createaccount and listaccounts.
+         * Hence, createaccount and listaccounts don't require this check.
+         */
+        if (!(requestAction.equals("CreateAccount") || requestAction.equals("ListAccounts"))) {
+            try {
+                new IAMApiAuthorizer().authorize(requestor, requestBody);
+                LOGGER.debug("User is authorized to perform invoked action.");
+            } catch (InvalidUserException e) {
+                LOGGER.debug(e.getServerResponse().getResponseBody());
+                return e.getServerResponse();
+            }
         }
 
         return performAction(resourceMap, requestBody, requestor);

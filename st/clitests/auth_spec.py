@@ -363,6 +363,194 @@ def accesskey_tests():
     result = AuthTest(test_msg).delete_user(**user_args).execute_test()
     result.command_response_should_have("User deleted.")
 
+
+    # Check if non root users are not allowed to use own access key
+    # and secret key on other users for creating and deleting access keys
+
+    '''
+    Setup for tests:
+    '''
+    _use_root_credentials()
+    user_args = {}
+    test_msg = "Create User s3user_1 using root access key and secret key " \
+               + "(path = /test/)"
+    user_args['UserName'] = "s3user_1"
+    user_args['Path'] = "/test/"
+    user2_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /test/$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user2_response_pattern)
+
+
+    test_msg = "Create access key using root access key and secret key " \
+               + "(user name is s3user_1)"
+    access_key_args['UserName'] = 's3user_1'
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+
+    response_elements = get_response_elements(result.status.stdout)
+    # Saving access key and secret key for s3user_1 for later use.
+    access_key_id_of_s3user1 = response_elements['AccessKeyId']
+    secret_key_of_s3user1 = response_elements['SecretAccessKey']
+
+    # Overwriting values of access key and secret key given by
+    # _use_root_credentials() with s3user_1's access key and secret key.
+    S3ClientConfig.access_key_id = access_key_id_of_s3user1
+    S3ClientConfig.secret_key = secret_key_of_s3user1
+
+
+    '''
+    runTest:
+    '''
+    test_msg = "Create User s3user_2 using s3user_1's access key and secret key " \
+               + "(path = /test/)"
+    user_args['UserName'] = "s3user_2"
+    user_args['Path'] = "/test/"
+    user2_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /test/$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action")
+
+    '''
+    Setup for tests:
+    '''
+    _use_root_credentials()
+    test_msg = "Create User s3user_2 using root's access key and secret key " \
+               + "(path = /test/)"
+    user_args['UserName'] = "s3user_2"
+    user_args['Path'] = "/test/"
+    user2_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /test/$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user2_response_pattern)
+
+    '''
+    runTest:
+    '''
+
+    test_msg = "Create access key using s3user_1's access key and secret key " \
+               +  "(user name is s3user_2)"
+    S3ClientConfig.access_key_id = access_key_id_of_s3user1
+    S3ClientConfig.secret_key = secret_key_of_s3user1
+    access_key_args['UserName'] = 's3user_2'
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action")
+
+
+    '''
+    Setup for tests:
+    '''
+    _use_root_credentials()
+    test_msg = "Create access key using root access key and secret key " \
+               + "(user name is s3user_2)"
+    access_key_args['UserName'] = 's3user_2'
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    response_elements = get_response_elements(result.status.stdout)
+
+    # Saving access key and secret key for s3user_1 for later use.
+    access_key_id_of_s3user2 = response_elements['AccessKeyId']
+    secret_key_of_s3user2 = response_elements['SecretAccessKey']
+
+    # Overwriting values of access key and secret key given by
+    # _use_root_credentials() with s3user_2's access key and secret key.
+    S3ClientConfig.access_key_id = access_key_id_of_s3user2
+    S3ClientConfig.secret_key = secret_key_of_s3user2
+
+    '''
+    runTest:
+    '''
+    test_msg = 'Delete access key of s3user_1 using s3user_2\'s access key' \
+               + ' and secret key'
+    access_key_args['UserName'] = 's3user_1'
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action")
+
+    '''
+    Setup for tests:
+    '''
+    _use_root_credentials()
+    test_msg = 'Delete access key of s3user_1 using root credentials'
+    access_key_args['UserName'] = 's3user_1'
+    access_key_args['AccessKeyId']  = access_key_id_of_s3user1
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+
+    S3ClientConfig.access_key_id = access_key_id_of_s3user2
+    S3ClientConfig.secret_key = secret_key_of_s3user2
+
+    '''
+    runTest:
+    '''
+    test_msg = "Delete User s3user_1 using s3user_2's access key and secret key"
+    user_args['UserName'] = "s3user_1"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action")
+
+    '''
+    Teardown:
+    '''
+    _use_root_credentials()
+    test_msg = 'Delete access key of s3user_2 using root access key and secret key'
+    access_key_args['UserName'] = 's3user_2'
+    access_key_args['AccessKeyId']  = access_key_id_of_s3user2
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+    test_msg = 'Delete User s3user_1 using root access key and secret key'
+    user_args = {}
+    user_args['UserName'] = "s3user_1"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+    test_msg = 'Delete User s3user_2 using root access key and secret key'
+    user_args = {}
+    user_args['UserName'] = "s3user_2"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+
+    '''
+    Setup for tests for scenario when one account's access key
+    and secret key are used for creating access key for user in aanother account :
+    '''
+
+    test_msg = "Create account s3test_1"
+    account_args = {'AccountName': 's3test_1', 'Email': 'test@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+
+    # Overwriting values of access key and secret key given by
+    # _use_root_credentials() with new account 's3test_1's access key and secret key.
+    S3ClientConfig.access_key_id = account_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = account_response_elements['SecretKey']
+
+    '''
+    runTest:
+    '''
+    test_msg = "Create access key using another account's access key and secret key " \
+               +  "(user name is s3user_2)"
+    access_key_args = {}
+    access_key_args['UserName'] = 's3user_2'
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    #import pdb; pdb.set_trace()
+    result.command_response_should_have("The request was rejected because it " \
+        + "referenced a user that does not exist.")
+
+    '''
+    Teardown:
+    '''
+    account_args = {}
+    test_msg = "Delete account s3test_1"
+    account_args = {'AccountName': 's3test_1'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    # restoring previous values for further tests
+    _use_root_credentials()
+
 def role_tests():
     policy_doc = os.path.join(os.path.dirname(__file__), 'resources', 'policy')
     policy_doc_full_path = os.path.abspath(policy_doc)
@@ -450,6 +638,8 @@ def get_federation_token_test():
     S3ClientConfig.secret_key = response_elements['SecretAccessKey']
     S3ClientConfig.token = response_elements['SessionToken']
 
+
+    _use_root_credentials()
     test_msg = 'List Users (default path)'
     user_args = {}
     list_user_pattern = "UserId = [\w-]*, UserName = root, ARN = [\S]*, Path = /$"
@@ -462,7 +652,6 @@ def get_federation_token_test():
     result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
     result.command_response_should_have("Access key deleted.")
 
-    _use_root_credentials()
     test_msg = 'Delete User s3root'
     user_args = {}
     user_args['UserName'] = "s3root"
