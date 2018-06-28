@@ -36,9 +36,16 @@ S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory)
     : S3Action(req, false), invalid_upload_id(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+
   upload_id = request->get_query_string_value("uploadId");
-  object_name = request->get_object_name();
   bucket_name = request->get_bucket_name();
+  object_name = request->get_object_name();
+
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: Abort Multipart API. Bucket[%s] \
+         Object[%s] with UploadId[%s]\n",
+         bucket_name.c_str(), object_name.c_str(), upload_id.c_str());
+
   multipart_oid = {0ULL, 0ULL};
   part_index_oid = {0ULL, 0ULL};
 

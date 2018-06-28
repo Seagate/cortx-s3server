@@ -36,6 +36,10 @@ S3PutObjectAction::S3PutObjectAction(
     : S3Action(req), total_data_to_stream(0), write_in_progress(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
+  s3_log(S3_LOG_INFO, request_id, "S3 API: Put Object. Bucket[%s] Object[%s]\n",
+         request->get_bucket_name().c_str(),
+         request->get_object_name().c_str());
+
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   S3UriToMeroOID(request->get_object_uri().c_str(), &new_object_oid);

@@ -35,6 +35,8 @@ S3GetServiceAction::S3GetServiceAction(
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
+  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Service.\n");
+
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
   } else {

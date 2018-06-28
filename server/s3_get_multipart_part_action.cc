@@ -28,8 +28,7 @@
 #include "s3_part_metadata.h"
 
 S3GetMultipartPartAction::S3GetMultipartPartAction(
-    std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<ClovisAPI> s3_clovis_apis,
+    std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
@@ -40,6 +39,22 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
       fetch_successful(false),
       invalid_upload_id(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+
+  bucket_name = request->get_bucket_name();
+  object_name = request->get_object_name();
+  upload_id = request->get_query_string_value("uploadId");
+  std::string maxparts = request->get_query_string_value("max-parts");
+  request_marker_key = request->get_query_string_value("part-number-marker");
+  if (request_marker_key.empty()) {
+    request_marker_key = "0";
+  }
+  last_key = request_marker_key;  // as requested by user
+
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: List Parts. Bucket[%s] Object[%s] for UploadId[%s]\
+         from part-number-marker[%s] with max-parts[%s]\n",
+         bucket_name.c_str(), object_name.c_str(), upload_id.c_str(),
+         last_key.c_str(), maxparts.c_str());
 
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
@@ -66,30 +81,22 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
     part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
   }
 
-  if (s3_clovis_apis) {
-    s3_clovis_api = s3_clovis_apis;
+  if (clovis_api) {
+    s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
 
-  request_marker_key = request->get_query_string_value("part-number-marker");
-  if (request_marker_key.empty()) {
-    request_marker_key = "0";
-  }
   multipart_part_list.set_request_marker_key(request_marker_key);
   s3_log(S3_LOG_DEBUG, request_id, "part-number-marker = %s\n",
          request_marker_key.c_str());
 
-  bucket_name = request->get_bucket_name();
-  object_name = request->get_object_name();
-  last_key = request_marker_key;  // as requested by user
-  upload_id = request->get_query_string_value("uploadId");
   multipart_oid = {0ULL, 0ULL};
   multipart_part_list.set_bucket_name(bucket_name);
   multipart_part_list.set_object_name(object_name);
   multipart_part_list.set_upload_id(upload_id);
   multipart_part_list.set_storage_class("STANDARD");
-  std::string maxparts = request->get_query_string_value("max-parts");
+
   if (maxparts.empty()) {
     max_parts = 1000;
     multipart_part_list.set_max_parts("1000");

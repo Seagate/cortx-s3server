@@ -28,6 +28,9 @@ S3GetBucketACLAction::S3GetBucketACLAction(
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
+  s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket Acl API. Bucket[%s]\n",
+         request->get_bucket_name().c_str());
+
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
   } else {

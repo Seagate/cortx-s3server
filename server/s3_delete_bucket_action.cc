@@ -37,6 +37,10 @@ S3DeleteBucketAction::S3DeleteBucketAction(
       is_bucket_empty(false),
       delete_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+
+  s3_log(S3_LOG_INFO, request_id, "S3 API: Delete Bucket API. Bucket[%s]\n",
+         request->get_bucket_name().c_str());
+
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
   } else {

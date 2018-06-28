@@ -29,6 +29,10 @@ S3PutBucketAction::S3PutBucketAction(
     std::shared_ptr<S3PutBucketBodyFactory> bucket_body_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+
+  s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket. Bucket[%s]\n",
+         request->get_bucket_name().c_str());
+
   location_constraint = "";
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;

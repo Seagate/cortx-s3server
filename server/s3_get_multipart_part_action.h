@@ -63,7 +63,7 @@ class S3GetMultipartPartAction : public S3Action {
  public:
   S3GetMultipartPartAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_apis = nullptr,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,

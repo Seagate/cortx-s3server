@@ -42,6 +42,13 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   part_number = get_part_number();
   upload_id = request->get_query_string_value("uploadId");
+
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: Upload Part. Bucket[%s] Object[%s]\
+         Part[%d] for UploadId[%s]\n",
+         request->get_bucket_name().c_str(), request->get_object_name().c_str(),
+         part_number, upload_id.c_str());
+
   layout_id = -1;  // Loaded from multipart metadata
   if (request->is_chunked() && !S3Option::get_instance()->is_auth_disabled()) {
     clear_tasks();  // remove default auth

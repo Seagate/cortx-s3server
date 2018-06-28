@@ -35,6 +35,12 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: Initiate Multipart Upload. Bucket[%s]\
+         Object[%s]\n",
+         request->get_bucket_name().c_str(),
+         request->get_object_name().c_str());
+
   S3UriToMeroOID(request->get_object_uri().c_str(), &oid);
   tried_count = 0;
 

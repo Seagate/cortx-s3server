@@ -28,6 +28,10 @@ S3HeadObjectAction::S3HeadObjectAction(
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
+  s3_log(
+      S3_LOG_INFO, request_id, "S3 API: Head Object. Bucket[%s] Object[%s]\n",
+      request->get_bucket_name().c_str(), request->get_object_name().c_str());
+
   if (bucket_meta_factory) {
     bucket_metadata_factory = bucket_meta_factory;
   } else {

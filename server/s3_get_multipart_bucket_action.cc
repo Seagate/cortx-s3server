@@ -40,6 +40,10 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
       last_uploadid("") {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: List Multipart Uploads. Bucket[%s]\n",
+         request->get_bucket_name().c_str());
+
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {

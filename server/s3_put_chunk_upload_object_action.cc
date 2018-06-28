@@ -41,6 +41,13 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
       auth_in_progress(false),
       auth_completed(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: Put Object (Chunk mode). Bucket[%s]\
+         Object[%s]\n",
+         request->get_bucket_name().c_str(),
+         request->get_object_name().c_str());
+
   clear_tasks();  // remove default auth
   if (!S3Option::get_instance()->is_auth_disabled()) {
     // Add chunk style auth

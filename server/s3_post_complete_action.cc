@@ -40,6 +40,15 @@ S3PostCompleteAction::S3PostCompleteAction(
     : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
+  upload_id = request->get_query_string_value("uploadId");
+  bucket_name = request->get_bucket_name();
+  object_name = request->get_object_name();
+
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: Complete Multipart Upload. Bucket[%s] Object[%s]\
+         for UploadId[%s]\n",
+         bucket_name.c_str(), object_name.c_str(), upload_id.c_str());
+
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
@@ -76,12 +85,11 @@ S3PostCompleteAction::S3PostCompleteAction(
   } else {
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
-  upload_id = request->get_query_string_value("uploadId");
-  object_name = request->get_object_name();
-  bucket_name = request->get_bucket_name();
+
   object_size = 0;
   post_successful = false;
   set_abort_multipart(false);
+
   setup_steps();
 }
 

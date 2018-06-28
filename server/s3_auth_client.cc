@@ -53,7 +53,8 @@ extern "C" evhtp_res on_auth_conn_err_callback(evhtp_connection_t *connection,
 
   if (!context->get_request()->client_connected()) {
     // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, "", "S3 Client has already disconnected.\n");
+    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+           "S3 Client has already disconnected.\n");
     return EVHTP_RES_OK;
   }
   context->set_op_status_for(0, S3AsyncOpStatus::connection_failed,
@@ -67,9 +68,11 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
                                                evbuf_t *buf, void *arg) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   unsigned int auth_resp_status = evhtp_request_status(req);
-  s3_log(S3_LOG_DEBUG, "", "auth_resp_status = %d\n", auth_resp_status);
 
   S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
+  s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+         "auth_resp_status = %d\n", auth_resp_status);
+
   // Note: Do not remove this, else you will have s3 crashes as the
   // callbacks are invoked after request/connection is freed.
   evhtp_unset_all_hooks(&context->get_auth_op_ctx()->conn->hooks);
@@ -78,7 +81,8 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
 
   if (!context->get_request()->client_connected()) {
     // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, "", "S3 Client has already disconnected.\n");
+    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+           "S3 Client has already disconnected.\n");
     return EVHTP_RES_OK;
   }
 
@@ -86,27 +90,31 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
   char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
   memset(auth_response_body, 0, buffer_len);
   evbuffer_copyout(buf, auth_response_body, buffer_len);
-  s3_log(S3_LOG_DEBUG, "",
+  s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
          "Response data received from Auth service = [[%s]]\n\n\n",
          auth_response_body);
 
   if (auth_resp_status == S3HttpSuccess200) {
-    s3_log(S3_LOG_DEBUG, "", "Authorization successful\n");
+    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+           "Authorization successful\n");
     context->set_op_status_for(0, S3AsyncOpStatus::success,
                                "Authorization successful");
     context->set_authorization_response(auth_response_body, true);
   } else if (auth_resp_status == S3HttpFailed401) {
-    s3_log(S3_LOG_ERROR, "", "Authorization failed\n");
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Authorization failed\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Authorization failed");
     context->set_authorization_response(auth_response_body, false);
   } else if (auth_resp_status == S3HttpFailed405) {
-    s3_log(S3_LOG_ERROR, "", "Authorization failed:Method Not Allowed \n");
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Authorization failed:Method Not Allowed \n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Authorization failed:Method Not Allowed");
     context->set_authorization_response(auth_response_body, false);
   } else {
-    s3_log(S3_LOG_ERROR, "", "Something is wrong with Auth server\n");
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Something is wrong with Auth server\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Something is wrong with Auth server");
     context->set_authorization_response("", false);
@@ -133,7 +141,8 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
   } else {
     auth_resp_status = evhtp_request_status(req);
   }
-  s3_log(S3_LOG_DEBUG, "", "auth_resp_status = %d\n", auth_resp_status);
+  s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+         "auth_resp_status = %d\n", auth_resp_status);
 
   // Note: Do not remove this, else you will have s3 crashes as the
   // callbacks are invoked after request/connection is freed.
@@ -142,7 +151,8 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
 
   if (!context->get_request()->client_connected()) {
     // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, "", "S3 Client has already disconnected.\n");
+    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+           "S3 Client has already disconnected.\n");
     return EVHTP_RES_OK;
   }
 
@@ -150,22 +160,25 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
   char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
   memset(auth_response_body, 0, buffer_len);
   evbuffer_copyout(buf, auth_response_body, buffer_len);
-  s3_log(S3_LOG_DEBUG, "",
+  s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
          "Response data received from Auth service = [[%s]]\n\n\n",
          auth_response_body);
 
   if (auth_resp_status == S3HttpSuccess200) {
-    s3_log(S3_LOG_DEBUG, "", "Authentication successful\n");
+    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
+           "Authentication successful\n");
     context->set_op_status_for(0, S3AsyncOpStatus::success,
                                "Authentication successful");
     context->set_auth_response_xml(auth_response_body, true);
   } else if (auth_resp_status == S3HttpFailed401) {
-    s3_log(S3_LOG_ERROR, "", "Authentication failed\n");
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Authentication failed\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Authentication failed");
     context->set_auth_response_xml(auth_response_body, false);
   } else {
-    s3_log(S3_LOG_ERROR, "", "Something is wrong with Auth server\n");
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Something is wrong with Auth server\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Something is wrong with Auth server");
     context->set_auth_response_xml("", false);

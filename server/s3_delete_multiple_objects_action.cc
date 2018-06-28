@@ -38,6 +38,10 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
       at_least_one_delete_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
+  s3_log(S3_LOG_INFO, request_id,
+         "S3 API: Delete Multiple Objects API. Bucket[%s]\n",
+         request->get_bucket_name().c_str());
+
   object_list_index_oid = {0ULL, 0ULL};
 
   if (bucket_md_factory) {
