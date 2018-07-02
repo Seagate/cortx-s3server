@@ -19,8 +19,8 @@ class AuthTest(PyCliTest):
         super(AuthTest, self).teardown()
 
     def with_cli(self, cmd):
-        if Config.use_ssl and 's3iamcli' in cmd:
-            cmd = cmd + ' --use-ssl'
+        if Config.no_ssl and 's3iamcli' in cmd:
+            cmd = cmd + ' --no-ssl'
         super(AuthTest, self).with_cli(cmd)
 
     def create_account(self, **account_args):

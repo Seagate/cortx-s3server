@@ -82,7 +82,7 @@ class S3IamCli:
 
         service = Config.service.upper()
 
-        if cli_args.use_ssl:
+        if not cli_args.no_ssl:
             Config.use_ssl = True
             service = service + '_HTTPS'
             Config.ca_cert_file = config['SSL']['CA_CERT_FILE']
@@ -185,7 +185,7 @@ class S3IamCli:
         parser.add_argument("--saml_role_arn", help="SAML Role ARN.")
         parser.add_argument("--saml_assertion", help="File conataining SAML assertion.")
         parser.add_argument("--new_user", help="New user name.")
-        parser.add_argument("--use-ssl", help="Use HTTPS protocol.", action ='store_true')
+        parser.add_argument("--no-ssl", help="Use HTTP protocol.", action ='store_true')
         parser.add_argument("--hidden_help",dest = 'hidden_help', action ='store_true', help=argparse.SUPPRESS)
         cli_args = parser.parse_args()
 

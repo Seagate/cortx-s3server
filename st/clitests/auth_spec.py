@@ -519,6 +519,7 @@ def delete_account_tests():
 
 def execute_tests_over_http_connection():
     print('Executing auth system tests over HTTP connection')
+    Config.no_ssl = True
     # Do not change the order.
     before_all()
     account_tests()
@@ -531,7 +532,6 @@ def execute_tests_over_http_connection():
 
 def execute_tests_over_https_connection():
     print('Executing auth system tests over HTTPS connection')
-    Config.use_ssl = True
     # Do not change the order.
     before_all()
     account_tests()
