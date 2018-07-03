@@ -25,7 +25,7 @@ Summary:    s3server for Mero
 
 Group:      Development/Tools
 License:    Seagate
-URL:        http://gerrit-sage.dco.colo.seagate.com:8080/s3server
+URL:        http://gerrit-sage.mero.colo.seagate.com:8080/s3server
 Source:     %{name}-%{version}-%{s3_git_revision}.tar.gz
 
 BuildRequires: automake
