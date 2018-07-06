@@ -38,13 +38,20 @@ import com.seagates3.model.Role;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountResponseGenerator;
+import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
+
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AccountController extends AbstractController {
 
+    private final Logger LOGGER = LoggerFactory.getLogger(AccountController.class.getName());
     private final AccountDAO accountDao;
     private final UserDAO userDAO;
     private final AccessKeyDAO accessKeyDAO;
@@ -52,7 +59,8 @@ public class AccountController extends AbstractController {
     private final GroupDAO groupDAO;
     private final PolicyDAO policyDAO;
     private final AccountResponseGenerator accountResponseGenerator;
-
+    private final S3AccountNotifier s3;
+    private boolean internalRequest = false;
     public AccountController(Requestor requestor,
             Map<String, String> requestBody) {
         super(requestor, requestBody);
@@ -64,6 +72,7 @@ public class AccountController extends AbstractController {
         roleDAO = (RoleDAO) DAODispatcher.getResourceDAO(DAOResource.ROLE);
         groupDAO = (GroupDAO) DAODispatcher.getResourceDAO(DAOResource.GROUP);
         policyDAO = (PolicyDAO) DAODispatcher.getResourceDAO(DAOResource.POLICY);
+        s3 = new S3AccountNotifier();
     }
 
     /*
@@ -117,6 +126,27 @@ public class AccountController extends AbstractController {
             rootAccessKey = createRootAccessKey(root);
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
+        }
+
+        //Notify S3 Server of new account creation
+        LOGGER.debug("Sending create account [" + account.getId() +
+                                   "] notification to S3 Server");
+        ServerResponse resp = s3.notifyNewAccount(account.getId(),
+                rootAccessKey.getId(), rootAccessKey.getSecretKey());
+        if(!resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
+            LOGGER.error("Account [" + account.getId() + "] create "
+                + "notification failed, Starting cleaunup.");
+            //Oops.. s3 notification failed, delete just now created account
+            internalRequest = true;
+            requestor.setId(root.getId());
+            ServerResponse response = delete();
+
+            if (!response.getResponseStatus().equals(HttpResponseStatus.OK)) {
+                LOGGER.error("Account [" + account.getId() + "] delete "
+                        + "failed statusCode:" + response.getResponseStatus());
+                return response;
+            }
+            return resp;
         }
 
         return accountResponseGenerator.generateCreateResponse(account, root,
@@ -183,6 +213,21 @@ public class AccountController extends AbstractController {
         boolean force = false;
         if (requestBody.containsKey("force")) {
             force = Boolean.parseBoolean(requestBody.get("force"));
+        }
+
+        //Notify S3 Server of account deletion
+
+        if (!internalRequest) {
+            LOGGER.debug("Sending delete account [" + account.getId() +
+                                       "] notification to S3 Server");
+            ServerResponse resp = s3.notifyDeleteAccount(account.getId(),
+                                        requestor.getAccesskey().getId(),
+                                requestor.getAccesskey().getSecretKey());
+            if(!resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
+                LOGGER.error("Account [" + account.getId() + "] delete "
+                    + "notification failed.");
+                return resp;
+            }
         }
 
         try {

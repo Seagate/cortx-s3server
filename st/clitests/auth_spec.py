@@ -5,6 +5,7 @@ from framework import Config
 from framework import S3PyCliTest
 from auth import AuthTest
 from s3client_config import S3ClientConfig
+from s3cmd import S3cmdTest
 import shutil
 
 home_dir = os.path.expanduser("~")
@@ -702,6 +703,37 @@ def delete_account_tests():
 
     # Test: delete account without force option
     test_msg = "Delete account s3test1"
+    account_args = {'AccountName': 's3test1'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
+    # Test: Account cannot be deleted if it contains some buckets
+    test_msg = "Create account s3test1"
+
+    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+
+    GlobalTestState.root_access_key = account_response_elements['AccessKeyId']
+    GlobalTestState.root_secret_key = account_response_elements['SecretKey']
+    _use_root_credentials()
+
+    S3ClientConfig.pathstyle = False
+
+    S3cmdTest('s3cmd can create bucket').with_credentials(GlobalTestState.root_access_key, GlobalTestState.root_secret_key)\
+    .create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    test_msg = "Delete account s3test1 containing buckets"
+    account_args = {'AccountName': 's3test1'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account cannot be deleted as it owns some resources.")
+
+    S3cmdTest('s3cmd can delete bucket').with_credentials(GlobalTestState.root_access_key, GlobalTestState.root_secret_key)\
+    .delete_bucket("seagatebucket").execute_test().command_is_successful()
+
+    test_msg = "Delete account s3test1 contains no buckets"
     account_args = {'AccountName': 's3test1'}
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")

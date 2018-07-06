@@ -18,6 +18,10 @@
  */
 package com.seagates3.authserver;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,10 +39,30 @@ import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
  */
 public class AuthServerConfig {
 
-    public static String AUTH_INSTALL_DIR = "/opt/seagate/auth";
+    public static String authResourceDir;
     private static String samlMetadataFilePath;
     private static Properties authServerConfig;
     private static String ldapPasswd;
+
+    /**
+     * Read the properties file.
+     * @throws GeneralSecurityException
+     */
+    public static void readConfig(String resourceDir)
+                       throws FileNotFoundException, IOException,
+                                  GeneralSecurityException, Exception {
+        authResourceDir = resourceDir;
+        Path authProperties = Paths.get(authResourceDir, "authserver.properties");
+        Path authSecureProperties = Paths.get(authResourceDir, "keystore.properties");
+        Properties authServerConfig = new Properties();
+        InputStream input = new FileInputStream(authProperties.toString());
+        authServerConfig.load(input);
+        Properties authSecureConfig = new Properties();
+        InputStream inSecure = new FileInputStream(authSecureProperties.toString());
+        authSecureConfig.load(inSecure);
+        authServerConfig.putAll(authSecureConfig);
+        AuthServerConfig.init(authServerConfig);
+    }
 
     /**
      * Initialize default endpoint and s3 endpoints etc.
@@ -111,7 +135,7 @@ public class AuthServerConfig {
     }
 
     public static Path getKeyStorePath() {
-        return Paths.get(AuthServerConfig.AUTH_INSTALL_DIR, "resources", getKeyStoreName());
+        return Paths.get(authResourceDir, getKeyStoreName());
     }
 
     public static String getKeyStorePassword() {
@@ -157,7 +181,7 @@ public class AuthServerConfig {
     public static String getLdapLoginCN() {
         String ldapLoginDN = authServerConfig.getProperty("ldapLoginDN");
         String ldapLoginCN = ldapLoginDN.substring(
-        		ldapLoginDN.indexOf("cn=") + 3, ldapLoginDN.indexOf(','));
+              ldapLoginDN.indexOf("cn=") + 3, ldapLoginDN.indexOf(','));
         return ldapLoginCN;
     }
 
@@ -216,5 +240,9 @@ public class AuthServerConfig {
     private static void setSamlMetadataFile(String fileName) {
         Path filePath = Paths.get("", "resources", "static", fileName);
         samlMetadataFilePath = filePath.toString();
+    }
+
+    public static boolean isEnableHttpsToS3() {
+       return Boolean.valueOf(authServerConfig.getProperty("enableHttpsToS3"));
     }
 }

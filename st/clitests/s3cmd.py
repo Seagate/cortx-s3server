@@ -12,6 +12,7 @@ class S3cmdTest(S3PyCliTest):
     def __init__(self, description):
         self.s3cfg = os.path.join(os.path.dirname(os.path.realpath(__file__)), Config.config_file)
         self._send_retries = " --max-retries=" + str(Config.s3cmd_max_retries) + " "
+        self.credentials = ""
         super(S3cmdTest, self).__init__(description)
 
     def setup(self):
@@ -27,6 +28,11 @@ class S3cmdTest(S3PyCliTest):
 
     def teardown(self):
         super(S3cmdTest, self).teardown()
+
+    def with_credentials(self, access_key, secret_key):
+        self.credentials = " --access_key=" + access_key +\
+                           " --secret_key=" + secret_key
+        return self
 
     def create_bucket(self, bucket_name, region=None, host=None):
         self.bucket_name = bucket_name
@@ -44,6 +50,8 @@ class S3cmdTest(S3PyCliTest):
                 self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " mb " + " s3://" + self.bucket_name + " --bucket-location=" + region)
             else:
                 self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " mb " + " s3://" + self.bucket_name)
+
+        self.command = self.command + self.credentials
         return self
 
     def list_buckets(self, host=None):
@@ -83,6 +91,8 @@ class S3cmdTest(S3PyCliTest):
             " rb " + " s3://" + self.bucket_name)
         else:
             self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " rb " + " s3://" + self.bucket_name)
+
+        self.command = self.command + self.credentials
         return self
 
     def list_objects(self, bucket_name, host=None):

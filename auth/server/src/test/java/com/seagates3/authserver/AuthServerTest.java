@@ -136,8 +136,9 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
+        verifyStatic();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
-        verifyPrivate(AuthServer.class).invoke("readConfig");
         verifyPrivate(AuthServer.class).invoke("logInit");
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
@@ -164,8 +165,9 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
+        verifyStatic();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
-        verifyPrivate(AuthServer.class).invoke("readConfig");
         verifyPrivate(AuthServer.class).invoke("logInit");
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
@@ -192,8 +194,9 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
+        verifyStatic();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
-        verifyPrivate(AuthServer.class).invoke("readConfig");
         verifyPrivate(AuthServer.class).invoke("logInit");
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
@@ -214,6 +217,8 @@ public class AuthServerTest {
         AuthServer.main(new String[]{});
 
         verifyStatic();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        verifyStatic();
         SSLContextProvider.init();
         verifyStatic();
         IAMResourceMapper.init();
@@ -222,7 +227,6 @@ public class AuthServerTest {
         verifyStatic();
         S3Perf.init();
 
-        verifyPrivate(AuthServer.class).invoke("readConfig");
         verifyPrivate(AuthServer.class).invoke("logInit");
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
@@ -253,6 +257,8 @@ public class AuthServerTest {
         AuthServer.main(new String[]{});
 
         verifyStatic();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        verifyStatic();
         FaultPoints.init();
         verifyStatic();
         SSLContextProvider.init();
@@ -263,7 +269,6 @@ public class AuthServerTest {
         verifyStatic();
         S3Perf.init();
 
-        verifyPrivate(AuthServer.class).invoke("readConfig");
         verifyPrivate(AuthServer.class).invoke("logInit");
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
@@ -284,6 +289,8 @@ public class AuthServerTest {
         AuthServer.main(new String[]{});
 
         verifyStatic();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
+        verifyStatic();
         FaultPoints.init();
         verifyStatic();
         SSLContextProvider.init();
@@ -294,7 +301,6 @@ public class AuthServerTest {
         verifyStatic();
         S3Perf.init();
 
-        verifyPrivate(AuthServer.class).invoke("readConfig");
         verifyPrivate(AuthServer.class).invoke("logInit");
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
@@ -324,8 +330,9 @@ public class AuthServerTest {
         DAODispatcher.init();
         verifyStatic();
         S3Perf.init();
+        verifyStatic();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
-        verifyPrivate(AuthServer.class).invoke("readConfig");
         verifyPrivate(AuthServer.class).invoke("logInit");
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
@@ -347,7 +354,7 @@ public class AuthServerTest {
 */
     private  void mainTestHelper() throws Exception {
         spy(AuthServer.class);
-        doNothing().when(AuthServer.class, "readConfig");
+
         doNothing().when(AuthServer.class, "logInit");
         doNothing().when(AuthServer.class, "attachShutDownHook");
 
@@ -370,40 +377,6 @@ public class AuthServerTest {
         channelFuture = mock(ChannelFuture.class);
         when(serverChannel.closeFuture()).thenReturn(channelFuture);
         when(channelFuture.sync()).thenReturn(channelFuture);
-    }
-
-    @Test
-    public void readConfigTest() throws Exception {
-        Properties authServerConfig = mock(Properties.class);
-        whenNew(Properties.class).withAnyArguments().thenReturn(authServerConfig);
-
-        FileInputStream input = mock(FileInputStream.class);
-        whenNew(FileInputStream.class).withAnyArguments().thenReturn(input);
-
-        doNothing().when(authServerConfig).load(input);
-
-        mockStatic(AuthServerConfig.class);
-        doNothing().when(AuthServerConfig.class, "init", any(Properties.class));
-
-        AuthServer.readConfig();
-
-        verify(authServerConfig, times(2)).load(input);
-
-        verifyStatic();
-        AuthServerConfig.init(authServerConfig);
-    }
-
-    @Test(expected = IOException.class)
-    public void readConfigTest_ShouldThrowIOException() throws Exception {
-        Properties authServerConfig = mock(Properties.class);
-        whenNew(Properties.class).withAnyArguments().thenReturn(authServerConfig);
-
-        FileInputStream input = mock(FileInputStream.class);
-        whenNew(FileInputStream.class).withAnyArguments().thenReturn(input);
-
-        doThrow(new IOException()).when(authServerConfig).load(input);
-
-        AuthServer.readConfig();
     }
 
     @Test

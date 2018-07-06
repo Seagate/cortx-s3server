@@ -18,6 +18,7 @@
  */
 package com.seagates3.util;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -160,4 +161,15 @@ public class DateUtil {
     private static TimeZone getDefatulTimeZone() {
         return TimeZone.getTimeZone("UTC");
     }
+    /**
+     * Return the current time in GMT.
+     * Returns Date in format "Thu, 05 Jul 2018 03:55:43 GMT"
+     */
+    public static String getCurrentTimeGMT() {
+        DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss ");
+        df.setTimeZone(TimeZone.getTimeZone("GMT"));
+        String d = df.format(new Date()) + "GMT";
+        return d;
+    }
+
 }

@@ -77,27 +77,6 @@ public class AuthServer {
     }
 
     /**
-     * Read the properties file.
-     * @throws GeneralSecurityException
-     */
-    static void readConfig() throws FileNotFoundException, IOException,
-                                  GeneralSecurityException, Exception {
-        Path authProperties = Paths.get(AuthServerConfig.AUTH_INSTALL_DIR,
-                                    "resources", "authserver.properties");
-        Path authSecureProperties = Paths.get(
-                              AuthServerConfig.AUTH_INSTALL_DIR, "resources",
-                                                     "keystore.properties");
-        Properties authServerConfig = new Properties();
-        InputStream input = new FileInputStream(authProperties.toString());
-        authServerConfig.load(input);
-        Properties authSecureConfig = new Properties();
-        InputStream inSecure = new FileInputStream(authSecureProperties.toString());
-        authSecureConfig.load(inSecure);
-        authServerConfig.putAll(authSecureConfig);
-        AuthServerConfig.init(authServerConfig);
-    }
-
-    /**
      * Create a File handler for Logger. Set level to ALL.
      */
     static void logInit() throws IOException, ServerInitialisationException {
@@ -135,7 +114,7 @@ public class AuthServer {
                             IOException, ServerInitialisationException,
                             GeneralSecurityException, Exception {
 
-        readConfig();
+        AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
         logInit();
 
         logger = LoggerFactory.getLogger(AuthServer.class.getName());

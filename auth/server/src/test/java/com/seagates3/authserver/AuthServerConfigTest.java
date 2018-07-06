@@ -19,48 +19,27 @@
 
 package com.seagates3.authserver;
 
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.slf4j.LoggerFactory;
 
-import com.seagates3.authencryptutil.AuthEncryptConfig;
-import com.seagates3.authencryptutil.JKSUtil;
-import com.seagates3.authentication.ClientRequestParser;
-import com.seagates3.authentication.ClientRequestToken;
-import com.seagates3.authentication.SignatureValidator;
-import com.seagates3.controller.IAMController;
-import com.seagates3.model.Requestor;
-import com.seagates3.response.ServerResponse;
-import com.seagates3.service.RequestorService;
 
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
-import org.powermock.core.classloader.annotations.MockPolicy;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.internal.WhiteboxImpl;
 
-import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.PrivateKey;
-import java.util.Map;
+
 import java.util.Properties;
-import java.util.TreeMap;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.doNothing;
+import static org.powermock.api.mockito.PowerMockito.doThrow;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.spy;
-import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
-
-
 
 public class AuthServerConfigTest {
 
@@ -68,7 +47,7 @@ public class AuthServerConfigTest {
     public void initTest() throws Exception {
 
         Properties authServerConfig = getAuthProperties();
-        AuthServerConfig.AUTH_INSTALL_DIR = "..";
+        AuthServerConfig.authResourceDir = "../resources";
         AuthServerConfig.init(authServerConfig);
         assertEquals("s3.seagate.com", AuthServerConfig.getDefaultEndpoint());
 
@@ -123,8 +102,46 @@ public class AuthServerConfigTest {
                 "s3-europe.seagate.com", "s3-asia.seagate.com"};
         assertArrayEquals(expectedEndPoints, AuthServerConfig.getEndpoints());
 
-        Path keyStorePath = Paths.get(AuthServerConfig.AUTH_INSTALL_DIR, "resources", "s3_auth.jks");
-        assertTrue(keyStorePath.toString().equals(AuthServerConfig.getKeyStorePath().toString()));
+        Path keyStorePath =
+             Paths.get(AuthServerConfig.authResourceDir, "s3_auth.jks");
+        assertTrue(keyStorePath.toString().equals(
+                        AuthServerConfig.getKeyStorePath().toString()));
+        assertTrue(AuthServerConfig.isEnableHttpsToS3());
+    }
+
+    @Test
+    public void readConfigTest() throws Exception {
+        AuthServerConfig.readConfig("../resources");
+
+        assertEquals("s3.seagate.com", AuthServerConfig.getDefaultEndpoint());
+
+        assertEquals("resources/static/saml-metadata.xml",
+                AuthServerConfig.getSAMLMetadataFilePath());
+
+        assertEquals(8085, AuthServerConfig.getHttpPort());
+
+        assertEquals(8086, AuthServerConfig.getHttpsPort());
+
+        assertEquals("s3_auth.jks", AuthServerConfig.getKeyStoreName());
+
+        assertEquals("seagate", AuthServerConfig.getKeyStorePassword());
+
+        assertEquals("seagate", AuthServerConfig.getKeyPassword());
+
+        assertTrue(AuthServerConfig.isHttpsEnabled());
+
+        assertEquals("ldap", AuthServerConfig.getDataSource());
+
+        assertEquals("127.0.0.1", AuthServerConfig.getLdapHost());
+
+        assertEquals(389, AuthServerConfig.getLdapPort());
+
+    }
+
+    @Test(expected = IOException.class)
+    public void readConfigTest_ShouldThrowIOException() throws Exception {
+        //Pass Invalid Path
+        AuthServerConfig.readConfig("/invalid/path");
     }
 
     private Properties getAuthProperties() throws Exception {
@@ -158,6 +175,7 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("s3KeyStorePassword", "seagate");
         authServerConfig.setProperty("s3KeyPassword", "seagate");
         authServerConfig.setProperty("s3AuthCertAlias", "s3auth_pass");
+        authServerConfig.setProperty("enableHttpsToS3", "true");
 
         return authServerConfig;
     }

@@ -166,6 +166,13 @@ public abstract class AbstractResponseGenerator {
                 "OperationNotSupported", errorMessage);
     }
 
+    public ServerResponse accountNotEmpty() {
+        String errorMessage = "Account cannot be deleted as it owns some resources.";
+
+        return formatResponse(HttpResponseStatus.CONFLICT,
+                "AccountNotEmpty", errorMessage);
+    }
+
     /**
      * Use this method for internal purpose.
      *

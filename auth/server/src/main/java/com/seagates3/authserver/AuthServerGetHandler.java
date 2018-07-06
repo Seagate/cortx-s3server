@@ -74,7 +74,7 @@ public class AuthServerGetHandler {
         LOGGER.debug("Get handler called.");
 
         if (httpRequest.getUri().startsWith("/static")) {
-            Path staticFilePath = Paths.get(AuthServerConfig.AUTH_INSTALL_DIR, "resources",
+            Path staticFilePath = Paths.get(AuthServerConstants.RESOURCE_DIR,
                                                                      httpRequest.getUri());
             File file = staticFilePath.toFile();
 

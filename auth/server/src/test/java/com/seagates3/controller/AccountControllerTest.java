@@ -32,6 +32,7 @@ import com.seagates3.model.Requestor;
 import com.seagates3.model.Role;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -52,7 +53,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({DAODispatcher.class, KeyGenUtil.class})
+@PrepareForTest({DAODispatcher.class, KeyGenUtil.class, AccountController.class})
 @PowerMockIgnore({"javax.management.*"})
 public class AccountControllerTest {
 
@@ -62,6 +63,7 @@ public class AccountControllerTest {
     private final AccessKeyDAO accessKeyDAO;
     private final RoleDAO roleDAO;
     private final Requestor requestor;
+    private final S3AccountNotifier s3;
     private Map<String, String> requestBody = new HashMap<>();
 
     public AccountControllerTest() throws Exception {
@@ -75,7 +77,9 @@ public class AccountControllerTest {
         userDAO = Mockito.mock(UserDAO.class);
         accessKeyDAO = Mockito.mock(AccessKeyDAO.class);
         roleDAO = Mockito.mock(RoleDAO.class);
+        s3 = Mockito.mock(S3AccountNotifier.class);
 
+        PowerMockito.whenNew(S3AccountNotifier.class).withNoArguments().thenReturn(s3);
         PowerMockito.doReturn(accountDAO).when(DAODispatcher.class,
                 "getResourceDAO", DAOResource.ACCOUNT
         );
@@ -319,6 +323,8 @@ public class AccountControllerTest {
             throws Exception {
         Account account = new Account();
         account.setName("s3test");
+        ServerResponse resp = new ServerResponse();
+        resp.setResponseStatus(HttpResponseStatus.OK);
 
         PowerMockito.doReturn("AKIASIAS").when(KeyGenUtil.class,
                 "createUserAccessKeyId"
@@ -330,7 +336,8 @@ public class AccountControllerTest {
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
         Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
-
+        Mockito.doReturn(resp).when(s3).notifyNewAccount(any(String.class),
+                                     any(String.class), any(String.class));
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
                 + "<CreateAccountResponse "
@@ -434,6 +441,14 @@ public class AccountControllerTest {
         users[0] = new User();
         users[0].setName("root");
         users[0].setId("rootxyz");
+        AccessKey aKey = new AccessKey();
+
+        aKey.setId("akey123");
+        aKey.setSecretKey("skey1234");
+
+        ServerResponse resp = new ServerResponse();
+        resp.setResponseStatus(HttpResponseStatus.OK);
+
         AccessKey[] accessKeys = new AccessKey[1];
         accessKeys[0] = mock(AccessKey.class);
         Account account = mock(Account.class);
@@ -443,8 +458,11 @@ public class AccountControllerTest {
         Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
         Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
         Mockito.when(requestor.getId()).thenReturn("rootxyz");
+        Mockito.when(requestor.getAccesskey()).thenReturn(aKey);
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
+        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(any(String.class),
+                any(String.class), any(String.class));
 
         final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
                 "standalone=\"no\"?><DeleteAccountResponse xmlns=\"https://iam.seagate" +
@@ -474,6 +492,14 @@ public class AccountControllerTest {
         users[1] = new User();
         users[1].setName("s3user");
 
+        AccessKey aKey = new AccessKey();
+
+        aKey.setId("akey123");
+        aKey.setSecretKey("skey1234");
+
+        ServerResponse resp = new ServerResponse();
+        resp.setResponseStatus(HttpResponseStatus.OK);
+
         AccessKey[] accessKeys = new AccessKey[1];
         accessKeys[0] = mock(AccessKey.class);
         Account account = mock(Account.class);
@@ -484,9 +510,12 @@ public class AccountControllerTest {
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
         Mockito.when(requestor.getId()).thenReturn("rootxyz");
+        Mockito.when(requestor.getAccesskey()).thenReturn(aKey);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
         Mockito.doThrow(new DataAccessException("subordinate objects must be deleted first"))
                 .when(accountDAO).deleteOu(account, LDAPUtils.USER_OU);
+        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(any(String.class),
+                any(String.class), any(String.class));
 
         final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
                 "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc" +
@@ -512,20 +541,32 @@ public class AccountControllerTest {
         users[0] = new User();
         users[0].setName("root");
         users[0].setId("rootxyz");
+
+        AccessKey aKey = new AccessKey();
+
+        aKey.setId("akey123");
+        aKey.setSecretKey("skey1234");
+
         AccessKey[] accessKeys = new AccessKey[1];
         accessKeys[0] = mock(AccessKey.class);
         Role[] roles = new Role[1];
         roles[0] = mock(Role.class);
         Account account = mock(Account.class);
 
+        ServerResponse resp = new ServerResponse();
+        resp.setResponseStatus(HttpResponseStatus.OK);
+
         Mockito.when(account.getName()).thenReturn("s3test");
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
         Mockito.when(userDAO.find("s3test", "root")).thenReturn(users[0]);
         Mockito.when(requestor.getId()).thenReturn("rootxyz");
+        Mockito.when(requestor.getAccesskey()).thenReturn(aKey);
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
         Mockito.when(roleDAO.findAll(account, "/")).thenReturn(roles);
+        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(any(String.class),
+                any(String.class), any(String.class));
 
         final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
                 "standalone=\"no\"?><DeleteAccountResponse xmlns=\"https://iam.seagate" +
