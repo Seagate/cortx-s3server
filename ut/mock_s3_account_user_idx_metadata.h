@@ -40,6 +40,8 @@ class MockS3AccountUserIdxMetadata : public S3AccountUserIdxMetadata {
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
+  MOCK_METHOD2(remove, void(std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed));
   MOCK_METHOD0(get_state, S3AccountUserIdxMetadataState());
   MOCK_METHOD0(load_successful, void());
   MOCK_METHOD0(load_failed, void());

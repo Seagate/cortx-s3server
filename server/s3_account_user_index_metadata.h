@@ -127,8 +127,8 @@ class S3AccountUserIdxMetadata {
   void save_failed();
 
   // Remove Account user info(bucket list oid)
-  void remove(std::function<void(void)> on_success,
-              std::function<void(void)> on_failed);
+  virtual void remove(std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
   void remove_successful();
   void remove_failed();
 
