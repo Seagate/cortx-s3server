@@ -7,7 +7,7 @@ Name: %{name}
 Version: %{version}
 Release: %{release}
 Source0: %{name}-%{version}.tar.gz
-URL: http://gerrit-sage.mero.colo.seagate.com:8080/s3server
+URL: http://gerrit.mero.colo.seagate.com:8080/s3server
 License: Seagate
 Group: Development/Tools
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot

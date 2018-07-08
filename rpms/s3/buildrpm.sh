@@ -11,7 +11,7 @@ GIT_VER=git8ee7e61
 cd ~/rpmbuild/SOURCES/
 rm -rf s3server*
 
-git clone http://gerrit-sage.mero.colo.seagate.com:8080/s3server s3server-${VERSION}-${GIT_VER}
+git clone http://gerrit.mero.colo.seagate.com:8080/s3server s3server-${VERSION}-${GIT_VER}
 tar -zcvf s3server-${VERSION}-${GIT_VER}.tar.gz s3server-${VERSION}-${GIT_VER}
 rm -rf s3server-${VERSION}-${GIT_VER}
 

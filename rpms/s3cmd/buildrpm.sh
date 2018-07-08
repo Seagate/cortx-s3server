@@ -12,7 +12,7 @@ SHORT_COMMIT_VER=4c248936
 cd ~/rpmbuild/SOURCES/
 rm -rf s3cmd*
 
-git clone -b v${VERSION} http://gerrit-sage.mero.colo.seagate.com:8080/s3cmd s3cmd-${VERSION}-${SHORT_COMMIT_VER}
+git clone -b v${VERSION} http://gerrit.mero.colo.seagate.com:8080/s3cmd s3cmd-${VERSION}-${SHORT_COMMIT_VER}
 tar -zcvf s3cmd-${VERSION}-${SHORT_COMMIT_VER}.tar.gz s3cmd-${VERSION}-${SHORT_COMMIT_VER}
 rm -rf s3cmd-${VERSION}-${SHORT_COMMIT_VER}
 
