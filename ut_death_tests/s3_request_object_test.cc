@@ -40,14 +40,13 @@ class S3RequestObjectTest : public testing::Test {
     EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_find(_, _))
         .Times(3)
         .WillRepeatedly(Return(""));
-    request =
-        new S3RequestObject(ev_request, mock_evhtp_obj_ptr);
+    request = new S3RequestObject(ev_request, mock_evhtp_obj_ptr);
   }
 
   ~S3RequestObjectTest() {
-      delete request;
-      event_base_free(evbase);
-    }
+    delete request;
+    event_base_free(evbase);
+  }
   // Declares the variables your tests want to use.
   S3RequestObject *request;
   evhtp_request_t *ev_request;  // To fill test data
@@ -59,6 +58,5 @@ TEST_F(S3RequestObjectTest, SettingContentLengthTwice) {
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_new(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(1);
   request->set_out_header_value("Content-Length", "0");
-  ASSERT_DEATH(request->set_out_header_value("Content-Length", "0"),
-               ".*");
+  ASSERT_DEATH(request->set_out_header_value("Content-Length", "0"), ".*");
 }
