@@ -88,7 +88,7 @@ void S3NewAccountRegisterNotifyAction::validate_request() {
     s3_log(S3_LOG_DEBUG, request_id,
            "Accound_id validation failed. URI account_id: %s does not match "
            "with the account_id: %s recevied from auth server.\n",
-           account_id.c_str(), request->get_account_id().c_str());
+           account_id_from_uri.c_str(), request->get_account_id().c_str());
     set_s3_error("InvalidAccountForMgmtApi");
     send_response_to_s3_client();
   }
