@@ -90,7 +90,7 @@ struct m0_uint128 root_user_bucket_list_oid;
 static int init_clovis(void) {
   int rc;
 
-  clovis_conf.cc_is_oostore = false;
+  clovis_conf.cc_is_oostore = true;
   clovis_conf.cc_is_read_verify = false;
   clovis_conf.cc_local_addr = FLAGS_clovis_local_addr.c_str();
   clovis_conf.cc_ha_addr = FLAGS_clovis_ha_addr.c_str();
