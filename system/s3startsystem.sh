@@ -20,6 +20,10 @@ else
   source $ha_config
 fi
 
+# Ensure default working dir is present
+s3_working_dir="/var/seagate/s3/"
+mkdir -p $s3_working_dir
+
 s3_log_dir="/var/log/seagate/s3/s3server-$1"
 mkdir -p $s3_log_dir
 

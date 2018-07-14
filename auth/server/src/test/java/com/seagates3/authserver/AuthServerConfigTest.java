@@ -54,9 +54,9 @@ public class AuthServerConfigTest {
         assertEquals("resources/static/saml-metadata.xml",
                 AuthServerConfig.getSAMLMetadataFilePath());
 
-        assertEquals(8085, AuthServerConfig.getHttpPort());
+        assertEquals(9085, AuthServerConfig.getHttpPort());
 
-        assertEquals(8086, AuthServerConfig.getHttpsPort());
+        assertEquals(9086, AuthServerConfig.getHttpsPort());
 
         assertEquals("s3_auth.jks", AuthServerConfig.getKeyStoreName());
 
@@ -154,8 +154,8 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("nettyBossGroupThreads","1");
         authServerConfig.setProperty("nettyWorkerGroupThreads", "2");
         authServerConfig.setProperty("nettyEventExecutorThreads", "4");
-        authServerConfig.setProperty("httpPort", "8085");
-        authServerConfig.setProperty("httpsPort", "8086");
+        authServerConfig.setProperty("httpPort", "9085");
+        authServerConfig.setProperty("httpsPort", "9086");
         authServerConfig.setProperty("logFilePath", "/var/log/seagate/auth/");
         authServerConfig.setProperty("dataSource", "ldap");
         authServerConfig.setProperty("ldapHost", "127.0.0.1");

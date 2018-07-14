@@ -27,3 +27,8 @@ auth-utils/s3iamcli/build/
 auth-utils/s3iamcli/dist/
 auth-utils/s3iamcli/s3iamcli.egg-info/
 st/clitests/tests-out/
+auth/encryptcli/dependency-reduced-pom.xml
+auth/encryptcli/target/
+auth/encryptutil/target/
+auth/server/dependency-reduced-pom.xml
+auth/server/target/
