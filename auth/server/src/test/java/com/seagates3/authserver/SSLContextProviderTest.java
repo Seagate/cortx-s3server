@@ -62,7 +62,7 @@ public class SSLContextProviderTest {
     @Before
     public void setUp() throws Exception {
         mockStatic(AuthServerConfig.class);
-        when(AuthServerConfig.getHttpsPort()).thenReturn(8086);
+        when(AuthServerConfig.getHttpsPort()).thenReturn(9086);
         when(AuthServerConfig.isHttpsEnabled()).thenReturn(Boolean.TRUE);
     }
 
@@ -96,7 +96,7 @@ public class SSLContextProviderTest {
         SSLContextProvider.init();
 
         assertEquals(sslContext, SSLContextProvider.getServerContext());
-        assertEquals(8086, SSLContextProvider.getHttpsPort());
+        assertEquals(9086, SSLContextProvider.getHttpsPort());
     }
 
     @Test(expected = ServerInitialisationException.class)

@@ -118,9 +118,9 @@ public class AuthServerConfigTest {
         assertEquals("resources/static/saml-metadata.xml",
                 AuthServerConfig.getSAMLMetadataFilePath());
 
-        assertEquals(8085, AuthServerConfig.getHttpPort());
+        assertEquals(9085, AuthServerConfig.getHttpPort());
 
-        assertEquals(8086, AuthServerConfig.getHttpsPort());
+        assertEquals(9086, AuthServerConfig.getHttpsPort());
 
         assertEquals("s3_auth.jks", AuthServerConfig.getKeyStoreName());
 
