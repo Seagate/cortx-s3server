@@ -107,6 +107,17 @@ sudo systemctl start s3authserver
 sudo systemctl stop s3authserver
 ```
 
+## Load balancer for S3
+We use haproxy as a load balancer, as well as have support for nginx. We started with
+nginx and moved to haproxy during Hermi release.
+Haproxy listens on port 80(http)/443(https) and forwards traffic to running S3 instances.
+
+```sh
+yum install haproxy
+cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
+systemctl restart haproxy
+```
+
 ## How to start/stop single instance of S3 server in Dev environment for testing?
 Execute below command from `s3server` top level directory. Before executing below
 commands, make sure that S3 Server, Auth server, third party libs etc are  built

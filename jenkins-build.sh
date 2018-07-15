@@ -21,9 +21,6 @@ cd $S3_BUILD_DIR
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 
-# nginx used as reverse-proxy for s3 service.
-$USE_SUDO systemctl restart nginx || echo "Cannot restart nginx service."
-
 # Check if mero build is cached and is latest, else rebuild mero as well
 THIRD_PARTY=$S3_BUILD_DIR/third_party
 MERO_SRC=$THIRD_PARTY/mero
@@ -52,7 +49,7 @@ $USE_SUDO ./dev-stops3.sh
 
 # Clean up mero and S3 log and data dirs
 $USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* /var/log/seagate/s3/* /var/log/seagate/auth/*
-$USE_SUDO rm -rf /m0trace.* /core.*
+$USE_SUDO rm -rf /var/seagate/s3/m0trace.* /var/seagate/s3/core.*
 
 # Start mero for new tests
 cd $MERO_SRC

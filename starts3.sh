@@ -1,8 +1,5 @@
 #!/bin/sh -x
 
-# Restart nginx
-systemctl restart nginx
-
 # Start the s3server
 export PATH=$PATH:/opt/seagate/s3/bin
 if [ $# -eq 0 ]; then

@@ -27,15 +27,6 @@ mkdir -p $s3_working_dir
 s3_log_dir="/var/log/seagate/s3/s3server-$1"
 mkdir -p $s3_log_dir
 
-# Restart nginx
-SERVICE='nginx'
-if ps ax | grep -v grep | grep $SERVICE > /dev/null
-then
-    echo "nginx is running"
-else
-    systemctl start nginx
-fi
-
 # Start the s3server
 export PATH=$PATH:/opt/seagate/s3/bin
 local_ep=$MERO_S3SERVER_EP

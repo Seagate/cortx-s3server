@@ -1,14 +1,14 @@
 ### Generate SSL certificate
- * Seagate  
- For Seagate domain run   
+ * Seagate
+ For Seagate domain run
  `./setup-ssl.sh --seagate`
 
 
- * AWS  
+ * AWS
  `./setup-ssl.sh --aws`
 
 
- * For Custom domain:  
+ * For Custom domain:
  Create a file with list of domain names (including wildcard domains). The first domain name in this file will be used as common name(CN) in certificates.
  ```
  $ cat dns.list
@@ -17,13 +17,13 @@
  s3-us.example.com
  *.s3-us.example.com
  ```
- Run following command to generate ssl certificate and key:  
+ Run following command to generate ssl certificate and key:
  ` ./setup-ssl.sh --san-file dns.list`
 
 ---
 
 
-### Nginx SSL Configuration steps
+### Nginx/haproxy SSL Configuration steps
 
 * Generate certificates using
   ```
@@ -31,11 +31,12 @@
   ./setup-ssl.sh --seagate
   ```
 
-* Verify the certificate with  
-  `openssl x509 -text -in ssl_sandbox/s3.seagate.com.crt`  
+* Verify the certificate with
+  `openssl x509 -text -in ssl_sandbox/s3.seagate.com.crt`
   Output should have DNS:s3.seagate.com, DNS:*.s3.seagate.com under X509v3 Subject Alternative Name
 
-* Copy the following certificates and key files:  
+* Copy the following certificates and key files:
+  For nginx
   `cp ssl_sandbox/* /etc/nginx/ssl/seagate/`
 
   Update following entries in /etc/nginx/nginx.conf
@@ -50,11 +51,28 @@
   }
   ```
 
+  For haproxy
+  `mkdir -p /etc/ssl/haproxy/`
+  `cp ssl_sandbox/* /etc/ssl/haproxy/`
+  `cat /etc/ssl/haproxy/s3.seagate.com.crt /etc/ssl/haproxy/s3.seagate.com.key > /etc/ssl/haproxy/s3.seagate.com.pem`
+
+  Update following entries in /etc/haproxy/haproxy.cfg
+  ```
+  frontend main
+    # Disable HTTP port
+    #bind 0.0.0.0:80
+
+    # Enable SSL port
+    bind 0.0.0.0:443 ssl crt /etc/ssl/haproxy/s3.seagate.com.pem
+
+  ```
+
+
 * Restart Nginx:
   `systemctl restart nginx`
 
-* Verify the nginx ssl setup using command:  
-  `openssl s_client -connect s3.seagate.com:443 -showcerts | openssl x509 -noout -text`  
+* Verify the nginx ssl setup using command:
+  `openssl s_client -connect s3.seagate.com:443 -showcerts | openssl x509 -noout -text`
   Output should have DNS:s3.seagate.com, DNS:*.s3.seagate.com under X509v3 Subject Alternative Name
 
 
@@ -62,7 +80,8 @@
 Update following attributes in the .s3cfg files, ex: pathstyle.s3cfg
 ```
 use_https = True
-ca_certs_file = /etc/nginx/ssl/seagate/ca.crt
+ca_certs_file = /etc/nginx/ssl/seagate/ca.crt  # for nginx
+#ca_certs_file = /etc/ssl/haproxy/ca.crt       # for haproxy
 check_ssl_certificate = True
 check_ssl_hostname = True
 ```

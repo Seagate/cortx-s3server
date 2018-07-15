@@ -33,16 +33,6 @@ set -x
 export LD_LIBRARY_PATH="$(pwd)/third_party/mero/mero/.libs/:"\
 "$(pwd)/third_party/mero/extra-libs/gf-complete/src/.libs/"
 
-# Restart nginx
-SERVICE='nginx'
-
-if ps ax | grep -v grep | grep $SERVICE > /dev/null
-then
-    echo "nginx is running"
-else
-    systemctl start nginx
-fi
-
 # Get local address
 modprobe lnet
 lctl network up &>> /dev/null
@@ -62,6 +52,13 @@ then
 ./third_party/mero/dix/utils/m0dixinit -l $local_nid:12345:34:100 -H $local_nid:12345:34:1 \
                  -p '<0x7000000000000001:0>' -I 'v|1:20' -d 'v|1:20' -a create
 fi
+
+# Ensure default working dir is present
+s3_working_dir="/var/seagate/s3/"
+mkdir -p $s3_working_dir
+
+s3_log_dir="/var/log/seagate/s3/"
+mkdir -p $s3_log_dir
 
 # Start the s3server
 export PATH=$PATH:/opt/seagate/s3/bin
