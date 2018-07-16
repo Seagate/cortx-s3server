@@ -23,13 +23,13 @@
           - openldap-servers
           - openldap-clients
 
-      - name: Install ntp
-        yum: pkg=ntp state=installed
-
-      - name: Configure ntp (required for ldap replication)
-        command: ntpdate time.seagate.com
-        notify:
-          - restart ntpd
+      # - name: Install ntp
+      #   yum: pkg=ntp state=installed
+      #
+      # - name: Configure ntp (required for ldap replication)
+      #   command: ntpdate time.seagate.com
+      #   notify:
+      #     - restart ntpd
 
       - name: Enable slapd service
         command: systemctl enable slapd
@@ -125,8 +125,8 @@
           name: /tmp/s3ldap
           state: absent
 
-  handlers:
-      - name: restart ntpd
-        service:
-          name: ntpd
-          state: restarted
+  # handlers:
+  #     - name: restart ntpd
+  #       service:
+  #         name: ntpd
+  #         state: restarted

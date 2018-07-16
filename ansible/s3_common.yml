@@ -1,0 +1,88 @@
+---
+- name: Copy s3-deps rpms to configured node
+  copy:
+    src: files/s3-deps
+    dest: /tmp/
+
+- name: Copy lustre rpms to configured node
+  copy:
+    src: files/lustre
+    dest: /tmp/s3vmsetup
+
+- name: Install lustre rpms
+  yum: pkg={{item}} state=present
+  with_items:
+    - /tmp/s3vmsetup/lustre/{{ lustre_client_rpm }}
+    - /tmp/s3vmsetup/lustre/{{ kmod_lustre_client_rpm }}
+
+- name: Configure lnet
+  template:
+    src: templates/lnet.conf
+    dest: /etc/modprobe.d/lnet.conf
+
+- name: Add the lnet module
+  modprobe:
+    name: lnet
+    state: present
+
+- name: Enable modprobe lnet on reboot
+  lineinfile:
+    path: /etc/modules-load.d/lnet.conf
+    line: 'lnet'
+    create: yes
+
+- name: Configure lnet
+  command: lctl net up
+
+- name: Enable lnet up on reboot
+  lineinfile:
+    path: /etc/profile
+    line: 'lctl net up'
+
+- name: Test lnet
+  command: lctl list_nids
+
+- name: Install S3 dependencies
+  yum: pkg={{item}} state=installed
+  with_items:
+    - java-1.8.0-openjdk
+
+- name: Update to latest selinux-policy (required by latest openldap)
+  yum: pkg={{item}} state=latest
+  with_items:
+    - selinux-policy
+
+- name: Install S3 runtime dependencies
+  yum: pkg={{item}} state=installed
+  with_items:
+    - openssl
+    - openssl-libs
+    - libxml2
+    - libyaml
+    - yaml-cpp
+    - gflags
+    - glog
+
+- name: Install nginx
+  yum:
+    name: nginx
+    state: present
+
+- name: Enable http port in selinux
+  command: setsebool httpd_can_network_connect on -P
+  when: ansible_selinux.status == "enabled"
+
+- name: Setup nginx config
+  copy:
+    src: ./files/nginx/nginx.conf.seagate
+    dest: /etc/nginx/nginx.conf
+  notify:
+    - restart nginx
+
+- name: Install patched s3cmd
+  yum:
+    name: /tmp/s3-deps/{{ s3cmd_patched_rpm }}
+    state: present
+
+- name: Create working directory for S3 server.
+  file: path=/var/seagate/s3 state=directory

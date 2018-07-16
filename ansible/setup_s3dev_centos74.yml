@@ -1,6 +1,6 @@
 ---
 
-- import_playbook: setup_openldap.yml
+- import_playbook: s3_openldap.yml
 
 - name: S3 dev vm setup (Centos 74)
   hosts: s3devvm
@@ -26,7 +26,8 @@
     ossperf_rpm: ossperf-3.0-1.x86_64.rpm
 
   tasks:
-  - import_tasks: setup_s3_common.yml
+  - import_tasks: s3_common_dev.yml
+  - import_tasks: s3_common.yml
 
   handlers:
       - name: restart nginx

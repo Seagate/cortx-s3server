@@ -2,20 +2,14 @@
 
 - import_playbook: s3_openldap.yml
 
-- name: S3 dev vm setup
+- name: S3 dev vm setup (Centos 75)
   hosts: s3devvm
   remote_user: root
   gather_facts: yes
   vars:
-    kernel_rpm: kernel-3.10.0-514.el7.x86_64.rpm
-    kernel_devel_rpm: kernel-devel-3.10.0-514.el7.x86_64.rpm
-    kernel_headers_rpm: kernel-headers-3.10.0-514.el7.x86_64.rpm
-    kernel_tools_rpm: kernel-tools-3.10.0-514.el7.x86_64.rpm
-    kernel_tools_libs_rpm: kernel-tools-libs-3.10.0-514.el7.x86_64.rpm
-    kernel_tools_libs_devel_rpm: kernel-tools-libs-devel-3.10.0-514.el7.x86_64.rpm
-    lustre_client_rpm: lustre-client-2.7.18.4-3.10.0_514.16.1.el7.x86_64_g9b76e4c.x86_64.rpm
-    lustre_client_devel_rpm: lustre-client-devel-2.7.18.4-3.10.0_514.16.1.el7.x86_64_g9b76e4c.x86_64.rpm
-    kmod_lustre_client_rpm: kmod-lustre-client-2.7.18.4-3.10.0_514.16.1.el7.x86_64_g9b76e4c.x86_64.rpm
+    lustre_client_rpm: lustre-client-2.11.0-1.el7.x86_64.rpm
+    lustre_client_devel_rpm: lustre-client-devel-2.11.0-1.el7.x86_64.rpm
+    kmod_lustre_client_rpm: kmod-lustre-client-2.11.0-1.el7.x86_64.rpm
     gmock_rpm: gmock-1.7.0-1.el7.centos.x86_64.rpm
     gmock_devel_rpm: gmock-devel-1.7.0-1.el7.centos.x86_64.rpm
     gtest_rpm: gtest-1.7.0-2.el7.centos.x86_64.rpm
