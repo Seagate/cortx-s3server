@@ -211,3 +211,30 @@ TEST_F(S3APIHandlerTest, DispatchObjectRequestPaymentAction) {
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
 }
+
+TEST_F(S3APIHandlerTest, DispatchBucketEncryptionAction) {
+  handler_under_test.reset(
+      new S3ServiceAPIHandler(mock_request, S3OperationCode::encryption));
+
+  EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
+  handler_under_test->dispatch();
+}
+
+TEST_F(S3APIHandlerTest, DispatchSelectObjectContentAction) {
+  handler_under_test.reset(
+      new S3ServiceAPIHandler(mock_request, S3OperationCode::selectcontent));
+
+  EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
+  handler_under_test->dispatch();
+}
+
+TEST_F(S3APIHandlerTest, DispatchSelectObjectRestoreAction) {
+  handler_under_test.reset(
+      new S3ServiceAPIHandler(mock_request, S3OperationCode::restore));
+
+  EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
+  handler_under_test->dispatch();
+}

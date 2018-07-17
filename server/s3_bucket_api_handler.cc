@@ -256,7 +256,21 @@ void S3BucketAPIHandler::create_action() {
           return;
       }
       break;
-
+    case S3OperationCode::encryption:
+      switch (request->http_verb()) {
+        case S3HttpVerb::GET:
+          s3_stats_inc("get_bucket_encryption_count");
+          break;
+        case S3HttpVerb::PUT:
+          s3_stats_inc("put_bucket_encryption_count");
+          break;
+        case S3HttpVerb::DELETE:
+          s3_stats_inc("delete_bucket_encryption_count");
+          break;
+        default:
+          return;
+      }
+      break;
     case S3OperationCode::none:
       // Perform operation on Bucket.
       switch (request->http_verb()) {

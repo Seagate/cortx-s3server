@@ -53,6 +53,8 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::multipart;
   } else if (request->has_query_param_key("delete")) {
     operation_code = S3OperationCode::multidelete;
+  } else if (request->has_query_param_key("encryption")) {
+    operation_code = S3OperationCode::encryption;
   } else if (request->has_query_param_key("requestPayment")) {
     operation_code = S3OperationCode::requestPayment;
   } else if (request->has_query_param_key("lifecycle")) {
@@ -83,6 +85,10 @@ void S3URI::setup_operation_code() {
     operation_code = S3OperationCode::versioning;
   } else if (request->has_query_param_key("versions")) {
     operation_code = S3OperationCode::versions;
+  } else if (request->has_query_param_key("select")) {
+    operation_code = S3OperationCode::selectcontent;
+  } else if (request->has_query_param_key("restore")) {
+    operation_code = S3OperationCode::restore;
   }
 
   s3_log(S3_LOG_DEBUG, request_id, "Operation code %s\n",

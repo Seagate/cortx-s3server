@@ -64,6 +64,7 @@ enum class S3OperationCode {
   acl,
 
   // Bucket Operations
+  encryption,
   location,
   policy,
   logging,
@@ -90,7 +91,9 @@ enum class S3OperationCode {
   abortupload,
   multidelete,
   multipart,
-  torrent
+  torrent,
+  selectcontent,
+  restore
 };
 
 inline std::string operation_code_to_str(S3OperationCode code) {
@@ -99,6 +102,8 @@ inline std::string operation_code_to_str(S3OperationCode code) {
       return "S3OperationCode::none";
     case S3OperationCode::acl:
       return "S3OperationCode::acl";
+    case S3OperationCode::encryption:
+      return "S3OperationCode::encryption";
     case S3OperationCode::policy:
       return "S3OperationCode::policy";
     case S3OperationCode::location:
@@ -137,6 +142,10 @@ inline std::string operation_code_to_str(S3OperationCode code) {
       return "S3OperationCode::versioning";
     case S3OperationCode::versions:
       return "S3OperationCode::versions";
+    case S3OperationCode::selectcontent:
+      return "S3OperationCode::selectcontent";
+    case S3OperationCode::restore:
+      return "S3OperationCode::restore";
     default:
       return "S3OperationCode::Unknown";
   }

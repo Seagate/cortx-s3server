@@ -152,6 +152,24 @@ void S3ObjectAPIHandler::create_action() {
           return;
       }
       break;
+    case S3OperationCode::selectcontent:
+      switch (request->http_verb()) {
+        case S3HttpVerb::POST:
+          s3_stats_inc("select_object_content_count");
+          break;
+        default:
+          return;
+      }
+      break;
+    case S3OperationCode::restore:
+      switch (request->http_verb()) {
+        case S3HttpVerb::POST:
+          s3_stats_inc("post_object_restore_count");
+          break;
+        default:
+          return;
+      }
+      break;
     default:
       // should never be here.
       return;

@@ -65,3 +65,8 @@
 - authentication_failed_invalid_accesskey_count
 - authentication_failed_signature_mismatch_count
 - internal_error_count
+- select_object_content_count
+- post_object_restore_count
+- get_bucket_encryption_count
+- put_bucket_encryption_count
+- delete_bucket_encryption_count
