@@ -17,6 +17,7 @@ class S3IamCli:
     def iam_usage(self):
         return '''
         CreateAccount -n <Account Name> -e <Email Id>
+        ResetAccountAccessKey -n <Account Name>
         ListAccounts
         CreateAccessKey
             -n <User Name>
@@ -215,7 +216,7 @@ class S3IamCli:
         # Load configurations
         self.load_config(cli_args)
 
-        if(cli_args.action.lower() in ["createaccount","listaccounts"] ):
+        if(cli_args.action.lower() in ["createaccount","listaccounts", "resetaccountaccesskey"] ):
 
             # Take credentials from declared environment variables
             if ('SG_LDAP_USER' in os.environ) and ('SG_LDAP_PASSWD' in os.environ):

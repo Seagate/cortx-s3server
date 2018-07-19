@@ -142,4 +142,37 @@ public class XMLResponseFormatterTest {
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
         Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
+
+    @Test
+    public void testFormatResetAccountAccessKeyResponse() {
+        LinkedHashMap responseElements = new LinkedHashMap();
+        responseElements.put("Path", "/");
+        responseElements.put("UserName", "s3test");
+        responseElements.put("UserId", "123");
+        responseElements.put("Arn", "arn:123");
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ResetAccountAccessKeyResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<ResetAccountAccessKeyResult>"
+                + "<User>"
+                + "<Path>/</Path>"
+                + "<UserName>s3test</UserName>"
+                + "<UserId>123</UserId>"
+                + "<Arn>arn:123</Arn>"
+                + "</User>"
+                + "</ResetAccountAccessKeyResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>9999</RequestId>"
+                + "</ResponseMetadata>"
+                + "</ResetAccountAccessKeyResponse>";
+
+        ServerResponse response = new XMLResponseFormatter()
+                  .formatResetAccountAccessKeyResponse("ResetAccountAccessKey",
+                                   "User", responseElements, "9999");
+
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.CREATED, response.getResponseStatus());
+    }
 }

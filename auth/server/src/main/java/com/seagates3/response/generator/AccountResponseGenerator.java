@@ -67,6 +67,22 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
         return new XMLResponseFormatter().formatDeleteResponse("DeleteAccount");
     }
 
+    public ServerResponse generateResetAccountAccessKeyResponse(Account account, User root,
+            AccessKey rootAccessKey) {
+        LinkedHashMap responseElements = new LinkedHashMap();
+        responseElements.put("AccountId", account.getId());
+        responseElements.put("CanonicalId", account.getCanonicalId());
+        responseElements.put("AccountName", account.getName());
+        responseElements.put("RootUserName", root.getName());
+        responseElements.put("AccessKeyId", rootAccessKey.getId());
+        responseElements.put("RootSecretKeyId", rootAccessKey.getSecretKey());
+        responseElements.put("Status", rootAccessKey.getStatus());
+
+        return (ServerResponse)
+           new XMLResponseFormatter().formatResetAccountAccessKeyResponse(
+               "ResetAccountAccessKey","Account", responseElements, "0000");
+    }
+
     @Override
     public ServerResponse entityAlreadyExists() {
         String errorMessage = "The request was rejected because it attempted "

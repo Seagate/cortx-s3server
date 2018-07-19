@@ -365,6 +365,129 @@ public class AccountControllerTest {
     }
 
     @Test
+    public void ResetAccountAccessKey_AccountDoesNotExists_ReturnNoSuchEntity()
+            throws Exception {
+        Account account = mock(Account.class);
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.FALSE);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
+                " standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/" +
+                "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The request" +
+                " was rejected because it referenced an entity that does not exist. " +
+                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accountController.resetAccountAccessKey();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                response.getResponseStatus());
+    }
+
+    @Test
+    public void ResetAccountAccessKey_UserDAOException_InternalError()
+            throws Exception {
+        Account account = mock(Account.class);
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(account.getName()).thenReturn("root");
+        Mockito.doThrow(new DataAccessException("failed to get root user"))
+                  .when(userDAO).find(any(String.class), any(String.class));
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<Error><Code>InternalFailure</Code>"
+                + "<Message>The request processing has failed because of an "
+                + "unknown error, exception or failure.</Message></Error>"
+                + "<RequestId>0000</RequestId>"
+                + "</ErrorResponse>";
+
+        ServerResponse response = accountController.resetAccountAccessKey();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                response.getResponseStatus());
+    }
+
+    @Test
+    public void ResetAccountAccessKey_NoRootUser_ReturnNoSuchEntity()
+            throws Exception {
+        Account account = mock(Account.class);
+        User root = mock(User.class);
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
+        Mockito.when(account.getName()).thenReturn("root");
+        Mockito.when(userDAO.find(any(String.class),
+                               any(String.class))).thenReturn(root);
+        Mockito.when(root.exists()).thenReturn(Boolean.FALSE);
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
+                " standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/" +
+                "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The request" +
+                " was rejected because it referenced an entity that does not exist. " +
+                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+
+        ServerResponse response = accountController.resetAccountAccessKey();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                response.getResponseStatus());
+    }
+
+    @Test
+    public void ResetAccountAccessKey_Success_Return()
+            throws Exception {
+        Account account = new Account();
+        account.setName("s3test");
+        account.setId("987654test");
+        account.setCanonicalId("C1234");
+        User root = new User();
+        root.setName("root");
+        root.setId("AKIASIAS");
+        AccessKey[] accessKeys = new AccessKey[1];
+
+        PowerMockito.doReturn("AKIASIAS").when(KeyGenUtil.class,
+                "createUserAccessKeyId"
+        );
+
+        PowerMockito.doReturn("htuspscae/123").when(KeyGenUtil.class,
+                                                "generateSecretKey");
+
+        accessKeys[0] = mock(AccessKey.class);
+        Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+        Mockito.when(userDAO.find(any(String.class),
+                               any(String.class))).thenReturn(root);
+
+        Mockito.when(accessKeyDAO.findAll(root)).thenReturn(accessKeys);
+        Mockito.doNothing().when(accessKeyDAO).delete(accessKeys[0]);
+
+        Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
+
+        final String expectedResponseBody = "<?xml version=\"1.0\" "
+                + "encoding=\"UTF-8\" standalone=\"no\"?>"
+                + "<ResetAccountAccessKeyResponse "
+                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
+                + "<ResetAccountAccessKeyResult>"
+                + "<Account>"
+                + "<AccountId>987654test</AccountId>"
+                + "<CanonicalId>C1234</CanonicalId>"
+                + "<AccountName>s3test</AccountName>"
+                + "<RootUserName>root</RootUserName>"
+                + "<AccessKeyId>AKIASIAS</AccessKeyId>"
+                + "<RootSecretKeyId>htuspscae/123</RootSecretKeyId>"
+                + "<Status>Active</Status>"
+                + "</Account>"
+                + "</ResetAccountAccessKeyResult>"
+                + "<ResponseMetadata>"
+                + "<RequestId>0000</RequestId>"
+                + "</ResponseMetadata>"
+                + "</ResetAccountAccessKeyResponse>";
+
+        ServerResponse response = accountController.resetAccountAccessKey();
+        Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+        Assert.assertEquals(HttpResponseStatus.CREATED,
+                response.getResponseStatus());
+    }
+
+    @Test
     public void DeleteAccount_AccountsSearchFailed_ReturnInternalServerError()
             throws DataAccessException {
         Mockito.when(accountDAO.find("s3test")).thenThrow(

@@ -74,7 +74,9 @@ public class IAMController {
         Requestor requestor;
         ServerResponse serverResponse;
         // CreateAccount needs to be authenticated with Ldap credentials
-        if (requestAction.equals("CreateAccount") || requestAction.equals("ListAccounts")) {
+        if (requestAction.equals("CreateAccount") ||
+                requestAction.equals("ListAccounts") ||
+                      requestAction.equals("ResetAccountAccessKey")) {
              LOGGER.debug("Parsing Client Request");
              clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
              if (clientRequestToken == null) {
@@ -178,7 +180,9 @@ public class IAMController {
          * Only ldap credentials are allowed for createaccount and listaccounts.
          * Hence, createaccount and listaccounts don't require this check.
          */
-        if (!(requestAction.equals("CreateAccount") || requestAction.equals("ListAccounts"))) {
+        if (!(requestAction.equals("CreateAccount") ||
+                   requestAction.equals("ListAccounts") ||
+                        requestAction.equals("ResetAccountAccessKey"))) {
             try {
                 new IAMApiAuthorizer().authorize(requestor, requestBody);
                 LOGGER.debug("User is authorized to perform invoked action.");

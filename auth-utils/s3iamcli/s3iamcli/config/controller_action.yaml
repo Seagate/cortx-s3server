@@ -16,6 +16,10 @@ listaccounts:
   controller : Account
   action :  list
   service : iam
+resetaccountaccesskey:
+  controller : Account
+  action :  reset_access_key
+  service : iam
 deleteaccount:
   controller : Account
   action :  delete

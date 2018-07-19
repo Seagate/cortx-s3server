@@ -58,4 +58,19 @@ public class AccountParameterValidator extends AbstractParameterValidator {
         return S3ParameterValidatorUtil.isValidName(
                 requestBody.get("AccountName"));
     }
+
+    /**
+     * Validate the input parameters for isValidResetAccountAccessKeyParams
+     *  account request. Account name is required.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true if input is valid.
+     */
+
+    public Boolean isValidResetAccountAccessKeyParams(Map<String,
+                                      String> requestBody) {
+        return S3ParameterValidatorUtil.isValidName(
+                requestBody.get("AccountName"));
+    }
+
 }

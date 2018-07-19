@@ -738,6 +738,57 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
+def reset_account_accesskey_tests():
+
+    test_msg = "Create account s3test1"
+
+    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+    s3test1_root_access_key = account_response_elements['AccessKeyId']
+    s3test1_root_secret_key = account_response_elements['SecretKey']
+
+    # Use access key and secret key of account s3test1
+    GlobalTestState.root_access_key = s3test1_root_access_key
+    GlobalTestState.root_secret_key = s3test1_root_secret_key
+    _use_root_credentials()
+
+    S3ClientConfig.pathstyle = False
+    # Create a bucket with just now created Account credentials
+    S3cmdTest('s3cmd can create bucket').with_credentials(GlobalTestState.root_access_key, GlobalTestState.root_secret_key)\
+    .create_bucket("seagatebucket").execute_test().command_is_successful()
+
+    test_msg = "Reset account access key"
+
+    account_args = {'AccountName': 's3test1', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).reset_account_accesskey(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+    s3test1_root_access_key = account_response_elements['AccessKeyId']
+    s3test1_root_secret_key = account_response_elements['SecretKey']
+
+    #Using old access key should fail now
+    S3cmdTest('s3cmd can delete bucket').with_credentials(GlobalTestState.root_access_key, GlobalTestState.root_secret_key)\
+    .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("")
+
+    # Use new access key and secret key of account s3test1
+    GlobalTestState.root_access_key = s3test1_root_access_key
+    GlobalTestState.root_secret_key = s3test1_root_secret_key
+    _use_root_credentials()
+
+    # Using new access key should pass now
+    S3cmdTest('s3cmd can delete bucket').with_credentials(GlobalTestState.root_access_key,
+                                                          GlobalTestState.root_secret_key) \
+    .delete_bucket("seagatebucket").execute_test().command_is_successful()
+
+    test_msg = "Delete account s3test1"
+    account_args = {'AccountName': 's3test1'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+
 def execute_tests_over_http_connection():
     print('Executing auth system tests over HTTP connection')
     Config.no_ssl = True
@@ -750,6 +801,7 @@ def execute_tests_over_http_connection():
     saml_provider_tests()
     get_federation_token_test()
     delete_account_tests()
+    reset_account_accesskey_tests()
 
 def execute_tests_over_https_connection():
     print('Executing auth system tests over HTTPS connection')
@@ -762,6 +814,7 @@ def execute_tests_over_https_connection():
     saml_provider_tests()
     get_federation_token_test()
     delete_account_tests()
+    reset_account_accesskey_tests()
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:

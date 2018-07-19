@@ -258,4 +258,54 @@ public class XMLResponseFormatter extends AbstractResponseFormatter {
 
         return writer.toString();
     }
+
+    public ServerResponse formatResetAccountAccessKeyResponse(String operation,
+                           String returnObject,
+                           LinkedHashMap<String, String> responseElements,
+                           String requestId) {
+        Document doc;
+        try {
+            doc = createNewDoc();
+        } catch (ParserConfigurationException ex) {
+            return null;
+        }
+
+        Element responseElement = doc.createElement(operation + "Response");
+        Attr attr = doc.createAttribute("xmlns");
+        attr.setValue(IAM_XMLNS);
+        responseElement.setAttributeNode(attr);
+        doc.appendChild(responseElement);
+
+        Element resultElement = doc.createElement(operation + "Result");
+        responseElement.appendChild(resultElement);
+
+        Element returnObjElement = doc.createElement(returnObject);
+        resultElement.appendChild(returnObjElement);
+
+        for (Map.Entry<String, String> entry : responseElements.entrySet()) {
+            Element element = doc.createElement(entry.getKey());
+            element.appendChild(doc.createTextNode(entry.getValue()));
+            returnObjElement.appendChild(element);
+        }
+
+        Element responseMetaData = doc.createElement("ResponseMetadata");
+        responseElement.appendChild(responseMetaData);
+
+        Element requestIdElement = doc.createElement("RequestId");
+        requestIdElement.appendChild(doc.createTextNode(requestId));
+        responseMetaData.appendChild(requestIdElement);
+
+        String responseBody;
+        try {
+            responseBody = docToString(doc);
+            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.CREATED,
+                    responseBody);
+
+            return serverResponse;
+        } catch (TransformerException ex) {
+            System.out.println("test");
+        }
+
+        return null;
+    }
 }

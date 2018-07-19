@@ -51,6 +51,13 @@ class AuthTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def reset_account_accesskey(self, **account_args):
+        cmd = "s3iamcli resetaccountaccesskey -n %s --ldapuser %s --ldappasswd %s" % (
+                 account_args['AccountName'], account_args['ldapuser'], account_args['ldappasswd'])
+
+        self.with_cli(cmd)
+        return self
+
     def create_user(self, **user_args):
         cmd = "s3iamcli createuser --access_key '%s' --secret_key '%s' -n %s" % (
                  S3ClientConfig.access_key_id,

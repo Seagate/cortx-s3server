@@ -2,6 +2,7 @@
     "CreateAccount": "Account#create",
     "DeleteAccount": "Account#delete",
     "ListAccounts": "Account#list",
+    "ResetAccountAccessKey": "Account#resetAccountAccessKey",
     "CreateAccessKey": "AccessKey#create",
     "CreateGroup": "Group#create",
     "CreatePolicy": "Policy#create",

@@ -10,11 +10,11 @@ class Account:
         self.cli_args = cli_args
 
     def create(self):
-        if(self.cli_args.name is None):
+        if self.cli_args.name is None:
             print("Account name is required.")
             return
 
-        if(self.cli_args.email is None):
+        if self.cli_args.email is None:
             print("Email Id of the user is required to create an Account")
             return
 
@@ -65,7 +65,7 @@ class Account:
 
     # delete account
     def delete(self):
-        if(self.cli_args.name is None):
+        if self.cli_args.name is None:
             print('Account name is required.')
             return
 
@@ -85,3 +85,25 @@ class Account:
         else:
             print('Account cannot be deleted.')
             print(response['body'])
+
+    # Reset Account Access Key
+    def reset_access_key(self):
+        if self.cli_args.name is None:
+            print("Account name is required.")
+            return
+
+        body = urllib.parse.urlencode({'Action' : 'ResetAccountAccessKey',
+            'AccountName' : self.cli_args.name, 'Email' : self.cli_args.email})
+        headers = {'content-type': 'application/x-www-form-urlencoded',
+                'Accept': 'text/plain'}
+        headers['Authorization'] = sign_request_v2('POST', '/', {}, headers)
+        response = ConnMan.send_post_request(body, headers)
+        if response['status'] == 201:
+            account_response = json.loads(json.dumps(xmltodict.parse(response['body'])))
+            account = account_response['ResetAccountAccessKeyResponse']['ResetAccountAccessKeyResult']['Account']
+            print("AccountId = %s, CanonicalId = %s, RootUserName = %s, AccessKeyId = %s, SecretKey = %s" %
+                    (account['AccountId'], account['CanonicalId'], account['RootUserName'],
+                        account['AccessKeyId'], account['RootSecretKeyId']))
+        else:
+            print("Account access key wasn't reset.")
+            print(response['reason'])

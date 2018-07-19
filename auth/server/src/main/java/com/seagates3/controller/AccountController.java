@@ -153,6 +153,54 @@ public class AccountController extends AbstractController {
                 rootAccessKey);
     }
 
+    public ServerResponse resetAccountAccessKey() {
+        String name = requestBody.get("AccountName");
+        LOGGER.info("Resetting access key of account: " + name);
+
+        Account account;
+        try {
+            account = accountDao.find(name);
+        } catch (DataAccessException ex) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        if (!account.exists()) {
+            LOGGER.error("Account [" + name +"] doesnot exist");
+            return accountResponseGenerator.noSuchEntity();
+        }
+
+        User root;
+        try {
+            root = userDAO.find(account.getName(), "root");
+        } catch (DataAccessException e) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        if (!root.exists()) {
+                LOGGER.error("Root user of account [" + name +"] doesnot exist");
+                return accountResponseGenerator.noSuchEntity();
+        }
+
+        // Delete Existing Root Access Keys
+        LOGGER.info("Deleting existing access key of account: " + name);
+        try {
+            deleteAccessKeys(root);
+        } catch (DataAccessException e) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        LOGGER.debug("Creating new access key for account: " + name);
+        AccessKey rootAccessKey;
+        try {
+            rootAccessKey = createRootAccessKey(root);
+        } catch (DataAccessException ex) {
+            return accountResponseGenerator.internalServerError();
+        }
+
+        return accountResponseGenerator.generateResetAccountAccessKeyResponse(
+                                          account, root, rootAccessKey);
+    }
+
     /*
      * Create a root user for the account.
      */
