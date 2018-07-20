@@ -134,9 +134,6 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
       s3_api_type = S3ApiType::object;
       bucket_name = std::string(full_path.c_str() + 1, pos - 1);
       object_name = std::string(full_path.c_str() + pos + 1);
-      if (object_name.back() == '/') {
-        object_name.pop_back();  // ignore last slash
-      }
     }
   }
   request->set_api_type(s3_api_type);
@@ -161,9 +158,6 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(
     s3_api_type = S3ApiType::object;
     request->set_api_type(s3_api_type);
     object_name = std::string(full_path.c_str() + 1);  // ignore first slash
-    if (object_name.back() == '/') {
-      object_name.pop_back();  // ignore last slash
-    }
   }
 }
 
