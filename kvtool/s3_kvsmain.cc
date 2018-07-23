@@ -141,7 +141,7 @@ static int create_index(struct m0_uint128 id) {
   memset(&idx, 0, sizeof(struct m0_clovis_idx));
 
   m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
-  m0_clovis_entity_create(&idx.in_entity, &ops[0]);
+  m0_clovis_entity_create(NULL, &idx.in_entity, &ops[0]);
 
   m0_clovis_op_launch(ops, ARRAY_SIZE(ops));
 

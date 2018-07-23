@@ -208,7 +208,7 @@ int create_s3_user_index(std::string index_name) {
   // reserving an oid for root index -- M0_CLOVIS_ID_APP + 1
   initialize_global_var();
   m0_clovis_idx_init(&idx, &clovis_uber_realm, &root_account_user_index_oid);
-  m0_clovis_entity_create(&idx.in_entity, &ops[0]);
+  m0_clovis_entity_create(NULL, &idx.in_entity, &ops[0]);
   m0_clovis_op_launch(ops, 1);
 
   rc = m0_clovis_op_wait(ops[0],
