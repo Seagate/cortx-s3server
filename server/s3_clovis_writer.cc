@@ -115,6 +115,7 @@ void S3ClovisWriter::open_objects() {
 
   struct s3_clovis_op_context *ctx = open_context->get_clovis_op_ctx();
 
+  std::ostringstream oid_list_stream;
   size_t ops_count = oid_list.size();
   for (size_t i = 0; i < ops_count; ++i) {
     struct s3_clovis_context_obj *op_ctx =
@@ -128,6 +129,8 @@ void S3ClovisWriter::open_objects() {
     ctx->cbs[i].oop_stable = s3_clovis_op_stable;
     ctx->cbs[i].oop_failed = s3_clovis_op_failed;
 
+    oid_list_stream << "(" << oid_list[i].u_hi << " " << oid_list[i].u_lo
+                    << ") ";
     s3_clovis_api->clovis_obj_init(&obj_ctx->objs[i], &clovis_uber_realm,
                                    &oid_list[i], layout_ids[i]);
 
@@ -138,6 +141,8 @@ void S3ClovisWriter::open_objects() {
     s3_clovis_api->clovis_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
   }
 
+  s3_log(S3_LOG_INFO, request_id, "Clovis API: openobj(oid: %s)\n",
+         oid_list_stream.str().c_str());
   s3_clovis_api->clovis_op_launch(ctx->ops, ops_count, ClovisOpType::openobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -147,8 +152,14 @@ void S3ClovisWriter::open_objects_successful() {
 
   is_object_opened = true;
   if (state == S3ClovisWriterOpState::writing) {
+    s3_log(
+        S3_LOG_INFO, request_id,
+        "Clovis API Successful: openobj(S3ClovisWriterOpState: (writing))\n");
     write_content();
   } else if (state == S3ClovisWriterOpState::deleting) {
+    s3_log(
+        S3_LOG_INFO, request_id,
+        "Clovis API Successful: openobj(S3ClovisWriterOpState: (deleting))\n");
     delete_objects();
   } else {
     s3_log(S3_LOG_ERROR, request_id,
@@ -225,6 +236,9 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
   ctx->ops[0]->op_datum = (void *)op_ctx;
 
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
+
+  s3_log(S3_LOG_INFO, request_id, "Clovis API: createobj(oid: (%lu %lu))\n",
+         oid_list[0].u_hi, oid_list[0].u_lo);
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::createobj);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -234,6 +248,9 @@ void S3ClovisWriter::create_object_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   is_object_opened = true;  // created object is also open
   state = S3ClovisWriterOpState::created;
+  s3_log(S3_LOG_INFO, request_id,
+         "Clovis API Successful: createobj(oid: (%lu %lu))\n", oid_list[0].u_hi,
+         oid_list[0].u_lo);
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -365,6 +382,12 @@ void S3ClovisWriter::write_content() {
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
   writer_context->start_timer_for("write_to_clovis_op");
+
+  s3_log(S3_LOG_INFO, request_id,
+         "Clovis API: Write (operation: M0_CLOVIS_OC_WRITE, oid: (%lu %lu), "
+         "start_offset_in_object(%zu), total_bytes_written_at_offset(%zu))\n",
+         oid_list[0].u_hi, oid_list[0].u_lo, rw_ctx->ext->iv_index[0],
+         size_in_current_write);
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::writeobj);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -372,7 +395,8 @@ void S3ClovisWriter::write_content() {
 
 void S3ClovisWriter::write_content_successful() {
   total_written += size_in_current_write;
-  s3_log(S3_LOG_DEBUG, request_id, "total_written = %zu\n", total_written);
+  s3_log(S3_LOG_INFO, request_id,
+         "Clovis API sucessful: write(total_written = %zu)\n", total_written);
 
   // We have copied data to clovis buffers.
   write_async_buffer->flush_used_buffers();
@@ -432,6 +456,7 @@ void S3ClovisWriter::delete_objects() {
 
   struct s3_clovis_op_context *ctx = delete_context->get_clovis_op_ctx();
 
+  std::ostringstream oid_list_stream;
   size_t ops_count = oid_list.size();
   for (size_t i = 0; i < ops_count; ++i) {
     struct s3_clovis_context_obj *op_ctx =
@@ -450,10 +475,14 @@ void S3ClovisWriter::delete_objects() {
 
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_clovis_api->clovis_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
+    oid_list_stream << "(" << oid_list[i].u_hi << " " << oid_list[i].u_lo
+                    << ") ";
   }
 
   delete_context->start_timer_for("delete_objects_from_clovis");
 
+  s3_log(S3_LOG_INFO, request_id, "Clovis API: deleteobj(oid: %s)\n",
+         oid_list_stream.str().c_str());
   s3_clovis_api->clovis_op_launch(ctx->ops, ops_count, ClovisOpType::deleteobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -461,6 +490,7 @@ void S3ClovisWriter::delete_objects() {
 void S3ClovisWriter::delete_objects_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   state = S3ClovisWriterOpState::deleted;
+  s3_log(S3_LOG_INFO, request_id, "Clovis API Successful: deleteobj\n");
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

@@ -127,17 +127,25 @@ void S3ClovisReader::open_object() {
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
+
+  s3_log(S3_LOG_INFO, request_id, "Clovis API: openobj(oid: (%lu %lu))\n",
+         oid.u_hi, oid.u_lo);
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::openobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ClovisReader::open_object_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
+  s3_log(S3_LOG_INFO, request_id,
+         "Clovis API Successful: openobj(oid: (%lu %lu))\n", oid.u_hi,
+         oid.u_lo);
   is_object_opened = true;
   if (!read_object()) {
     // read cannot be launched, out-of-memory
     state = S3ClovisReaderOpState::ooo;
+    s3_log(S3_LOG_ERROR, request_id,
+           "Clovis API failed: openobj(oid: (%lu %lu), out-of-memory)\n",
+           oid.u_hi, oid.u_lo);
     this->handler_on_failed();
   }
 
@@ -206,6 +214,10 @@ bool S3ClovisReader::read_object() {
 
   reader_context->start_timer_for("read_object_data");
 
+  s3_log(S3_LOG_INFO, request_id,
+         "Clovis API: readobj(operation: M0_CLOVIS_OC_READ, oid: (%lu %lu))\n",
+         oid.u_hi, oid.u_lo);
+
   s3_clovis_api->clovis_op_launch(ctx->ops, 1);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return true;
@@ -213,6 +225,9 @@ bool S3ClovisReader::read_object() {
 
 void S3ClovisReader::read_object_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id,
+         "Clovis API Successful: readobj(oid: (%lu %lu))\n", oid.u_hi,
+         oid.u_lo);
   state = S3ClovisReaderOpState::success;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
