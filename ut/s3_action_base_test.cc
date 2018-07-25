@@ -162,3 +162,33 @@ TEST_F(S3ActionTest, OutOfMemoryTestForPutObject) {
 
   ptr_s3Actionobject->start();
 }
+
+TEST_F(S3ActionTest, SkipAuthTest) {
+  ptr_s3Actionobject->skip_auth = true;
+  ptr_s3Actionobject->setup_steps();
+  // No tasks
+  EXPECT_EQ(0, ptr_s3Actionobject->number_of_tasks());
+}
+
+TEST_F(S3ActionTest, EnableAuthTest) {
+  S3Option::get_instance()->enable_auth();
+  ptr_s3Actionobject->setup_steps();
+  S3Option::get_instance()->disable_auth();
+  // Number of tasks in task list should be only one.
+  EXPECT_EQ(1, ptr_s3Actionobject->number_of_tasks());
+}
+
+TEST_F(S3ActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag) {
+  S3Option::get_instance()->disable_auth();
+  ptr_s3Actionobject->skip_auth = true;
+  ptr_s3Actionobject->setup_steps();
+  // no tasks
+  EXPECT_EQ(0, ptr_s3Actionobject->number_of_tasks());
+}
+
+TEST_F(S3ActionTest, DisableSkipAuthFlagAndSetS3OptionDisableAuthFlag) {
+  S3Option::get_instance()->disable_auth();
+  ptr_s3Actionobject->setup_steps();
+  // no tasks
+  EXPECT_EQ(0, ptr_s3Actionobject->number_of_tasks());
+}

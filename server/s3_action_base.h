@@ -82,8 +82,6 @@ class S3Action {
   std::shared_ptr<S3RequestObject> request;
   std::string request_id;
   bool invalid_request;
-  // Allow class object instiantiation without support for authentication
-  bool disable_auth;
   // Any action specific state should be managed by derived classes.
  private:
   // Holds the member functions that will process the request.
@@ -108,7 +106,8 @@ class S3Action {
   // If this flag is set then check_shutdown_and_rollback() is called
   // from start() & next() methods.
   bool check_shutdown_signal;
-
+  // Allow class object instiantiation without support for authentication
+  bool skip_auth;
   // In case of shutdown, this flag indicates that a error response
   // is already scheduled.
   bool is_response_scheduled;
@@ -122,7 +121,8 @@ class S3Action {
 
  public:
   S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true,
-           std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
+           std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
+           bool skip_auth = false);
   virtual ~S3Action();
 
   void set_s3_error(std::string code);
@@ -226,6 +226,9 @@ class S3Action {
   FRIEND_TEST(S3ActionTest, AddTaskRollback);
   FRIEND_TEST(S3ActionTest, TasklistRun);
   FRIEND_TEST(S3ActionTest, RollbacklistRun);
+  FRIEND_TEST(S3ActionTest, SkipAuthTest);
+  FRIEND_TEST(S3ActionTest, EnableAuthTest);
+  FRIEND_TEST(S3ActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag);
   FRIEND_TEST(S3APIHandlerTest, DispatchActionTest);
 };
 

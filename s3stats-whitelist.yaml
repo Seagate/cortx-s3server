@@ -60,6 +60,7 @@
 - total_request_count
 - unsupported_api_count
 - get_service_request_count
+- health_check_request_count
 - authorization_failed_invalid_accesskey_count
 - authorization_failed_signature_mismatch_count
 - authentication_failed_invalid_accesskey_count

@@ -24,10 +24,12 @@
 #include "s3_stats.h"
 
 S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
-                   std::shared_ptr<S3AuthClientFactory> auth_factory)
+                   std::shared_ptr<S3AuthClientFactory> auth_factory,
+                   bool skip_auth)
     : request(req),
       invalid_request(false),
       check_shutdown_signal(check_shutdown),
+      skip_auth(skip_auth),
       is_response_scheduled(false),
       is_fi_hit(false) {
   request_id = request->get_request_id();
@@ -60,8 +62,11 @@ bool S3Action::is_error_state() { return state == S3ActionState::error; }
 
 void S3Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
+  s3_log(S3_LOG_DEBUG, request_id,
+         "S3Option::is_auth_disabled: (%d), skip_auth: (%d)\n",
+         S3Option::get_instance()->is_auth_disabled(), skip_auth);
 
-  if (!S3Option::get_instance()->is_auth_disabled()) {
+  if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth) {
     add_task(std::bind(&S3Action::check_authentication, this));
     // add_task(std::bind( &S3Action::fetch_acl_policies, this ));
     // Commented till we implement Authorization feature completely.
