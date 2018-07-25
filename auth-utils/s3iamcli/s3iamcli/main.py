@@ -7,6 +7,7 @@ import imp
 import botocore
 import logging
 import shutil
+import getpass
 
 from boto3.session import Session
 from s3iamcli.config import Credentials
@@ -231,7 +232,7 @@ class S3IamCli:
                     print("Provide Ldap User Id.")
                     sys.exit(1)
 
-                cli_args.ldappasswd = input("Enter Ldap password: ")
+                cli_args.ldappasswd = getpass.getpass("Enter Ldap password: ")
                 if not cli_args.ldappasswd:
                     print("Provide Ldap password.")
                     sys.exit(1)
@@ -254,7 +255,7 @@ class S3IamCli:
                     print("Provide access key.")
                     sys.exit(1)
 
-                cli_args.secret_key = input("Enter Secret Key: ")
+                cli_args.secret_key = getpass.getpass("Enter Secret Key: ")
                 if not cli_args.secret_key:
                     print("Provide secret key.")
                     sys.exit(1)
