@@ -18,16 +18,21 @@
  */
 package com.seagates3.dao.ldap;
 
+import java.io.UnsupportedEncodingException;
+import java.security.Security;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPException;
+import com.novell.ldap.LDAPJSSESecureSocketFactory;
+import com.novell.ldap.LDAPSocketFactory;
 import com.novell.ldap.connectionpool.PoolManager;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.ServerInitialisationException;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.util.IEMUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.io.UnsupportedEncodingException;
 
 public class LdapConnectionManager {
 
@@ -37,12 +42,27 @@ public class LdapConnectionManager {
 
     public static void initLdap()
             throws ServerInitialisationException {
+
         try {
+            LDAPSocketFactory socketFactory = null;
+            int port;
+            if (AuthServerConfig.isSSLToLdapEnabled()) {
+                port = AuthServerConfig.getLdapSSLPort();
+                LOGGER.info("Connecting ldap on SSL port :" + port);
+                String path = AuthServerConfig.getKeyStorePath().toString();
+                System.setProperty("javax.net.ssl.trustStore", path);
+                socketFactory = new LDAPJSSESecureSocketFactory();
+            }
+            else {
+                port = AuthServerConfig.getLdapPort();
+                LOGGER.info("Connecting ldap on port :" + port);
+            }
+
             ldapPool = new PoolManager(AuthServerConfig.getLdapHost(),
-                    AuthServerConfig.getLdapPort(),
+                    port,
                     AuthServerConfig.getLdapMaxConnections(),
                     AuthServerConfig.getLdapMaxSharedConnections(),
-                    null);
+                    socketFactory);
 
             ldapLoginDN = AuthServerConfig.getLdapLoginDN();
             ldapLoginPW = AuthServerConfig.getLdapLoginPassword();

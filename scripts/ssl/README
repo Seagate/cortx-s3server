@@ -103,3 +103,54 @@ Note:
 Note:
 Currently only tests for bucket name with '.' are not supported due to s3cmd limitations.
 Comment out tests using seagate.bucket in s3cmd_specs.py
+
+## Generating SSL certificates for OpenLdap and deploying it for S3 Auth Server
+
+* Create a file with domain name of Openldap server
+  Ex:$cat dns.list
+     localhost
+
+* Run following command to generate ssl certificate and key:
+   cd scripts/ssl/
+  `./setup-ssl.sh --san-file dns.list`
+
+* Copy the following certificates and key files:
+  `cp ssl_sandbox/ca.crt /etc/ssl/openldap/`
+  `cp ssl_sandbox/localhost.crt /etc/ssl/openldap/`
+  `cp ssl_sandbox/localhost.key /etc/ssl/openldap/private`
+
+* Set Owner of directory and files
+  chown -R root:root /etc/openldap/ssl/seagate*
+
+* Add location of certificate and key's in ldif file
+  #cat ssl_certs.ldif
+  dn: cn=config
+  replace: olcTLSCACertificateFile
+  olcTLSCACertificateFile: /etc/ssl/openldap/ca.crt
+  -
+  replace: olctlscertificatefile
+  olctlscertificatefile: /etc/ssl/openldap/localhost.crt
+  -
+  replace: olctlscertificatekeyfile
+  olctlscertificatekeyfile: /etc/ssl/openldap/private/localhost.key
+
+* Update LDAP
+  ldapmodify -Y EXTERNAL  -H ldapi:/// -f ssl_certs.ldif
+
+* Enable SSL port add ldaps:/// entry in /etc/sysconfig/slapd
+  SLAPD_URLS="ldap:/// ldaps:/// ldapi:///"
+
+* [Optional] Update openldap client config file to use ssl for openldap cli
+  Add below entries in /etc/openldap/ldap.conf
+
+  SSL on
+  TLS_CACERTDIR     /etc/openldap/ssl/seagete
+  TLS_CACERT        /etc/openldap/ssl/seagate/localhost.crt
+  TLS_REQCERT allow
+
+* Restart LDAP services
+  systemctl restart slapd
+
+* Add certificate to Auth Server Java Key Store file
+  keytool -import -trustcacerts -keystore s3_auth.jks -storepass seagate -noprompt -alias ldapcert -file /etc/openldap/ssl/seagate/localhost.crt
+

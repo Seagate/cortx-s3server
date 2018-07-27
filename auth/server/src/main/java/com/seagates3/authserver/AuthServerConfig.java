@@ -166,6 +166,14 @@ public class AuthServerConfig {
         return Integer.parseInt(authServerConfig.getProperty("ldapPort"));
     }
 
+    public static int getLdapSSLPort() {
+        return Integer.parseInt(authServerConfig.getProperty("ldapSSLPort"));
+    }
+
+    public static Boolean isSSLToLdapEnabled() {
+        return Boolean.valueOf(authServerConfig.getProperty("enableSSLToLdap"));
+    }
+
     public static int getLdapMaxConnections() {
         return Integer.parseInt(authServerConfig.getProperty("ldapMaxCons"));
     }

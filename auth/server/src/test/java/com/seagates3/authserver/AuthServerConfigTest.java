@@ -72,6 +72,10 @@ public class AuthServerConfigTest {
 
         assertEquals(389, AuthServerConfig.getLdapPort());
 
+        assertEquals(636, AuthServerConfig.getLdapSSLPort());
+
+        assertEquals(true, AuthServerConfig.isSSLToLdapEnabled());
+
         assertEquals(5, AuthServerConfig.getLdapMaxConnections());
 
         assertEquals(1, AuthServerConfig.getLdapMaxSharedConnections());
@@ -136,6 +140,10 @@ public class AuthServerConfigTest {
 
         assertEquals(389, AuthServerConfig.getLdapPort());
 
+        assertEquals(636, AuthServerConfig.getLdapSSLPort());
+
+        assertEquals(false, AuthServerConfig.isSSLToLdapEnabled());
+
     }
 
     @Test(expected = IOException.class)
@@ -160,6 +168,8 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("dataSource", "ldap");
         authServerConfig.setProperty("ldapHost", "127.0.0.1");
         authServerConfig.setProperty("ldapPort", "389");
+        authServerConfig.setProperty("ldapSSLPort", "636");
+        authServerConfig.setProperty("enableSSLToLdap", "true");
         authServerConfig.setProperty("ldapMaxCons", "5");
         authServerConfig.setProperty("ldapMaxSharedCons", "1");
         authServerConfig.setProperty("ldapLoginDN", "cn=admin,dc=seagate,dc=com");

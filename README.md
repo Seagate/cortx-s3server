@@ -86,6 +86,14 @@ are present in $HOME/.seagate_src_cache and will be used in current build.
 ./rebuildall.sh --no-mero-rpm --use-build-cache
 ```
 
+Enable OpenLDAP SSL port and deploy SSL certificates, S3 Auth Server uses
+SSL port of OpenLDAP for connection, below script needs to be run before
+starting S3 Auth Server
+```sh
+cd scripts/ldap/ssl
+./enable_ssl_openldap.sh -cafile certs/ca.crt -certfile certs/localhost.crt -keyfile certs/private/localhost.key
+```
+
 If current third_party/* revision does not match with previous revision
 cached in $HOME/.seagate_src_cache/, user should clean the cache and rebuild.
 

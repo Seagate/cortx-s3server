@@ -37,6 +37,10 @@ fi
 
 ./rebuildall.sh --no-mero-rpm --use-build-cache
 
+#Deploy SSL certificates and enable OpenLDAP SSL port
+cd scripts/ldap/ssl
+./enable_ssl_openldap.sh -cafile certs/ca.crt -certfile certs/localhost.crt -keyfile certs/private/localhost.key
+
 # Stop any old running mero
 cd $MERO_SRC
 echo "Stopping any old running mero services"

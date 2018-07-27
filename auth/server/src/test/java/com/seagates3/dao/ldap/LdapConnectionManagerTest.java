@@ -20,6 +20,7 @@ package com.seagates3.dao.ldap;
 
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPException;
+import com.novell.ldap.LDAPJSSESecureSocketFactory;
 import com.novell.ldap.connectionpool.PoolManager;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.ServerInitialisationException;
@@ -39,6 +40,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({AuthServerConfig.class, FaultPoints.class, LdapConnectionManager.class})
 @MockPolicy(Slf4jMockPolicy.class)
@@ -46,9 +50,10 @@ public class LdapConnectionManagerTest {
 
     private PoolManager ldapPool;
     private LDAPConnection ldapConnection;
-
+    private LDAPJSSESecureSocketFactory socketFactory;
     private final String LDAP_HOST = "127.0.0.1";
     private final int LDAP_PORT = 389;
+    private final int LDAP_SSL_PORT = 636;
     private final int LDAP_MAX_CONN = 5;
     private final int LDAP_MAX_SHARED_CONN = 1;
     private final String LDAP_LOGIN_DN = "cn=admin,dc=seagate,dc=com";
@@ -65,6 +70,10 @@ public class LdapConnectionManagerTest {
         PowerMockito.doReturn(LDAP_LOGIN_DN).when(AuthServerConfig.class, "getLdapLoginDN");
         PowerMockito.doReturn(LDAP_LOGIN_PASSWD).when(AuthServerConfig.class, "getLdapLoginPassword");
 
+        socketFactory = mock(LDAPJSSESecureSocketFactory.class);
+        PowerMockito.whenNew(LDAPJSSESecureSocketFactory.class)
+                .withNoArguments().thenReturn(socketFactory);
+
         ldapPool = mock(PoolManager.class);
         PowerMockito.whenNew(PoolManager.class).withArguments(LDAP_HOST,
                 LDAP_PORT, LDAP_MAX_CONN, LDAP_MAX_SHARED_CONN, null).thenReturn(ldapPool);
@@ -76,10 +85,35 @@ public class LdapConnectionManagerTest {
 
     @Test
     public void initLdapTest() throws Exception {
+        PowerMockito.doReturn(false)
+                .when(AuthServerConfig.class, "isSSLToLdapEnabled");
+
         LdapConnectionManager.initLdap();
 
+        PowerMockito.verifyNew(LDAPJSSESecureSocketFactory.class, times(0))
+                .withNoArguments();
         PowerMockito.verifyNew(PoolManager.class, times(1))
-                .withArguments(LDAP_HOST, LDAP_PORT, LDAP_MAX_CONN, LDAP_MAX_SHARED_CONN, null);
+                .withArguments(LDAP_HOST, LDAP_PORT, LDAP_MAX_CONN,
+                                       LDAP_MAX_SHARED_CONN, null);
+    }
+
+    @Test
+    public void initLdapTestSSL() throws Exception {
+        PowerMockito.doReturn(true)
+                .when(AuthServerConfig.class, "isSSLToLdapEnabled");
+        Path storePath = Paths.get("/tmp");
+        PowerMockito.doReturn(storePath)
+        .when(AuthServerConfig.class, "getKeyStorePath");
+
+        PowerMockito.doReturn(LDAP_SSL_PORT)
+        .when(AuthServerConfig.class, "getLdapSSLPort");
+
+        LdapConnectionManager.initLdap();
+        PowerMockito.verifyNew(LDAPJSSESecureSocketFactory.class, times(1))
+                .withNoArguments();
+        PowerMockito.verifyNew(PoolManager.class, times(1))
+                .withArguments(LDAP_HOST, LDAP_SSL_PORT, LDAP_MAX_CONN,
+                                   LDAP_MAX_SHARED_CONN, socketFactory);
     }
 
     @Test(expected = ServerInitialisationException.class)
