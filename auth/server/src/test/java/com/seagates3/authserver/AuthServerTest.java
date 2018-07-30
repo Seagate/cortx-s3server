@@ -39,6 +39,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Rule;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.rules.TestRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runner.RunWith;
@@ -86,7 +87,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 public class AuthServerTest {
 
     @Rule
-        public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
     private int bossGroupThreads = 1;
     private int workerGroupThreads = 2;
     private int eventExecutorThreads = 4;
@@ -233,18 +235,19 @@ public class AuthServerTest {
         verify(serverChannel, times(1)).closeFuture();
         verify(channelFuture, times(1)).sync();
     }
-/* TODO Below logic of mocking system exit doesn't work this needs to be fixed
+
     @Test
     public void mainTest_HttpAndHttpsDisabled() throws Exception {
         mainTestHelper();
         doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpEnabled");
         doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpsEnabled");
 
+        exit.expectSystemExitWithStatus(1);
         AuthServer.main(new String[]{});
         assertEquals("Both HTTP and HTTPS are disabled. At least one channel should be enabled.", systemOutRule.getLog());
 
     }
-*/
+
     @Test
     public void mainTest_HttpAndHttpsEnabled_FiEnabled() throws Exception {
         mainTestHelper();
@@ -339,7 +342,7 @@ public class AuthServerTest {
         verify(serverChannel, times(1)).closeFuture();
         verify(channelFuture, times(1)).sync();
     }
-/* TODO Below logic of mocking system exit doesn't work this needs to be fixed
+
     @Test
     public void mainTest_HttpAndHttpsDisabled_FiEnabled() throws Exception {
         mainTestHelper();
@@ -347,11 +350,12 @@ public class AuthServerTest {
         doReturn(Boolean.FALSE).when(AuthServerConfig.class, "isHttpsEnabled");
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
 
+        exit.expectSystemExitWithStatus(1);
         AuthServer.main(new String[]{});
         assertEquals("Both HTTP and HTTPS are disabled. At least one channel should be enabled.", systemOutRule.getLog()); 
 
     }
-*/
+
     private  void mainTestHelper() throws Exception {
         spy(AuthServer.class);
 
