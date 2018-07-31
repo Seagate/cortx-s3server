@@ -366,7 +366,9 @@ int main(int argc, char **argv) {
       new S3Router(new S3APIHandlerFactory(), new S3UriFactory());
 
   // So we can support queries like s3.com/bucketname?location or ?acl
-  evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS);
+  // So we can support empty queries (for s3fs) like s3.com/bucketname?prefix=
+  evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS |
+                                  EVHTP_PARSE_QUERY_FLAG_ALLOW_EMPTY_VALS);
 
   // Main request processing (processing headers & body) is done in hooks
   evhtp_set_post_accept_cb(htp, set_s3_connection_handlers, router);
