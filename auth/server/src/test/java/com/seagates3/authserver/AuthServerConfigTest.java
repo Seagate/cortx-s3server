@@ -27,7 +27,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.security.GeneralSecurityException;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
@@ -82,8 +82,6 @@ public class AuthServerConfigTest {
 
         assertEquals("cn=admin,dc=seagate,dc=com", AuthServerConfig.getLdapLoginDN());
 
-        assertEquals("ldapadmin", AuthServerConfig.getLdapLoginPassword());
-
         assertEquals("https://console.s3.seagate.com:9292/sso", AuthServerConfig.getConsoleURL());
 
         assertNull(AuthServerConfig.getLogConfigFile());
@@ -111,6 +109,13 @@ public class AuthServerConfigTest {
         assertTrue(keyStorePath.toString().equals(
                         AuthServerConfig.getKeyStorePath().toString()));
         assertTrue(AuthServerConfig.isEnableHttpsToS3());
+    }
+
+    @Test
+    public void loadCredentialsTest() throws GeneralSecurityException, Exception {
+
+        AuthServerConfig.loadCredentials();
+        assertEquals("ldapadmin", AuthServerConfig.getLdapLoginPassword());
     }
 
     @Test

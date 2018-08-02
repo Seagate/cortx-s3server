@@ -68,9 +68,9 @@ public class AuthServerConfig {
      * Initialize default endpoint and s3 endpoints etc.
      *
      * @param authServerConfig Server configuration parameters.
-     * @throws GeneralSecurityException
+     * @throws Exception
      */
-    public static void init(Properties authServerConfig) throws GeneralSecurityException, Exception {
+    public static void init(Properties authServerConfig) throws Exception {
         AuthServerConfig.authServerConfig = authServerConfig;
 
         setSamlMetadataFile(authServerConfig.getProperty(
@@ -78,6 +78,16 @@ public class AuthServerConfig {
         String jvm = ManagementFactory.getRuntimeMXBean().getName();
         AuthServerConfig.authServerConfig.put("pid", jvm.substring(0, jvm.indexOf("@")));
 
+    }
+    /**
+     * Initialize Ldap-Password
+     *
+     * @param authServerConfig Server configuration parameters.
+     * @throws GeneralSecurityException
+     */
+    public static void loadCredentials() throws GeneralSecurityException, Exception {
+
+        Properties authServerConfig = AuthServerConfig.authServerConfig;
         String encryptedPasswd = authServerConfig.getProperty("ldapLoginPW");
         Path authProperties = getKeyStorePath();
         PrivateKey privateKey = JKSUtil.getPrivateKeyFromJKS(

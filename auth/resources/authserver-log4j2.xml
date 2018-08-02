@@ -13,12 +13,21 @@
         </Console>
 
         <RollingFile name="ROLLINGFILE" fileName="${baseDir}/app.log"
-                     filePattern="${baseDir}/$${date:yyyy-MM}/app-%d{yyyy-MM-dd}.log.gz">
+                     filePattern="${baseDir}/$${date:yyyy-MM-dd}/app-%d{yyyy-MM-dd-HH}.log.gz">
             <PatternLayout pattern="%d %p %C{1.} [%t] %m%n"/>
             <Policies>
-                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
             </Policies>
-            <DefaultRolloverStrategy max="20"/>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${baseDir}" maxDepth="2">
+                  <IfFileName glob="*/app-*.log.gz">
+                      <IfAny>
+                        <IfAccumulatedFileSize exceeds="20 MB" />
+                        <IfAccumulatedFileCount exceeds="20" />
+                      </IfAny>
+                  </IfFileName>
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
 
         <Socket name="RFC5424" host="localhost" port="514" protocol="UDP">

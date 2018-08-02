@@ -142,6 +142,7 @@ public class AuthServerTest {
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
         verifyPrivate(AuthServer.class).invoke("logInit");
+        AuthServerConfig.loadCredentials();
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
         verify(serverChannel).closeFuture();
@@ -171,6 +172,7 @@ public class AuthServerTest {
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
         verifyPrivate(AuthServer.class).invoke("logInit");
+        AuthServerConfig.loadCredentials();
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
         verify(serverChannel, times(2)).closeFuture();
@@ -200,6 +202,7 @@ public class AuthServerTest {
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
         verifyPrivate(AuthServer.class).invoke("logInit");
+        AuthServerConfig.loadCredentials();
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
         verify(serverChannel, times(1)).closeFuture();
@@ -230,6 +233,7 @@ public class AuthServerTest {
         S3Perf.init();
 
         verifyPrivate(AuthServer.class).invoke("logInit");
+        AuthServerConfig.loadCredentials();
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
         verify(serverChannel, times(1)).closeFuture();
@@ -273,6 +277,7 @@ public class AuthServerTest {
         S3Perf.init();
 
         verifyPrivate(AuthServer.class).invoke("logInit");
+        AuthServerConfig.loadCredentials();
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
         verify(serverChannel, times(2)).closeFuture();
@@ -305,6 +310,7 @@ public class AuthServerTest {
         S3Perf.init();
 
         verifyPrivate(AuthServer.class).invoke("logInit");
+        AuthServerConfig.loadCredentials();
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
         verify(serverChannel, times(1)).closeFuture();
@@ -337,6 +343,7 @@ public class AuthServerTest {
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
 
         verifyPrivate(AuthServer.class).invoke("logInit");
+        AuthServerConfig.loadCredentials();
         verifyPrivate(AuthServer.class).invoke("attachShutDownHook");
 
         verify(serverChannel, times(1)).closeFuture();
