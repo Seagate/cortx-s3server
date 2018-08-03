@@ -403,6 +403,105 @@ public class AWSV4RequestHelper {
     }
 
     /**
+     * Return ClientRequestToken for the httpHeaders.
+     *
+     * @return
+     */
+    public static ClientRequestToken getFullHttpRequestClientTokenHEAD() {
+        String authHeader = "AWS4-HMAC-SHA256 Credential=AKIAJTYX36YCKQSAJT7Q/"
+                          + "20180719/us-east-1/s3/aws4_request,"
+                          + "SignedHeaders=connection;date;host;"
+                          + "x-amz-content-sha256;x-amz-date,"
+                          + "Signature="
+          + "aad057b69f74b68957f7d32c3c7c19b5a64d78749de4f5b328253629d9a55059";
+
+        Map<String, String> requestBody
+                = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        requestBody.put("Authorization", authHeader);
+        requestBody.put("connection", "Keep-Alive");
+        requestBody.put("date", "Thu, 19 Jul 2018 07:28:25 GMT");
+        requestBody.put("host", "seagatebucket.s3.seagate.com");
+        requestBody.put("Version", "2010-05-08");
+        requestBody.put("x-amz-date", "20180719T072825Z");
+        requestBody.put("x-amz-content-sha256",
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+
+        String signedHeaders = "connection;date;host;x-amz-content-sha256;"
+                             + "x-amz-date";
+
+        ClientRequestToken requestToken = new ClientRequestToken();
+        requestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
+        requestToken.setAccessKeyId("AKIAJTYX36YCKQSAJT7Q");
+        requestToken.setCredentialScope("20180719/us-east-1/s3/aws4_request");
+        requestToken.setDate("20180719");
+        requestToken.setHttpMethod("HEAD");
+        requestToken.setUri("/Full-0026/0000");
+
+        requestToken.setRegion("us-east-1");
+        requestToken.setService("s3");
+        requestToken.setSignature(
+         "aad057b69f74b68957f7d32c3c7c19b5a64d78749de4f5b328253629d9a55059");
+        requestToken.setSignedHeaders(signedHeaders);
+        requestToken.setSigningAlgorithm("AWS4-HMAC-SHA256");
+        requestToken.setRequestPayload("");
+        requestToken.setVirtualHost(Boolean.TRUE);
+        requestToken.setRequestHeaders(requestBody);
+        requestToken.setBucketName("seagatebucket");
+
+        return requestToken;
+    }
+
+    /**
+     * Return ClientRequestToken for the httpHeaders.
+     *
+     * @return
+     */
+    public static ClientRequestToken getInvalidHttpRequestClientToken() {
+        String authHeader = "AWS4-HMAC-SHA256 Credential="
+                 + "AKIAJTYX36YCKQSAJT7Q/20180719/us-east-1/s3/aws4_request,"
+         + "SignedHeaders=connection;date;"
+         + "host;x-amz-content-sha256;x-amz-date,"
+         + "Signature="
+         + "aad057b69f74b68957f7d32c3c7c19b5a64d78749de4f5b328253629d9a55059";
+
+        Map<String, String> requestBody
+                = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        requestBody.put("Authorization", authHeader);
+  //    Not adding connection header
+  //    requestBody.put("connection", "Keep-Alive");
+        requestBody.put("date", "Thu, 19 Jul 2018 07:28:25 GMT");
+        requestBody.put("host", "seagatebucket.s3.seagate.com");
+        requestBody.put("Version", "2010-05-08");
+        requestBody.put("x-amz-date", "20180719T072825Z");
+        requestBody.put("x-amz-content-sha256",
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+
+        String signedHeaders = "connection;date;host;"
+                             + "x-amz-content-sha256;x-amz-date";
+
+        ClientRequestToken requestToken = new ClientRequestToken();
+        requestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
+        requestToken.setAccessKeyId("AKIAJTYX36YCKQSAJT7Q");
+        requestToken.setCredentialScope("20180719/us-east-1/s3/aws4_request");
+        requestToken.setDate("20180719");
+        requestToken.setHttpMethod("HEAD");
+        requestToken.setUri("/Full-0026/0000");
+
+        requestToken.setRegion("us-east-1");
+        requestToken.setService("s3");
+        requestToken.setSignature(
+          "aad057b69f74b68957f7d32c3c7c19b5a64d78749de4f5b328253629d9a55059");
+        requestToken.setSignedHeaders(signedHeaders);
+        requestToken.setSigningAlgorithm("AWS4-HMAC-SHA256");
+        requestToken.setRequestPayload("");
+        requestToken.setVirtualHost(Boolean.TRUE);
+        requestToken.setRequestHeaders(requestBody);
+        requestToken.setBucketName("seagatebucket");
+
+        return requestToken;
+    }
+
+    /**
      * Return the requestor object.
      *
      * @return
@@ -412,6 +511,20 @@ public class AWSV4RequestHelper {
         AccessKey accessKey = new AccessKey();
         accessKey.setId(ACCESS_KEY_ID);
         accessKey.setSecretKey(SECRET_KEY);
+
+        requestor.setAccessKey(accessKey);
+        return requestor;
+    }
+    /**
+     * Return the requestor object.
+     *
+     * @return
+     */
+    public static Requestor getRequestorMock(String aKey, String sKey) {
+        Requestor requestor = new Requestor();
+        AccessKey accessKey = new AccessKey();
+        accessKey.setId(aKey);
+        accessKey.setSecretKey(sKey);
 
         requestor.setAccessKey(accessKey);
         return requestor;

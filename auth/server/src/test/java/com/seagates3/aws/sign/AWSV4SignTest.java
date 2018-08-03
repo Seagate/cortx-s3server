@@ -20,6 +20,7 @@ package com.seagates3.aws.sign;
 
 import com.seagates3.authentication.AWSV4Sign;
 import com.seagates3.aws.AWSV4RequestHelper;
+import com.seagates3.exception.BadRequestException;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import org.junit.Assert;
@@ -45,8 +46,13 @@ public class AWSV4SignTest {
         ClientRequestToken requestToken
                 = AWSV4RequestHelper.getChunkedSeedRequestClientToken();
 
-        Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
-                Boolean.TRUE);
+        try {
+                Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
+                   Boolean.TRUE);
+        } catch (BadRequestException e) {
+            e.printStackTrace();
+            Assert.fail("This Shouldn't have thrown exception");
+        }
 
     }
 
@@ -57,8 +63,13 @@ public class AWSV4SignTest {
 
         requestToken.setHttpMethod("GET");
 
-        Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
-                Boolean.FALSE);
+        try {
+            Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
+               Boolean.FALSE);
+        } catch (BadRequestException e) {
+            e.printStackTrace();
+            Assert.fail("This Shouldn't have thrown exception");
+        }
 
     }
 
@@ -67,8 +78,13 @@ public class AWSV4SignTest {
         ClientRequestToken requestToken
                 = AWSV4RequestHelper.getChunkedRequestClientToken();
 
-        Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
-                Boolean.TRUE);
+        try {
+            Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
+               Boolean.TRUE);
+        } catch (BadRequestException e) {
+            e.printStackTrace();
+            Assert.fail("This Shouldn't have thrown exception");
+        }
 
     }
 
@@ -77,8 +93,13 @@ public class AWSV4SignTest {
         ClientRequestToken requestToken
                 = AWSV4RequestHelper.getRequestClientTokenPathStyle();
 
-        Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
-                Boolean.TRUE);
+        try {
+            Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
+               Boolean.TRUE);
+        } catch (BadRequestException e) {
+            e.printStackTrace();
+            Assert.fail("This Shouldn't have thrown exception");
+        }
 
     }
 
@@ -87,9 +108,49 @@ public class AWSV4SignTest {
         ClientRequestToken requestToken
                 = AWSV4RequestHelper.getRequestClientTokenVirtualHostStyle();
 
-        Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
-                Boolean.TRUE);
+        try {
+            Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
+                    Boolean.TRUE);
+        } catch (BadRequestException e) {
+            e.printStackTrace();
+            Assert.fail("This Shouldn't have thrown exception");
+        }
 
+    }
+
+    @Test
+    public void Authenticate_RequestVirtualHostStyleHead_True() {
+        ClientRequestToken requestToken
+                = AWSV4RequestHelper.getFullHttpRequestClientTokenHEAD();
+
+        Requestor requestor1 =
+                AWSV4RequestHelper.getRequestorMock("AKIAJTYX36YCKQSAJT7Q",
+                                "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        try {
+            Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor1),
+                    Boolean.TRUE);
+        } catch (BadRequestException e) {
+            e.printStackTrace();
+            Assert.fail("This Shouldn't have thrown exception");
+        }
+
+    }
+
+    @Test
+    public void Authenticate_RequestVirtualHostStyle_InvalidRequest() {
+        ClientRequestToken requestToken
+                = AWSV4RequestHelper.getInvalidHttpRequestClientToken();
+
+        Requestor requestor1 =
+                AWSV4RequestHelper.getRequestorMock("AKIAJTYX36YCKQSAJT7Q",
+                                "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        try {
+            awsv4Sign.authenticate(requestToken, requestor1);
+            Assert.fail("Didn't throw BadRequest Exception");
+        } catch (BadRequestException e) {
+            Assert.assertTrue(e.getMessage().contains("Signed header :"
+                    + "connection is not found in Request header list"));
+        }
     }
 
 }

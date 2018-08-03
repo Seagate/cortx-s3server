@@ -18,7 +18,9 @@
  */
 package com.seagates3.authentication;
 
+import com.seagates3.exception.BadRequestException;
 import com.seagates3.model.Requestor;
+
 import com.seagates3.util.BinaryUtil;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
@@ -46,10 +48,11 @@ public class AWSV4Sign implements AWSSign {
      * @param clientRequestToken
      * @param requestor
      * @return True if authenticated.
+     * @throws BadRequestException
      */
     @Override
     public Boolean authenticate(ClientRequestToken clientRequestToken,
-            Requestor requestor) {
+            Requestor requestor) throws BadRequestException {
         Map<String, String> requestHeaders
                 = clientRequestToken.getRequestHeaders();
 
@@ -76,9 +79,10 @@ public class AWSV4Sign implements AWSSign {
      * @param clientRequestToken
      * @param requestor
      * @return
+     * @throws BadRequestException
      */
     private Boolean verifySignature(
-            ClientRequestToken clientRequestToken, Requestor requestor) {
+            ClientRequestToken clientRequestToken, Requestor requestor) throws BadRequestException {
         String canonicalRequest, stringToSign, signature;
         byte[] signingKey;
 
@@ -105,9 +109,10 @@ public class AWSV4Sign implements AWSSign {
      * @param clientRequestToken
      * @param requestor
      * @return
+     * @throws BadRequestException
      */
     private Boolean verifyChunkedSeedSignature(
-            ClientRequestToken clientRequestToken, Requestor requestor) {
+            ClientRequestToken clientRequestToken, Requestor requestor) throws BadRequestException {
         String canonicalRequest, stringToSign, signature;
         byte[] signingKey;
 
@@ -165,8 +170,9 @@ public class AWSV4Sign implements AWSSign {
      * HTTPRequestMethod + '\n' + CanonicalURI + '\n' + CanonicalQueryString +
      * '\n' + CanonicalHeaders + '\n' + SignedHeaders + '\n' +
      * HexEncode(Hash(RequestPayload))
+     * @throws BadRequestException
      */
-    private String createCanonicalRequest(ClientRequestToken clientRequestToken) {
+    private String createCanonicalRequest(ClientRequestToken clientRequestToken) throws BadRequestException {
         String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
                 hashedPayload, canonicalRequest;
 
@@ -196,9 +202,10 @@ public class AWSV4Sign implements AWSSign {
      *
      * @param clientRequestToken
      * @return
+     * @throws BadRequestException
      */
     private String createCanonicalRequestChunkedSeed(
-            ClientRequestToken clientRequestToken) {
+            ClientRequestToken clientRequestToken) throws BadRequestException {
         String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
                 canonicalRequest;
 
@@ -387,16 +394,24 @@ public class AWSV4Sign implements AWSSign {
      *
      * CanonicalHeadersEntry = Lowercase(HeaderName) + ':' +
      * Trimall(HeaderValue) + '\n'
+     * @throws BadRequestException
      */
-    private String createCanonicalHeader(ClientRequestToken clientRequestToken) {
+    private String createCanonicalHeader(ClientRequestToken clientRequestToken) throws BadRequestException {
         String headerValue;
         String canonicalHeader = "";
         Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
 
         for (String s : clientRequestToken.getSignedHeaders().split(";")) {
-            if (s.equalsIgnoreCase("content-type")) {
-                headerValue = requestHeaders.get(s).trim();
+            headerValue = requestHeaders.get(s);
+            if (headerValue == null) {
+                String errMsg = "Signed header :" + s +
+                                " is not found in Request header list";
+                LOGGER.error(errMsg);
 
+                throw new BadRequestException(errMsg);
+            }
+            headerValue = headerValue.trim();
+            if (s.equalsIgnoreCase("content-type")) {
                 /*
                  * Strangely, the aws .net sdk doesn't send the content type.
                  * Hence the content type is hard coded.
@@ -408,7 +423,6 @@ public class AWSV4Sign implements AWSSign {
                     canonicalHeader += String.format("%s:%s\n", s, headerValue);
                 }
             } else {
-                headerValue = requestHeaders.get(s).trim();
                 canonicalHeader += String.format("%s:%s\n", s, headerValue);
             }
         }

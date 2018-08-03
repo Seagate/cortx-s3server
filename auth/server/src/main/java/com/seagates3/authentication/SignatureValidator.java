@@ -18,6 +18,7 @@
  */
 package com.seagates3.authentication;
 
+import com.seagates3.exception.BadRequestException;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
@@ -40,8 +41,13 @@ public class SignatureValidator {
 
         AWSSign awsSign = getSigner(clientRequestToken);
 
-        Boolean isRequestorAuthenticated = awsSign.authenticate(
-                clientRequestToken, requestor);
+        Boolean isRequestorAuthenticated;
+        try {
+            isRequestorAuthenticated = awsSign.authenticate(
+                                         clientRequestToken, requestor);
+        } catch (BadRequestException e) {
+            return responseGenerator.badRequest();
+        }
         if (!isRequestorAuthenticated) {
             LOGGER.debug("Requestor is not authenticated.");
             return responseGenerator.signatureDoesNotMatch();
