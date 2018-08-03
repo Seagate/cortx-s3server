@@ -240,6 +240,23 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthErrorResponse) {
       p_authopctx->get_error_message().c_str());
 }
 
+TEST_F(S3AuthClientOpContextTest, CanParseAuthInvalidTokenErrorResponse) {
+  std::string sample_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" "
+      "standalone=\"no\"?><ErrorResponse "
+      "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
+      "\"><Error><Code>InvalidToken</Code><Message>The provided "
+      "token is malformed or otherwise "
+      "invalid.</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+
+  p_authopctx->set_auth_response_xml(sample_response.c_str(), false);
+
+  EXPECT_FALSE(p_authopctx->is_auth_successful);
+  EXPECT_STREQ("InvalidToken", p_authopctx->get_error_code().c_str());
+  EXPECT_STREQ("The provided token is malformed or otherwise invalid.",
+               p_authopctx->get_error_message().c_str());
+}
+
 TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationErrorResponse) {
   std::string sample_response =
       "<?xml version=\"1.0\" encoding=\"UTF-8\" "

@@ -163,7 +163,6 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
   s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
          "Response data received from Auth service = [[%s]]\n\n\n",
          auth_response_body);
-
   if (auth_resp_status == S3HttpSuccess200) {
     s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
            "Authentication successful\n");
@@ -175,6 +174,12 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
            "Authentication failed\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Authentication failed");
+    context->set_auth_response_xml(auth_response_body, false);
+  } else if (auth_resp_status == S3HttpFailed400) {
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Authentication failed\n");
+    context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                               "Authentication failed:Bad Request");
     context->set_auth_response_xml(auth_response_body, false);
   } else {
     s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),

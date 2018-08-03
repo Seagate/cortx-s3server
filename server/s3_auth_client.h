@@ -186,6 +186,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   FRIEND_TEST(S3AuthClientOpContextTest,
               CanHandleParseErrorInAuthErrorResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanParseAuthErrorResponse);
+  FRIEND_TEST(S3AuthClientOpContextTest, CanParseAuthInvalidTokenErrorResponse);
   FRIEND_TEST(S3AuthClientOpContextTest, CanParseAuthorizationSuccessResponse);
   FRIEND_TEST(S3AuthClientOpContextTest,
               CanHandleParseErrorInAuthorizeSuccessResponse);
