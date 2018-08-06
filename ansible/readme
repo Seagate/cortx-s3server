@@ -32,10 +32,12 @@ Centos 74 VM image is available at
 4. Copy the downloaded folders from "files" to <your s3server code>/ansible/files/ directory
    Copy lustre rpms for Centos {7.5 or 7.4} to <your s3server code>/ansible/files/lustre/
 
-5. Update hosts file with IP address of your new VM,
-   here [s3devvm] is just a ansible group name and NOT dev vm hostname
+5. Update <s3 src>/ansible/hosts file with IP address of your new VM, If you plan to run ansible
+   within VM, use 127.0.0.1 for IP in <s3 src>/ansible/hosts file.
+   Note that [s3devvm] is just a ansible group name and NOT dev vm hostname.
 
-6. Run ansible to setup the dev vm using appropriate .yml file
+6. Run ansible to setup the dev vm using appropriate .yml file. If you want to run
+   with same VM, use option "--connection local" to below command.
    $ ansible-playbook -i hosts setup_s3dev_centos75.yml -v  -k
    # For Centos 74 use setup_s3dev_centos74.yml
    # For Centos 73 use setup_s3dev_centos73.yml
