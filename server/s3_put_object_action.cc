@@ -459,6 +459,12 @@ void S3PutObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+
+    if (get_s3_error_code() == "ServiceUnavailable" ||
+        get_s3_error_code() == "InternalError") {
+      request->set_out_header_value("Connection", "close");
+    }
+
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
@@ -473,6 +479,7 @@ void S3PutObjectAction::send_response_to_s3_client() {
     S3Error error("InternalError", request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
+    request->set_out_header_value("Connection", "close");
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
