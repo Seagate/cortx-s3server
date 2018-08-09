@@ -18,7 +18,7 @@
  */
 package com.seagates3.authentication;
 
-import com.seagates3.exception.BadRequestException;
+import com.seagates3.exception.InvalidTokenException;
 import com.seagates3.model.Requestor;
 
 import com.seagates3.util.BinaryUtil;
@@ -48,11 +48,11 @@ public class AWSV4Sign implements AWSSign {
      * @param clientRequestToken
      * @param requestor
      * @return True if authenticated.
-     * @throws BadRequestException
+     * @throws InvalidTokenException
      */
     @Override
     public Boolean authenticate(ClientRequestToken clientRequestToken,
-            Requestor requestor) throws BadRequestException {
+                   Requestor requestor) throws InvalidTokenException {
         Map<String, String> requestHeaders
                 = clientRequestToken.getRequestHeaders();
 
@@ -80,9 +80,10 @@ public class AWSV4Sign implements AWSSign {
      * @param requestor
      * @return
      * @throws BadRequestException
+     * @throws InvalidTokenException
      */
-    private Boolean verifySignature(
-            ClientRequestToken clientRequestToken, Requestor requestor) throws BadRequestException {
+    private Boolean verifySignature(ClientRequestToken clientRequestToken,
+                       Requestor requestor) throws InvalidTokenException {
         String canonicalRequest, stringToSign, signature;
         byte[] signingKey;
 
@@ -109,10 +110,11 @@ public class AWSV4Sign implements AWSSign {
      * @param clientRequestToken
      * @param requestor
      * @return
-     * @throws BadRequestException
+     * @throws InvalidTokenException
      */
     private Boolean verifyChunkedSeedSignature(
-            ClientRequestToken clientRequestToken, Requestor requestor) throws BadRequestException {
+            ClientRequestToken clientRequestToken, Requestor requestor)
+                                         throws InvalidTokenException {
         String canonicalRequest, stringToSign, signature;
         byte[] signingKey;
 
@@ -170,9 +172,11 @@ public class AWSV4Sign implements AWSSign {
      * HTTPRequestMethod + '\n' + CanonicalURI + '\n' + CanonicalQueryString +
      * '\n' + CanonicalHeaders + '\n' + SignedHeaders + '\n' +
      * HexEncode(Hash(RequestPayload))
-     * @throws BadRequestException
+      * @throws InvalidTokenException
      */
-    private String createCanonicalRequest(ClientRequestToken clientRequestToken) throws BadRequestException {
+    private String createCanonicalRequest(
+            ClientRequestToken clientRequestToken)
+                    throws InvalidTokenException {
         String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
                 hashedPayload, canonicalRequest;
 
@@ -202,10 +206,11 @@ public class AWSV4Sign implements AWSSign {
      *
      * @param clientRequestToken
      * @return
-     * @throws BadRequestException
+     * @throws InvalidTokenException
      */
     private String createCanonicalRequestChunkedSeed(
-            ClientRequestToken clientRequestToken) throws BadRequestException {
+            ClientRequestToken clientRequestToken)
+                        throws InvalidTokenException {
         String httpMethod, canonicalURI, canonicalQuery, canonicalHeader,
                 canonicalRequest;
 
@@ -394,9 +399,10 @@ public class AWSV4Sign implements AWSSign {
      *
      * CanonicalHeadersEntry = Lowercase(HeaderName) + ':' +
      * Trimall(HeaderValue) + '\n'
-     * @throws BadRequestException
+     * @throws InvalidTokenException
      */
-    private String createCanonicalHeader(ClientRequestToken clientRequestToken) throws BadRequestException {
+    private String createCanonicalHeader(ClientRequestToken clientRequestToken)
+                                                 throws InvalidTokenException {
         String headerValue;
         String canonicalHeader = "";
         Map<String, String> requestHeaders = clientRequestToken.getRequestHeaders();
@@ -408,7 +414,7 @@ public class AWSV4Sign implements AWSSign {
                                 " is not found in Request header list";
                 LOGGER.error(errMsg);
 
-                throw new BadRequestException(errMsg);
+                throw new InvalidTokenException(errMsg);
             }
             headerValue = headerValue.trim();
             if (s.equalsIgnoreCase("content-type")) {

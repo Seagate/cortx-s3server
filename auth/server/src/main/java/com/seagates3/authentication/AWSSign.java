@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.seagates3.exception.BadRequestException;
+import com.seagates3.exception.InvalidTokenException;
 import com.seagates3.model.Requestor;
 
 public interface AWSSign {
@@ -41,5 +41,5 @@ public interface AWSSign {
      * Authenticate the request using AWS algorithm.
      */
     public Boolean authenticate(ClientRequestToken clientRequestToken,
-                       Requestor requestor) throws BadRequestException;
+                       Requestor requestor) throws InvalidTokenException;
 }

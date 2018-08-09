@@ -34,6 +34,14 @@ public abstract class AbstractResponseGenerator {
                 "BadRequest", errorMessage);
     }
 
+    public ServerResponse invalidToken() {
+        String errorMessage = "The provided token is malformed or"
+                                           + " otherwise invalid.";
+
+        return formatResponse(HttpResponseStatus.BAD_REQUEST,
+                "InvalidToken", errorMessage);
+    }
+
     public ServerResponse deleteConflict() {
         String errorMessage = "The request was rejected because it attempted "
                 + "to delete a resource that has attached subordinate entities. "
