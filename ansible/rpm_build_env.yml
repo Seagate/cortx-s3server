@@ -1,15 +1,12 @@
 ---
 
-- import_playbook: openldap.yml
-
-- name: S3 dev vm setup (Centos 74)
+- name: S3 rpm build setup (Centos 75) (Assumes mero build env is set up)
+# Mero build env should be setup and mero and lustre rpms should be installed.
+# Clone mero and build using ./autogen.sh && ./configure && make rpms-notests
   hosts: s3devvm
   remote_user: root
   gather_facts: yes
   vars:
-    lustre_client_rpm: lustre-client-2.11.0-1.el7.centos.x86_64.rpm
-    lustre_client_devel_rpm: lustre-client-devel-2.11.0-1.el7.centos.x86_64.rpm
-    kmod_lustre_client_rpm: kmod-lustre-client-2.11.0-1.el7.centos.x86_64.rpm
     gmock_rpm: gmock-1.7.0-1.el7.centos.x86_64.rpm
     gmock_devel_rpm: gmock-devel-1.7.0-1.el7.centos.x86_64.rpm
     gtest_rpm: gtest-1.7.0-2.el7.centos.x86_64.rpm
@@ -22,21 +19,6 @@
     python34_botocore_rpm: python34-botocore-1.6.0-1.el7.centos.noarch.rpm
     python34_s3transfer_rpm: python34-s3transfer-0.1.10-1.el7.centos.noarch.rpm
     python34_boto3_rpm: python34-boto3-1.4.6-1.el7.centos.noarch.rpm
-    s3cmd_patched_rpm: s3cmd-1.6.1-1.el7.centos.noarch.rpm
-    ossperf_rpm: ossperf-3.0-1.x86_64.rpm
 
   tasks:
-    - name: Enable epel repo
-      yum: pkg={{item}} state=installed
-      with_items:
-        - epel-release
-
-    - import_tasks: common_build_env.yml
-    - import_tasks: common_runtime.yml
-    - import_tasks: common_dev_setup.yml
-
-  handlers:
-      - name: restart slapd
-        service:
-          name: slapd
-          state: restarted
+  - import_tasks: common_build_env.yml

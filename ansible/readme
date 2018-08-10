@@ -10,13 +10,12 @@ Add gpgcheck=0 to file /etc/yum.repos.d/epel-x86_64.repo
 Centos 75 VM image is available at
     http://jenkins.mero.colo.seagate.com/share/bigstorage/sage_releases/vmdk_images/sage-CentOS-7.5.x86_64-7.5.1-k3.10.0-862.vmdk
 
-Centos 74 VM image is available at
-    https://drive.google.com/open?id=1mTktNQI7HDp1-N02LLl4ul-DsqqUtR6D
+1. Install ansible on your laptop
+   - http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
+   Mac : http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#latest-releases-on-mac-osx
+   Update Mac OS maintenance release if you are facing any issues for 'pip install ansible'
 
-1. Install ansible on your laptop (macbook)
- - http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
- Mac : http://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#latest-releases-on-mac-osx
- Update Mac OS maintenance release if you are facing any issues for 'pip install ansible'
+   Centos: yum install -y ansible
 
 2. Create a VM using sage VM (centos 7.5 or earlier) and test ssh access
 
@@ -26,21 +25,17 @@ Centos 74 VM image is available at
         https://drive.google.com/open?id=1QMPLcHjOT4q8xwDrCxZzsUPHPgMizu3R
    For Centos 75, additionally download lustre rpms from
          https://drive.google.com/open?id=1SZxCwoOUMRm78aQrazKTy8lz-XZIIHbE
-   For Centos 74, additionally download lustre rpms from
-        https://drive.google.com/open?id=1mTktNQI7HDp1-N02LLl4ul-DsqqUtR6D
 
 4. Copy the downloaded folders from "files" to <your s3server code>/ansible/files/ directory
-   Copy lustre rpms for Centos {7.5 or 7.4} to <your s3server code>/ansible/files/lustre/
+   Copy lustre rpms for Centos 7.5 to <your s3server code>/ansible/files/lustre/
 
-5. Update <s3 src>/ansible/hosts file with IP address of your new VM, If you plan to run ansible
-   within VM, use 127.0.0.1 for IP in <s3 src>/ansible/hosts file.
-   Note that [s3devvm] is just a ansible group name and NOT dev vm hostname.
+5. Update <s3 src>/ansible/hosts file with IP address of your new VM.
+   If you plan to run ansible within VM, use 127.0.0.1 for IP in <s3 src>/ansible/hosts file.
+   Note: that [s3devvm] is just a ansible group name and NOT dev vm hostname.
 
 6. Run ansible to setup the dev vm using appropriate .yml file. If you want to run
    with same VM, use option "--connection local" to below command.
    $ ansible-playbook -i hosts setup_s3dev_centos75.yml -v  -k
-   # For Centos 74 use setup_s3dev_centos74.yml
-   # For Centos 73 use setup_s3dev_centos73.yml
 
    It will prompt for ssh password and ldap password.
    For ldap password on dev vm, use "seagate" for rootDN and "ldapadmin" for IAM admin. These
@@ -55,10 +50,10 @@ Centos 74 VM image is available at
 
 1. For ansible install, see above steps.
 
-2. Update hosts file with IP address of your openldap node in section [s3ldapnode]
+2. Update <s3 src>/ansible/hosts file with IP address of your openldap node in section [s3ldapnode]
 
 3. Run ansible to setup the openldap, enter the openldap password you want to setup.
-   # ansible-playbook -i hosts s3_openldap.yml -v  -k
+   # ansible-playbook -i hosts openldap.yml -v  -k
    It will prompt for ssh password, followed by new openldap password.
    For ldap password on dev vm, use "seagate" for rootDN and "ldapadmin" for IAM admin
    Your openldap should be ready after successful run
@@ -70,10 +65,10 @@ Centos 74 VM image is available at
 
 1. For ansible install, see above steps.
 
-2. Update hosts file with IP address of your s3 node in section [s3releasenode]
+2. Update <s3 src>/ansible/hosts file with IP address of your s3 node in section [s3releasenode]
 
 3. Run ansible to setup the s3, enter the openldap password you want to setup.
-   # ansible-playbook -i hosts s3_release_centos74.yml -v  -k
+   # ansible-playbook -i hosts setup_release_node.yml -v  -k
    It will prompt for ssh password, followed by new openldap password.
    For ldap password for testing, use "seagate" for rootDN and "ldapadmin" for IAM admin
    Your s3 should be ready after successful run

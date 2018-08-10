@@ -1,0 +1,89 @@
+---
+
+# Sets up the S3 development environment.
+# Prerequisites: common_build_env.yml
+
+- name: Copy lustre rpms to configured node
+  copy:
+    src: files/lustre
+    dest: /tmp/s3devvmsetup
+
+- name: Install lustre rpms
+  yum: pkg={{item}} state=present
+  with_items:
+    - /tmp/s3devvmsetup/lustre/{{ lustre_client_rpm }}
+    - /tmp/s3devvmsetup/lustre/{{ lustre_client_devel_rpm }}
+    - /tmp/s3devvmsetup/lustre/{{ kmod_lustre_client_rpm }}
+
+- name: Update to latest selinux-policy (required by latest openldap)
+  yum: pkg={{item}} state=latest
+  with_items:
+    - selinux-policy
+
+- name: Install S3 development runtime dependencies
+  yum: pkg={{item}} state=installed
+  with_items:
+    - openldap-servers
+    - openldap-clients
+
+- name: Add mappings to /etc/hosts (for S3 system tests)
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      {{ item.ip }} {{ item.name }}
+    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
+  with_items:
+    - { name: seagatebucket.s3.seagate.com, ip: 127.0.0.1 }
+    - { name: seagate-bucket.s3.seagate.com, ip: 127.0.0.1 }
+    - { name: seagatebucket123.s3.seagate.com, ip: 127.0.0.1 }
+    - { name: seagate.bucket.s3.seagate.com, ip: 127.0.0.1 }
+    - { name: s3-us-west-2.seagate.com, ip: 127.0.0.1 }
+    - { name: seagatebucket.s3-us-west-2.seagate.com, ip: 127.0.0.1 }
+    - { name: iam.seagate.com, ip: 127.0.0.1 }
+    - { name: sts.seagate.com, ip: 127.0.0.1 }
+    - { name: s3.seagate.com, ip: 127.0.0.1 }
+
+- name: Install patched s3cmd
+  yum:
+    name: /tmp/s3-deps/{{ s3cmd_patched_rpm }}
+    state: present
+
+- name: Install tools for ST
+  yum: pkg={{item}} state=installed
+  with_items:
+    - /tmp/s3-deps/{{ ossperf_rpm }}
+    - parallel
+    - bc
+    - coreutils
+
+- name: Configure lnet
+  template:
+    src: templates/lnet.conf
+    dest: /etc/modprobe.d/lnet.conf
+
+- name: Add the lnet module
+  modprobe:
+    name: lnet
+    state: present
+
+- name: Enable modprobe lnet on reboot
+  lineinfile:
+    path: /etc/modules-load.d/lnet.conf
+    line: 'lnet'
+    create: yes
+
+- name: Configure lnet
+  command: lctl net up
+
+- name: Enable lnet up on reboot
+  lineinfile:
+    path: /etc/profile
+    line: 'lctl net up'
+
+- name: Test lnet
+  command: lctl list_nids
+
+- name: Install patched s3cmd
+  yum:
+    name: /tmp/s3-deps/{{ s3cmd_patched_rpm }}
+    state: present

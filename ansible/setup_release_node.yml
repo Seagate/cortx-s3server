@@ -1,0 +1,19 @@
+---
+
+- import_playbook: openldap.yml
+
+- name: S3 release node setup (Centos 74)
+  hosts: s3releasenode
+  remote_user: root
+  gather_facts: yes
+  vars:
+    s3cmd_patched_rpm: s3cmd-1.6.1-1.el7.centos.noarch.rpm
+
+  tasks:
+  - import_tasks: common_runtime.yml
+
+  handlers:
+      - name: restart slapd
+        service:
+          name: slapd
+          state: restarted

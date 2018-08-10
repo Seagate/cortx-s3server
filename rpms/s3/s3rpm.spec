@@ -4,29 +4,15 @@
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
 
-# kernel version.
-%define raw_kernel_ver %(
-                          if test -n "$kernel_src"; then
-                              basename $(readlink -f "$kernel_src")
-                          else
-                              uname -r
-                          fi
-                        )
-
-%define kernel_ver %( echo %{raw_kernel_ver} | tr - _ | sed -e 's/\.debug$//' -e 's/\.%{_arch}$//' -e 's/\.%{dist}$//
-' -e 's/\.el7$//'  )
-
-%define s3_git_revision git8ee7e61
-
 Name:       s3server
-Version:    1.0.0
-Release:    %{build_num}_%{s3_git_revision}_%{kernel_ver}%{?dist}
+Version:    %{_s3_version}
+Release:    %{build_num}_%{_s3_git_ver}_%{?dist:el7}
 Summary:    s3server for Mero
 
 Group:      Development/Tools
 License:    Seagate
 URL:        http://gerrit.mero.colo.seagate.com:8080/s3server
-Source:     %{name}-%{version}-%{s3_git_revision}.tar.gz
+Source:     %{name}-%{version}-%{_s3_git_ver}.tar.gz
 
 BuildRequires: automake
 BuildRequires: bazel
@@ -60,7 +46,7 @@ Requires: java-1.8.0-openjdk-headless
 S3 server provides S3 REST API interface support for Mero object storage.
 
 %prep
-%setup -n %{name}-%{version}-%{s3_git_revision}
+%setup -n %{name}-%{version}-%{_s3_git_ver}
 
 %build
 ./rebuildall.sh --no-check-code --no-install

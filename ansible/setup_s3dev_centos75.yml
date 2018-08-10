@@ -1,6 +1,6 @@
 ---
 
-- import_playbook: s3_openldap.yml
+# - import_playbook: openldap.yml
 
 - name: S3 dev vm setup (Centos 75)
   hosts: s3devvm
@@ -26,15 +26,16 @@
     ossperf_rpm: ossperf-3.0-1.x86_64.rpm
 
   tasks:
-  - import_tasks: s3_common_dev.yml
-  - import_tasks: s3_common.yml
+    - name: Enable epel repo
+      yum: pkg={{item}} state=installed
+      with_items:
+        - epel-release
+
+    - import_tasks: common_build_env.yml
+    - import_tasks: common_runtime.yml
+    - import_tasks: common_dev_setup.yml
 
   handlers:
-      - name: restart nginx
-        service:
-          name: nginx
-          state: restarted
-
       - name: restart slapd
         service:
           name: slapd

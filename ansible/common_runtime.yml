@@ -1,0 +1,54 @@
+---
+
+- name: Install S3 dependencies
+  yum: pkg={{item}} state=installed
+  with_items:
+    - java-1.8.0-openjdk
+
+- name: Update to latest selinux-policy (required by latest openldap)
+  yum: pkg={{item}} state=latest
+  with_items:
+    - selinux-policy
+
+- name: Install S3 runtime dependencies
+  yum: pkg={{item}} state=installed
+  with_items:
+    - openssl
+    - openssl-libs
+    - libxml2
+    - libyaml
+    - yaml-cpp
+    - gflags
+    - glog
+
+- name: Install nginx
+  yum:
+    name: nginx
+    state: present
+
+- name: Setup nginx config
+  copy:
+    src: ./files/nginx/nginx.conf.seagate
+    dest: /etc/nginx/nginx.conf
+
+- name: Install haproxy
+  yum:
+    name: haproxy
+    state: present
+
+- name: Setup haproxy config
+  copy:
+    src: ./files/haproxy/haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg
+
+- name: Enable http port in selinux
+  command: setsebool httpd_can_network_connect on -P
+  when: ansible_selinux.status == "enabled"
+
+- name: Install patched s3cmd
+  yum:
+    name: /tmp/s3-deps/{{ s3cmd_patched_rpm }}
+    state: present
+
+- name: Create working directory for S3 server.
+  file: path=/var/seagate/s3 state=directory
