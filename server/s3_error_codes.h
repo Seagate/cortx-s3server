@@ -27,6 +27,7 @@
 #define S3HttpSuccess200 EVHTP_RES_OK
 #define S3HttpSuccess201 EVHTP_RES_CREATED
 #define S3HttpSuccess204 EVHTP_RES_NOCONTENT
+#define S3HttpSuccess206 EVHTP_RES_PARTIAL
 #define S3HttpFailed400 EVHTP_RES_400
 #define S3HttpFailed401 EVHTP_RES_UNAUTH
 #define S3HttpFailed404 EVHTP_RES_NOTFOUND

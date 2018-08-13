@@ -199,6 +199,10 @@ class S3ClovisReader {
   virtual size_t get_first_block(char** data);
   virtual size_t get_next_block(char** data);
 
+  virtual size_t get_last_index() { return last_index; }
+
+  virtual void set_last_index(size_t index) { last_index = index; }
+
   // For Testing purpose
   FRIEND_TEST(S3ClovisReaderTest, Constructor);
   FRIEND_TEST(S3ClovisReaderTest, OpenObjectDataTest);

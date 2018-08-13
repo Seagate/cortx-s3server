@@ -40,12 +40,21 @@ class S3GetObjectAction : public S3Action {
   size_t total_blocks_in_object;
   size_t blocks_already_read;
   size_t data_sent_to_client;
+  size_t content_length;
+
+  size_t first_byte_offset_to_read;
+  size_t last_byte_offset_to_read;
+  size_t total_blocks_to_read;
 
   bool read_object_reply_started;
 
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
+
+  size_t get_requested_content_length() {
+    return last_byte_offset_to_read - first_byte_offset_to_read + 1;
+  }
 
  public:
   S3GetObjectAction(
@@ -58,6 +67,11 @@ class S3GetObjectAction : public S3Action {
 
   void fetch_bucket_info();
   void fetch_object_info();
+  void validate_object_info();
+  void check_full_or_range_object_read();
+  void set_total_blocks_to_read_from_object();
+  bool validate_range_header_and_set_read_options(
+      const std::string& range_value);
   void read_object();
 
   void read_object_data();
@@ -74,14 +88,15 @@ class S3GetObjectAction : public S3Action {
   FRIEND_TEST(S3GetObjectActionTest,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3GetObjectActionTest,
-              ReadObjectWhenMissingObjectReportNoSuckKey);
+              ValidateObjectWhenMissingObjectReportNoSuckKey);
   FRIEND_TEST(S3GetObjectActionTest,
-              ReadObjectWhenObjInfoFetchFailedReportError);
+              ValidateObjectWhenObjInfoFetchFailedReportError);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse);
-  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeZero);
+  FRIEND_TEST(S3GetObjectActionTest, ValidateObjectOfSizeZero);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfGivenRange);
   FRIEND_TEST(S3GetObjectActionTest,
               SendResponseWhenShuttingDownAndResponseStarted);
   FRIEND_TEST(S3GetObjectActionTest,
@@ -92,6 +107,51 @@ class S3GetObjectAction : public S3Action {
   FRIEND_TEST(S3GetObjectActionTest, SendSuccessResponseForZeroSizeObject);
   FRIEND_TEST(S3GetObjectActionTest, SendSuccessResponseForNonZeroSizeObject);
   FRIEND_TEST(S3GetObjectActionTest, SendErrorResponseForErrorReadingObject);
+  FRIEND_TEST(S3GetObjectActionTest, CheckFullOrRangeObjectReadWithEmptyRange);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadWithValidRangeFirst500ForContentLength8000);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadWithValidRangewithspacesForContentLength8000_1);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadWithValidRangewithspacesForContentLength8000_2);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadWithValidRangeLast500ForContentLength8000);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadWithValidRangeLast500WithSpaceForContentLength8000);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadLastByteForContentLength8000);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadLastBytewithIncludeSpaceForContentLength8000);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadFirstByteForContentLength8000);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadWithRangeInMultipleBlocksForContentLength8000);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadFromGivenOffsetForContentLength8000_1);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadFromGivenOffsetForContentLength8000_2);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_1);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_2);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_3);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_4);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_5);
+  FRIEND_TEST(S3GetObjectActionTest,
+              CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_6);
+  FRIEND_TEST(
+      S3GetObjectActionTest,
+      CheckFullOrRangeObjectReadWithUnsupportMultiRangeForContentLength8000);
 };
 
 #endif

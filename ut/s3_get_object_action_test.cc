@@ -200,7 +200,7 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
   EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
 
-TEST_F(S3GetObjectActionTest, ReadObjectWhenMissingObjectReportNoSuckKey) {
+TEST_F(S3GetObjectActionTest, ValidateObjectWhenMissingObjectReportNoSuckKey) {
   CREATE_OBJECT_METADATA;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
@@ -208,14 +208,14 @@ TEST_F(S3GetObjectActionTest, ReadObjectWhenMissingObjectReportNoSuckKey) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
 
-  action_under_test->read_object();
+  action_under_test->validate_object_info();
 
   EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
 
-TEST_F(S3GetObjectActionTest, ReadObjectWhenObjInfoFetchFailedReportError) {
+TEST_F(S3GetObjectActionTest, ValidateObjectWhenObjInfoFetchFailedReportError) {
   CREATE_OBJECT_METADATA;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
@@ -223,14 +223,14 @@ TEST_F(S3GetObjectActionTest, ReadObjectWhenObjInfoFetchFailedReportError) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
 
-  action_under_test->read_object();
+  action_under_test->validate_object_info();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
 
-TEST_F(S3GetObjectActionTest, ReadObjectOfSizeZero) {
+TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {
   CREATE_OBJECT_METADATA;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
@@ -253,12 +253,542 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeZero) {
       .Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
 
-  action_under_test->read_object();
+  action_under_test->validate_object_info();
 }
 
+TEST_F(S3GetObjectActionTest, CheckFullOrRangeObjectReadWithEmptyRange) {
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return(""));
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->check_full_or_range_object_read();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithValidRangeFirst500ForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=0-499"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(0, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(499, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(
+    S3GetObjectActionTest,
+    CheckFullOrRangeObjectReadWithValidRangewithspacesForContentLength8000_1) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("  bytes=0-499    "));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(0, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(499, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(
+    S3GetObjectActionTest,
+    CheckFullOrRangeObjectReadWithValidRangewithspacesForContentLength8000_2) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("  bytes  =  0 - 499    "));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(0, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(499, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithValidRangeLast500ForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=-500"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(7500, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(
+    S3GetObjectActionTest,
+    CheckFullOrRangeObjectReadWithValidRangeLast500WithSpaceForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes= - 500"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(7500, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadLastByteForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=-1"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(7999, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadLastBytewithIncludeSpaceForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes = - 1"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(7999, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadFirstByteForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=0-0"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(0, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(0, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadFromGivenOffsetForContentLength8000_1) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=400-"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(400, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(2, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadFromGivenOffsetForContentLength8000_2) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=6000-"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(6000, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(1, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(
+    S3GetObjectActionTest,
+    CheckFullOrRangeObjectReadWithRangeInMultipleBlocksForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=4000-6000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  EXPECT_EQ(4000, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(6000, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(2, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_1) {
+  CREATE_OBJECT_METADATA;
+  int layout_id = 1;
+  // first byte offset is greater than last byte offset
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=6000-2000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+
+  EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
+  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_2) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  // for empty range
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes="));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+
+  EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
+  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_3) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=-0"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+
+  EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
+  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_4) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  // first offset byte is greater than content length
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=8002-"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+
+  EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
+  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_5) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  // first offset byte is equal to than content length
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=8000-"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+
+  EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
+  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithInvalidRangeForContentLength8000_6) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  // range has char
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=A8000-B"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
+
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+
+  EXPECT_STREQ("InvalidRange", action_under_test->get_s3_error_code().c_str());
+  EXPECT_TRUE(action_under_test->clovis_reader == NULL);
+}
+
+TEST_F(S3GetObjectActionTest,
+       CheckFullOrRangeObjectReadWithUnsupportMultiRangeForContentLength8000) {
+  CREATE_OBJECT_METADATA;
+
+  int layout_id = 1;
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1).WillOnce(
+      Return("bytes=2-400,600-800,6000-7000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(8000));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str()).WillRepeatedly(Return("8000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  action_under_test->validate_object_info();
+  action_under_test->check_full_or_range_object_read();
+  action_under_test->set_total_blocks_to_read_from_object();
+
+  // offset should have 0 and content_length-1, that is complete object
+  EXPECT_EQ(0, action_under_test->first_byte_offset_to_read);
+  EXPECT_EQ(7999, action_under_test->last_byte_offset_to_read);
+  EXPECT_EQ(2, action_under_test->total_blocks_to_read);
+  EXPECT_EQ(1, call_count_one);
+}
 TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   CREATE_OBJECT_METADATA;
 
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
@@ -303,13 +833,14 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3ClovisReaderOpState::success));
-
+  action_under_test->validate_object_info();
   action_under_test->read_object();
 }
 
 TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
   CREATE_OBJECT_METADATA;
 
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
@@ -353,13 +884,14 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
   EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3ClovisReaderOpState::success));
-
+  action_under_test->validate_object_info();
   action_under_test->read_object();
 }
 
 TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   CREATE_OBJECT_METADATA;
 
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range")).Times(1);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
@@ -407,7 +939,63 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
   EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3ClovisReaderOpState::success));
+  action_under_test->validate_object_info();
+  action_under_test->read_object();
+}
 
+TEST_F(S3GetObjectActionTest, ReadObjectOfGivenRange) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*ptr_mock_request, get_header_value("Range"))
+      .Times(1)
+      .WillRepeatedly(Return("bytes=2-400,600-800,6000-7000"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_last_modified_gmt())
+      .WillOnce(Return("Sunday, 29 January 2017 08:05:01 GMT"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_md5())
+      .Times(AtLeast(1))
+      .WillOnce(Return("abcd1234abcd"));
+
+  // Object size less than unit size
+  int layout_id = 1;
+  size_t obj_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id) +
+      1;
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length()).WillRepeatedly(Return(obj_size));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_content_length_str())
+      .WillRepeatedly(Return(std::to_string(obj_size)));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+
+  EXPECT_CALL(*ptr_mock_request, send_reply_start(Eq(S3HttpSuccess206)))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(1)));
+  EXPECT_CALL(*ptr_mock_request, send_reply_body(_, Eq(obj_size - 1)));
+  EXPECT_CALL(*ptr_mock_request, send_reply_end()).Times(1);
+  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_first_block(_))
+      .WillOnce(Return(obj_size - 1));
+  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_next_block(_))
+      .WillOnce(Return(1))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader),
+              read_object_data(_, _, _))
+      .Times(1)
+      .WillOnce(Invoke(test_read_object_data_success));
+  EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
+      .Times(AtLeast(1))
+      .WillOnce(Return(S3ClovisReaderOpState::success));
+  action_under_test->validate_object_info();
   action_under_test->read_object();
 }
 
@@ -457,6 +1045,15 @@ TEST_F(S3GetObjectActionTest, SendInternalErrorResponse) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
+
+  action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3GetObjectActionTest, SendInvalidRangeErrorResponse) {
+  action_under_test->set_s3_error("InvalidRange");
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(416, _)).Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
 }
