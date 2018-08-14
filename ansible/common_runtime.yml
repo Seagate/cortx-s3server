@@ -21,6 +21,17 @@
     - gflags
     - glog
 
+- name: Update to latest selinux-policy (required by latest openldap)
+  yum: pkg={{item}} state=latest
+  with_items:
+    - selinux-policy
+
+- name: Install S3 openldap dependencies
+  yum: pkg={{item}} state=installed
+  with_items:
+    - openldap-servers
+    - openldap-clients
+
 - name: Install nginx
   yum:
     name: nginx
@@ -45,10 +56,15 @@
   command: setsebool httpd_can_network_connect on -P
   when: ansible_selinux.status == "enabled"
 
-- name: Install patched s3cmd
+- name: Install keepalived
   yum:
-    name: /tmp/s3-deps/{{ s3cmd_patched_rpm }}
+    name: keepalived
     state: present
+
+- name: Setup keepalived master config (sample, manually updated)
+  copy:
+    src: ./files/keepalived/keepalived.conf.master
+    dest: /etc/keepalived/keepalived.conf.master
 
 - name: Create working directory for S3 server.
   file: path=/var/seagate/s3 state=directory

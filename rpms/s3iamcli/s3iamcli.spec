@@ -1,23 +1,26 @@
-%define name s3iamcli
-%define version 1.0.0
-%define release 1
 
-Summary: Seagate S3 IAM CLI.
-Name: %{name}
-Version: %{version}
-Release: %{release}
-Source0: %{name}-%{version}.tar.gz
-URL: http://gerrit.mero.colo.seagate.com:8080/s3server
-License: Seagate
-Group: Development/Tools
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Prefix: %{_prefix}
-BuildArch: noarch
-Vendor: Seagate
+# build number
+%define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
+
+Name:       s3iamcli
+Version:    %{_s3iamcli_version}
+Release:    %{build_num}_%{_s3iamcli_git_ver}
+Summary:    Seagate S3 IAM CLI.
+
+Group:      Development/Tools
+License:    Seagate
+URL:        http://gerrit.mero.colo.seagate.com:8080/s3server
+Source0:    %{name}-%{version}-%{_s3iamcli_git_ver}.tar.gz
+
+BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+Prefix:     %{_prefix}
+BuildArch:  noarch
+Vendor:     Seagate
 
 BuildRequires:  python%{python3_pkgversion} >= 3.4
 BuildRequires:  python%{python3_pkgversion}-devel
 BuildRequires:  python%{python3_pkgversion}-setuptools
+
 Requires:  python%{python3_pkgversion} >= 3.4
 Requires:  python%{python3_pkgversion}-yaml
 Requires:  python%{python3_pkgversion}-xmltodict >= 0.9.0
@@ -36,6 +39,7 @@ Group:          Development/Tools
 BuildRequires:  python%{python3_pkgversion} >= 3.4
 BuildRequires:  python%{python3_pkgversion}-devel
 BuildRequires:  python%{python3_pkgversion}-setuptools
+
 Requires:  python%{python3_pkgversion} >= 3.4
 Requires:  python%{python3_pkgversion}-yaml
 Requires:  python%{python3_pkgversion}-xmltodict >= 0.9.0
@@ -49,17 +53,17 @@ This package contains development files for %{name}.
 
 
 %prep
-%setup -n %{name}-%{version}
+%setup -n %{name}-%{version}-%{_s3iamcli_git_ver}
 
 %build
-mkdir -p %{_builddir}/%{name}-%{version}/build/lib/%{name}
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}/build/lib/%{name}
 cd %{name}
 python3 -m compileall -b *.py
-cp  *.pyc %{_builddir}/%{name}-%{version}/build/lib/%{name}
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}/build/lib/%{name}
 echo "build complete"
 
 %install
-cd %{_builddir}/%{name}-%{version}
+cd %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}
 python3 setup.py install --no-compile --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 %clean

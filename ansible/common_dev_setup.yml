@@ -15,17 +15,6 @@
     - /tmp/s3devvmsetup/lustre/{{ lustre_client_devel_rpm }}
     - /tmp/s3devvmsetup/lustre/{{ kmod_lustre_client_rpm }}
 
-- name: Update to latest selinux-policy (required by latest openldap)
-  yum: pkg={{item}} state=latest
-  with_items:
-    - selinux-policy
-
-- name: Install S3 development runtime dependencies
-  yum: pkg={{item}} state=installed
-  with_items:
-    - openldap-servers
-    - openldap-clients
-
 - name: Add mappings to /etc/hosts (for S3 system tests)
   blockinfile:
     path: /etc/hosts

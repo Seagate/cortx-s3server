@@ -68,6 +68,7 @@ Centos 75 VM image is available at
 2. Update <s3 src>/ansible/hosts file with IP address of your s3 node in section [s3releasenode]
 
 3. Run ansible to setup the s3, enter the openldap password you want to setup.
+   (Note: you may have to "yum install epel-release -y" if epel repo is not setup in node)
    # ansible-playbook -i hosts setup_release_node.yml -v  -k
    It will prompt for ssh password, followed by new openldap password.
    For ldap password for testing, use "seagate" for rootDN and "ldapadmin" for IAM admin

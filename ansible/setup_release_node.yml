@@ -1,5 +1,7 @@
 ---
 
+# you may have to `yum install epel-release -y`
+
 - import_playbook: openldap.yml
 
 - name: S3 release node setup (Centos 74)

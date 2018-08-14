@@ -8,7 +8,7 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 GIT_VER=
 S3_VERSION=1.0.0
 
-usage() { echo "Usage: $0 -G <git version> [-S <S3 version>]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 -G <git short revision> [-S <S3 version>]" 1>&2; exit 1; }
 
 while getopts ":G:S:" o; do
     case "${o}" in
@@ -35,6 +35,7 @@ echo "Using [GIT_VER=${GIT_VER}] ..."
 cd ~/rpmbuild/SOURCES/
 rm -rf s3server*
 
+# Setup the source tar for rpm build
 git clone http://gerrit.mero.colo.seagate.com:8080/s3server s3server-${S3_VERSION}-git${GIT_VER}
 cd s3server-${S3_VERSION}-git${GIT_VER}
 # For sake of test, attempt checkout of version
