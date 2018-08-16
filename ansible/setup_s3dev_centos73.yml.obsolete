@@ -46,3 +46,8 @@
         service:
           name: slapd
           state: restarted
+
+      - name: restart rsyslog
+        service:
+          name: rsyslog
+          state: restarted

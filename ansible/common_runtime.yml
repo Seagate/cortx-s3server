@@ -52,6 +52,12 @@
     src: ./files/haproxy/haproxy.cfg
     dest: /etc/haproxy/haproxy.cfg
 
+- name: Setup haproxy config to enable logs
+  copy:
+    src: ./files/haproxy/rsyslog.d/haproxy.conf
+    dest: /etc/rsyslog.d/haproxy.conf
+  notify: restart rsyslog
+
 - name: Enable http port in selinux
   command: setsebool httpd_can_network_connect on -P
   when: ansible_selinux.status == "enabled"

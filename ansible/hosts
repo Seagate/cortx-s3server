@@ -9,3 +9,7 @@ xx.xx.xx.xx
 [s3ldapnode]
 # Change ip to ldap node to be configured
 xx.xx.xx.xx
+
+[s3releasenode]
+# Change ip to ldap node to be configured
+xx.xx.xx.xx
