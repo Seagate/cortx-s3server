@@ -13,3 +13,7 @@ xx.xx.xx.xx
 [s3releasenode]
 # Change ip to ldap node to be configured
 xx.xx.xx.xx
+
+[bareos]
+# Change ip to bareos node to be configured
+xx.xx.xx.xx

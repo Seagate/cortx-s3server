@@ -515,3 +515,92 @@ firewall-cmd --zone=public --add-port=2003/tcp --permanent
 sudo firewall-cmd --reload
 
 ```
+
+## Bareos Setup
+
+# Follow ansibe steps to configure bareos on VM.
+```sh
+cd <s3-src>/ansible
+cat readme
+
+```
+# Update director configuration file
+```sh
+vi /etc/bareos/bareos-dir.d/storage/s3_storage.conf
+
+```
+## Update "Address" field with fully qualified domain name(FQDN)
+## The "Password" field should match "Password" of /etc/bareos/bareos-sd.d/director/bareos-dir.conf
+
+
+# Ensure port 80/443 in s3server/Mero Node is open
+```sh
+iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+
+```
+# Update file selection in fileSet resource definition
+```sh
+vi /etc/bareos/bareos-dir.d/fileset/s3files.conf
+
+```
+# All files in "File" are selected for backup/restore. Ensure they are present locally on VM.
+
+# Update jobdefs resource file
+```sh
+vi  /etc/bareos/bareos-dir.d/jobdefs/S3Job.conf
+
+```
+# Update "Level" to select Full/Incremental/Diﬀerential backup.
+
+# Create/Update job resource definition file for backup/restore.Sample files are:
+```sh
+vim /etc/bareos/bareos-dir.d/job/BackupToS3.conf
+vim /etc/bareos/bareos-dir.d/job/RestoreFiles.conf
+
+```
+# Start bareos daemons/services
+```sh
+systemctl start bareos-dir
+systemctl start bareos-sd
+systemctl start bareos-fd
+
+```
+# Storage Daemon Node should be able to resolve s3server/mero host <Bucket Name>.s3.seagate.com
+# Append following entries to /etc/hosts
+```sh
+
+192.168.64.144 seagatebucket.s3.seagate.com
+192.168.64.144 iam.seagate.com sts.seagate.com s3.seagate.com
+
+```
+# Running a backup job.
+```sh
+[root@localhost bareos]# bconsole
+*run
+The defined Job resources are:
+     1: RestoreFiles
+     2: BackupToS3
+     3: BackupCatalog
+     4: backup-bareos-fd
+Select Job resource (1-4): 2
+
+```
+# Running a restore job.
+```sh
+*restore
+Select you job id.
+cwd is: /
+$ mark *
+$ done
+
+```
+# Verifying files that have been restore
+# The restored files will be present in /tmp/bareos-restores
+# Use "md5sum" command to verify hash of files that have been restored.
+```sh
+md5sum /tmp/bareos-restores/file.txt
+md5sum /root/file.txt
+
+```
+
+
