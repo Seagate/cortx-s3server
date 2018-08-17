@@ -393,4 +393,53 @@ sudo ./install
 
 # Restart Graphite
 sudo service carbon-cache restart
+
+#Installing Graphite on CentOS
+yum install -y graphite-web python-carbon
+
+#Set the retention period in storage schema
+vim /opt/graphite/conf/storage-schemas.conf
+
+#Add entry at the end
+#  [name]
+#  pattern = regex
+#  retentions = timePerPoint:timeToStore, timePerPoint:timeToStore, ...
+
+[default]
+pattern = .*
+retentions = 12s:4h, 2m:3d, 5m:8d, 13m:32d, 1h:1y
+
+#Restart Carbon service
+sudo systemctl enable carbon-cache
+sudo systemctl restart carbon-cache
+
+#Configure Apache for Graphite
+
+#Remove default index page from Apache
+echo > /etc/httpd/conf.d/welcome.conf
+
+#Edit /etc/httpd/conf.d/graphite-web.conf and replace everything in the 'Directory "/usr/share/graphite/"' block with
+Require all granted
+Order allow,deny
+Allow from all
+
+#Assign permission to Graphite dir
+sudo chown apache:apache /var/lib/graphite-web/graphite.db
+
+#Work around a bug related to building index with
+touch /var/lib/graphite-web/index
+
+#Start Apache and enable auto-start
+sudo systemctl start http
+sudo systemctl enable http
+
+#Access to Graphite Web interface
+#Enable port 80 in firewalld
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --reload
+
+#If Graphite is running on different node enable port 2003
+firewall-cmd --zone=public --add-port=2003/tcp --permanent
+sudo firewall-cmd --reload
+
 ```
