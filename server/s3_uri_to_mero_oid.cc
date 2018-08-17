@@ -86,8 +86,10 @@ void S3UriToMeroOID(const char* name, struct m0_uint128* object_id,
   }
 
   *object_id = tmp_uint128;
-  s3_log(S3_LOG_DEBUG, "", "ID for %s is %lu %lu\n", name, object_id->u_hi,
-         object_id->u_lo);
+  s3_log(S3_LOG_DEBUG, "",
+         "ID for %s is "
+         "%" SCNx64 " : %" SCNx64 "\n",
+         name, object_id->u_hi, object_id->u_lo);
 
   timer.stop();
   LOG_PERF("S3UriToMeroOID_ns", timer.elapsed_time_in_nanosec());

@@ -101,7 +101,8 @@ void S3AccountUserIdxMetadata::load_successful() {
 
   if (this->from_json(clovis_kv_reader->get_value()) != 0) {
     s3_log(S3_LOG_ERROR, request_id,
-           "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+           "Json Parsing failed. Index oid = "
+           "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
            root_account_user_index_oid.u_hi, root_account_user_index_oid.u_lo,
            get_account_index_id().c_str(),
            clovis_kv_reader->get_value().c_str());

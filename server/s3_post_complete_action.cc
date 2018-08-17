@@ -254,7 +254,8 @@ void S3PostCompleteAction::get_parts_successful() {
              store_kv->first.c_str(), store_kv->second.second.c_str());
       if (part_metadata->from_json(store_kv->second.second) != 0) {
         s3_log(S3_LOG_ERROR, request_id,
-               "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+               "Json Parsing failed. Index oid = "
+               "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
                part_index_oid.u_hi, part_index_oid.u_lo,
                store_kv->first.c_str(), store_kv->second.second.c_str());
         s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED,
@@ -359,7 +360,9 @@ void S3PostCompleteAction::delete_old_object_if_present() {
   if ((old_object_oid.u_lo == 0ULL) && (old_object_oid.u_hi == 0ULL)) {
     next();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Deleting old object with oid %lu %lu\n",
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Deleting old object with oid "
+           "%" SCNx64 " : %" SCNx64 "\n",
            old_object_oid.u_hi, old_object_oid.u_lo);
     if (clovis_writer == NULL) {
       clovis_writer =
@@ -378,7 +381,8 @@ void S3PostCompleteAction::delete_old_object_if_present() {
 void S3PostCompleteAction::delete_old_object_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
-         "Deletion of old object with oid %lu %lu failed\n",
+         "Deletion of old object with oid "
+         "%" SCNx64 " : %" SCNx64 "failed\n",
          multipart_metadata->get_old_oid().u_hi,
          multipart_metadata->get_old_oid().u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,

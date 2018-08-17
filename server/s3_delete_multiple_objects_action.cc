@@ -250,7 +250,8 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
       if (object->from_json(kv.second.second) != 0) {
         atleast_one_json_error = true;
         s3_log(S3_LOG_ERROR, request_id,
-               "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+               "Json Parsing failed. Index oid = "
+               "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
                object_list_index_oid.u_hi, object_list_index_oid.u_lo,
                kv.first.c_str(), kv.second.second.c_str());
         delete_objects_response.add_failure(kv.first, "InternalError");
@@ -387,7 +388,8 @@ void S3DeleteMultipleObjectsAction::delete_objects_failed() {
       // do nothing here
     } else {
       s3_log(S3_LOG_ERROR, request_id,
-             "Deletion of object with oid %lu %lu failed\n",
+             "Deletion of object with oid "
+             "%" SCNx64 " : %" SCNx64 " failed\n",
              obj->get_oid().u_hi, obj->get_oid().u_lo);
       delete_obj_failed = true;
     }

@@ -275,7 +275,8 @@ void S3PutObjectAction::rollback_create_failed() {
   } else {
     // Log rollback failure.
     s3_log(S3_LOG_ERROR, request_id,
-           "Rollback: Deletion of object with oid %lu %lu failed\n",
+           "Rollback: Deletion of object with oid "
+           "%" SCNx64 " : %" SCNx64 " failed\n",
            new_object_oid.u_hi, new_object_oid.u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
@@ -442,7 +443,8 @@ void S3PutObjectAction::delete_old_object_failed() {
   s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
          S3_IEM_DELETE_OBJ_FAIL_JSON);
   s3_log(S3_LOG_ERROR, request_id,
-         "Deletion of old object with oid %lu %lu failed\n",
+         "Deletion of old object with oid "
+         "%" SCNx64 " : %" SCNx64 " failed\n",
          old_object_oid.u_hi, old_object_oid.u_lo);
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

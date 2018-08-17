@@ -29,6 +29,7 @@
 #include <syslog.h>
 #include <time.h>
 #include <memory>
+#include <inttypes.h>
 
 #define S3_LOG_FATAL google::GLOG_FATAL
 #define S3_LOG_ERROR google::GLOG_ERROR

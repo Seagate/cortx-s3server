@@ -189,7 +189,8 @@ void S3PostMultipartObjectAction::fetch_object_info_status() {
     old_oid = object_metadata->get_oid();
     old_layout_id = object_metadata->get_layout_id();
     s3_log(S3_LOG_DEBUG, request_id,
-           "Object with oid %lu %lu already exists, creating new oid\n",
+           "Object with oid "
+           "%" SCNx64 " : %" SCNx64 " already exists, creating new oid\n",
            old_oid.u_hi, old_oid.u_lo);
     create_new_oid(old_oid);
 

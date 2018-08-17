@@ -209,7 +209,8 @@ void S3DeleteBucketAction::fetch_multipart_objects_successful() {
     if (object->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
       s3_log(S3_LOG_ERROR, request_id,
-             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             "Json Parsing failed. Index oid = "
+             "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
              multipart_index_oid.u_hi, multipart_index_oid.u_lo,
              kv.first.c_str(), kv.second.second.c_str());
     } else {
@@ -274,13 +275,15 @@ void S3DeleteBucketAction::delete_multipart_objects_successful() {
     op_ret_code = clovis_writer->get_op_ret_code_for_delete_op(count);
     if (op_ret_code == 0 || op_ret_code == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id,
-             "Deleted multipart object, oid is %lu %lu\n",
+             "Deleted multipart object, oid is "
+             "%" SCNx64 " : %" SCNx64 "\n",
              multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
     } else {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Failed to delete multipart object, this will be stale in Mero: "
-             "%lu %lu\n",
-             multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Failed to delete multipart object, this oid will be stale in Mero: "
+          "%" SCNx64 " : %" SCNx64 "\n",
+          multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
       atleast_one_error = true;
     }
     count += 1;
@@ -301,10 +304,11 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
   for (auto& multipart_obj_oid : multipart_object_oids) {
     op_ret_code = clovis_writer->get_op_ret_code_for_delete_op(count);
     if (op_ret_code != -ENOENT && op_ret_code != 0) {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Failed to delete multipart object, this will be stale in Mero: "
-             "%lu %lu\n",
-             multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Failed to delete multipart object, this oid will be stale in Mero: "
+          "%" SCNx64 " : %" SCNx64 "\n",
+          multipart_obj_oid.u_hi, multipart_obj_oid.u_lo);
       atleast_one_error = true;
     }
     count++;
@@ -378,7 +382,9 @@ void S3DeleteBucketAction::remove_multipart_index() {
 void S3DeleteBucketAction::remove_multipart_index_failed() {
   struct m0_uint128 multipart_index =
       bucket_metadata->get_multipart_index_oid();
-  s3_log(S3_LOG_WARN, request_id, "Failed to delete multipart index %lu %lu\n",
+  s3_log(S3_LOG_WARN, request_id,
+         "Failed to delete multipart index oid "
+         "%" SCNx64 " : %" SCNx64 "\n",
          multipart_index.u_hi, multipart_index.u_lo);
   next();
 }

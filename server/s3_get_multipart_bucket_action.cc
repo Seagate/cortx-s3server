@@ -187,7 +187,8 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
     if (object->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
       s3_log(S3_LOG_ERROR, request_id,
-             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             "Json Parsing failed. Index oid = "
+             "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
              indx_oid.u_hi, indx_oid.u_lo, kv.first.c_str(),
              kv.second.second.c_str());
       --length;

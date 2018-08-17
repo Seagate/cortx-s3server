@@ -237,7 +237,9 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
 
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
 
-  s3_log(S3_LOG_INFO, request_id, "Clovis API: createobj(oid: (%lu %lu))\n",
+  s3_log(S3_LOG_INFO, request_id,
+         "Clovis API: createobj(oid: ("
+         "%" SCNx64 " : %" SCNx64 "))\n",
          oid_list[0].u_hi, oid_list[0].u_lo);
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::createobj);
 
@@ -249,8 +251,9 @@ void S3ClovisWriter::create_object_successful() {
   is_object_opened = true;  // created object is also open
   state = S3ClovisWriterOpState::created;
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API Successful: createobj(oid: (%lu %lu))\n", oid_list[0].u_hi,
-         oid_list[0].u_lo);
+         "Clovis API Successful: createobj(oid: ("
+         "%" SCNx64 " : %" SCNx64 "))\n",
+         oid_list[0].u_hi, oid_list[0].u_lo);
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -384,8 +387,9 @@ void S3ClovisWriter::write_content() {
   writer_context->start_timer_for("write_to_clovis_op");
 
   s3_log(S3_LOG_INFO, request_id,
-         "Clovis API: Write (operation: M0_CLOVIS_OC_WRITE, oid: (%lu %lu), "
-         "start_offset_in_object(%zu), total_bytes_written_at_offset(%zu))\n",
+         "Clovis API: Write (operation: M0_CLOVIS_OC_WRITE, oid: ("
+         "%" SCNx64 " : %" SCNx64
+         " start_offset_in_object(%zu), total_bytes_written_at_offset(%zu))\n",
          oid_list[0].u_hi, oid_list[0].u_lo, rw_ctx->ext->iv_index[0],
          size_in_current_write);
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::writeobj);

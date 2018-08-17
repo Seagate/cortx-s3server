@@ -180,7 +180,8 @@ void S3DeleteObjectAction::delete_object_failed() {
   } else {
     // Any other error report failure.
     s3_log(S3_LOG_ERROR, request_id,
-           "Deletion of object with oid %lu %lu failed\n",
+           "Deletion of object with oid "
+           "%" SCNx64 " : %" SCNx64 " failed\n",
            object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);

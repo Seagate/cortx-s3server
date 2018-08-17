@@ -250,8 +250,8 @@ void S3AbortMultipartAction::delete_part_index_with_parts() {
 void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
-         "Failed to delete part index, this will be stale in Mero: "
-         "%lu %lu\n",
+         "Failed to delete part index, this oid will be stale in Mero: "
+         "%" SCNx64 " : %" SCNx64,
          part_index_oid.u_hi, part_index_oid.u_lo);
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

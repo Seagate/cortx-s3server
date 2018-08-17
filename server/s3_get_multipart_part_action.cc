@@ -207,7 +207,8 @@ void S3GetMultipartPartAction::get_key_object_successful() {
 
     if (part->from_json(value) != 0) {
       s3_log(S3_LOG_ERROR, request_id,
-             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             "Json Parsing failed. Index oid = "
+             "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
              part_index_oid.u_hi, part_index_oid.u_lo, key_name.c_str(),
              value.c_str());
       s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
@@ -288,7 +289,8 @@ void S3GetMultipartPartAction::get_next_objects_successful() {
     if (part->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
       s3_log(S3_LOG_ERROR, request_id,
-             "Json Parsing failed. Index = %lu %lu, Key = %s, Value = %s\n",
+             "Json Parsing failed. Index oid = "
+             "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
              part_index_oid.u_hi, part_index_oid.u_lo, kv.first.c_str(),
              kv.second.second.c_str());
     } else {
