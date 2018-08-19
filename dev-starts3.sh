@@ -41,7 +41,11 @@ local_nid=`lctl list_nids | head -1`
 local_ep=$local_nid:12345:33
 ha_ep=$local_nid:12345:34:1
 
+#Set the core file size to unlimited
 ulimit -c unlimited
+
+#Set max open file limit to 10240
+ulimit -n 10240
 
 # Run m0dixinit
 set +e

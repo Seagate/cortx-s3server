@@ -22,6 +22,7 @@
 #include <tuple>
 #include <vector>
 #include <event2/thread.h>
+#include <sys/resource.h>
 
 #include "clovis_helpers.h"
 #include "evhtp_wrapper.h"
@@ -266,6 +267,21 @@ FAIL:
   return rc;
 }
 
+void log_resource_limits() {
+  int rc;
+  struct rlimit rlimit;
+  rc = getrlimit(RLIMIT_NOFILE, &rlimit);
+  if (rc == 0) {
+    s3_log(S3_LOG_INFO, "", "Open file limits: soft = %ld hard = %ld\n",
+           rlimit.rlim_cur, rlimit.rlim_max);
+  }
+  rc = getrlimit(RLIMIT_CORE, &rlimit);
+  if (rc == 0) {
+    s3_log(S3_LOG_INFO, "", "Core file size limits: soft = %ld hard = %ld\n",
+           rlimit.rlim_cur, rlimit.rlim_max);
+  }
+}
+
 int main(int argc, char **argv) {
   int rc = 0;
   const char *bind_addr;
@@ -393,6 +409,8 @@ int main(int argc, char **argv) {
     fini_auth_ssl();
     return rc;
   }
+
+  log_resource_limits();
 
   /* Initialise mero and Clovis */
   rc = init_clovis();

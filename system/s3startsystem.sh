@@ -37,6 +37,12 @@ print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"][
 `"/s3server-$1"
 mkdir -p $s3_log_dir
 
+#set the maximum size of core file to unlimited
+ulimit -c unlimited
+
+#Set the open file limit to 10240
+ulimit -n 10240
+
 # Start the s3server
 export PATH=$PATH:/opt/seagate/s3/bin
 local_ep=$MERO_S3SERVER_EP
