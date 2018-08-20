@@ -26,11 +26,13 @@
 #include "s3_perf_logger.h"
 #include "s3_stats.h"
 #include "s3_timer.h"
+#include "s3_iem.h"
 
-void S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
-                    std::string &request_id, m0_uint128 *ufid,
-                    S3ClovisEntityType type) {
+int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
+                   std::string &request_id, m0_uint128 *ufid,
+                   S3ClovisEntityType type) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  int rc;
   S3Timer timer;
   struct m0_uint128 tmp_uint128;
   struct m0_fid index_fid;
@@ -39,12 +41,12 @@ void S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
       S3Option::get_instance()->is_murmurhash_oid_enabled();
   if (ufid == NULL) {
     s3_log(S3_LOG_ERROR, request_id, "Invalid argument, ufid pointer is NULL");
-    return;
+    return -EINVAL;
   }
   if (name == NULL) {
     s3_log(S3_LOG_ERROR, request_id,
            "Invalid argument, input parameter 'name' is NULL\n");
-    return;
+    return -EINVAL;
   }
 
   timer.start();
@@ -59,7 +61,7 @@ void S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
       // oid should not be 0
       s3_log(S3_LOG_ERROR, request_id,
              "The input parameter 'name' is empty string\n");
-      return;
+      return -EINVAL;
     }
     MurmurHash3_x64_128(name, len, 0, &hash128_64);
 
@@ -79,7 +81,7 @@ void S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
     struct m0_uint128 reserved_range = {0ULL, 0ULL};
     m0_uint128_add(&reserved_range, &M0_CLOVIS_ID_APP, &s3_range);
 
-    int rc = m0_uint128_cmp(&reserved_range, &tmp_uint128);
+    rc = m0_uint128_cmp(&reserved_range, &tmp_uint128);
     if (rc >= 0) {
       struct m0_uint128 res;
       // ID should be more than M0_CLOVIS_ID_APP
@@ -96,7 +98,14 @@ void S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
     if (s3_clovis_api == NULL) {
       s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
     }
-    s3_clovis_api->m0_h_ufid_next(ufid);
+    rc = s3_clovis_api->m0_h_ufid_next(ufid);
+    if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id, "Failed to generate UFID\n");
+      // May need to change error code to something better in future -- TODO
+      s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
+             S3_IEM_CLOVIS_CONN_FAIL_JSON);
+      return rc;
+    }
   }
 
   if (type == S3ClovisEntityType::index) {
@@ -115,5 +124,5 @@ void S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
   s3_stats_timing("uri_to_mero_oid", timer.elapsed_time_in_millisec());
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  return;
+  return 0;
 }
