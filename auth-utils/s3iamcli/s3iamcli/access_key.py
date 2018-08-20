@@ -11,7 +11,7 @@ class AccessKey:
         try:
             result = self.iam_client.create_access_key(**access_key_args)
         except Exception as ex:
-            print("Exception occured while creating Access Key.")
+            print("Failed to create access key.")
             print(str(ex))
             return
 
@@ -34,7 +34,7 @@ class AccessKey:
         try:
             self.iam_client.delete_access_key(**access_key_args)
         except Exception as ex:
-            print("Exception occured while deleting access key.")
+            print("Failed to delete access key.")
             print(str(ex))
             return
 
@@ -59,7 +59,7 @@ class AccessKey:
         try:
             self.iam_client.update_access_key(**access_key_args)
         except Exception as ex:
-            print("Exception occured while updating access key.")
+            print("Failed to update access key.")
             print(str(ex))
             return
 
@@ -73,7 +73,7 @@ class AccessKey:
         try:
             result = self.iam_client.list_access_keys(**access_key_args)
         except Exception as ex:
-            print("Exception occured while listing access keys.")
+            print("Failed to list access keys.")
             print(str(ex))
             return
 

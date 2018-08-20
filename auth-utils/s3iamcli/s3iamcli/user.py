@@ -17,7 +17,7 @@ class User:
         try:
             result = self.iam_client.create_user(**user_args)
         except Exception as ex:
-            print("Exception occured while creating user.")
+            print("Failed to create user.")
             print(str(ex))
             return
 
@@ -35,7 +35,7 @@ class User:
         try:
             self.iam_client.delete_user(**user_args)
         except Exception as ex:
-            print("Exception occured while deleting user.")
+            print("Failed to delete user.")
             print(str(ex))
             return
 
@@ -58,7 +58,7 @@ class User:
         try:
             self.iam_client.update_user(**user_args)
         except Exception as ex:
-            print("Exception occured while updating user info.")
+            print("Failed to update user info.")
             print(str(ex))
             return
 
@@ -72,7 +72,7 @@ class User:
         try:
             result = self.iam_client.list_users(**user_args)
         except Exception as ex:
-            print("Exception occured while listing users.")
+            print("Failed to list users.")
             print(str(ex))
             return
 

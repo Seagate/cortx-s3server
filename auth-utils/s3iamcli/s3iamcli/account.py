@@ -32,7 +32,8 @@ class Account:
                         account['AccessKeyId'], account['RootSecretKeyId']))
         else:
             print("Account wasn't created.")
-            print(response['reason'])
+            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
+            print(error_response)
 
     def _print_account(self, account):
         print("AccountName = %s, AccountId = %s, CanonicalId = %s, Email = %s"
@@ -61,7 +62,8 @@ class Account:
                     self._print_account(account)
         else:
             print("Failed to list accounts!")
-            print(response['reason'])
+            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
+            print(error_response)
 
     # delete account
     def delete(self):
@@ -84,7 +86,8 @@ class Account:
             print('Account deleted successfully.')
         else:
             print('Account cannot be deleted.')
-            print(response['body'])
+            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
+            print(error_response)
 
     # Reset Account Access Key
     def reset_access_key(self):
@@ -106,4 +109,5 @@ class Account:
                         account['AccessKeyId'], account['RootSecretKeyId']))
         else:
             print("Account access key wasn't reset.")
-            print(response['reason'])
+            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
+            print(error_response)

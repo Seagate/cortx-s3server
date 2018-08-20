@@ -294,7 +294,7 @@ def accesskey_tests():
     access_key_args = {}
     access_key_args['UserName'] = 'userDoesNotExist'
     result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
-    result.command_response_should_have("Exception occured while creating Access Key.")
+    result.command_response_should_have("Failed to create access key.")
 
     test_msg = 'Create access key (user name is root)'
     access_key_args['UserName'] = 'root'
@@ -307,12 +307,12 @@ def accesskey_tests():
     test_msg = 'Create access key (Allow only 2 credentials per user.)'
     access_key_args['UserName'] = 'root'
     result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
-    result.command_response_should_have("Exception occured while creating Access Key.")
+    result.command_response_should_have("Failed to create access key.")
 
     test_msg = 'Delete access key (user name and access key id combination is incorrect)'
     access_key_args['UserName'] = 'root3'
     result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
-    result.command_response_should_have("Exception occured while deleting access key.")
+    result.command_response_should_have("Failed to delete access key.")
 
     test_msg = 'Update access key for root user should fail(Change status from Active to Inactive)'
     access_key_args['Status'] = "Inactive"
