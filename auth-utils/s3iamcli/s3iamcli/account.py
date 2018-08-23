@@ -1,8 +1,11 @@
 import http.client, urllib.parse
-import json
-import xmltodict
+import sys
 from s3iamcli.util import sign_request_v2
 from s3iamcli.conn_manager import ConnMan
+from s3iamcli.error_response import ErrorResponse
+from s3iamcli.create_account_response import CreateAccountResponse
+from s3iamcli.list_account_response import ListAccountResponse
+from s3iamcli.reset_key_response import ResetAccountAccessKey
 
 class Account:
     def __init__(self, iam_client, cli_args):
@@ -25,19 +28,19 @@ class Account:
         headers['Authorization'] = sign_request_v2('POST', '/', {}, headers)
         response = ConnMan.send_post_request(body, headers)
         if(response['status'] == 201):
-            account_response = json.loads(json.dumps(xmltodict.parse(response['body'])))
-            account = account_response['CreateAccountResponse']['CreateAccountResult']['Account']
-            print("AccountId = %s, CanonicalId = %s, RootUserName = %s, AccessKeyId = %s, SecretKey = %s" %
-                    (account['AccountId'], account['CanonicalId'], account['RootUserName'],
-                        account['AccessKeyId'], account['RootSecretKeyId']))
+            account = CreateAccountResponse(response)
+
+            if account.is_valid_response():
+                account.print_account_info()
+            else:
+                # unlikely message corruption case in network
+                print("Account was created. For account details try account listing.")
+                sys.exit(0)
         else:
             print("Account wasn't created.")
-            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
-            print(error_response)
-
-    def _print_account(self, account):
-        print("AccountName = %s, AccountId = %s, CanonicalId = %s, Email = %s"
-                % (account['AccountName'], account['AccountId'], account['CanonicalId'], account['Email']));
+            error = ErrorResponse(response)
+            error_message = error.get_error_message()
+            print(error_message)
 
     # list all accounts
     def list(self):
@@ -48,22 +51,19 @@ class Account:
         response = ConnMan.send_post_request(body, headers)
 
         if response['status'] == 200:
-            accounts_response = json.loads(json.dumps(xmltodict.parse(response['body'])))
-            accounts = accounts_response['ListAccountsResponse']['ListAccountsResult']['Accounts']
-            if accounts is None:
-                print("No accounts found.")
-                return
-            account_members = accounts['member']
-            # For only one account, account_members will be of type dict, convert it to list type
-            if type(account_members) == dict:
-                self._print_account(account_members)
+            accounts = ListAccountResponse(response)
+
+            if accounts.is_valid_response():
+                accounts.print_account_listing()
             else:
-                for account in account_members:
-                    self._print_account(account)
+                # unlikely message corruption case in network
+                print("Failed to list accounts.")
+                sys.exit(0)
         else:
             print("Failed to list accounts!")
-            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
-            print(error_response)
+            error = ErrorResponse(response)
+            error_message = error.get_error_message()
+            print(error_message)
 
     # delete account
     def delete(self):
@@ -86,8 +86,9 @@ class Account:
             print('Account deleted successfully.')
         else:
             print('Account cannot be deleted.')
-            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
-            print(error_response)
+            error = ErrorResponse(response)
+            error_message = error.get_error_message()
+            print(error_message)
 
     # Reset Account Access Key
     def reset_access_key(self):
@@ -102,12 +103,16 @@ class Account:
         headers['Authorization'] = sign_request_v2('POST', '/', {}, headers)
         response = ConnMan.send_post_request(body, headers)
         if response['status'] == 201:
-            account_response = json.loads(json.dumps(xmltodict.parse(response['body'])))
-            account = account_response['ResetAccountAccessKeyResponse']['ResetAccountAccessKeyResult']['Account']
-            print("AccountId = %s, CanonicalId = %s, RootUserName = %s, AccessKeyId = %s, SecretKey = %s" %
-                    (account['AccountId'], account['CanonicalId'], account['RootUserName'],
-                        account['AccessKeyId'], account['RootSecretKeyId']))
+            account = ResetAccountAccessKey(response)
+
+            if account.is_valid_response():
+                account.print_account_info()
+            else:
+                # unlikely message corruption case in network
+                print("Account access key was reset successfully.")
+                sys.exit(0)
         else:
             print("Account access key wasn't reset.")
-            error_response = xmltodict.parse(response['body'])['ErrorResponse']['Error']['Message']
-            print(error_response)
+            error = ErrorResponse(response)
+            error_message = error.get_error_message()
+            print(error_message)
