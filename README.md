@@ -330,9 +330,33 @@ Un-comment lines having Graphite variables (graphiteHost & graphitePort) and set
 values. Also add graphite to the backends variable as shown in the comment in the
 s3statsd-config.js file.
 
+##  Adding S3 Node Identifier to StatsD
+By default statsd sends metrics with prefix "stats", if multiple statsd send data to
+graphite, all of them will be listed in same prefix name. To differentiate metrics
+from different S3 nodes statsd config file needs to be updated with globalPrefix
+value, for example below globalePrefix value is set to "s3node2".
+
+{
+  graphitePort: 2003
+, graphiteHost: "graphite-host"
+, mgmt_port: 8126
+, port: 8125
+, graphite: {
+         legacyNamespace: false,
+         globalPrefix: "s3node2"
+}
+, backends: [ "./backends/graphite" , "./backends/console" ]
+}
+
 Once above config is done, run StatsD daemon as below
 ```sh
 sudo systemctl restart statsd
+```
+
+## Sending sample test data to StatsD
+
+```sh
+echo "myapp.myservice:10|c" | nc -w 1 -u localhost 8125
 ```
 
 ## Viewing StatsD data
@@ -363,6 +387,7 @@ $ echo "counters" | nc 127.0.0.1 8126
     'statsd.metrics_received': 1,
     total_request_count: 1 }
   END
+
 ```
 
 b) Graphite backend
@@ -388,8 +413,8 @@ sudo ./install
 
 # Refer to https://github.com/etsy/statsd/blob/master/docs/graphite.md and
   edit files:
-    /opt/graphite/conf/storage-schemas.conf and
-    /opt/graphite/conf/storage-aggregation.conf
+    /etc/carbon/storage-schemas.conf and
+    /etc/carbon/storage-aggregation.conf
 
 # Restart Graphite
 sudo service carbon-cache restart
@@ -398,7 +423,7 @@ sudo service carbon-cache restart
 yum install -y graphite-web python-carbon
 
 #Set the retention period in storage schema
-vim /opt/graphite/conf/storage-schemas.conf
+vim /etc/carbon/storage-schemas.conf
 
 #Add entry at the end
 #  [name]
@@ -430,8 +455,8 @@ sudo chown apache:apache /var/lib/graphite-web/graphite.db
 touch /var/lib/graphite-web/index
 
 #Start Apache and enable auto-start
-sudo systemctl start http
-sudo systemctl enable http
+sudo systemctl start httpd
+sudo systemctl enable httpd
 
 #Access to Graphite Web interface
 #Enable port 80 in firewalld
