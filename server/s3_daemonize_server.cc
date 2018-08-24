@@ -143,7 +143,13 @@ void S3Daemonize::daemonize() {
   }
   sigaction(SIGHUP, &s3hup_act, NULL);
 
-  daemon_wd = option_instance->get_daemon_dir();
+  // Set the working directory for current instance as s3server-process_fid
+  std::string process_fid = option_instance->get_clovis_process_fid();
+  // Remove the surrounding angle brackets <>
+  process_fid.erase(0, 1);
+  process_fid.erase(process_fid.size() - 1);
+
+  daemon_wd = option_instance->get_daemon_dir() + "/s3server-" + process_fid;
   if (access(daemon_wd.c_str(), F_OK) != 0) {
     s3_log(S3_LOG_FATAL, "", "The directory %s doesn't exist, errno = %d\n",
            daemon_wd.c_str(), errno);
@@ -155,6 +161,8 @@ void S3Daemonize::daemonize() {
            daemon_wd.c_str(), errno);
     exit(1);
   }
+  s3_log(S3_LOG_INFO, "", "Working directory for S3 server = [%s]\n",
+         daemon_wd.c_str());
   write_to_pidfile();
 }
 

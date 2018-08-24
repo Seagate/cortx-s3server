@@ -56,10 +56,20 @@ then
 fi
 
 # Ensure default working dir is present
-s3_working_dir="/var/seagate/s3/"
+s3_working_dir=`python -c '
+import yaml;
+print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
+' | tr -d '\r\n'
+`"/s3server-0x7200000000000000:0"
+
 mkdir -p $s3_working_dir
 
-s3_log_dir="/var/log/seagate/s3/"
+# Log dir configured in s3config.yaml
+s3_log_dir=`python -c '
+import yaml;
+print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_LOG_DIR"];
+' | tr -d '\r\n'
+`"/s3server-0x7200000000000000:0"
 mkdir -p $s3_log_dir
 
 # Start the s3server
