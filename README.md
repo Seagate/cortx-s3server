@@ -438,6 +438,19 @@ retentions = 12s:4h, 2m:3d, 5m:8d, 13m:32d, 1h:1y
 sudo systemctl enable carbon-cache
 sudo systemctl restart carbon-cache
 
+#Run database setup script
+#change the timezone and SECRET_KEY values in /etc/graphite-web/local_settings.py(Optional)
+
+PYTHONPATH=/usr/share/graphite/webapp django-admin syncdb --settings=graphite.settings
+
+#Creating a superuser
+#You just installed Django's auth system, which means you don't have any superusers defined.
+Would you like to create one now? (yes/no): Please enter either "yes" or "no": yes
+Username (leave blank to use 'root'): <username>
+Email address: <email>
+Password: <password>
+Password (again): <password>
+
 #Configure Apache for Graphite
 
 #Remove default index page from Apache
