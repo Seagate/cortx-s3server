@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 #########################
 # S3 sanity test script #
 #########################
@@ -24,62 +26,53 @@ case "$1" in
         ;;
 esac
 
+
 # Security credentialis
-AK='AKIAJPINPFRBTPAYOGNA'
-SK='ht8ntpB9DoChDrneKZHvPVTm+1mHbs7UdCyYZ5Hd'
+read -p "Enter Access Key: " access_key
+read -p "Enter Secret Key: " secret_key
 
-CLIENT='jcloud/jcloudclient.jar'
-BUCKET='seagatebucket'
-OBJECT='32MB.data'
+read -p "Enter test bucket name: " bucket_name
+read -p "Enter test object name: " object_name
+read -p "Enter test object size in MB: " object_size
 
-# Add test account which is required to run S3 sanity test
-cd ldap
-echo 'Adding account: s3_test to LDAP for sanity testing...'
-sudo chmod +x add_test_account.sh
-sudo ./add_test_account.sh
-cd ..
+echo -e "\n\n***** S3: SANITY TEST *****"
 
-echo "***** S3: SANITY TEST *****"
+TEST_CMD="s3cmd --access_key=$access_key --secret_key=$secret_key"
 
-set -e
-echo -e "\nList Buckets:"
-java -jar $CLIENT ls -p -x $AK -y $SK
+echo -e "\nList Buckets: "
+$TEST_CMD ls || { echo "Failed" && exit 1; }
 
-echo -e "\nCreate buckekt - '$BUCKET':"
-java -jar $CLIENT mb "s3://$BUCKET" -p -x $AK -y $SK
+echo -e "\nCreate bucket - '$bucket_name': "
+$TEST_CMD mb "s3://$bucket_name" || { echo "Failed" && exit 1; }
 
-# create a file
-dd if=/dev/urandom of=$OBJECT bs=8M count=4 status=none
-content_md5_before=$(md5sum $OBJECT)
+# create a test file
+test_file_input=/tmp/"$object_name".input
+test_output_file=/tmp/"$object_name".out
 
-echo -e "\nUpload object '$OBJECT' to '$BUCKET':"
-java -jar $CLIENT put $OBJECT "s3://$BUCKET" -p -x $AK -y $SK
+dd if=/dev/urandom of=$test_file_input bs=1MB count=$object_size
+content_md5_before=$(md5sum $test_file_input | cut -d ' ' -f 1)
 
-echo -e "\nList objects in '$BUCKET':"
-java -jar $CLIENT ls "s3://$BUCKET" -p -x $AK -y $SK
+echo -e "\nUpload object '$test_file_input' to '$bucket_name': "
+$TEST_CMD put $test_file_input "s3://$bucket_name/$object_name" || { echo "Failed" && exit 1; }
 
-echo -e "\nDownload object '$OBJECT' from '$BUCKET':"
-java -jar $CLIENT get "s3://$BUCKET/$OBJECT" $OBJECT -p -x $AK -y $SK
-content_md5_after=$(md5sum $OBJECT)
+echo -e "\nList uploaded object in '$bucket_name': "
+$TEST_CMD ls "s3://$bucket_name/$object_name" || { echo "Failed" && exit 1; }
 
-echo -en "\nData integrity check:"
+echo -e "\nDownload object '$object_name' from '$bucket_name': "
+$TEST_CMD get "s3://$bucket_name/$object_name" $test_output_file || { echo "Failed" && exit 1; }
+content_md5_after=$(md5sum $test_output_file | cut -d ' ' -f 1)
+
+echo -en "\nData integrity check: "
 [[ $content_md5_before == $content_md5_after ]] && echo 'Passed.' || echo 'Failed.'
 
-echo -e "\nDelete object '$OBJECT' from '$BUCKET':"
-java -jar $CLIENT del "s3://$BUCKET/$OBJECT" -p -x $AK -y $SK
+echo -e "\nDelete object '$object_name' from '$bucket_name': "
+$TEST_CMD del "s3://$bucket_name/$object_name" || { echo "Failed" && exit 1; }
 
-echo -e "\nDelete bucket - '$BUCKET':"
-java -jar $CLIENT rb "s3://$BUCKET/$OBJECT" -p -x $AK -y $SK
+echo -e "\nDelete bucket - '$bucket_name': "
+$TEST_CMD rb "s3://$bucket_name" || { echo "Failed" && exit 1; }
 set +e
 
-echo "\n***** S3: SANITY TEST SUCCESSFULLY COMPLETED *****"
+# delete test files file
+rm -f $test_file_input $test_output_file
 
-# delete a file
-rm -f $OBJECT
-
-# delte test account
-cd ldap
-echo 'Deleting account: s3_test.'
-sudo chmod +x delete_test_account.sh
-sudo ./delete_test_account.sh
-cd ..
+echo -e "\n\n***** S3: SANITY TEST SUCCESSFULLY COMPLETED *****\n"
