@@ -1,11 +1,22 @@
-### Add following entry to _/etc/hosts_ file
-`127.0.0.1   s3.seagate.com`
+###
 
-Note: If S3 server is running on remote system, replace *127.0.0.1* with S3 server IP address.
+These scripts assume that S3 server and necessary s3 domain is setup and these
+scripts are expected to run on S3 client nodes.
 
+It also assumes that s3cmd is setup properly on the node where these are run.
+Minimally s3cmd .s3cfg should be pointing to correct Seagate S3 services:
 
-### Run S3 sanity test
+# Sample from ~/.s3cfg
 ```
-sudo chmod +x s3-sanity-test.sh
-sudo ./s3-sanity-test.sh
+host_base = s3.seagate.com
+host_bucket = %(bucket)s.s3.seagate.com
+```
+
+### Run S3 tests
+```
+# For simple tests
+./s3-sanity-test.sh
+
+# For regression tests for different object sizes
+./s3-obj-reg-test.sh
 ```
