@@ -48,7 +48,7 @@ function perform_object_test() {
     multipart_option=" --multipart-chunk-size-mb=$multipart_size_in_mb "
   fi
 
-  object_name=$(mktemp s3test.XXXXXXXXX)
+  object_name=$(mktemp /tmp/s3test.XXXXXXXXX | xargs basename)
   test_file_input=/tmp/"$object_name".in
   test_output_file=/tmp/"$object_name".out
 
@@ -74,7 +74,7 @@ function perform_object_test() {
   [[ $content_md5_before == $content_md5_after ]] && echo 'Passed.' || echo 'Failed.'
   # Delete the test files.
   rm -f $test_file_input $test_output_file
-
+  rm -rf /tmp/$object_name
   echo -e "\n\t$TEST_CMD del "s3://$bucket_name/$object_name": "
   $TEST_CMD_WITH_CREDS del "s3://$bucket_name/$object_name" \
       > /dev/null && echo -e '\t=> Passed.' || { echo -e "\t=> Failed" && exit 1; }
