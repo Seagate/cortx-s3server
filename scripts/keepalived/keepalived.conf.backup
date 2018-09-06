@@ -1,7 +1,11 @@
 vrrp_script chk_haproxy {
-  script "killall -0 haproxy" # check the haproxy process
+  script "/usr/bin/systemctl status haproxy" # check the haproxy process
   interval 2 # every 2 seconds
   weight 2 # add 2 points if OK
+}
+
+global_defs {
+  enable_script_security
 }
 
 vrrp_instance VI_1 {
