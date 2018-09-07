@@ -80,7 +80,7 @@ public class IAMController {
              LOGGER.debug("Parsing Client Request");
              clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
              if (clientRequestToken == null) {
-                  return responseGenerator.badRequest();
+                  return responseGenerator.invalidHeader();
              }
              AccessKey akey = new AccessKey();
              String ldapUser = AuthServerConfig.getLdapLoginCN();
@@ -113,7 +113,7 @@ public class IAMController {
                * Client Request Token will be null if the request is incorrect.
              */
              if (clientRequestToken == null) {
-                  return responseGenerator.badRequest();
+                  return responseGenerator.invalidHeader();
              }
              try {
                   requestor = RequestorService.getRequestor(clientRequestToken);

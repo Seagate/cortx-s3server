@@ -27,7 +27,14 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  */
 public abstract class AbstractResponseGenerator {
 
-    public ServerResponse badRequest() {
+    public ServerResponse invalidHeader() {
+        String errorMessage = "Invalid Authorization header.";
+
+        return formatResponse(HttpResponseStatus.BAD_REQUEST,
+                "BadRequest", errorMessage);
+    }
+
+	public ServerResponse badRequest() {
         String errorMessage = "Bad Request. Check request headers and body.";
 
         return formatResponse(HttpResponseStatus.BAD_REQUEST,

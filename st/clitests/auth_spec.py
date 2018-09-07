@@ -127,6 +127,17 @@ def account_tests():
     os.environ.pop("SG_LDAP_USER")
     os.environ.pop("SG_LDAP_PASSWD")
 
+    test_msg = "List accounts - Take invalid ldapuser and ldappasswd from config"
+
+    new_config_entries = {'SG_LDAP_PASSWD': 'sgiamadmin#', 'SG_LDAP_USER': 'ldapadmin#'}
+    update_config_yaml(new_config_entries)
+
+    result = AuthTest(test_msg).list_account().execute_test()
+
+    result.command_should_match_pattern("Failed to list accounts")
+
+    restore_config_yaml()
+
     #TODO - Need to fix this test. Currently skipping this test as it waits for password to be entered manually through prompt.
     '''
     test_msg = "List accounts - Take ldapuser and ldappasswd from prompt"
@@ -702,6 +713,17 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
+    # Use invalid access key and secret key of account s3test1
+    GlobalTestState.root_access_key = "xRZ807dxQEqakueNTBpyNQ#"
+    GlobalTestState.root_secret_key = "caEE2plJfA1BrhthYsh9H9siEQZtCMF4etvj1o9B"
+    _use_root_credentials()
+
+    # Test: delete account with invalid access key and secret key format
+    test_msg = "Delete account s3test1 with invalid access key format"
+    account_args = {'AccountName': 's3test1'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test() \
+        .command_response_should_have("Invalid Authorization header.")
+
     # Use access key and secret key of account s3test1
     GlobalTestState.root_access_key = s3test1_root_access_key
     GlobalTestState.root_secret_key = s3test1_root_secret_key
@@ -775,6 +797,13 @@ def reset_account_accesskey_tests():
     account_response_elements = get_response_elements(result.status.stdout)
     s3test1_root_access_key = account_response_elements['AccessKeyId']
     s3test1_root_secret_key = account_response_elements['SecretKey']
+
+    test_msg = "Reset account access key with invalid credentials"
+
+    account_args = {'AccountName': 's3test1', 'ldapuser': 'sgiamadmin*',
+                    'ldappasswd': 'ldapadmin@'}
+    result = AuthTest(test_msg).reset_account_accesskey(**account_args).execute_test()
+    result.command_should_match_pattern("Account access key wasn't reset.")
 
     #Using old access key should fail now
     S3cmdTest('s3cmd can delete bucket').with_credentials(GlobalTestState.root_access_key, GlobalTestState.root_secret_key)\

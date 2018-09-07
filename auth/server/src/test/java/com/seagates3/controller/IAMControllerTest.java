@@ -19,6 +19,7 @@
 
 package com.seagates3.controller;
 
+import com.seagates3.authentication.AWSRequestParser;
 import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
@@ -54,6 +55,7 @@ import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -267,14 +269,55 @@ public class IAMControllerTest {
 
     @Test
     public void serveTest_BadRequest() throws Exception {
-        requestBody.put("Action", "CreateUser");
-        when(ClientRequestParser.parse(httpRequest, requestBody)).thenReturn(null);
+        requestBody.put("Action", "AuthorizeUser");
+        requestBody.put("authorization","AWS AKIAIOSFODN&EXAMPL$#:"
+                + "frJIUN8DYpKDtOLCwo//yllqDzg=");
+
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenCallRealMethod();
 
         ServerResponse response = controller.serve(httpRequest, requestBody);
 
         assertThat(response.getResponseBody(),
-                containsString("Bad Request. Check request headers and body."));
+                containsString("Invalid Authorization header."));
         assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
+    }
+
+    @Test
+    public void serveTest_ValidRequest() throws Exception {
+        requestBody.put("Action", "AuthenticateUser");
+        requestBody.put("Host", "iam.seagate.com:9086");
+        requestBody.put("authorization","AWS RqkWRyVIQrq5Aq9eMUt1HQ:"
+                + "frJIUN8DYpKDtOLCwo//yllqDzg=");
+        ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
+        AWSRequestParser awsrequestparser = mock(AWSRequestParser.class);
+        SignatureValidator signatureValidator = mock(SignatureValidator.class);
+        AuthenticationResponseGenerator responseGenerator
+                = mock(AuthenticationResponseGenerator.class);
+        when(ClientRequestParser.parse(httpRequest, requestBody))
+                .thenCallRealMethod();
+        when((ClientRequestParser.getAWSRequestParser(any(ClientRequestToken.
+                AWSSigningVersion.class)))).thenReturn(awsrequestparser);
+        when(awsrequestparser.parse(requestBody))
+                .thenReturn(clientRequestToken);
+        when(RequestorService.getRequestor(clientRequestToken))
+                .thenReturn(requestor);
+        whenNew(SignatureValidator.class).withNoArguments()
+                .thenReturn(signatureValidator);
+        when(signatureValidator.validate(clientRequestToken, requestor))
+                .thenReturn(serverResponse);
+        when(serverResponse.getResponseStatus())
+                .thenReturn(HttpResponseStatus.OK);
+        whenNew(AuthenticationResponseGenerator.class).withNoArguments()
+                .thenReturn(responseGenerator);
+        when(responseGenerator.generateAuthenticatedResponse(requestor, clientRequestToken))
+                .thenReturn(serverResponse);
+        when(serverResponse.getResponseBody())
+                .thenReturn("<AuthenticateUser>");
+
+        IAMController controller = new IAMController();
+        ServerResponse response = controller.serve(httpRequest, requestBody);
+
+        assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
 
     @Test

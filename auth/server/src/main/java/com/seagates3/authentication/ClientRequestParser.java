@@ -28,6 +28,9 @@ public class ClientRequestParser {
             = "com.seagates3.authentication";
     private static final String AWS_V2_AUTHRORIAZATION_PATTERN
             = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
+    private static final String AWS_V4_AUTHRORIAZATION_PATTERN
+            = "AWS4-HMAC-SHA256[\\w\\W]+";
+
 
     public static ClientRequestToken parse(FullHttpRequest httpRequest,
             Map<String, String> requestBody) {
@@ -48,8 +51,14 @@ public class ClientRequestParser {
 
         if (authorizationHeader.matches(AWS_V2_AUTHRORIAZATION_PATTERN)) {
             awsSigningVersion = ClientRequestToken.AWSSigningVersion.V2;
-        } else {
+        }
+        else if(authorizationHeader.matches(AWS_V4_AUTHRORIAZATION_PATTERN))
+        {
             awsSigningVersion = ClientRequestToken.AWSSigningVersion.V4;
+        }
+        else
+        {
+            return null;
         }
 
         AWSRequestParser awsRequestParser = getAWSRequestParser(awsSigningVersion);
@@ -61,7 +70,7 @@ public class ClientRequestParser {
         }
     }
 
-    private static AWSRequestParser getAWSRequestParser(
+    public static AWSRequestParser getAWSRequestParser(
             ClientRequestToken.AWSSigningVersion awsSigningVersion) {
 
         String signVersion = awsSigningVersion.toString();
