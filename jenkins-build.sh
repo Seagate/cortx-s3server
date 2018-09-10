@@ -52,7 +52,7 @@ echo "Stopping any old running s3 services"
 $USE_SUDO ./dev-stops3.sh
 
 # Clean up mero and S3 log and data dirs
-$USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* /var/log/seagate/s3/* /var/log/seagate/auth/*
+$USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* /var/log/seagate/s3/* /var/log/seagate/auth/server/*
 
 # Start mero for new tests
 cd $MERO_SRC

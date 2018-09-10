@@ -70,6 +70,8 @@ public class SSLContextProviderTest {
     public void initTest_HttpsDisabled() throws ServerInitialisationException {
         when(AuthServerConfig.isHttpsEnabled()).thenReturn(Boolean.FALSE);
 
+        when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
+                                              "resources", "s3_auth.jks"));
         SSLContextProvider.init();
 
         assertNull(SSLContextProvider.getServerContext());

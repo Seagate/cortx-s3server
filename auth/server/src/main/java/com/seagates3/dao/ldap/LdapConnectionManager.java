@@ -49,8 +49,6 @@ public class LdapConnectionManager {
             if (AuthServerConfig.isSSLToLdapEnabled()) {
                 port = AuthServerConfig.getLdapSSLPort();
                 LOGGER.info("Connecting ldap on SSL port :" + port);
-                String path = AuthServerConfig.getKeyStorePath().toString();
-                System.setProperty("javax.net.ssl.trustStore", path);
                 socketFactory = new LDAPJSSESecureSocketFactory();
             }
             else {

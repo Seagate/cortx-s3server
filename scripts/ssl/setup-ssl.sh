@@ -59,7 +59,7 @@ cd "$CURRENT_DIR/ssl_sandbox"
 openssl req -new -x509 -extensions v3_ca  -keyout ca.key -out ca.crt -days 3650\
     -nodes -subj "/C=$COUNTRY/L=$LOCALITY/O=$ORG/CN=$CN" 2>/dev/null
 
-openssl genrsa -out "$CN.key" 1024 2>/dev/null
+openssl genrsa -out "$CN.key" 2048 2>/dev/null
 
 openssl req -new -key  "$CN.key" -out "$CN.csr" -config $SSL_CNF_FILE\
     -subj "/C=$COUNTRY/L=$LOCALITY/O=$ORG/CN=$CN"

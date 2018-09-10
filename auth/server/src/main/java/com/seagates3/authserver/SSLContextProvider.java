@@ -45,12 +45,15 @@ public class SSLContextProvider {
     public static void init() throws ServerInitialisationException {
         LOGGER.info("Initializing SSl Context");
 
+        // Set Trust store
+        Path s3KeystoreFile = AuthServerConfig.getKeyStorePath();
+        System.setProperty("javax.net.ssl.trustStore",
+                                      s3KeystoreFile.toString());
+
         if (AuthServerConfig.isHttpsEnabled()) {
             LOGGER.info("HTTPS is enabled.");
 
             httpsPort = AuthServerConfig.getHttpsPort();
-
-            Path s3KeystoreFile = AuthServerConfig.getKeyStorePath();
 
             char[] keystorePassword = AuthServerConfig.getKeyStorePassword()
                     .toCharArray();

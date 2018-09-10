@@ -123,6 +123,13 @@ Haproxy listens on port 80(http)/443(https) and forwards traffic to running S3 i
 ```sh
 yum install haproxy
 cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
+```
+## Copy SSL certificates to haproxy
+
+```sh
+cp <s3-src>/scripts/haproxy/ssl/s3.seagate.com.pem /etc/ssl/haproxy/
+cp <s3-src>/auth/resources/iam.seagate.com.pem /etc/ssl/haproxy/
+cp <s3-src>/auth/resources/iam.seagate.com.crt /etc/ssl/haproxy/
 systemctl restart haproxy
 ```
 
@@ -245,6 +252,21 @@ openssl pkcs12 -in s3_auth.p12 -out s3_auth.jks.pem -passin pass:seagate -passou
 ```sh
 openssl x509 -in s3_auth.jks.pem -out iam.seagate.com.crt
 ```
+
+#Steps to create pem file containing private and public key to deploy with haproxy for auth server endpoint.
+
+#Extract Private Key
+
+```sh
+openssl pkcs12 -in s3_auth.p12 -nocerts -out s3_auth.jks.key -passin pass:seagate -passout pass:seagate
+```
+#Decrypt using pass phrase
+
+```sh
+openssl rsa -in s3_auth.jks.key -out iam.seagate.com.key -passin pass:seagate
+cat iam.seagate.com.crt iam.seagate.com.key > iam.seagate.com.pem
+```
+
 ## Steps to create Key Pair for password encryption and store it in java keystore
 ## This key pair will be used by AuthPassEncryptCLI and AuthServer for encryption and decryption of ldap password respectively
 ```sh

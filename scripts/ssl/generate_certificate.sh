@@ -1,16 +1,19 @@
 #!/bin/bash
 set -e
+
 read -p "Enter S3 endpoint (default is s3.seagate.com): " s3_default_endpoint
 read -p "Enter S3 region endpoint (default is s3-us-west-2.seagate.com): " s3_region_endpoint
 read -p "Enter S3 iam endpoint (default is iam.seagate.com): " s3_iam_endpoint
 read -p "Enter S3 sts endpoint (default is sts.seagate.com): " s3_sts_endpoint
 read -p "Enter Open ldap domain name (default is localhost): " openldap_domainname
+read -p "Enter the key store passphrase (default is seagate): " passphrase
 
 [ "$s3_default_endpoint" == "" ] && s3_default_endpoint="s3.seagate.com"
 [ "$s3_region_endpoint" == "" ] && s3_region_endpoint="s3-us-west-2.seagate.com"
 [ "$s3_iam_endpoint" == "" ] && s3_iam_endpoint="iam.seagate.com"
 [ "$s3_sts_endpoint" == "" ] && s3_sts_endpoint="sts.seagate.com"
 [ "$openldap_domainname" == "" ] && openldap_domainname="localhost"
+[ "$passphrase" == "" ] && passphrase="seagate"
 
 function generate_s3_certs()
 {
@@ -27,8 +30,6 @@ function generate_s3_certs()
   dns_list_file="$CURRENT_DIR/dns.list"
   rm -f $dns_list_file
   echo $s3_default_endpoint > $dns_list_file
-  echo $s3_iam_endpoint >> $dns_list_file
-  echo $s3_sts_endpoint >> $dns_list_file
   echo "*.$s3_default_endpoint" >> $dns_list_file
   echo $s3_region_endpoint | tr , '\n' >> $dns_list_file
 
@@ -45,34 +46,43 @@ function generate_s3_certs()
 function generate_jks_and_iamcert()
 {
   #san_region_endpoint=`echo $s3_region_endpoint | sed 's/,/,dns:/g'`
-  san_list="dns:$s3_iam_endpoint,dns:$s3_sts_endpoint,dns:$s3_default_endpoint"
+  san_list="dns:$s3_iam_endpoint,dns:$s3_sts_endpoint"
 
   keytool -genkeypair -keyalg RSA -alias s3auth -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass seagate -keypass seagate -validity 3600 -keysize 2048 \
+  -storepass ${passphrase} -keypass ${passphrase} -validity 3600 -keysize 2048 \
   -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=$s3_iam_endpoint" -ext SAN=$san_list
 
   ## Steps to generate crt from Key store
   keytool -importkeystore -srckeystore ${s3auth_dir}/s3_auth.jks \
   -destkeystore ${s3auth_dir}/s3_auth.p12 -srcstoretype jks \
-  -deststoretype pkcs12 -srcstorepass seagate -deststorepass seagate
+  -deststoretype pkcs12 -srcstorepass ${passphrase} -deststorepass ${passphrase}
 
   openssl pkcs12 -in ${s3auth_dir}/s3_auth.p12 -out ${s3auth_dir}/s3_auth.jks.pem \
-  -passin pass:seagate -passout pass:seagate
+  -passin pass:${passphrase} -passout pass:${passphrase}
   openssl x509 -in ${s3auth_dir}/s3_auth.jks.pem -out ${s3auth_dir}/${s3_iam_endpoint}.crt
+
+  #Extract Private Key
+  openssl pkcs12 -in ${s3auth_dir}/s3_auth.p12 -nocerts -out ${s3auth_dir}/s3_auth.jks.key \
+  -passin pass:${passphrase} -passout pass:${passphrase}
+  #Decrypt using pass phrase
+  openssl rsa -in ${s3auth_dir}/s3_auth.jks.key -out ${s3auth_dir}/${s3_iam_endpoint}.key \
+  -passin pass:${passphrase}
+  cat ${s3auth_dir}/${s3_iam_endpoint}.crt ${s3auth_dir}/${s3_iam_endpoint}.key > \
+  ${s3auth_dir}/${s3_iam_endpoint}.pem
 
   ## Steps to create Key Pair for password encryption and store it in java keystore
   ## This key pair will be used by AuthPassEncryptCLI and AuthServer for encryption and
   ## decryption of ldap password respectively
   keytool -genkeypair -keyalg RSA -alias s3auth_pass -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass seagate -keypass seagate -validity 3600 -keysize 512 \
+  -storepass ${passphrase} -keypass ${passphrase} -validity 3600 -keysize 512 \
   -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=$iam_end_point" -ext SAN=$san_list
 
   # import open ldap cert into jks
   keytool -import -trustcacerts -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass seagate -noprompt -alias ldapcert -file ${openldap_dir}/localhost.crt
+  -storepass ${passphrase} -noprompt -alias ldapcert -file ${openldap_dir}/localhost.crt
   # import haproxy s3 ssl cert into jks file
   keytool -import -trustcacerts -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass seagate -noprompt -alias s3 -file ${s3_dir}/${s3_default_endpoint}.crt
+  -storepass ${passphrase} -noprompt -alias s3 -file ${s3_dir}/${s3_default_endpoint}.crt
 }
 
 function generate_openldap_cert()
