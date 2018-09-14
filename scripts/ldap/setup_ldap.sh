@@ -4,23 +4,41 @@
 # Install and configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--defaultpasswd] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [--defaultpasswd] [--skipssl] [--help | -h]
 Install and configure OpenLDAP.
 
 where:
 --defaultpasswd     use default password i.e. 'seagate' for LDAP
+--skipssl           skips all ssl configuration for LDAP
 --help              display this help and exit"
 
+set -e
 defaultpasswd=false
-case "$1" in
+usessl=true
+
+if [ $# -lt 1 ]
+then
+  echo "$USAGE"
+  exit 1
+fi
+
+while test $# -gt 0
+do
+  case "$1" in
     --defaultpasswd )
         defaultpasswd=true
+        ;;
+    --skipssl )
+        usessl=false
         ;;
     --help | -h )
         echo "$USAGE"
         exit 1
         ;;
-esac
+  esac
+  shift
+done
+
 
 # install openldap server and client
 yum list installed selinux-policy && yum update -y selinux-policy
@@ -81,6 +99,12 @@ ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FI
 rm -f $ADMIN_USERS_FILE
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
+
+if [[ $usessl == true ]]
+then
+#Deploy SSL certificates and enable OpenLDAP SSL port
+./ssl/enable_ssl_openldap.sh -cafile ssl/certs/ca.crt -certfile ssl/certs/localhost.crt -keyfile ssl/certs/private/localhost.key
+fi
 
 echo "************************************************************"
 echo "You may have to redo any selinux settings as selinux-policy package was updated."

@@ -1,0 +1,9 @@
+dn: cn=config
+replace: olcTLSCACertificateFile
+olcTLSCACertificateFile: /etc/ssl/openldap/ca.crt
+-
+replace: olctlscertificatefile
+olctlscertificatefile: /etc/ssl/openldap/localhost.crt
+-
+replace: olctlscertificatekeyfile
+olctlscertificatekeyfile: /etc/ssl/openldap/private/localhost.key

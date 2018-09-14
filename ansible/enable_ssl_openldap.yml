@@ -1,0 +1,67 @@
+---
+- name: Enable SSL for openldap setup on port 636
+  hosts: s3ldapnode
+  remote_user: root
+  gather_facts: yes
+  vars:
+    ldap_url: ldap:\/\/\/ ldaps:\/\/\/ ldapi:\/\/\/
+
+  tasks:
+
+      - name: Create directory to store ssl certificates
+        file: path=/etc/ssl/openldap/private state=directory
+
+      - name: Copy CA certificate
+        copy:
+          src: files/ldap/ssl/certs/ca.crt
+          dest: /etc/ssl/openldap/ca.crt
+
+      - name: Copy localhost certificate
+        copy:
+          src: files/ldap/ssl/certs/localhost.crt
+          dest: /etc/ssl/openldap/localhost.crt
+
+      - name: Copy localhost key
+        copy:
+          src: files/ldap/ssl/certs/private/localhost.key
+          dest: /etc/ssl/openldap/private/localhost.key
+
+      - name: Change owner permission for /etc/ssl/openldap*
+        file: path=/etc/ssl/openldap* owner=root group=root state=directory recurse=yes
+
+      - name: Copy openldap config related file
+        copy:
+          src: files/ldap/ssl/ssl_certs.ldif
+          dest: /etc/ssl/openldap/ssl_certs.ldif
+
+      - name: Update openldap configuration
+        command: ldapmodify -Y EXTERNAL  -H ldapi:/// -f /etc/ssl/openldap/ssl_certs.ldif
+        no_log: true
+
+      - name: Clean up ldap config related file
+        file:
+          state: absent
+          path: /etc/ssl/openldap/ssl_certs.ldif
+
+      - name: Backup original slapd file
+        copy:
+          src:  /etc/sysconfig/slapd
+          dest: /etc/sysconfig/slapd.bak
+          backup: yes
+          remote_src: yes
+
+      - name: Edit file Inplace
+        command: sed -i "s/^SLAPD_URLS=.*/SLAPD_URLS={{ldap_url}}/" /etc/sysconfig/slapd
+        no_log: true
+
+      - name: Copy ldap configuration
+        copy:
+          src: files/ldap/ssl/ldap.conf
+          dest: /etc/openldap/ldap.conf
+          backup: yes
+
+  handlers:
+      - name: restart slapd
+        service:
+          name: slapd
+          state: restarted
