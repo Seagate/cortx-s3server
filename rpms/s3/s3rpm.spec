@@ -97,6 +97,7 @@ rm -rf %{buildroot}
 /opt/seagate/auth/resources/s3_auth.jks
 /opt/seagate/auth/resources/signin.seagate.com.crt
 /opt/seagate/auth/resources/iam.seagate.com.crt
+/opt/seagate/auth/resources/iam.seagate.com.pem
 /opt/seagate/auth/startauth.sh
 /opt/seagate/s3/bin/cloviskvscli
 /opt/seagate/s3/bin/s3server
