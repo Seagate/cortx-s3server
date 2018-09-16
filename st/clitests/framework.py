@@ -15,7 +15,7 @@ class Config:
     time_readable_format = True
     tmp_wd = ''
     s3cmd_max_retries = 5
-    use_ssl = False
+    no_ssl = True
     client_execution_timeout = None
     request_timeout = None
     socket_timeout = None

@@ -192,7 +192,7 @@ test9:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>BadRequest</Code><Message>Bad Request. Check request headers and body.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><ErrorResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><Error><Code>BadRequest</Code><Message>Invalid Authorization header.</Message></Error><RequestId>0000</RequestId></ErrorResponse>'
 
 test10:
     test-title: Authenticate user using AWS Signature Version 4

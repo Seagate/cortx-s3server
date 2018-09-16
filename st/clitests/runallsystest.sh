@@ -22,6 +22,15 @@ PythonV="python3.4"
 echo "`date -u`: Running auth_spec.py..."
 $PythonV auth_spec.py --all
 
+echo "`date -u`: Running auth_spec_negative_and_fi.py..."
+$PythonV auth_spec_negative_and_fi.py
+
+echo "`date -u`: Running auth_spec_param_validation.py..."
+$PythonV auth_spec_param_validation.py
+
+echo "`date -u`: Running auth_spec_signature_calculation.py..."
+$PythonV auth_spec_signature_calculation.py
+
 echo "`date -u`: Running s3cmd_spec.py..."
 $PythonV s3cmd_spec.py
 

@@ -6,4 +6,4 @@ class S3ClientConfig:
     ldappasswd = ""
     pathstyle = False
     s3_uri = "http://s3.seagate.com"
-    iam_uri = "http://iam.seagate.com:8085"
+    iam_uri = "http://iam.seagate.com:9085"

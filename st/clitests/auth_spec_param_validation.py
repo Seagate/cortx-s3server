@@ -44,7 +44,10 @@ def parameter_validation_tests():
     user_args = {}
     user_args['UserName'] = "s3user1"
     AuthTest(test_msg).create_user(**user_args).execute_test()\
-            .command_response_should_have("Exception occured while creating user")
+            .command_response_should_have("An error occurred (InvalidAccessKeyId) when"
+                                          " calling the CreateUser operation: The AWS "
+                                          "access key Id you provided does not exist "
+                                          "in our records.")
 
     # Create user with wrong secret key
     test_msg = "Create User s3user1 should fail if secret key is invalid"
@@ -53,7 +56,13 @@ def parameter_validation_tests():
     user_args = {}
     user_args['UserName'] = "s3user1"
     AuthTest(test_msg).create_user(**user_args).execute_test()\
-            .command_response_should_have("Exception occured while creating user")
+            .command_response_should_have("An error occurred (SignatureDoesNotMatch) when "
+                                          "calling the CreateUser operation: The request "
+                                          "signature we calculated does not match the "
+                                          "signature you provided. Check your AWS secret "
+                                          "access key and signing method. For more "
+                                          "information, see REST Authentication andSOAP "
+                                          "Authentication for details.")
 
     set_valid_credentials()
 
@@ -61,14 +70,14 @@ def parameter_validation_tests():
     user_args = {}
     user_args['UserName'] = '#invalidusername'
     AuthTest(test_msg).create_user(**user_args).execute_test()\
-            .command_response_should_have("Exception occured while creating user")
+            .command_response_should_have("Failed to create user.")
 
     test_msg = "Create user should fail if pathname is invalid"
     user_args = {}
     user_args['UserName'] = 'test_user'
     user_args['Path'] = '#_-=INVALID%PATH/'
     AuthTest(test_msg).create_user(**user_args).execute_test()\
-            .command_response_should_have("Exception occured while creating user")
+            .command_response_should_have("Failed to create user.")
 
 before_all()
 parameter_validation_tests()
