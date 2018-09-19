@@ -125,6 +125,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
 };
 
 enum class S3ClovisReaderOpState {
+  init_failed,
   failed,
   start,
   success,
@@ -163,7 +164,7 @@ class S3ClovisReader {
 
   // Internal open operation so clovis can fetch required object metadata
   // for example object pool version
-  void open_object();
+  int open_object();
   void open_object_successful();
   void open_object_failed();
 

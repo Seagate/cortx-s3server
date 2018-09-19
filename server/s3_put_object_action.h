@@ -132,6 +132,7 @@ class S3PutObjectAction : public S3Action {
   FRIEND_TEST(S3PutObjectActionTest,
               WriteObjectShouldWriteContentAndMarkProgress);
   FRIEND_TEST(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure);
   FRIEND_TEST(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown);
   FRIEND_TEST(S3PutObjectActionTest,
               WriteObjectSuccessfulWhileShuttingDownAndRollback);

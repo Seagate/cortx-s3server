@@ -297,6 +297,10 @@ void S3PutMultiObjectAction::consume_incoming_content() {
             S3Option::get_instance()->get_clovis_write_payload_size(
                 layout_id)) {
       write_object(request->get_buffered_input());
+      if (!clovis_write_in_progress && clovis_write_completed) {
+        s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+        return;
+      }
     }
   }
   if (!request->get_buffered_input()->is_freezed() &&
@@ -393,7 +397,11 @@ void S3PutMultiObjectAction::write_object_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Write to clovis failed\n");
   clovis_write_in_progress = false;
   clovis_write_completed = true;
-  set_s3_error("InternalError");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
   if (request->is_chunked()) {
     write_failed = true;
     request->pause();  // pause any further reading from client.

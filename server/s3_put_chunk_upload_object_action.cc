@@ -376,6 +376,10 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
             S3Option::get_instance()->get_clovis_write_payload_size(
                 layout_id)) {
       write_object(request->get_buffered_input());
+      if (!clovis_write_in_progress && write_failed) {
+        s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+        return;
+      }
     }
   }
   if (!request->get_buffered_input()->is_freezed() &&
@@ -475,7 +479,13 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   write_failed = true;
   request->pause();  // pause any further reading from client
   get_auth_client()->abort_chunk_auth_op();
-  set_s3_error("InternalError");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+    set_s3_error("ServiceUnavailable");
+    s3_log(S3_LOG_ERROR, request_id,
+           "write_object_failed called due to clovis_entity_open failure\n");
+  } else {
+    set_s3_error("InternalError");
+  }
 
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");

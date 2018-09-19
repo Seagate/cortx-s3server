@@ -394,7 +394,13 @@ void S3PutObjectAction::write_object_successful() {
 
 void S3PutObjectAction::write_object_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed writing to clovis.\n");
-  set_s3_error("InternalError");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+    set_s3_error("ServiceUnavailable");
+    s3_log(S3_LOG_ERROR, request_id,
+           "write_object_failed called due to clovis_entity_open failure\n");
+  } else {
+    set_s3_error("InternalError");
+  }
   write_in_progress = false;
 
   // Trigger rollback to undo changes done and report error

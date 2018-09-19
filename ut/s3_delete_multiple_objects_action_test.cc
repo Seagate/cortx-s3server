@@ -682,11 +682,25 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   action_under_test->delete_objects_successful();
 }
 
+TEST_F(S3DeleteMultipleObjectsActionTest,
+       DeleteObjectsInitFailedNoMoreToProcess) {
+  action_under_test->oids_to_delete.push_back(oid);
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(503, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(1)
+      .WillOnce(Return(S3ClovisWriterOpState::init_failed));
+  action_under_test->delete_objects_failed();
+}
+
 TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectsFailedNoMoreToProcess) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
       .Times(AtLeast(1));
   EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(1)
+      .WillOnce(Return(S3ClovisWriterOpState::failed));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
 
@@ -700,6 +714,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectsFailedMoreToProcess) {
       object_list_indx_oid);
   EXPECT_CALL(*mock_request, get_header_value(_))
       .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(1)
+      .WillOnce(Return(S3ClovisWriterOpState::failed));
   // Clear tasks so validate_request_body calls mocked next
   action_under_test->clear_tasks();
   action_under_test->add_task(

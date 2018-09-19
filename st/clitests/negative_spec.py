@@ -150,6 +150,69 @@ for i, type in enumerate(config_types):
         delete_test("seagatebucket", "3Kfile").\
         execute_test().command_is_successful()
 
+    # clovis_open_entity fails
+    S3fiTest('s3cmd can enable FI clovis_enity_open').\
+        enable_fi("enable", "always", "clovis_entity_open_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can not upload 18MBfile object').\
+        upload_test("seagatebucket", "18MBfile", 18000000).\
+        execute_test(negative_case=True).command_should_fail()
+
+    # test for delete bucket with multipart object
+    S3cmdTest('s3cmd cannot delete bucket').delete_bucket("seagatebucket").\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+
+    S3fiTest('s3cmd can disable FI clovis_enity_open_fail').\
+        disable_fi("clovis_entity_open_fail").\
+        execute_test().command_is_successful()
+    result = S3cmdTest('s3cmd can list multipart uploads in progress').\
+             list_multipart_uploads("seagatebucket").execute_test()
+    result.command_response_should_have('18MBfile')
+    upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
+
+    result = S3cmdTest('S3cmd can list parts of multipart upload.').\
+             list_parts("seagatebucket", "18MBfile", upload_id).\
+             execute_test().command_is_successful()
+
+    S3cmdTest('S3cmd can abort multipart upload').\
+    abort_multipart("seagatebucket", "18MBfile", upload_id).\
+    execute_test().command_is_successful()
+
+    #clovis_enity_open failure and chunk upload
+    S3fiTest('s3cmd can enable FI clovis_enity_open').\
+        enable_fi("enable", "always", "clovis_entity_open_fail").\
+        execute_test().command_is_successful()
+    JClientTest('Jclient can upload 3k file in chunked mode').\
+        put_object("seagatebucket", "3Kfile", 3000, chunked=True).\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd can disable FI clovis_enity_open_fail').\
+        disable_fi("clovis_entity_open_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can delete 3k file').\
+        delete_test("seagatebucket", "3Kfile").\
+        execute_test().command_is_successful()
+
+
+
+    # clovis_open_entity fails read failure
+    S3cmdTest('s3cmd can upload 3K file').\
+        upload_test("seagatebucket", "3Kfile", 3000).\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd can enable FI clovis_enity_open').\
+        enable_fi("enable", "always", "clovis_entity_open_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot download 3k file').\
+        download_test("seagatebucket", "3kfile").\
+        execute_test(negative_case=True).command_should_fail()
+    S3fiTest('s3cmd can disable FI clovis_enity_open_fail').\
+        disable_fi("clovis_entity_open_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can delete 3k file').\
+        delete_test("seagatebucket", "3Kfile").\
+        execute_test().command_is_successful()
+
+
     # Multipart listing shall return an error for corrupted object
     JClientTest('Jclient can upload partial parts').\
         partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).\

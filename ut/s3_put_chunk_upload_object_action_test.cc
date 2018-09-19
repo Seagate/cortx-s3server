@@ -618,6 +618,34 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
       .WillRepeatedly(Return(true));
 
   EXPECT_CALL(*mock_request, pause()).Times(1);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(1)
+      .WillOnce(Return(S3ClovisWriterOpState::failed));
+
+  action_under_test->write_object_failed();
+
+  EXPECT_FALSE(action_under_test->clovis_write_in_progress);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
+       WriteObjectEntityFailedShouldUndoMarkProgress) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+
+  // mock mark progress
+  action_under_test->clovis_write_in_progress = true;
+  // Mock out the rollback calls on action.
+  action_under_test->clear_tasks_rollback();
+  action_under_test->add_task_rollback(std::bind(
+      &S3PutChunkUploadObjectActionTestBase::func_callback_one, this));
+
+  EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*mock_request, pause()).Times(1);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(1)
+      .WillOnce(Return(S3ClovisWriterOpState::init_failed));
 
   action_under_test->write_object_failed();
 

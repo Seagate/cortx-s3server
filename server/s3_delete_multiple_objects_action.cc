@@ -383,27 +383,34 @@ void S3DeleteMultipleObjectsAction::delete_objects_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   uint obj_index = 0;
   bool delete_obj_failed = false;
-  for (auto& obj : objects_metadata) {
-    if (clovis_writer->get_op_ret_code_for_delete_op(obj_index) == -ENOENT) {
-      // do nothing here
-    } else {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Deletion of object with oid "
-             "%" SCNx64 " : %" SCNx64 " failed\n",
-             obj->get_oid().u_hi, obj->get_oid().u_lo);
-      delete_obj_failed = true;
-    }
-    ++obj_index;
-  }
-  if (delete_obj_failed) {
-    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
-           S3_IEM_DELETE_OBJ_FAIL_JSON);
-  }
-  if (delete_index_in_req < delete_request.get_count()) {
-    // Try to delete the remaining
-    fetch_objects_info();
-  } else {
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+    set_s3_error("ServiceUnavailable");
+    s3_log(S3_LOG_ERROR, request_id,
+           "delete_objects_failed called due to clovis_entity_open failure\n");
     send_response_to_s3_client();
+  } else {
+    for (auto& obj : objects_metadata) {
+      if (clovis_writer->get_op_ret_code_for_delete_op(obj_index) == -ENOENT) {
+        // do nothing here
+      } else {
+        s3_log(S3_LOG_ERROR, request_id,
+               "Deletion of object with oid "
+               "%" SCNx64 " : %" SCNx64 " failed\n",
+               obj->get_oid().u_hi, obj->get_oid().u_lo);
+        delete_obj_failed = true;
+      }
+      ++obj_index;
+    }
+    if (delete_obj_failed) {
+      s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+             S3_IEM_DELETE_OBJ_FAIL_JSON);
+    }
+    if (delete_index_in_req < delete_request.get_count()) {
+      // Try to delete the remaining
+      fetch_objects_info();
+    } else {
+      send_response_to_s3_client();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

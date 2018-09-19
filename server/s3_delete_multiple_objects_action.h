@@ -148,6 +148,8 @@ class S3DeleteMultipleObjectsAction : public S3Action {
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
               DeleteObjectsFailedNoMoreToProcess);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
+              DeleteObjectsInitFailedNoMoreToProcess);
+  FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
               DeleteObjectsFailedMoreToProcess);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, SendErrorResponse);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, SendAnyFailedResponse);

@@ -87,6 +87,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
 };
 
 enum class S3ClovisWriterOpState {
+  init_failed,
   failed,
   start,
   creating,
@@ -137,7 +138,7 @@ class S3ClovisWriter {
   std::shared_ptr<S3AsyncBufferOptContainer> write_async_buffer;
 
   // Write - single object, delete - multiple objects supported
-  void open_objects();
+  int open_objects();
   void open_objects_successful();
   void open_objects_failed();
 
@@ -240,6 +241,7 @@ class S3ClovisWriter {
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsSuccessfulTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsFailedTest);
   FRIEND_TEST(S3ClovisWriterTest, OpenObjectsTest);
+  FRIEND_TEST(S3ClovisWriterTest, OpenObjectsEntityOpenFailedTest);
   FRIEND_TEST(S3ClovisWriterTest, OpenObjectsFailedTest);
   FRIEND_TEST(S3ClovisWriterTest, OpenObjectsFailedMissingTest);
   FRIEND_TEST(S3ClovisWriterTest, WriteContentSuccessfulTest);

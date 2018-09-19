@@ -160,7 +160,11 @@ class ConcreteClovisAPI : public ClovisAPI {
 
   int clovis_entity_open(struct m0_clovis_entity *entity,
                          struct m0_clovis_op **op) {
-    return m0_clovis_entity_open(entity, op);
+    if (s3_fi_is_enabled("clovis_entity_open_fail")) {
+      return -1;
+    } else {
+      return m0_clovis_entity_open(entity, op);
+    }
   }
 
   int clovis_entity_create(struct m0_clovis_entity *entity,

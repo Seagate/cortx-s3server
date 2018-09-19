@@ -301,6 +301,14 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
   uint count = 0;
   int op_ret_code;
   bool atleast_one_error = false;
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+    set_s3_error("ServiceUnavailable");
+    s3_log(S3_LOG_ERROR, "",
+           "delete_multipart_objects_failed called due to clovis_entity_open "
+           "failure\n");
+    send_response_to_s3_client();
+    return;
+  }
   for (auto& multipart_obj_oid : multipart_object_oids) {
     op_ret_code = clovis_writer->get_op_ret_code_for_delete_op(count);
     if (op_ret_code != -ENOENT && op_ret_code != 0) {

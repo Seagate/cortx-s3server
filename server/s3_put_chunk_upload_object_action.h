@@ -154,6 +154,10 @@ class S3PutChunkUploadObjectAction : public S3Action {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               WriteObjectFailedShouldUndoMarkProgress);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectEntityFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              WriteObjectEntityOpenFailedShouldUndoMarkProgress);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               WriteObjectSuccessfulWhileShuttingDown);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               WriteObjectSuccessfulWhileShuttingDownAndRollback);

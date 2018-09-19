@@ -100,7 +100,8 @@ void S3ClovisWriter::clean_up_contexts() {
   }
 }
 
-void S3ClovisWriter::open_objects() {
+int S3ClovisWriter::open_objects() {
+  int rc = 0;
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   is_object_opened = false;
@@ -136,8 +137,14 @@ void S3ClovisWriter::open_objects() {
     s3_clovis_api->clovis_obj_init(&obj_ctx->objs[i], &clovis_uber_realm,
                                    &oid_list[i], layout_ids[i]);
 
-    s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[i].ob_entity),
-                                      &(ctx->ops[i]));
+    rc = s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[i].ob_entity),
+                                           &(ctx->ops[i]));
+    if (rc != 0) {
+      s3_log(S3_LOG_WARN, request_id,
+             "Clovis API: clovis_entity_open failed with error code %d\n", rc);
+      state = S3ClovisWriterOpState::init_failed;
+      return rc;
+    }
 
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_clovis_api->clovis_op_setup(ctx->ops[i], &ctx->cbs[i], 0);
@@ -147,6 +154,7 @@ void S3ClovisWriter::open_objects() {
          oid_list_stream.str().c_str());
   s3_clovis_api->clovis_op_launch(ctx->ops, ops_count, ClovisOpType::openobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  return rc;
 }
 
 void S3ClovisWriter::open_objects_successful() {
@@ -295,7 +303,11 @@ void S3ClovisWriter::write_content(
   if (is_object_opened) {
     write_content();
   } else {
-    open_objects();
+    int rc;
+    rc = open_objects();
+    if (rc != 0) {
+      this->handler_on_failed();
+    }
   }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -444,9 +456,12 @@ void S3ClovisWriter::delete_object(std::function<void(void)> on_success,
   if (is_object_opened) {
     delete_objects();
   } else {
-    open_objects();
+    int rc;
+    rc = open_objects();
+    if (rc != 0) {
+      this->handler_on_failed();
+    }
   }
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -525,6 +540,7 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
                                     std::vector<int> layoutids,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
+  int rc;
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
@@ -537,8 +553,10 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
   state = S3ClovisWriterOpState::deleting;
 
   // Force open all objects
-  open_objects();
-
+  rc = open_objects();
+  if (rc != 0) {
+    this->handler_on_failed();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
