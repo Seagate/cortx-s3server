@@ -14,10 +14,16 @@ abort()
 }
 trap 'abort' 0
 
-pyv=`python3 -c "import platform;print(platform.python_version())";`
-if [ "$pyv" != "3.4.8" ]; then
-   echo "You need Python 3.4.8 to run system tests"
-   abort
+PY_EXPECTED_V=3.4.8  # at least 3.4.8 or above
+PY_VER=`python3 -c "import platform;print(platform.python_version())";`
+
+function is_x_gt_eq_to_y() {
+   x=$1
+   y=$2
+   test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" = "$x";
+}
+if !(is_x_gt_eq_to_y $PY_VER $PY_EXPECTED_V); then
+   echo "Python version should be atleast greater than $PY_EXPECTED_V"
 fi
 
 JCLIENTJAR='jclient.jar'
