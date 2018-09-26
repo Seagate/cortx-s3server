@@ -85,15 +85,21 @@ bool S3ClovisReader::read_object_data(size_t num_of_blocks,
   if (is_object_opened) {
     rc = read_object();
   } else {
-    open_object();
+    int rc;
+    rc = open_object();
+    if (rc != 0) {
+      this->handler_on_failed();
+      return false;
+    }
   }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return rc;
 }
 
-void S3ClovisReader::open_object() {
+int S3ClovisReader::open_object() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  int rc = 0;
 
   is_object_opened = false;
 
@@ -124,6 +130,12 @@ void S3ClovisReader::open_object() {
 
   s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[0].ob_entity),
                                     &(ctx->ops[0]));
+  if (rc != 0) {
+    s3_log(S3_LOG_WARN, request_id,
+           "Clovis API: clovis_entity_open failed with error code %d\n", rc);
+    state = S3ClovisReaderOpState::init_failed;
+    return rc;
+  }
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
@@ -134,6 +146,7 @@ void S3ClovisReader::open_object() {
          oid.u_hi, oid.u_lo);
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::openobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  return rc;
 }
 
 void S3ClovisReader::open_object_successful() {
