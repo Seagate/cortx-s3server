@@ -286,6 +286,21 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectFailedShouldReportDeleted) {
   action_under_test->delete_object_failed();
 }
 
+TEST_F(S3DeleteObjectActionTest,
+       DeleteObjectFailedToLaunchShouldReportDeleted) {
+  CREATE_OBJECT_METADATA;
+
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+
+  EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
+
+  action_under_test->delete_object_failed();
+}
+
 TEST_F(S3DeleteObjectActionTest, SendErrorResponse) {
   action_under_test->set_s3_error("InternalError");
 

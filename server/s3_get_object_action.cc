@@ -382,7 +382,8 @@ void S3GetObjectAction::read_object_data() {
           std::bind(&S3GetObjectAction::send_data_to_client, this),
           std::bind(&S3GetObjectAction::read_object_data_failed, this));
       if (!op_launched) {
-        if (clovis_reader->get_state() == S3ClovisReaderOpState::init_failed) {
+        if (clovis_reader->get_state() ==
+            S3ClovisReaderOpState::failed_to_launch) {
           set_s3_error("ServiceUnavailable");
           s3_log(S3_LOG_ERROR, request_id,
                  "read_object_data called due to clovis_entity_open failure\n");

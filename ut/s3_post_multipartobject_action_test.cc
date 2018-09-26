@@ -270,12 +270,33 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailed) {
 
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(1)
+      .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
   action_under_test->create_object_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PostMultipartObjectTest, CreateObjectFailedToLaunch) {
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+
+  action_under_test->create_object_failed();
+  EXPECT_TRUE(action_under_test->clovis_writer == NULL);
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
+
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  action_under_test->create_object_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision) {
@@ -361,6 +382,22 @@ TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed) {
   EXPECT_EQ(0, call_count_one);
 }
 
+TEST_F(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed1) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->add_task_rollback(
+      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+
+  action_under_test->rollback_create_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
+  EXPECT_EQ(0, call_count_one);
+}
+
 TEST_F(S3PostMultipartObjectTest, RollbackPartMetadataIndex) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), remove_index(_, _))
@@ -377,6 +414,21 @@ TEST_F(S3PostMultipartObjectTest, RollbackPartMetadataIndexFailed) {
 }
 
 TEST_F(S3PostMultipartObjectTest, SaveUploadMetadataFailed) {
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  action_under_test->add_task_rollback(
+      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+  action_under_test->save_upload_metadata_failed();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostMultipartObjectTest, SaveUploadMetadataFailedToLaunch) {
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
   action_under_test->add_task_rollback(
       std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
   action_under_test->save_upload_metadata_failed();
@@ -435,6 +487,21 @@ TEST_F(S3PostMultipartObjectTest, SaveMultipartMetadata) {
 }
 
 TEST_F(S3PostMultipartObjectTest, SaveMultipartMetadataFailed) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  action_under_test->add_task_rollback(
+      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+  action_under_test->save_multipart_metadata_failed();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostMultipartObjectTest, SaveMultipartMetadataFailedToLaunch) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
   action_under_test->add_task_rollback(
       std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
   action_under_test->save_multipart_metadata_failed();

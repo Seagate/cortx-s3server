@@ -86,6 +86,7 @@ class S3PutObjectAction : public S3Action {
   void write_object_successful();
   void write_object_failed();
   void save_metadata();
+  void save_object_metadata_failed();
   void delete_old_object_if_present();
   void delete_old_object_failed();
   void send_response_to_s3_client();
@@ -114,10 +115,12 @@ class S3PutObjectAction : public S3Action {
               CreateObjectFailedWithCollisionExceededRetry);
   FRIEND_TEST(S3PutObjectActionTest, CreateObjectFailedWithCollisionRetry);
   FRIEND_TEST(S3PutObjectActionTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3PutObjectActionTest, CreateObjectFailedToLaunchTest);
   FRIEND_TEST(S3PutObjectActionTest, RollbackTest);
   FRIEND_TEST(S3PutObjectActionTest, CreateNewOidTest);
   FRIEND_TEST(S3PutObjectActionTest, RollbackFailedTest1);
   FRIEND_TEST(S3PutObjectActionTest, RollbackFailedTest2);
+  FRIEND_TEST(S3PutObjectActionTest, RollbackFailedTest3);
   FRIEND_TEST(S3PutObjectActionTest, InitiateDataStreamingForZeroSizeObject);
   FRIEND_TEST(S3PutObjectActionTest, InitiateDataStreamingExpectingMoreData);
   FRIEND_TEST(S3PutObjectActionTest, InitiateDataStreamingWeHaveAllData);
@@ -150,6 +153,7 @@ class S3PutObjectAction : public S3Action {
   FRIEND_TEST(S3PutObjectActionTest, DeleteObjectNotRequired);
   FRIEND_TEST(S3PutObjectActionTest, DeleteObjectSinceItsPresent);
   FRIEND_TEST(S3PutObjectActionTest, DeleteObjectFailed);
+  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectFailedToLaunch);
   FRIEND_TEST(S3PutObjectActionTest, SendResponseWhenShuttingDown);
   FRIEND_TEST(S3PutObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3PutObjectActionTest, SendSuccessResponse);

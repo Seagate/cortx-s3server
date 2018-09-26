@@ -239,6 +239,16 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
   }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
     collision_detected();
+  } else if (clovis_writer->get_state() ==
+             S3ClovisWriterOpState::failed_to_launch) {
+    create_object_timer.stop();
+    LOG_PERF("create_object_failed_ms",
+             create_object_timer.elapsed_time_in_millisec());
+    s3_stats_timing("create_object_failed",
+                    create_object_timer.elapsed_time_in_millisec());
+    s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
     create_object_timer.stop();
     LOG_PERF("create_object_failed_ms",
@@ -316,6 +326,11 @@ void S3PutChunkUploadObjectAction::rollback_create_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     rollback_next();
+  } else if (clovis_writer->get_state() ==
+             S3ClovisWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_WARN, request_id, "Deletion of object failed\n");
+    set_s3_error("ServiceUnavailable");
+    rollback_done();
   } else {
     // Log rollback failure.
     s3_log(S3_LOG_WARN, request_id, "Deletion of object failed\n");
@@ -479,7 +494,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   write_failed = true;
   request->pause();  // pause any further reading from client
   get_auth_client()->abort_chunk_auth_op();
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_log(S3_LOG_ERROR, request_id,
            "write_object_failed called due to clovis_entity_open failure\n");
@@ -526,7 +541,18 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   check_shutdown_signal_for_next_task(false);
   object_metadata->save(
       std::bind(&S3PutChunkUploadObjectAction::next, this),
-      std::bind(&S3PutChunkUploadObjectAction::rollback_start, this));
+      std::bind(&S3PutChunkUploadObjectAction::save_object_metadata_failed,
+                this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Object metadata save failed\n");
+    set_s3_error("ServiceUnavailable");
+  }
+  rollback_start();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -547,6 +573,14 @@ void S3PutChunkUploadObjectAction::delete_old_object_if_present() {
 
 void S3PutChunkUploadObjectAction::delete_old_object_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Deletion of old object with oid "
+           "%" SCNx64 " : %" SCNx64 " failed\n",
+           old_object_oid.u_hi, old_object_oid.u_lo);
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
   s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
          S3_IEM_DELETE_OBJ_FAIL_JSON);
   s3_log(S3_LOG_ERROR, request_id,
@@ -554,6 +588,7 @@ void S3PutChunkUploadObjectAction::delete_old_object_failed() {
          "%" SCNx64 " : %" SCNx64 " failed\n",
          old_object_oid.u_hi, old_object_oid.u_lo);
   next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

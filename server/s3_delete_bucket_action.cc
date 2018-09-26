@@ -301,11 +301,9 @@ void S3DeleteBucketAction::delete_multipart_objects_failed() {
   uint count = 0;
   int op_ret_code;
   bool atleast_one_error = false;
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
-    s3_log(S3_LOG_ERROR, "",
-           "delete_multipart_objects_failed called due to clovis_entity_open "
-           "failure\n");
+    s3_log(S3_LOG_ERROR, "", "delete_multipart_objects_failed failed\n");
     send_response_to_s3_client();
     return;
   }
@@ -367,7 +365,12 @@ void S3DeleteBucketAction::remove_part_indexes_successful() {
 
 void S3DeleteBucketAction::remove_part_indexes_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed to delete multipart part metadata\n");
-  next();
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
 }
 
 void S3DeleteBucketAction::remove_multipart_index() {
@@ -394,7 +397,12 @@ void S3DeleteBucketAction::remove_multipart_index_failed() {
          "Failed to delete multipart index oid "
          "%" SCNx64 " : %" SCNx64 "\n",
          multipart_index.u_hi, multipart_index.u_lo);
-  next();
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
 }
 
 void S3DeleteBucketAction::remove_object_list_index() {
@@ -448,7 +456,12 @@ void S3DeleteBucketAction::remove_object_list_index_failed() {
          bucket_metadata->get_object_list_index_oid_u_lo_str().c_str());
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
          S3_IEM_DELETE_IDX_FAIL_JSON);
-  next();
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

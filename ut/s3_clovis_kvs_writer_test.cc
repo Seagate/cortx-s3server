@@ -244,6 +244,25 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessful) {
   EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
 }
 
+TEST_F(S3ClovisKvsWritterTest, CreateIndexEntityCreateFailed) {
+  S3CallBack s3cloviskvscallbackobj;
+
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_create(_, _))
+      .WillOnce(Return(-1));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
+
+  action_under_test->create_index(
+      "TestIndex", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+
+  EXPECT_EQ(1, action_under_test->oid_list.size());
+  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
+  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
+  EXPECT_EQ(S3ClovisKVSWriterOpState::failed_to_launch,
+            action_under_test->get_state());
+}
+
 TEST_F(S3ClovisKvsWritterTest, CreateIndexFail) {
   S3CallBack s3cloviskvscallbackobj;
 
@@ -647,6 +666,23 @@ TEST_F(S3ClovisKvsWritterTest, DelIndexIdxPresent) {
 
   EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
   EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
+}
+
+TEST_F(S3ClovisKvsWritterTest, DelIndexEntityDeleteFailed) {
+  S3CallBack s3cloviskvscallbackobj;
+
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_delete(_, _))
+      .WillOnce(Return(-1));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_open(_, _));
+
+  action_under_test->delete_index(
+      oid, std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+
+  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
+  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
 }
 
 TEST_F(S3ClovisKvsWritterTest, DelIndexFailed) {

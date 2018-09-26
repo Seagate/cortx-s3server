@@ -86,8 +86,9 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
 };
 
 enum class S3ClovisKVSWriterOpState {
-  failed,
   start,
+  failed_to_launch,
+  failed,
   created,
   saved,
   deleted,
@@ -204,6 +205,7 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexIdxPresent);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndex);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexSuccessful);
+  FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexEntityCreateFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFail);
   FRIEND_TEST(S3ClovisKvsWritterTest, CreateIndexFailExists);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncIndex);
@@ -215,6 +217,7 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, PutKeyValEmpty);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexIdxPresent);
+  FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexEntityDeleteFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelIndexFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyVal);
   FRIEND_TEST(S3ClovisKvsWritterTest, SyncKeyvalSuccessful);

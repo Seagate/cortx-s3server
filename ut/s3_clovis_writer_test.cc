@@ -196,6 +196,28 @@ TEST_F(S3ClovisWriterTest, CreateObjectTest) {
   EXPECT_FALSE(s3cloviswriter_callbackobj.fail_called);
 }
 
+TEST_F(S3ClovisWriterTest, CreateObjectEntityCreateFailTest) {
+  S3CallBack s3cloviswriter_callbackobj;
+
+  clovis_writer_ptr = std::make_shared<S3ClovisWriter>(request_mock, obj_oid, 0,
+                                                       s3_clovis_api_mock);
+
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _, _));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_entity_create(_, _))
+      .WillOnce(Return(-1));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
+
+  S3Option::get_instance()->set_eventbase(evbase);
+
+  clovis_writer_ptr->create_object(
+      std::bind(&S3CallBack::on_success, &s3cloviswriter_callbackobj),
+      std::bind(&S3CallBack::on_failed, &s3cloviswriter_callbackobj),
+      layout_id);
+
+  EXPECT_FALSE(s3cloviswriter_callbackobj.success_called);
+  EXPECT_TRUE(s3cloviswriter_callbackobj.fail_called);
+}
+
 TEST_F(S3ClovisWriterTest, CreateObjectSuccessfulTest) {
   S3CallBack s3cloviswriter_callbackobj;
 
@@ -270,6 +292,44 @@ TEST_F(S3ClovisWriterTest, DeleteObjectFailedTest) {
       std::bind(&S3CallBack::on_success, &s3cloviswriter_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviswriter_callbackobj),
       layout_id);
+
+  EXPECT_FALSE(s3cloviswriter_callbackobj.success_called);
+  EXPECT_TRUE(s3cloviswriter_callbackobj.fail_called);
+}
+
+TEST_F(S3ClovisWriterTest, DeleteObjectclovisEntityDeleteFailedTest) {
+  S3CallBack s3cloviswriter_callbackobj;
+
+  std::vector<struct m0_uint128> oids;
+  std::vector<int> layoutids;
+  for (int i = 0; i < 3; i++) {
+    oids.push_back(obj_oid);
+    layoutids.push_back(layout_id);
+  }
+
+  clovis_writer_ptr = std::make_shared<S3ClovisWriter>(request_mock, obj_oid, 0,
+                                                       s3_clovis_api_mock);
+
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_init(_, _, _, _))
+      .Times(oids.size());
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_entity_open(_, _))
+      .Times(oids.size())
+      .WillRepeatedly(Invoke(s3_test_allocate_op));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_entity_delete(_, _))
+      .Times(1)
+      .WillRepeatedly(Return(-1));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _)).Times(oids.size());
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _))
+      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(oids.size());
+  EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
+
+  S3Option::get_instance()->set_eventbase(evbase);
+
+  clovis_writer_ptr->delete_objects(
+      oids, layoutids,
+      std::bind(&S3CallBack::on_success, &s3cloviswriter_callbackobj),
+      std::bind(&S3CallBack::on_failed, &s3cloviswriter_callbackobj));
 
   EXPECT_FALSE(s3cloviswriter_callbackobj.success_called);
   EXPECT_TRUE(s3cloviswriter_callbackobj.fail_called);
@@ -381,7 +441,7 @@ TEST_F(S3ClovisWriterTest, OpenObjectsEntityOpenFailedTest) {
 
   rc = clovis_writer_ptr->open_objects();
   EXPECT_EQ(-E2BIG, rc);
-  EXPECT_EQ(S3ClovisWriterOpState::init_failed, clovis_writer_ptr->state);
+  EXPECT_EQ(S3ClovisWriterOpState::failed_to_launch, clovis_writer_ptr->state);
   EXPECT_FALSE(clovis_writer_ptr->is_object_opened);
 }
 
@@ -527,7 +587,7 @@ TEST_F(S3ClovisWriterTest, WriteEntityFailedTest) {
       std::bind(&S3CallBack::on_failed, &s3cloviswriter_callbackobj), buffer);
 
   EXPECT_TRUE(clovis_writer_ptr->get_state() ==
-              S3ClovisWriterOpState::init_failed);
+              S3ClovisWriterOpState::failed_to_launch);
   EXPECT_FALSE(s3cloviswriter_callbackobj.success_called);
   EXPECT_TRUE(s3cloviswriter_callbackobj.fail_called);
 }

@@ -102,6 +102,8 @@ class S3NewAccountRegisterNotifyAction : public S3Action {
   FRIEND_TEST(S3NewAccountRegisterNotifyActionTest,
               CreateBucketListIndexFailed);
   FRIEND_TEST(S3NewAccountRegisterNotifyActionTest,
+              CreateBucketListIndexFailedToLaunch);
+  FRIEND_TEST(S3NewAccountRegisterNotifyActionTest,
               CreateBucketListIndexSuccessful);
   FRIEND_TEST(S3NewAccountRegisterNotifyActionTest, ValidateRequestSuceess);
   FRIEND_TEST(S3NewAccountRegisterNotifyActionTest, ValidateRequestFailed);

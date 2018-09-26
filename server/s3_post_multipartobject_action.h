@@ -87,6 +87,7 @@ class S3PostMultipartObjectAction : public S3Action {
   void save_upload_metadata();
   void save_upload_metadata_failed();
   void create_part_meta_index();
+  void create_part_meta_index_failed();
   void save_multipart_metadata();
   void save_multipart_metadata_failed();
   void send_response_to_s3_client();
@@ -106,6 +107,7 @@ class S3PostMultipartObjectAction : public S3Action {
   FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgress);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObject);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedToLaunch);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateNewOid);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchObjectInfoMultipartPresent);
@@ -117,18 +119,21 @@ class S3PostMultipartObjectAction : public S3Action {
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreate);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataMissing);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed1);
   FRIEND_TEST(S3PostMultipartObjectTest,
               RollbackUploadMetadataFailMetadataPresent);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndex);
   FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadata);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndexFailed);
   FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataFailedToLaunch);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadata);
   FRIEND_TEST(S3PostMultipartObjectTest,
               RollbackUploadMetadataFailMetadataMissing);
   FRIEND_TEST(S3PostMultipartObjectTest, CreatePartMetadataIndex);
   FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadata);
   FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataFailed);
+  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataFailedToLaunch);
   FRIEND_TEST(S3PostMultipartObjectTest, Send500ResponseToClient);
   FRIEND_TEST(S3PostMultipartObjectTest, Send404ResponseToClient);
   FRIEND_TEST(S3PostMultipartObjectTest, Send200ResponseToClient);

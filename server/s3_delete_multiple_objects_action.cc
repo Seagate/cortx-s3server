@@ -383,7 +383,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   uint obj_index = 0;
   bool delete_obj_failed = false;
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     s3_log(S3_LOG_ERROR, request_id,
            "delete_objects_failed called due to clovis_entity_open failure\n");

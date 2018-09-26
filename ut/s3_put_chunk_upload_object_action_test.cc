@@ -373,8 +373,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedTest) {
   action_under_test->create_object();
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
@@ -382,6 +382,26 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedTest) {
 
   action_under_test->create_object_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedToLaunchTest) {
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_request, get_data_length()).Times(1).WillOnce(Return(0));
+
+  action_under_test->create_object();
+
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+
+  action_under_test->create_object_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateNewOidTest) {
@@ -416,10 +436,22 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest1) {
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest2) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
-
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(500, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+
+  action_under_test->rollback_create_failed();
+  EXPECT_EQ(0, call_count_one);
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest3) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
 
   action_under_test->rollback_create_failed();
@@ -645,7 +677,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::init_failed));
+      .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
 
   action_under_test->write_object_failed();
 
@@ -903,6 +935,9 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectSinceItsPresent) {
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailed) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
   action_under_test->add_task(std::bind(
@@ -911,6 +946,17 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailed) {
   action_under_test->delete_old_object_failed();
 
   EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailedToLaunch) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+
+  action_under_test->delete_old_object_failed();
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendResponseWhenShuttingDown) {

@@ -87,9 +87,9 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
 };
 
 enum class S3ClovisWriterOpState {
-  init_failed,
-  failed,
   start,
+  failed_to_launch,
+  failed,
   creating,
   created,
   saved,
@@ -234,12 +234,14 @@ class S3ClovisWriter {
   FRIEND_TEST(S3ClovisWriterTest, CreateObjectTest);
   FRIEND_TEST(S3ClovisWriterTest, CreateObjectSuccessfulTest);
   FRIEND_TEST(S3ClovisWriterTest, CreateObjectFailedTest);
+  FRIEND_TEST(S3ClovisWriterTest, CreateObjectEntityCreateFailTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectSuccessfulTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectFailedTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsSuccessfulTest);
   FRIEND_TEST(S3ClovisWriterTest, DeleteObjectsFailedTest);
+  FRIEND_TEST(S3ClovisWriterTest, DeleteObjectclovisEntityDeleteFailedTest);
   FRIEND_TEST(S3ClovisWriterTest, OpenObjectsTest);
   FRIEND_TEST(S3ClovisWriterTest, OpenObjectsEntityOpenFailedTest);
   FRIEND_TEST(S3ClovisWriterTest, OpenObjectsFailedTest);

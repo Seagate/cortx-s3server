@@ -116,7 +116,11 @@ void S3ClovisKVSWriter::create_index_with_oid(
   rc = s3_clovis_api->clovis_entity_create(&(idx_ctx->idx[0].in_entity),
                                            &(idx_op_ctx->ops[0]));
   if (rc != 0) {
-    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_entity_create failed\n");
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    s3_log(S3_LOG_ERROR, request_id,
+           "clovis_entity_create failed with return code: (%d)\n", rc);
+    this->handler_on_failed();
+    return;
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
@@ -256,7 +260,11 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
   int rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[0].in_entity),
                                                &(idx_op_ctx->ops[0]));
   if (rc != 0) {
-    s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_entity_delete failed\n");
+    s3_log(S3_LOG_ERROR, request_id,
+           "clovis_entity_delete failed with return code: (%d)\n", rc);
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   }
 
   idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
@@ -330,8 +338,15 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
                                    &oid_list[i]);
     s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[i].in_entity),
                                       &(idx_op_ctx->ops[i]));
-    s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[i].in_entity),
-                                        &(idx_op_ctx->ops[i]));
+    int rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[i].in_entity),
+                                                 &(idx_op_ctx->ops[i]));
+    if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "clovis_entity_delete failed with return code: (%d)\n", rc);
+      state = S3ClovisKVSWriterOpState::failed_to_launch;
+      this->handler_on_failed();
+      return;
+    }
 
     idx_op_ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[i], &idx_op_ctx->cbs[i], 0);

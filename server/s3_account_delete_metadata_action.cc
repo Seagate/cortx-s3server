@@ -237,7 +237,12 @@ void S3AccountDeleteMetadataAction::remove_bucket_list_index() {
 void S3AccountDeleteMetadataAction::remove_bucket_list_index_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Account delete index failed.\n");
-  set_s3_error("InternalError");
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

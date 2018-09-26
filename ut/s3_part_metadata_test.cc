@@ -295,10 +295,24 @@ TEST_F(S3PartMetadataTest, CreateBucketListIndexFailed) {
   metadata_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .Times(1)
+      .Times(2)
       .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   metadata_under_test->create_part_index_failed();
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
+  EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::failed);
+}
+
+TEST_F(S3PartMetadataTest, CreateBucketListIndexFailedToLaunch) {
+  metadata_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
+  metadata_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(2)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+  metadata_under_test->create_part_index_failed();
+  EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
+  EXPECT_EQ(metadata_under_test->state, S3PartMetadataState::failed_to_launch);
 }
 
 TEST_F(S3PartMetadataTest, CollisionDetected) {

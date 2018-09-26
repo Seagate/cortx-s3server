@@ -274,6 +274,10 @@ void S3PartMetadata::create_part_index_failed() {
     s3_log(S3_LOG_WARN, request_id, "Collision detected for Index %s\n",
            index_name.c_str());
     handle_collision();
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3PartMetadataState::failed_to_launch;
+    this->handler_on_failed();
   } else {
     state = S3PartMetadataState::failed;  // todo Check error
     this->handler_on_failed();
@@ -372,6 +376,9 @@ void S3PartMetadata::remove_index_failed() {
          S3_IEM_DELETE_IDX_FAIL_JSON);
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::failed) {
     state = S3PartMetadataState::failed;
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3PartMetadataState::failed_to_launch;
   }
   this->handler_on_failed();
 }

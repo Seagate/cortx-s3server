@@ -378,6 +378,12 @@ void S3ObjectMetadata::create_bucket_index_failed() {
     // create_bucket_index gets called when bucket index is not there, hence if
     // state is "exists" then it will be due to collision, resolve it.
     collision_detected();
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Object metadata create bucket index failed.\n");
+    state = S3ObjectMetadataState::failed_to_launch;  // todo Check error
+    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_DEBUG, request_id,
            "Object metadata create bucket index failed.\n");

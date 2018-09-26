@@ -96,7 +96,6 @@ class S3AbortMultipartActionTest : public testing::Test {
 };
 
 TEST_F(S3AbortMultipartActionTest, ConstructorTest) {
-  EXPECT_TRUE(action_under_test->abort_success == false);
   EXPECT_NE(0, action_under_test->number_of_tasks());
   EXPECT_TRUE(action_under_test->s3_clovis_api != NULL);
 }
@@ -164,7 +163,6 @@ TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest1) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), remove(_, _))
       .Times(1);
   action_under_test->delete_multipart_metadata();
-  EXPECT_TRUE(action_under_test->invalid_upload_id == false);
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest2) {
@@ -181,7 +179,7 @@ TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest2) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
   action_under_test->delete_multipart_metadata();
-  EXPECT_TRUE(action_under_test->invalid_upload_id == true);
+  EXPECT_STREQ("NoSuchUpload", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest3) {
@@ -193,64 +191,59 @@ TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest3) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
   action_under_test->delete_multipart_metadata();
-  EXPECT_TRUE(action_under_test->invalid_upload_id == false);
+  EXPECT_STREQ("NoSuchUpload", action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentTest1) {
+TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest4) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  action_under_test->part_index_oid = {0ULL, 0ULL};
-  action_under_test->add_task_rollback(
-      std::bind(&S3AbortMultipartActionTest::func_callback_one, this));
-  action_under_test->check_shutdown_signal_for_next_task(true);
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-  action_under_test->check_if_any_parts_present();
-  EXPECT_EQ(1, call_count_one);
-  action_under_test->check_shutdown_signal_for_next_task(false);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  action_under_test->delete_multipart_metadata();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentTest2) {
+TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest5) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  action_under_test->part_index_oid = {0xffff, 0xffff};
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _, _))
-      .Times(1);
-  action_under_test->check_if_any_parts_present();
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+  action_under_test->delete_multipart_metadata();
+  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentFailedTest1) {
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
-  action_under_test->check_shutdown_signal_for_next_task(true);
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
+TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedTest) {
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
-  action_under_test->check_if_any_parts_present_failed();
-  EXPECT_TRUE(false == action_under_test->abort_success);
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+  action_under_test->delete_multipart_metadata_failed();
   action_under_test->check_shutdown_signal_for_next_task(false);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
+  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3AbortMultipartActionTest, CheckAnyPartPresentFailedTest2) {
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
+TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedToLaunchTest) {
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
-
-  action_under_test->check_if_any_parts_present_failed();
-  EXPECT_TRUE(false == action_under_test->abort_success);
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  action_under_test->delete_multipart_metadata_failed();
+  action_under_test->check_shutdown_signal_for_next_task(false);
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteObjectTest1) {
@@ -294,7 +287,7 @@ TEST_F(S3AbortMultipartActionTest, DeleteObjectTest3) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   action_under_test->delete_object();
   action_under_test->check_shutdown_signal_for_next_task(false);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
@@ -316,7 +309,24 @@ TEST_F(S3AbortMultipartActionTest, DeleteObjectFailedTest1) {
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
   action_under_test->delete_object_failed();
-  EXPECT_TRUE(action_under_test->abort_success == false);
+  action_under_test->check_shutdown_signal_for_next_task(false);
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
+}
+
+TEST_F(S3AbortMultipartActionTest, DeleteObjectFailedToLaunchTest) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+  action_under_test->check_shutdown_signal_for_next_task(true);
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+
+  action_under_test->delete_object_failed();
   action_under_test->check_shutdown_signal_for_next_task(false);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
@@ -344,6 +354,9 @@ TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest2) {
 TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailed) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   action_under_test->check_shutdown_signal_for_next_task(true);
+  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
+      .WillRepeatedly(Return(S3PartMetadataState::failed));
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
@@ -353,103 +366,29 @@ TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailed) {
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
 
-TEST_F(S3AbortMultipartActionTest, Send403NoSuchBucketToS3Client) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillOnce(Return(S3BucketMetadataState::missing));
+TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailedToLaunch) {
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+  action_under_test->check_shutdown_signal_for_next_task(true);
+  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
+      .WillRepeatedly(Return(S3PartMetadataState::failed_to_launch));
+  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request,
-              send_response(404, HasSubstr("<Code>NoSuchBucket</Code>")))
-      .Times(1);
-  action_under_test->send_response_to_s3_client();
-}
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
 
-TEST_F(S3AbortMultipartActionTest, Send500InternalErrorToS3Client1) {
-  short times = 4;
-  short indx;
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillOnce(Return(S3BucketMetadataState::failed))
-      .WillOnce(Return(S3BucketMetadataState::fetching))
-      .WillOnce(Return(S3BucketMetadataState::saving))
-      .WillOnce(Return(S3BucketMetadataState::deleting));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request,
-              send_response(500, HasSubstr("<Code>InternalError</Code>")))
-      .Times(times);
-  for (indx = 0; indx < times; indx++) {
-    action_under_test->send_response_to_s3_client();
-  }
-}
-
-TEST_F(S3AbortMultipartActionTest, Send500InternalErrorToS3Client2) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request,
-              send_response(500, HasSubstr("<Code>InternalError</Code>")))
-      .Times(1);
-  action_under_test->send_response_to_s3_client();
-}
-
-TEST_F(S3AbortMultipartActionTest, Send403NoSuchUploadToS3Client1) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  action_under_test->invalid_upload_id = true;
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request,
-              send_response(404, HasSubstr("<Code>NoSuchUpload</Code>")))
-      .Times(1);
-  action_under_test->send_response_to_s3_client();
-}
-
-TEST_F(S3AbortMultipartActionTest, Send403NoSuchUploadToS3Client2) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-
-  action_under_test->clovis_kv_reader =
-      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
-      .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request,
-              send_response(404, HasSubstr("<Code>NoSuchUpload</Code>")))
-      .Times(1);
-  action_under_test->send_response_to_s3_client();
-}
-
-TEST_F(S3AbortMultipartActionTest, Send403NoSuchUploadToS3Client3) {
-  action_under_test->multipart_oid = {0ULL, 0ULL};
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request,
-              send_response(404, HasSubstr("<Code>NoSuchUpload</Code>")))
-      .Times(1);
-  action_under_test->send_response_to_s3_client();
+  action_under_test->delete_part_index_with_parts_failed();
+  action_under_test->check_shutdown_signal_for_next_task(false);
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
 
 TEST_F(S3AbortMultipartActionTest, Send200SuccessToS3Client) {
-  action_under_test->multipart_oid = {0xffff, 0xffff};
-  action_under_test->abort_success = true;
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
-      .WillRepeatedly(Return(S3PartMetadataState::deleted));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(1);
   action_under_test->send_response_to_s3_client();
 }
 
 TEST_F(S3AbortMultipartActionTest, Send503InternalErrorToS3Client) {
-  action_under_test->multipart_oid = {0xffff, 0xffff};
+  action_under_test->set_s3_error("InternalError");
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request,
               send_response(500, HasSubstr("<Code>InternalError</Code>")))

@@ -306,11 +306,28 @@ TEST_F(S3AccountDeleteMetadataActionTest, RemoveBucketListIndex) {
 }
 
 TEST_F(S3AccountDeleteMetadataActionTest, RemoveBucketListIndexFailed) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   action_under_test->remove_bucket_list_index_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3AccountDeleteMetadataActionTest, RemoveBucketListIndexFailedToLaunch) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+  action_under_test->remove_bucket_list_index_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3AccountDeleteMetadataActionTest, SendResponseToInternalError) {

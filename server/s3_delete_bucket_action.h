@@ -134,12 +134,15 @@ class S3DeleteBucketAction : public S3Action {
   FRIEND_TEST(S3DeleteBucketActionTest, RemovePartIndexes);
   FRIEND_TEST(S3DeleteBucketActionTest, RemovePartIndexesSuccess);
   FRIEND_TEST(S3DeleteBucketActionTest, RemovePartIndexesFailed);
+  FRIEND_TEST(S3DeleteBucketActionTest, RemovePartIndexesFailedToLaunch);
   FRIEND_TEST(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartPresent);
   FRIEND_TEST(S3DeleteBucketActionTest,
               RemoveMultipartIndexMultipartNotPresent);
   FRIEND_TEST(S3DeleteBucketActionTest, RemoveMultipartIndexFailed);
+  FRIEND_TEST(S3DeleteBucketActionTest, RemoveMultipartIndexFailedToLaunch);
   FRIEND_TEST(S3DeleteBucketActionTest, RemoveObjectListIndex);
   FRIEND_TEST(S3DeleteBucketActionTest, RemoveObjectListIndexFailed);
+  FRIEND_TEST(S3DeleteBucketActionTest, RemoveObjectListIndexFailedToLaunch);
   FRIEND_TEST(S3DeleteBucketActionTest, DeleteBucket);
   FRIEND_TEST(S3DeleteBucketActionTest, DeleteBucketSuccess);
   FRIEND_TEST(S3DeleteBucketActionTest, DeleteBucketFailedBucketMissing);

@@ -424,7 +424,7 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsFailed) {
       std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillOnce(Return(S3ClovisWriterOpState::init_failed));
+      .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
   action_under_test->delete_multipart_objects_failed();
   EXPECT_EQ(1, call_count_one);
@@ -474,12 +474,30 @@ TEST_F(S3DeleteBucketActionTest, RemovePartIndexesSuccess) {
 }
 
 TEST_F(S3DeleteBucketActionTest, RemovePartIndexesFailed) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3BucketMetadataState::failed));
   action_under_test->clear_tasks();
   action_under_test->add_task(
       std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
 
   action_under_test->remove_part_indexes_failed();
   EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3DeleteBucketActionTest, RemovePartIndexesFailedToLaunch) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3BucketMetadataState::failed_to_launch));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  action_under_test->remove_part_indexes_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartPresent) {
@@ -506,12 +524,28 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartNotPresent) {
 TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailed) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3BucketMetadataState::failed));
   action_under_test->clear_tasks();
   action_under_test->add_task(
       std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
 
   action_under_test->remove_multipart_index_failed();
   EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailedToLaunch) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3BucketMetadataState::failed_to_launch));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  action_under_test->remove_multipart_index_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndex) {
@@ -533,12 +567,28 @@ TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndex) {
 TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndexFailed) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3BucketMetadataState::failed));
   action_under_test->clear_tasks();
   action_under_test->add_task(
       std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
 
   action_under_test->remove_object_list_index_failed();
   EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndexFailedToLaunch) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(1)
+      .WillOnce(Return(S3BucketMetadataState::failed_to_launch));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  action_under_test->remove_object_list_index_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3DeleteBucketActionTest, DeleteBucket) {

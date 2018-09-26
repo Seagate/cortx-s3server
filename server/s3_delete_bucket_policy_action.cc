@@ -24,7 +24,7 @@
 S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req, false), delete_successful(false) {
+    : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
@@ -68,7 +68,15 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy() {
                   this),
         std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy_failed,
                   this));
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+    send_response_to_s3_client();
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -76,7 +84,6 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy() {
 
 void S3DeleteBucketPolicyAction::delete_bucket_policy_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  delete_successful = true;
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -84,7 +91,11 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy_successful() {
 void S3DeleteBucketPolicyAction::delete_bucket_policy_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Bucket policy deletion failed\n");
-  delete_successful = false;
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -92,34 +103,21 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy_failed() {
 void S3DeleteBucketPolicyAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Trigger metadata read async operation with callback
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_bucket_name());
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
+                  request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::failed) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (delete_successful) {
-    request->send_response(S3HttpSuccess204);
   } else {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
+    request->send_response(S3HttpSuccess204);
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

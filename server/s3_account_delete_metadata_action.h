@@ -97,6 +97,8 @@ class S3AccountDeleteMetadataAction : public S3Action {
   FRIEND_TEST(S3AccountDeleteMetadataActionTest,
               RemoveAccountIndexInfoSuccessWithFailedState);
   FRIEND_TEST(S3AccountDeleteMetadataActionTest, RemoveAccountIndexInfoFailed);
+  FRIEND_TEST(S3AccountDeleteMetadataActionTest,
+              RemoveBucketListIndexFailedToLaunch);
   FRIEND_TEST(S3AccountDeleteMetadataActionTest, RemoveBucketListIndex);
   FRIEND_TEST(S3AccountDeleteMetadataActionTest, RemoveBucketListIndexFailed);
 };

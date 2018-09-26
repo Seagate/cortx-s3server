@@ -172,6 +172,11 @@ void S3NewAccountRegisterNotifyAction::create_bucket_list_index_failed() {
         get_account_index_id(), salted_bucket_list_index_name,
         std::bind(&S3NewAccountRegisterNotifyAction::create_bucket_list_index,
                   this));
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Index creation failed.\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Index creation failed.\n");
     set_s3_error("InternalError");

@@ -87,8 +87,10 @@ class S3PostCompleteAction : public S3Action {
   void get_parts_failed();
   void get_part_info(int part);
   void save_metadata();
+  void save_object_metadata_failed();
   void delete_multipart_metadata();
   void delete_part_index();
+  void delete_part_index_failed();
   void delete_parts();
   void delete_parts_failed();
   void set_abort_multipart(bool abortit);
@@ -135,11 +137,13 @@ class S3PostCompleteAction : public S3Action {
   FRIEND_TEST(S3PostCompleteActionTest, DeleteParts);
   FRIEND_TEST(S3PostCompleteActionTest, DeletePartsNext);
   FRIEND_TEST(S3PostCompleteActionTest, DeletePartsFailed);
+  FRIEND_TEST(S3PostCompleteActionTest, DeletePartsEntityDeleteFailed);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadata);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresent);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresentClovisWriter);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresentNULL);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectFailed);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectEntityDeleteFailed);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientInternalError);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientErrorSet);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientAbortMultipart);

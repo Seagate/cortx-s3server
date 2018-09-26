@@ -142,7 +142,7 @@ int S3ClovisWriter::open_objects() {
     if (rc != 0) {
       s3_log(S3_LOG_WARN, request_id,
              "Clovis API: clovis_entity_open failed with error code %d\n", rc);
-      state = S3ClovisWriterOpState::init_failed;
+      state = S3ClovisWriterOpState::failed_to_launch;
       return rc;
     }
 
@@ -240,9 +240,15 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
   s3_clovis_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm,
                                  &oid_list[0], layout_ids[0]);
 
-  s3_clovis_api->clovis_entity_create(&(obj_ctx->objs[0].ob_entity),
-                                      &(ctx->ops[0]));
-
+  int rc = s3_clovis_api->clovis_entity_create(&(obj_ctx->objs[0].ob_entity),
+                                               &(ctx->ops[0]));
+  if (rc != 0) {
+    state = S3ClovisWriterOpState::failed_to_launch;
+    s3_log(S3_LOG_ERROR, request_id,
+           "clovis_entity_create failed with return code: (%d)\n", rc);
+    this->handler_on_failed();
+    return;
+  }
   ctx->ops[0]->op_datum = (void *)op_ctx;
 
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);
@@ -491,8 +497,15 @@ void S3ClovisWriter::delete_objects() {
     ctx->cbs[i].oop_stable = s3_clovis_op_stable;
     ctx->cbs[i].oop_failed = s3_clovis_op_failed;
 
-    s3_clovis_api->clovis_entity_delete(&(obj_ctx->objs[i].ob_entity),
-                                        &(ctx->ops[i]));
+    int rc = s3_clovis_api->clovis_entity_delete(&(obj_ctx->objs[i].ob_entity),
+                                                 &(ctx->ops[i]));
+    if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "clovis_entity_delete failed with return code: (%d)\n", rc);
+      state = S3ClovisWriterOpState::failed_to_launch;
+      this->handler_on_failed();
+      return;
+    }
 
     ctx->ops[i]->op_datum = (void *)op_ctx;
     s3_clovis_api->clovis_op_setup(ctx->ops[i], &ctx->cbs[i], 0);

@@ -34,7 +34,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory)
-    : S3Action(req, false), invalid_upload_id(false) {
+    : S3Action(req, false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   upload_id = request->get_query_string_value("uploadId");
@@ -91,7 +91,6 @@ S3AbortMultipartAction::S3AbortMultipartAction(
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  abort_success = false;
   setup_steps();
 }
 
@@ -100,8 +99,6 @@ void S3AbortMultipartAction::setup_steps() {
   add_task(std::bind(&S3AbortMultipartAction::fetch_bucket_info, this));
   add_task(std::bind(&S3AbortMultipartAction::get_multipart_metadata, this));
   add_task(std::bind(&S3AbortMultipartAction::delete_multipart_metadata, this));
-  add_task(
-      std::bind(&S3AbortMultipartAction::check_if_any_parts_present, this));
   add_task(std::bind(&S3AbortMultipartAction::delete_object, this));
   add_task(
       std::bind(&S3AbortMultipartAction::delete_part_index_with_parts, this));
@@ -125,6 +122,7 @@ void S3AbortMultipartAction::get_multipart_metadata() {
     multipart_oid = bucket_metadata->get_multipart_index_oid();
     if (multipart_oid.u_lo == 0ULL && multipart_oid.u_hi == 0ULL) {
       // There is no multipart upload to abort
+      set_s3_error("NoSuchUpload");
       send_response_to_s3_client();
     } else {
       object_multipart_metadata =
@@ -136,6 +134,7 @@ void S3AbortMultipartAction::get_multipart_metadata() {
           std::bind(&S3AbortMultipartAction::next, this));
     }
   } else {
+    set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -149,46 +148,38 @@ void S3AbortMultipartAction::delete_multipart_metadata() {
       part_index_oid = object_multipart_metadata->get_part_index_oid();
       object_multipart_metadata->remove(
           std::bind(&S3AbortMultipartAction::next, this),
-          std::bind(&S3AbortMultipartAction::next, this));
+          std::bind(&S3AbortMultipartAction::delete_multipart_metadata_failed,
+                    this));
     } else {
-      invalid_upload_id = true;
+      set_s3_error("NoSuchUpload");
       send_response_to_s3_client();
     }
+  } else if (object_multipart_metadata->get_state() ==
+             S3ObjectMetadataState::missing) {
+    set_s3_error("NoSuchUpload");
+    send_response_to_s3_client();
+  } else if (object_multipart_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3AbortMultipartAction::check_if_any_parts_present() {
+void S3AbortMultipartAction::delete_multipart_metadata_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id,
+         "Object multipart meta data deletion failed\n");
   if (object_multipart_metadata->get_state() ==
-      S3ObjectMetadataState::deleted) {
-    abort_success = true;
-  }
-  if (part_index_oid.u_lo == 0ULL && part_index_oid.u_hi == 0ULL) {
-    next();
+      S3ObjectMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
   } else {
-    clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-        request, s3_clovis_api);
-    clovis_kv_reader->next_keyval(
-        part_index_oid, "", 1, std::bind(&S3AbortMultipartAction::next, this),
-        std::bind(&S3AbortMultipartAction::check_if_any_parts_present_failed,
-                  this));
+    set_s3_error("InternalError");
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AbortMultipartAction::check_if_any_parts_present_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_INFO, request_id, "No parts uploaded in upload-id: %s\n",
-           upload_id.c_str());
-    next();
-  } else {
-    abort_success = false;
-    send_response_to_s3_client();
-  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -212,8 +203,8 @@ void S3AbortMultipartAction::delete_object() {
 
 void S3AbortMultipartAction::delete_object_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed) {
+  if ((clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) ||
+      (clovis_writer->get_state() == S3ClovisWriterOpState::failed)) {
     // todo: how do we have clean up of oid for such cases? background utility?
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to delete object, this will be stale in Mero: u_hi(base64) "
@@ -222,7 +213,6 @@ void S3AbortMultipartAction::delete_object_failed() {
            object_multipart_metadata->get_oid_u_lo_str().c_str());
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
-    abort_success = false;
   }
   next();
 
@@ -259,83 +249,19 @@ void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
 
 void S3AbortMultipartAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  S3BucketMetadataState bucket_metadata_state = S3BucketMetadataState::empty;
-  S3ObjectMetadataState object_multipart_metadata_state =
-      S3ObjectMetadataState::empty;
-  S3ClovisKVSReaderOpState clovis_kv_reader_state =
-      S3ClovisKVSReaderOpState::empty;
-  S3PartMetadataState part_metadata_state = S3PartMetadataState::empty;
-
-  if (bucket_metadata) {
-    bucket_metadata_state = bucket_metadata->get_state();
-  }
-  if (object_multipart_metadata) {
-    object_multipart_metadata_state = object_multipart_metadata->get_state();
-  }
-  if (clovis_kv_reader) {
-    clovis_kv_reader_state = clovis_kv_reader->get_state();
-  }
-  if (bucket_metadata_state == S3BucketMetadataState::missing) {
-    // Invalid Bucket Name
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if ((bucket_metadata_state == S3BucketMetadataState::failed) ||
-             (bucket_metadata_state == S3BucketMetadataState::fetching) ||
-             (bucket_metadata_state == S3BucketMetadataState::saving) ||
-             (bucket_metadata_state == S3BucketMetadataState::deleting)) {
-    S3Error error("InternalError", request->get_request_id(),
+  if (is_error_state() && !get_s3_error_code().empty()) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    if (get_s3_error_code().compare("ServiceUnavailable")) {
+      request->set_out_header_value("Retry-After", "1");
+    }
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_multipart_metadata && invalid_upload_id) {
-    S3Error error("NoSuchUpload", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if ((object_multipart_metadata_state ==
-              S3ObjectMetadataState::missing) &&
-             (clovis_kv_reader_state == S3ClovisKVSReaderOpState::missing)) {
-    S3Error error("NoSuchUpload", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_multipart_metadata_state == S3ObjectMetadataState::failed) {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (multipart_oid.u_lo == 0ULL && multipart_oid.u_hi == 0ULL) {
-    S3Error error("NoSuchUpload", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (abort_success ||
-             (part_metadata_state == S3PartMetadataState::deleted)) {
-    request->send_response(S3HttpSuccess200);
   } else {
-    s3_log(S3_LOG_DEBUG, request_id,
-           "InternalError: Requesting client to retry after 1 second\n");
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    // Suggest the client retry after 1 second delay
-    request->set_out_header_value("Retry-After", "1");
-    request->send_response(error.get_http_status_code(), response_xml);
+    request->send_response(S3HttpSuccess200);
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

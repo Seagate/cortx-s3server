@@ -45,7 +45,8 @@ enum class S3BucketMetadataState {
   saved,     // Metadata saved to store.
   deleting,
   deleted,  // Metadata deleted from store
-  failed
+  failed,
+  failed_to_launch
 };
 
 // Forward declarations
@@ -268,6 +269,7 @@ class S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataTest,
               CreateBucketListIndexFailedCollisionHappened);
   FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexFailed);
+  FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataTest, HandleCollision);
   FRIEND_TEST(S3BucketMetadataTest, HandleCollisionMaxAttemptExceeded);
   FRIEND_TEST(S3BucketMetadataTest, RegeneratedNewIndexName);
@@ -295,7 +297,9 @@ class S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataTest,
               CreateMultipartListIndexFailedCollisionHappened);
   FRIEND_TEST(S3BucketMetadataTest, CreateObjectListIndexFailed);
+  FRIEND_TEST(S3BucketMetadataTest, CreateObjectListIndexFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataTest, CreateMultipartListIndexFailed);
+  FRIEND_TEST(S3BucketMetadataTest, CreateMultipartListIndexFailedToLaunch);
 };
 
 #endif

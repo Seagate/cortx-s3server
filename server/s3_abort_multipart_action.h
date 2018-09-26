@@ -46,8 +46,6 @@ class S3AbortMultipartAction : public S3Action {
   std::string object_name;
   m0_uint128 multipart_oid;
   m0_uint128 part_index_oid;
-  bool abort_success;
-  bool invalid_upload_id;
 
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
@@ -73,14 +71,13 @@ class S3AbortMultipartAction : public S3Action {
 
   void fetch_bucket_info();
   void get_multipart_metadata();
-  void check_if_any_parts_present();
-  void check_if_any_parts_present_failed();
   void delete_multipart_failed();
   void delete_object();
   void delete_object_failed();
   void delete_part_index_with_parts();
   void delete_part_index_with_parts_failed();
   void delete_multipart_metadata();
+  void delete_multipart_metadata_failed();
   void send_response_to_s3_client();
 
   // Google tests
@@ -92,23 +89,21 @@ class S3AbortMultipartAction : public S3Action {
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest3);
-  FRIEND_TEST(S3AbortMultipartActionTest, CheckAnyPartPresentTest1);
-  FRIEND_TEST(S3AbortMultipartActionTest, CheckAnyPartPresentTest2);
-  FRIEND_TEST(S3AbortMultipartActionTest, CheckAnyPartPresentFailedTest1);
-  FRIEND_TEST(S3AbortMultipartActionTest, CheckAnyPartPresentFailedTest2);
+  FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest4);
+  FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest5);
+  FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedTest);
+  FRIEND_TEST(S3AbortMultipartActionTest,
+              DeleteMultipartMetadataFailedToLaunchTest);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectTest3);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectFailedTest1);
+  FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectFailedToLaunchTest);
   FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailed);
-  FRIEND_TEST(S3AbortMultipartActionTest, Send403NoSuchBucketToS3Client);
-  FRIEND_TEST(S3AbortMultipartActionTest, Send500InternalErrorToS3Client1);
-  FRIEND_TEST(S3AbortMultipartActionTest, Send500InternalErrorToS3Client2);
-  FRIEND_TEST(S3AbortMultipartActionTest, Send403NoSuchUploadToS3Client1);
-  FRIEND_TEST(S3AbortMultipartActionTest, Send403NoSuchUploadToS3Client2);
-  FRIEND_TEST(S3AbortMultipartActionTest, Send403NoSuchUploadToS3Client3);
+  FRIEND_TEST(S3AbortMultipartActionTest,
+              DeletePartIndexWithPartsFailedToLaunch);
   FRIEND_TEST(S3AbortMultipartActionTest, Send200SuccessToS3Client);
   FRIEND_TEST(S3AbortMultipartActionTest, Send503InternalErrorToS3Client);
 };

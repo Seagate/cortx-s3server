@@ -125,9 +125,9 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
 };
 
 enum class S3ClovisReaderOpState {
-  init_failed,
-  failed,
   start,
+  failed_to_launch,
+  failed,
   success,
   missing,  // Missing object
   ooo,      // out-of-memory

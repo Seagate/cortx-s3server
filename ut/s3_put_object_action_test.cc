@@ -343,8 +343,8 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
   action_under_test->create_object();
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
@@ -352,6 +352,26 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
 
   action_under_test->create_object_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, CreateObjectFailedToLaunchTest) {
+  EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              create_object(_, _, _)).Times(1);
+  action_under_test->create_object();
+
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+
+  action_under_test->create_object_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, CreateNewOidTest) {
@@ -386,7 +406,7 @@ TEST_F(S3PutObjectActionTest, RollbackFailedTest1) {
 TEST_F(S3PutObjectActionTest, RollbackFailedTest2) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
@@ -394,6 +414,18 @@ TEST_F(S3PutObjectActionTest, RollbackFailedTest2) {
 
   action_under_test->rollback_create_failed();
   EXPECT_EQ(0, call_count_one);
+}
+
+TEST_F(S3PutObjectActionTest, RollbackFailedTest3) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+
+  action_under_test->rollback_create_failed();
 }
 
 TEST_F(S3PutObjectActionTest, InitiateDataStreamingForZeroSizeObject) {
@@ -598,7 +630,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
       .WillRepeatedly(Return(true));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::init_failed));
+      .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
 
   action_under_test->write_object_failed();
 
@@ -874,10 +906,27 @@ TEST_F(S3PutObjectActionTest, DeleteObjectSinceItsPresent) {
 }
 
 TEST_F(S3PutObjectActionTest, DeleteObjectFailed) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
   action_under_test->add_task(
       std::bind(&S3PutObjectActionTest::func_callback_one, this));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
+
+  action_under_test->delete_old_object_failed();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutObjectActionTest, DeleteObjectFailedToLaunch) {
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutObjectActionTest::func_callback_one, this));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
 
   action_under_test->delete_old_object_failed();
 

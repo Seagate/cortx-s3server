@@ -349,6 +349,11 @@ void S3BucketMetadata::create_bucket_list_index_failed() {
     handle_collision(
         get_account_index_id(), salted_bucket_list_index_name,
         std::bind(&S3BucketMetadata::create_bucket_list_index, this));
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Bucket list index creation failed.\n");
+    state = S3BucketMetadataState::failed_to_launch;
+    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Index creation failed.\n");
     state = S3BucketMetadataState::failed;
@@ -505,6 +510,11 @@ void S3BucketMetadata::create_object_list_index_failed() {
     handle_collision(
         get_object_list_index_name(), salted_object_list_index_name,
         std::bind(&S3BucketMetadata::create_object_list_index, this));
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Object list Index creation failed.\n");
+    state = S3BucketMetadataState::failed_to_launch;
+    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Object list Index creation failed.\n");
     state = S3BucketMetadataState::failed;
@@ -527,6 +537,11 @@ void S3BucketMetadata::create_multipart_list_index_failed() {
     handle_collision(
         get_multipart_index_name(), salted_multipart_list_index_name,
         std::bind(&S3BucketMetadata::create_multipart_list_index, this));
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Multipart list Index creation failed.\n");
+    state = S3BucketMetadataState::failed_to_launch;
+    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Multipart list Index creation failed.\n");
     state = S3BucketMetadataState::failed;

@@ -177,6 +177,14 @@ void S3DeleteObjectAction::delete_object_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     next();
+  } else if (clovis_writer->get_state() ==
+             S3ClovisWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Deletion of object with oid "
+           "%" SCNx64 " : %" SCNx64 " failed\n",
+           object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
     // Any other error report failure.
     s3_log(S3_LOG_ERROR, request_id,

@@ -397,7 +397,7 @@ void S3PutMultiObjectAction::write_object_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Write to clovis failed\n");
   clovis_write_in_progress = false;
   clovis_write_completed = true;
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::init_failed) {
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");

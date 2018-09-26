@@ -97,6 +97,7 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void write_object_successful();
   void write_object_failed();
   void save_metadata();
+  void save_object_metadata_failed();
   void delete_old_object_if_present();
   void delete_old_object_failed();
   void send_response_to_s3_client();
@@ -129,10 +130,13 @@ class S3PutChunkUploadObjectAction : public S3Action {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               CreateObjectFailedWithCollisionRetry);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedTest);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              CreateObjectFailedToLaunchTest);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackTest);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, CreateNewOidTest);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest1);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest2);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest3);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               InitiateDataStreamingForZeroSizeObject);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
@@ -176,6 +180,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               DeleteObjectSinceItsPresent);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailed);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              DeleteObjectFailedToLaunch);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               SendResponseWhenShuttingDown);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, SendErrorResponse);

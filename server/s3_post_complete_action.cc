@@ -339,8 +339,17 @@ void S3PostCompleteAction::save_metadata() {
 
     object_metadata->save(
         std::bind(&S3PostCompleteAction::next, this),
-        std::bind(&S3PostCompleteAction::send_response_to_s3_client, this));
+        std::bind(&S3PostCompleteAction::save_object_metadata_failed, this));
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostCompleteAction::save_object_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -380,6 +389,15 @@ void S3PostCompleteAction::delete_old_object_if_present() {
 
 void S3PostCompleteAction::delete_old_object_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Deletion of object with oid "
+           "%" SCNx64 " : %" SCNx64 " failed\n",
+           multipart_metadata->get_old_oid().u_hi,
+           multipart_metadata->get_old_oid().u_lo);
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
   s3_log(S3_LOG_ERROR, request_id,
          "Deletion of old object with oid "
          "%" SCNx64 " : %" SCNx64 "failed\n",
@@ -388,13 +406,27 @@ void S3PostCompleteAction::delete_old_object_failed() {
   s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
          S3_IEM_DELETE_OBJ_FAIL_JSON);
   next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PostCompleteAction::delete_part_index() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  part_metadata->remove_index(std::bind(&S3PostCompleteAction::next, this),
-                              std::bind(&S3PostCompleteAction::next, this));
+  part_metadata->remove_index(
+      std::bind(&S3PostCompleteAction::next, this),
+      std::bind(&S3PostCompleteAction::delete_part_index_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostCompleteAction::delete_part_index_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id, "Failed to delete multipart part index\n");
+  if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -415,8 +447,17 @@ void S3PostCompleteAction::delete_parts() {
 
 void S3PostCompleteAction::delete_parts_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Delete parts info failed.\n");
-  set_s3_error("InternalError");
-  send_response_to_s3_client();
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Deletion of object with oid "
+           "%" SCNx64 " : %" SCNx64 " failed\n",
+           object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  }
 }
 
 bool S3PostCompleteAction::validate_request_body(std::string& xml_str) {

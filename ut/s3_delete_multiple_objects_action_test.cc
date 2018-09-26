@@ -689,7 +689,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(AtLeast(1));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::init_failed));
+      .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
   action_under_test->delete_objects_failed();
 }
 

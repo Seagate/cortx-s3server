@@ -33,7 +33,6 @@
 class S3DeleteBucketPolicyAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  bool delete_successful;
 
   // Helpers
   std::string get_bucket_index_name() {

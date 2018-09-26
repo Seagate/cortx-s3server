@@ -169,12 +169,20 @@ class ConcreteClovisAPI : public ClovisAPI {
 
   int clovis_entity_create(struct m0_clovis_entity *entity,
                            struct m0_clovis_op **op) {
-    return m0_clovis_entity_create(NULL, entity, op);
+    if (s3_fi_is_enabled("clovis_entity_create_fail")) {
+      return -1;
+    } else {
+      return m0_clovis_entity_create(NULL, entity, op);
+    }
   }
 
   int clovis_entity_delete(struct m0_clovis_entity *entity,
                            struct m0_clovis_op **op) {
-    return m0_clovis_entity_delete(entity, op);
+    if (s3_fi_is_enabled("clovis_entity_delete_fail")) {
+      return -1;
+    } else {
+      return m0_clovis_entity_delete(entity, op);
+    }
   }
 
   void clovis_op_setup(struct m0_clovis_op *op,

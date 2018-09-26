@@ -557,9 +557,28 @@ TEST_F(S3PostCompleteActionTest, DeletePartsNext) {
 }
 
 TEST_F(S3PostCompleteActionTest, DeletePartsFailed) {
+  CREATE_WRITER_OBJ;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
   EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
+  action_under_test_ptr->delete_parts_failed();
+}
+
+TEST_F(S3PostCompleteActionTest, DeletePartsEntityDeleteFailed) {
+  CREATE_WRITER_OBJ;
+  CREATE_METADATA_OBJ;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
   action_under_test_ptr->delete_parts_failed();
 }
 
@@ -609,13 +628,29 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObjectIfPresentClovisWriter) {
 
 TEST_F(S3PostCompleteActionTest, DeleteOldObjectFailed) {
   CREATE_MP_METADATA_OBJ;
+  CREATE_WRITER_OBJ;
   action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->add_task(
       std::bind(&S3PostCompleteActionTest::func_callback_one, this));
-
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
   action_under_test_ptr->delete_old_object_failed();
   EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostCompleteActionTest, DeleteOldObjectEntityDeleteFailed) {
+  CREATE_MP_METADATA_OBJ;
+  CREATE_WRITER_OBJ;
+  action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
+  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
+  action_under_test_ptr->delete_old_object_failed();
 }
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientInternalError) {

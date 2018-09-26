@@ -133,7 +133,7 @@ int S3ClovisReader::open_object() {
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_entity_open failed with error code %d\n", rc);
-    state = S3ClovisReaderOpState::init_failed;
+    state = S3ClovisReaderOpState::failed_to_launch;
     return rc;
   }
 
