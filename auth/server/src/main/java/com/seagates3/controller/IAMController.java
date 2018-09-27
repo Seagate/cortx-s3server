@@ -103,7 +103,7 @@ public class IAMController {
              perf.printTime("Request validation");
 
              if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
-                  LOGGER.debug("Incorrect signature. Request not authenticated");
+                  LOGGER.error("Incorrect signature. Request not authenticated");
                   return serverResponse;
              }
         } else if (!requestAction.equals("AssumeRoleWithSAML")) {
@@ -143,16 +143,15 @@ public class IAMController {
              perf.printTime("Request validation");
 
              if (!serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
-                  LOGGER.debug("Incorrect signature.Request not authenticated");
+                  LOGGER.error("Incorrect signature. Request not authenticated");
                   return serverResponse;
              }
 
              if (requestAction.equals("AuthenticateUser")) {
                   serverResponse = responseGenerator.generateAuthenticatedResponse(requestor,
                                    clientRequestToken);
-
-                  LOGGER.debug("Request is authenticated. Authenticate user " + "response - "
-                                                          + serverResponse.getResponseBody());
+                  LOGGER.info("Request is authenticated for user: " + requestor.getName()
+                                       + " account: " + requestor.getAccount().getName());
 
                   return serverResponse;
              }
@@ -185,9 +184,10 @@ public class IAMController {
                         requestAction.equals("ResetAccountAccessKey"))) {
             try {
                 new IAMApiAuthorizer().authorize(requestor, requestBody);
-                LOGGER.debug("User is authorized to perform invoked action.");
+                LOGGER.info("Request is authorized for user: " + requestor.getName()
+                + " account: " + requestor.getAccount());
             } catch (InvalidUserException e) {
-                LOGGER.debug(e.getServerResponse().getResponseBody());
+                LOGGER.error(e.getServerResponse().getResponseBody());
                 return e.getServerResponse();
             }
         }

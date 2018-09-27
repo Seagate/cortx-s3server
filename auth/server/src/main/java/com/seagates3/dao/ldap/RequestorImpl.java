@@ -33,7 +33,13 @@ import com.seagates3.model.Requestor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class RequestorImpl implements RequestorDAO {
+
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(RequestorImpl.class.getName());
 
     @Override
     public Requestor find(AccessKey accessKey) throws DataAccessException {
@@ -53,10 +59,14 @@ public class RequestorImpl implements RequestorDAO {
                     LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
                     LDAPUtils.BASE_DN);
 
+            LOGGER.debug("Finding access key details of userID: "
+                                            + accessKey.getUserId());
             try {
                 ldapResults = LDAPUtils.search(baseDN, LDAPConnection.SCOPE_SUB,
                         filter, attrs);
             } catch (LDAPException ex) {
+                LOGGER.error("Failed to find access key details of userId: "
+                                           + accessKey.getUserId());
                 throw new DataAccessException(
                         "Failed to find requestor details.\n" + ex);
             }
@@ -76,6 +86,8 @@ public class RequestorImpl implements RequestorDAO {
                 String accountName = getAccountName(entry.getDN());
                 requestor.setAccount(getAccount(accountName));
             } else {
+                LOGGER.error("Failed to find access key details of userId: "
+                        + accessKey.getUserId());
                 throw new DataAccessException(
                         "Failed to find the requestor who owns the "
                         + "given access key.\n");
@@ -112,7 +124,7 @@ public class RequestorImpl implements RequestorDAO {
     private Account getAccount(String accountName) throws DataAccessException {
         AccountDAO accountDao = (AccountDAO) DAODispatcher.getResourceDAO(
                 DAOResource.ACCOUNT);
-
+        LOGGER.debug("Finding account: " + accountName);
         return accountDao.find(accountName);
     }
 }

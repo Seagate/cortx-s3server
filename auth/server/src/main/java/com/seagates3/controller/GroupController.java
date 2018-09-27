@@ -31,11 +31,15 @@ import com.seagates3.util.DateUtil;
 import com.seagates3.util.KeyGenUtil;
 import java.util.Map;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GroupController extends AbstractController {
 
     GroupDAO groupDAO;
     GroupResponseGenerator responseGenerator;
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(GroupController.class.getName());
 
     public GroupController(Requestor requestor,
             Map<String, String> requestBody) {
@@ -77,6 +81,8 @@ public class GroupController extends AbstractController {
 
         String currentTime = DateUtil.toServerResponseFormat(DateTime.now());
         group.setCreateDate(currentTime);
+
+        LOGGER.info("Creating group: " + group.getName());
 
         try {
             groupDAO.save(group);

@@ -100,6 +100,10 @@ public class AuthServerPostHandler {
     }
 
     private void returnHTTPResponse(FullHttpResponse response) {
+
+        LOGGER.info("Sending HTTP Response code [" +
+                               response.getStatus() + "]");
+
         if (!keepAlive) {
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
 

@@ -31,8 +31,13 @@ import com.seagates3.model.Role;
 import com.seagates3.util.DateUtil;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class RoleImpl implements RoleDAO {
 
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(RoleImpl.class.getName());
     /**
      * Get the role from LDAP.
      *
@@ -63,10 +68,13 @@ public class RoleImpl implements RoleDAO {
 
         LDAPSearchResults ldapResults;
 
+        LOGGER.debug("Searching role dn: " + ldapBase);
+
         try {
             ldapResults = LDAPUtils.search(ldapBase,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find the role: " + role.getName());
             throw new DataAccessException("Failed to find the role.\n" + ex);
         }
 
@@ -86,7 +94,8 @@ public class RoleImpl implements RoleDAO {
                         createTimeStamp);
                 role.setCreateDate(createTime);
             } catch (LDAPException ex) {
-                throw new DataAccessException("Failed to find user details.\n"
+                LOGGER.error("Failed to find details of role: " + role.getName());
+                throw new DataAccessException("Failed to find role details.\n"
                         + ex);
             }
         }
@@ -120,11 +129,15 @@ public class RoleImpl implements RoleDAO {
                 pathPrefix, LDAPUtils.OBJECT_CLASS, LDAPUtils.ROLE_OBJECT_CLASS
         );
 
+        LOGGER.debug("Searching roles dn: " + ldapBase);
+
         LDAPSearchResults ldapResults;
         try {
             ldapResults = LDAPUtils.search(ldapBase,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find all roles of account:"
+                    + account.getName() + " pathPrefix: " + pathPrefix);
             throw new DataAccessException("Failed to find all roles.\n" + ex);
         }
 
@@ -134,6 +147,7 @@ public class RoleImpl implements RoleDAO {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
+                LOGGER.error("Error fetching data from ldap.");
                 throw new DataAccessException("Ldap failure.\n" + ex);
             }
             role.setAccount(account);
@@ -173,9 +187,12 @@ public class RoleImpl implements RoleDAO {
                 LDAPUtils.BASE_DN
         );
 
+        LOGGER.debug("Deleting role: " + role.getName());
+
         try {
             LDAPUtils.delete(dn);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to delete the role: " + role.getName());
             throw new DataAccessException("Failed to delete the role.\n" + ex);
         }
     }
@@ -204,9 +221,12 @@ public class RoleImpl implements RoleDAO {
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
                 LDAPUtils.BASE_DN);
 
+        LOGGER.debug("Creating role: " + role.getName());
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to create the role: " + role.getName());
             throw new DataAccessException("Failed to create role.\n" + ex);
         }
     }

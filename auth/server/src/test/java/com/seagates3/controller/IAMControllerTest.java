@@ -242,6 +242,13 @@ public class IAMControllerTest {
         requestBody.put("Action", "AuthenticateUser");
         ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
         SignatureValidator signatureValidator = mock(SignatureValidator.class);
+
+        Account account = mock(Account.class);
+        when(requestor.getName()).thenReturn("tylerdurden");
+        when(requestor.getAccount()).thenReturn(account);
+        when(account.getId()).thenReturn("NS5144");
+        when(account.getName()).thenReturn("jack");
+
         AuthenticationResponseGenerator responseGenerator
                 = mock(AuthenticationResponseGenerator.class);
         when(ClientRequestParser.parse(httpRequest, requestBody))
@@ -291,6 +298,13 @@ public class IAMControllerTest {
         ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
         AWSRequestParser awsrequestparser = mock(AWSRequestParser.class);
         SignatureValidator signatureValidator = mock(SignatureValidator.class);
+
+        Account account = mock(Account.class);
+        when(requestor.getName()).thenReturn("tylerdurden");
+        when(requestor.getAccount()).thenReturn(account);
+        when(account.getId()).thenReturn("NS5144");
+        when(account.getName()).thenReturn("jack");
+
         AuthenticationResponseGenerator responseGenerator
                 = mock(AuthenticationResponseGenerator.class);
         when(ClientRequestParser.parse(httpRequest, requestBody))

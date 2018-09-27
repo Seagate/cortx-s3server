@@ -38,14 +38,14 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
-import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LDAPUtils.class, AccessKeyImpl.class, AuthServerConfig.class})
-@MockPolicy(Slf4jMockPolicy.class)
+@PowerMockIgnore( {"javax.management.*"})
+
 public class AccessKeyImplTest {
 
     private final String ACCESSKEY_BASE_DN = "ou=accesskeys,dc=s3,dc=seagate,"

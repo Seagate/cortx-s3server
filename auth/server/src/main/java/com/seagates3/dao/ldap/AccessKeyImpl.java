@@ -25,6 +25,7 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.controller.UserController;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.AccessKey;
@@ -33,8 +34,13 @@ import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AccessKeyImpl implements AccessKeyDAO {
 
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(AccessKeyImpl.class.getName());
     /**
      * Search the access key in LDAP.
      *
@@ -64,6 +70,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             ldapResults = LDAPUtils.search(accessKeyBaseDN,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find Access Key.");
             throw new DataAccessException("Access key find failed.\n" + ex);
         }
 
@@ -72,6 +79,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
+                LOGGER.error("Failed to update Access Key.");
                 throw new DataAccessException("Failed to update AccessKey.\n"
                         + ex);
             }
@@ -131,6 +139,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             ldapResults = LDAPUtils.search(accessKeyBaseDN,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find Access Key.");
             throw new DataAccessException("Access key find failed.\n" + ex);
         }
 
@@ -139,6 +148,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
+                LOGGER.error("Failed to update AccessKey.");
                 throw new DataAccessException("Failed to update AccessKey.\n"
                         + ex);
             }
@@ -205,6 +215,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             ldapResults = LDAPUtils.search(accessKeyBaseDN,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to search access keys.");
             throw new DataAccessException("Failed to search access keys" + ex);
         }
 
@@ -215,6 +226,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
+                LOGGER.error("Access key find failed.");
                 throw new DataAccessException("Access key find failed.\n" + ex);
             }
 
@@ -283,6 +295,8 @@ public class AccessKeyImpl implements AccessKeyDAO {
 
             return count;
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to get the count of user access keys"
+                    + " for user id :" + userId);
             throw new DataAccessException("Failed to get the count of user "
                     + "access keys" + ex);
         }
@@ -302,6 +316,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
         try {
             LDAPUtils.delete(dn);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to delete access key.");
             throw new DataAccessException("Failed to delete access key" + ex);
         }
     }
@@ -344,6 +359,8 @@ public class AccessKeyImpl implements AccessKeyDAO {
         try {
             LDAPUtils.modify(dn, modify);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to update the access key of userId: "
+                                             + accessKey.getUserId());
             throw new DataAccessException("Failed to update the access key" + ex);
         }
     }
@@ -371,6 +388,8 @@ public class AccessKeyImpl implements AccessKeyDAO {
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to save access key of userId:"
+                                        + accessKey.getUserId());
             throw new DataAccessException("Failed to save access key" + ex);
         }
     }
@@ -405,6 +424,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to save federated access key.");
             throw new DataAccessException("Failed to save federated access key" + ex);
         }
     }

@@ -18,6 +18,9 @@
  */
 package com.seagates3.dao.ldap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
 import com.novell.ldap.LDAPConnection;
@@ -31,6 +34,9 @@ import com.seagates3.model.Group;
 import com.seagates3.util.DateUtil;
 
 public class GroupImpl implements GroupDAO {
+
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(GroupImpl.class.getName());
 
     /**
      * Find the group.
@@ -61,10 +67,13 @@ public class GroupImpl implements GroupDAO {
 
         LDAPSearchResults ldapResults;
 
+        LOGGER.debug("Searching group dn: " + ldapBase);
+
         try {
             ldapResults = LDAPUtils.search(ldapBase,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find the group: " + groupName);
             throw new DataAccessException("Failed to find the group.\n" + ex);
         }
 
@@ -83,7 +92,8 @@ public class GroupImpl implements GroupDAO {
                 group.setCreateDate(createTime);
 
             } catch (LDAPException ex) {
-                throw new DataAccessException("Failed to find user details.\n" + ex);
+                LOGGER.error("Failed to find detais of group: " + groupName);
+                throw new DataAccessException("Failed to find group details.\n" + ex);
             }
         }
 
@@ -115,9 +125,12 @@ public class GroupImpl implements GroupDAO {
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
                 LDAPUtils.BASE_DN);
 
+        LOGGER.debug("Saving group dn: " + dn);
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to creat the group: " + group.getName());
             throw new DataAccessException("Failed to create group.\n" + ex);
         }
     }

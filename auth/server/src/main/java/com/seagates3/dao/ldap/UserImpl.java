@@ -31,8 +31,13 @@ import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class UserImpl implements UserDAO {
 
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(UserImpl.class.getName());
     /**
      * Get the user details from LDAP.
      *
@@ -63,11 +68,15 @@ public class UserImpl implements UserDAO {
 
         String filter = String.format("(%s=%s)", LDAPUtils.COMMON_NAME, userName);
 
+        LOGGER.debug("Searching user base dn: " + userBaseDN);
+
         LDAPSearchResults ldapResults;
         try {
             ldapResults = LDAPUtils.search(userBaseDN,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find details of user: " + userName
+                                          + " account: " + accountName);
             throw new DataAccessException("Failed to find user details.\n" + ex);
         }
 
@@ -77,6 +86,8 @@ public class UserImpl implements UserDAO {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
+                LOGGER.error("Failed to find details of user: " + userName
+                        + " account: " + accountName);
                 throw new DataAccessException("Failed to find user details.\n" + ex);
             }
 
@@ -134,9 +145,13 @@ public class UserImpl implements UserDAO {
         );
         String filter = String.format("(%s=%s)", LDAPUtils.USER_ID, userId);
 
+        LOGGER.debug("Searching user base dn: " + userBaseDN);
+
         try {
             ldapResults = LDAPUtils.search(userBaseDN, LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find details of user: " + userId
+                    + " account: " + accountName);
             throw new DataAccessException("Failed to find user details.\n" + ex);
         }
 
@@ -145,6 +160,8 @@ public class UserImpl implements UserDAO {
             try {
                 entry = ldapResults.next();
             } catch (LDAPException ex) {
+                LOGGER.error("Failed to find details of user: " + userId
+                        + " account: " + accountName);
                 throw new DataAccessException("Failed to find user details.\n" + ex);
             }
 
@@ -193,10 +210,14 @@ public class UserImpl implements UserDAO {
 
         LDAPSearchResults ldapResults;
 
+        LOGGER.debug("Searching user base dn: " + userBaseDN);
+
         try {
             ldapResults = LDAPUtils.search(userBaseDN,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find all users of path prefix: "
+                    + pathPrefix + " account: " + accountName);
             throw new DataAccessException("Failed to find all user details.\n" + ex);
         }
 
@@ -240,9 +261,12 @@ public class UserImpl implements UserDAO {
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
                 LDAPUtils.BASE_DN);
 
+        LOGGER.debug("Deleting user dn: " + dn);
+
         try {
             LDAPUtils.delete(dn);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to delete the user: "+ user.getName());
             throw new DataAccessException("Failed to delete the user.\n" + ex);
         }
     }
@@ -280,9 +304,12 @@ public class UserImpl implements UserDAO {
                 LDAPUtils.BASE_DN
         );
 
+        LOGGER.debug("Saving user dn: " + dn);
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to save the user: " + user.getName());
             throw new DataAccessException("Failed to save the user.\n" + ex);
         }
     }
@@ -319,10 +346,16 @@ public class UserImpl implements UserDAO {
             modList.add(new LDAPModification(LDAPModification.REPLACE, attr));
         }
 
+        LOGGER.debug("Updating user dn: " + dn + " new user name: "
+                            + newUserName + " new path: " + newPath);
+
         try {
             LDAPUtils.modify(dn, modList);
         } catch (LDAPException ex) {
-            throw new DataAccessException("Failed to modify the user details.\n" + ex);
+            LOGGER.error("Failed to modify the details of user: "
+                                                 + user.getName());
+            throw new DataAccessException("Failed to modify the user"
+                                             + " details.\n" + ex);
         }
     }
 }

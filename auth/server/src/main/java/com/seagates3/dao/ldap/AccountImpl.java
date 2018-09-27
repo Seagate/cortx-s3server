@@ -30,7 +30,13 @@ import com.seagates3.fi.FaultPoints;
 import com.seagates3.model.Account;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AccountImpl implements AccountDAO {
+
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(AccountImpl.class.getName());
 
     @Override
     public Account findByID(String accountID) throws DataAccessException {
@@ -43,12 +49,16 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.ACCOUNT_ID, accountID, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
 
+        LOGGER.debug("Searching account id: " + accountID);
+
         LDAPSearchResults ldapResults;
         try {
             ldapResults = LDAPUtils.search(LDAPUtils.BASE_DN,
                     LDAPConnection.SCOPE_SUB, filter, attrs
             );
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to search account details."
+                    + "of account id: " + accountID);
             throw new DataAccessException("failed to search account.\n" + ex);
         }
 
@@ -60,6 +70,8 @@ public class AccountImpl implements AccountDAO {
                 account.setCanonicalId(entry.getAttribute(
                         LDAPUtils.CANONICAL_ID).getStringValue());
             } catch (LDAPException ex) {
+                LOGGER.error("Failed to find account details."
+                        + "of account id: " + accountID);
                 throw new DataAccessException("Failed to find account details.\n" + ex);
             }
         }
@@ -85,11 +97,14 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
 
         LDAPSearchResults ldapResults;
+        LOGGER.debug("Searching account: " + name + " filter: " +
+                                                           filter);
         try {
             ldapResults = LDAPUtils.search(LDAPUtils.BASE_DN,
                     LDAPConnection.SCOPE_SUB, filter, attrs
             );
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to search account: " + name);
             throw new DataAccessException("failed to search account.\n" + ex);
         }
 
@@ -106,6 +121,7 @@ public class AccountImpl implements AccountDAO {
                 account.setCanonicalId(entry.getAttribute(
                         LDAPUtils.CANONICAL_ID).getStringValue());
             } catch (LDAPException ex) {
+                LOGGER.error("Failed to find details of account: " + name);
                 throw new DataAccessException("Failed to find account details.\n" + ex);
             }
         }
@@ -136,10 +152,14 @@ public class AccountImpl implements AccountDAO {
         String[] attr = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
                 LDAPUtils.EMAIL, LDAPUtils.CANONICAL_ID};
 
+        LOGGER.debug("Searching baseDn: " + baseDn + " account filter: "
+                                       + accountFilter);
+
         try {
             ldapResults = LDAPUtils.search(baseDn, LDAPConnection.SCOPE_SUB,
                     accountFilter, attr);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to fetch accounts.");
             throw new DataAccessException("Failed to fetch accounts.\n" + ex);
         }
         while (ldapResults.hasMore()) {
@@ -153,6 +173,7 @@ public class AccountImpl implements AccountDAO {
 
                 ldapEntry = ldapResults.next();
             } catch (LDAPException ldapException) {
+                LOGGER.error("Failed to read ldapEntry.");
                 throw new DataAccessException("Failed to read ldapEntry.\n"
                         + ldapException);
             }
@@ -199,9 +220,12 @@ public class AccountImpl implements AccountDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.CANONICAL_ID,
                 account.getCanonicalId()));
 
+        LOGGER.debug("Saving account dn: " + dn);
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to add new account: " + account.getName());
             throw new DataAccessException("failed to add new account.\n" + ex);
         }
 
@@ -220,9 +244,13 @@ public class AccountImpl implements AccountDAO {
         String dn = String.format("%s=%s,%s=accounts,%s",
                 LDAPUtils.ORGANIZATIONAL_NAME, account.getName(),
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.BASE_DN);
+
+        LOGGER.debug("Deleting account dn: " + dn);
+
         try {
             LDAPUtils.delete(dn);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to delete account: " + account.getName());
             throw new DataAccessException("Failed to delete account.\n" + ex);
         }
     }
@@ -239,9 +267,12 @@ public class AccountImpl implements AccountDAO {
                 account.getName(), LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
                 LDAPUtils.BASE_DN);
 
+        LOGGER.debug("Deleting account dn: " + dn);
+
         try {
             LDAPUtils.delete(dn);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to delete dn: " + dn);
             throw new DataAccessException("Failed to delete " + ou + " ou.\n" + ex);
         }
     }
@@ -265,9 +296,12 @@ public class AccountImpl implements AccountDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
                 LDAPUtils.USER_OU));
 
+        LOGGER.debug("Creating user dn: " + dn);
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to create dn: "+ dn);
             throw new DataAccessException("failed to create user ou.\n" + ex);
         }
     }
@@ -290,9 +324,12 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.ORGANIZATIONAL_UNIT_CLASS));
         attributeSet.add(new LDAPAttribute("ou", "roles"));
 
+        LOGGER.debug("Creating role dn: " + dn);
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to create role dn: " + dn);
             throw new DataAccessException("failed to create role ou.\n" + ex);
         }
     }
@@ -316,9 +353,12 @@ public class AccountImpl implements AccountDAO {
         attributeSet.add(new LDAPAttribute(LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
                 LDAPUtils.POLICY_OU));
 
+        LOGGER.debug("Creating Policy dn: " + dn);
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to create policy dn: " + dn);
             throw new DataAccessException("failed to create policy ou.\n" + ex);
         }
     }
@@ -336,6 +376,8 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.BASE_DN
         );
 
+        LOGGER.debug("Creating Groups dn: " + dn);
+
         LDAPAttributeSet attributeSet = new LDAPAttributeSet();
         attributeSet.add(new LDAPAttribute(LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ORGANIZATIONAL_UNIT_CLASS));
@@ -345,6 +387,7 @@ public class AccountImpl implements AccountDAO {
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to create groups dn: " + dn);
             throw new DataAccessException("failed to create groups ou.\n" + ex);
         }
     }

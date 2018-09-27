@@ -31,11 +31,15 @@ import com.seagates3.util.DateUtil;
 import com.seagates3.util.KeyGenUtil;
 import java.util.Map;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PolicyController extends AbstractController {
 
     PolicyDAO policyDAO;
     PolicyResponseGenerator responseGenerator;
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(PolicyController.class.getName());
 
     public PolicyController(Requestor requestor,
             Map<String, String> requestBody) {
@@ -85,6 +89,8 @@ public class PolicyController extends AbstractController {
         policy.setUpdateDate(currentTime);
         policy.setDefaultVersionId("v1");
         policy.setAttachmentCount(0);
+
+        LOGGER.info("Creating policy: " + policy.getName());
 
         try {
             policyDAO.save(policy);

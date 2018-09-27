@@ -94,6 +94,9 @@ public class AccountController extends AbstractController {
     public ServerResponse create() {
         String name = requestBody.get("AccountName");
         Account account;
+
+        LOGGER.info("Creating account: " + name);
+
         try {
             account = accountDao.find(name);
         } catch (DataAccessException ex) {
@@ -129,12 +132,12 @@ public class AccountController extends AbstractController {
         }
 
         //Notify S3 Server of new account creation
-        LOGGER.debug("Sending create account [" + account.getId() +
+        LOGGER.debug("Sending create account [" + account.getName() +
                                    "] notification to S3 Server");
         ServerResponse resp = s3.notifyNewAccount(account.getId(),
                 rootAccessKey.getId(), rootAccessKey.getSecretKey());
         if(!resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
-            LOGGER.error("Account [" + account.getId() + "] create "
+            LOGGER.error("Account [" + account.getName() + "] create "
                 + "notification failed, Starting cleaunup.");
             //Oops.. s3 notification failed, delete just now created account
             internalRequest = true;
@@ -142,7 +145,7 @@ public class AccountController extends AbstractController {
             ServerResponse response = delete();
 
             if (!response.getResponseStatus().equals(HttpResponseStatus.OK)) {
-                LOGGER.error("Account [" + account.getId() + "] delete "
+                LOGGER.error("Account [" + account.getName() + "] delete "
                         + "failed statusCode:" + response.getResponseStatus());
                 return response;
             }
@@ -213,6 +216,8 @@ public class AccountController extends AbstractController {
 
         user.setId(KeyGenUtil.createUserId());
 
+        LOGGER.info("Creating root user for account: " + accountName);
+
         userDAO.save(user);
         return user;
     }
@@ -236,6 +241,8 @@ public class AccountController extends AbstractController {
     public ServerResponse delete() {
         String name = requestBody.get("AccountName");
         Account account;
+
+        LOGGER.info("Deleting account: " + name);
 
         try {
             account = accountDao.find(name);
@@ -266,13 +273,13 @@ public class AccountController extends AbstractController {
         //Notify S3 Server of account deletion
 
         if (!internalRequest) {
-            LOGGER.debug("Sending delete account [" + account.getId() +
+            LOGGER.debug("Sending delete account [" + account.getName() +
                                        "] notification to S3 Server");
             ServerResponse resp = s3.notifyDeleteAccount(account.getId(),
                                         requestor.getAccesskey().getId(),
                                 requestor.getAccesskey().getSecretKey());
             if(!resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
-                LOGGER.error("Account [" + account.getId() + "] delete "
+                LOGGER.error("Account [" + account.getName() + "] delete "
                     + "notification failed.");
                 return resp;
             }
@@ -308,6 +315,9 @@ public class AccountController extends AbstractController {
     }
 
     private void deleteAccessKeys(User user) throws DataAccessException {
+
+        LOGGER.info("Deleting all access keys of user: " + user.getName());
+
         AccessKey[] accessKeys = accessKeyDAO.findAll(user);
         for (AccessKey accessKey : accessKeys) {
             accessKeyDAO.delete(accessKey);
@@ -315,11 +325,17 @@ public class AccountController extends AbstractController {
     }
 
     private void deleteUser(User user) throws DataAccessException {
+
+        LOGGER.info("Deleting user: " + user.getName());
+
         deleteAccessKeys(user);
         userDAO.delete(user);
     }
 
     private void deleteUsers(Account account, String path) throws DataAccessException {
+
+        LOGGER.info("Deleting all users of account: " + account.getName());
+
         User[] users = userDAO.findAll(account.getName(), path);
         for (User user : users) {
             deleteUser(user);
@@ -327,6 +343,10 @@ public class AccountController extends AbstractController {
     }
 
     private void deleteRoles(Account account, String path) throws DataAccessException {
+
+        LOGGER.info("Deleting all associated roles of account: "
+                                            + account.getName());
+
         Role[] roles = roleDAO.findAll(account, path);
         for (Role role : roles) {
             roleDAO.delete(role);

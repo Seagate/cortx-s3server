@@ -31,11 +31,15 @@ import com.seagates3.util.DateUtil;
 import com.seagates3.util.KeyGenUtil;
 import java.util.Map;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RoleController extends AbstractController {
 
     RoleDAO roleDAO;
     RoleResponseGenerator responseGenerator;
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(RoleController.class.getName());
 
     public RoleController(Requestor requestor,
             Map<String, String> requestBody) {
@@ -78,6 +82,8 @@ public class RoleController extends AbstractController {
                 role.getRoleId());
         role.setARN(arn);
 
+        LOGGER.info("Creating role:" + role.getName());
+
         try {
             roleDAO.save(role);
         } catch (DataAccessException ex) {
@@ -105,6 +111,8 @@ public class RoleController extends AbstractController {
             return responseGenerator.noSuchEntity();
         }
 
+        LOGGER.info("Deleting role:" + role.getName());
+
         try {
             roleDAO.delete(role);
         } catch (DataAccessException ex) {
@@ -123,6 +131,9 @@ public class RoleController extends AbstractController {
         } else {
             pathPrefix = "/";
         }
+
+        LOGGER.info("Listing all roles of account: " + requestor.getAccount()
+                                 + " pathPrefix: " + pathPrefix);
 
         Role[] roleList;
         try {

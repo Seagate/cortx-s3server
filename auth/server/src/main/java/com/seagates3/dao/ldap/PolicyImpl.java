@@ -18,6 +18,9 @@
  */
 package com.seagates3.dao.ldap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
 import com.novell.ldap.LDAPConnection;
@@ -32,6 +35,8 @@ import com.seagates3.util.DateUtil;
 
 public class PolicyImpl implements PolicyDAO {
 
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(PolicyImpl.class.getName());
     /**
      * Find the policy.
      *
@@ -63,10 +68,15 @@ public class PolicyImpl implements PolicyDAO {
 
         LDAPSearchResults ldapResults;
 
+        LOGGER.debug("Searching policy dn: " + ldapBase + " filter: "
+                                                            + filter);
+
         try {
             ldapResults = LDAPUtils.search(ldapBase,
                     LDAPConnection.SCOPE_SUB, filter, attrs);
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to find the policy: " + policy.getName()
+                                                  + " filter: " + filter);
             throw new DataAccessException("Failed to find the policy.\n" + ex);
         }
 
@@ -94,7 +104,9 @@ public class PolicyImpl implements PolicyDAO {
                         modifyTimeStamp);
                 policy.setUpdateDate(modifiedTime);
             } catch (LDAPException ex) {
-                throw new DataAccessException("Failed to find user details.\n" + ex);
+                LOGGER.error("Failed to find details of policy: "
+                                            + policy.getName());
+                throw new DataAccessException("Failed to find policy details. \n" + ex);
             }
         }
 
@@ -135,9 +147,12 @@ public class PolicyImpl implements PolicyDAO {
                 LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.ACCOUNT_OU,
                 LDAPUtils.BASE_DN);
 
+        LOGGER.debug("Saving Policy dn: " + dn);
+
         try {
             LDAPUtils.add(new LDAPEntry(dn, attributeSet));
         } catch (LDAPException ex) {
+            LOGGER.error("Failed to create policy: " + policy.getName());
             throw new DataAccessException("Failed to create policy.\n" + ex);
         }
     }

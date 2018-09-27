@@ -32,11 +32,17 @@ import com.seagates3.response.generator.AccessKeyResponseGenerator;
 import com.seagates3.util.KeyGenUtil;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AccessKeyController extends AbstractController {
 
     AccessKeyDAO accessKeyDAO;
     UserDAO userDAO;
     AccessKeyResponseGenerator accessKeyResponseGenerator;
+
+    private final Logger LOGGER =
+                  LoggerFactory.getLogger(AccessKeyController.class.getName());
 
     public AccessKeyController(Requestor requestor, Map<String, String> requestBody) {
         super(requestor, requestBody);
@@ -70,16 +76,21 @@ public class AccessKeyController extends AbstractController {
         }
 
         if (!user.exists()) {
+            LOGGER.error("User [" + user.getName() + "] does not exists");
             return accessKeyResponseGenerator.noSuchEntity("a user");
         }
 
         try {
             if (accessKeyDAO.getCount(user.getId()) == 2) {
+                LOGGER.error("Access key quota exceeded for user: "
+                                                  + user.getName());
                 return accessKeyResponseGenerator.accessKeyQuotaExceeded();
             }
         } catch (DataAccessException ex) {
             return accessKeyResponseGenerator.internalServerError();
         }
+
+        LOGGER.info("Creating access key for user: " + user.getName());
 
         AccessKey accessKey = new AccessKey();
         accessKey.setUserId(user.getId());
@@ -112,6 +123,7 @@ public class AccessKeyController extends AbstractController {
         }
 
         if (!accessKey.exists()) {
+            LOGGER.error("Access key does not exists");
             return accessKeyResponseGenerator.noSuchEntity("an access key");
         }
 
@@ -129,6 +141,7 @@ public class AccessKeyController extends AbstractController {
             }
 
             if (!user.exists()) {
+                LOGGER.error("User [" + user.getName() + "] does not exists");
                 return accessKeyResponseGenerator.noSuchEntity("a user");
             }
 
@@ -137,6 +150,7 @@ public class AccessKeyController extends AbstractController {
             }
         }
 
+        LOGGER.info("Deleting access key");
         try {
             accessKeyDAO.delete(accessKey);
         } catch (DataAccessException ex) {
@@ -165,10 +179,13 @@ public class AccessKeyController extends AbstractController {
         try {
             user = userDAO.find(requestor.getAccount().getName(), userName);
         } catch (DataAccessException ex) {
+            LOGGER.error("Failed find user: " + userName + " in account: "
+                                        + requestor.getAccount().getName());
             return accessKeyResponseGenerator.internalServerError();
         }
 
         if (!user.exists()) {
+            LOGGER.error("User [" + user.getName() + "] does not exists");
             return accessKeyResponseGenerator.noSuchEntity("a user");
         }
 
@@ -176,6 +193,8 @@ public class AccessKeyController extends AbstractController {
         try {
             accessKeyList = accessKeyDAO.findAll(user);
         } catch (DataAccessException ex) {
+            LOGGER.error("Failed to fine access keys of user: "
+                                                + user.getName());
             return accessKeyResponseGenerator.internalServerError();
         }
 
@@ -216,8 +235,11 @@ public class AccessKeyController extends AbstractController {
             }
 
             if (!user.exists()) {
+                LOGGER.error("User [" + user.getName() + "] does not exists");
                 return accessKeyResponseGenerator.noSuchEntity("a user");
             } else if (accessKey.getUserId().compareTo(user.getId()) != 0) {
+                LOGGER.error("Access key does not belong to user:"
+                                                    + user.getName());
                 return accessKeyResponseGenerator.invalidParametervalue(
                         "Access key does not belong to provided user.");
             }
@@ -231,6 +253,7 @@ public class AccessKeyController extends AbstractController {
         }
 
         if (user.getName().equals("root")) {
+            LOGGER.error("Access key status for root user can not be changed.");
             return accessKeyResponseGenerator.operationNotSupported(
                     "Access key status for root user can not be changed."
             );

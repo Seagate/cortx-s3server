@@ -131,7 +131,8 @@ public class AuthServerGetHandler {
                     Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
             );
 
-            LOGGER.debug("HTTP Response sent.");
+            LOGGER.info("Sending HTTP Response code [" +
+                              response.getStatus() + "]");
         } catch (UnsupportedEncodingException ex) {
             IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
                     "UTF-8 encoding is not supported", null);

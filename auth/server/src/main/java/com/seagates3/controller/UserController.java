@@ -29,11 +29,15 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.UserResponseGenerator;
 import com.seagates3.util.KeyGenUtil;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserController extends AbstractController {
 
     private final UserDAO userDAO;
     private final UserResponseGenerator userResponseGenerator;
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(UserController.class.getName());
 
     public UserController(Requestor requestor,
             Map<String, String> requestBody) {
@@ -59,8 +63,11 @@ public class UserController extends AbstractController {
         }
 
         if (user.exists()) {
+            LOGGER.error("User [" + user.getName() + "] already exists");
             return userResponseGenerator.entityAlreadyExists();
         }
+
+        LOGGER.info("Creating user : " + user.getName());
 
         if (requestBody.containsKey("path")) {
             user.setPath(requestBody.get("path"));
@@ -97,8 +104,11 @@ public class UserController extends AbstractController {
         }
 
         if (!user.exists()) {
+            LOGGER.error("User [" + user.getName() + "] does not exists");
             return userResponseGenerator.noSuchEntity();
         }
+
+        LOGGER.info("Deleting user : " + user.getName());
 
         AccessKeyDAO accessKeyDao
                 = (AccessKeyDAO) DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY);
@@ -145,6 +155,8 @@ public class UserController extends AbstractController {
             return userResponseGenerator.internalServerError();
         }
 
+        LOGGER.info("Listing users of account : "
+                      + requestor.getAccount().getName());
         return userResponseGenerator.generateListResponse(userList);
     }
 
@@ -164,6 +176,7 @@ public class UserController extends AbstractController {
 
         if ("root".equals(requestBody.get("UserName")) &&
                 requestBody.containsKey("NewUserName")) {
+            LOGGER.error("Cannot change user name of root user.");
             return userResponseGenerator.operationNotSupported(
                     "Cannot change user name of root user."
             );
@@ -178,8 +191,11 @@ public class UserController extends AbstractController {
         }
 
         if (!user.exists()) {
+            LOGGER.error("User [" + user.getName() + "] does not exists");
             return userResponseGenerator.noSuchEntity();
         }
+
+        LOGGER.info("Updating user : " + user.getName());
 
         if (requestBody.containsKey("NewUserName")) {
             newUserName = requestBody.get("NewUserName");
