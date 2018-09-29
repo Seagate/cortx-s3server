@@ -51,6 +51,7 @@ class S3PutBucketAction : public S3Action {
   void validate_request_body(std::string content);
   void read_metadata();
   void create_bucket();
+  void create_bucket_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose

@@ -85,13 +85,20 @@ void S3HeadObjectAction::fetch_object_info() {
           std::bind(&S3HeadObjectAction::next, this),
           std::bind(&S3HeadObjectAction::fetch_object_info_failed, this));
     }
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
-    set_s3_error("NoSuchBucket");
-    send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
-    set_s3_error("InternalError");
+    if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+      s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
+      set_s3_error("NoSuchBucket");
+    } else if (bucket_metadata->get_state() ==
+               S3BucketMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Bucket metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
 }
@@ -101,6 +108,11 @@ void S3HeadObjectAction::fetch_object_info_failed() {
   if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_WARN, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     s3_log(S3_LOG_WARN, request_id, "Failed to look up Object metadata\n");
     set_s3_error("InternalError");

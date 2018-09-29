@@ -53,57 +53,67 @@ void S3GetBucketPolicyAction::get_metadata() {
 
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
-  bucket_metadata->load(std::bind(&S3GetBucketPolicyAction::next, this),
-                        std::bind(&S3GetBucketPolicyAction::next, this));
+  bucket_metadata->load(
+      std::bind(&S3GetBucketPolicyAction::get_metadata_successful, this),
+      std::bind(&S3GetBucketPolicyAction::get_metadata_failed, this));
+}
+
+void S3GetBucketPolicyAction::get_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::string response_json = bucket_metadata->get_policy_as_json();
+  if (response_json.empty()) {
+    set_s3_error("NoSuchBucketPolicy");
+  }
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3GetBucketPolicyAction::get_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering get_metadata_failed\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    s3_log(S3_LOG_ERROR, request_id, "Bucket metadata load operation failed\n");
+    set_s3_error("NoSuchBucket");
+  } else {
+    set_s3_error("InternalError");
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to internal error\n");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetBucketPolicyAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
-  if (reject_if_shutting_down()) {
-    // Send response with 'Service Unavailable' code.
-    s3_log(S3_LOG_DEBUG, request_id,
-           "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", request->get_request_id(),
+  if (reject_if_shutting_down() ||
+      (is_error_state() && !get_s3_error_code().empty())) {
+    S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-    request->set_out_header_value("Retry-After", "1");
 
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    S3Error error("NoSuchBucket", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    std::string response_json = bucket_metadata->get_policy_as_json();
-    if (response_json.empty()) {
-      S3Error error("NoSuchBucketPolicy", request->get_request_id(),
-                    request->get_bucket_name());
-      std::string& response_xml = error.to_xml();
-      request->set_out_header_value("Content-Type", "application/xml");
-      request->set_out_header_value("Content-Length",
-                                    std::to_string(response_xml.length()));
-      request->send_response(error.get_http_status_code(), response_xml);
-    } else {
-      request->send_response(S3HttpSuccess200, response_json);
+    if (get_s3_error_code() == "ServiceUnavailable" ||
+        get_s3_error_code() == "InternalError") {
+      request->set_out_header_value("Connection", "close");
     }
-  } else {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
+
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
+
     request->send_response(error.get_http_status_code(), response_xml);
+
+  } else {
+    request->send_response(S3HttpSuccess200,
+                           bucket_metadata->get_policy_as_json());
   }
+
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   i_am_done();  // self delete

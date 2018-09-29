@@ -102,6 +102,7 @@ class S3PutMultiObjectAction : public S3Action {
   void write_object_failed();
 
   void save_metadata();
+  void save_metadata_failed();
   void send_response_to_s3_client();
 
   // Google tests

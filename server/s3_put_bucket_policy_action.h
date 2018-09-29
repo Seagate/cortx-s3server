@@ -45,6 +45,7 @@ class S3PutBucketPolicyAction : public S3Action {
   void consume_incoming_content();
   void validate_request_body(std::string content);
   void set_policy();
+  void set_policy_failed();
   void get_metadata();
   void send_response_to_s3_client();
 

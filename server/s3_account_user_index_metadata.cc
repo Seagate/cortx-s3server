@@ -128,6 +128,9 @@ void S3AccountUserIdxMetadata::load_failed() {
     s3_log(S3_LOG_DEBUG, request_id,
            "Account User index metadata is missing\n");
     state = S3AccountUserIdxMetadataState::missing;
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    state = S3AccountUserIdxMetadataState::failed_to_launch;
   } else {
     s3_log(S3_LOG_ERROR, request_id,
            "Loading of account user index metadata failed\n");
@@ -169,8 +172,12 @@ void S3AccountUserIdxMetadata::save_successful() {
 void S3AccountUserIdxMetadata::save_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Saving of Account user metadata failed\n");
-
-  state = S3AccountUserIdxMetadataState::failed;
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3AccountUserIdxMetadataState::failed_to_launch;
+  } else {
+    state = S3AccountUserIdxMetadataState::failed;
+  }
   this->handler_on_failed();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -206,7 +213,12 @@ void S3AccountUserIdxMetadata::remove_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Removal of Account User metadata failed\n");
 
-  state = S3AccountUserIdxMetadataState::failed;
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3AccountUserIdxMetadataState::failed_to_launch;
+  } else {
+    state = S3AccountUserIdxMetadataState::failed;
+  }
   this->handler_on_failed();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

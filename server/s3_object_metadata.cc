@@ -368,7 +368,11 @@ void S3ObjectMetadata::save_object_list_index_oid_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   s3_log(S3_LOG_DEBUG, request_id,
          "Object metadata create bucket index failed.\n");
-  state = S3ObjectMetadataState::failed;  // todo Check error
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    state = S3ObjectMetadataState::failed_to_launch;
+  } else {
+    state = S3ObjectMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 
@@ -500,7 +504,12 @@ void S3ObjectMetadata::remove_failed() {
   s3_log(S3_LOG_DEBUG, request_id,
          "Delete Object metadata failed for Object [%s].\n",
          object_name.c_str());
-  state = S3ObjectMetadataState::failed;
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3ObjectMetadataState::failed_to_launch;
+  } else {
+    state = S3ObjectMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 

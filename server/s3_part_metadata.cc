@@ -307,8 +307,13 @@ void S3PartMetadata::save_metadata_successful() {
 
 void S3PartMetadata::save_metadata_failed() {
   // TODO - do anything more for failure?
-  s3_log(S3_LOG_DEBUG, request_id, "Failed to save part metadata\n");
-  state = S3PartMetadataState::failed;
+  s3_log(S3_LOG_ERROR, request_id, "Failed to save part metadata\n");
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3PartMetadataState::failed_to_launch;
+  } else {
+    state = S3PartMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 
@@ -343,7 +348,12 @@ void S3PartMetadata::remove_successful() {
 
 void S3PartMetadata::remove_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed to delete part info\n");
-  state = S3PartMetadataState::failed;
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3PartMetadataState::failed_to_launch;
+  } else {
+    state = S3PartMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 

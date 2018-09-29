@@ -37,7 +37,6 @@ class S3ClovisKVSWriterFactory;
 
 enum class S3AccountUserIdxMetadataState {
   empty,  // Initial state, no lookup done
-
   // Ops on root index
   created,  // create root success
   exists,   // create root exists
@@ -47,7 +46,8 @@ enum class S3AccountUserIdxMetadataState {
   missing,  // Metadata not present in store.
   saved,    // Metadata saved to store.
   deleted,  // Metadata deleted from store
-  failed
+  failed,
+  failed_to_launch,  // pre launch operation failed
 };
 
 class S3AccountUserIdxMetadata {
@@ -149,9 +149,11 @@ class S3AccountUserIdxMetadata {
   FRIEND_TEST(S3AccountUserIdxMetadataTest, Save);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveSuccessful);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveFailed);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveFailedToLaunch);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, Remove);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveFailedToLaunch);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, ToJson);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, FromJson);
   FRIEND_TEST(S3AccountUserIdxMetadataTest, FromJsonError);

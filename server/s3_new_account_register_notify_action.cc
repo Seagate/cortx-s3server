@@ -224,7 +224,12 @@ void S3NewAccountRegisterNotifyAction::save_bucket_list_index_oid_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
          "Saving of Bucket list index oid metadata failed\n");
-  set_s3_error("InternalError");
+  if (account_user_index_metadata->get_state() ==
+      S3AccountUserIdxMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

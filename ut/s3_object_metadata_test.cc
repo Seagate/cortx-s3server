@@ -413,10 +413,30 @@ TEST_F(S3ObjectMetadataTest, SaveObjectListIndexSuccessful) {
 }
 
 TEST_F(S3ObjectMetadataTest, SaveObjectListIndexFailed) {
+  action_under_test->bucket_metadata =
+      action_under_test->bucket_metadata_factory->create_bucket_metadata_obj(
+          ptr_mock_request);
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
   action_under_test->save_object_list_index_oid_failed();
   EXPECT_EQ(S3ObjectMetadataState::failed, action_under_test->state);
+  EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
+}
+
+TEST_F(S3ObjectMetadataTest, SaveObjectListIndexFailedToLaunch) {
+  action_under_test->bucket_metadata =
+      action_under_test->bucket_metadata_factory->create_bucket_metadata_obj(
+          ptr_mock_request);
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
+  action_under_test->save_object_list_index_oid_failed();
+  EXPECT_EQ(S3ObjectMetadataState::failed_to_launch, action_under_test->state);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
 }
 
@@ -581,11 +601,28 @@ TEST_F(S3ObjectMetadataTest, RemoveSuccessful) {
 }
 
 TEST_F(S3ObjectMetadataTest, RemoveFailed) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
-
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   action_under_test->remove_failed();
   EXPECT_EQ(S3ObjectMetadataState::failed, action_under_test->state);
+  EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
+}
+
+TEST_F(S3ObjectMetadataTest, RemoveFailedToLaunch) {
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3objectmetadata_callbackobj);
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+  action_under_test->remove_failed();
+  EXPECT_EQ(S3ObjectMetadataState::failed_to_launch, action_under_test->state);
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
 }
 

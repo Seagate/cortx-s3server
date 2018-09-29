@@ -41,7 +41,7 @@ enum class S3ObjectMetadataState {
   saved,    // Metadata saved to store.
   deleted,  // Metadata deleted from store.
   failed,
-  failed_to_launch,
+  failed_to_launch,  // pre launch operation failed.
   invalid
 };
 
@@ -258,6 +258,7 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, CreateBucketIndexSuccessful);
   FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexSuccessful);
   FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexFailedToLaunch);
   FRIEND_TEST(S3ObjectMetadataTest,
               CreateBucketListIndexFailedCollisionHappened);
   FRIEND_TEST(S3ObjectMetadataTest, CreateBucketListIndexFailed);
@@ -272,6 +273,7 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, Remove);
   FRIEND_TEST(S3ObjectMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3ObjectMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveFailedToLaunch);
   FRIEND_TEST(S3ObjectMetadataTest, CreateDefaultAcl);
   FRIEND_TEST(S3ObjectMetadataTest, ToJson);
   FRIEND_TEST(S3ObjectMetadataTest, FromJson);

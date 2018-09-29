@@ -383,6 +383,10 @@ TEST_F(S3PutObjectActionTest, CreateNewOidTest) {
 }
 
 TEST_F(S3PutObjectActionTest, RollbackTest) {
+  CREATE_OBJECT_METADATA;
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               delete_object(_, _, _))
@@ -406,6 +410,7 @@ TEST_F(S3PutObjectActionTest, RollbackFailedTest1) {
 TEST_F(S3PutObjectActionTest, RollbackFailedTest2) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
+      .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));

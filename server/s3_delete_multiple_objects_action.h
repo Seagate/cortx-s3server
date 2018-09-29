@@ -130,6 +130,8 @@ class S3DeleteMultipleObjectsAction : public S3Action {
               FetchObjectsInfoSuccessfulJsonErrors);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, DeleteObjectMetadata);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
+              DeleteObjectMetadataFailedToLaunch);
+  FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
               DeleteObjectMetadataFailedWithMissing);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
               DeleteObjectMetadataFailedWithErrors);

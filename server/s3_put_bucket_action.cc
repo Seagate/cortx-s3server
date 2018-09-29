@@ -128,12 +128,33 @@ void S3PutBucketAction::create_bucket() {
     }
     // bypass shutdown signal check for next task
     check_shutdown_signal_for_next_task(false);
-    bucket_metadata->save(std::bind(&S3PutBucketAction::next, this),
-                          std::bind(&S3PutBucketAction::next, this));
+    bucket_metadata->save(
+        std::bind(&S3PutBucketAction::next, this),
+        std::bind(&S3PutBucketAction::create_bucket_failed, this));
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "load operation failed due to some pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutBucketAction::create_bucket_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Save bucket metadata operation failed due to prelaunch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "save bucket metadata operation failed\n");
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

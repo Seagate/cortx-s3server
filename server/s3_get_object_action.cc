@@ -106,13 +106,20 @@ void S3GetObjectAction::fetch_object_info() {
       object_metadata->load(std::bind(&S3GetObjectAction::next, this),
                             std::bind(&S3GetObjectAction::next, this));
     }
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
-    set_s3_error("NoSuchBucket");
-    send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed\n");
-    set_s3_error("InternalError");
+    if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+      s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
+      set_s3_error("NoSuchBucket");
+    } else if (bucket_metadata->get_state() ==
+               S3BucketMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Bucket metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed\n");
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
 }
@@ -153,13 +160,20 @@ void S3GetObjectAction::validate_object_info() {
              total_blocks_in_object);
       next();
     }
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-    set_s3_error("NoSuchKey");
-    send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-    set_s3_error("InternalError");
+    if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+      set_s3_error("NoSuchKey");
+    } else if (object_metadata->get_state() ==
+               S3ObjectMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Object metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -487,7 +501,9 @@ void S3GetObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
              ((object_metadata->get_content_length() == 0) ||

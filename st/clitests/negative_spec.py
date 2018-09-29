@@ -212,6 +212,27 @@ for i, type in enumerate(config_types):
         delete_test("seagatebucket", "3Kfile").\
         execute_test().command_is_successful()
 
+   # clovis_idx_op failure
+    S3cmdTest('s3cmd can upload 3K file').\
+        upload_test("seagatebucket", "3Kfile", 3000).\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd can enable FI clovis_idx_op_fail').\
+        enable_fi("enable", "always", "clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot download 3K file').\
+        download_test("seagatebucket", "3Kfile").\
+        execute_test(negative_case=True).command_should_fail()
+    S3fiTest('s3cmd can disable FI clovis_idx_op_fail').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can delete 3k file').\
+        delete_test("seagatebucket", "3Kfile").\
+        execute_test().command_is_successful()
+
+    # TODO -- Add more negative tests for clovis_idx_op_fail
+
+
+
     # clovis_enity_create fails for object upload
     S3fiTest('s3cmd can enable FI clovis_enity_create').\
         enable_fi("enable", "always", "clovis_entity_create_fail").\
@@ -257,8 +278,6 @@ for i, type in enumerate(config_types):
         disable_fi("clovis_entity_create_fail").\
         execute_test().command_is_successful()
 
-    Config.s3cmd_max_retries = 0
-
     # clovis_enity_delete fails delete failure
     S3cmdTest('s3cmd can upload 3K file').\
         upload_test("seagatebucket", "3Kfile", 3000).\
@@ -266,14 +285,11 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd can enable FI clovis_enity_delete').\
         enable_fi("enable", "always", "clovis_entity_delete_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not delete 3k file').\
-        delete_test("seagatebucket", "3Kfile").\
-        execute_test(negative_case=True).command_should_fail()
-    S3fiTest('s3cmd can disable FI clovis_enity_delete').\
-        disable_fi("clovis_entity_delete_fail").\
-        execute_test().command_is_successful()
     S3cmdTest('s3cmd can delete 3k file').\
         delete_test("seagatebucket", "3Kfile").\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd can disable FI clovis_enity_delete').\
+        disable_fi("clovis_entity_delete_fail").\
         execute_test().command_is_successful()
 
      #clovis_enity_delete failure and chunk upload
@@ -283,14 +299,11 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd can enable FI clovis_entity_delete').\
         enable_fi("enable", "always", "clovis_entity_delete_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not delete 3k file').\
-        delete_test("seagatebucket", "3Kfile").\
-        execute_test(negative_case=True).command_should_fail()
-    S3fiTest('s3cmd can disable FI clovis_entity_delete').\
-        disable_fi("clovis_entity_delete_fail").\
-        execute_test().command_is_successful()
     S3cmdTest('s3cmd can delete 3k file').\
         delete_test("seagatebucket", "3Kfile").\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd can disable FI clovis_entity_delete').\
+        disable_fi("clovis_entity_delete_fail").\
         execute_test().command_is_successful()
 
      # clovis_enity_delete failure with multipart object
@@ -300,17 +313,12 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd can eneble FI clovis_enity_delete').\
         enable_fi("enable", "always", "clovis_entity_delete_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not delete 18MB file').\
-        delete_test("seagatebucket", "18MBfile").\
-        execute_test(negative_case=True).command_should_fail()
-    S3fiTest('s3cmd can disable FI clovis_enity_delete').\
-        disable_fi("clovis_entity_delete_fail").\
-        execute_test().command_is_successful()
     S3cmdTest('s3cmd can delete 18MB file').\
         delete_test("seagatebucket", "18MBfile").\
         execute_test().command_is_successful()
-
-    Config.s3cmd_max_retries = 2
+    S3fiTest('s3cmd can disable FI clovis_enity_delete').\
+        disable_fi("clovis_entity_delete_fail").\
+        execute_test().command_is_successful()
 
     # clovis_enity_create failure for Bucket metadata
     S3fiTest('s3cmd can enable FI clovis_enity_create').\

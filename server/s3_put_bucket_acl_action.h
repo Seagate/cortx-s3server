@@ -48,6 +48,7 @@ class S3PutBucketACLAction : public S3Action {
   void fetch_bucket_info();
   void fetch_bucket_info_failed();
   void setacl();
+  void setacl_failed();
   void send_response_to_s3_client();
 
   FRIEND_TEST(S3PutBucketAclActionTest, Constructor);

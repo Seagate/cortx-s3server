@@ -68,6 +68,55 @@ TEST_F(S3HeadBucketActionTest, ReadMetaData) {
   action_under_test_ptr->read_metadata();
 }
 
+TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest1) {
+  action_under_test_ptr->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  EXPECT_CALL(*request_mock, pause()).Times(1);
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
+  action_under_test_ptr->read_metadata_failed();
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
+  EXPECT_STREQ("InternalError",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest2) {
+  ;
+  action_under_test_ptr->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
+  EXPECT_CALL(*request_mock, pause()).Times(1);
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
+  action_under_test_ptr->read_metadata_failed();
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
+TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest3) {
+  action_under_test_ptr->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  S3Option::get_instance()->set_is_s3_shutting_down(true);
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::missing));
+  EXPECT_CALL(*request_mock, pause()).Times(1);
+  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
+  action_under_test_ptr->read_metadata_failed();
+  S3Option::get_instance()->set_is_s3_shutting_down(false);
+  EXPECT_STREQ("NoSuchBucket",
+               action_under_test_ptr->get_s3_error_code().c_str());
+}
+
 TEST_F(S3HeadBucketActionTest, SendResponseToClientServiceUnavailable) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*request_mock, pause()).Times(1);
@@ -78,29 +127,19 @@ TEST_F(S3HeadBucketActionTest, SendResponseToClientServiceUnavailable) {
 }
 
 TEST_F(S3HeadBucketActionTest, SendResponseToClientSuccess) {
-  CREATE_BUCKET_METADATA_OBJ;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
 
 TEST_F(S3HeadBucketActionTest, SendResponseToClientNoSuchBucket) {
-  CREATE_BUCKET_METADATA_OBJ;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::missing));
+  action_under_test_ptr->set_s3_error("NoSuchBucket");
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
 
 TEST_F(S3HeadBucketActionTest, SendResponseToClientInternalError) {
-  CREATE_BUCKET_METADATA_OBJ;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  action_under_test_ptr->set_s3_error("InternalError");
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();

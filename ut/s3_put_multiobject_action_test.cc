@@ -177,6 +177,10 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ChunkAuthSucessfulWriteFailed) {
   action_under_test->clovis_write_completed = true;
   action_under_test->write_failed = true;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
+      .Times(AtLeast(1))
+      .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
@@ -896,11 +900,6 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendErrorResponse) {
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendSuccessResponse) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-
-  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
-
-  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
-      .WillOnce(Return(S3PartMetadataState::saved));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
@@ -913,6 +912,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendSuccessResponse) {
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendFailedResponse) {
+  action_under_test->set_s3_error("InternalError");
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);

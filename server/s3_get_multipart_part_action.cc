@@ -152,6 +152,10 @@ void S3GetMultipartPartAction::get_multipart_metadata() {
   } else {
     if (bucket_state == S3BucketMetadataState::missing) {
       set_s3_error("NoSuchBucket");
+    } else if (bucket_state == S3BucketMetadataState::failed_to_launch) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "load operation failed due to some pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
     } else {
       set_s3_error("InternalError");
     }
@@ -328,6 +332,12 @@ void S3GetMultipartPartAction::get_next_objects_failed() {
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Missing part listing\n");
     fetch_successful = true;  // With no entries.
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Part metadata next keyval operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to find part listing\n");
     fetch_successful = false;

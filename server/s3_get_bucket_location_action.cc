@@ -62,6 +62,11 @@ void S3GetBucketlocationAction::fetch_bucket_info_failed() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     s3_log(S3_LOG_WARN, request_id, "Failed to fetch Bucket metadata\n");
     set_s3_error("InternalError");

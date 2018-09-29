@@ -73,8 +73,6 @@ class S3DeleteObjectAction : public S3Action {
   FRIEND_TEST(S3DeleteObjectActionTest,
               DeleteObjectWhenMetadataDeleteSucceeded);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectMissingShouldReportDeleted);
-  FRIEND_TEST(S3DeleteObjectActionTest,
-              DeleteObjectFailedToLaunchShouldReportDeleted);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectFailedShouldReportDeleted);
   FRIEND_TEST(S3DeleteObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3DeleteObjectActionTest, SendAnyFailedResponse);

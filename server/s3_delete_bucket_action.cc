@@ -137,7 +137,13 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
                     this));
     }
   } else {
-    if (bucket_metadata_state == S3BucketMetadataState::missing) {
+    if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Bucket metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+      send_response_to_s3_client();
+    } else if (bucket_metadata_state == S3BucketMetadataState::missing) {
       set_s3_error("NoSuchBucket");
     } else {
       set_s3_error("InternalError");
@@ -161,10 +167,18 @@ void S3DeleteBucketAction::fetch_first_object_metadata_failed() {
     s3_log(S3_LOG_DEBUG, request_id, "There is no object in bucket\n");
     is_bucket_empty = true;
     next();
-  } else {
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed) {
     is_bucket_empty = false;
     s3_log(S3_LOG_ERROR, request_id, "Failed to retrieve object metadata\n");
     set_s3_error("BucketNotEmpty");
+    send_response_to_s3_client();
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata next keyval operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -486,6 +500,9 @@ void S3DeleteBucketAction::delete_bucket_failed() {
   delete_successful = false;
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }

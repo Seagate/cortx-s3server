@@ -426,7 +426,10 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
       &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
       kvs_ctx->rcs, M0_OIF_OVERWRITE, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
-    s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op failed\n");
+    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
   }
@@ -492,6 +495,9 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
       idx_op_ctx->sync_op, writer_context->get_clovis_idx_op_ctx()->ops[0]);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_entity_add failed\n");
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   }
 
   idx_op_ctx->sync_op->op_datum = (void *)op_ctx;
@@ -600,6 +606,9 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
                                     &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
   }

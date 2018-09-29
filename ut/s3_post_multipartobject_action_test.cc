@@ -163,7 +163,7 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoMultipartNotPresent) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .Times(1)
+      .Times(2)
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
 
   action_under_test->bucket_metadata =
@@ -180,7 +180,7 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoObjectNotPresent) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .Times(1)
+      .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
 
   action_under_test->bucket_metadata =
@@ -406,6 +406,10 @@ TEST_F(S3PostMultipartObjectTest, RollbackPartMetadataIndex) {
 }
 
 TEST_F(S3PostMultipartObjectTest, RollbackPartMetadataIndexFailed) {
+  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3PartMetadataState::failed));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   action_under_test->set_s3_error("InternalError");

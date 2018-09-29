@@ -621,7 +621,8 @@ TEST_F(S3DeleteBucketActionTest, DeleteBucketFailedBucketMetaRetrievalFailed) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillOnce(Return(S3BucketMetadataState::failed));
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 

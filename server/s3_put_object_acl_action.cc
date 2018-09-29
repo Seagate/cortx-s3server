@@ -120,6 +120,11 @@ void S3PutObjectACLAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -148,6 +153,11 @@ void S3PutObjectACLAction::get_object_metadata_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("NoSuchKey");
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -192,17 +202,10 @@ void S3PutObjectACLAction::send_response_to_s3_client() {
       request->set_out_header_value("Retry-After", "1");
     }
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::saved) {
-    request->send_response(S3HttpSuccess200);
   } else {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->send_response(error.get_http_status_code(), response_xml);
+    request->send_response(S3HttpSuccess200);
   }
+
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

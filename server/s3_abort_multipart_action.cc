@@ -134,7 +134,17 @@ void S3AbortMultipartAction::get_multipart_metadata() {
           std::bind(&S3AbortMultipartAction::next, this));
     }
   } else {
-    set_s3_error("NoSuchBucket");
+    if (bucket_metadata->get_state() ==
+        S3BucketMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Bucket metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+      set_s3_error("NoSuchBucket");
+    } else {
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -163,7 +173,15 @@ void S3AbortMultipartAction::delete_multipart_metadata() {
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
-    set_s3_error("InternalError");
+    if (object_multipart_metadata->get_state() ==
+        S3ObjectMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Object metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -239,10 +257,14 @@ void S3AbortMultipartAction::delete_part_index_with_parts() {
 
 void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  // Not checking part metatdata state for failed_to_launch here as we wont
+  // return 503
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to delete part index, this oid will be stale in Mero: "
          "%" SCNx64 " : %" SCNx64,
          part_index_oid.u_hi, part_index_oid.u_lo);
+  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+         S3_IEM_DELETE_IDX_FAIL_JSON);
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

@@ -37,11 +37,15 @@ class S3HeadBucketAction : public S3Action {
 
   void setup_steps();
   void read_metadata();
+  void read_metadata_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
   FRIEND_TEST(S3HeadBucketActionTest, Constructor);
   FRIEND_TEST(S3HeadBucketActionTest, ReadMetaData);
+  FRIEND_TEST(S3HeadBucketActionTest, ReadMetaDataFailedTest1);
+  FRIEND_TEST(S3HeadBucketActionTest, ReadMetaDataFailedTest2);
+  FRIEND_TEST(S3HeadBucketActionTest, ReadMetaDataFailedTest3);
   FRIEND_TEST(S3HeadBucketActionTest, SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3HeadBucketActionTest, SendResponseToClientNoSuchBucket);
   FRIEND_TEST(S3HeadBucketActionTest, SendResponseToClientInternalError);

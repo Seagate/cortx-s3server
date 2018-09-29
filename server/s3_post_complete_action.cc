@@ -173,6 +173,11 @@ void S3PostCompleteAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -198,6 +203,11 @@ void S3PostCompleteAction::fetch_multipart_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Multipart info missing\n");
   if (multipart_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("InvalidObjectState");
+  } else if (multipart_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -220,6 +230,10 @@ void S3PostCompleteAction::set_abort_multipart(bool abortit) {
 }
 
 bool S3PostCompleteAction::is_abort_multipart() {
+  // If this returns true it means that request is bad (say parts (apart from
+  // last part) are not of same size) so we continue further in cleanup mode.
+  // We dont save metadata and delete object/indexes.
+  // Its set to true by set_abort_multipart()
   return delete_multipart_object;
 }
 
@@ -314,8 +328,16 @@ void S3PostCompleteAction::get_parts_successful() {
 }
 
 void S3PostCompleteAction::get_parts_failed() {
-  s3_log(S3_LOG_ERROR, request_id, "Parts info missing\n");
-  set_s3_error("InternalError");
+  if (clovis_kv_reader->get_state() ==
+      S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Parts metadata next keyval operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Parts info missing\n");
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
 }
 
@@ -355,8 +377,18 @@ void S3PostCompleteAction::save_object_metadata_failed() {
 
 void S3PostCompleteAction::delete_multipart_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  multipart_metadata->remove(std::bind(&S3PostCompleteAction::next, this),
-                             std::bind(&S3PostCompleteAction::next, this));
+  multipart_metadata->remove(
+      std::bind(&S3PostCompleteAction::next, this),
+      std::bind(&S3PostCompleteAction::delete_multipart_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostCompleteAction::delete_multipart_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id,
+         "Deletion of %s key failed from multipart index\n",
+         object_name.c_str());
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -389,24 +421,14 @@ void S3PostCompleteAction::delete_old_object_if_present() {
 
 void S3PostCompleteAction::delete_old_object_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Deletion of object with oid "
-           "%" SCNx64 " : %" SCNx64 " failed\n",
-           multipart_metadata->get_old_oid().u_hi,
-           multipart_metadata->get_old_oid().u_lo);
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
-  } else {
   s3_log(S3_LOG_ERROR, request_id,
          "Deletion of old object with oid "
-         "%" SCNx64 " : %" SCNx64 "failed\n",
+         "%" SCNx64 " : %" SCNx64 "failed, it will be stale in Mero\n",
          multipart_metadata->get_old_oid().u_hi,
          multipart_metadata->get_old_oid().u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
          S3_IEM_DELETE_OBJ_FAIL_JSON);
   next();
-  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -419,8 +441,14 @@ void S3PostCompleteAction::delete_part_index() {
 }
 
 void S3PostCompleteAction::delete_part_index_failed() {
+  m0_uint128 part_index_oid;
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_ERROR, request_id, "Failed to delete multipart part index\n");
+  part_index_oid = part_metadata->get_part_index_oid();
+  s3_log(S3_LOG_ERROR, request_id,
+         "Deletion of part index failed, this oid will be stale in Mero"
+         "%" SCNx64 " : %" SCNx64 "\n",
+         part_index_oid.u_hi, part_index_oid.u_lo);
+
   if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
@@ -447,17 +475,15 @@ void S3PostCompleteAction::delete_parts() {
 
 void S3PostCompleteAction::delete_parts_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Delete parts info failed.\n");
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Deletion of object with oid "
-           "%" SCNx64 " : %" SCNx64 " failed\n",
-           object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
-  } else {
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-  }
+  // This will be called only in case when in abort mode (is_abort_multipart()
+  // is true)
+  // ie when request is bad, so no need of checking failed_to_launch error
+  s3_log(S3_LOG_ERROR, request_id,
+         "Deletion of object with oid "
+         "%" SCNx64 " : %" SCNx64 " failed, this will be stale in Mero\n",
+         object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
+  set_s3_error("InvalidObjectState");
+  send_response_to_s3_client();
 }
 
 bool S3PostCompleteAction::validate_request_body(std::string& xml_str) {
@@ -549,6 +575,9 @@ void S3PostCompleteAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    if (get_s3_error_code().compare("ServiceUnavailable")) {
+      request->set_out_header_value("Retry-After", "1");
+    }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (is_abort_multipart()) {
     S3Error error("InvalidObjectState", request->get_request_id(),

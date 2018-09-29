@@ -75,6 +75,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
                                    std::vector<std::string> keys,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
+  int rc = 0;
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
@@ -82,7 +83,6 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   id = oid;
 
-  int rc = 0;
   last_result_keys_values.clear();
   last_value = "";
 
@@ -135,6 +135,9 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
                                     kvs_ctx->rcs, 0, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    state = S3ClovisKVSReaderOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
   }
@@ -146,6 +149,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::getkv);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  return;
 }
 
 void S3ClovisKVSReader::get_keyval_successful() {
@@ -267,6 +271,9 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
                                     kvs_ctx->rcs, flag, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    state = S3ClovisKVSReaderOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
   }
@@ -278,6 +285,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::getkv);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  return;
 }
 
 void S3ClovisKVSReader::next_keyval_successful() {

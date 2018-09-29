@@ -146,6 +146,12 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
           std::bind(&S3PostMultipartObjectAction::next, this),
           std::bind(&S3PostMultipartObjectAction::next, this));
     }
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
     s3_log(S3_LOG_WARN, request_id, "Missing bucket [%s]\n",
            request->get_bucket_name().c_str());
@@ -159,6 +165,16 @@ void S3PostMultipartObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (object_multipart_metadata->get_state() !=
       S3ObjectMetadataState::present) {
+    if (object_multipart_metadata->get_state() ==
+        S3ObjectMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Object metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+      send_response_to_s3_client();
+      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+      return;
+    }
     s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
     object_list_oid = bucket_metadata->get_object_list_index_oid();
     if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
@@ -325,14 +341,16 @@ void S3PostMultipartObjectAction::rollback_create_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     rollback_next();
-  } else if (clovis_writer->get_state() ==
-             S3ClovisWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_WARN, request_id, "Deletion of object failed\n");
-    set_s3_error("ServiceUnavailable");
-    rollback_done();
   } else {
-    // Log rollback failure.
-    s3_log(S3_LOG_WARN, request_id, "Deletion of object failed\n");
+    s3_log(S3_LOG_ERROR, request_id,
+           "Deletion of object failed, this oid will be stale in Mero: "
+           "%" SCNx64 " : %" SCNx64 "\n",
+           oid.u_hi, oid.u_lo);
+    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
+           S3_IEM_DELETE_OBJ_FAIL_JSON);
+    if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+    }
     rollback_done();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -350,7 +368,17 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index() {
 
 void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  m0_uint128 part_index_oid = part_metadata->get_part_index_oid();
   s3_log(S3_LOG_WARN, request_id, "Deletion of part metadata failed\n");
+  if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  }
+  s3_log(S3_LOG_ERROR, request_id,
+         "Deletion of index failed, this oid will be stale in Mero"
+         "%" SCNx64 " : %" SCNx64 "\n",
+         part_index_oid.u_hi, part_index_oid.u_lo);
+  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+         S3_IEM_DELETE_IDX_FAIL_JSON);
   rollback_done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

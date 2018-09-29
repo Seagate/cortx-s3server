@@ -106,17 +106,40 @@ void S3PutBucketPolicyAction::get_metadata() {
 
 void S3PutBucketPolicyAction::set_policy() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     bucket_metadata->setpolicy(new_bucket_policy);
     // bypass shutdown signal check for next task
     check_shutdown_signal_for_next_task(false);
-    bucket_metadata->save(std::bind(&S3PutBucketPolicyAction::next, this),
-                          std::bind(&S3PutBucketPolicyAction::next, this));
-  } else {
+    bucket_metadata->save(
+        std::bind(&S3PutBucketPolicyAction::next, this),
+        std::bind(&S3PutBucketPolicyAction::set_policy_failed, this));
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to prelaunch failure\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
     send_response_to_s3_client();
+  } else {
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutBucketPolicyAction::set_policy_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Save Bucket metadata operation failed due to prelaunch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Save Bucket metadata operation failed\n");
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -143,21 +166,15 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-
+    if (get_s3_error_code() == "ServiceUnavailable") {
+      request->set_out_header_value("Retry-After", "1");
+    }
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::saved) {
+  } else {
     // request->set_header_value(...)
     request->send_response(S3HttpSuccess204);
-  } else {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_bucket_name());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
   }
+
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

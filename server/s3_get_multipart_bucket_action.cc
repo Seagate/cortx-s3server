@@ -131,6 +131,11 @@ void S3GetMultipartBucketAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -280,6 +285,12 @@ void S3GetMultipartBucketAction::get_next_objects_failed() {
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No more multipart uploads listing\n");
     fetch_successful = true;  // With no entries.
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Multipart metadata next keyval operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to fetch multipart listing\n");
     set_s3_error("InternalError");

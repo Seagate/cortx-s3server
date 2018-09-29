@@ -40,6 +40,8 @@ class S3GetBucketPolicyAction : public S3Action {
 
   void setup_steps();
   void get_metadata();
+  void get_metadata_successful();
+  void get_metadata_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose

@@ -103,7 +103,8 @@ TEST_F(S3PutBucketPolicyActionTest, SetPolicyWhenBucketMissing) {
           ->create_bucket_metadata_obj(request_mock);
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillOnce(Return(S3BucketMetadataState::missing));
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
 
@@ -137,10 +138,6 @@ TEST_F(S3PutBucketPolicyActionTest, SendResponseToClientMalformedXML) {
 }
 
 TEST_F(S3PutBucketPolicyActionTest, SendResponseToClientNoSuchBucket) {
-  action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
-
   action_under_test_ptr->set_s3_error("NoSuchBucket");
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
@@ -148,23 +145,12 @@ TEST_F(S3PutBucketPolicyActionTest, SendResponseToClientNoSuchBucket) {
 }
 
 TEST_F(S3PutBucketPolicyActionTest, SendResponseToClientSuccess) {
-  action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::saved));
   EXPECT_CALL(*request_mock, send_response(204, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
 
 TEST_F(S3PutBucketPolicyActionTest, SendResponseToClientInternalError) {
-  action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  action_under_test_ptr->set_s3_error("InternalError");
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();

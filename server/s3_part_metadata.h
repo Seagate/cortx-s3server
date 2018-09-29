@@ -45,7 +45,7 @@ enum class S3PartMetadataState {
   deleted,            // Metadata deleted from store.
   index_deleted,      // store deleted.
   failed,
-  failed_to_launch
+  failed_to_launch  // Pre launch operation failed
 };
 
 // Forward declarations.
@@ -198,6 +198,7 @@ class S3PartMetadata {
   FRIEND_TEST(S3PartMetadataTest, SaveMetadata);
   FRIEND_TEST(S3PartMetadataTest, SaveMetadataSuccessful);
   FRIEND_TEST(S3PartMetadataTest, SaveMetadataFailed);
+  FRIEND_TEST(S3PartMetadataTest, SaveMetadataFailedToLaunch);
   FRIEND_TEST(S3PartMetadataTest, CreateIndex);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndex);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessful);
@@ -211,6 +212,7 @@ class S3PartMetadata {
   FRIEND_TEST(S3PartMetadataTest, Remove);
   FRIEND_TEST(S3PartMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3PartMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3PartMetadataTest, RemoveFailedToLaunch);
   FRIEND_TEST(S3PartMetadataTest, RemoveIndex);
   FRIEND_TEST(S3PartMetadataTest, RemoveIndexSucessful);
   FRIEND_TEST(S3PartMetadataTest, RemoveIndexFailed);

@@ -513,6 +513,21 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectMetadataSucceeded) {
   EXPECT_EQ(0, action_under_test->delete_objects_response.get_failure_count());
 }
 
+TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectMetadataFailedToLaunch) {
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(500, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+
+  action_under_test->delete_objects_metadata_failed();
+
+  EXPECT_FALSE(action_under_test->at_least_one_delete_successful);
+  EXPECT_EQ(0, action_under_test->delete_objects_response.get_success_count());
+  EXPECT_EQ(0, action_under_test->delete_objects_response.get_failure_count());
+}
+
 TEST_F(S3DeleteMultipleObjectsActionTest,
        DeleteObjectMetadataFailedWithMissing) {
   action_under_test->objects_metadata.push_back(
@@ -524,7 +539,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
               get_op_ret_code_for_del_kv(_))
       .Times(2)
       .WillRepeatedly(Return(-ENOENT));
-
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
       .Times(AtLeast(1));
@@ -550,7 +567,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
               get_op_ret_code_for_del_kv(_))
       .Times(2)
       .WillRepeatedly(Return(-ENETUNREACH));
-
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _))
       .Times(AtLeast(1));
@@ -585,6 +604,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_keyval(_, my_keys, _, _))
       .Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
 
   action_under_test->objects_metadata.push_back(
       object_meta_factory->create_object_metadata_obj(mock_request));

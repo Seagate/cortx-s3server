@@ -232,6 +232,14 @@ void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
       state = S3BucketMetadataState::missing;
       this->handler_on_failed();
     }
+  } else if (account_user_index_metadata->get_state() ==
+             S3AccountUserIdxMetadataState::failed_to_launch) {
+    s3_log(
+        S3_LOG_ERROR, request_id,
+        "Failed to fetch Bucket List index oid from Account User index. Please "
+        "retry after some time\n");
+    state = S3BucketMetadataState::failed_to_launch;
+    this->handler_on_failed();
   } else {
     s3_log(
         S3_LOG_ERROR, request_id,
@@ -428,7 +436,12 @@ void S3BucketMetadata::save_bucket_list_index_oid_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
          "Saving of Bucket list index oid metadata failed\n");
-  state = S3BucketMetadataState::failed;
+  if (account_user_index_metadata->get_state() ==
+      S3AccountUserIdxMetadataState::failed_to_launch) {
+    state = S3BucketMetadataState::failed_to_launch;
+  } else {
+    state = S3BucketMetadataState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -553,7 +566,12 @@ void S3BucketMetadata::create_multipart_list_index_failed() {
 void S3BucketMetadata::save_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Saving of Bucket metadata failed\n");
-  state = S3BucketMetadataState::failed;
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3BucketMetadataState::failed_to_launch;
+  } else {
+    state = S3BucketMetadataState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -599,7 +617,12 @@ void S3BucketMetadata::remove_bucket_info_successful() {
 void S3BucketMetadata::remove_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Removal of Bucket metadata failed\n");
-  state = S3BucketMetadataState::failed;
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3BucketMetadataState::failed_to_launch;
+  } else {
+    state = S3BucketMetadataState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

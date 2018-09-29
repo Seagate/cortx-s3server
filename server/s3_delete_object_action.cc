@@ -101,13 +101,20 @@ void S3DeleteObjectAction::fetch_object_info() {
       object_metadata->load(std::bind(&S3DeleteObjectAction::next, this),
                             std::bind(&S3DeleteObjectAction::next, this));
     }
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
-    set_s3_error("NoSuchBucket");
-    send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
-    set_s3_error("InternalError");
+    if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+      s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
+      set_s3_error("NoSuchBucket");
+    } else if (bucket_metadata->get_state() ==
+               S3BucketMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Bucket metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -119,15 +126,21 @@ void S3DeleteObjectAction::delete_metadata() {
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     object_metadata->remove(std::bind(&S3DeleteObjectAction::next, this),
                             std::bind(&S3DeleteObjectAction::next, this));
-  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-    s3_log(S3_LOG_WARN, request_id, "Object not found\n");
-    send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_WARN, request_id, "Failed to look up Object metadata\n");
-    set_s3_error("InternalError");
+    if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+      s3_log(S3_LOG_WARN, request_id, "Object not found\n");
+    } else if (object_metadata->get_state() ==
+               S3ObjectMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Object metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_WARN, request_id, "Failed to look up Object metadata\n");
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -177,19 +190,11 @@ void S3DeleteObjectAction::delete_object_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     next();
-  } else if (clovis_writer->get_state() ==
-             S3ClovisWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Deletion of object with oid "
-           "%" SCNx64 " : %" SCNx64 " failed\n",
-           object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
   } else {
     // Any other error report failure.
     s3_log(S3_LOG_ERROR, request_id,
            "Deletion of object with oid "
-           "%" SCNx64 " : %" SCNx64 " failed\n",
+           "%" SCNx64 " : %" SCNx64 " failed, it may remain stale in Mero\n",
            object_metadata->get_oid().u_hi, object_metadata->get_oid().u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);

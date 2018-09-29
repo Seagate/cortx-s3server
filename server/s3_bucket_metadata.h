@@ -46,7 +46,7 @@ enum class S3BucketMetadataState {
   deleting,
   deleted,  // Metadata deleted from store
   failed,
-  failed_to_launch
+  failed_to_launch  // pre launch operation failed
 };
 
 // Forward declarations
@@ -277,14 +277,17 @@ class S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOidSucessfulStateSaving);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOidSucessful);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOIDFailed);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOIDFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfo);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfoSuccess);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfoFailed);
+  FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfoFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataTest, RemovePresentMetadata);
   FRIEND_TEST(S3BucketMetadataTest, RemoveAfterFetchingBucketListIndexOID);
   FRIEND_TEST(S3BucketMetadataTest, RemoveBucketInfo);
   FRIEND_TEST(S3BucketMetadataTest, RemoveBucketInfoSuccessful);
   FRIEND_TEST(S3BucketMetadataTest, RemoveBucketInfoFailed);
+  FRIEND_TEST(S3BucketMetadataTest, RemoveBucketInfoFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataTest, CreateDefaultAcl);
   FRIEND_TEST(S3BucketMetadataTest, ToJson);
   FRIEND_TEST(S3BucketMetadataTest, FromJson);

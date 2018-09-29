@@ -90,8 +90,9 @@ class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
 
 enum class S3ClovisKVSReaderOpState {
   empty,
-  failed,
   start,
+  failed_to_launch,
+  failed,
   present,
   missing,
 };
@@ -180,6 +181,7 @@ class S3ClovisKVSReader {
   FRIEND_TEST(S3ClovisKvsReaderTest, Constructor);
   FRIEND_TEST(S3ClovisKvsReaderTest, CleanupContexts);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTest);
+  FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalFailTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalIdxPresentTest);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalTestEmpty);
   FRIEND_TEST(S3ClovisKvsReaderTest, GetKeyvalSuccessfulTest);

@@ -414,6 +414,11 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateNewOidTest) {
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, RollbackTest) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  action_under_test->object_metadata =
+      object_meta_factory->mock_object_metadata;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               delete_object(_, _, _))
       .Times(1);

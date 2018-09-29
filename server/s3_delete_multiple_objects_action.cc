@@ -175,6 +175,11 @@ void S3DeleteMultipleObjectsAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Fetching of bucket information failed\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -323,27 +328,35 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata_successful() {
 void S3DeleteMultipleObjectsAction::delete_objects_metadata_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
-  uint obj_index = 0;
-  for (auto& obj : objects_metadata) {
-    if (clovis_kv_writer->get_op_ret_code_for_del_kv(obj_index) == -ENOENT) {
-      at_least_one_delete_successful = true;
-      delete_objects_response.add_success(obj->get_object_name());
-    } else {
-      delete_objects_response.add_failure(obj->get_object_name(),
-                                          "InternalError");
-    }
-    ++obj_index;
-  }
-  if (delete_index_in_req < delete_request.get_count()) {
-    // Try to delete the remaining
-    fetch_objects_info();
-  } else {
-    if (!at_least_one_delete_successful) {
-      set_s3_error("InternalError");
-    }
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    s3_log(
+        S3_LOG_DEBUG, request_id,
+        "Object metadata delete operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
+  } else {
+    uint obj_index = 0;
+    for (auto& obj : objects_metadata) {
+      if (clovis_kv_writer->get_op_ret_code_for_del_kv(obj_index) == -ENOENT) {
+        at_least_one_delete_successful = true;
+        delete_objects_response.add_success(obj->get_object_name());
+      } else {
+        delete_objects_response.add_failure(obj->get_object_name(),
+                                            "InternalError");
+      }
+      ++obj_index;
+    }
+    if (delete_index_in_req < delete_request.get_count()) {
+      // Try to delete the remaining
+      fetch_objects_info();
+    } else {
+      if (!at_least_one_delete_successful) {
+        set_s3_error("InternalError");
+      }
+      send_response_to_s3_client();
+    }
   }
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

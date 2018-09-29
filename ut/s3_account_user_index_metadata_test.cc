@@ -219,10 +219,27 @@ TEST_F(S3AccountUserIdxMetadataTest, SaveSuccessful) {
 }
 
 TEST_F(S3AccountUserIdxMetadataTest, SaveFailed) {
+  CREATE_KVS_WRITER_OBJ;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3AccountUserIdxMetadataTest::func_callback_one, this);
   idx_metadata_under_test_ptr->save_failed();
   EXPECT_EQ(S3AccountUserIdxMetadataState::failed,
+            idx_metadata_under_test_ptr->state);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3AccountUserIdxMetadataTest, SaveFailedToLaunch) {
+  CREATE_KVS_WRITER_OBJ;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+  idx_metadata_under_test_ptr->handler_on_failed =
+      std::bind(&S3AccountUserIdxMetadataTest::func_callback_one, this);
+  idx_metadata_under_test_ptr->save_failed();
+  EXPECT_EQ(S3AccountUserIdxMetadataState::failed_to_launch,
             idx_metadata_under_test_ptr->state);
   EXPECT_EQ(1, call_count_one);
 }
@@ -237,10 +254,27 @@ TEST_F(S3AccountUserIdxMetadataTest, RemoveSuccessful) {
 }
 
 TEST_F(S3AccountUserIdxMetadataTest, RemoveFailed) {
+  CREATE_KVS_WRITER_OBJ;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   idx_metadata_under_test_ptr->handler_on_failed =
       std::bind(&S3AccountUserIdxMetadataTest::func_callback_one, this);
   idx_metadata_under_test_ptr->remove_failed();
   EXPECT_EQ(S3AccountUserIdxMetadataState::failed,
+            idx_metadata_under_test_ptr->state);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3AccountUserIdxMetadataTest, RemoveFailedToLaunch) {
+  CREATE_KVS_WRITER_OBJ;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
+  idx_metadata_under_test_ptr->handler_on_failed =
+      std::bind(&S3AccountUserIdxMetadataTest::func_callback_one, this);
+  idx_metadata_under_test_ptr->remove_failed();
+  EXPECT_EQ(S3AccountUserIdxMetadataState::failed_to_launch,
             idx_metadata_under_test_ptr->state);
   EXPECT_EQ(1, call_count_one);
 }

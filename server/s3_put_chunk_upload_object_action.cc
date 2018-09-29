@@ -180,14 +180,23 @@ void S3PutChunkUploadObjectAction::fetch_object_info() {
                     this),
           std::bind(&S3PutChunkUploadObjectAction::next, this));
     }
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
-    set_s3_error("NoSuchBucket");
-    send_response_to_s3_client();
   } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed\n");
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
+    if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+      s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
+      set_s3_error("NoSuchBucket");
+      send_response_to_s3_client();
+    } else if (bucket_metadata->get_state() ==
+               S3BucketMetadataState::failed_to_launch) {
+      s3_log(
+          S3_LOG_ERROR, request_id,
+          "Bucket metadata load operation failed due to pre launch failure\n");
+      set_s3_error("ServiceUnavailable");
+      send_response_to_s3_client();
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed\n");
+      set_s3_error("InternalError");
+      send_response_to_s3_client();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -203,6 +212,12 @@ void S3PutChunkUploadObjectAction::fetch_object_info_status() {
   } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::missing\n");
     next();
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
     set_s3_error("InternalError");
@@ -315,6 +330,11 @@ void S3PutChunkUploadObjectAction::create_new_oid(
 void S3PutChunkUploadObjectAction::rollback_create() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   clovis_writer->set_oid(new_object_oid);
+  if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Save object metadata failed due to prelaunch failure\n");
+    set_s3_error("ServiceUnavailable");
+  }
   clovis_writer->delete_object(
       std::bind(&S3PutChunkUploadObjectAction::rollback_next, this),
       std::bind(&S3PutChunkUploadObjectAction::rollback_create_failed, this),
@@ -333,7 +353,10 @@ void S3PutChunkUploadObjectAction::rollback_create_failed() {
     rollback_done();
   } else {
     // Log rollback failure.
-    s3_log(S3_LOG_WARN, request_id, "Deletion of object failed\n");
+    s3_log(S3_LOG_ERROR, request_id,
+           "Deletion of object failed, this oid will be stale in Mero: "
+           "%" SCNx64 " : %" SCNx64 "\n",
+           new_object_oid.u_hi, new_object_oid.u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
     rollback_done();

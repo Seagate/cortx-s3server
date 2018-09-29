@@ -158,6 +158,11 @@ void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -434,8 +439,23 @@ void S3PutMultiObjectAction::save_metadata() {
     s3_fi_enable_once("clovis_kv_put_fail");
   }
 
-  part_metadata->save(std::bind(&S3PutMultiObjectAction::next, this),
-                      std::bind(&S3PutMultiObjectAction::next, this));
+  part_metadata->save(
+      std::bind(&S3PutMultiObjectAction::next, this),
+      std::bind(&S3PutMultiObjectAction::save_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutMultiObjectAction::save_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Save of Part metadata failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_ERROR, request_id, "Save of Part metadata failed\n");
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -469,26 +489,12 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (part_metadata &&
-             (part_metadata->get_state() == S3PartMetadataState::saved)) {
+  } else {
     request->set_out_header_value("ETag", clovis_writer->get_content_md5());
 
     request->send_response(S3HttpSuccess200);
-  } else {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Internal error upload id = %s request id = %s object uri = %s\n",
-           upload_id.c_str(), request->get_request_id().c_str(),
-           request->get_object_uri().c_str());
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Connection", "close");
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
   }
+
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   request->resume();
 

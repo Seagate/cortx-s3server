@@ -233,10 +233,7 @@ TEST_F(S3PutObjectACLActionTest, SendResponseToClientServiceUnavailable) {
 }
 
 TEST_F(S3PutObjectACLActionTest, SendResponseToClientInternalError) {
-  CREATE_OBJECT_METADATA;
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  action_under_test_ptr->set_s3_error("InternalError");
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();

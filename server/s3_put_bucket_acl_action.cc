@@ -111,6 +111,11 @@ void S3PutBucketACLAction::fetch_bucket_info_failed() {
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
@@ -126,8 +131,22 @@ void S3PutBucketACLAction::setacl() {
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   bucket_metadata->save(std::bind(&S3PutBucketACLAction::next, this),
-                        std::bind(&S3PutBucketACLAction::next, this));
+                        std::bind(&S3PutBucketACLAction::setacl_failed, this));
 
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutBucketACLAction::setacl_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id, "setting acl failed\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

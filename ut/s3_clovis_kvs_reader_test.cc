@@ -183,6 +183,27 @@ TEST_F(S3ClovisKvsReaderTest, GetKeyvalTest) {
   EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
 }
 
+TEST_F(S3ClovisKvsReaderTest, GetKeyvalFailTest) {
+  S3CallBack s3cloviskvscallbackobj;
+
+  test_key = "utTestKey";
+
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+      .WillRepeatedly(Return(-1));
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(0);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _)).Times(0);
+
+  ptr_cloviskvs_reader->get_keyval(
+      index_oid, test_key,
+      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
+      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
+
+  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
+  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
+}
+
 TEST_F(S3ClovisKvsReaderTest, GetKeyvalIdxPresentTest) {
   S3CallBack s3cloviskvscallbackobj;
 

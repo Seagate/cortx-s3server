@@ -92,6 +92,13 @@ void S3GetServiceAction::get_next_buckets() {
     bucket_list_index_oid =
         account_user_index_metadata->get_bucket_list_index_oid();
   } else if (account_user_index_metadata->get_state() ==
+             S3AccountUserIdxMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+    return;
+  } else if (account_user_index_metadata->get_state() ==
              S3AccountUserIdxMetadataState::failed) {
     set_s3_error("InternalError");
     send_response_to_s3_client();
@@ -166,6 +173,12 @@ void S3GetServiceAction::get_next_buckets_failed() {
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Buckets list is empty\n");
     fetch_successful = true;  // With no entries.
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(
+        S3_LOG_ERROR, request_id,
+        "Bucket list next keyval operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Failed to fetch bucket list info\n");
     set_s3_error("InternalError");

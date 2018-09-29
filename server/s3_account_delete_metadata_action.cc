@@ -177,6 +177,13 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed() {
            "There is no bucket for the acocunt id: %s\n",
            account_id_from_uri.c_str());
     next();
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata next keyval operation failed due to pre launch "
+           "failure\n");
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Failed to retrieve bucket metadata\n");
     set_s3_error("InternalError");
@@ -214,7 +221,12 @@ void S3AccountDeleteMetadataAction::remove_account_index_info_successful() {
 void S3AccountDeleteMetadataAction::remove_account_index_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Account metadata cleanup failed.\n");
-  set_s3_error("InternalError");
+  if (account_user_index_metadata->get_state() ==
+      S3AccountUserIdxMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
