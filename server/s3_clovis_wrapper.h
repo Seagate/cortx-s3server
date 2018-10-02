@@ -145,7 +145,11 @@ class ConcreteClovisAPI : public ClovisAPI {
   void clovis_obj_fini(struct m0_clovis_obj *obj) { m0_clovis_obj_fini(obj); }
 
   int clovis_sync_op_init(struct m0_clovis_op **sync_op) {
-    return m0_clovis_sync_op_init(sync_op);
+    if (s3_fi_is_enabled("clovis_sync_op_init_fail")) {
+      return -1;
+    } else {
+      return m0_clovis_sync_op_init(sync_op);
+    }
   }
 
   int clovis_sync_entity_add(struct m0_clovis_op *sync_op,

@@ -347,7 +347,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
-      .WillOnce(Return(S3PartMetadataState::failed));
+      .WillRepeatedly(Return(S3PartMetadataState::failed));
 
   action_under_test->fetch_firstpart_info_failed();
 

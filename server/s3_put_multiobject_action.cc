@@ -208,9 +208,11 @@ void S3PutMultiObjectAction::fetch_firstpart_info_failed() {
   s3_log(S3_LOG_WARN, request_id,
          "Part 1 metadata doesn't exist, cannot determine \"consistent\" part "
          "size\n");
-  if (part_metadata->get_state() == S3PartMetadataState::missing) {
+  if (part_metadata->get_state() == S3PartMetadataState::missing ||
+      part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
     // May happen if part 2/3... comes before part 1, in that case those part
     // upload need to be retried(by that time part 1 meta data will get in)
+    // or its a pre launch failure
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");

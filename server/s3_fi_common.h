@@ -94,6 +94,7 @@ void s3_fi_enable_random(const char *tag, uint32_t p);
  * @param tag  FP tag, which was specified as a parameter to s3_fi_is_enabled()
  * @param n    A "frequency" with which FP is triggered
  * eg: s3_fi_enable("write_fail", 5);
+ * Here fault injection is triggered first 5 times.
  *
  */
 void s3_fi_enable_each_nth_time(const char *tag, uint32_t n);
@@ -109,7 +110,8 @@ void s3_fi_enable_each_nth_time(const char *tag, uint32_t n);
  *skipping it
  *             N times before
  * eg: s3_fi_enable("write_fail", 5, 20);
- *
+ * Here FI is not trigerred first 5 times then FI is triggered next 20 times,
+ * this cycle is repeated.
  */
 void s3_fi_enable_off_n_on_m(const char *tag, uint32_t n, uint32_t m);
 
