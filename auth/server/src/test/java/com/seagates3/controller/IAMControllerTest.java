@@ -285,7 +285,7 @@ public class IAMControllerTest {
         ServerResponse response = controller.serve(httpRequest, requestBody);
 
         assertThat(response.getResponseBody(),
-                containsString("Invalid Authorization header."));
+                containsString("The provided token is malformed or otherwise invalid."));
         assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
     }
 

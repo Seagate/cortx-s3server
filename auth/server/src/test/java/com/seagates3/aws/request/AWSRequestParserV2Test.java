@@ -21,6 +21,7 @@ package com.seagates3.aws.request;
 import com.seagates3.authentication.AWSRequestParserV2;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.aws.AWSV2RequestHelper;
+import com.seagates3.exception.InvalidTokenException;
 import com.seagates3.authentication.ClientRequestToken;
 import java.util.Map;
 import org.junit.Assert;
@@ -29,11 +30,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.internal.matchers.apachecommons.ReflectionEquals;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(AuthServerConfig.class)
+@PowerMockIgnore( {"javax.management.*"})
+
 public class AWSRequestParserV2Test {
 
     private final AWSRequestParserV2 parser;
@@ -57,7 +61,7 @@ public class AWSRequestParserV2Test {
     }
 
     @Test
-    public void Parse_RequestBody_PathStyle() {
+    public void Parse_RequestBody_PathStyle() throws InvalidTokenException {
         Map<String, String> requestHeaders
                 = AWSV2RequestHelper.getRequestHeadersPathStyle();
         ClientRequestToken requestToken
@@ -68,7 +72,7 @@ public class AWSRequestParserV2Test {
     }
 
     @Test
-    public void Parse_RequestBody_VirtualHostStyle() {
+    public void Parse_RequestBody_VirtualHostStyle() throws InvalidTokenException {
         Map<String, String> requestHeaders
                 = AWSV2RequestHelper.getRequestHeadersVirtualHostStyle();
         ClientRequestToken requestToken

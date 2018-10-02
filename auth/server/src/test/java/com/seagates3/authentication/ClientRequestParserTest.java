@@ -22,6 +22,8 @@ package com.seagates3.authentication;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.aws.AWSV2RequestHelper;
 import com.seagates3.aws.AWSV4RequestHelper;
+import com.seagates3.exception.InvalidTokenException;
+
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
@@ -112,6 +114,17 @@ public class ClientRequestParserTest {
                 = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
         fullHttpRequest.headers().add("XYZ", "");
         when(httpRequest.headers()).thenReturn(fullHttpRequest.headers());
+
+        assertNull(ClientRequestParser.parse(httpRequest, requestBody));
+    }
+
+    @Test
+    public void parseTest_InvalidToken_AuthenticateUser() {
+        requestBody.put("Action", "AuthenticateUser");
+        requestBody.put("host", "iam.seagate.com:9086");
+        requestBody.put("authorization","AWS4-HMAC-SHA256 Credential=vcev ceece/"
+                + "20181001/us-west2/iam/aws4_request, SignedHeaders=host;x-amz-date, "
+                + "Signature=676b4c41ad34f611ada591072cd2977cf948d4556ffca32164af1cf1b8d4f181");
 
         assertNull(ClientRequestParser.parse(httpRequest, requestBody));
     }

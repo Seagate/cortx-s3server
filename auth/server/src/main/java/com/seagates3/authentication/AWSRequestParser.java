@@ -19,6 +19,8 @@
 package com.seagates3.authentication;
 
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.exception.InvalidTokenException;
+
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import java.util.ArrayList;
@@ -37,24 +39,29 @@ public abstract class AWSRequestParser {
      *
      * @param httpRequest
      * @return
+     * @throws InvalidTokenException
      */
-    public abstract ClientRequestToken parse(FullHttpRequest httpRequest);
+    public abstract ClientRequestToken parse(FullHttpRequest httpRequest)
+            throws InvalidTokenException;
 
     /**
      *
      * @param requestBody
      * @return
+     * @throws InvalidTokenException
      */
-    public abstract ClientRequestToken parse(Map<String, String> requestBody);
+    public abstract ClientRequestToken parse(Map<String, String> requestBody)
+            throws InvalidTokenException;
 
     /**
      * Parse the authorization header.
      *
      * @param authorizationHeaderValue
      * @param clientRequestToken
+     * @throws InvalidTokenException
      */
     protected abstract void authHeaderParser(String authorizationHeaderValue,
-            ClientRequestToken clientRequestToken);
+            ClientRequestToken clientRequestToken) throws InvalidTokenException;
 
     /**
      * Parse the request headers.

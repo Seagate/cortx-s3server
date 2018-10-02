@@ -722,7 +722,7 @@ def delete_account_tests():
     test_msg = "Delete account s3test1 with invalid access key format"
     account_args = {'AccountName': 's3test1'}
     AuthTest(test_msg).delete_account(**account_args).execute_test() \
-        .command_response_should_have("Invalid Authorization header.")
+        .command_response_should_have("The provided token is malformed or otherwise invalid.")
 
     # Use access key and secret key of account s3test1
     GlobalTestState.root_access_key = s3test1_root_access_key

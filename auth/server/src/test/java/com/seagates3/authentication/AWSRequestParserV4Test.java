@@ -19,6 +19,8 @@
 package com.seagates3.authentication;
 
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.exception.InvalidTokenException;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -57,7 +59,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test(expected = NullPointerException.class)
-    public void parseTest_ShouldThrowExceptionIfNullParamPassed() {
+    public void parseTest_ShouldThrowExceptionIfNullParamPassed() throws InvalidTokenException {
         // Arrange
         FullHttpRequest fullHttpRequest = mock(FullHttpRequest.class);
 
@@ -100,7 +102,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test
-    public void parseTest_ForRequestBody() {
+    public void parseTest_ForRequestBody() throws InvalidTokenException {
         // Arrange
         Map<String, String> requestBody = mock(Map.class);
 
@@ -113,7 +115,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test
-    public void authHeaderParserTest() {
+    public void authHeaderParserTest() throws InvalidTokenException {
         // Arrange
         String authorizationHeaderValue = "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/" +
                 "20160321/US/s3/aws4_request,SignedHeaders=host;x-amz-content-sha256;x-amz-date," +
@@ -129,8 +131,8 @@ public class AWSRequestParserV4Test {
                 clientRequestToken.getSignature());
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
-    public void authHeaderParserTest_InvalidAuthorizationHeader() {
+    @Test(expected = InvalidTokenException.class)
+    public void authHeaderParserTest_InvalidAuthorizationHeader() throws InvalidTokenException {
         // Arrange
         String authorizationHeaderValue = "AWS4-HMAC-SHA256Credential=" +
                 "AKIAIOSFODNN7EXAMPLE/20160321/US/s3/aws4_request,SignedHeaders=host;" +
@@ -143,7 +145,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test(expected = NullPointerException.class)
-    public void authHeaderParserTest_NULLAuthorizationHeader() {
+    public void authHeaderParserTest_NULLAuthorizationHeader() throws InvalidTokenException {
         // Arrange
         String authorizationHeaderValue = null;
         ClientRequestToken clientRequestToken = new ClientRequestToken();
@@ -152,8 +154,8 @@ public class AWSRequestParserV4Test {
         awsRequestParserV4.authHeaderParser(authorizationHeaderValue, clientRequestToken);
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
-    public void authHeaderParserTest_InvalidAuthorizationHeader_V4() {
+    @Test(expected = InvalidTokenException.class)
+    public void authHeaderParserTest_InvalidAuthorizationHeader_V4() throws InvalidTokenException {
         // Arrange
         String authorizationHeaderValue = "AWS AKIAJTYX36YCKQSAJT7Q:uDWiVvxwCUR9YJ8EGJgbtW9tjFM=";
         ClientRequestToken clientRequestToken = new ClientRequestToken();

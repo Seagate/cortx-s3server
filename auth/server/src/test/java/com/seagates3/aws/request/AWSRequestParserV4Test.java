@@ -21,6 +21,7 @@ package com.seagates3.aws.request;
 import com.seagates3.authentication.AWSRequestParserV4;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.aws.AWSV4RequestHelper;
+import com.seagates3.exception.InvalidTokenException;
 import com.seagates3.authentication.ClientRequestToken;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -64,7 +65,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test
-    public void Parse_RequestBody_PathStyle() {
+    public void Parse_RequestBody_PathStyle() throws InvalidTokenException {
         Map<String, String> requestHeaders
                 = AWSV4RequestHelper.getRequestHeadersPathStyle();
         ClientRequestToken requestToken
@@ -76,7 +77,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test
-    public void Parse_RequestBody_VirtualHostStyle() {
+    public void Parse_RequestBody_VirtualHostStyle() throws InvalidTokenException {
         Map<String, String> requestHeaders
                 = AWSV4RequestHelper.getRequestHeadersVirtualHostStyle();
         ClientRequestToken requestToken
@@ -88,7 +89,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test
-    public void Parse_RequestHeadersEmptyHttpQuery_VirtualHostStyle() {
+    public void Parse_RequestHeadersEmptyHttpQuery_VirtualHostStyle() throws InvalidTokenException {
         FullHttpRequest request = Mockito.mock(DefaultFullHttpRequest.class);
 
         Mockito.when(request.content()).thenReturn(Unpooled.buffer(0));
@@ -105,7 +106,7 @@ public class AWSRequestParserV4Test {
     }
 
     @Test
-    public void Parse_RequestHeaderWithHttpQuery_VirtualHostStyle() {
+    public void Parse_RequestHeaderWithHttpQuery_VirtualHostStyle() throws InvalidTokenException {
         FullHttpRequest request = Mockito.mock(DefaultFullHttpRequest.class);
 
         Mockito.when(request.content()).thenReturn(Unpooled.buffer(0));

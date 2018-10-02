@@ -18,9 +18,12 @@
  */
 package com.seagates3.authentication;
 
+import com.seagates3.exception.InvalidTokenException;
 import com.seagates3.util.IEMUtil;
 import io.netty.handler.codec.http.FullHttpRequest;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientRequestParser {
 
@@ -30,6 +33,8 @@ public class ClientRequestParser {
             = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
     private static final String AWS_V4_AUTHRORIAZATION_PATTERN
             = "AWS4-HMAC-SHA256[\\w\\W]+";
+    private final static Logger LOGGER =
+            LoggerFactory.getLogger(ClientRequestParser.class.getName());
 
 
     public static ClientRequestToken parse(FullHttpRequest httpRequest,
@@ -62,12 +67,23 @@ public class ClientRequestParser {
         }
 
         AWSRequestParser awsRequestParser = getAWSRequestParser(awsSigningVersion);
+        ClientRequestToken clientrequesttoken = null;
         if (requestAction.equals("AuthenticateUser")
                 || requestAction.equals("AuthorizeUser")) {
-            return awsRequestParser.parse(requestBody);
+            try {
+                clientrequesttoken = awsRequestParser.parse(requestBody);
+            } catch (InvalidTokenException ex) {
+                LOGGER.error("Error while parsing request : "+ ex.getMessage());
+            }
         } else {
-            return awsRequestParser.parse(httpRequest);
+
+            try {
+                clientrequesttoken = awsRequestParser.parse(httpRequest);
+            } catch (InvalidTokenException ex) {
+                    LOGGER.error("Error while parsing request : "+ ex.getMessage());
+            }
         }
+        return clientrequesttoken;
     }
 
     public static AWSRequestParser getAWSRequestParser(

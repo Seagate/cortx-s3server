@@ -23,11 +23,21 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.CharsetUtil;
 import java.util.Map;
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.seagates3.exception.InvalidTokenException;
 
 public class AWSRequestParserV4 extends AWSRequestParser {
 
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(AWSRequestParserV4.class.getName());
+
+
     @Override
-    public ClientRequestToken parse(FullHttpRequest httpRequest) {
+    public ClientRequestToken parse(FullHttpRequest httpRequest) throws InvalidTokenException {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
         clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
         clientRequestToken.setRequestPayload(getRequestPayload(httpRequest));
@@ -41,7 +51,7 @@ public class AWSRequestParserV4 extends AWSRequestParser {
     }
 
     @Override
-    public ClientRequestToken parse(Map<String, String> requestBody) {
+    public ClientRequestToken parse(Map<String, String> requestBody) throws InvalidTokenException {
         ClientRequestToken clientRequestToken = new ClientRequestToken();
         clientRequestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
 
@@ -53,7 +63,7 @@ public class AWSRequestParserV4 extends AWSRequestParser {
 
         parseRequestHeaders(requestBody, clientRequestToken);
 
-        authHeaderParser(requestBody.get("Authorization"), clientRequestToken);
+        authHeaderParser(requestBody.get("authorization"), clientRequestToken);
 
         return clientRequestToken;
     }
@@ -78,28 +88,56 @@ public class AWSRequestParserV4 extends AWSRequestParser {
      *
      * @param authorizationHeaderValue Authorization Header
      * @param clientRequestToken
+     * @throws InvalidTokenException
      */
     @Override
     protected void authHeaderParser(String authorizationHeaderValue,
-            ClientRequestToken clientRequestToken) {
+            ClientRequestToken clientRequestToken) throws InvalidTokenException  {
+        String errMsg = "Invalid client request token found while parsing request";
         String[] tokens = authorizationHeaderValue.split(",");
+        if (tokens.length < 3) {
+            LOGGER.error("Found "+ tokens.length + " tokens "+ Arrays.toString(tokens) +
+                       " while parsing but required atleast 3 credtokens.");
+            throw new InvalidTokenException(errMsg);
+        }
+
         String[] subTokens, credTokens, credScopeTokens;
 
         subTokens = tokens[0].split(" ");
+        if (subTokens.length < 2) {
+            LOGGER.error("Found "+ subTokens.length + " subtokens "+ Arrays.toString(subTokens) +
+                       " while parsing but required atleast 2 subtokens.");
+            throw new InvalidTokenException(errMsg);
+        }
         clientRequestToken.setSigningAlgorithm(subTokens[0]);
 
         credTokens = subTokens[1].split("/", 2);
+        if (credTokens.length < 2) {
+            LOGGER.error("Found "+ credTokens.length + " credtokens " + Arrays.toString(credTokens) +
+                       " while parsing but required atleast 2 credtokens.");
+            throw new InvalidTokenException(errMsg);
+        }
         clientRequestToken.setAccessKeyId(credTokens[0].split("=")[1]);
 
         String credentialScope = credTokens[1];
         clientRequestToken.setCredentialScope(credentialScope);
 
         credScopeTokens = credentialScope.split("/");
+        if (credScopeTokens.length < 3) {
+            LOGGER.error("Found " + credScopeTokens.length + " credscopetokens "+ Arrays.toString(credScopeTokens) +
+                       " while parsing but required atleast 3 credscopetokens.");
+            throw new InvalidTokenException(errMsg);
+        }
         clientRequestToken.setDate(credScopeTokens[0]);
         clientRequestToken.setRegion(credScopeTokens[1]);
         clientRequestToken.setService(credScopeTokens[2]);
 
         subTokens = tokens[1].split("=");
+        if (subTokens.length < 2) {
+            LOGGER.error("Found " + subTokens.length + " subtokens "+ Arrays.toString(subTokens) +
+                       " while parsing but required atleast 2 subtokens.");
+            throw new InvalidTokenException(errMsg);
+        }
         clientRequestToken.setSignedHeaders(subTokens[1]);
         clientRequestToken.setSignature(tokens[2].split("=")[1]);
     }
