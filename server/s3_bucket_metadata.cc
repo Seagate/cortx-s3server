@@ -43,6 +43,7 @@ S3BucketMetadata::S3BucketMetadata(
   salted_bucket_list_index_name = get_account_index_id();
   salted_multipart_list_index_name = get_multipart_index_name();
   state = S3BucketMetadataState::empty;
+  current_op = S3BucketMetadataCurrentOp::none;
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
@@ -184,7 +185,7 @@ void S3BucketMetadata::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  state = S3BucketMetadataState::fetching;
+  current_op = S3BucketMetadataCurrentOp::fetching;
   fetch_bucket_list_index_oid();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -209,11 +210,11 @@ void S3BucketMetadata::fetch_bucket_list_index_oid_success() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   bucket_list_index_oid =
       account_user_index_metadata->get_bucket_list_index_oid();
-  if (state == S3BucketMetadataState::saving) {
+  if (current_op == S3BucketMetadataCurrentOp::saving) {
     save_bucket_info();
-  } else if (state == S3BucketMetadataState::fetching) {
+  } else if (current_op == S3BucketMetadataCurrentOp::fetching) {
     load_bucket_info();
-  } else if (state == S3BucketMetadataState::deleting) {
+  } else if (current_op == S3BucketMetadataCurrentOp::deleting) {
     remove_bucket_info();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -224,12 +225,12 @@ void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
 
   if (account_user_index_metadata->get_state() ==
       S3AccountUserIdxMetadataState::missing) {
-    if (state == S3BucketMetadataState::saving ||
-        state == S3BucketMetadataState::fetching) {
+    state = S3BucketMetadataState::missing;
+    if (current_op == S3BucketMetadataCurrentOp::saving ||
+        current_op == S3BucketMetadataCurrentOp::fetching) {
       collision_attempt_count = 0;
       create_bucket_list_index();
     } else {
-      state = S3BucketMetadataState::missing;
       this->handler_on_failed();
     }
   } else if (account_user_index_metadata->get_state() ==
@@ -313,7 +314,7 @@ void S3BucketMetadata::save(std::function<void(void)> on_success,
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
-  state = S3BucketMetadataState::saving;
+  current_op = S3BucketMetadataCurrentOp::saving;
   if (bucket_list_index_oid.u_lo == 0ULL &&
       bucket_list_index_oid.u_hi == 0ULL) {
     // If there is no index oid then read it
@@ -333,7 +334,6 @@ void S3BucketMetadata::save(std::function<void(void)> on_success,
 void S3BucketMetadata::create_bucket_list_index() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
-  state = S3BucketMetadataState::missing;
   if (collision_attempt_count == 0) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -427,7 +427,12 @@ void S3BucketMetadata::save_bucket_list_index_oid() {
 
 void S3BucketMetadata::save_bucket_list_index_oid_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (state == S3BucketMetadataState::saving) {
+  if (current_op == S3BucketMetadataCurrentOp::fetching &&
+      state == S3BucketMetadataState::missing) {
+    // We just created bucket list container, so bucket metadata is missing
+    // hence call failure callback
+    this->handler_on_failed();
+  } else if (current_op == S3BucketMetadataCurrentOp::saving) {
     collision_attempt_count = 0;
     create_object_list_index();
   } else {
@@ -473,7 +478,6 @@ void S3BucketMetadata::save_bucket_info() {
 
 void S3BucketMetadata::save_bucket_info_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  state = S3BucketMetadataState::saved;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -590,7 +594,7 @@ void S3BucketMetadata::remove(std::function<void(void)> on_success,
   if (state == S3BucketMetadataState::present) {
     remove_bucket_info();
   } else {
-    state = S3BucketMetadataState::deleting;
+    current_op = S3BucketMetadataCurrentOp::deleting;
     fetch_bucket_list_index_oid();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -613,7 +617,6 @@ void S3BucketMetadata::remove_bucket_info() {
 
 void S3BucketMetadata::remove_bucket_info_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  state = S3BucketMetadataState::deleted;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

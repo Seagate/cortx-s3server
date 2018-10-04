@@ -214,7 +214,8 @@ TEST_F(S3BucketMetadataTest, Load) {
   action_under_test->load(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(S3BucketMetadataState::fetching, action_under_test->state);
+  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::fetching,
+            action_under_test->current_op);
 }
 
 TEST_F(S3BucketMetadataTest, FetchBucketListIndexOid) {
@@ -229,7 +230,8 @@ TEST_F(S3BucketMetadataTest, FetchBucketListIndexOid) {
 TEST_F(S3BucketMetadataTest, FetchBucketListIndexOIDSuccessStateIsSaving) {
   action_under_test->account_user_index_metadata =
       s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-  action_under_test->state = S3BucketMetadataState::saving;
+  action_under_test->current_op =
+      action_under_test->S3BucketMetadataCurrentOp::saving;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _))
       .Times(1);
@@ -239,7 +241,8 @@ TEST_F(S3BucketMetadataTest, FetchBucketListIndexOIDSuccessStateIsSaving) {
 TEST_F(S3BucketMetadataTest, FetchBucketListIndexOIDSuccessStateIsFetching) {
   action_under_test->account_user_index_metadata =
       s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-  action_under_test->state = S3BucketMetadataState::fetching;
+  action_under_test->current_op =
+      action_under_test->S3BucketMetadataCurrentOp::fetching;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_keyval(_, "", _, _))
       .Times(1);
@@ -249,7 +252,8 @@ TEST_F(S3BucketMetadataTest, FetchBucketListIndexOIDSuccessStateIsFetching) {
 TEST_F(S3BucketMetadataTest, FetchBucketListIndexOIDSuccessStateIsDeleting) {
   action_under_test->account_user_index_metadata =
       s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-  action_under_test->state = S3BucketMetadataState::deleting;
+  action_under_test->current_op =
+      action_under_test->S3BucketMetadataCurrentOp::deleting;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_keyval(_, _, _, _))
       .Times(1);
@@ -264,7 +268,8 @@ TEST_F(S3BucketMetadataTest, FetchBucketListIndexOIDFailedStateIsSaving) {
       get_state())
       .Times(1)
       .WillRepeatedly(Return(S3AccountUserIdxMetadataState::missing));
-  action_under_test->state = S3BucketMetadataState::saving;
+  action_under_test->current_op =
+      action_under_test->S3BucketMetadataCurrentOp::saving;
   action_under_test->collision_attempt_count = 0;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index(_, _, _))
@@ -283,7 +288,7 @@ TEST_F(S3BucketMetadataTest,
       get_state())
       .Times(1)
       .WillRepeatedly(Return(S3AccountUserIdxMetadataState::missing));
-  action_under_test->state = S3BucketMetadataState::saved;
+  // action_under_test->state = S3BucketMetadataState::saved;
   action_under_test->fetch_bucket_list_index_oid_failed();
   EXPECT_EQ(S3BucketMetadataState::missing, action_under_test->state);
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
@@ -297,7 +302,8 @@ TEST_F(S3BucketMetadataTest, FetchBucketListIndexOIDFailedStateIsFetching) {
       get_state())
       .Times(1)
       .WillRepeatedly(Return(S3AccountUserIdxMetadataState::missing));
-  action_under_test->state = S3BucketMetadataState::fetching;
+  action_under_test->current_op =
+      action_under_test->S3BucketMetadataCurrentOp::fetching;
   action_under_test->collision_attempt_count = 0;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               create_index(_, _, _))
@@ -384,7 +390,8 @@ TEST_F(S3BucketMetadataTest, SaveMeatdataMissingIndexOID) {
   action_under_test->save(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(S3BucketMetadataState::saving, action_under_test->state);
+  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::saving,
+            action_under_test->current_op);
 }
 
 TEST_F(S3BucketMetadataTest, SaveMeatdataIndexOIDPresent) {
@@ -396,7 +403,8 @@ TEST_F(S3BucketMetadataTest, SaveMeatdataIndexOIDPresent) {
   action_under_test->save(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(S3BucketMetadataState::saving, action_under_test->state);
+  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::saving,
+            action_under_test->current_op);
 }
 
 TEST_F(S3BucketMetadataTest, CreateObjectIndexOIDNotPresent) {
@@ -410,7 +418,8 @@ TEST_F(S3BucketMetadataTest, CreateObjectIndexOIDNotPresent) {
   action_under_test->save(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(S3BucketMetadataState::saving, action_under_test->state);
+  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::saving,
+            action_under_test->current_op);
 }
 
 TEST_F(S3BucketMetadataTest, CreateBucketListIndexCollisionCount0) {
@@ -419,7 +428,6 @@ TEST_F(S3BucketMetadataTest, CreateBucketListIndexCollisionCount0) {
               create_index(_, _, _))
       .Times(1);
   action_under_test->create_bucket_list_index();
-  EXPECT_EQ(S3BucketMetadataState::missing, action_under_test->state);
 }
 
 TEST_F(S3BucketMetadataTest, CreateObjectListIndexCollisionCount0) {
@@ -444,7 +452,6 @@ TEST_F(S3BucketMetadataTest, CreateBucketListIndexCollisionCount1) {
               create_index(_, _, _))
       .Times(1);
   action_under_test->create_bucket_list_index();
-  EXPECT_EQ(S3BucketMetadataState::missing, action_under_test->state);
 }
 
 TEST_F(S3BucketMetadataTest, CreateBucketListIndexSuccessful) {
@@ -648,7 +655,8 @@ TEST_F(S3BucketMetadataTest, SaveBucketListIndexOid) {
 }
 
 TEST_F(S3BucketMetadataTest, SaveBucketListIndexOidSucessfulStateSaving) {
-  action_under_test->state = S3BucketMetadataState::saving;
+  action_under_test->current_op =
+      action_under_test->S3BucketMetadataCurrentOp::saving;
   action_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
@@ -659,9 +667,18 @@ TEST_F(S3BucketMetadataTest, SaveBucketListIndexOidSucessfulStateSaving) {
 TEST_F(S3BucketMetadataTest, SaveBucketListIndexOidSucessful) {
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj);
-  action_under_test->state = S3BucketMetadataState::saved;
   action_under_test->save_bucket_list_index_oid_successful();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
+}
+
+TEST_F(S3BucketMetadataTest, SaveBucketListIndexOidSucessfulBcktMetaMissing) {
+  action_under_test->current_op =
+      action_under_test->S3BucketMetadataCurrentOp::fetching;
+  action_under_test->state = S3BucketMetadataState::missing;
+  action_under_test->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj);
+  action_under_test->save_bucket_list_index_oid_successful();
+  EXPECT_TRUE(s3bucketmetadata_callbackobj.fail_called);
 }
 
 TEST_F(S3BucketMetadataTest, SaveBucketListIndexOIDFailed) {
@@ -721,7 +738,7 @@ TEST_F(S3BucketMetadataTest, SaveBucketInfoSuccess) {
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj);
   action_under_test->save_bucket_info_successful();
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
-  EXPECT_EQ(S3BucketMetadataState::saved, action_under_test->state);
+  // EXPECT_EQ(S3BucketMetadataState::saved, action_under_test->state);
 }
 
 TEST_F(S3BucketMetadataTest, SaveBucketInfoFailed) {
@@ -774,7 +791,8 @@ TEST_F(S3BucketMetadataTest, RemoveAfterFetchingBucketListIndexOID) {
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
 
-  EXPECT_EQ(S3BucketMetadataState::deleting, action_under_test->state);
+  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::deleting,
+            action_under_test->current_op);
 }
 
 TEST_F(S3BucketMetadataTest, RemoveBucketInfo) {
@@ -791,7 +809,6 @@ TEST_F(S3BucketMetadataTest, RemoveBucketInfoSuccessful) {
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj);
 
   action_under_test->remove_bucket_info_successful();
-  EXPECT_EQ(S3BucketMetadataState::deleted, action_under_test->state);
   EXPECT_TRUE(s3bucketmetadata_callbackobj.success_called);
 }
 

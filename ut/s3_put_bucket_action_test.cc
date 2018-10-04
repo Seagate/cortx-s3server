@@ -200,17 +200,13 @@ TEST_F(S3PutBucketActionTest, SendResponseToClientNoSuchBucket) {
 TEST_F(S3PutBucketActionTest, SendResponseToClientSuccess) {
   CREATE_BUCKET_METADATA_OBJ;
 
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::saved));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
 
 TEST_F(S3PutBucketActionTest, SendResponseToClientInternalError) {
   CREATE_BUCKET_METADATA_OBJ;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  action_under_test_ptr->set_s3_error("InternalError");
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();

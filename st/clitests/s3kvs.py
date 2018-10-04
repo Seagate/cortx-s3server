@@ -172,3 +172,13 @@ def delete_user_info(user_record="ACCOUNTUSER/12345"):
     root_oid = S3kvTest('Kvtest fetch root index').root_index()
     result = S3kvTest('Kvtest delete user record').delete_keyval(root_oid,user_record).execute_test(ignore_err=True)
     return
+
+# Clean all data
+def clean_all_data():
+    result = S3kvTest('Kvtest remove root index').delete_root_index().execute_test(ignore_err=True)
+    return
+
+def create_s3root_index():
+    result = S3kvTest('Kvtest create root index').create_root_index().execute_test(ignore_err=True)
+    return
+

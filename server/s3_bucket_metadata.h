@@ -38,13 +38,8 @@
 
 enum class S3BucketMetadataState {
   empty,     // Initial state, no lookup done
-  fetching,  // Loading in progress
   present,   // Metadata exists and was read successfully
   missing,   // Metadata not present in store.
-  saving,    // Save is in progress
-  saved,     // Metadata saved to store.
-  deleting,
-  deleted,  // Metadata deleted from store
   failed,
   failed_to_launch  // pre launch operation failed
 };
@@ -65,6 +60,13 @@ class S3BucketMetadata {
   std::string salted_bucket_list_index_name;
   std::string salted_object_list_index_name;
   std::string salted_multipart_list_index_name;
+
+  enum class S3BucketMetadataCurrentOp {
+    none,
+    fetching,
+    saving,
+    deleting
+  };
 
   // Maximum retry count for collision resolution
   unsigned short collision_attempt_count;
@@ -101,6 +103,7 @@ class S3BucketMetadata {
   std::function<void()> handler_on_failed;
 
   S3BucketMetadataState state;
+  S3BucketMetadataCurrentOp current_op;
 
   std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
 
@@ -277,6 +280,8 @@ class S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOid);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOidSucessfulStateSaving);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOidSucessful);
+  FRIEND_TEST(S3BucketMetadataTest,
+              SaveBucketListIndexOidSucessfulBcktMetaMissing);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOIDFailed);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketListIndexOIDFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataTest, SaveBucketInfo);
