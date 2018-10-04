@@ -42,7 +42,6 @@ class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
   // Read/Write Operation context.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
-  std::string request_id;
 
  public:
   S3ClovisKVSReaderContext(std::shared_ptr<S3RequestObject> req,

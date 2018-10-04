@@ -85,11 +85,10 @@ bool S3ClovisReader::read_object_data(size_t num_of_blocks,
   if (is_object_opened) {
     rc = read_object();
   } else {
-    int rc;
-    rc = open_object();
-    if (rc != 0) {
+    int retcode = open_object();
+    if (retcode != 0) {
       this->handler_on_failed();
-      return false;
+      rc = false;
     }
   }
 
@@ -128,8 +127,8 @@ int S3ClovisReader::open_object() {
   s3_clovis_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm, &oid,
                                  layout_id);
 
-  s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[0].ob_entity),
-                                    &(ctx->ops[0]));
+  rc = s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[0].ob_entity),
+                                         &(ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_entity_open failed with error code %d\n", rc);

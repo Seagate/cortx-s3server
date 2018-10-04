@@ -115,8 +115,7 @@ void S3DeleteBucketAction::fetch_bucket_metadata() {
 
 void S3DeleteBucketAction::fetch_first_object_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  S3BucketMetadataState bucket_metadata_state = S3BucketMetadataState::empty;
-  bucket_metadata_state = bucket_metadata->get_state();
+  S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::present) {
     clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
         request, s3_clovis_api);

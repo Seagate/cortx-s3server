@@ -177,12 +177,18 @@ void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
   rc = s3_clovis_api->clovis_sync_op_init(&idx_op_ctx->sync_op);
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_op_init\n");
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   }
   for (int i = 0; i < index_count; i++) {
     rc = s3_clovis_api->clovis_sync_entity_add(idx_op_ctx->sync_op,
                                                &(idx_ctx->idx[i].in_entity));
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_entity_add failed\n");
+      state = S3ClovisKVSWriterOpState::failed_to_launch;
+      this->handler_on_failed();
+      return;
     }
   }
   idx_op_ctx->sync_op->op_datum = (void *)op_ctx;
@@ -255,10 +261,18 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
 
   s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_uber_realm,
                                  &idx_oid);
-  s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[0].in_entity),
-                                    &(idx_op_ctx->ops[0]));
-  int rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[0].in_entity),
-                                               &(idx_op_ctx->ops[0]));
+  int rc = s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[0].in_entity),
+                                             &(idx_op_ctx->ops[0]));
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "clovis_entity_open failed with return code: (%d)\n", rc);
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
+  }
+
+  rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[0].in_entity),
+                                           &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id,
            "clovis_entity_delete failed with return code: (%d)\n", rc);
@@ -336,10 +350,17 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
 
     s3_clovis_api->clovis_idx_init(&idx_ctx->idx[i], &clovis_uber_realm,
                                    &oid_list[i]);
-    s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[i].in_entity),
-                                      &(idx_op_ctx->ops[i]));
-    int rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[i].in_entity),
-                                                 &(idx_op_ctx->ops[i]));
+    int rc = s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[i].in_entity),
+                                               &(idx_op_ctx->ops[i]));
+    if (rc != 0) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "clovis_entity_open failed with return code: (%d)\n", rc);
+      state = S3ClovisKVSWriterOpState::failed_to_launch;
+      this->handler_on_failed();
+      return;
+    }
+    rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[i].in_entity),
+                                             &(idx_op_ctx->ops[i]));
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id,
              "clovis_entity_delete failed with return code: (%d)\n", rc);
@@ -488,7 +509,10 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
 
   rc = s3_clovis_api->clovis_sync_op_init(&idx_op_ctx->sync_op);
   if (rc != 0) {
-    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_op_init\n");
+    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_op_init failed\n");
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    this->handler_on_failed();
+    return;
   }
 
   rc = s3_clovis_api->clovis_sync_op_add(

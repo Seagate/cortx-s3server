@@ -168,10 +168,6 @@ void S3AbortMultipartAction::delete_multipart_metadata() {
              S3ObjectMetadataState::missing) {
     set_s3_error("NoSuchUpload");
     send_response_to_s3_client();
-  } else if (object_multipart_metadata->get_state() ==
-             S3ObjectMetadataState::failed_to_launch) {
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
   } else {
     if (object_multipart_metadata->get_state() ==
         S3ObjectMetadataState::failed_to_launch) {
