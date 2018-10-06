@@ -53,12 +53,44 @@ rm cn\=config.ldif
   ldapadd -Y EXTERNAL -H ldapi:/// -f syncprov.ldif
 ```
 
+     # For an N-Way Multi-Master replication setup over SSL/TLS
+     # Following steps should be replicated on each node only if SSL needs to be enabled.
+
+     a. Check hostname if hostname is localhost change it using ```hostname -f```
+     b. Goto <s3server>/scripts/ssl
+     c. Create a file dns.list
+        <ldap_hostname_1>
+        <ldap_hostname_2>
+        ...
+        <ldap_hostname_n>
+     d. Run following command & configure ssl certificates
+        ./setup-ssl.sh --san-file dns.list
+     e. Follow steps in <s3server>/scripts/ssl to create & deploy certificates.
+     f. Update /etc/hosts/ for each node with ip address of rest nodes
+        For example: On node1
+        vim /etc/hosts/
+        <ldap_hostname_2> 192.168.68.200
+        ...
+        <ldap_hostname_n> 192.168.68.201
+     g. Enable port 636 so that openldap nodes can connect to each other
+        ```sh
+          firewall-cmd --zone=public --add-port=636/tcp --permanent
+          firewall-cmd --reload
+        ```sh
+
+
 3. Setup Master node for replication
    Edit replicate.ldif to localize for current Master. Refer comments
    in replicate.ldiff for details.
 ```sh
   vim replicate.ldif
 ```
+   Enable port 389 so that openldap nodes can connect to each other
+```sh
+firewall-cmd --zone=public --add-port=389/tcp --permanent
+firewall-cmd --reload
+```sh
+
    Add configuration to LDAP
 ```sh
   ldapmodify -Y EXTERNAL  -H ldapi:/// -f replicate.ldif

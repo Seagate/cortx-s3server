@@ -5,8 +5,21 @@
 # for each server. Update provider field, provider=ldap://<provider_IP> with
 # URI of LDAP providers(Masters)
 #
-# Comman to add configuration to ldap:
+# Replication over SSL/TLS
+# Update provider field, provider=ldaps://<provider_IP>:port with fully qualified domain name
+# of LDAP providers(Masters) & port= 636
+# Note: The fully qualified domain name of ldap node must match CN in ssl certificate.
+# Example: If the fully qualified domain name is openldap_node1.s3.seagate.com
+           the certificate subject field can be C=IN, L=Pune, O=Seagate Tech, CN=*.s3.seagate.com
+# You can explicitly specifiy SSL certificate locations for each rid(Optional)
+#     tls_reqcert=demand
+#     tls_cert=/etc/ssl/openldap/ldap-cert.pem
+#     tls_cacert=/etc/ssl/openldap/ldap-cert.pem
+#     tls_key=/etc/ssl/openldap/private/ldap-key.pem
+#
+# Command to add configuration to ldap:
 # ldapmodify -Y EXTERNAL  -H ldapi:/// -f replicate.ldif
+
 dn: cn=config
 changetype: modify
 replace: olcServerID

@@ -15,6 +15,8 @@ read -p "Enter the key store passphrase (default is seagate): " passphrase
 [ "$openldap_domainname" == "" ] && openldap_domainname="localhost"
 [ "$passphrase" == "" ] && passphrase="seagate"
 
+openldap_filename="openldap"
+
 function generate_s3_certs()
 {
   # create dns.list file in ssl folder with given domain names.
@@ -79,7 +81,7 @@ function generate_jks_and_iamcert()
 
   # import open ldap cert into jks
   keytool -import -trustcacerts -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass ${passphrase} -noprompt -alias ldapcert -file ${openldap_dir}/localhost.crt
+  -storepass ${passphrase} -noprompt -alias ldapcert -file ${openldap_dir}/${openldap_filename}.crt
   # import haproxy s3 ssl cert into jks file
   keytool -import -trustcacerts -keystore ${s3auth_dir}/s3_auth.jks \
   -storepass ${passphrase} -noprompt -alias s3 -file ${s3_dir}/${s3_default_endpoint}.crt
@@ -99,10 +101,10 @@ function generate_openldap_cert()
   # create dns list file
   dns_list_file="$CURRENT_DIR/dns.list"
   rm -f $dns_list_file
-  echo "$openldap_domainname" > $dns_list_file
+  echo "$openldap_domainname" | tr , '\n' > $dns_list_file
 
   # generate openldap cert files
-  $CURRENT_DIR/setup-ssl.sh --san-file $dns_list_file
+  $CURRENT_DIR/setup-ssl.sh --san-file $dns_list_file --cert-name $openldap_filename
   \cp $ssl_sandbox/* $openldap_dir
   rm -f $dns_list_file
   rm -rf $ssl_sandbox

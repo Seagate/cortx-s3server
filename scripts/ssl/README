@@ -109,15 +109,23 @@ Comment out tests using seagate.bucket in s3cmd_specs.py
 * Create a file with domain name of Openldap server
   Ex:$cat dns.list
      localhost
+* For creating a file with domain names of Multiple Openldap server(Optional for single node setup)
+  Ex:$cat dns.list
+    openldap_node_1
+    openldap_node_2
+    ...
+    openldap_node_n
 
 * Run following command to generate ssl certificate and key:
    cd scripts/ssl/
   `./setup-ssl.sh --san-file dns.list`
 
+* Default value for `cert_name` & `cert_key` is `openldap` & changes if explicitly specified using `--cert-name` option
+
 * Copy the following certificates and key files:
   `cp ssl_sandbox/ca.crt /etc/ssl/openldap/`
-  `cp ssl_sandbox/localhost.crt /etc/ssl/openldap/`
-  `cp ssl_sandbox/localhost.key /etc/ssl/openldap/private`
+  `cp ssl_sandbox/*.crt /etc/ssl/openldap/`
+  `cp ssl_sandbox/*.key /etc/ssl/openldap/private`
 
 * Set Owner of directory and files
   chown -R root:root /etc/openldap/ssl/seagate*
@@ -129,10 +137,10 @@ Comment out tests using seagate.bucket in s3cmd_specs.py
   olcTLSCACertificateFile: /etc/ssl/openldap/ca.crt
   -
   replace: olctlscertificatefile
-  olctlscertificatefile: /etc/ssl/openldap/localhost.crt
+  olctlscertificatefile: /etc/ssl/openldap/cert_name.crt
   -
   replace: olctlscertificatekeyfile
-  olctlscertificatekeyfile: /etc/ssl/openldap/private/localhost.key
+  olctlscertificatekeyfile: /etc/ssl/openldap/private/cert_key.key
 
 * Update LDAP
   ldapmodify -Y EXTERNAL  -H ldapi:/// -f ssl_certs.ldif
@@ -145,7 +153,7 @@ Comment out tests using seagate.bucket in s3cmd_specs.py
 
   SSL on
   TLS_CACERTDIR     /etc/openldap/ssl/seagete
-  TLS_CACERT        /etc/openldap/ssl/seagate/localhost.crt
+  TLS_CACERT        /etc/openldap/ssl/seagate/ca.crt
   TLS_REQCERT allow
 
 * Restart LDAP services

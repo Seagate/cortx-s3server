@@ -93,6 +93,9 @@ starting S3 Auth Server
 cd scripts/ldap/ssl
 ./enable_ssl_openldap.sh -cafile certs/ca.crt -certfile certs/localhost.crt -keyfile certs/private/localhost.key
 ```
+```sh
+cp <s3-src>/scripts/ldap/ssl/ldap.conf /etc/openldap/ldap.conf
+```
 
 If current third_party/* revision does not match with previous revision
 cached in $HOME/.seagate_src_cache/, user should clean the cache and rebuild.

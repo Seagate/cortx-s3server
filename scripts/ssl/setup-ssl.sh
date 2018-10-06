@@ -6,13 +6,14 @@
 
 set -e
 
-USAGE="USAGE: bash $(basename "$0") [--help] {--seagate | --aws | --san-file File}
+USAGE="USAGE: bash $(basename "$0") [--help] {--seagate | --aws | --san-file File} { --cert-name Name}
 Generate self-signed certificates using OpenSSL.
 
 where:
 --seagate       Generate certificate for Seagate domain names
 --aws           Generate certificate for Amazon AWS domain names
 --san-file      Generate certificate for domain names provided in file
+--cert-name     Name of certificate file to be generated
 --help          display this help and exit"
 
 CN=''
@@ -48,6 +49,17 @@ esac
 
 [[ -z $CN ]] || [[ -z $SAN ]] && echo 'Please specify CN and SAN values.' && exit
 
+if [[ "$3" == "--cert-name" ]]; then
+    [[ -z $4 ]] && echo 'ERROR: Specify certificate name to be created' && exit 1
+        cert_name=$4
+        echo "Using [$4] as certificate file name"
+else
+    echo "Using common name(CN)[$CN] as certificate file name"
+    cert_name=$CN
+    echo $cert_name
+fi
+
+
 export SAN=$SAN
 
 echo -e "Generating self-signed certificates for CN = $CN\nWith SANs =" $SAN
@@ -59,15 +71,15 @@ cd "$CURRENT_DIR/ssl_sandbox"
 openssl req -new -x509 -extensions v3_ca  -keyout ca.key -out ca.crt -days 3650\
     -nodes -subj "/C=$COUNTRY/L=$LOCALITY/O=$ORG/CN=$CN" 2>/dev/null
 
-openssl genrsa -out "$CN.key" 2048 2>/dev/null
+openssl genrsa -out "$cert_name.key" 2048 2>/dev/null
 
-openssl req -new -key  "$CN.key" -out "$CN.csr" -config $SSL_CNF_FILE\
+openssl req -new -key  "$cert_name.key" -out "$cert_name.csr" -config $SSL_CNF_FILE\
     -subj "/C=$COUNTRY/L=$LOCALITY/O=$ORG/CN=$CN"
 
-openssl x509 -req -days 365 -in "$CN.csr" -CA ca.crt -CAkey ca.key -set_serial 01\
-    -out "$CN.crt" -extfile $SSL_CNF_FILE -extensions v3_ca 2>/dev/null
+openssl x509 -req -days 365 -in "$cert_name.csr" -CA ca.crt -CAkey ca.key -set_serial 01\
+    -out "$cert_name.crt" -extfile $SSL_CNF_FILE -extensions v3_ca 2>/dev/null
 
-cat ca.crt >> $CN.crt
+cat ca.crt >> $cert_name.crt
 
-echo "ssl_certificate: $CURRENT_DIR/ssl_sandbox/$CN.crt"
-echo "ssl_certificate_key: $CURRENT_DIR/ssl_sandbox/$CN.key"
+echo "ssl_certificate: $CURRENT_DIR/ssl_sandbox/$cert_name.crt"
+echo "ssl_certificate_key: $CURRENT_DIR/ssl_sandbox/$cert_name.key"
