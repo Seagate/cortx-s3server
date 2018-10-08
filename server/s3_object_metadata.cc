@@ -304,6 +304,10 @@ void S3ObjectMetadata::load_failed() {
     s3_log(S3_LOG_DEBUG, request_id, "Object metadata missing for %s\n",
            object_name.c_str());
     state = S3ObjectMetadataState::missing;  // Missing
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_WARN, request_id, "Object metadata load failed\n");
+    state = S3ObjectMetadataState::failed_to_launch;
   } else {
     s3_log(S3_LOG_WARN, request_id, "Object metadata load failed\n");
     state = S3ObjectMetadataState::failed;

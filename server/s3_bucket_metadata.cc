@@ -294,6 +294,10 @@ void S3BucketMetadata::load_bucket_info_failed() {
              S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata is missing\n");
     state = S3BucketMetadataState::missing;
+  } else if (clovis_kv_reader->get_state() ==
+             S3ClovisKVSReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id, "Loading of bucket metadata failed\n");
+    state = S3BucketMetadataState::failed_to_launch;
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Loading of bucket metadata failed\n");
     state = S3BucketMetadataState::failed;

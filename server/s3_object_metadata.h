@@ -251,6 +251,7 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedJsonParsingFailed);
   FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedMetadataMissing);
   FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedMetadataFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedMetadataFailedToLaunch);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMeatdataMissingIndexOID);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMeatdataIndexOIDPresent);
   FRIEND_TEST(S3ObjectMetadataTest, CreateBucketIndex);
