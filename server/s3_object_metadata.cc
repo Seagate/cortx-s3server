@@ -469,7 +469,12 @@ void S3ObjectMetadata::save_metadata_successful() {
 void S3ObjectMetadata::save_metadata_failed() {
   s3_log(S3_LOG_ERROR, request_id,
          "Object metadata save failed for Object [%s].\n", object_name.c_str());
-  state = S3ObjectMetadataState::failed;
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3ObjectMetadataState::failed_to_launch;
+  } else {
+    state = S3ObjectMetadataState::failed;
+  }
   this->handler_on_failed();
 }
 

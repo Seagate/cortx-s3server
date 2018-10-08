@@ -271,6 +271,7 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataWithParam);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataSuccess);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataFailedToLaunch);
   FRIEND_TEST(S3ObjectMetadataTest, Remove);
   FRIEND_TEST(S3ObjectMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3ObjectMetadataTest, RemoveFailed);

@@ -231,8 +231,6 @@ for i, type in enumerate(config_types):
 
     # TODO -- Add more negative tests for clovis_idx_op_fail
 
-
-
     # clovis_enity_create fails for object upload
     S3fiTest('s3cmd can enable FI clovis_enity_create').\
         enable_fi("enable", "always", "clovis_entity_create_fail").\
@@ -333,6 +331,80 @@ for i, type in enumerate(config_types):
         execute_test().command_is_successful().\
         command_response_should_not_have('s3://seagatebucket_1').\
         command_response_should_have('s3://seagatebucket')
+
+    # negative tests cases for put_keyval
+    # set and delete policy negative testing
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "3", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot set acl on bucket').\
+        setacl_bucket("seagatebucket","read:123").\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "2", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot set policy on bucket').\
+        setpolicy_bucket("seagatebucket","policy.txt").\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can set policy on bucket').\
+        setpolicy_bucket("seagatebucket","policy.txt").\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "2", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd cannot delete policy on bucket').\
+        delpolicy_bucket("seagatebucket").\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can delete policy on bucket').\
+        delpolicy_bucket("seagatebucket").\
+        execute_test().command_is_successful()
+
+    # object metadata save negative testing
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "3", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can not upload 3K file').\
+        upload_test("seagatebucket", "3Kfile", 3000).\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+
+    # bucket metadata save negative testing
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "2", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can not create bucket').create_bucket("seagatebucket123").\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+
+    # multipart object metadata negative test
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "4", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can not upload 18MBfile file').\
+        upload_test("seagatebucket", "18MBfile", 18000000).\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
 
     # Multipart listing shall return an error for corrupted object
     JClientTest('Jclient can upload partial parts').\
