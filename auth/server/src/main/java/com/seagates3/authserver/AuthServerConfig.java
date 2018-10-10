@@ -27,7 +27,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.seagates3.authencryptutil.JKSUtil;
 import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
@@ -43,6 +50,8 @@ public class AuthServerConfig {
     private static String samlMetadataFilePath;
     private static Properties authServerConfig;
     private static String ldapPasswd;
+
+    private static Logger logger;
 
     /**
      * Read the properties file.
@@ -79,6 +88,31 @@ public class AuthServerConfig {
         AuthServerConfig.authServerConfig.put("pid", jvm.substring(0, jvm.indexOf("@")));
 
     }
+
+    /**
+     * Log default configurations for auth-server
+     *
+     * @param authServerConfig Server configuration parameters.
+     * @param enuKeys ServerConfig keys.
+     */
+   public static void logConfigProps() {
+       Properties authServerConfig = AuthServerConfig.authServerConfig;
+       Enumeration<Object> authProps = authServerConfig.keys();
+
+       logger = LoggerFactory.getLogger(AuthServerConfig.class.getName());
+
+       logger.info("Configuring AuthServer with following properties");
+       while (authProps.hasMoreElements()) {
+                String key = (String) authProps.nextElement();
+                Set<String> secureProps = new HashSet<>(Arrays.asList("s3KeyPassword",
+                       "ldapLoginPW", "s3KeyStorePassword"));
+                if( !secureProps.contains(key) ) {
+                     String value = authServerConfig.getProperty(key);
+                     logger.info("Config [" + key + "] = " + value);
+                }
+       }
+    }
+
     /**
      * Initialize Ldap-Password
      *

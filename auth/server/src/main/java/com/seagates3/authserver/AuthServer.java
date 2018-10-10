@@ -116,6 +116,8 @@ public class AuthServer {
 
         AuthServerConfig.readConfig(AuthServerConstants.RESOURCE_DIR);
         logInit();
+        // LoggerFactory.getLogger works after this logInit() call.
+        AuthServerConfig.logConfigProps();
         AuthServerConfig.loadCredentials();
 
         logger = LoggerFactory.getLogger(AuthServer.class.getName());
