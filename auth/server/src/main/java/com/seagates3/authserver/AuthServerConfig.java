@@ -123,12 +123,13 @@ public class AuthServerConfig {
 
         Properties authServerConfig = AuthServerConfig.authServerConfig;
         String encryptedPasswd = authServerConfig.getProperty("ldapLoginPW");
-        Path authProperties = getKeyStorePath();
+        Path keyStoreFilePath = getKeyStorePath();
         PrivateKey privateKey = JKSUtil.getPrivateKeyFromJKS(
-                                authProperties.toString(), getCertAlias(),
+                                keyStoreFilePath.toString(), getCertAlias(),
                                 getKeyStorePassword());
-        if(privateKey == null) {
-             throw new GeneralSecurityException("Failed to find Private Key.");
+        if (privateKey == null) {
+             throw new GeneralSecurityException("Failed to find Private Key ["
+                + keyStoreFilePath + "].");
         }
         ldapPasswd = RSAEncryptDecryptUtil.decrypt(encryptedPasswd,
                      privateKey);
@@ -179,7 +180,8 @@ public class AuthServerConfig {
     }
 
     public static Path getKeyStorePath() {
-        return Paths.get(authResourceDir, getKeyStoreName());
+        return Paths.get(authServerConfig.getProperty("s3KeyStorePath"),
+                         getKeyStoreName());
     }
 
     public static String getKeyStorePassword() {

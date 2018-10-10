@@ -66,7 +66,8 @@ public class AuthEncryptConfig {
     }
 
     public static Path getKeyStorePath() {
-        return Paths.get(AUTH_INSTALL_DIR, "resources", getKeyStoreName());
+        return Paths.get(authEncryptConfig.getProperty("s3KeyStorePath"),
+                         getKeyStoreName());
     }
 
     public static String getKeyPassword() {
@@ -83,5 +84,10 @@ public class AuthEncryptConfig {
 
     public static String getLogLevel() {
         return authEncryptConfig.getProperty("logLevel");
+    }
+
+    // Overide helper for UT.
+    public static void overrideProperty(String key, String value) {
+      authEncryptConfig.setProperty(key, value);
     }
 }

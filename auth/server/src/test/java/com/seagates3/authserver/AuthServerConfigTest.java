@@ -58,7 +58,7 @@ public class AuthServerConfigTest {
 
         assertEquals(9086, AuthServerConfig.getHttpsPort());
 
-        assertEquals("s3_auth.jks", AuthServerConfig.getKeyStoreName());
+        assertEquals("s3authserver.jks", AuthServerConfig.getKeyStoreName());
 
         assertEquals("seagate", AuthServerConfig.getKeyStorePassword());
 
@@ -105,7 +105,7 @@ public class AuthServerConfigTest {
         assertArrayEquals(expectedEndPoints, AuthServerConfig.getEndpoints());
 
         Path keyStorePath =
-             Paths.get(AuthServerConfig.authResourceDir, "s3_auth.jks");
+             Paths.get("..", "resources", "s3authserver.jks");
         assertTrue(keyStorePath.toString().equals(
                         AuthServerConfig.getKeyStorePath().toString()));
         assertTrue(AuthServerConfig.isEnableHttpsToS3());
@@ -113,6 +113,9 @@ public class AuthServerConfigTest {
 
     @Test
     public void loadCredentialsTest() throws GeneralSecurityException, Exception {
+        Properties authServerConfig = getAuthProperties();
+        AuthServerConfig.authResourceDir = "../resources";
+        AuthServerConfig.init(authServerConfig);
 
         AuthServerConfig.loadCredentials();
         assertEquals("ldapadmin", AuthServerConfig.getLdapLoginPassword());
@@ -131,7 +134,7 @@ public class AuthServerConfigTest {
 
         assertEquals(9086, AuthServerConfig.getHttpsPort());
 
-        assertEquals("s3_auth.jks", AuthServerConfig.getKeyStoreName());
+        assertEquals("s3authserver.jks", AuthServerConfig.getKeyStoreName());
 
         assertEquals("seagate", AuthServerConfig.getKeyStorePassword());
 
@@ -179,14 +182,15 @@ public class AuthServerConfigTest {
         authServerConfig.setProperty("ldapMaxSharedCons", "1");
         authServerConfig.setProperty("ldapLoginDN", "cn=admin,dc=seagate,dc=com");
         authServerConfig.setProperty("ldapLoginPW",
-        "tfV4LjdiOyKF6zgOJUDdRfuB/P0JiDfqUucrJQ30TrZHvU/4WTvBJpZ0tbECmPrwXWJ73zv/XeFvspK6p5BS7Q==");
+        "Rofaa+mJRYLVbuA2kF+CyVUJBjPx5IIFDBQfajmrn23o5aEZHonQj1ikUU9iMBoC6p/dZtVXMO1KFGzHXX3y1A==");
         authServerConfig.setProperty("consoleURL", "https://console.s3.seagate.com:9292/sso");
         authServerConfig.setProperty("enable_https", "true");
         authServerConfig.setProperty("enable_http", "false");
         authServerConfig.setProperty("enableFaultInjection", "false");
         authServerConfig.setProperty("perfEnabled", "false");
         authServerConfig.setProperty("perfLogFile", "/var/log/seagate/auth/perf.log");
-        authServerConfig.setProperty("s3KeyStoreName", "s3_auth.jks");
+        authServerConfig.setProperty("s3KeyStorePath", "../resources/");
+        authServerConfig.setProperty("s3KeyStoreName", "s3authserver.jks");
         authServerConfig.setProperty("s3KeyStorePassword", "seagate");
         authServerConfig.setProperty("s3KeyPassword", "seagate");
         authServerConfig.setProperty("s3AuthCertAlias", "s3auth_pass");

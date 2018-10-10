@@ -57,7 +57,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"javax.management.*"})
 public class SSLContextProviderTest {
 
-    private static Path filePath = Paths.get("..", "resources", "s3_auth.jks");
+    private static Path filePath = Paths.get("..", "resources",
+          "s3authserver.jks");
 
     @Before
     public void setUp() throws Exception {
@@ -71,7 +72,7 @@ public class SSLContextProviderTest {
         when(AuthServerConfig.isHttpsEnabled()).thenReturn(Boolean.FALSE);
 
         when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
-                                              "resources", "s3_auth.jks"));
+            "resources", "s3authserver.jks"));
         SSLContextProvider.init();
 
         assertNull(SSLContextProvider.getServerContext());
@@ -87,7 +88,7 @@ public class SSLContextProviderTest {
         SslContextBuilder contextBuilder = mock(SslContextBuilder.class);
         SslContext sslContext = mock(SslContext.class);
         when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
-                                              "resources", "s3_auth.jks"));
+                "resources", "s3authserver.jks"));
         when(AuthServerConfig.getKeyStorePassword()).thenReturn("seagate");
         when(AuthServerConfig.getKeyPassword()).thenReturn("seagate");
         when(KeyManagerFactory.getInstance(anyString())).thenReturn(kmf);
@@ -105,7 +106,7 @@ public class SSLContextProviderTest {
     public void initTest_HttpsEnabled_NoSuchAlgorithm()
                                     throws ServerInitialisationException {
         when(AuthServerConfig.getKeyStorePath()).thenReturn(Paths.get("..",
-                                              "resources", "s3_auth.jks"));
+                "resources", "s3authserver.jks"));
         when(AuthServerConfig.getKeyStorePassword()).thenReturn("seagate");
         when(AuthServerConfig.getKeyPassword()).thenReturn("seagate");
 

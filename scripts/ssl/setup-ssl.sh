@@ -6,7 +6,9 @@
 
 set -e
 
-USAGE="USAGE: bash $(basename "$0") [--help] {--seagate | --aws | --san-file File} { --cert-name Name}
+USAGE="USAGE: bash $(basename "$0") [--help]
+                   { --seagate | --aws | --san-file File }
+                   { --cert-name OutputFileName }
 Generate self-signed certificates using OpenSSL.
 
 where:

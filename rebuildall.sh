@@ -269,9 +269,8 @@ then
     else
       python3 setup.py install
     fi
-    # Copy ca cert file required by s3iamcli st tests
-    mkdir -p ~/.sgs3iamcli/ssl
-    cp -f /opt/seagate/auth/resources/iam.seagate.com.crt ~/.sgs3iamcli/ssl/
+    # Assert to check if the certificates are installed.
+    rpm -q stx-s3-client-certs
     cd -
   fi
 fi

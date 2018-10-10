@@ -148,7 +148,7 @@ class S3Option {
     s3_region_endpoints.insert("s3-us.seagate.com");
     s3_region_endpoints.insert("s3-europe.seagate.com");
     s3_region_endpoints.insert("s3-asia.seagate.com");
-    s3_iam_cert_file = "/opt/seagate/auth/resources/iam.seagate.com.crt";
+    s3_iam_cert_file = "/etc/ssl/stx-s3/s3auth/s3authserver.crt";
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
 

@@ -86,12 +86,23 @@ are present in $HOME/.seagate_src_cache and will be used in current build.
 ./rebuildall.sh --no-mero-rpm --use-build-cache
 ```
 
+Build SSL certificates and install (use defaults)
+```sh
+cd rpms/s3certs
+./buildrpm.sh
+yum localinstall ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
+yum localinstall ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
+```
+
 Enable OpenLDAP SSL port and deploy SSL certificates, S3 Auth Server uses
 SSL port of OpenLDAP for connection, below script needs to be run before
-starting S3 Auth Server
+starting S3 Auth Server.
+Ensure you have stx-s3-certs package installed before running this.
 ```sh
 cd scripts/ldap/ssl
-./enable_ssl_openldap.sh -cafile certs/ca.crt -certfile certs/localhost.crt -keyfile certs/private/localhost.key
+./enable_ssl_openldap.sh -cafile /etc/ssl/stx-s3/openldap/ca.crt \
+      -certfile /etc/ssl/stx-s3/openldap/s3openldap.crt \
+      -keyfile /etc/ssl/stx-s3/openldap/s3openldap.key
 ```
 ```sh
 cp <s3-src>/scripts/ldap/ssl/ldap.conf /etc/openldap/ldap.conf
@@ -127,12 +138,10 @@ Haproxy listens on port 80(http)/443(https) and forwards traffic to running S3 i
 yum install haproxy
 cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
 ```
-## Copy SSL certificates to haproxy
-
+## Install SSL certificates for S3 service (haroxy)
+See Build SSL section above.
 ```sh
-cp <s3-src>/scripts/haproxy/ssl/s3.seagate.com.pem /etc/ssl/haproxy/
-cp <s3-src>/auth/resources/iam.seagate.com.pem /etc/ssl/haproxy/
-cp <s3-src>/auth/resources/iam.seagate.com.crt /etc/ssl/haproxy/
+yum localinstall stx-s3-certs
 systemctl restart haproxy
 ```
 
@@ -240,20 +249,20 @@ sudo systemctl status "s3server@0x7200000000000001:0x30"
 ## Steps to create Java key store and Certificate.
 ## Required JDK 1.8.0_91 to be installed to run "keytool"
 ```sh
-keytool -genkeypair -keyalg RSA -alias s3auth -keystore s3_auth.jks -storepass seagate -keypass seagate -validity 3600 -keysize 2048 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
+keytool -genkeypair -keyalg RSA -alias s3auth -keystore s3authserver.jks -storepass seagate -keypass seagate -validity 3600 -keysize 2048 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
 ```
 
 ## Steps to generate crt from Key store
 ```sh
-keytool -importkeystore -srckeystore s3_auth.jks -destkeystore s3_auth.p12 -srcstoretype jks -deststoretype pkcs12 -srcstorepass seagate -deststorepass seagate
+keytool -importkeystore -srckeystore s3authserver.jks -destkeystore s3authserver.p12 -srcstoretype jks -deststoretype pkcs12 -srcstorepass seagate -deststorepass seagate
 ```
 
 ```sh
-openssl pkcs12 -in s3_auth.p12 -out s3_auth.jks.pem -passin pass:seagate -passout pass:seagate
+openssl pkcs12 -in s3authserver.p12 -out s3authserver.jks.pem -passin pass:seagate -passout pass:seagate
 ```
 
 ```sh
-openssl x509 -in s3_auth.jks.pem -out iam.seagate.com.crt
+openssl x509 -in s3authserver.jks.pem -out s3authserver.crt
 ```
 
 #Steps to create pem file containing private and public key to deploy with haproxy for auth server endpoint.
@@ -261,19 +270,19 @@ openssl x509 -in s3_auth.jks.pem -out iam.seagate.com.crt
 #Extract Private Key
 
 ```sh
-openssl pkcs12 -in s3_auth.p12 -nocerts -out s3_auth.jks.key -passin pass:seagate -passout pass:seagate
+openssl pkcs12 -in s3authserver.p12 -nocerts -out s3authserver.jks.key -passin pass:seagate -passout pass:seagate
 ```
 #Decrypt using pass phrase
 
 ```sh
-openssl rsa -in s3_auth.jks.key -out iam.seagate.com.key -passin pass:seagate
-cat iam.seagate.com.crt iam.seagate.com.key > iam.seagate.com.pem
+openssl rsa -in s3authserver.jks.key -out s3authserver.key -passin pass:seagate
+cat s3authserver.crt s3authserver.key > s3authserver.pem
 ```
 
 ## Steps to create Key Pair for password encryption and store it in java keystore
 ## This key pair will be used by AuthPassEncryptCLI and AuthServer for encryption and decryption of ldap password respectively
 ```sh
-keytool -genkeypair -keyalg RSA -alias s3auth_pass -keystore s3_auth.jks -storepass seagate -keypass seagate -validity 3600 -keysize 512 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
+keytool -genkeypair -keyalg RSA -alias s3auth_pass -keystore s3authserver.jks -storepass seagate -keypass seagate -validity 3600 -keysize 512 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
 ```
 
 ## How to generate S3 server RPM

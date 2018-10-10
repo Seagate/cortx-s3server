@@ -4,17 +4,20 @@
 # Install and configure OpenLDAP #
 ##################################
 
-USAGE="USAGE: bash $(basename "$0") [--defaultpasswd] [--skipssl] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [--defaultpasswd] [--skipssl]
+      [--forceclean] [--help | -h]
 Install and configure OpenLDAP.
 
 where:
 --defaultpasswd     use default password i.e. 'seagate' for LDAP
 --skipssl           skips all ssl configuration for LDAP
+--forceclean        Clean old openldap setup (** careful: deletes data **)
 --help              display this help and exit"
 
 set -e
 defaultpasswd=false
 usessl=true
+forceclean=false
 
 if [ $# -lt 1 ]
 then
@@ -31,6 +34,9 @@ do
     --skipssl )
         usessl=false
         ;;
+    --forceclean )
+        forceclean=true
+        ;;
     --help | -h )
         echo "$USAGE"
         exit 1
@@ -42,6 +48,17 @@ done
 
 # install openldap server and client
 yum list installed selinux-policy && yum update -y selinux-policy
+
+# Clean up old setup if any
+if [[ $forceclean == true ]]
+then
+  systemctl stop slapd || /bin/true
+  rpm -e openldap-servers openldap-clients || /bin/true
+  rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
+  rm -rf /var/lib/ldap/*
+  rm -f /etc/sysconfig/slapd*
+fi
+
 yum install -y openldap-servers openldap-clients
 
 ROOTDNPASSWORD="seagate"
@@ -103,7 +120,9 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
 if [[ $usessl == true ]]
 then
 #Deploy SSL certificates and enable OpenLDAP SSL port
-./ssl/enable_ssl_openldap.sh -cafile ssl/certs/ca.crt -certfile ssl/certs/localhost.crt -keyfile ssl/certs/private/localhost.key
+./ssl/enable_ssl_openldap.sh -cafile /etc/ssl/stx-s3/openldap/ca.crt \
+                   -certfile /etc/ssl/stx-s3/openldap/s3openldap.crt \
+                   -keyfile /etc/ssl/stx-s3/openldap/s3openldap.key
 fi
 
 echo "************************************************************"

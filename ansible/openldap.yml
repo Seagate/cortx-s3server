@@ -114,47 +114,13 @@
         command: ldapmodify -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/iam-admin-access.ldif
         no_log: true
 
-      - name: Configure OpenLDAP - Set syncrepl as a provider
-        command: ldapadd -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/syncprov_mod.ldif
-        no_log: true
-
-      - name: Configure OpenLDAP - setup sync config
-        command: ldapadd -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/syncprov.ldif
-        no_log: true
-
-      - name: Delete temp directory
-        file:
-          name: /tmp/s3ldap
-          state: absent
-
-      - name: Create directory to store ssl certificates
-        file: path=/etc/ssl/openldap/private state=directory
-
-      - name: Copy CA certificate
-        copy:
-          src: files/ldap/ssl/certs/ca.crt
-          dest: /etc/ssl/openldap/ca.crt
-
-      - name: Copy public certificate
-        copy:
-          src: files/ldap/ssl/certs/localhost.crt
-          dest: /etc/ssl/openldap/localhost.crt
-
-      - name: Copy private certificate key
-        copy:
-          src: files/ldap/ssl/certs/private/localhost.key
-          dest: /etc/ssl/openldap/private/localhost.key
-
-      - name: Change owner permission for /etc/ssl/openldap*
-        file: path=/etc/ssl/openldap* owner=root group=root state=directory recurse=yes
-
       - name: Copy SSL config file for openldap
         copy:
           src: files/ldap/ssl/ssl_certs.ldif
-          dest: /etc/ssl/openldap/ssl_certs.ldif
+          dest: /tmp/s3ldap/ssl_certs.ldif
 
       - name: Update openldap configuration
-        command: ldapmodify -Y EXTERNAL  -H ldapi:/// -f /etc/ssl/openldap/ssl_certs.ldif
+        command: ldapmodify -Y EXTERNAL  -H ldapi:/// -f /tmp/s3ldap/ssl_certs.ldif
         no_log: true
 
       - name: Backup original slapd file
@@ -174,10 +140,16 @@
           dest: /etc/openldap/ldap.conf
           backup: yes
 
+      - name: Delete temp directory
+        file:
+          name: /tmp/s3ldap
+          state: absent
+
       - name: restart slapd
         service:
           name: slapd
           state: restarted
+          enabled: yes
 
   # handlers:
   #     - name: restart ntpd

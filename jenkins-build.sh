@@ -17,6 +17,12 @@ fi
 
 ulimit -c unlimited
 
+# Few assertions - prerun checks
+rpm -q haproxy
+rpm -q stx-s3-certs
+rpm -q stx-s3-client-certs
+systemctl status haproxy
+
 cd $S3_BUILD_DIR
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
@@ -37,18 +43,22 @@ fi
 
 ./rebuildall.sh --no-mero-rpm --use-build-cache
 
+# Stop any old running S3 instances
+echo "Stopping any old running s3 services"
+$USE_SUDO ./dev-stops3.sh
+
+$USE_SUDO systemctl stop s3authserver
+
 # Stop any old running mero
 cd $MERO_SRC
 echo "Stopping any old running mero services"
 $USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
 cd $S3_BUILD_DIR
 
-# Stop any old running S3 instances
-echo "Stopping any old running s3 services"
-$USE_SUDO ./dev-stops3.sh
-
 # Clean up mero and S3 log and data dirs
-$USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* /var/log/seagate/s3/* /var/log/seagate/auth/server/*
+$USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* \
+                 /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
+                 /var/log/seagate/auth/tools/*
 
 # Start mero for new tests
 cd $MERO_SRC
@@ -60,6 +70,11 @@ cd $S3_BUILD_DIR
 echo "Starting new built s3 auth services"
 cp /opt/seagate/auth/resources/authserver.properties /opt/seagate/auth/resources/backup.authserver.properties
 \cp -r $S3_BUILD_DIR/auth/server/tests/resources/test.authserver.properties /opt/seagate/auth/resources/authserver.properties
+
+# Ensure correct ldap credentials are present.
+./scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
+          -p /opt/seagate/auth/resources/authserver.properties
+
 $USE_SUDO systemctl restart s3authserver
 
 # Start S3 gracefully, with max 3 attempts

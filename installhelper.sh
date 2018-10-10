@@ -25,6 +25,7 @@ rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
 
 mkdir -p $AUTH_INSTALL_LOCATION
+mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
@@ -73,7 +74,10 @@ cp -f auth/server/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION/
 cp -f auth/encryptcli/target/AuthPassEncryptCLI-1.0-0.jar $AUTH_INSTALL_LOCATION/
 
 #Copy Auth Server resources to install location
-cp -ru auth/resources/ $AUTH_INSTALL_LOCATION/
+cp -ru auth/resources/static $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/authserver-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/authserver.properties $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/keystore.properties $AUTH_INSTALL_LOCATION/resources/
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/

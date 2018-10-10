@@ -37,7 +37,7 @@ public class AuthEncryptConfigTest {
         Properties authEncryptConfig = getAuthProperties();
         AuthEncryptConfig.init(authEncryptConfig);
 
-        assertEquals("s3_auth.jks", AuthEncryptConfig.getKeyStoreName());
+        assertEquals("s3authserver.jks", AuthEncryptConfig.getKeyStoreName());
 
         assertEquals("seagate", AuthEncryptConfig.getKeyStorePassword());
 
@@ -51,7 +51,7 @@ public class AuthEncryptConfigTest {
         String installDir = "..";
         AuthEncryptConfig.readConfig(installDir);
 
-        assertEquals("s3_auth.jks", AuthEncryptConfig.getKeyStoreName());
+        assertEquals("s3authserver.jks", AuthEncryptConfig.getKeyStoreName());
 
         assertEquals("seagate", AuthEncryptConfig.getKeyStorePassword());
 
@@ -70,7 +70,7 @@ public class AuthEncryptConfigTest {
     private Properties getAuthProperties() throws Exception {
         Properties AuthEncryptConfig = new Properties();
 
-        AuthEncryptConfig.setProperty("s3KeyStoreName", "s3_auth.jks");
+        AuthEncryptConfig.setProperty("s3KeyStoreName", "s3authserver.jks");
         AuthEncryptConfig.setProperty("s3KeyStorePassword", "seagate");
         AuthEncryptConfig.setProperty("s3KeyPassword", "seagate");
         AuthEncryptConfig.setProperty("s3AuthCertAlias", "passencrypt");

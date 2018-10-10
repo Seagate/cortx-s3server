@@ -6,19 +6,22 @@
   hosts: s3devvm
   remote_user: root
   gather_facts: yes
-  vars:
-    gmock_rpm: gmock-1.7.0-1.el7.centos.x86_64.rpm
-    gmock_devel_rpm: gmock-devel-1.7.0-1.el7.centos.x86_64.rpm
-    gtest_rpm: gtest-1.7.0-2.el7.centos.x86_64.rpm
-    gtest_devel_rpm: gtest-devel-1.7.0-2.el7.centos.x86_64.rpm
-    bazel_rpm: bazel-0.11.1-1.el7.centos.x86_64.rpm
-    git_clang_format_rpm: git-clang-format-6.0-1.el7.centos.x86_64.rpm
-    python34_wheel_rpm: python34-wheel-0.24.0-2.el7.centos.noarch.rpm
-    python34_jmespath_rpm: python34-jmespath-0.9.0-1.el7.centos.noarch.rpm
-    python34_xmltodict_rpm: python34-xmltodict-0.9.0-1.el7.centos.noarch.rpm
-    python34_botocore_rpm: python34-botocore-1.6.0-1.el7.centos.noarch.rpm
-    python34_s3transfer_rpm: python34-s3transfer-0.1.10-1.el7.centos.noarch.rpm
-    python34_boto3_rpm: python34-boto3-1.4.6-1.el7.centos.noarch.rpm
 
   tasks:
-  - import_tasks: common_build_env.yml
+    - import_tasks: common_build_env.yml
+
+    - name: Add mero repository
+      yum_repository:
+        name: releases_hermi_mero
+        description: Yum repo for mero rpms
+        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/mero/repo/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add halon repository
+      yum_repository:
+        name: releases_hermi_halon
+        description: Yum repo for mero rpms
+        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/halon/repo/
+        gpgcheck: no
+        priority: 1

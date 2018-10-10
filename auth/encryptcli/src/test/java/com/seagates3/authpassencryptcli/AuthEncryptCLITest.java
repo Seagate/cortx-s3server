@@ -43,6 +43,7 @@ public  class AuthEncryptCLITest {
         //For Unit Tests resource folder is at s3server/auth/resources
         String installDir = "..";
         AuthEncryptConfig.readConfig(installDir);
+        AuthEncryptConfig.overrideProperty("s3KeyStorePath", "../resources");
     }
 
     @Test

@@ -15,7 +15,10 @@ read -p "Enter the key store passphrase (default is seagate): " passphrase
 [ "$openldap_domainname" == "" ] && openldap_domainname="localhost"
 [ "$passphrase" == "" ] && passphrase="seagate"
 
-openldap_filename="openldap"
+# Global file names
+s3_auth_cert_file_name="s3authserver"
+s3_cert_file_name="s3server"
+s3_openldap_cert_file_name="s3openldap"
 
 function generate_s3_certs()
 {
@@ -36,8 +39,13 @@ function generate_s3_certs()
   echo $s3_region_endpoint | tr , '\n' >> $dns_list_file
 
   # generate s3 ssl cert files
-  $CURRENT_DIR/setup-ssl.sh --san-file $dns_list_file
-  cat ${ssl_sandbox}/${s3_default_endpoint}.crt ${ssl_sandbox}/${s3_default_endpoint}.key > ${ssl_sandbox}/${s3_default_endpoint}.pem
+  $CURRENT_DIR/setup-ssl.sh --san-file $dns_list_file \
+                            --cert-name $s3_cert_file_name
+
+  cat ${ssl_sandbox}/${s3_cert_file_name}.crt \
+      ${ssl_sandbox}/${s3_cert_file_name}.key \
+      > ${ssl_sandbox}/${s3_cert_file_name}.pem
+
   \cp $ssl_sandbox/* $s3_dir
 
   # cleanup
@@ -50,46 +58,66 @@ function generate_jks_and_iamcert()
   #san_region_endpoint=`echo $s3_region_endpoint | sed 's/,/,dns:/g'`
   san_list="dns:$s3_iam_endpoint,dns:$s3_sts_endpoint"
 
-  keytool -genkeypair -keyalg RSA -alias s3auth -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass ${passphrase} -keypass ${passphrase} -validity 3600 -keysize 2048 \
-  -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=$s3_iam_endpoint" -ext SAN=$san_list
+  # Create s3authserver.jks keystore file
+  keytool -genkeypair -keyalg RSA -alias s3auth \
+          -keystore ${s3auth_dir}/s3authserver.jks -storepass ${passphrase} \
+          -keypass ${passphrase} -validity 3600 -keysize 2048 \
+          -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=$s3_iam_endpoint" \
+          -ext SAN=$san_list
 
-  ## Steps to generate crt from Key store
-  keytool -importkeystore -srckeystore ${s3auth_dir}/s3_auth.jks \
-  -destkeystore ${s3auth_dir}/s3_auth.p12 -srcstoretype jks \
-  -deststoretype pkcs12 -srcstorepass ${passphrase} -deststorepass ${passphrase}
+  # Steps to generate crt file from Key store
+  keytool -importkeystore -srckeystore ${s3auth_dir}/s3authserver.jks \
+          -destkeystore ${s3auth_dir}/s3authserver.p12 -srcstoretype jks \
+          -deststoretype pkcs12 -srcstorepass ${passphrase} \
+          -deststorepass ${passphrase}
 
-  openssl pkcs12 -in ${s3auth_dir}/s3_auth.p12 -out ${s3auth_dir}/s3_auth.jks.pem \
-  -passin pass:${passphrase} -passout pass:${passphrase}
-  openssl x509 -in ${s3auth_dir}/s3_auth.jks.pem -out ${s3auth_dir}/${s3_iam_endpoint}.crt
+  openssl pkcs12 -in ${s3auth_dir}/s3authserver.p12 \
+          -out ${s3auth_dir}/s3authserver.jks.pem \
+          -passin pass:${passphrase} -passout pass:${passphrase}
 
-  #Extract Private Key
-  openssl pkcs12 -in ${s3auth_dir}/s3_auth.p12 -nocerts -out ${s3auth_dir}/s3_auth.jks.key \
-  -passin pass:${passphrase} -passout pass:${passphrase}
-  #Decrypt using pass phrase
-  openssl rsa -in ${s3auth_dir}/s3_auth.jks.key -out ${s3auth_dir}/${s3_iam_endpoint}.key \
-  -passin pass:${passphrase}
-  cat ${s3auth_dir}/${s3_iam_endpoint}.crt ${s3auth_dir}/${s3_iam_endpoint}.key > \
-  ${s3auth_dir}/${s3_iam_endpoint}.pem
+  openssl x509 -in ${s3auth_dir}/s3authserver.jks.pem \
+          -out ${s3auth_dir}/${s3_auth_cert_file_name}.crt
+
+  # Extract Private Key
+  openssl pkcs12 -in ${s3auth_dir}/s3authserver.p12 -nocerts \
+          -out ${s3auth_dir}/s3authserver.jks.key -passin pass:${passphrase} \
+          -passout pass:${passphrase}
+
+  # Decrypt using pass phrase
+  openssl rsa -in ${s3auth_dir}/s3authserver.jks.key \
+          -out ${s3auth_dir}/${s3_auth_cert_file_name}.key \
+          -passin pass:${passphrase}
+
+  cat ${s3auth_dir}/${s3_auth_cert_file_name}.crt \
+      ${s3auth_dir}/${s3_auth_cert_file_name}.key \
+      > ${s3auth_dir}/${s3_auth_cert_file_name}.pem
 
   ## Steps to create Key Pair for password encryption and store it in java keystore
   ## This key pair will be used by AuthPassEncryptCLI and AuthServer for encryption and
   ## decryption of ldap password respectively
-  keytool -genkeypair -keyalg RSA -alias s3auth_pass -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass ${passphrase} -keypass ${passphrase} -validity 3600 -keysize 512 \
-  -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=$iam_end_point" -ext SAN=$san_list
+  keytool -genkeypair -keyalg RSA -alias s3auth_pass \
+          -keystore ${s3auth_dir}/s3authserver.jks -storepass ${passphrase} \
+          -keypass ${passphrase} -validity 3600 -keysize 512 \
+          -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=$s3_iam_endpoint" \
+          -ext SAN=$san_list
 
+}
+
+function import_s3_ldap_cert_in_jks() {
   # import open ldap cert into jks
-  keytool -import -trustcacerts -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass ${passphrase} -noprompt -alias ldapcert -file ${openldap_dir}/${openldap_filename}.crt
-  # import haproxy s3 ssl cert into jks file
-  keytool -import -trustcacerts -keystore ${s3auth_dir}/s3_auth.jks \
-  -storepass ${passphrase} -noprompt -alias s3 -file ${s3_dir}/${s3_default_endpoint}.crt
+  keytool -import -trustcacerts -keystore ${s3auth_dir}/s3authserver.jks \
+          -storepass ${passphrase} -noprompt -alias ldapcert \
+          -file ${openldap_dir}/${s3_openldap_cert_file_name}.crt
+
+  # import s3 ssl cert into jks file
+  keytool -import -trustcacerts -keystore ${s3auth_dir}/s3authserver.jks \
+          -storepass ${passphrase} -noprompt -alias s3 \
+          -file ${s3_dir}/${s3_cert_file_name}.crt
 }
 
 function generate_openldap_cert()
 {
-  # create dns.list file in ssl folder with localhost.
+  # create dns.list file in ssl folder with openldap domainname.
   # generate ssl certificate and key
   ssl_sandbox="$CURRENT_DIR/ssl_sandbox"
   if [ -d "$ssl_sandbox" ]
@@ -101,39 +129,20 @@ function generate_openldap_cert()
   # create dns list file
   dns_list_file="$CURRENT_DIR/dns.list"
   rm -f $dns_list_file
-  echo "$openldap_domainname" | tr , '\n' > $dns_list_file
+  echo "$openldap_domainname" > $dns_list_file
 
   # generate openldap cert files
-  $CURRENT_DIR/setup-ssl.sh --san-file $dns_list_file --cert-name $openldap_filename
+  $CURRENT_DIR/setup-ssl.sh --san-file $dns_list_file \
+                            --cert-name $s3_openldap_cert_file_name
+
   \cp $ssl_sandbox/* $openldap_dir
+
   rm -f $dns_list_file
   rm -rf $ssl_sandbox
-
-  # ./enable_ssl_openldap.sh -cafile $openldap/ca.crt \
-  # -certfile $openldap/localhost.crt -keyfile $openldap/localhost.key
-  # Update ldap.conf so that ldap client cli can connect to ssl port of ldap i.e ldaps
-  echo "#
-## LDAP Defaults
-##
-#
-## See ldap.conf(5) for details
-## This file should be world readable but not world writable.
-#
-##BASE   dc=example,dc=com
-SSL on
-##SIZELIMIT      12
-##TIMELIMIT      15
-##DEREF          never
-TLS_CACERTDIR     /etc/ssl/openldap
-TLS_CACERT        /etc/ssl/openldap/ca.crt
-TLS_REQCERT allow
-#
-## Turning this off breaks GSSAPI used with krb5 when rdns = false
-SASL_NOCANON    on" > $openldap_dir/ldap.conf
 }
 
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-sand_box="$CURRENT_DIR/sandbox"
+sand_box=`pwd`"/s3_certs_sandbox"
 
 # create target directories
 rm -rf $sand_box
@@ -151,6 +160,9 @@ generate_s3_certs
 generate_openldap_cert
 # 3. generate jks
 generate_jks_and_iamcert
+# 4. import s3 and openldap crt in jks
+import_s3_ldap_cert_in_jks
+
 
 echo
-echo "##Certificate generation is done##"
+echo "## Certificate generation is complete in [$sand_box] ##"

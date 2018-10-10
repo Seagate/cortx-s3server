@@ -32,6 +32,7 @@ fi
 echo "Using [S3_VERSION=${S3_VERSION}] ..."
 echo "Using [GIT_VER=${GIT_VER}] ..."
 
+mkdir -p ~/rpmbuild/SOURCES/
 cd ~/rpmbuild/SOURCES/
 rm -rf s3server*
 

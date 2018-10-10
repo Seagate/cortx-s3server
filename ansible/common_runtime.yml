@@ -1,5 +1,21 @@
 ---
 
+- name: Add repository for lustre
+  yum_repository:
+    name: releases_hermi_lustre
+    description: Yum repo for lustre
+    baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/lustre/repo/
+    gpgcheck: no
+    priority: 1
+
+- name: Add S3 deps repository
+  yum_repository:
+    name: releases_hermi_s3server_uploads
+    description: Yum repo for S3 server dependencies
+    baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/s3server_uploads/
+    gpgcheck: no
+    priority: 1
+
 - name: Install S3 dependencies
   yum: pkg={{item}} state=installed
   with_items:
@@ -25,12 +41,6 @@
   yum: pkg={{item}} state=latest
   with_items:
     - selinux-policy
-
-- name: Install S3 openldap dependencies
-  yum: pkg={{item}} state=installed
-  with_items:
-    - openldap-servers
-    - openldap-clients
 
 - name: Install nginx
   yum:

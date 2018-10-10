@@ -41,6 +41,7 @@ Requires: glog
 Requires: pkgconfig
 # Java used by Auth server
 Requires: java-1.8.0-openjdk-headless
+Requires: PyYAML
 
 %description
 S3 server provides S3 REST API interface support for Mero object storage.
@@ -94,10 +95,6 @@ rm -rf %{buildroot}
 /lib/systemd/system/s3server@.service
 /opt/seagate/auth/AuthServer-1.0-0.jar
 /opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
-/opt/seagate/auth/resources/s3_auth.jks
-/opt/seagate/auth/resources/signin.seagate.com.crt
-/opt/seagate/auth/resources/iam.seagate.com.crt
-/opt/seagate/auth/resources/iam.seagate.com.pem
 /opt/seagate/auth/startauth.sh
 /opt/seagate/s3/bin/cloviskvscli
 /opt/seagate/s3/bin/s3server

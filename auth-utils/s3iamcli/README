@@ -14,7 +14,7 @@ Installing Python 3.4 and required dependencies
    yum install python34
    yum install python34-yaml
 
-Below python module dependencies can be downloaded from internal release management RPM Repository location 
+Below python module dependencies can be downloaded from internal release management RPM Repository location
 or built from S3server Repo s3server/rpms/python34/buildrpms.sh script.
   - python34-xmltodict
   - python34-jmespath
@@ -43,7 +43,7 @@ DEFAULT_REGION: us-west2
 
 # SSL section configurations are read only in case of https connection.
 SSL:
-    CA_CERT_FILE: ~/.sgs3iamcli/ssl/iam.seagate.com.crt
+    CA_CERT_FILE: /etc/ssl/stx-s3/s3auth/s3authserver.crt
     CHECK_SSL_HOSTNAME: True
     VERIFY_SSL_CERT: True
 

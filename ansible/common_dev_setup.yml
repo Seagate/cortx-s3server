@@ -3,17 +3,28 @@
 # Sets up the S3 development environment.
 # Prerequisites: common_build_env.yml
 
-- name: Copy lustre rpms to configured node
-  copy:
-    src: files/lustre
-    dest: /tmp/s3devvmsetup
+- name: Add repository for lustre
+  yum_repository:
+    name: releases_hermi_lustre
+    description: Yum repo for lustre
+    baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/lustre/repo/
+    gpgcheck: no
+    priority: 1
+
+- name: Add S3 deps repository
+  yum_repository:
+    name: releases_hermi_s3server_uploads
+    description: Yum repo for S3 server dependencies
+    baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/s3server_uploads/
+    gpgcheck: no
+    priority: 1
 
 - name: Install lustre rpms
   yum: pkg={{item}} state=present
   with_items:
-    - /tmp/s3devvmsetup/lustre/{{ lustre_client_rpm }}
-    - /tmp/s3devvmsetup/lustre/{{ lustre_client_devel_rpm }}
-    - /tmp/s3devvmsetup/lustre/{{ kmod_lustre_client_rpm }}
+    - lustre-client
+    - lustre-client-devel
+    - kmod-lustre-client
 
 - name: Add mappings to /etc/hosts (for S3 system tests)
   blockinfile:
@@ -32,15 +43,22 @@
     - { name: sts.seagate.com, ip: 127.0.0.1 }
     - { name: s3.seagate.com, ip: 127.0.0.1 }
 
+- name: Install patched s3cmd deps
+  yum:
+    name: python-magic
+    state: present
+
 - name: Install patched s3cmd
   yum:
-    name: /tmp/s3-deps/{{ s3cmd_patched_rpm }}
+    name: s3cmd
+    disablerepo: '*'
+    enablerepo: releases_hermi_s3server_uploads
     state: present
 
 - name: Install tools for ST
   yum: pkg={{item}} state=installed
   with_items:
-    - /tmp/s3-deps/{{ ossperf_rpm }}
+    - ossperf
     - parallel
     - bc
     - coreutils
@@ -71,8 +89,3 @@
 
 - name: Test lnet
   command: lctl list_nids
-
-- name: Install patched s3cmd
-  yum:
-    name: /tmp/s3-deps/{{ s3cmd_patched_rpm }}
-    state: present

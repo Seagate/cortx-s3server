@@ -32,12 +32,12 @@
   ```
 
 * Verify the certificate with
-  `openssl x509 -text -in ssl_sandbox/s3.seagate.com.crt`
+  `openssl x509 -text -in ssl_sandbox/s3server.crt`
   Output should have DNS:s3.seagate.com, DNS:*.s3.seagate.com under X509v3 Subject Alternative Name
 
 * Copy the following certificates and key files:
   For nginx
-  `cp ssl_sandbox/* /etc/nginx/ssl/seagate/`
+  `cp ssl_sandbox/* /etc/ssl/stx-s3/s3/`
 
   Update following entries in /etc/nginx/nginx.conf
   ```
@@ -45,16 +45,16 @@
       listen                80;
       listen                443 reuseport ssl;
       server_name           s3.seagate.com;
-      ssl_certificate       /etc/nginx/ssl/seagate/s3.seagate.com.crt;
-      ssl_certificate_key   /etc/nginx/ssl/seagate/s3.seagate.com.key;
+      ssl_certificate       /etc/ssl/stx-s3/s3/s3server.crt;
+      ssl_certificate_key   /etc/ssl/stx-s3/s3/s3server.key;
     ...
   }
   ```
 
   For haproxy
-  `mkdir -p /etc/ssl/haproxy/`
-  `cp ssl_sandbox/* /etc/ssl/haproxy/`
-  `cat /etc/ssl/haproxy/s3.seagate.com.crt /etc/ssl/haproxy/s3.seagate.com.key > /etc/ssl/haproxy/s3.seagate.com.pem`
+  `mkdir -p /etc/ssl/stx-s3/s3/`
+  `cp ssl_sandbox/* /etc/ssl/stx-s3/s3/`
+  `cat /etc/ssl/stx-s3/s3/s3server.crt /etc/ssl/stx-s3/s3/s3server.key > /etc/ssl/stx-s3/s3/s3server.pem`
 
   Update following entries in /etc/haproxy/haproxy.cfg
   ```
@@ -63,7 +63,7 @@
     #bind 0.0.0.0:80
 
     # Enable SSL port
-    bind 0.0.0.0:443 ssl crt /etc/ssl/haproxy/s3.seagate.com.pem
+    bind 0.0.0.0:443 ssl crt /etc/ssl/stx-s3/s3/s3server.pem
 
   ```
 
@@ -80,8 +80,8 @@
 Update following attributes in the .s3cfg files, ex: pathstyle.s3cfg
 ```
 use_https = True
-ca_certs_file = /etc/nginx/ssl/seagate/ca.crt  # for nginx
-#ca_certs_file = /etc/ssl/haproxy/ca.crt       # for haproxy
+ca_certs_file = /etc/ssl/stx-s3/s3/ca.crt     # for nginx
+#ca_certs_file = /etc/ssl/stx-s3/s3/ca.crt    # for haproxy
 check_ssl_certificate = True
 check_ssl_hostname = True
 ```
@@ -90,8 +90,10 @@ check_ssl_hostname = True
 
 Run
 ```
-/opt/jdk1.8.0_91/bin/keytool -import -trustcacerts -keystore /opt/jdk1.8.0_91/jre/lib/security/cacerts \
--storepass changeit -noprompt -alias s3server -file /etc/nginx/ssl/seagate/ca.crt
+/opt/jdk1.8.0_91/bin/keytool -import -trustcacerts
+      -keystore /opt/jdk1.8.0_91/jre/lib/security/cacerts \
+      -storepass changeit -noprompt -alias s3server
+      -file /etc/ssl/stx-s3/s3/ca.crt
 ```
 
 Note:
@@ -104,12 +106,13 @@ Note:
 Currently only tests for bucket name with '.' are not supported due to s3cmd limitations.
 Comment out tests using seagate.bucket in s3cmd_specs.py
 
-## Generating SSL certificates for OpenLdap and deploying it for S3 Auth Server
+## Generating SSL certificates for OpenLdap and deploying it
 
 * Create a file with domain name of Openldap server
   Ex:$cat dns.list
      localhost
-* For creating a file with domain names of Multiple Openldap server(Optional for single node setup)
+* For creating a file with domain names of Multiple Openldap server(Optional
+  for single node setup)
   Ex:$cat dns.list
     openldap_node_1
     openldap_node_2
@@ -120,27 +123,28 @@ Comment out tests using seagate.bucket in s3cmd_specs.py
    cd scripts/ssl/
   `./setup-ssl.sh --san-file dns.list`
 
-* Default value for `cert_name` & `cert_key` is `openldap` & changes if explicitly specified using `--cert-name` option
+* Default value for `cert_name` & `cert_key` is `openldap`
+  & changes if explicitly specified using `--cert-name` option
 
 * Copy the following certificates and key files:
-  `cp ssl_sandbox/ca.crt /etc/ssl/openldap/`
-  `cp ssl_sandbox/*.crt /etc/ssl/openldap/`
-  `cp ssl_sandbox/*.key /etc/ssl/openldap/private`
+  `cp ssl_sandbox/ca.crt /etc/ssl/stx-s3/openldap/`
+  `cp ssl_sandbox/*.crt /etc/ssl/stx-s3/openldap/`
+  `cp ssl_sandbox/*.key /etc/ssl/stx-s3/openldap/`
 
 * Set Owner of directory and files
-  chown -R root:root /etc/openldap/ssl/seagate*
+  chown -R root:root /etc/ssl/stx-s3/openldap/*
 
 * Add location of certificate and key's in ldif file
   #cat ssl_certs.ldif
   dn: cn=config
   replace: olcTLSCACertificateFile
-  olcTLSCACertificateFile: /etc/ssl/openldap/ca.crt
+  olcTLSCACertificateFile: /etc/ssl/stx-s3/openldap/ca.crt
   -
   replace: olctlscertificatefile
-  olctlscertificatefile: /etc/ssl/openldap/cert_name.crt
+  olctlscertificatefile: /etc/ssl/stx-s3/openldap/cert_name.crt
   -
   replace: olctlscertificatekeyfile
-  olctlscertificatekeyfile: /etc/ssl/openldap/private/cert_key.key
+  olctlscertificatekeyfile: /etc/ssl/stx-s3/openldap/cert_key.key
 
 * Update LDAP
   ldapmodify -Y EXTERNAL  -H ldapi:/// -f ssl_certs.ldif
@@ -152,13 +156,14 @@ Comment out tests using seagate.bucket in s3cmd_specs.py
   Add below entries in /etc/openldap/ldap.conf
 
   SSL on
-  TLS_CACERTDIR     /etc/openldap/ssl/seagete
-  TLS_CACERT        /etc/openldap/ssl/seagate/ca.crt
+  TLS_CACERTDIR     /etc/ssl/stx-s3/openldap/
+  TLS_CACERT        /etc/ssl/stx-s3/openldap/ca.crt
   TLS_REQCERT allow
 
 * Restart LDAP services
   systemctl restart slapd
 
 * Add certificate to Auth Server Java Key Store file
-  keytool -import -trustcacerts -keystore s3_auth.jks -storepass seagate -noprompt -alias ldapcert -file /etc/openldap/ssl/seagate/localhost.crt
-
+  keytool -import -trustcacerts -keystore s3authserver.jks -storepass seagate \
+          -noprompt -alias ldapcert \
+          -file /etc/ssl/stx-s3/openldap/s3openldap.crt

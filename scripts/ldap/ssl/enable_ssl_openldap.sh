@@ -6,15 +6,18 @@
 # 3. Updates URL's in /etc/sysconfig/slapd to enable ldaps port 636
 # 4. Restarts slapd service
 
-USAGE="USAGE: bash $(basename "$0") [-cafile <cacert>] [-certfile <cert>] [-keyfile <key>] [-help | -h]
+USAGE="USAGE: bash $(basename "$0") [-cafile <cacert>] [-certfile <cert>]
+              [-keyfile <key>] [-help | -h]
 Deploy SSL certs and enable SSL in Openldap
 where:
--cafile <cacert>  CA Certificate file
--certfile <cert>  Certificate file
--keyfile <key>    Key file
+-cafile <cacert>  CA Certificate absolute file path
+-certfile <cert>  Certificate absolute file path
+-keyfile <key>    Key absolute file path
 -help             Display usage and exit"
 #Ex :
-# ./enable_ssl_openldap.sh -cafile /build/ssl/ca.crt -certfile /build/ssl/host.crt -keyfile /build/ssl/host.key
+# ./enable_ssl_openldap.sh -cafile /etc/ssl/stx-s3/openldap/ca.crt \
+#                          -certfile /etc/ssl/stx-s3/openldap/s3openldap.crt \
+#                          -keyfile /etc/ssl/stx-s3/openldap/s3openldap.key
 
 if [ -z $1 ]
   then
@@ -63,27 +66,15 @@ fi
 #echo $certfile
 #echo $keyfile
 
-echo "Copying Certificates.."
-mkdir -p /etc/ssl/openldap/private
-cp $cafile /etc/ssl/openldap/
-cp $certfile /etc/ssl/openldap/
-cp $keyfile /etc/ssl/openldap/private
-chown -R root:root /etc/ssl/openldap*
-
-ca=/etc/ssl/openldap/$(basename $cafile)
-cert=/etc/ssl/openldap/$(basename $certfile)
-key=/etc/ssl/openldap/private/$(basename $keyfile)
-#echo "$ca" "$cert" "$key"
-
 ssl_ldif="dn: cn=config
 replace: olcTLSCACertificateFile
-olcTLSCACertificateFile: $ca
+olcTLSCACertificateFile: $cafile
 -
 replace: olctlscertificatefile
-olctlscertificatefile: $cert
+olctlscertificatefile: $certfile
 -
 replace: olctlscertificatekeyfile
-olctlscertificatekeyfile: $key"
+olctlscertificatekeyfile: $keyfile"
 
 echo "$ssl_ldif" > ssl_certs.ldif
 
