@@ -118,7 +118,6 @@ void S3GetBucketAction::fetch_bucket_info_failed() {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata load operation failed due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
   } else {
     set_s3_error("InternalError");
   }

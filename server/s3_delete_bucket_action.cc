@@ -141,7 +141,6 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
           S3_LOG_ERROR, request_id,
           "Bucket metadata load operation failed due to pre launch failure\n");
       set_s3_error("ServiceUnavailable");
-      send_response_to_s3_client();
     } else if (bucket_metadata_state == S3BucketMetadataState::missing) {
       set_s3_error("NoSuchBucket");
     } else {

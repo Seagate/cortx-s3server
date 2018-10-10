@@ -130,6 +130,15 @@ TEST_F(S3ErrorTest, ReturnValidErrorXml) {
 
 TEST_F(S3ErrorTest, Negative) {
   S3Error error("NegativeTestCase", "dummy-request-id", "SomeBucketName");
-  EXPECT_EQ(-1, error.get_http_status_code());
-  EXPECT_EQ("", error.to_xml());
+  std::string expected_response =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  expected_response +=
+      "<Error>\n"
+      "  <Code>NegativeTestCase</Code>\n"
+      "  <Message>Unknown Error</Message>\n"
+      "  <Resource>SomeBucketName</Resource>\n"
+      "  <RequestId>dummy-request-id</RequestId>\n"
+      "</Error>\n";
+  EXPECT_EQ(520, error.get_http_status_code());
+  EXPECT_EQ(expected_response, error.to_xml());
 }

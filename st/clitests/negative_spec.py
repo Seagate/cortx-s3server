@@ -642,6 +642,79 @@ for i, type in enumerate(config_types):
         abort_multipart("seagatebucket", "18MBfile", upload_id).\
         execute_test().command_is_successful()
 
+    # negative tests cases for next_keyval
+    # bucket deletion negative test
+    S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket123").\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "2", "99").\
+        execute_test().command_is_successful()
+    # fetch_first_object_metadata_failed clovis idx op fail
+    S3cmdTest('s3cmd can not delete bucket').delete_bucket("seagatebucket123").\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "3", "99").\
+        execute_test().command_is_successful()
+    # fetch_first_multipart_object_metadata_failed clovis idx op fail
+    S3cmdTest('s3cmd can not delete bucket').delete_bucket("seagatebucket123").\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket123").\
+        execute_test().command_is_successful()
+
+    # object list negative test
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "2", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can not list objects').list_objects('seagatebucket').\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+
+    # list bucket negative test
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "1", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can not list buckets').list_buckets().\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+
+    # multipart object metadata negative test
+    # Multipart listing shall return an error on clovis_idx_op
+    JClientTest('Jclient can upload partial parts').\
+        partial_multipart_upload("seagatebucket", "18MBfile", 18000000, 1, 2).\
+        execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').\
+                list_multipart("seagatebucket").execute_test()
+    result.command_response_should_have('18MBfile')
+    upload_id = result.status.stdout.split("id - ")[1]
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "2", "99").\
+        execute_test().command_is_successful()
+    JClientTest('Jclient can not list multipart uploads of corrupted object').\
+        list_parts("seagatebucket", "18MBfile", upload_id).\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("ServiceUnavailable")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    JClientTest('Jclient can abort multipart upload').\
+        abort_multipart("seagatebucket", "18MBfile", upload_id).\
+        execute_test().command_is_successful()
+
     # ************ PART METADATA CORRUPTION TEST ***********
     # Multipart listing shouldn't list corrupted parts
     JClientTest('Jclient can upload partial parts').\

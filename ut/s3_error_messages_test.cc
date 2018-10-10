@@ -27,8 +27,8 @@
 
 TEST(S3ErrorDetailsTest, DefaultConstructor) {
   S3ErrorDetails error_msg;
-  EXPECT_EQ(-1, error_msg.http_return_code);
-  EXPECT_STREQ("", error_msg.description.c_str());
+  EXPECT_EQ(520, error_msg.http_return_code);
+  EXPECT_STREQ("Unknown Error", error_msg.description.c_str());
 }
 
 TEST(S3ErrorDetailsTest, ConstructorWithMsg) {

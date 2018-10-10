@@ -32,7 +32,7 @@ class S3ErrorDetails {
   int http_return_code;
 
  public:
-  S3ErrorDetails() : description(""), http_return_code(-1) {}
+  S3ErrorDetails() : description("Unknown Error"), http_return_code(520) {}
 
   S3ErrorDetails(std::string message, int http_code) {
     description = message;
