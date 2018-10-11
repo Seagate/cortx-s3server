@@ -1,6 +1,7 @@
 [Unit]
 Description=Mero-S3 Auth Server
-After=syslog.target
+After=slapd.service
+Requires=slapd.service
 
 [Service]
 Type=simple
