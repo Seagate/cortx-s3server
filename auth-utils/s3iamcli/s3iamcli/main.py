@@ -23,18 +23,19 @@ class S3IamCli:
         CreateAccessKey
             -n <User Name>
         CreateUser -n <User Name>
-            -p <Path (Optional)
-        DeleteAccount -n <Account Name> -r <true|false>
-        DeleteAccesskey -k <Access Key Id to be deleted>
+            [-p <Path>]
+        DeleteAccount -n <Account Name>
+            [--force]
+        DeleteAccesskey -k <Access Key Id>
             -n <User Name>
         DeleteUser -n <User Name>
         ListAccessKeys
             -n <User Name>
         ListUsers
-            -p <Path Prefix>
+            [-p <Path Prefix>]
         UpdateUser -n <Old User Name>
-            --new_user <New User Name> -p <New Path>
-        UpdateAccessKey -k <access key to be updated> -s <Active/Inactive>
+            --new_user <New User Name> [-p <New Path>]
+        UpdateAccessKey -k <Access Key Id> -s <Active/Inactive>
             -n <User Name>
         '''
     def iam_usage_hidden(self):
@@ -57,7 +58,7 @@ class S3IamCli:
         Delete Role -n <Role Name>
         DeleteSamlProvider --arn <Saml Provider ARN>
         GetFederationToken -n <User Name>
-            -d <Duration in second> -f <Policiy Document File>
+            -d <Duration in seconds> -f <Policy Document File>
         ListRoles -p <Path Prefix>
         ListSamlProviders
         UpdateSAMLProvider --arn <SAML Provider ARN> -f <Path of metadata file>
@@ -166,9 +167,10 @@ class S3IamCli:
 
     # run method
     def run(self):
+        show_hidden_args = '--hidden_help' in sys.argv
         parser = argparse.ArgumentParser(usage = self.iam_usage())
         parser.add_argument("action", help="Action to be performed.")
-        parser.add_argument("-n", "--name", help="Name.")
+        parser.add_argument("-n", "--name", help="User Name.")
         parser.add_argument("-e", "--email", help="Email id.")
         parser.add_argument("-p", "--path", help="Path or Path Prefix.")
         parser.add_argument("-f", "--file", help="File Path.")
@@ -183,9 +185,9 @@ class S3IamCli:
         parser.add_argument("--session_token", help="Session Token.")
         parser.add_argument("--arn", help="ARN.")
         parser.add_argument("--description", help="Description of the entity.")
-        parser.add_argument("--saml_principal_arn", help="SAML Principal ARN.")
-        parser.add_argument("--saml_role_arn", help="SAML Role ARN.")
-        parser.add_argument("--saml_assertion", help="File conataining SAML assertion.")
+        parser.add_argument("--saml_principal_arn", help="SAML Principal ARN." if show_hidden_args else argparse.SUPPRESS)
+        parser.add_argument("--saml_role_arn", help="SAML Role ARN." if show_hidden_args else argparse.SUPPRESS)
+        parser.add_argument("--saml_assertion", help="File containing SAML assertion." if show_hidden_args else argparse.SUPPRESS)
         parser.add_argument("--new_user", help="New user name.")
         parser.add_argument("--no-ssl", help="Use HTTP protocol.", action ='store_true')
         parser.add_argument("--hidden_help",dest = 'hidden_help', action ='store_true', help=argparse.SUPPRESS)
