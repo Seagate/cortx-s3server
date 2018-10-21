@@ -19,7 +19,7 @@
 - name: Install S3 dependencies
   yum: pkg={{item}} state=installed
   with_items:
-    - java-1.8.0-openjdk
+    - java-1.8.0-openjdk-headless
 
 - name: Update to latest selinux-policy (required by latest openldap)
   yum: pkg={{item}} state=latest
@@ -42,15 +42,16 @@
   with_items:
     - selinux-policy
 
-- name: Install nginx
-  yum:
-    name: nginx
-    state: present
-
-- name: Setup nginx config
-  copy:
-    src: ./files/nginx/nginx.conf.seagate
-    dest: /etc/nginx/nginx.conf
+# Keep commented for future reference
+# - name: Install nginx
+#   yum:
+#     name: nginx
+#     state: present
+#
+# - name: Setup nginx config
+#   copy:
+#     src: ./files/nginx/nginx.conf.seagate
+#     dest: /etc/nginx/nginx.conf
 
 - name: Install haproxy
   yum:

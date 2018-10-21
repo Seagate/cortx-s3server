@@ -52,11 +52,13 @@ yum list installed selinux-policy && yum update -y selinux-policy
 # Clean up old setup if any
 if [[ $forceclean == true ]]
 then
-  systemctl stop slapd || /bin/true
-  rpm -e openldap-servers openldap-clients || /bin/true
+  systemctl stop slapd 2>/dev/null || /bin/true
+  yum remove -y openldap-servers openldap-clients || /bin/true
   rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
   rm -rf /var/lib/ldap/*
-  rm -f /etc/sysconfig/slapd*
+  rm -f /etc/sysconfig/slapd* || /bin/true
+  rm -f /etc/openldap/slapd* || /bin/true
+  rm -rf /etc/openldap/slapd.d/*
 fi
 
 yum install -y openldap-servers openldap-clients

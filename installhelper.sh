@@ -26,6 +26,7 @@ rm -rf $S3_INSTALL_LOCATION
 
 mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
+mkdir -p $AUTH_INSTALL_LOCATION/scripts
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
@@ -81,6 +82,9 @@ cp -f auth/resources/keystore.properties $AUTH_INSTALL_LOCATION/resources/
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/
+
+# Copy auth server Helper scripts
+cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
 
 # Copy the auth service file for systemctl support.
 cp auth/server/s3authserver.service $SERVICE_FILE_LOCATION

@@ -35,28 +35,39 @@ install -p openldap/* $RPM_BUILD_ROOT/etc/ssl/stx-s3/openldap
 %clean
 rm -rf %{buildroot}
 
+%pre
+# Ensure we have users "ldap", "haproxy" created by mentioned packages.
+getent passwd haproxy 2>/dev/null || { \
+  echo -e "\n*ERROR* User 'haproxy' missing. Please install haproxy package.";
+  exit 1; }
+
+getent passwd ldap 2>/dev/null || { \
+  echo -e "\n*ERROR* User 'ldap' missing. Please install openldap-servers package.";
+  exit 1; }
+
 %files
+%defattr(-,root,root,-)
 
 # S3 server certificates
-/etc/ssl/stx-s3/s3/ca.crt
-/etc/ssl/stx-s3/s3/ca.key
-/etc/ssl/stx-s3/s3/s3server.crt
-/etc/ssl/stx-s3/s3/s3server.csr
-/etc/ssl/stx-s3/s3/s3server.key
-/etc/ssl/stx-s3/s3/s3server.pem
+%attr(0751, haproxy, haproxy) /etc/ssl/stx-s3/s3/ca.crt
+%attr(0751, haproxy, haproxy) /etc/ssl/stx-s3/s3/ca.key
+%attr(0751, haproxy, haproxy) /etc/ssl/stx-s3/s3/s3server.crt
+%attr(0751, haproxy, haproxy) /etc/ssl/stx-s3/s3/s3server.csr
+%attr(0751, haproxy, haproxy) /etc/ssl/stx-s3/s3/s3server.key
+%attr(0751, haproxy, haproxy) /etc/ssl/stx-s3/s3/s3server.pem
 
 # S3 Auth server certificates
-/etc/ssl/stx-s3/s3auth/s3authserver.crt
-/etc/ssl/stx-s3/s3auth/s3authserver.pem
-/etc/ssl/stx-s3/s3auth/s3authserver.jks.key
-/etc/ssl/stx-s3/s3auth/s3authserver.p12
-/etc/ssl/stx-s3/s3auth/s3authserver.key
-/etc/ssl/stx-s3/s3auth/s3authserver.jks
-/etc/ssl/stx-s3/s3auth/s3authserver.jks.pem
+%attr(0751, root, root) /etc/ssl/stx-s3/s3auth/s3authserver.crt
+%attr(0751, root, root) /etc/ssl/stx-s3/s3auth/s3authserver.pem
+%attr(0751, root, root) /etc/ssl/stx-s3/s3auth/s3authserver.jks.key
+%attr(0751, root, root) /etc/ssl/stx-s3/s3auth/s3authserver.p12
+%attr(0751, root, root) /etc/ssl/stx-s3/s3auth/s3authserver.key
+%attr(0751, root, root) /etc/ssl/stx-s3/s3auth/s3authserver.jks
+%attr(0751, root, root) /etc/ssl/stx-s3/s3auth/s3authserver.jks.pem
 
 # S3 openldap server certificates
-/etc/ssl/stx-s3/openldap/ca.crt
-/etc/ssl/stx-s3/openldap/ca.key
-/etc/ssl/stx-s3/openldap/s3openldap.crt
-/etc/ssl/stx-s3/openldap/s3openldap.csr
-/etc/ssl/stx-s3/openldap/s3openldap.key
+%attr(0751, ldap, ldap) /etc/ssl/stx-s3/openldap/ca.crt
+%attr(0751, ldap, ldap) /etc/ssl/stx-s3/openldap/ca.key
+%attr(0751, ldap, ldap) /etc/ssl/stx-s3/openldap/s3openldap.crt
+%attr(0751, ldap, ldap) /etc/ssl/stx-s3/openldap/s3openldap.csr
+%attr(0751, ldap, ldap) /etc/ssl/stx-s3/openldap/s3openldap.key

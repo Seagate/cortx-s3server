@@ -1,3 +1,9 @@
+For latest, see <s3 src>/doc/quickstart.md
+
+
+Below contents are for future reference only and could be outdated.
+
+* obsolete *
 Notes:
 1. If you hit gpg check errors, you can temporarily disable gpg checks by updating
 repo files.
@@ -73,26 +79,5 @@ Centos 75 VM image is available at
    It will prompt for ssh password, followed by new openldap password.
    For ldap password for testing, use "seagate" for rootDN and "ldapadmin" for IAM admin
    Your s3 should be ready after successful run
-
-******************************* END OpenLDAP setup **************************************
-
-
-******** Follow steps mentioned below on your laptop to configure your *bareos* node ******
-
-1. For ansible install, see above steps.
-
-2. Update <s3 src>/ansible/hosts file with IP address of your bareos node in section [bareos]
-
-3. S3 server should be configured before configuring bareos.
-
-4. Run ansible to setup the s3, enter the openldap password you want to setup.
-   # ansible-playbook -i hosts setup_bareos.yml -v  -k
-
-   It will prompt for ssh password, followed by S3 server IP address.
-   Configure S3server & provide host on which S3 is configured.
-   For S3 bucket name for testing, use "seagatebucket". Create this bucket "seagatebucket" on s3server
-   For S3 service endpoint domain, use "s3.seagate.com"
-   For S3 access key, use "AKIAJTYX36YCKQSAJT7Q"
-   For S3 access key, use "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt"
 
 ******************************* END OpenLDAP setup **************************************

@@ -29,7 +29,6 @@ rm -rf %{buildroot}
 install -d $RPM_BUILD_ROOT/etc/ssl/stx-s3-clients/{s3,s3auth}
 
 install -p s3/ca.crt $RPM_BUILD_ROOT/etc/ssl/stx-s3-clients/s3/ca.crt
-install -p s3/s3server.crt $RPM_BUILD_ROOT/etc/ssl/stx-s3-clients/s3/s3server.crt
 
 install -p s3auth/s3authserver.crt $RPM_BUILD_ROOT/etc/ssl/stx-s3-clients/s3auth/s3authserver.crt
 
@@ -40,7 +39,6 @@ rm -rf %{buildroot}
 
 # s3 client certs
 /etc/ssl/stx-s3-clients/s3/ca.crt
-/etc/ssl/stx-s3-clients/s3/s3server.crt
 
 # s3iamcli client certs
 /etc/ssl/stx-s3-clients/s3auth/s3authserver.crt

@@ -15,7 +15,7 @@ S3_VERSION=1.0.0
 
 usage() { echo "Usage: $0 [-T <short tag/domain>] [-S <S3 version>] [-h Show help]" 1>&2; exit 1; }
 
-while getopts ":T:S:h:" o; do
+while getopts ":T:S:h" o; do
     case "${o}" in
         T)
             TAG=${OPTARG}

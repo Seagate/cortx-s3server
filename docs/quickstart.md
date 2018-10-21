@@ -1,3 +1,5 @@
+* Note current steps are assumed to be run within VM to be configured.
+
 # Setup VM
 Import VM from (use latest or check with team)
 http://jenkins.mero.colo.seagate.com/share/bigstorage/sage_releases/vmdk_images/
@@ -10,7 +12,7 @@ Import VM into VMWare Fusion or VirtualBox
 
 Clone source on the new VM.
   git clone http://gerrit.mero.colo.seagate.com:8080/s3server
-or follow
+or to clone with your seagate gid follow the link given below.
 https://docs.google.com/document/d/17ufHPsT62dFL-5VE8r6NeADSefUa0eGgkmPNTkv-k3o/
 
 Ensure you have at least 8GB RAM for dev VM and 4GB RAM for release/rpmbuild VM.
@@ -57,13 +59,27 @@ Built rpms will be available in ~/rpmbuild/RPMS/x86_64/
 This rpms can be copied to release VM for testing.
 
 # To Setup release VM
-Install certificate rpms. These can either be build with following or obtained
-from dev VM build.
-Location on dev build post build: ~/rpmbuild/RPMS/x86_64/stx-s3-c*
+Run setup script to configure release vm
 
+* Do NOT use this script directly on Real cluster as it cleans existing openldap
+setup. You can use steps within init.sh cautiously.
+For new/clean VM this is safe.
 
-Run setup script to configure rpmbuild vm
+Ensure you have static hostname setup for the node. Example:
+```sh
+hostnamectl set-hostname s3release
+# check status
+hostnamectl status
+```
+
 ```sh
 cd <s3 src>
 ./scripts/env/release/init.sh
 ```
+VM is now ready to yum install mero halon s3server s3iamcli and configure.
+
+Once s3server rpm is installed, run following script to update ldap password
+in authserver config. [ -l <ldap passwd> -p <authserver.properties file path> ]
+
+/opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
+    -p /opt/seagate/auth/resources/authserver.properties
