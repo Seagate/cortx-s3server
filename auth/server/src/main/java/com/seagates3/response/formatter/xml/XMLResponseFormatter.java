@@ -35,11 +35,17 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public class XMLResponseFormatter extends AbstractResponseFormatter {
+
+    private final Logger LOGGER =
+            LoggerFactory.getLogger(XMLResponseFormatter.class.getName());
 
     @Override
     public ServerResponse formatCreateResponse(String operation, String returnObject,
@@ -81,10 +87,10 @@ public class XMLResponseFormatter extends AbstractResponseFormatter {
             responseBody = docToString(doc);
             ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.CREATED,
                     responseBody);
-
             return serverResponse;
         } catch (TransformerException ex) {
-            System.out.println("test");
+            LOGGER.error("Unable to decode response body");
+            LOGGER.error(ex.toString());
         }
 
         return null;
@@ -303,7 +309,8 @@ public class XMLResponseFormatter extends AbstractResponseFormatter {
 
             return serverResponse;
         } catch (TransformerException ex) {
-            System.out.println("test");
+            LOGGER.error("Unable to decode response body");
+            LOGGER.error(ex.toString());
         }
 
         return null;

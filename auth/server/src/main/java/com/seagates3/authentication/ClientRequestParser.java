@@ -105,7 +105,8 @@ public class ClientRequestParser {
                     "Failed to get required class",
                     String.format("\"cause\": \"%s\"", ex.getCause()));
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException ex) {
-            System.out.println(ex);
+            LOGGER.error("Error occured while creating aws request parser");
+            LOGGER.error(ex.toString());
         }
 
         return null;

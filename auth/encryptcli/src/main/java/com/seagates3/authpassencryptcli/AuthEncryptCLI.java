@@ -82,8 +82,9 @@ public class AuthEncryptCLI {
             System.err.println("Password values do not match.");
             System.exit(1);
         }
-        Arrays.fill(tmp2, ' ');
-        return tmp2.toString();
+        Arrays.fill(tmp1, ' ');
+
+        return new String(tmp2);
     }
 
     /**
