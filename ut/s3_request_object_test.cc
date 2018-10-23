@@ -42,9 +42,6 @@ class S3RequestObjectTest : public testing::Test {
     request = new S3RequestObject(ev_request, evhtp_obj_ptr);
 
     mock_evhtp_obj_ptr = new MockEvhtpWrapper();
-    EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_find(_, _))
-        .Times(3)
-        .WillRepeatedly(Return(""));
     request_with_mock_http =
         new S3RequestObject(ev_request, mock_evhtp_obj_ptr);
   }
@@ -256,6 +253,43 @@ TEST_F(S3RequestObjectTest, ReturnsValidContentLengthHeaderValue) {
   fake_in_headers(input_headers);
 
   EXPECT_EQ(852, request->get_content_length());
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentLengthWithNonNumericTest1) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Length"] = "abcd";
+  input_headers["Host"] = "s3.seagate.com";
+
+  EXPECT_THROW(fake_in_headers(input_headers), std::invalid_argument);
+  EXPECT_FALSE(request->validate_content_length());
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentLengthWithNonNumericTest2) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Length"] = "123";
+  input_headers["Host"] = "s3.seagate.com";
+  input_headers["x-amz-decoded-content-length"] = "abcd";
+
+  EXPECT_THROW(fake_in_headers(input_headers), std::invalid_argument);
+  EXPECT_FALSE(request->validate_content_length());
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentLengthValidTest1) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Length"] = "123";
+  input_headers["Host"] = "s3.seagate.com";
+  fake_in_headers(input_headers);
+  EXPECT_TRUE(request->validate_content_length());
+}
+
+TEST_F(S3RequestObjectTest, ValidateContentLengthValidTest2) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Length"] = "123";
+  input_headers["Host"] = "s3.seagate.com";
+  input_headers["x-amz-decoded-content-length"] = "456";
+  fake_in_headers(input_headers);
+
+  EXPECT_TRUE(request->validate_content_length());
 }
 
 TEST_F(S3RequestObjectTest, ReturnsValidContentBody) {

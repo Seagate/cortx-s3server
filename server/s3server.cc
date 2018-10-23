@@ -41,7 +41,6 @@
 #include "s3_stats.h"
 #include "s3_timer.h"
 #include "s3_uri_to_mero_oid.h"
-
 #define FOUR_KB 4096
 
 #define WEBSTORE "/home/seagate/webstore"
@@ -63,15 +62,17 @@ extern "C" void s3_handler(evhtp_request_t *req, void *a) {
 extern "C" void on_client_conn_err_callback(evhtp_request_t *req,
                                             evhtp_error_flags errtype,
                                             void *arg) {
-  s3_log(S3_LOG_DEBUG, "", "S3 Client disconnected.\n");
-  S3RequestObject *request = (S3RequestObject *)req->cbarg;
-
-  if (request) {
-    request->client_has_disconnected();
+  s3_log(S3_LOG_INFO, "", "S3 Client disconnected.\n");
+  if (req) {
+    S3RequestObject *request = (S3RequestObject *)req->cbarg;
+    if (request) {
+      request->client_has_disconnected();
+    }
+    if (req->conn) {
+      evhtp_unset_all_hooks(&req->conn->hooks);
+    }
+    evhtp_unset_all_hooks(&req->hooks);
   }
-  evhtp_unset_all_hooks(&req->conn->hooks);
-  evhtp_unset_all_hooks(&req->hooks);
-
   return;
 }
 
@@ -81,6 +82,23 @@ extern "C" int s3_log_header(evhtp_header_t *header, void *arg) {
   return 0;
 }
 
+static evhtp_res on_client_connection_fini(evhtp_connection_t *connection,
+                                           void *arg) {
+  s3_log(S3_LOG_INFO, "",
+         "S3 client connection freed, connection(%p), request(%p)\n",
+         connection, connection->request);
+  if (connection) {
+    if (connection->request) {
+      S3RequestObject *request = (S3RequestObject *)connection->request->cbarg;
+      if (request) {
+        request->client_has_disconnected();
+      }
+      evhtp_unset_all_hooks(&connection->request->hooks);
+    }
+    evhtp_unset_all_hooks(&connection->hooks);
+  }
+  return EVHTP_RES_OK;
+}
 extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
                                       evhtp_headers_t *hdrs, void *arg) {
   s3_log(S3_LOG_INFO, "", "Received Request with uri [%s].\n",
@@ -98,6 +116,30 @@ extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
   EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
   std::shared_ptr<S3RequestObject> s3_request =
       std::make_shared<S3RequestObject>(req, evhtp_obj_ptr);
+
+  // validate content length against out of range
+  // and invalid argument
+  if (!s3_request->validate_content_length()) {
+    s3_request->pause();
+    evhtp_unset_all_hooks(&req->conn->hooks);
+    // Send response with 'Bad Request' code.
+    s3_log(
+        S3_LOG_DEBUG, "",
+        "sending 'Bad Request' response to client due to invalid request...\n");
+    S3Error error("BadRequest", s3_request->get_request_id(), "");
+    std::string &response_xml = error.to_xml();
+    s3_request->set_out_header_value("Content-Type", "application/xml");
+    s3_request->set_out_header_value("Content-Length",
+                                     std::to_string(response_xml.length()));
+    s3_request->set_out_header_value("Retry-After", "1");
+
+    s3_request->send_response(error.get_http_status_code(), response_xml);
+    return EVHTP_RES_OK;
+  }
+
+  // request validation is done and we are ready to use request
+  // so initialise the s3 request;
+  s3_request->initialise();
 
   if (S3Option::get_instance()->get_is_s3_shutting_down() &&
       !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
@@ -155,6 +197,8 @@ extern "C" evhtp_res set_s3_connection_handlers(evhtp_connection_t *conn,
                  (evhtp_hook)dispatch_request, arg);
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_read,
                  (evhtp_hook)process_request_data, NULL);
+  evhtp_set_hook(&conn->hooks, evhtp_hook_on_connection_fini,
+                 (evhtp_hook)on_client_connection_fini, NULL);
 
   return EVHTP_RES_OK;
 }

@@ -37,9 +37,6 @@ class S3RequestObjectTest : public testing::Test {
     evbase = event_base_new();
     ev_request = evhtp_request_new(dummy_request_cb, evbase);
     mock_evhtp_obj_ptr = new MockEvhtpWrapper();
-    EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_find(_, _))
-        .Times(3)
-        .WillRepeatedly(Return(""));
     request = new S3RequestObject(ev_request, mock_evhtp_obj_ptr);
   }
 

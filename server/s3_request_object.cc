@@ -24,6 +24,7 @@
 #include "s3_error_codes.h"
 #include "s3_factory.h"
 #include "s3_option.h"
+#include "s3_common_utilities.h"
 #include "s3_request_object.h"
 #include "s3_stats.h"
 
@@ -92,8 +93,6 @@ S3RequestObject::S3RequestObject(
       free(decoded_str);
     }
   }
-
-  initialise();
 }
 
 void S3RequestObject::initialise() {
@@ -243,6 +242,7 @@ void S3RequestObject::set_out_header_value(std::string key, std::string value) {
 std::string S3RequestObject::get_data_length_str() {
   std::string data_length_key = "x-amz-decoded-content-length";
   std::string data_length = get_header_value(data_length_key);
+  data_length = S3CommonUtilities::trim(data_length);
   if (data_length.empty()) {
     // Normal request
     return get_content_length_str();
@@ -252,20 +252,63 @@ std::string S3RequestObject::get_data_length_str() {
 }
 
 size_t S3RequestObject::get_data_length() {
-  return std::stoi(get_data_length_str());
+  return std::stoul(get_data_length_str());
 }
 
 std::string S3RequestObject::get_content_length_str() {
   std::string content_length = "Content-Length";
   std::string len = get_header_value(content_length);
+  len = S3CommonUtilities::trim(len);
   if (len.empty()) {
     len = "0";
   }
   return len;
 }
 
+bool S3RequestObject::validate_content_length() {
+  bool is_content_length_valid = true;
+  unsigned long content_length = 0;
+  try {
+    content_length = std::stoul(get_content_length_str());
+  }
+  catch (const std::invalid_argument& ia) {
+    is_content_length_valid = false;
+  }
+  catch (const std::out_of_range& oor) {
+    is_content_length_valid = false;
+  }
+
+  // check content length is greater than SIZE_MAX
+  if (content_length > SIZE_MAX) {
+    is_content_length_valid = false;
+  }
+  // return if content length is not valid
+  if (!is_content_length_valid) return is_content_length_valid;
+
+  std::string data_length_key = "x-amz-decoded-content-length";
+  std::string data_length = get_header_value(data_length_key);
+  if (!data_length.empty()) {
+    try {
+      content_length = std::stoul(data_length);
+    }
+    catch (const std::invalid_argument& ia) {
+      is_content_length_valid = false;
+    }
+    catch (const std::out_of_range& oor) {
+      is_content_length_valid = false;
+    }
+    // check content length is greater than SIZE_MAX
+    if (content_length > SIZE_MAX) {
+      is_content_length_valid = false;
+    }
+  }
+  return is_content_length_valid;
+}
+
 size_t S3RequestObject::get_content_length() {
-  return std::stoi(get_content_length_str());
+  // no need to handle expection here,
+  // as we are handling at dispatch request
+  return std::stoul(get_content_length_str());
 }
 
 std::string& S3RequestObject::get_full_body_content_as_string() {
