@@ -1,23 +1,7 @@
 ---
 
 # Sets up the S3 development environment.
-# Prerequisites: common_build_env.yml
-
-- name: Add repository for lustre
-  yum_repository:
-    name: releases_hermi_lustre
-    description: Yum repo for lustre
-    baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/lustre/repo/
-    gpgcheck: no
-    priority: 1
-
-- name: Add S3 deps repository
-  yum_repository:
-    name: releases_hermi_s3server_uploads
-    description: Yum repo for S3 server dependencies
-    baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/s3server_uploads/
-    gpgcheck: no
-    priority: 1
+# Prerequisites: common_build_env.yml and jenkins_yum_repos.yml
 
 - name: Install lustre rpms
   yum: pkg={{item}} state=present

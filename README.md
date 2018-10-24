@@ -89,7 +89,9 @@ are present in $HOME/.seagate_src_cache and will be used in current build.
 Build SSL certificates and install (use defaults)
 ```sh
 cd rpms/s3certs
-./buildrpm.sh
+# Here "s3dev" is a tag used on the generated certificate rpms
+# Alternatively one can also pass other options, check -h.
+./buildrpm.sh -T s3dev
 yum localinstall ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
 yum localinstall ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 ```
@@ -603,5 +605,3 @@ md5sum /tmp/bareos-restores/file.txt
 md5sum /root/file.txt
 
 ```
-
-

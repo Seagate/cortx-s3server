@@ -1,0 +1,46 @@
+---
+- name: Setup yum repos for development (devvm and release test vm)
+  hosts: s3*
+  remote_user: root
+  gather_facts: no
+
+  tasks:
+    - name: Add repository for lustre
+      yum_repository:
+        name: releases_hermi_lustre
+        description: Yum repo for lustre
+        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/lustre/repo/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add repository for halon
+      yum_repository:
+        name: releases_hermi_halon
+        description: Yum repo for halon
+        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/halon/repo/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add repository for mero
+      yum_repository:
+        name: releases_hermi_mero
+        description: Yum repo for mero
+        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/mero/repo/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add repository for s3server
+      yum_repository:
+        name: releases_hermi_s3server
+        description: Yum repo for s3server
+        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/s3server/repo/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add S3 deps repository
+      yum_repository:
+        name: releases_hermi_s3server_uploads
+        description: Yum repo for S3 server dependencies
+        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/s3server_uploads/
+        gpgcheck: no
+        priority: 1

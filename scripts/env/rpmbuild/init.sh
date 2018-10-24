@@ -12,7 +12,10 @@ cd ${BASEDIR}/../../../ansible
 cp -f ./hosts ./hosts_local
 sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
 
-# run ansible to configure build env
+# Setup necessary repos
+ansible-playbook -i ./hosts_local --connection local jenkins_yum_repos.yml -v  -k
+
+# Setup rpmbuild env
 ansible-playbook -i ./hosts_local --connection local rpm_build_env.yml -v  -k
 
 rm -f ./hosts_local

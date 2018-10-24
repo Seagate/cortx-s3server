@@ -23,7 +23,7 @@ rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 
 cd ${BASEDIR}/../../../rpms/s3certs
 # Needs openssl and jre which are installed with rpm_build_env
-./buildrpm.sh
+./buildrpm.sh -T s3dev
 
 # install the built certs
 rpm -e stx-s3-certs stx-s3-client-certs || /bin/true
@@ -40,7 +40,10 @@ cd ${BASEDIR}/../../../ansible
 cp -f ./hosts ./hosts_local
 sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
 
-# run ansible to configure build env
+# Setup necessary repos
+ansible-playbook -i ./hosts_local --connection local jenkins_yum_repos.yml -v  -k
+
+# Set up release node
 ansible-playbook -i ./hosts_local --connection local setup_release_node.yml -v  -k
 
 rm -f ./hosts_local

@@ -76,7 +76,11 @@ hostnamectl status
 cd <s3 src>
 ./scripts/env/release/init.sh
 ```
-VM is now ready to yum install mero halon s3server s3iamcli and configure.
+VM is now ready to install mero halon s3server s3iamcli and configure.
+
+```sh
+yum install -y halon mero s3server s3iamcli s3cmd
+```
 
 Once s3server rpm is installed, run following script to update ldap password
 in authserver config. [ -l <ldap passwd> -p <authserver.properties file path> ]
