@@ -137,6 +137,7 @@ Haproxy listens on port 80(http)/443(https) and forwards traffic to running S3 i
 ```sh
 yum install haproxy
 cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
+cp <s3-src>/scripts/haproxy/503.http /etc/haproxy/503.http
 ```
 ## Install SSL certificates for S3 service (haroxy)
 See Build SSL section above.

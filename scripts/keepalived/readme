@@ -9,7 +9,7 @@ Setup:
 
 - yum install haproxy keepalived
 
-- Add the haproxy configs using scripts/haproxy/haproxy.conf.
+- Add the haproxy configs using scripts/haproxy/haproxy.cfg.
   See <s3 src>/README.md
 
 - On node 1 (haproxy1) copy the keepalived.conf.master to /etc/keepalived/keepalived.conf

@@ -63,6 +63,11 @@
     src: ./files/haproxy/haproxy.cfg
     dest: /etc/haproxy/haproxy.cfg
 
+- name: Setup haproxy 503 error code to http file
+  copy:
+    src: ./files/haproxy/503.http
+    dest: /etc/haproxy/errors/
+
 - name: Setup haproxy config to enable logs
   copy:
     src: ./files/haproxy/rsyslog.d/haproxy.conf
