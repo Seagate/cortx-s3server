@@ -56,8 +56,10 @@ rpm -q stx-s3-client-certs
 systemctl status haproxy
 
 cd $S3_BUILD_DIR
-
-$USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
+$USE_SUDO systemctl is-active s3authserver 2>&1 > /dev/null
+if [[ $? -eq 0 ]]; then
+  $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
+fi
 
 # Check if mero build is cached and is latest, else rebuild mero as well
 THIRD_PARTY=$S3_BUILD_DIR/third_party
