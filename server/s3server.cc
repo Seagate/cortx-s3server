@@ -84,10 +84,11 @@ extern "C" int s3_log_header(evhtp_header_t *header, void *arg) {
 
 static evhtp_res on_client_connection_fini(evhtp_connection_t *connection,
                                            void *arg) {
-  s3_log(S3_LOG_INFO, "",
-         "S3 client connection freed, connection(%p), request(%p)\n",
-         connection, connection->request);
+  s3_log(S3_LOG_DEBUG, "", "Finalize s3 client connection(%p)\n", connection);
+  // Around this event libevhtp will free connection->request, so we
+  // protect S3 code from accessing freed connection->request
   if (connection) {
+    s3_log(S3_LOG_DEBUG, "", "connection->request(%p)", connection->request);
     if (connection->request) {
       S3RequestObject *request = (S3RequestObject *)connection->request->cbarg;
       if (request) {
@@ -99,6 +100,7 @@ static evhtp_res on_client_connection_fini(evhtp_connection_t *connection,
   }
   return EVHTP_RES_OK;
 }
+
 extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
                                       evhtp_headers_t *hdrs, void *arg) {
   s3_log(S3_LOG_INFO, "", "Received Request with uri [%s].\n",

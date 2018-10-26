@@ -42,6 +42,7 @@ S3RequestObject::S3RequestObject(
     evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
     std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory)
     : ev_req(req),
+      http_method(S3HttpVerb::UNKNOWN),
       is_paused(false),
       notify_read_watermark(0),
       total_bytes_received(0),
@@ -75,23 +76,28 @@ S3RequestObject::S3RequestObject(
 
   request_error = S3RequestError::None;
   evhtp_obj.reset(evhtp_obj_ptr);
-  if (ev_req != NULL && ev_req->uri != NULL) {
-    if (ev_req->uri->path != NULL) {
-      char* decoded_str = evhttp_decode_uri(ev_req->uri->path->full);
-      full_path_decoded_uri = decoded_str;
-      free(decoded_str);
+  if (ev_req != NULL) {
+    http_method = (S3HttpVerb)ev_req->method;
+    if (ev_req->uri != NULL) {
+      if (ev_req->uri->path != NULL) {
+        char* decoded_str = evhttp_decode_uri(ev_req->uri->path->full);
+        full_path_decoded_uri = decoded_str;
+        free(decoded_str);
+        if (ev_req->uri->path->file != NULL) {
+          char* decoded_str = evhttp_decode_uri(ev_req->uri->path->file);
+          file_path_decoded_uri = decoded_str;
+          free(decoded_str);
+        }
+      }
+      if (ev_req->uri->query_raw != NULL) {
+        char* decoded_str =
+            evhttp_decode_uri((const char*)ev_req->uri->query_raw);
+        query_raw_decoded_uri = decoded_str;
+        free(decoded_str);
+      }
     }
-    if (ev_req->uri->path->file != NULL) {
-      char* decoded_str = evhttp_decode_uri(ev_req->uri->path->file);
-      file_path_decoded_uri = decoded_str;
-      free(decoded_str);
-    }
-    if (ev_req->uri->query_raw != NULL) {
-      char* decoded_str =
-          evhttp_decode_uri((const char*)ev_req->uri->query_raw);
-      query_raw_decoded_uri = decoded_str;
-      free(decoded_str);
-    }
+  } else {
+    s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
   }
 }
 
@@ -124,7 +130,7 @@ S3RequestObject::~S3RequestObject() {
   }
 }
 
-S3HttpVerb S3RequestObject::http_verb() { return (S3HttpVerb)ev_req->method; }
+S3HttpVerb S3RequestObject::http_verb() { return http_method; }
 
 const char* S3RequestObject::get_http_verb_str(S3HttpVerb method) {
   return htparser_get_methodstr_m((htp_method)method);
@@ -139,7 +145,15 @@ const char* S3RequestObject::c_get_full_path() {
 }
 
 const char* S3RequestObject::c_get_full_encoded_path() {
-  return ev_req->uri->path->full;
+  if (client_connected()) {
+    if ((ev_req != NULL) && (ev_req->uri != NULL) &&
+        (ev_req->uri->path != NULL)) {
+      return ev_req->uri->path->full;
+    }
+  } else {
+    s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+  }
+  return NULL;
 }
 
 void S3RequestObject::set_file_name(const char* file_name) {
@@ -160,14 +174,22 @@ const char* S3RequestObject::c_get_uri_query() {
 
 std::map<std::string, std::string>& S3RequestObject::get_in_headers_copy() {
   if (!in_headers_copied) {
-    evhtp_obj->http_kvs_for_each(ev_req->headers_in, consume_header, this);
-    in_headers_copied = true;
+    if (client_connected() && (ev_req != NULL)) {
+      evhtp_obj->http_kvs_for_each(ev_req->headers_in, consume_header, this);
+      in_headers_copied = true;
+    } else {
+      s3_log(S3_LOG_WARN, request_id,
+             "s3 client disconnected state or ev_req(NULL).\n");
+    }
   }
   return in_headers_copy;
 }
 
 std::string S3RequestObject::get_header_value(std::string key) {
-  if (ev_req == NULL) {
+  if (ev_req == NULL || !client_connected()) {
+    // just being defensive here
+    s3_log(S3_LOG_WARN, request_id,
+           "s3 client disconnected state or ev_req(NULL).\n");
     return "";
   }
   const char* ret =
@@ -225,6 +247,11 @@ std::string S3RequestObject::get_host_name() {
 }
 
 void S3RequestObject::set_out_header_value(std::string key, std::string value) {
+  if (!client_connected() || ev_req == NULL) {
+    s3_log(S3_LOG_WARN, request_id,
+           "s3 client disconnected state or ev_req(NULL).\n");
+    return;
+  }
   if (out_headers_copy.find(key) == out_headers_copy.end()) {
     evhtp_obj->http_headers_add_header(
         ev_req->headers_out,
@@ -321,19 +348,29 @@ std::string& S3RequestObject::get_full_body_content_as_string() {
 }
 
 std::string S3RequestObject::get_query_string_value(std::string key) {
-  const char* value = evhtp_obj->http_kv_find(ev_req->uri->query, key.c_str());
   std::string val_str = "";
-  if (value) {
-    char* decoded_value;
-    decoded_value = evhttp_decode_uri(value);
-    val_str = decoded_value;
-    free(decoded_value);
+  if (client_connected() && (ev_req != NULL) && (ev_req->uri != NULL)) {
+    const char* value =
+        evhtp_obj->http_kv_find(ev_req->uri->query, key.c_str());
+    if (value) {
+      char* decoded_value;
+      decoded_value = evhttp_decode_uri(value);
+      val_str = decoded_value;
+      free(decoded_value);
+    }
+  } else {
+    s3_log(S3_LOG_WARN, request_id,
+           "s3 client disconnected state or ev_req(%p).\n", ev_req);
   }
   return val_str;
 }
 
 bool S3RequestObject::has_query_param_key(std::string key) {
-  return evhtp_obj->http_kvs_find_kv(ev_req->uri->query, key.c_str()) != NULL;
+  if (client_connected() && (ev_req != NULL) && (ev_req->uri != NULL)) {
+    return evhtp_obj->http_kvs_find_kv(ev_req->uri->query, key.c_str()) != NULL;
+  }
+  s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+  return false;
 }
 
 // Operation params.
@@ -374,9 +411,14 @@ void S3RequestObject::set_account_name(const std::string& name) {
 const std::string& S3RequestObject::get_account_name() { return account_name; }
 
 void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering with buf(%p)\n", buf);
   s3_log(S3_LOG_DEBUG, request_id, "pending_in_flight (before): %zu\n",
          pending_in_flight);
+  if (buf == NULL) {
+    // Very unlikely
+    s3_log(S3_LOG_WARN, request_id, "Exiting due to buf(NULL)\n");
+    return;
+  }
   // Keep buffering till someone starts listening.
   size_t data_bytes_received = 0;
   S3Timer buffering_timer;
@@ -445,6 +487,15 @@ void S3RequestObject::send_response(int code, std::string body) {
   s3_log(S3_LOG_INFO, request_id, "Response code: [%d]\n", code);
   s3_log(S3_LOG_INFO, request_id, "Sending response as: [%s]\n", body.c_str());
 
+  if (code == S3HttpFailed500) {
+    s3_stats_inc("internal_error_count");
+  }
+
+  if (!client_connected()) {
+    s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+    return;
+  }
+
   // If body not empty, write to response body.
   if (!body.empty()) {
     evbuffer_add_printf(ev_req->buffer_out, body.c_str());
@@ -457,9 +508,6 @@ void S3RequestObject::send_response(int code, std::string body) {
   }
   set_out_header_value("x-amzn-RequestId", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
-  if (code == S3HttpFailed500) {
-    s3_stats_inc("internal_error_count");
-  }
   resume();  // attempt resume just in case some one forgot
 }
 
@@ -510,6 +558,8 @@ void S3RequestObject::respond_error(
            response_xml.c_str());
 
     send_response(error.get_http_status_code(), response_xml);
+  } else {
+    s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
   }
 }
 

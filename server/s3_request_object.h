@@ -46,7 +46,8 @@ enum class S3HttpVerb {
   GET = htp_method_GET,
   PUT = htp_method_PUT,
   DELETE = htp_method_DELETE,
-  POST = htp_method_POST
+  POST = htp_method_POST,
+  UNKNOWN = htp_method_UNKNOWN
 };
 
 enum class S3RequestError {
@@ -62,6 +63,7 @@ class S3AsyncBufferOptContainerFactory;
 
 class S3RequestObject {
   evhtp_request_t* ev_req;
+  S3HttpVerb http_method;
   std::string bucket_name;
   std::string object_name;
   // This info is fetched from auth service.
@@ -152,7 +154,7 @@ class S3RequestObject {
   virtual std::string get_query_string_value(std::string key);
   virtual bool has_query_param_key(std::string key);
 
-  // xxx Remove this soon
+  // xxx Remove this soon - used by Unit tests
   struct evbuffer* buffer_in() {
     return ev_req->buffer_in;
   }
@@ -202,6 +204,10 @@ class S3RequestObject {
   // We specifically use this when auth is in-progress so that
   // we dont flood with data coming from socket in user buffers.
   virtual void pause() {
+    if (!client_connected()) {
+      s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+      return;
+    }
     if (!is_paused) {
       s3_log(S3_LOG_DEBUG, "", "Pausing the request for sock %d...\n",
              ev_req->conn->sock);
@@ -211,6 +217,10 @@ class S3RequestObject {
   }
 
   virtual void resume() {
+    if (!client_connected()) {
+      s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+      return;
+    }
     if (is_paused) {
       s3_log(S3_LOG_DEBUG, "", "Resuming the request for sock %d...\n",
              ev_req->conn->sock);
@@ -219,7 +229,10 @@ class S3RequestObject {
     }
   }
 
-  void client_has_disconnected() { is_client_connected = false; }
+  void client_has_disconnected() {
+    is_client_connected = false;
+    ev_req = NULL;
+  }
 
   bool client_connected() { return is_client_connected; }
 
