@@ -428,6 +428,7 @@ TEST_F(S3ClovisWriterTest, OpenObjectsTest) {
 }
 
 TEST_F(S3ClovisWriterTest, OpenObjectsEntityOpenFailedTest) {
+  S3CallBack s3cloviswriter_callbackobj;
   int rc;
   clovis_writer_ptr = std::make_shared<S3ClovisWriter>(request_mock, obj_oid, 0,
                                                        s3_clovis_api_mock);
@@ -439,6 +440,8 @@ TEST_F(S3ClovisWriterTest, OpenObjectsEntityOpenFailedTest) {
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_setup(_, _, _)).Times(0);
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_launch(_, _, _)).Times(0);
 
+  clovis_writer_ptr->handler_on_failed =
+      std::bind(&S3CallBack::on_failed, &s3cloviswriter_callbackobj);
   rc = clovis_writer_ptr->open_objects();
   EXPECT_EQ(-E2BIG, rc);
   EXPECT_EQ(S3ClovisWriterOpState::failed_to_launch, clovis_writer_ptr->state);

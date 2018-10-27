@@ -48,6 +48,7 @@ S3RequestObject::S3RequestObject(
       total_bytes_received(0),
       is_client_connected(true),
       is_chunked_upload(false),
+      s3_api_type(S3ApiType::unsupported),
       in_headers_copied(false),
       reply_buffer(NULL) {
   S3Uuid uuid;

@@ -241,6 +241,14 @@ void fini_auth_ssl() {
   if (g_ssl_auth_ctx) {
     SSL_CTX_free(g_ssl_auth_ctx);
   }
+
+  // see Cleanup section in
+  // https://wiki.openssl.org/index.php/Library_Initialization
+  ERR_remove_state(0);
+  ERR_free_strings();
+  EVP_cleanup();
+  CRYPTO_cleanup_all_ex_data();
+  SSL_COMP_free_compression_methods();
 }
 
 // This index will be holding the ids for the Account, User index

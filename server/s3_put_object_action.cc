@@ -41,6 +41,7 @@ S3PutObjectAction::S3PutObjectAction(
          request->get_object_name().c_str());
 
   old_object_oid = {0ULL, 0ULL};
+  new_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   if (clovis_api) {
     s3_clovis_api = clovis_api;

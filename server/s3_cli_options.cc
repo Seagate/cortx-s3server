@@ -182,7 +182,6 @@ int parse_and_load_config_options(int argc, char **argv) {
     option_instance->set_cmdline_option(S3_OPTION_CLOVIS_PROCESS_FID,
                                         flag_info.current_value.c_str());
   }
-
   return 0;
 }
 

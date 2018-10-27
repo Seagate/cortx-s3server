@@ -72,7 +72,6 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   std::shared_ptr<S3APIHandler> handler;
 
-  std::string bucket_name, object_name;
   std::string host_name = request->get_host_name();
 
   s3_log(S3_LOG_DEBUG, request_id, "host_name = %s\n", host_name.c_str());

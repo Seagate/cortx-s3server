@@ -45,7 +45,7 @@ class S3URI {
   void setup_operation_code();
 
  public:
-  S3URI(std::shared_ptr<S3RequestObject> req);
+  explicit S3URI(std::shared_ptr<S3RequestObject> req);
   virtual ~S3URI() {}
 
   virtual S3ApiType get_s3_api_type();
@@ -58,7 +58,7 @@ class S3URI {
 
 class S3PathStyleURI : public S3URI {
  public:
-  S3PathStyleURI(std::shared_ptr<S3RequestObject> req);
+  explicit S3PathStyleURI(std::shared_ptr<S3RequestObject> req);
 };
 
 class S3VirtualHostStyleURI : public S3URI {
@@ -68,7 +68,7 @@ class S3VirtualHostStyleURI : public S3URI {
   void setup_bucket_name();
 
  public:
-  S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req);
+  explicit S3VirtualHostStyleURI(std::shared_ptr<S3RequestObject> req);
 };
 
 class S3UriFactory {

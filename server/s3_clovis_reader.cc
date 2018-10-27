@@ -133,6 +133,7 @@ int S3ClovisReader::open_object() {
     s3_log(S3_LOG_WARN, request_id,
            "Clovis API: clovis_entity_open failed with error code %d\n", rc);
     state = S3ClovisReaderOpState::failed_to_launch;
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return rc;
   }
 
@@ -169,16 +170,18 @@ void S3ClovisReader::open_object_successful() {
 }
 
 void S3ClovisReader::open_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with errno = %d\n",
-         open_context->get_errno_for(0));
-
-  is_object_opened = false;
-  if (open_context->get_errno_for(0) == -ENOENT) {
-    state = S3ClovisReaderOpState::missing;
-    s3_log(S3_LOG_DEBUG, request_id, "Object doesn't exists\n");
-  } else {
-    state = S3ClovisReaderOpState::failed;
-    s3_log(S3_LOG_ERROR, request_id, "Object initialization failed\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (state != S3ClovisReaderOpState::failed_to_launch) {
+    s3_log(S3_LOG_DEBUG, request_id, "errno = %d\n",
+           open_context->get_errno_for(0));
+    is_object_opened = false;
+    if (open_context->get_errno_for(0) == -ENOENT) {
+      state = S3ClovisReaderOpState::missing;
+      s3_log(S3_LOG_DEBUG, request_id, "Object doesn't exists\n");
+    } else {
+      state = S3ClovisReaderOpState::failed;
+      s3_log(S3_LOG_ERROR, request_id, "Object initialization failed\n");
+    }
   }
   this->handler_on_failed();
 
@@ -252,9 +255,9 @@ void S3ClovisReader::read_object_successful() {
 }
 
 void S3ClovisReader::read_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with errno = %d\n",
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "errno = %d\n",
          reader_context->get_errno_for(0));
-
   if (reader_context->get_errno_for(0) == -ENOENT) {
     s3_log(S3_LOG_DEBUG, request_id, "Object doesn't exist\n");
     state = S3ClovisReaderOpState::missing;

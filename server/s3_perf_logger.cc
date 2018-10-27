@@ -35,7 +35,7 @@ void S3PerfLogger::initialize(std::string log_file) {
 }
 
 S3PerfLogger* S3PerfLogger::get_instance() {
-  if (!instance) {
+  if (!instance && S3Option::get_instance()->s3_performance_enabled()) {
     S3PerfLogger::initialize();
   }
   return instance;

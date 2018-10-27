@@ -119,7 +119,7 @@ void S3ClovisKVSWriter::create_index_with_oid(
     state = S3ClovisKVSWriterOpState::failed_to_launch;
     s3_log(S3_LOG_ERROR, request_id,
            "clovis_entity_create failed with return code: (%d)\n", rc);
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   }
 
@@ -140,12 +140,14 @@ void S3ClovisKVSWriter::create_index_successful() {
 
 void S3ClovisKVSWriter::create_index_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (writer_context->get_errno_for(0) == -EEXIST) {
-    state = S3ClovisKVSWriterOpState::exists;
-    s3_log(S3_LOG_DEBUG, request_id, "Index already exists\n");
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Index creation failed\n");
-    state = S3ClovisKVSWriterOpState::failed;
+  if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
+    if (writer_context->get_errno_for(0) == -EEXIST) {
+      state = S3ClovisKVSWriterOpState::exists;
+      s3_log(S3_LOG_DEBUG, request_id, "Index already exists\n");
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Index creation failed\n");
+      state = S3ClovisKVSWriterOpState::failed;
+    }
   }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -178,7 +180,7 @@ void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_op_init\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   }
   for (int i = 0; i < index_count; i++) {
@@ -187,7 +189,7 @@ void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_entity_add failed\n");
       state = S3ClovisKVSWriterOpState::failed_to_launch;
-      this->handler_on_failed();
+      s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
       return;
     }
   }
@@ -213,12 +215,14 @@ void S3ClovisKVSWriter::sync_index_successful() {
 
 void S3ClovisKVSWriter::sync_index_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (sync_context->get_errno_for(0) == -ENOENT) {
-    state = S3ClovisKVSWriterOpState::missing;
-    s3_log(S3_LOG_DEBUG, request_id, "Index syncing failed as its missing\n");
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Index syncing failed\n");
-    state = S3ClovisKVSWriterOpState::failed;
+  if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
+    if (sync_context->get_errno_for(0) == -ENOENT) {
+      state = S3ClovisKVSWriterOpState::missing;
+      s3_log(S3_LOG_DEBUG, request_id, "Index syncing failed as its missing\n");
+    } else {
+      s3_log(S3_LOG_DEBUG, request_id, "Index syncing failed\n");
+      state = S3ClovisKVSWriterOpState::failed;
+    }
   }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -267,7 +271,7 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
     s3_log(S3_LOG_ERROR, request_id,
            "clovis_entity_open failed with return code: (%d)\n", rc);
     state = S3ClovisKVSWriterOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   }
 
@@ -277,7 +281,7 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
     s3_log(S3_LOG_ERROR, request_id,
            "clovis_entity_delete failed with return code: (%d)\n", rc);
     state = S3ClovisKVSWriterOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   }
 
@@ -298,12 +302,14 @@ void S3ClovisKVSWriter::delete_index_successful() {
 
 void S3ClovisKVSWriter::delete_index_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (writer_context->get_errno_for(0) == -ENOENT) {
-    s3_log(S3_LOG_DEBUG, request_id, "Index doesn't exists\n");
-    state = S3ClovisKVSWriterOpState::missing;
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Deletion of Index failed\n");
-    state = S3ClovisKVSWriterOpState::failed;
+  if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
+    if (writer_context->get_errno_for(0) == -ENOENT) {
+      s3_log(S3_LOG_DEBUG, request_id, "Index doesn't exists\n");
+      state = S3ClovisKVSWriterOpState::missing;
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "Deletion of Index failed\n");
+      state = S3ClovisKVSWriterOpState::failed;
+    }
   }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -356,7 +362,7 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
       s3_log(S3_LOG_ERROR, request_id,
              "clovis_entity_open failed with return code: (%d)\n", rc);
       state = S3ClovisKVSWriterOpState::failed_to_launch;
-      this->handler_on_failed();
+      s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
       return;
     }
     rc = s3_clovis_api->clovis_entity_delete(&(idx_ctx->idx[i].in_entity),
@@ -365,7 +371,7 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
       s3_log(S3_LOG_ERROR, request_id,
              "clovis_entity_delete failed with return code: (%d)\n", rc);
       state = S3ClovisKVSWriterOpState::failed_to_launch;
-      this->handler_on_failed();
+      s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
       return;
     }
 
@@ -390,7 +396,9 @@ void S3ClovisKVSWriter::delete_indexes_successful() {
 void S3ClovisKVSWriter::delete_indexes_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Deletion of Index failed\n");
-  state = S3ClovisKVSWriterOpState::failed;
+  if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3ClovisKVSWriterOpState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -449,7 +457,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
@@ -477,7 +485,9 @@ void S3ClovisKVSWriter::put_keyval_successful() {
 void S3ClovisKVSWriter::put_keyval_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Writing of key value failed\n");
-  state = S3ClovisKVSWriterOpState::failed;
+  if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3ClovisKVSWriterOpState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -511,7 +521,7 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_op_init failed\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   }
 
@@ -520,7 +530,7 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_sync_entity_add failed\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   }
 
@@ -551,7 +561,9 @@ void S3ClovisKVSWriter::sync_keyval_successful() {
 
 void S3ClovisKVSWriter::sync_keyval_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  state = S3ClovisKVSWriterOpState::failed;
+  if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3ClovisKVSWriterOpState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -631,7 +643,7 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
@@ -657,7 +669,9 @@ void S3ClovisKVSWriter::delete_keyval_successful() {
 
 void S3ClovisKVSWriter::delete_keyval_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  state = S3ClovisKVSWriterOpState::failed;
+  if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
+    state = S3ClovisKVSWriterOpState::failed;
+  }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

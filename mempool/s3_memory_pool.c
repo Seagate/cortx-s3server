@@ -392,7 +392,7 @@ int mempool_downsize(MemoryPoolHandle handle, size_t mem_to_free) {
 }
 
 int mempool_destroy(MemoryPoolHandle *handle) {
-  struct mempool *pool;
+  struct mempool *pool = NULL;
   struct memory_pool_element *pool_item;
 
   if (handle == NULL) {
@@ -408,6 +408,12 @@ int mempool_destroy(MemoryPoolHandle *handle) {
     pthread_mutex_lock(&pool->lock);
   }
 
+  if (*handle == NULL) {
+    return S3_MEMPOOL_INVALID_ARG;
+  }
+
+  /* reset the handle */
+  *handle = NULL;
   /* Free the items in free list */
   pool_item = pool->free_list;
   while (pool_item != NULL) {
@@ -431,14 +437,10 @@ int mempool_destroy(MemoryPoolHandle *handle) {
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_unlock(&pool->lock);
-  }
-
-  free(pool);
-  /* reset the handle */
-  *handle = NULL;
-  if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_destroy(&pool->lock);
   }
 
+  free(pool);
+  pool = NULL;
   return 0;
 }

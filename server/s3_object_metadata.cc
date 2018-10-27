@@ -496,16 +496,8 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, request_id,
          "Deleting Object metadata for Object [%s].\n", object_name.c_str());
 
-  std::string index_name;
-
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
-
-  if (is_multipart) {
-    index_name = get_multipart_index_name();
-  } else {
-    index_name = get_bucket_index_name();
-  }
 
   clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
       request, s3_clovis_api);

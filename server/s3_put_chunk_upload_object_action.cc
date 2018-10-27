@@ -69,6 +69,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
 
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
+  new_object_oid = {0ULL, 0ULL};
   S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
                  &new_object_oid);
   tried_count = 0;

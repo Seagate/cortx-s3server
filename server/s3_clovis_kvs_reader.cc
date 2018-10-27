@@ -136,7 +136,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
     state = S3ClovisKVSReaderOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
@@ -199,12 +199,14 @@ void S3ClovisKVSReader::get_keyval_successful() {
 
 void S3ClovisKVSReader::get_keyval_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (reader_context->get_errno_for(0) == -ENOENT) {
-    s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist\n");
-    state = S3ClovisKVSReaderOpState::missing;
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Getting the value for a key failed\n");
-    state = S3ClovisKVSReaderOpState::failed;
+  if (state != S3ClovisKVSReaderOpState::failed_to_launch) {
+    if (reader_context->get_errno_for(0) == -ENOENT) {
+      s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist\n");
+      state = S3ClovisKVSReaderOpState::missing;
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "Getting the value for a key failed\n");
+      state = S3ClovisKVSReaderOpState::failed;
+    }
   }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -272,7 +274,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
     state = S3ClovisKVSReaderOpState::failed_to_launch;
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
@@ -334,14 +336,15 @@ void S3ClovisKVSReader::next_keyval_successful() {
 
 void S3ClovisKVSReader::next_keyval_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  if (reader_context->get_errno_for(0) == -ENOENT) {
-    s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist in metadata\n");
-    state = S3ClovisKVSReaderOpState::missing;
-  } else {
-    s3_log(S3_LOG_ERROR, request_id,
-           "fetching of next set of key values failed\n");
-    state = S3ClovisKVSReaderOpState::failed;
+  if (state != S3ClovisKVSReaderOpState::failed_to_launch) {
+    if (reader_context->get_errno_for(0) == -ENOENT) {
+      s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist in metadata\n");
+      state = S3ClovisKVSReaderOpState::missing;
+    } else {
+      s3_log(S3_LOG_ERROR, request_id,
+             "fetching of next set of key values failed\n");
+      state = S3ClovisKVSReaderOpState::failed;
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   this->handler_on_failed();

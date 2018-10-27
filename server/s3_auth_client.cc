@@ -222,6 +222,7 @@ extern "C" void timeout_cb_auth_retry(evutil_socket_t fd, short event,
 S3AuthClient::S3AuthClient(std::shared_ptr<S3RequestObject> req)
     : request(req),
       state(S3AuthClientOpState::init),
+      req_body_buffer(NULL),
       is_chunked_auth(false),
       last_chunk_added(false),
       chunk_auth_aborted(false) {

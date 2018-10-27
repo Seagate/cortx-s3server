@@ -143,6 +143,7 @@ int S3ClovisWriter::open_objects() {
       s3_log(S3_LOG_WARN, request_id,
              "Clovis API: clovis_entity_open failed with error code %d\n", rc);
       state = S3ClovisWriterOpState::failed_to_launch;
+      s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
       return rc;
     }
 
@@ -183,17 +184,19 @@ void S3ClovisWriter::open_objects_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   is_object_opened = false;
-  size_t missing_count = 0;
-  for (missing_count = 0; missing_count < oid_list.size(); missing_count++) {
-    if (open_context->get_errno_for(missing_count) != -ENOENT) break;
-  }
+  if (state != S3ClovisWriterOpState::failed_to_launch) {
+    size_t missing_count = 0;
+    for (missing_count = 0; missing_count < oid_list.size(); missing_count++) {
+      if (open_context->get_errno_for(missing_count) != -ENOENT) break;
+    }
 
-  if (missing_count == oid_list.size()) {
-    s3_log(S3_LOG_ERROR, request_id, "ENOENT: All Objects missing\n");
-    state = S3ClovisWriterOpState::missing;
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Objects opening failed\n");
-    state = S3ClovisWriterOpState::failed;
+    if (missing_count == oid_list.size()) {
+      s3_log(S3_LOG_ERROR, request_id, "ENOENT: All Objects missing\n");
+      state = S3ClovisWriterOpState::missing;
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "Objects opening failed\n");
+      state = S3ClovisWriterOpState::failed;
+    }
   }
   this->handler_on_failed();
 
@@ -246,7 +249,7 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
     state = S3ClovisWriterOpState::failed_to_launch;
     s3_log(S3_LOG_ERROR, request_id,
            "clovis_entity_create failed with return code: (%d)\n", rc);
-    this->handler_on_failed();
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
     return;
   }
   ctx->ops[0]->op_datum = (void *)op_ctx;
@@ -279,12 +282,14 @@ void S3ClovisWriter::create_object_failed() {
          create_context->get_errno_for(0));
 
   is_object_opened = false;
-  if (create_context->get_errno_for(0) == -EEXIST) {
-    state = S3ClovisWriterOpState::exists;
-    s3_log(S3_LOG_DEBUG, request_id, "Object already exists\n");
-  } else {
-    state = S3ClovisWriterOpState::failed;
-    s3_log(S3_LOG_ERROR, request_id, "Object creation failed\n");
+  if (state != S3ClovisWriterOpState::failed_to_launch) {
+    if (create_context->get_errno_for(0) == -EEXIST) {
+      state = S3ClovisWriterOpState::exists;
+      s3_log(S3_LOG_DEBUG, request_id, "Object already exists\n");
+    } else {
+      state = S3ClovisWriterOpState::failed;
+      s3_log(S3_LOG_ERROR, request_id, "Object creation failed\n");
+    }
   }
   this->handler_on_failed();
 
@@ -309,11 +314,7 @@ void S3ClovisWriter::write_content(
   if (is_object_opened) {
     write_content();
   } else {
-    int rc;
-    rc = open_objects();
-    if (rc != 0) {
-      this->handler_on_failed();
-    }
+    open_objects();
   }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -462,11 +463,7 @@ void S3ClovisWriter::delete_object(std::function<void(void)> on_success,
   if (is_object_opened) {
     delete_objects();
   } else {
-    int rc;
-    rc = open_objects();
-    if (rc != 0) {
-      this->handler_on_failed();
-    }
+    open_objects();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -503,7 +500,7 @@ void S3ClovisWriter::delete_objects() {
       s3_log(S3_LOG_ERROR, request_id,
              "clovis_entity_delete failed with return code: (%d)\n", rc);
       state = S3ClovisWriterOpState::failed_to_launch;
-      this->handler_on_failed();
+      s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
       return;
     }
 
@@ -531,18 +528,19 @@ void S3ClovisWriter::delete_objects_successful() {
 
 void S3ClovisWriter::delete_objects_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (state != S3ClovisWriterOpState::failed_to_launch) {
+    size_t missing_count = 0;
+    for (missing_count = 0; missing_count < oid_list.size(); missing_count++) {
+      if (delete_context->get_errno_for(missing_count) != -ENOENT) break;
+    }
 
-  size_t missing_count = 0;
-  for (missing_count = 0; missing_count < oid_list.size(); missing_count++) {
-    if (delete_context->get_errno_for(missing_count) != -ENOENT) break;
-  }
-
-  if (missing_count == oid_list.size()) {
-    s3_log(S3_LOG_ERROR, request_id, "ENOENT: All Objects missing\n");
-    state = S3ClovisWriterOpState::missing;
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Objects deletion failed\n");
-    state = S3ClovisWriterOpState::failed;
+    if (missing_count == oid_list.size()) {
+      s3_log(S3_LOG_ERROR, request_id, "ENOENT: All Objects missing\n");
+      state = S3ClovisWriterOpState::missing;
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "Objects deletion failed\n");
+      state = S3ClovisWriterOpState::failed;
+    }
   }
   this->handler_on_failed();
 
@@ -553,7 +551,6 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
                                     std::vector<int> layoutids,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  int rc;
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
@@ -566,10 +563,7 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
   state = S3ClovisWriterOpState::deleting;
 
   // Force open all objects
-  rc = open_objects();
-  if (rc != 0) {
-    this->handler_on_failed();
-  }
+  open_objects();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

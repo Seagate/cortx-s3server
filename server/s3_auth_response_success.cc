@@ -72,7 +72,11 @@ bool S3AuthResponseSuccess::parse_and_validate() {
   xmlNodePtr root_node = xmlDocGetRootElement(document);
   if (root_node == NULL) {
     s3_log(S3_LOG_ERROR, "", "Auth response xml body is invalid.\n");
+    // proper clenup reference:
+    // https://stackoverflow.com/questions/41032013/valgrind-memory-leak-in-xmlstrndup
     xmlFreeDoc(document);
+    xmlCleanupCharEncodingHandlers();
+    xmlCleanupParser();
     is_valid = false;
     return is_valid;
   }
@@ -85,28 +89,28 @@ bool S3AuthResponseSuccess::parse_and_validate() {
       for (xmlNode *child_node = child->children; child_node != NULL;
            child_node = child_node->next) {
         key = xmlNodeGetContent(child_node);
-        if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
-          s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
-          user_id = (const char *)key;
-        } else if ((!xmlStrcmp(child_node->name,
-                               (const xmlChar *)"UserName"))) {
-          s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
-          user_name = (const char *)key;
-        } else if ((!xmlStrcmp(child_node->name,
-                               (const xmlChar *)"AccountName"))) {
-          s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
-          account_name = (const char *)key;
-        } else if ((!xmlStrcmp(child_node->name,
-                               (const xmlChar *)"AccountId"))) {
-          s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
-          account_id = (const char *)key;
-        } else if ((!xmlStrcmp(child_node->name,
-                               (const xmlChar *)"SignatureSHA256"))) {
-          s3_log(S3_LOG_DEBUG, "", "SignatureSHA256 =%s\n", (const char *)key);
-          signature_SHA256 = (const char *)key;
-        }
-
         if (key != NULL) {
+          if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
+            s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
+            user_id = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"UserName"))) {
+            s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
+            user_name = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"AccountName"))) {
+            s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
+            account_name = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"AccountId"))) {
+            s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
+            account_id = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"SignatureSHA256"))) {
+            s3_log(S3_LOG_DEBUG, "", "SignatureSHA256 =%s\n",
+                   (const char *)key);
+            signature_SHA256 = (const char *)key;
+          }
           xmlFree(key);
           key = NULL;
         }
@@ -115,11 +119,11 @@ bool S3AuthResponseSuccess::parse_and_validate() {
       for (xmlNode *child_node = child->children; child_node != NULL;
            child_node = child_node->next) {
         key = xmlNodeGetContent(child_node);
-        if ((!xmlStrcmp(child_node->name, (const xmlChar *)"RequestId"))) {
-          s3_log(S3_LOG_DEBUG, "", "RequestId = %s\n", (const char *)key);
-          request_id = (const char *)key;
-        }
         if (key != NULL) {
+          if ((!xmlStrcmp(child_node->name, (const xmlChar *)"RequestId"))) {
+            s3_log(S3_LOG_DEBUG, "", "RequestId = %s\n", (const char *)key);
+            request_id = (const char *)key;
+          }
           xmlFree(key);
           key = NULL;
         }
@@ -129,24 +133,23 @@ bool S3AuthResponseSuccess::parse_and_validate() {
       for (xmlNode *child_node = child->children; child_node != NULL;
            child_node = child_node->next) {
         key = xmlNodeGetContent(child_node);
-        if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
-          s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
-          user_id = (const char *)key;
-        } else if ((!xmlStrcmp(child_node->name,
-                               (const xmlChar *)"UserName"))) {
-          s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
-          user_name = (const char *)key;
-        } else if ((!xmlStrcmp(child_node->name,
-                               (const xmlChar *)"AccountName"))) {
-          s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
-          account_name = (const char *)key;
-        } else if ((!xmlStrcmp(child_node->name,
-                               (const xmlChar *)"AccountId"))) {
-          s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
-          account_id = (const char *)key;
-        }
-
         if (key != NULL) {
+          if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
+            s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
+            user_id = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"UserName"))) {
+            s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
+            user_name = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"AccountName"))) {
+            s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
+            account_name = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"AccountId"))) {
+            s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
+            account_id = (const char *)key;
+          }
           xmlFree(key);
           key = NULL;
         }
@@ -155,6 +158,8 @@ bool S3AuthResponseSuccess::parse_and_validate() {
     child = child->next;
   }
   xmlFreeDoc(document);
+  xmlCleanupCharEncodingHandlers();
+  xmlCleanupParser();
   if (user_name.empty() || user_id.empty() || account_name.empty() ||
       account_id.empty()) {
     // We dont have enough user info from auth server.

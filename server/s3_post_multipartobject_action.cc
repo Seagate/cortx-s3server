@@ -47,7 +47,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-
+  oid = {0ULL, 0ULL};
   S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
                  &oid);
 

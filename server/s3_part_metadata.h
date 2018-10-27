@@ -75,7 +75,6 @@ class S3PartMetadata {
   std::map<std::string, std::string> user_defined_attribute;
 
   S3ObjectACL object_ACL;
-  bool is_multipart;
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
