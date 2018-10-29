@@ -34,6 +34,11 @@ class S3cmdTest(S3PyCliTest):
                            " --secret_key=" + secret_key
         return self
 
+    def with_cli(self, cmd):
+        if Config.no_ssl:
+            cmd = cmd + " --no-ssl"
+        super(S3PyCliTest, self).with_cli(cmd)
+
     def create_bucket(self, bucket_name, region=None, host=None):
         self.bucket_name = bucket_name
         if host:

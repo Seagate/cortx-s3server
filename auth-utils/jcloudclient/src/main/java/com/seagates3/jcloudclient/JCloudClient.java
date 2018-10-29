@@ -20,6 +20,8 @@ package com.seagates3.jcloudclient;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
+
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,6 +29,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -41,6 +44,9 @@ public class JCloudClient {
     private static final String PACKAGE_NAME = "com.seagates3.jcloudclient";
     private static Options s3Options;
     private static CommandLine cmd;
+    public static String CONFIG_DIR_NAME = new File(JCloudClient.class.getProtectionDomain().getCodeSource()
+            .getLocation().getPath()).getParentFile().getPath();
+    public static String CONFIG_FILE_NAME = Paths.get(CONFIG_DIR_NAME,"jcloud.properties").toString();
 
     public static void main(String[] args) throws FileNotFoundException,
             UnsupportedEncodingException {
@@ -53,6 +59,19 @@ public class JCloudClient {
         if (cmd.hasOption("h")) {
             showUsage();
         }
+
+        if (cmd.hasOption("c")) {
+            setDefaultConfig();
+        } else {
+
+        if ( ! new File(CONFIG_FILE_NAME).isFile()) {
+            System.err.println("Default configuration file " + CONFIG_FILE_NAME + " not found. "
+                    + "Use '-c' to specify configuration file location explicitly");
+            System.exit(1);
+        }
+    }
+
+
 
         String[] commandArguments = cmd.getArgs();
         if (commandArguments.length == 0) {
@@ -98,6 +117,22 @@ public class JCloudClient {
 
     }
 
+    private static void setDefaultConfig() {
+
+        CONFIG_FILE_NAME = cmd.getOptionValue("c");
+        try {
+            if (CONFIG_FILE_NAME == null) {
+                throw new Exception("Incorrect configuration file");
+            }
+            if ( ! new File(CONFIG_FILE_NAME).isFile()) {
+                throw new FileNotFoundException("Configuration file not found");
+            }
+        } catch (Exception ex) {
+           System.err.println(ex.getMessage());
+           System.exit(1);
+        }
+    }
+
     private static void init(String[] args) {
         s3Options = constructOptions();
         try {
@@ -118,6 +153,7 @@ public class JCloudClient {
         options.addOption("x", "access-key", true, "Access key id")
                 .addOption("y", "secret-key", true, "Secret key")
                 .addOption("t", "session-token", true, "Session token")
+                .addOption("c", "config_file", true, "Use specified config file")
                 .addOption("p", "path_style", false, "Use Path style APIs")
                 .addOption("m", "multi-part-chunk-size", true,
                         "Size of chunk in MB.")

@@ -20,11 +20,15 @@ package com.seagates3.javaclient;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -41,6 +45,10 @@ public class JavaClient {
     private static final String PACKAGE_NAME = "com.seagates3.javaclient";
     private static Options s3Options;
     private static CommandLine cmd;
+    public static String CONFIG_DIR_NAME = new File(JavaClient.class.getProtectionDomain().getCodeSource()
+                                                 .getLocation().getPath()).getParentFile().getPath();
+    public static String CONFIG_FILE_NAME = Paths.get(CONFIG_DIR_NAME,"jclient.properties").toString();
+
 
     public static void main(String[] args) throws Exception {
         JavaClient.run(args);
@@ -55,6 +63,18 @@ public class JavaClient {
         if (cmd.hasOption("L")) {
             setLogLevel();
         }
+
+        if (cmd.hasOption("c")) {
+            setDefaultConfig();
+        } else {
+
+            if ( ! new File(CONFIG_FILE_NAME).isFile()) {
+                System.err.println("Default configuration file " + CONFIG_FILE_NAME + " not found. "
+                        + "Use '-c' to specify configuration file location explicitly");
+                System.exit(1);
+            }
+        }
+
 
         String[] commandArguments = cmd.getArgs();
         if (commandArguments.length == 0) {
@@ -100,6 +120,22 @@ public class JavaClient {
 
     }
 
+    private static void setDefaultConfig() {
+
+        CONFIG_FILE_NAME = cmd.getOptionValue("c");
+        try {
+            if (CONFIG_FILE_NAME == null) {
+                throw new Exception("Incorrect configuration file");
+            }
+            if ( ! new File(CONFIG_FILE_NAME).isFile()) {
+                throw new FileNotFoundException("Configuration file not found");
+            }
+        } catch (Exception ex) {
+           System.err.println(ex.getMessage());
+           System.exit(1);
+        }
+    }
+
     private static void init(String[] args) {
         s3Options = constructOptions();
         try {
@@ -133,6 +169,7 @@ public class JavaClient {
                 .addOption("t", "session_token", true, "Session token")
                 .addOption("p", "path_style", false, "Use Path style APIs")
                 .addOption("l", "location", true, "Bucket location")
+                .addOption("c", "config_file", true, "Use specified config file")
                 .addOption("m", "multi_part_chunk_size", true,
                         "Size of chunk in MB")
                 .addOption("a", "aws", false, "Run operation on AWS S3 (only for debugging)")

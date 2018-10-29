@@ -5,5 +5,9 @@ class S3ClientConfig:
     ldapuser = ""
     ldappasswd = ""
     pathstyle = False
-    s3_uri = "http://s3.seagate.com"
-    iam_uri = "http://iam.seagate.com:9085"
+    ca_file = "/etc/ssl/stx-s3-clients/s3/ca.crt"
+    auth_ca_file = "/etc/ssl/stx-s3/s3auth/s3authserver.crt"
+    s3_uri_https = "https://s3.seagate.com"
+    iam_uri_https = "https://iam.seagate.com:9443"
+    s3_uri_http = "http://s3.seagate.com"
+    iam_uri_http = "http://iam.seagate.com:9085"

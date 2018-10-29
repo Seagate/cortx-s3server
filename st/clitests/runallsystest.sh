@@ -1,8 +1,41 @@
 #!/bin/sh
 
+SCRIPT_PATH=$(readlink -f "$0")
+BASEDIR=$(dirname "$SCRIPT_PATH")
+usage() {
+  echo 'Usage: runallsystest.sh { --no_https | --help | -h}'
+  echo 'Parameters as below :                                '
+  echo '          --no_https     : Use http for system tests'
+  echo '          --help (-h)    : Display help'
+}
+
+sed -i 's/no_ssl =.*$/no_ssl = False/g' $BASEDIR/framework.py
+
+
+if [ $# -gt 0 ]
+then
+  while true; do
+    case "$1" in
+      --no_https)
+         sed -i 's/no_ssl =.*$/no_ssl = True/g' $BASEDIR/framework.py
+         sed -i 's/use_https=.*$/use_https=false/g' $BASEDIR/jclient.properties
+         sed -i 's/use_https=.*$/use_https=false/g' $BASEDIR/jcloud.properties
+         break ;;
+
+      -h|--help) usage; exit 0 ;;
+
+      *) echo 'Incorrect command. See runallsystest.sh --help for details.' ; exit 1 ;;
+    esac
+  done
+else
+  echo 'Executing ST`s over HTTPS'
+fi
+
 set -e
 abort()
 {
+git checkout -- $BASEDIR/framework.py
+
     echo >&2 '
 ***************
 *** ABORTED ***
@@ -20,7 +53,7 @@ sh ./prechecksystest.sh
 PythonV="python3.4"
 
 echo "`date -u`: Running auth_spec.py..."
-$PythonV auth_spec.py --all
+$PythonV auth_spec.py
 
 echo "`date -u`: Running auth_spec_negative_and_fi.py..."
 $PythonV auth_spec_negative_and_fi.py
@@ -52,6 +85,8 @@ $PythonV shutdown_spec.py
 
 echo "`date -u`: Running authpassencryptcli_spec.py..."
 $PythonV authpassencryptcli_spec.py
+
+git checkout -- $BASEDIR/framework.py
 
 echo >&2 '
 **************************

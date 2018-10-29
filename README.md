@@ -224,6 +224,40 @@ Note the option `--no-mero-rpm` passed to the command. It informs the script
 to use mero libs from the source code location at the run time.
 In case of Release environment, simply skip passing the option to the script.
 
+## How to run systemtest over HTTP during jenkins (Default uses HTTPS in jenkins).
+```sh
+vim scripts/haproxy/haproxy.cfg
+```
+Uncomment following line
+
+server s3authserver 0.0.0.0:9085
+
+```sh
+vim s3config.yaml
+```
+Update following parameters value
+
+S3_ENABLE_AUTH_SSL: false
+S3_AUTH_PORT: 9085
+
+```sh
+vim auth/resources/authserver.properties
+```
+Update following parameters value
+
+enableSSLToLdap=false
+enable_https=false
+enableHttpsToS3=false
+
+Update jenkins script to use http
+
+```sh
+vim jenkins-build.sh
+```
+Specify `--no-https` to below script so that jenkins would excecute ST's over HTTP.
+
+./runalltest.sh --no-mero-rpm --no-https
+
 
 ## How to run tests for unsupported S3 APIs?
 For unsupported S3 APIs, we return 501(NotImplemented) error code.

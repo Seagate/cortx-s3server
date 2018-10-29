@@ -5,6 +5,7 @@ read -p "Enter S3 endpoint (default is s3.seagate.com): " s3_default_endpoint
 read -p "Enter S3 region endpoint (default is s3-us-west-2.seagate.com): " s3_region_endpoint
 read -p "Enter S3 iam endpoint (default is iam.seagate.com): " s3_iam_endpoint
 read -p "Enter S3 sts endpoint (default is sts.seagate.com): " s3_sts_endpoint
+read -p "Enter host S3 ip address (for dev vm use 127.0.0.1): " s3_ip_address
 read -p "Enter Open ldap domain name (default is localhost): " openldap_domainname
 read -p "Enter the key store passphrase (default is seagate): " passphrase
 
@@ -36,7 +37,12 @@ function generate_s3_certs()
   rm -f $dns_list_file
   echo $s3_default_endpoint > $dns_list_file
   echo "*.$s3_default_endpoint" >> $dns_list_file
+  echo "*.$s3_region_endpoint" >> $dns_list_file
   echo $s3_region_endpoint | tr , '\n' >> $dns_list_file
+  if [ ! -z "$s3_ip_address" ]
+  then
+    echo $s3_ip_address >> $dns_list_file
+  fi
 
   # generate s3 ssl cert files
   $CURRENT_DIR/setup-ssl.sh --san-file $dns_list_file \

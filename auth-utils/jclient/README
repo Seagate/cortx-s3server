@@ -37,3 +37,10 @@ java -jar jclient.jar -h
 NOTE
 Option "-a" or "--aws" will run the command on AWS S3. This can be used by
 developers to debug issues.
+Jclient will search for default properties file "jclient.properties" in directory which
+contains jclient.jar.
+If default properties file is absent specify "-c" to configure properties file explicitly.
+
+Example:
+
+java -jar jclient.jar -c /root/s3server/st/clitests/jclient.properties

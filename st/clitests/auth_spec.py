@@ -13,12 +13,6 @@ home_dir = os.path.expanduser("~")
 original_config_file = os.path.join(home_dir,  '.sgs3iamcli/config.yaml')
 backup_config_file = os.path.join(home_dir, '.sgs3iamcli/backup_config.yaml')
 
-
-# To run auth_spec.py over HTTPS connection only, pass --https-only param to script
-# $ python auth_spec.py --https-only
-# To run auth_spec.py over both HTTP and HTTPS connections, pass --all param to script
-# $ python auth_spec.py --all
-
 # Helps debugging
 # Config.log_enabled = True
 # Config.dummy_run = True
@@ -873,22 +867,12 @@ def reset_account_accesskey_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
-def execute_tests_over_http_connection():
-    print('Executing auth system tests over HTTP connection')
-    Config.no_ssl = True
-    # Do not change the order.
-    before_all()
-    account_tests()
-    user_tests()
-    accesskey_tests()
-    role_tests()
-    saml_provider_tests()
-    get_federation_token_test()
-    delete_account_tests()
-    reset_account_accesskey_tests()
+def execute_all_system_tests():
+    if Config.no_ssl :
+        print('Executing auth system tests over HTTP connection')
+    else:
+        print('Executing auth system tests over HTTPS connection')
 
-def execute_tests_over_https_connection():
-    print('Executing auth system tests over HTTPS connection')
     # Do not change the order.
     before_all()
     account_tests()
@@ -901,11 +885,5 @@ def execute_tests_over_https_connection():
     reset_account_accesskey_tests()
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        execute_tests_over_http_connection()
-    else:
-        if sys.argv[1] == '--https-only':
-            execute_tests_over_https_connection()
-        elif sys.argv[1] == '--all':
-            execute_tests_over_http_connection()
-            execute_tests_over_https_connection()
+
+    execute_all_system_tests()

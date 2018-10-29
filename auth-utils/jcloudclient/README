@@ -37,3 +37,10 @@ java -jar jcloudclient.jar -h
 NOTE
 Option "-a" or "--aws" will run the command on AWS S3. This can be used by
 developers to debug issues.
+Jcloudclient will search for default properties file "jcloud.properties" in directory which
+contains jcloudclient.jar.
+If default properties file is absent specify "-c" to configure properties file explicitly.
+
+Example:
+
+java -jar jcloudclient.jar -c /root/s3server/st/clitests/jcloudclient.properties

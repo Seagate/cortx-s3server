@@ -21,6 +21,10 @@ class AuthTest(PyCliTest):
     def with_cli(self, cmd):
         if Config.no_ssl and 's3iamcli' in cmd:
             cmd = cmd + ' --no-ssl'
+        # This case is for fault injection curl commands only in SSL mode.
+        elif not Config.no_ssl and 's3iamcli' not in cmd:
+            cmd = cmd + ' --cacert ' + S3ClientConfig.auth_ca_file
+
         super(AuthTest, self).with_cli(cmd)
 
     def create_account(self, **account_args):
@@ -282,15 +286,23 @@ class AuthTest(PyCliTest):
         return self
 
     def inject_fault(self, fault_point, mode, value):
-        cmd = "curl -s --data 'Action=InjectFault&FaultPoint=%s&Mode=%s&Value=%s' %s"\
-                % (fault_point, mode, value, S3ClientConfig.iam_uri)
+        cmd = "curl -s --data 'Action=InjectFault&FaultPoint=%s&Mode=%s&Value=%s' "\
+                % (fault_point, mode, value)
+        if Config.no_ssl:
+            cmd = cmd + " " + S3ClientConfig.iam_uri_http
+        else:
+            cmd = cmd + " " + S3ClientConfig.iam_uri_https
 
         self.with_cli(cmd)
         return self
 
     def reset_fault(self, fault_point):
-        cmd = "curl -s --data 'Action=ResetFault&FaultPoint=%s' %s"\
-                % (fault_point, S3ClientConfig.iam_uri)
+        cmd = "curl -s --data 'Action=ResetFault&FaultPoint=%s' "\
+                % (fault_point)
+        if Config.no_ssl:
+            cmd = cmd + " " + S3ClientConfig.iam_uri_http
+        else:
+            cmd = cmd + " " + S3ClientConfig.iam_uri_https
 
         self.with_cli(cmd)
         return self

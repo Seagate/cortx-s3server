@@ -227,6 +227,7 @@ then
   fi
   mvn package
   cp target/jclient.jar ../../st/clitests/
+  cp target/classes/jclient.properties ../../st/clitests/
   cd -
 fi
 
@@ -239,6 +240,7 @@ then
   fi
   mvn package
   cp target/jcloudclient.jar ../../st/clitests/
+  cp target/classes/jcloud.properties ../../st/clitests/
   cd -
 fi
 

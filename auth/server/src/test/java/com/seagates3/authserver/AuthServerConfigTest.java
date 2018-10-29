@@ -150,7 +150,7 @@ public class AuthServerConfigTest {
 
         assertEquals(636, AuthServerConfig.getLdapSSLPort());
 
-        assertEquals(false, AuthServerConfig.isSSLToLdapEnabled());
+        assertEquals(true, AuthServerConfig.isSSLToLdapEnabled());
 
     }
 

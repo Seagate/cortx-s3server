@@ -2,16 +2,24 @@ import os
 import yaml
 import pprint
 import http.client, urllib.parse
+import ssl
 import json
 import xmltodict
+from framework import Config
 from s3client_config import S3ClientConfig
 
 class AuthHTTPClient:
     def __init__(self):
-        self.iam_uri = S3ClientConfig.iam_uri
+        self.iam_uri_https = S3ClientConfig.iam_uri_https
+        self.iam_uri_http = S3ClientConfig.iam_uri_http
 
     def authenticate_user(self, headers, body):
-        conn = http.client.HTTPConnection(urllib.parse.urlparse(self.iam_uri).netloc)
+
+        if Config.no_ssl:
+            conn = http.client.HTTPConnection(urllib.parse.urlparse(self.iam_uri_http).netloc)
+        else:
+            conn = http.client.HTTPSConnection(urllib.parse.urlparse(self.iam_uri_https).netloc,
+                                           context= ssl._create_unverified_context())
         conn.request("POST", "/", urllib.parse.urlencode(body), headers)
         response_data = conn.getresponse().read()
         conn.close()

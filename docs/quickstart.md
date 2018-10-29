@@ -29,6 +29,11 @@ Run Build and tests
 ./jenkins-build.sh
 ```
 
+Above will run all system test over HTTPS to run over HTTP specify `--use_http`
+```sh
+./jenkins-build.sh --use_http
+```
+
 # To setup rpmbuild VM and Build S3 rpms
 Run setup script to configure rpmbuild vm
 ```sh

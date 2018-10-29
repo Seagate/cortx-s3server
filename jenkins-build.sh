@@ -1,5 +1,37 @@
 #!/bin/sh
 
+USAGE="USAGE: bash $(basename "$0") [--use_http] [--help | -h]
+
+where:
+--use_http         Use HTTP for ST's
+--help (-h)        Display help"
+
+use_http=0
+
+if [ $# -eq 0 ]
+then
+  echo "Using HTTPS for system tests"
+elif [ $# -gt 1 ]
+then
+  echo "Invald arguments passed";
+        echo "$USAGE"
+        exit 1
+else
+  case "$1" in
+    --use_http ) use_http=1;
+        echo "Using HTTP for system tests";
+        ;;
+    --help | -h )
+        echo "$USAGE"
+        exit 1
+        ;;
+    * )
+        echo "Invald argument passed";
+        echo "$USAGE"
+        exit 1
+        ;;
+  esac
+fi
 set -xe
 
 export PATH=/opt/seagate/s3/bin/:$PATH
@@ -60,20 +92,28 @@ $USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* \
                  /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
                  /var/log/seagate/auth/tools/*
 
+# Configuration setting for using HTTP connection
+if [ $use_http -eq 1 ]
+then
+  $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 9085/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/enableSSLToLdap=.*$/enableSSLToLdap=false/g' /opt/seagate/auth/resources/authserver.properties
+  $USE_SUDO sed -i 's/enable_https=.*$/enable_https=false/g' /opt/seagate/auth/resources/authserver.properties
+  $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/auth/resources/authserver.properties
+fi
+
 # Start mero for new tests
 cd $MERO_SRC
 echo "Starting new built mero services"
 $USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh start
 cd $S3_BUILD_DIR
 
-# Start S3 auth
-echo "Starting new built s3 auth services"
-cp /opt/seagate/auth/resources/authserver.properties /opt/seagate/auth/resources/backup.authserver.properties
-\cp -r $S3_BUILD_DIR/auth/server/tests/resources/test.authserver.properties /opt/seagate/auth/resources/authserver.properties
-
 # Ensure correct ldap credentials are present.
 ./scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
           -p /opt/seagate/auth/resources/authserver.properties
+
+# Enable fault injection in AuthServer
+$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=true/g' /opt/seagate/auth/resources/authserver.properties
 
 $USE_SUDO systemctl restart s3authserver
 
@@ -108,13 +148,27 @@ if [ "$statuss3" != "0" ]; then
   exit 1
 fi
 
+
+# Add certificate to keystore
+if [ $use_http -eq 0 ]
+then
+  $USE_SUDO keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null || true
+  $USE_SUDO keytool -import -trustcacerts -alias s3server -noprompt -file /etc/ssl/stx-s3-clients/s3/ca.crt -keystore /etc/pki/java/cacerts -storepass changeit
+fi
+
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
-./runalltest.sh --no-mero-rpm || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+if [ $use_http -eq 1 ]
+then
+  ./runalltest.sh --no-mero-rpm --no-https || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+else
+  ./runalltest.sh --no-mero-rpm || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+fi
+
+# Disable fault injection in AuthServer
+$USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/auth/resources/authserver.properties
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
-\cp -r /opt/seagate/auth/resources/backup.authserver.properties /opt/seagate/auth/resources/authserver.properties
-
 $USE_SUDO ./dev-stops3.sh || echo "Cannot stop s3 services"
 
 # Dump last log lines for easy lookup in jenkins

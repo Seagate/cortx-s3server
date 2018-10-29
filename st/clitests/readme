@@ -112,7 +112,7 @@ following change in the test script (ex - s3cmd_spec.py) before running the test
 set
    Config.time_readable_format = False
 
- - To run auth_spec.py over HTTPS connection only, pass --https-only param to script
-    $ python auth_spec.py --https-only
- - To run auth_spec.py over both HTTP and HTTPS connections, pass --all param to script
-    $ python auth_spec.py --all
+ - To run runallsystest.sh over HTTPS connection only
+    $ ./runallsystest.sh
+ - To run auth_spec.py over HTTP connection only, pass --no_https param to script
+    $ ./runallsystest.sh  --no_https
