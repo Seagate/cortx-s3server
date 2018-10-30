@@ -92,6 +92,8 @@ class S3PutMultiObjectAction : public S3Action {
   void fetch_multipart_failed();
   void fetch_firstpart_info();
   void fetch_firstpart_info_failed();
+  void save_multipart_metadata();
+  void save_multipart_metadata_failed();
   void compute_part_offset();
 
   void initiate_data_streaming();
@@ -131,11 +133,14 @@ class S3PutMultiObjectAction : public S3Action {
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchMultiPartMetadataInternalErrorFailed);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, FetchFirstPartInfo);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadata);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchFirstPartInfoServiceUnavailableFailed);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchFirstPartInfoInternalErrorFailed);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              ComputePartOffsetNoChunk);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset);
   FRIEND_TEST(S3PutMultipartObjectActionTestWithMockAuth,
               InitiateDataStreamingForZeroSizeObject);

@@ -318,6 +318,25 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadata) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  action_under_test->part_number = 1;
+
+  size_t unit_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
+              get_part_one_size()).WillRepeatedly(Return(0));
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .WillRepeatedly(Return(unit_size));
+
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), save(_, _))
+      .Times(AtLeast(1));
+  action_under_test->save_multipart_metadata();
+}
+
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, FetchFirstPartInfo) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
@@ -384,11 +403,36 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test->part_number = 2;
+  EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(true));
 
   size_t unit_size =
       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
       .WillRepeatedly(Return(unit_size));
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .WillRepeatedly(Return(unit_size));
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  action_under_test->compute_part_offset();
+  EXPECT_TRUE(action_under_test->clovis_writer != nullptr);
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
+  action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  action_under_test->part_number = 2;
+  EXPECT_CALL(*(ptr_mock_request), is_chunked()).WillOnce(Return(false));
+
+  size_t unit_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
+              get_part_one_size()).WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
       .WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())

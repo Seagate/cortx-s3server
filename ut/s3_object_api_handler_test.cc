@@ -187,7 +187,7 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction) {
       .WillOnce(Return(""));
   EXPECT_CALL(*(mock_request), get_query_string_value(_))
       .WillRepeatedly(Return("123"));
-  EXPECT_CALL(*(mock_request), is_chunked()).WillOnce(Return(true));
+  EXPECT_CALL(*(mock_request), is_chunked()).WillRepeatedly(Return(true));
 
   handler_under_test->create_action();
 

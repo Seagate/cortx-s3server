@@ -242,7 +242,8 @@ void S3PostCompleteAction::get_parts_successful() {
   S3AwsEtag awsetag;
   size_t curr_size;
   size_t prev_size = 0;
-
+  size_t part_one_size_in_multipart_metadata =
+      multipart_metadata->get_part_one_size();
   auto& kvps = clovis_kv_reader->get_key_values();
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, multipart_metadata->get_part_index_oid(), upload_id, 0);
@@ -294,6 +295,24 @@ void S3PostCompleteAction::get_parts_successful() {
         set_s3_error("EntityTooSmall");
         set_abort_multipart(true);
         break;
+      }
+
+      if (part_one_size_in_multipart_metadata != 0) {
+        // In non chunked mode if current part size is not same as
+        // that in multipart metadata and its not the last part,
+        // then bail out
+        if (curr_size != part_one_size_in_multipart_metadata &&
+            store_kv->first != total_parts) {
+          s3_log(S3_LOG_ERROR, request_id,
+                 "The part %s size (%zu) is not "
+                 "matching with part one size (%zu) "
+                 "in multipart metadata\n",
+                 store_kv->first.c_str(), curr_size,
+                 part_one_size_in_multipart_metadata);
+          set_s3_error("InvalidObjectState");
+          set_abort_multipart(true);
+          break;
+        }
       }
 
       if (store_kv->first != parts.begin()->first && prev_size != curr_size) {

@@ -151,9 +151,11 @@ class S3ObjectMetadata {
 
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
+  virtual size_t get_part_one_size();
   virtual std::string get_content_length_str();
 
   virtual void set_md5(std::string md5);
+  virtual void set_part_one_size(const size_t& part_size);
   virtual std::string get_md5();
 
   virtual void set_oid(struct m0_uint128 id);

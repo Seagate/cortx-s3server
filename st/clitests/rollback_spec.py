@@ -106,12 +106,7 @@ S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfil
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 clean_18mb_multipart()
 
-S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "clovis_kv_get_fail", "20", "99").execute_test().command_is_successful()
-S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
-S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
-clean_18mb_multipart()
-
-S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "clovis_kv_get_fail", "21", "99").execute_test().command_is_successful()
+S3fiTest('s3cmd enable FI GET KV').enable_fi_offnonm("enable", "clovis_kv_get_fail", "19", "99").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_get_fail").execute_test().command_is_successful()
 clean_18mb_multipart()

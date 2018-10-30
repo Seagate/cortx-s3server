@@ -41,6 +41,8 @@ class MockS3ObjectMultipartMetadata : public S3ObjectMetadata {
                          clovis_api) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
   MOCK_METHOD0(get_upload_id, std::string());
+  MOCK_METHOD0(get_part_one_size, size_t());
+  MOCK_METHOD1(set_part_one_size, void(size_t part_size));
   MOCK_METHOD0(get_layout_id, int());
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));

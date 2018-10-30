@@ -92,8 +92,23 @@ void S3PutMultiObjectAction::setup_steps() {
 
   add_task(std::bind(&S3PutMultiObjectAction::fetch_bucket_info, this));
   add_task(std::bind(&S3PutMultiObjectAction::fetch_multipart_metadata, this));
-  if (part_number != 1) {
-    add_task(std::bind(&S3PutMultiObjectAction::fetch_firstpart_info, this));
+  if (part_number == 1) {
+    // Save first part size to multipart metadata in case of non
+    // chunked mode.
+    // In case of chunked multipart upload we wont have Content-Length
+    // http header within part reqquest, so we cannot save it -- Size
+    // is specified within streamed payload chunks(body)
+    if (!request->is_chunked()) {
+      add_task(
+          std::bind(&S3PutMultiObjectAction::save_multipart_metadata, this));
+    }
+  } else {
+    // For chunked multipart upload only we need to access first part
+    // info for part one size, in case of non chunked multipart upload
+    // we get the same from multipart metadata.
+    if (request->is_chunked()) {
+      add_task(std::bind(&S3PutMultiObjectAction::fetch_firstpart_info, this));
+    }
   }
   add_task(std::bind(&S3PutMultiObjectAction::compute_part_offset, this));
   add_task(std::bind(&S3PutMultiObjectAction::initiate_data_streaming, this));
@@ -194,6 +209,58 @@ void S3PutMultiObjectAction::fetch_multipart_failed() {
   send_response_to_s3_client();
 }
 
+void S3PutMultiObjectAction::save_multipart_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  // This function to be called for part 1 upload
+  // so that other parts can see the size of part 1
+  // to proceed.Also this is only in case of
+  // non-chunked part upload.
+  assert(part_number == 1);
+  size_t part_one_size_in_multipart_metadata =
+      object_multipart_metadata->get_part_one_size();
+  size_t current_part_one_size = request->get_data_length();
+
+  if (part_one_size_in_multipart_metadata != 0) {
+    s3_log(S3_LOG_WARN, request_id,
+           "Part one size in multipart metadata "
+           "(%zu) differs from current part one "
+           "size (%zu)",
+           part_one_size_in_multipart_metadata, current_part_one_size);
+    if (current_part_one_size != part_one_size_in_multipart_metadata) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Part one size in multipart metadata "
+             "(%zu) differs from current part one "
+             "size (%zu)",
+             part_one_size_in_multipart_metadata, current_part_one_size);
+      set_s3_error("InvalidObjectState");
+      send_response_to_s3_client();
+      s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+      return;
+    }
+  }
+  object_multipart_metadata->set_part_one_size(current_part_one_size);
+  object_multipart_metadata->save(
+      std::bind(&S3PutMultiObjectAction::next, this),
+      std::bind(&S3PutMultiObjectAction::save_multipart_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutMultiObjectAction::save_multipart_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id,
+         "Failed to update multipart metadata with part one size\n");
+  if (object_multipart_metadata->get_state() ==
+      S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_WARN, request_id,
+           "Multipart metadata save operation failed\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3PutMultiObjectAction::fetch_firstpart_info() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   part_metadata = part_metadata_factory->create_part_metadata_obj(
@@ -224,7 +291,29 @@ void S3PutMultiObjectAction::compute_part_offset() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   size_t offset = 0;
   if (part_number != 1) {
-    size_t part_one_size = part_metadata->get_content_length();
+    size_t part_one_size = 0;
+    if (request->is_chunked()) {
+      part_one_size = part_metadata->get_content_length();
+    } else {
+      // In case of no chunked multipart upload we put in
+      // part one size to the multipart metadata, if its not there
+      // it means part one request didn't come till now
+      part_one_size = object_multipart_metadata->get_part_one_size();
+      if (part_one_size == 0) {
+        // May happen if part 2/3... comes before part 1, in that case those
+        // part pload need to be retried(by that time part 1 metadata will
+        // get in)
+        s3_log(S3_LOG_WARN, request_id,
+               "Part 1 size is not there in multipart "
+               "metadata, hence rejecting this "
+               "request of part %d for time being, "
+               "Try later...\n",
+               part_number);
+        set_s3_error("ServiceUnavailable");
+        send_response_to_s3_client();
+        return;
+      }
+    }
     s3_log(S3_LOG_DEBUG, request_id, "Part size = %zu for part_number = %d\n",
            request->get_content_length(), part_number);
     // Calculate offset
@@ -258,7 +347,6 @@ void S3PutMultiObjectAction::compute_part_offset() {
       return;
     }
   }
-
   next();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
