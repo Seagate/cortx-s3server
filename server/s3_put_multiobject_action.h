@@ -135,6 +135,14 @@ class S3PutMultiObjectAction : public S3Action {
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, FetchFirstPartInfo);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadata);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              SaveMultipartMetadataError);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              SaveMultipartMetadataAssert);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              SaveMultipartMetadataFailedInternalError);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              SaveMultipartMetadataFailedServiceUnavailable);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchFirstPartInfoServiceUnavailableFailed);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchFirstPartInfoInternalErrorFailed);

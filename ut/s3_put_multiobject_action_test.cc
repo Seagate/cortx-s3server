@@ -337,6 +337,81 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadata) {
   action_under_test->save_multipart_metadata();
 }
 
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataError) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  action_under_test->part_number = 1;
+
+  size_t unit_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
+              get_part_one_size()).WillRepeatedly(Return(unit_size));
+  EXPECT_CALL(*ptr_mock_request, get_data_length())
+      .WillRepeatedly(Return(unit_size - 2));
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), save(_, _))
+      .Times(AtLeast(0));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(403, _)).Times(1);
+  action_under_test->save_multipart_metadata();
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+       SaveMultipartMetadataFailedServiceUnavailable) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  action_under_test->part_number = 1;
+
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  action_under_test->save_multipart_metadata_failed();
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+       SaveMultipartMetadataFailedInternalError) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  action_under_test->part_number = 1;
+
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+  action_under_test->save_multipart_metadata_failed();
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataAssert) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  action_under_test->part_number = 2;
+
+  size_t unit_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata,
+              get_part_one_size()).WillRepeatedly(Return(0));
+  EXPECT_CALL(*ptr_mock_request, get_content_length())
+      .WillRepeatedly(Return(unit_size));
+
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), save(_, _))
+      .Times(0);
+  ASSERT_DEATH(action_under_test->save_multipart_metadata(), ".*");
+}
+
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, FetchFirstPartInfo) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;

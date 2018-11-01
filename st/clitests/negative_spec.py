@@ -555,6 +555,23 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd disable Fault injection').\
         disable_fi("clovis_idx_op_fail").\
         execute_test().command_is_successful()
+    S3fiTest('s3cmd enable FI clovis idx op fail').\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", "20", "99").\
+        execute_test().command_is_successful()
+    S3cmdTest('s3cmd can not upload 18MBfile file').\
+        upload_test("seagatebucket", "18MBfile", 18000000).\
+        execute_test(negative_case=True).command_should_fail().\
+        command_error_should_have("InternalError")
+    S3fiTest('s3cmd disable Fault injection').\
+        disable_fi("clovis_idx_op_fail").\
+        execute_test().command_is_successful()
+    result = S3cmdTest('s3cmd can list multipart uploads in progress').\
+             list_multipart_uploads("seagatebucket").execute_test()
+    result.command_response_should_have('18MBfile')
+    upload_id = result.status.stdout.split('\n')[2].split('\t')[2]
+    S3cmdTest('S3cmd can abort multipart upload').\
+    abort_multipart("seagatebucket", "18MBfile", upload_id).\
+    execute_test().command_is_successful()
     S3cmdTest('s3cmd can delete policy on bucket').\
         delpolicy_bucket("seagatebucket").\
         execute_test().command_is_successful()
