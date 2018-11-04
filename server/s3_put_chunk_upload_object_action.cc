@@ -111,7 +111,7 @@ void S3PutChunkUploadObjectAction::setup_steps() {
 }
 
 void S3PutChunkUploadObjectAction::chunk_auth_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   auth_in_progress = false;
   auth_completed = true;
   if (check_shutdown_and_rollback(true)) {
@@ -130,7 +130,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_successful() {
 }
 
 void S3PutChunkUploadObjectAction::chunk_auth_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   auth_in_progress = false;
   auth_failed = true;
   auth_completed = true;
@@ -152,7 +152,7 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
 }
 
 void S3PutChunkUploadObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
@@ -163,7 +163,7 @@ void S3PutChunkUploadObjectAction::fetch_bucket_info() {
 }
 
 void S3PutChunkUploadObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
     struct m0_uint128 object_list_oid =
@@ -203,7 +203,7 @@ void S3PutChunkUploadObjectAction::fetch_object_info() {
 }
 
 void S3PutChunkUploadObjectAction::fetch_object_info_status() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
     old_object_oid = object_metadata->get_oid();
@@ -228,7 +228,7 @@ void S3PutChunkUploadObjectAction::fetch_object_info_status() {
 }
 
 void S3PutChunkUploadObjectAction::create_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   create_object_timer.start();
   if (tried_count == 0) {
     clovis_writer =
@@ -248,7 +248,7 @@ void S3PutChunkUploadObjectAction::create_object() {
 }
 
 void S3PutChunkUploadObjectAction::create_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -281,7 +281,7 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
 }
 
 void S3PutChunkUploadObjectAction::collision_detected() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -329,7 +329,7 @@ void S3PutChunkUploadObjectAction::create_new_oid(
 }
 
 void S3PutChunkUploadObjectAction::rollback_create() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   clovis_writer->set_oid(new_object_oid);
   if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
@@ -344,7 +344,7 @@ void S3PutChunkUploadObjectAction::rollback_create() {
 }
 
 void S3PutChunkUploadObjectAction::rollback_create_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     rollback_next();
   } else if (clovis_writer->get_state() ==
@@ -366,7 +366,7 @@ void S3PutChunkUploadObjectAction::rollback_create_failed() {
 }
 
 void S3PutChunkUploadObjectAction::initiate_data_streaming() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // mark rollback point
   add_task_rollback(
@@ -405,7 +405,7 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
 }
 
 void S3PutChunkUploadObjectAction::consume_incoming_content() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_chunk_upload_object_action_consume_incoming_content_shutdown_fail");
@@ -433,7 +433,7 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
 }
 
 void S3PutChunkUploadObjectAction::send_chunk_details_if_any() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Also send any ready chunk data for auth
   while (request->is_chunk_detail_ready()) {
     S3ChunkDetail detail = request->pop_chunk_detail();
@@ -455,7 +455,7 @@ void S3PutChunkUploadObjectAction::send_chunk_details_if_any() {
 
 void S3PutChunkUploadObjectAction::write_object(
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // Also send any ready chunk data for auth
   send_chunk_details_if_any();
@@ -470,7 +470,7 @@ void S3PutChunkUploadObjectAction::write_object(
 }
 
 void S3PutChunkUploadObjectAction::write_object_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "Write to clovis successful\n");
   clovis_write_in_progress = false;
 
@@ -512,7 +512,7 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
 }
 
 void S3PutChunkUploadObjectAction::write_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   clovis_write_in_progress = false;
   write_failed = true;
@@ -540,7 +540,7 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
 }
 
 void S3PutChunkUploadObjectAction::save_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // xxx set attributes & save
   if (!object_metadata) {
     object_metadata = object_metadata_factory->create_object_metadata_obj(
@@ -571,7 +571,7 @@ void S3PutChunkUploadObjectAction::save_metadata() {
 }
 
 void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id, "Object metadata save failed\n");
     set_s3_error("ServiceUnavailable");
@@ -581,7 +581,7 @@ void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
 }
 
 void S3PutChunkUploadObjectAction::delete_old_object_if_present() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (old_object_oid.u_hi == 0ULL && old_object_oid.u_lo == 0ULL) {
     next();
   } else {
@@ -596,7 +596,7 @@ void S3PutChunkUploadObjectAction::delete_old_object_if_present() {
 }
 
 void S3PutChunkUploadObjectAction::delete_old_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Deletion of old object with oid "
@@ -617,7 +617,7 @@ void S3PutChunkUploadObjectAction::delete_old_object_failed() {
 }
 
 void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if ((auth_in_progress) &&
       (get_auth_client()->get_state() == S3AuthClientOpState::started)) {

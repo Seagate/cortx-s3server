@@ -57,7 +57,7 @@ void S3PutBucketAction::setup_steps() {
 }
 
 void S3PutBucketAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
@@ -86,7 +86,7 @@ void S3PutBucketAction::consume_incoming_content() {
 }
 
 void S3PutBucketAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // S3PutBucketBody bucket(content);
   put_bucket_body = put_bucketbody_factory->create_put_bucket_body(content);
   if (put_bucket_body->isOK()) {
@@ -101,7 +101,7 @@ void S3PutBucketAction::validate_request_body(std::string content) {
 }
 
 void S3PutBucketAction::read_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Trigger metadata read async operation with callback
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
@@ -111,7 +111,7 @@ void S3PutBucketAction::read_metadata() {
 }
 
 void S3PutBucketAction::create_bucket() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // Trigger metadata write async operation with callback
   // XXX Check if last step was successful.
@@ -145,7 +145,7 @@ void S3PutBucketAction::create_bucket() {
 }
 
 void S3PutBucketAction::create_bucket_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save bucket metadata operation failed due to prelaunch failure\n");
@@ -159,7 +159,7 @@ void S3PutBucketAction::create_bucket_failed() {
 }
 
 void S3PutBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

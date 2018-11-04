@@ -81,7 +81,7 @@ void S3AccountDeleteMetadataAction::setup_steps() {
 }
 
 void S3AccountDeleteMetadataAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // check for the account_id got from authentication response and account_id is
   // in uri same or not
   if (account_id_from_uri == request->get_account_id()) {
@@ -102,7 +102,7 @@ void S3AccountDeleteMetadataAction::validate_request() {
 }
 
 void S3AccountDeleteMetadataAction::fetch_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (!account_user_index_metadata) {
     account_user_index_metadata =
@@ -117,7 +117,7 @@ void S3AccountDeleteMetadataAction::fetch_bucket_list_index_oid() {
 }
 
 void S3AccountDeleteMetadataAction::validate_fetched_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (account_user_index_metadata->get_state() ==
       S3AccountUserIdxMetadataState::present) {
@@ -145,7 +145,7 @@ void S3AccountDeleteMetadataAction::validate_fetched_bucket_list_index_oid() {
 }
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
   clovis_kv_reader->next_keyval(
@@ -160,7 +160,7 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
 }
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id,
          "Account: %s has at least one Bucket. Account delete should not be "
          "allowed.\n",
@@ -171,7 +171,7 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_successful() {
 }
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id,
            "There is no bucket for the acocunt id: %s\n",
@@ -193,7 +193,7 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed() {
 }
 
 void S3AccountDeleteMetadataAction::remove_account_index_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   account_user_index_metadata->remove(
       std::bind(
           &S3AccountDeleteMetadataAction::remove_account_index_info_successful,
@@ -205,7 +205,7 @@ void S3AccountDeleteMetadataAction::remove_account_index_info() {
 }
 
 void S3AccountDeleteMetadataAction::remove_account_index_info_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (account_user_index_metadata->get_state() ==
       S3AccountUserIdxMetadataState::deleted) {
     // Account metadata delete success
@@ -219,7 +219,7 @@ void S3AccountDeleteMetadataAction::remove_account_index_info_successful() {
 }
 
 void S3AccountDeleteMetadataAction::remove_account_index_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Account metadata cleanup failed.\n");
   if (account_user_index_metadata->get_state() ==
       S3AccountUserIdxMetadataState::failed_to_launch) {
@@ -232,7 +232,7 @@ void S3AccountDeleteMetadataAction::remove_account_index_info_failed() {
 }
 
 void S3AccountDeleteMetadataAction::remove_bucket_list_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Can happen when only index is present
   if (clovis_kv_writer == nullptr) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
@@ -247,7 +247,7 @@ void S3AccountDeleteMetadataAction::remove_bucket_list_index() {
 }
 
 void S3AccountDeleteMetadataAction::remove_bucket_list_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Account delete index failed.\n");
   if (clovis_kv_writer->get_state() ==
       S3ClovisKVSWriterOpState::failed_to_launch) {
@@ -260,7 +260,7 @@ void S3AccountDeleteMetadataAction::remove_bucket_list_index_failed() {
 }
 
 void S3AccountDeleteMetadataAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

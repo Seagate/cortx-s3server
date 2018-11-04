@@ -49,7 +49,7 @@ void S3DeleteBucketPolicyAction::setup_steps() {
 }
 
 void S3DeleteBucketPolicyAction::fetch_bucket_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // Trigger metadata read async operation with callback
   bucket_metadata =
@@ -60,7 +60,7 @@ void S3DeleteBucketPolicyAction::fetch_bucket_metadata() {
 }
 
 void S3DeleteBucketPolicyAction::delete_bucket_policy() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     bucket_metadata->deletepolicy();
     bucket_metadata->save(
@@ -83,13 +83,13 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy() {
 }
 
 void S3DeleteBucketPolicyAction::delete_bucket_policy_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteBucketPolicyAction::delete_bucket_policy_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Bucket policy deletion failed\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
@@ -101,7 +101,7 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy_failed() {
 }
 
 void S3DeleteBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Trigger metadata read async operation with callback
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

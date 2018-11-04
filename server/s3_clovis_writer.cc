@@ -102,7 +102,7 @@ void S3ClovisWriter::clean_up_contexts() {
 
 int S3ClovisWriter::open_objects() {
   int rc = 0;
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   is_object_opened = false;
   if (obj_ctx) {
@@ -159,7 +159,7 @@ int S3ClovisWriter::open_objects() {
 }
 
 void S3ClovisWriter::open_objects_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   is_object_opened = true;
   if (state == S3ClovisWriterOpState::writing) {
@@ -181,7 +181,7 @@ void S3ClovisWriter::open_objects_successful() {
 }
 
 void S3ClovisWriter::open_objects_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   is_object_opened = false;
   if (state != S3ClovisWriterOpState::failed_to_launch) {
@@ -206,7 +206,7 @@ void S3ClovisWriter::open_objects_failed() {
 void S3ClovisWriter::create_object(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed,
                                    int layoutid) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with layoutid = %d\n", layoutid);
+  s3_log(S3_LOG_INFO, request_id, "Entering with layoutid = %d\n", layoutid);
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -266,7 +266,7 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
 }
 
 void S3ClovisWriter::create_object_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   is_object_opened = true;  // created object is also open
   state = S3ClovisWriterOpState::created;
   s3_log(S3_LOG_INFO, request_id,
@@ -278,7 +278,7 @@ void S3ClovisWriter::create_object_successful() {
 }
 
 void S3ClovisWriter::create_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with errno = %d\n",
+  s3_log(S3_LOG_INFO, request_id, "Entering with errno = %d\n",
          create_context->get_errno_for(0));
 
   is_object_opened = false;
@@ -299,7 +299,7 @@ void S3ClovisWriter::create_object_failed() {
 void S3ClovisWriter::write_content(
     std::function<void(void)> on_success, std::function<void(void)> on_failed,
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with layout_id = %d\n",
+  s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
          layout_ids[0]);
 
   this->handler_on_success = on_success;
@@ -321,7 +321,7 @@ void S3ClovisWriter::write_content(
 }
 
 void S3ClovisWriter::write_content() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with layout_id = %d\n",
+  s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
          layout_ids[0]);
 
   assert(is_object_opened);
@@ -447,7 +447,7 @@ void S3ClovisWriter::write_content_failed() {
 void S3ClovisWriter::delete_object(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed,
                                    int layoutid) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with layoutid = %d\n", layoutid);
+  s3_log(S3_LOG_INFO, request_id, "Entering with layoutid = %d\n", layoutid);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
@@ -469,7 +469,7 @@ void S3ClovisWriter::delete_object(std::function<void(void)> on_success,
 }
 
 void S3ClovisWriter::delete_objects() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   assert(is_object_opened);
 
@@ -519,7 +519,7 @@ void S3ClovisWriter::delete_objects() {
 }
 
 void S3ClovisWriter::delete_objects_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   state = S3ClovisWriterOpState::deleted;
   s3_log(S3_LOG_INFO, request_id, "Clovis API Successful: deleteobj\n");
   this->handler_on_success();
@@ -527,7 +527,7 @@ void S3ClovisWriter::delete_objects_successful() {
 }
 
 void S3ClovisWriter::delete_objects_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisWriterOpState::failed_to_launch) {
     size_t missing_count = 0;
     for (missing_count = 0; missing_count < oid_list.size(); missing_count++) {
@@ -551,7 +551,7 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
                                     std::vector<int> layoutids,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;

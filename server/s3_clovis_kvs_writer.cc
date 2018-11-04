@@ -78,7 +78,7 @@ void S3ClovisKVSWriter::create_index(std::string index_name,
 void S3ClovisKVSWriter::create_index_with_oid(
     struct m0_uint128 idx_oid, std::function<void(void)> on_success,
     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   int rc = 0;
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -133,13 +133,13 @@ void S3ClovisKVSWriter::create_index_with_oid(
 }
 
 void S3ClovisKVSWriter::create_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   sync_index(this->handler_on_success, this->handler_on_failed, 1);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ClovisKVSWriter::create_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
     if (writer_context->get_errno_for(0) == -EEXIST) {
       state = S3ClovisKVSWriterOpState::exists;
@@ -156,7 +156,7 @@ void S3ClovisKVSWriter::create_index_failed() {
 void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed,
                                    int index_count) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with index_count = %d\n",
+  s3_log(S3_LOG_INFO, request_id, "Entering with index_count = %d\n",
          index_count);
   int rc = 0;
   this->handler_on_success = on_success;
@@ -203,7 +203,7 @@ void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
 }
 
 void S3ClovisKVSWriter::sync_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state == S3ClovisKVSWriterOpState::deleting) {
     state = S3ClovisKVSWriterOpState::deleted;
   } else {
@@ -214,7 +214,7 @@ void S3ClovisKVSWriter::sync_index_successful() {
 }
 
 void S3ClovisKVSWriter::sync_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
     if (sync_context->get_errno_for(0) == -ENOENT) {
       state = S3ClovisKVSWriterOpState::missing;
@@ -231,7 +231,7 @@ void S3ClovisKVSWriter::sync_index_failed() {
 void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
@@ -295,13 +295,13 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
 }
 
 void S3ClovisKVSWriter::delete_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   sync_index(this->handler_on_success, this->handler_on_failed, 1);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ClovisKVSWriter::delete_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
     if (writer_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "Index doesn't exists\n");
@@ -318,7 +318,7 @@ void S3ClovisKVSWriter::delete_index_failed() {
 void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
                                        std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -387,14 +387,14 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
 }
 
 void S3ClovisKVSWriter::delete_indexes_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   sync_index(this->handler_on_success, this->handler_on_failed,
              oid_list.size());
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ClovisKVSWriter::delete_indexes_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Deletion of Index failed\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
     state = S3ClovisKVSWriterOpState::failed;
@@ -407,7 +407,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
                                    std::string val,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with key = %s and value = %s\n",
+  s3_log(S3_LOG_INFO, request_id, "Entering with key = %s and value = %s\n",
          key.c_str(), val.c_str());
 
   int rc = 0;
@@ -474,7 +474,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 }
 
 void S3ClovisKVSWriter::put_keyval_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
   // do this when cassandra + mero-kvs rcs implementation completed
   // in clovis
@@ -483,7 +483,7 @@ void S3ClovisKVSWriter::put_keyval_successful() {
 }
 
 void S3ClovisKVSWriter::put_keyval_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "Writing of key value failed\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
     state = S3ClovisKVSWriterOpState::failed;
@@ -494,7 +494,7 @@ void S3ClovisKVSWriter::put_keyval_failed() {
 
 void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   int rc = 0;
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -549,7 +549,7 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
 }
 
 void S3ClovisKVSWriter::sync_keyval_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state == S3ClovisKVSWriterOpState::deleting) {
     state = S3ClovisKVSWriterOpState::deleted;
   } else {
@@ -560,7 +560,7 @@ void S3ClovisKVSWriter::sync_keyval_successful() {
 }
 
 void S3ClovisKVSWriter::sync_keyval_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
     state = S3ClovisKVSWriterOpState::failed;
   }
@@ -571,7 +571,7 @@ void S3ClovisKVSWriter::sync_keyval_failed() {
 void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid, std::string key,
                                       std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   std::vector<std::string> keys;
   keys.push_back(key);
 
@@ -583,7 +583,7 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
                                       std::vector<std::string> keys,
                                       std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   int rc;
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
@@ -659,7 +659,7 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
 }
 
 void S3ClovisKVSWriter::delete_keyval_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
   // do this when cassandra + mero-kvs rcs implementation completed
   // in clovis
@@ -668,7 +668,7 @@ void S3ClovisKVSWriter::delete_keyval_successful() {
 }
 
 void S3ClovisKVSWriter::delete_keyval_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
     state = S3ClovisKVSWriterOpState::failed;
   }

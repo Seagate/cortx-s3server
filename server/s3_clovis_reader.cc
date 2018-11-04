@@ -71,7 +71,7 @@ void S3ClovisReader::clean_up_contexts() {
 bool S3ClovisReader::read_object_data(size_t num_of_blocks,
                                       std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id,
+  s3_log(S3_LOG_INFO, request_id,
          "Entering with num_of_blocks = %zu from last_index = %zu\n",
          num_of_blocks, last_index);
 
@@ -97,7 +97,7 @@ bool S3ClovisReader::read_object_data(size_t num_of_blocks,
 }
 
 int S3ClovisReader::open_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   int rc = 0;
 
   is_object_opened = false;
@@ -150,7 +150,7 @@ int S3ClovisReader::open_object() {
 }
 
 void S3ClovisReader::open_object_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_INFO, request_id,
          "Clovis API Successful: openobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
@@ -170,7 +170,7 @@ void S3ClovisReader::open_object_successful() {
 }
 
 void S3ClovisReader::open_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisReaderOpState::failed_to_launch) {
     s3_log(S3_LOG_DEBUG, request_id, "errno = %d\n",
            open_context->get_errno_for(0));
@@ -189,7 +189,7 @@ void S3ClovisReader::open_object_failed() {
 }
 
 bool S3ClovisReader::read_object() {
-  s3_log(S3_LOG_DEBUG, request_id,
+  s3_log(S3_LOG_INFO, request_id,
          "Entering with num_of_blocks_to_read = %zu from last_index = %zu\n",
          num_of_blocks_to_read, last_index);
 
@@ -244,7 +244,7 @@ bool S3ClovisReader::read_object() {
 }
 
 void S3ClovisReader::read_object_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_INFO, request_id,
          "Clovis API Successful: readobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
@@ -255,7 +255,7 @@ void S3ClovisReader::read_object_successful() {
 }
 
 void S3ClovisReader::read_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "errno = %d\n",
          reader_context->get_errno_for(0));
   if (reader_context->get_errno_for(0) == -ENOENT) {
@@ -277,7 +277,7 @@ size_t S3ClovisReader::get_first_block(char **data) {
 
 // Returns size of data in next block and -1 if there is no content or done
 size_t S3ClovisReader::get_next_block(char **data) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id,
          "num_of_blocks_to_read = %zu from iteration_index = %zu\n",
          num_of_blocks_to_read, iteration_index);

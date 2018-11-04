@@ -46,7 +46,7 @@ void S3HeadBucketAction::setup_steps() {
 }
 
 void S3HeadBucketAction::read_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
 
   // Trigger metadata read async operation with callback
   bucket_metadata =
@@ -59,7 +59,7 @@ void S3HeadBucketAction::read_metadata() {
 }
 
 void S3HeadBucketAction::read_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering read_metadata_fail\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering read_metadata_fail\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata load operation failed due to pre launch failure\n");
@@ -75,7 +75,7 @@ void S3HeadBucketAction::read_metadata_failed() {
 }
 
 void S3HeadBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
     S3Error error(get_s3_error_code(), request->get_request_id(),

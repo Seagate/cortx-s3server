@@ -59,7 +59,7 @@ void S3GetObjectACLAction::setup_steps() {
 }
 
 void S3GetObjectACLAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
@@ -69,7 +69,7 @@ void S3GetObjectACLAction::fetch_bucket_info() {
 }
 
 void S3GetObjectACLAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -85,7 +85,7 @@ void S3GetObjectACLAction::fetch_bucket_info_failed() {
 }
 
 void S3GetObjectACLAction::get_object_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching object metadata\n");
+  s3_log(S3_LOG_INFO, request_id, "Fetching object metadata\n");
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   object_list_index_oid = bucket_metadata->get_object_list_index_oid();
@@ -105,7 +105,7 @@ void S3GetObjectACLAction::get_object_metadata() {
 }
 
 void S3GetObjectACLAction::get_object_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() ==
@@ -121,7 +121,7 @@ void S3GetObjectACLAction::get_object_metadata_failed() {
 }
 
 void S3GetObjectACLAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

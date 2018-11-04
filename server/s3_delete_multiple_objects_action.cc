@@ -101,7 +101,7 @@ void S3DeleteMultipleObjectsAction::setup_steps() {
 }
 
 void S3DeleteMultipleObjectsAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
@@ -117,7 +117,7 @@ void S3DeleteMultipleObjectsAction::validate_request() {
 }
 
 void S3DeleteMultipleObjectsAction::consume_incoming_content() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
   }
@@ -125,7 +125,7 @@ void S3DeleteMultipleObjectsAction::consume_incoming_content() {
 }
 
 void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   MD5hash calc_md5;
   calc_md5.Update(content.c_str(), content.length());
   calc_md5.Finalize();
@@ -156,7 +156,7 @@ void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
 }
 
 void S3DeleteMultipleObjectsAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (s3_fi_is_enabled("fail_fetch_bucket_info")) {
     s3_fi_enable_once("clovis_kv_get_fail");
   }
@@ -187,7 +187,7 @@ void S3DeleteMultipleObjectsAction::fetch_bucket_info_failed() {
 }
 
 void S3DeleteMultipleObjectsAction::fetch_objects_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   object_list_index_oid = bucket_metadata->get_object_list_index_oid();
   if (object_list_index_oid.u_lo == 0ULL &&
       object_list_index_oid.u_hi == 0ULL) {
@@ -218,7 +218,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info() {
 }
 
 void S3DeleteMultipleObjectsAction::fetch_objects_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     for (auto& key : keys_to_delete) {
       delete_objects_response.add_success(key);
@@ -236,7 +236,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_failed() {
 }
 
 void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // Create a list of objects found to be deleted
 
@@ -295,7 +295,7 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
 }
 
 void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   std::vector<std::string> keys;
   for (auto& obj : objects_metadata) {
     if (obj->get_state() != S3ObjectMetadataState::invalid) {
@@ -316,7 +316,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata() {
 }
 
 void S3DeleteMultipleObjectsAction::delete_objects_metadata_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   at_least_one_delete_successful = true;
   for (auto& obj : objects_metadata) {
     delete_objects_response.add_success(obj->get_object_name());
@@ -326,7 +326,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata_successful() {
 }
 
 void S3DeleteMultipleObjectsAction::delete_objects_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (clovis_kv_writer->get_state() ==
       S3ClovisKVSWriterOpState::failed_to_launch) {
@@ -361,7 +361,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_metadata_failed() {
 }
 
 void S3DeleteMultipleObjectsAction::delete_objects() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (oids_to_delete.empty()) {
     if (delete_index_in_req < delete_request.get_count()) {
@@ -382,7 +382,7 @@ void S3DeleteMultipleObjectsAction::delete_objects() {
 }
 
 void S3DeleteMultipleObjectsAction::delete_objects_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (delete_index_in_req < delete_request.get_count()) {
     // Try to delete the remaining
     fetch_objects_info();
@@ -393,7 +393,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_successful() {
 }
 
 void S3DeleteMultipleObjectsAction::delete_objects_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   uint obj_index = 0;
   bool delete_obj_failed = false;
   if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
@@ -429,7 +429,7 @@ void S3DeleteMultipleObjectsAction::delete_objects_failed() {
 }
 
 void S3DeleteMultipleObjectsAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),

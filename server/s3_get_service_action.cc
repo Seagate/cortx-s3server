@@ -70,7 +70,7 @@ void S3GetServiceAction::setup_steps() {
 }
 
 void S3GetServiceAction::fetch_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   account_user_index_metadata =
       acct_user_idx_metadata_factory->create_s3_account_user_idx_metadata(
@@ -82,7 +82,7 @@ void S3GetServiceAction::fetch_bucket_list_index_oid() {
 }
 
 void S3GetServiceAction::get_next_buckets() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -127,7 +127,7 @@ void S3GetServiceAction::get_next_buckets() {
 }
 
 void S3GetServiceAction::get_next_buckets_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -170,6 +170,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
 }
 
 void S3GetServiceAction::get_next_buckets_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Buckets list is empty\n");
     fetch_successful = true;  // With no entries.
@@ -185,10 +186,11 @@ void S3GetServiceAction::get_next_buckets_failed() {
     fetch_successful = false;
   }
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetServiceAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

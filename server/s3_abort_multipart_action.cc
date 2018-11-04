@@ -108,7 +108,7 @@ void S3AbortMultipartAction::setup_steps() {
 }
 
 void S3AbortMultipartAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(std::bind(&S3AbortMultipartAction::next, this),
@@ -117,7 +117,7 @@ void S3AbortMultipartAction::fetch_bucket_info() {
 }
 
 void S3AbortMultipartAction::get_multipart_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     multipart_oid = bucket_metadata->get_multipart_index_oid();
     if (multipart_oid.u_lo == 0ULL && multipart_oid.u_hi == 0ULL) {
@@ -151,7 +151,7 @@ void S3AbortMultipartAction::get_multipart_metadata() {
 }
 
 void S3AbortMultipartAction::delete_multipart_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_multipart_metadata->get_state() ==
       S3ObjectMetadataState::present) {
     if (object_multipart_metadata->get_upload_id() == upload_id) {
@@ -184,7 +184,7 @@ void S3AbortMultipartAction::delete_multipart_metadata() {
 }
 
 void S3AbortMultipartAction::delete_multipart_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
          "Object multipart meta data deletion failed\n");
   if (object_multipart_metadata->get_state() ==
@@ -198,7 +198,7 @@ void S3AbortMultipartAction::delete_multipart_metadata_failed() {
 }
 
 void S3AbortMultipartAction::delete_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if ((object_multipart_metadata->get_state() ==
        S3ObjectMetadataState::present) ||
       (object_multipart_metadata->get_state() ==
@@ -216,7 +216,7 @@ void S3AbortMultipartAction::delete_object() {
 }
 
 void S3AbortMultipartAction::delete_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if ((clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) ||
       (clovis_writer->get_state() == S3ClovisWriterOpState::failed)) {
     // todo: how do we have clean up of oid for such cases? background utility?
@@ -234,7 +234,7 @@ void S3AbortMultipartAction::delete_object_failed() {
 }
 
 void S3AbortMultipartAction::delete_part_index_with_parts() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (part_index_oid.u_lo == 0ULL && part_index_oid.u_hi == 0ULL) {
     next();
   } else {
@@ -252,7 +252,7 @@ void S3AbortMultipartAction::delete_part_index_with_parts() {
 }
 
 void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Not checking part metatdata state for failed_to_launch here as we wont
   // return 503
   s3_log(S3_LOG_ERROR, request_id,
@@ -266,7 +266,7 @@ void S3AbortMultipartAction::delete_part_index_with_parts_failed() {
 }
 
 void S3AbortMultipartAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());

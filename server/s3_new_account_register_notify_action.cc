@@ -78,7 +78,7 @@ void S3NewAccountRegisterNotifyAction::setup_steps() {
 }
 
 void S3NewAccountRegisterNotifyAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // check for the account_id received from authentication response and
   // account_id is in uri same or not
   if (account_id_from_uri == request->get_account_id()) {
@@ -96,7 +96,7 @@ void S3NewAccountRegisterNotifyAction::validate_request() {
 }
 
 void S3NewAccountRegisterNotifyAction::fetch_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (!account_user_index_metadata) {
     account_user_index_metadata =
@@ -112,7 +112,7 @@ void S3NewAccountRegisterNotifyAction::fetch_bucket_list_index_oid() {
 
 void
 S3NewAccountRegisterNotifyAction::validate_fetched_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (account_user_index_metadata->get_state() ==
       S3AccountUserIdxMetadataState::present) {
@@ -139,7 +139,7 @@ S3NewAccountRegisterNotifyAction::validate_fetched_bucket_list_index_oid() {
 }
 
 void S3NewAccountRegisterNotifyAction::create_bucket_list_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (collision_attempt_count == 0) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, s3_clovis_api);
@@ -157,14 +157,14 @@ void S3NewAccountRegisterNotifyAction::create_bucket_list_index() {
 }
 
 void S3NewAccountRegisterNotifyAction::create_bucket_list_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_list_index_oid = clovis_kv_writer->get_oid();
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3NewAccountRegisterNotifyAction::create_bucket_list_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
     // create_bucket_list_index is called when there is no id for that index,
     // Hence if clovis returned its present then its due to collision.
@@ -186,7 +186,7 @@ void S3NewAccountRegisterNotifyAction::create_bucket_list_index_failed() {
 }
 
 void S3NewAccountRegisterNotifyAction::save_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (!account_user_index_metadata) {
     account_user_index_metadata =
         account_user_index_metadata_factory
@@ -205,7 +205,7 @@ void S3NewAccountRegisterNotifyAction::save_bucket_list_index_oid() {
 }
 
 void S3NewAccountRegisterNotifyAction::save_bucket_list_index_oid_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (account_user_index_metadata->get_state() ==
       S3AccountUserIdxMetadataState::saved) {
     s3_log(S3_LOG_ERROR, request_id,
@@ -221,7 +221,7 @@ void S3NewAccountRegisterNotifyAction::save_bucket_list_index_oid_successful() {
 }
 
 void S3NewAccountRegisterNotifyAction::save_bucket_list_index_oid_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
          "Saving of Bucket list index oid metadata failed\n");
   if (account_user_index_metadata->get_state() ==
@@ -270,7 +270,7 @@ void S3NewAccountRegisterNotifyAction::regenerate_new_index_name(
 }
 
 void S3NewAccountRegisterNotifyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

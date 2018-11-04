@@ -119,7 +119,7 @@ void S3PutMultiObjectAction::setup_steps() {
 }
 
 void S3PutMultiObjectAction::chunk_auth_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   auth_in_progress = false;
   auth_completed = true;
   if (check_shutdown_and_rollback(true)) {
@@ -139,7 +139,7 @@ void S3PutMultiObjectAction::chunk_auth_successful() {
 }
 
 void S3PutMultiObjectAction::chunk_auth_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   auth_failed = true;
   auth_completed = true;
   set_s3_error("SignatureDoesNotMatch");
@@ -155,7 +155,7 @@ void S3PutMultiObjectAction::chunk_auth_failed() {
 }
 
 void S3PutMultiObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
 
@@ -185,7 +185,7 @@ void S3PutMultiObjectAction::fetch_bucket_info_failed() {
 }
 
 void S3PutMultiObjectAction::fetch_multipart_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   object_multipart_metadata =
       object_mp_metadata_factory->create_object_mp_metadata_obj(
           request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
@@ -210,7 +210,7 @@ void S3PutMultiObjectAction::fetch_multipart_failed() {
 }
 
 void S3PutMultiObjectAction::save_multipart_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // This function to be called for part 1 upload
   // so that other parts can see the size of part 1
   // to proceed.Also this is only in case of
@@ -246,7 +246,7 @@ void S3PutMultiObjectAction::save_multipart_metadata() {
 }
 
 void S3PutMultiObjectAction::save_multipart_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to update multipart metadata with part one size\n");
   if (object_multipart_metadata->get_state() ==
@@ -262,7 +262,7 @@ void S3PutMultiObjectAction::save_multipart_metadata_failed() {
 }
 
 void S3PutMultiObjectAction::fetch_firstpart_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_oid(), upload_id, 1);
   part_metadata->load(
@@ -288,7 +288,7 @@ void S3PutMultiObjectAction::fetch_firstpart_info_failed() {
 }
 
 void S3PutMultiObjectAction::compute_part_offset() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   size_t offset = 0;
   if (part_number != 1) {
     size_t part_one_size = 0;
@@ -353,7 +353,7 @@ void S3PutMultiObjectAction::compute_part_offset() {
 }
 
 void S3PutMultiObjectAction::initiate_data_streaming() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   total_data_to_stream = request->get_data_length();
   // request->resume();
@@ -382,7 +382,7 @@ void S3PutMultiObjectAction::initiate_data_streaming() {
 }
 
 void S3PutMultiObjectAction::consume_incoming_content() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_consume_incoming_content_shutdown_fail");
@@ -410,7 +410,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
 }
 
 void S3PutMultiObjectAction::send_chunk_details_if_any() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   while (request->is_chunk_detail_ready()) {
     S3ChunkDetail detail = request->pop_chunk_detail();
     s3_log(S3_LOG_DEBUG, request_id, "Using chunk details for auth:\n");
@@ -431,7 +431,7 @@ void S3PutMultiObjectAction::send_chunk_details_if_any() {
 
 void S3PutMultiObjectAction::write_object(
     std::shared_ptr<S3AsyncBufferOptContainer> buffer) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (request->is_chunked()) {
     // Also send any ready chunk data for auth
     send_chunk_details_if_any();
@@ -447,7 +447,7 @@ void S3PutMultiObjectAction::write_object(
 }
 
 void S3PutMultiObjectAction::write_object_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   clovis_write_in_progress = false;
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -510,7 +510,7 @@ void S3PutMultiObjectAction::write_object_failed() {
 }
 
 void S3PutMultiObjectAction::save_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   part_metadata = part_metadata_factory->create_part_metadata_obj(
       request, object_multipart_metadata->get_part_index_oid(), upload_id,
       part_number);
@@ -536,7 +536,7 @@ void S3PutMultiObjectAction::save_metadata() {
 }
 
 void S3PutMultiObjectAction::save_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save of Part metadata failed due to pre launch failure\n");
@@ -550,7 +550,7 @@ void S3PutMultiObjectAction::save_metadata_failed() {
 }
 
 void S3PutMultiObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if ((auth_in_progress) &&
       (get_auth_client()->get_state() == S3AuthClientOpState::started)) {

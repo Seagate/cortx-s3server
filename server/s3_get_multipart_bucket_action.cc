@@ -71,7 +71,7 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
 }
 
 void S3GetMultipartBucketAction::object_list_setup() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   request_marker_key = request->get_query_string_value("key-marker");
   if (!request_marker_key.empty()) {
     multipart_object_list.set_request_marker_key(request_marker_key);
@@ -118,7 +118,7 @@ void S3GetMultipartBucketAction::setup_steps() {
 }
 
 void S3GetMultipartBucketAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
@@ -128,7 +128,7 @@ void S3GetMultipartBucketAction::fetch_bucket_info() {
 }
 
 void S3GetMultipartBucketAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -143,7 +143,7 @@ void S3GetMultipartBucketAction::fetch_bucket_info_failed() {
 }
 
 void S3GetMultipartBucketAction::get_next_objects() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -173,7 +173,7 @@ void S3GetMultipartBucketAction::get_next_objects() {
 }
 
 void S3GetMultipartBucketAction::get_next_objects_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -282,6 +282,7 @@ void S3GetMultipartBucketAction::get_next_objects_successful() {
 }
 
 void S3GetMultipartBucketAction::get_next_objects_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No more multipart uploads listing\n");
     fetch_successful = true;  // With no entries.
@@ -297,10 +298,11 @@ void S3GetMultipartBucketAction::get_next_objects_failed() {
     fetch_successful = false;
   }
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetMultipartBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

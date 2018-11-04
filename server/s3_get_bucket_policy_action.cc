@@ -47,7 +47,7 @@ void S3GetBucketPolicyAction::setup_steps() {
 }
 
 void S3GetBucketPolicyAction::get_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
 
@@ -59,7 +59,7 @@ void S3GetBucketPolicyAction::get_metadata() {
 }
 
 void S3GetBucketPolicyAction::get_metadata_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   std::string response_json = bucket_metadata->get_policy_as_json();
   if (response_json.empty()) {
     set_s3_error("NoSuchBucketPolicy");
@@ -87,7 +87,7 @@ void S3GetBucketPolicyAction::get_metadata_failed() {
 }
 
 void S3GetBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

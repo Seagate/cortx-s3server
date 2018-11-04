@@ -76,7 +76,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
   int rc = 0;
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
   }
@@ -153,7 +153,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 }
 
 void S3ClovisKVSReader::get_keyval_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
   struct s3_clovis_kvs_op_context *kvs_ctx =
@@ -198,7 +198,7 @@ void S3ClovisKVSReader::get_keyval_successful() {
 }
 
 void S3ClovisKVSReader::get_keyval_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSReaderOpState::failed_to_launch) {
     if (reader_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist\n");
@@ -217,7 +217,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed,
                                     unsigned int flag) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with key = %s and count = %zu\n",
+  s3_log(S3_LOG_INFO, request_id, "Entering with key = %s and count = %zu\n",
          key.c_str(), nr_kvp);
   id = idx_oid;
   int rc = 0;
@@ -291,7 +291,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 }
 
 void S3ClovisKVSReader::next_keyval_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   state = S3ClovisKVSReaderOpState::present;
 
@@ -335,7 +335,7 @@ void S3ClovisKVSReader::next_keyval_successful() {
 }
 
 void S3ClovisKVSReader::next_keyval_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSReaderOpState::failed_to_launch) {
     if (reader_context->get_errno_for(0) == -ENOENT) {
       s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist in metadata\n");

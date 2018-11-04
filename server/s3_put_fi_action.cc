@@ -132,7 +132,7 @@ void S3PutFiAction::set_fault_injection() {
 }
 
 void S3PutFiAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (!is_error_state() && get_s3_error_code().empty()) {
     request->send_response(S3HttpSuccess200);

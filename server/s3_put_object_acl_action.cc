@@ -59,7 +59,7 @@ void S3PutObjectACLAction::setup_steps() {
 }
 
 void S3PutObjectACLAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
     new_object_acl = request->get_full_body_content_as_string();
@@ -87,7 +87,7 @@ void S3PutObjectACLAction::consume_incoming_content() {
 }
 
 void S3PutObjectACLAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // TODO: ACL implementation is partial, fix this when adding full support.
   // S3PutObjectAclBody object_acl(content);
@@ -103,7 +103,7 @@ void S3PutObjectACLAction::validate_request_body(std::string content) {
 }
 
 void S3PutObjectACLAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
@@ -117,7 +117,7 @@ void S3PutObjectACLAction::fetch_bucket_info() {
 }
 
 void S3PutObjectACLAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -150,7 +150,7 @@ void S3PutObjectACLAction::get_object_metadata() {
 }
 
 void S3PutObjectACLAction::get_object_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() ==
@@ -166,7 +166,7 @@ void S3PutObjectACLAction::get_object_metadata_failed() {
 }
 
 void S3PutObjectACLAction::setacl() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   object_metadata->setacl(new_object_acl);
@@ -176,7 +176,7 @@ void S3PutObjectACLAction::setacl() {
 }
 
 void S3PutObjectACLAction::setacl_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("NoSuchKey");
   } else {
@@ -187,7 +187,7 @@ void S3PutObjectACLAction::setacl_failed() {
 }
 
 void S3PutObjectACLAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

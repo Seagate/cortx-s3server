@@ -79,7 +79,7 @@ void S3GetObjectAction::setup_steps() {
 }
 
 void S3GetObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
@@ -91,6 +91,7 @@ void S3GetObjectAction::fetch_bucket_info() {
 }
 
 void S3GetObjectAction::fetch_object_info() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
     object_list_oid = bucket_metadata->get_object_list_index_oid();
@@ -122,10 +123,11 @@ void S3GetObjectAction::fetch_object_info() {
     }
     send_response_to_s3_client();
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetObjectAction::validate_object_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     content_length = object_metadata->get_content_length();
     // as per RFC last_byte_offset_to_read is taken to be equal to one less than
@@ -203,7 +205,7 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
 
 bool S3GetObjectAction::validate_range_header_and_set_read_options(
     const std::string& range_value) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // reference: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35.
   // parse the Range header value
   // eg: bytes=0-1024 value
@@ -305,7 +307,7 @@ bool S3GetObjectAction::validate_range_header_and_set_read_options(
 }
 
 void S3GetObjectAction::check_full_or_range_object_read() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   std::string range_header_value = request->get_header_value("Range");
   if (range_header_value.empty()) {
     // Range is not specified, read complte object
@@ -327,7 +329,7 @@ void S3GetObjectAction::check_full_or_range_object_read() {
 }
 
 void S3GetObjectAction::read_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   request->set_out_header_value("Last-Modified",
                                 object_metadata->get_last_modified_gmt());
   request->set_out_header_value("ETag", object_metadata->get_md5());
@@ -365,7 +367,7 @@ void S3GetObjectAction::read_object() {
 }
 
 void S3GetObjectAction::read_object_data() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -417,7 +419,7 @@ void S3GetObjectAction::read_object_data() {
 }
 
 void S3GetObjectAction::send_data_to_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -474,7 +476,7 @@ void S3GetObjectAction::read_object_data_failed() {
 }
 
 void S3GetObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down()) {
     if (read_object_reply_started) {

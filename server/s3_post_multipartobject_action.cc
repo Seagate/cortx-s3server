@@ -120,7 +120,7 @@ void S3PostMultipartObjectAction::setup_steps() {
 }
 
 void S3PostMultipartObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
 
@@ -130,7 +130,7 @@ void S3PostMultipartObjectAction::fetch_bucket_info() {
 }
 
 void S3PostMultipartObjectAction::check_upload_is_inprogress() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     S3Uuid uuid;
     upload_id = uuid.get_string_uuid();
@@ -162,7 +162,7 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
 }
 
 void S3PostMultipartObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_multipart_metadata->get_state() !=
       S3ObjectMetadataState::present) {
     if (object_multipart_metadata->get_state() ==
@@ -207,7 +207,7 @@ void S3PostMultipartObjectAction::fetch_object_info() {
 }
 
 void S3PostMultipartObjectAction::fetch_object_info_status() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   S3ObjectMetadataState object_state = object_metadata->get_state();
   if (object_state == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
@@ -234,7 +234,7 @@ void S3PostMultipartObjectAction::fetch_object_info_status() {
 }
 
 void S3PostMultipartObjectAction::create_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   create_object_timer.start();
   if (tried_count == 0) {
     clovis_writer = clovis_writer_factory->create_clovis_writer(request, oid);
@@ -254,7 +254,7 @@ void S3PostMultipartObjectAction::create_object() {
 }
 
 void S3PostMultipartObjectAction::create_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -282,7 +282,7 @@ void S3PostMultipartObjectAction::create_object_failed() {
 }
 
 void S3PostMultipartObjectAction::collision_occured() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -328,7 +328,7 @@ void S3PostMultipartObjectAction::create_new_oid(
 }
 
 void S3PostMultipartObjectAction::rollback_create() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   clovis_writer->set_oid(oid);
   clovis_writer->delete_object(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
@@ -338,7 +338,7 @@ void S3PostMultipartObjectAction::rollback_create() {
 }
 
 void S3PostMultipartObjectAction::rollback_create_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     rollback_next();
   } else {
@@ -357,7 +357,7 @@ void S3PostMultipartObjectAction::rollback_create_failed() {
 }
 
 void S3PostMultipartObjectAction::rollback_create_part_meta_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   part_metadata->remove_index(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(
@@ -367,7 +367,7 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index() {
 }
 
 void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   m0_uint128 part_index_oid = part_metadata->get_part_index_oid();
   s3_log(S3_LOG_WARN, request_id, "Deletion of part metadata failed\n");
   if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
@@ -384,7 +384,7 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
 }
 
 void S3PostMultipartObjectAction::save_upload_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   create_object_timer.stop();
   LOG_PERF("create_object_successful_ms",
            create_object_timer.elapsed_time_in_millisec());
@@ -418,7 +418,7 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
 }
 
 void S3PostMultipartObjectAction::save_upload_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_multipart_metadata->get_state() ==
       S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_WARN, request_id, "save upload index metadata failed\n");
@@ -430,7 +430,7 @@ void S3PostMultipartObjectAction::save_upload_metadata_failed() {
 }
 
 void S3PostMultipartObjectAction::rollback_upload_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   object_multipart_metadata->remove(
       std::bind(&S3PostMultipartObjectAction::rollback_next, this),
       std::bind(&S3PostMultipartObjectAction::rollback_upload_metadata_failed,
@@ -439,7 +439,7 @@ void S3PostMultipartObjectAction::rollback_upload_metadata() {
 }
 
 void S3PostMultipartObjectAction::rollback_upload_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_multipart_metadata->get_state() ==
       S3ObjectMetadataState::missing) {
     rollback_next();
@@ -452,7 +452,7 @@ void S3PostMultipartObjectAction::rollback_upload_metadata_failed() {
 }
 
 void S3PostMultipartObjectAction::create_part_meta_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // mark rollback point
   add_task_rollback(
       std::bind(&S3PostMultipartObjectAction::rollback_create, this));
@@ -466,7 +466,7 @@ void S3PostMultipartObjectAction::create_part_meta_index() {
 }
 
 void S3PostMultipartObjectAction::create_part_meta_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
     s3_log(S3_LOG_WARN, request_id, "Multipart index creation failed\n");
     set_s3_error("ServiceUnavailable");
@@ -476,7 +476,7 @@ void S3PostMultipartObjectAction::create_part_meta_index_failed() {
 }
 
 void S3PostMultipartObjectAction::save_multipart_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
   if (multipart_index_oid.u_lo == 0 && multipart_index_oid.u_hi == 0) {
@@ -497,7 +497,7 @@ void S3PostMultipartObjectAction::save_multipart_metadata() {
 }
 
 void S3PostMultipartObjectAction::save_multipart_metadata_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
          "Failed to save multipart index oid metadata\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
@@ -510,7 +510,7 @@ void S3PostMultipartObjectAction::save_multipart_metadata_failed() {
 }
 
 void S3PostMultipartObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
     S3Error error(get_s3_error_code(), request->get_request_id(),

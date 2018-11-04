@@ -49,7 +49,7 @@ void S3PutBucketACLAction::setup_steps() {
 }
 
 void S3PutBucketACLAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
     new_bucket_acl = request->get_full_body_content_as_string();
@@ -77,7 +77,7 @@ void S3PutBucketACLAction::consume_incoming_content() {
 }
 
 void S3PutBucketACLAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   // TODO: ACL implementation is partial, fix this when adding full support.
   // S3PutBucketAclBody bucket_acl(content);
@@ -93,7 +93,7 @@ void S3PutBucketACLAction::validate_request_body(std::string content) {
 }
 
 void S3PutBucketACLAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
@@ -107,7 +107,7 @@ void S3PutBucketACLAction::fetch_bucket_info() {
 }
 
 void S3PutBucketACLAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
@@ -125,7 +125,7 @@ void S3PutBucketACLAction::fetch_bucket_info_failed() {
 }
 
 void S3PutBucketACLAction::setacl() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   bucket_metadata->setacl(new_bucket_acl);
   // bypass shutdown signal check for next task
@@ -137,7 +137,7 @@ void S3PutBucketACLAction::setacl() {
 }
 
 void S3PutBucketACLAction::setacl_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id, "setting acl failed\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
@@ -151,7 +151,7 @@ void S3PutBucketACLAction::setacl_failed() {
 }
 
 void S3PutBucketACLAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

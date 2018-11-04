@@ -70,7 +70,7 @@ void S3GetBucketAction::setup_steps() {
 }
 
 void S3GetBucketAction::object_list_setup() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   object_list.set_bucket_name(request->get_bucket_name());
   request_prefix = request->get_query_string_value("prefix");
@@ -102,7 +102,7 @@ void S3GetBucketAction::object_list_setup() {
 }
 
 void S3GetBucketAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
+  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
@@ -111,7 +111,7 @@ void S3GetBucketAction::fetch_bucket_info() {
 }
 
 void S3GetBucketAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -126,7 +126,7 @@ void S3GetBucketAction::fetch_bucket_info_failed() {
 }
 
 void S3GetBucketAction::get_next_objects() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
   m0_uint128 object_list_index_oid =
       bucket_metadata->get_object_list_index_oid();
@@ -154,7 +154,7 @@ void S3GetBucketAction::get_next_objects() {
 }
 
 void S3GetBucketAction::get_next_objects_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -272,6 +272,7 @@ void S3GetBucketAction::get_next_objects_successful() {
 }
 
 void S3GetBucketAction::get_next_objects_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "No Objects found in Object listing\n");
     fetch_successful = true;  // With no entries.
@@ -287,10 +288,11 @@ void S3GetBucketAction::get_next_objects_failed() {
     fetch_successful = false;
   }
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetBucketAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {

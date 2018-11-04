@@ -74,7 +74,7 @@ void S3DeleteObjectAction::setup_steps() {
 }
 
 void S3DeleteObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
@@ -85,7 +85,7 @@ void S3DeleteObjectAction::fetch_bucket_info() {
 }
 
 void S3DeleteObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     struct m0_uint128 object_list_indx_oid =
         bucket_metadata->get_object_list_index_oid();
@@ -121,7 +121,7 @@ void S3DeleteObjectAction::fetch_object_info() {
 }
 
 void S3DeleteObjectAction::delete_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     object_metadata->remove(std::bind(&S3DeleteObjectAction::next, this),
@@ -145,7 +145,7 @@ void S3DeleteObjectAction::delete_metadata() {
 }
 
 void S3DeleteObjectAction::delete_object() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (object_metadata->get_state() == S3ObjectMetadataState::deleted) {
     clovis_writer = clovis_writer_factory->create_clovis_writer(
@@ -187,7 +187,7 @@ void S3DeleteObjectAction::delete_object() {
  */
 
 void S3DeleteObjectAction::delete_object_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
     next();
   } else {
@@ -205,7 +205,7 @@ void S3DeleteObjectAction::delete_object_failed() {
 
 
 void S3DeleteObjectAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),

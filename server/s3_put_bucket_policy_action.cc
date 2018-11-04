@@ -49,7 +49,7 @@ void S3PutBucketPolicyAction::setup_steps() {
 }
 
 void S3PutBucketPolicyAction::validate_request() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
@@ -105,7 +105,7 @@ void S3PutBucketPolicyAction::get_metadata() {
 }
 
 void S3PutBucketPolicyAction::set_policy() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     bucket_metadata->setpolicy(new_bucket_policy);
     // bypass shutdown signal check for next task
@@ -130,7 +130,7 @@ void S3PutBucketPolicyAction::set_policy() {
 }
 
 void S3PutBucketPolicyAction::set_policy_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Save Bucket metadata operation failed due to prelaunch failure\n");
@@ -144,7 +144,7 @@ void S3PutBucketPolicyAction::set_policy_failed() {
 }
 
 void S3PutBucketPolicyAction::send_response_to_s3_client() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (reject_if_shutting_down()) {
     // Send response with 'Service Unavailable' code.
