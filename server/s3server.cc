@@ -59,19 +59,19 @@ extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   s3_log(S3_LOG_DEBUG, "", "Request Completed.\n");
 }
 
-extern "C" void on_client_conn_err_callback(evhtp_request_t *req,
+extern "C" void on_client_conn_err_callback(evhtp_request_t *ev_req,
                                             evhtp_error_flags errtype,
                                             void *arg) {
   s3_log(S3_LOG_INFO, "", "S3 Client disconnected.\n");
-  if (req) {
-    S3RequestObject *request = (S3RequestObject *)req->cbarg;
-    if (request) {
-      request->client_has_disconnected();
+  if (ev_req) {
+    S3RequestObject *s3_request = static_cast<S3RequestObject *>(ev_req->cbarg);
+    if (s3_request) {
+      s3_request->client_has_disconnected();
     }
-    if (req->conn) {
-      evhtp_unset_all_hooks(&req->conn->hooks);
+    if (ev_req->conn) {
+      evhtp_unset_all_hooks(&ev_req->conn->hooks);
     }
-    evhtp_unset_all_hooks(&req->hooks);
+    evhtp_unset_all_hooks(&ev_req->hooks);
   }
   return;
 }
@@ -82,21 +82,17 @@ extern "C" int s3_log_header(evhtp_header_t *header, void *arg) {
   return 0;
 }
 
-static evhtp_res on_client_connection_fini(evhtp_connection_t *connection,
-                                           void *arg) {
-  s3_log(S3_LOG_DEBUG, "", "Finalize s3 client connection(%p)\n", connection);
-  // Around this event libevhtp will free connection->request, so we
-  // protect S3 code from accessing freed connection->request
-  if (connection) {
-    s3_log(S3_LOG_DEBUG, "", "connection->request(%p)", connection->request);
-    if (connection->request) {
-      S3RequestObject *request = (S3RequestObject *)connection->request->cbarg;
-      if (request) {
-        request->client_has_disconnected();
-      }
-      evhtp_unset_all_hooks(&connection->request->hooks);
+static evhtp_res on_client_request_fini(evhtp_request_t *ev_req, void *arg) {
+  s3_log(S3_LOG_DEBUG, "", "Finalize s3 client request(%p)\n", ev_req);
+  // Around this event libevhtp will free request, so we
+  // protect S3 code from accessing freed request
+  if (ev_req) {
+    S3RequestObject *s3_req = static_cast<S3RequestObject *>(ev_req->cbarg);
+    s3_log(S3_LOG_DEBUG, "", "S3RequestObject(%p)\n", s3_req);
+    if (s3_req) {
+      s3_req->client_has_disconnected();
     }
-    evhtp_unset_all_hooks(&connection->hooks);
+    evhtp_unset_all_hooks(&ev_req->hooks);
   }
   return EVHTP_RES_OK;
 }
@@ -113,7 +109,7 @@ extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
   // Log http headers
   evhtp_headers_for_each(hdrs, s3_log_header, NULL);
 
-  S3Router *router = (S3Router *)arg;
+  S3Router *router = static_cast<S3Router *>(arg);
 
   EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
   std::shared_ptr<S3RequestObject> s3_request =
@@ -165,6 +161,8 @@ extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
 
   evhtp_set_hook(&req->hooks, evhtp_hook_on_error,
                  (evhtp_hook)on_client_conn_err_callback, NULL);
+  evhtp_set_hook(&req->hooks, evhtp_hook_on_request_fini,
+                 (evhtp_hook)on_client_request_fini, NULL);
 
   router->dispatch(s3_request);
 
@@ -176,8 +174,8 @@ extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
   s3_log(S3_LOG_DEBUG, "", "Received Request body %zu bytes for sock = %d\n",
          evbuffer_get_length(buf), req->conn->sock);
 
-  S3RequestObject *request = (S3RequestObject *)req->cbarg;
-
+  S3RequestObject *request = static_cast<S3RequestObject *>(req->cbarg);
+  s3_log(S3_LOG_DEBUG, "", "S3RequestObject(%p)\n", request);
   if (request) {
     evbuf_t *s3_buf = evbuffer_new();
     evbuffer_add_buffer(s3_buf, buf);
@@ -199,9 +197,6 @@ extern "C" evhtp_res set_s3_connection_handlers(evhtp_connection_t *conn,
                  (evhtp_hook)dispatch_request, arg);
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_read,
                  (evhtp_hook)process_request_data, NULL);
-  evhtp_set_hook(&conn->hooks, evhtp_hook_on_connection_fini,
-                 (evhtp_hook)on_client_connection_fini, NULL);
-
   return EVHTP_RES_OK;
 }
 
@@ -431,7 +426,6 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-
   S3Router *router =
       new S3Router(new S3APIHandlerFactory(), new S3UriFactory());
 
@@ -444,7 +438,7 @@ int main(int argc, char **argv) {
   evhtp_set_post_accept_cb(htp, set_s3_connection_handlers, router);
 
   // This handler is just like complete the request processing & respond
-  evhtp_set_gencb(htp, s3_handler, router);
+  evhtp_set_gencb(htp, s3_handler, NULL);
 
   bind_port = g_option_instance->get_s3_bind_port();
   bind_addr = g_option_instance->get_bind_addr().c_str();

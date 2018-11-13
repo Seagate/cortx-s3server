@@ -55,6 +55,9 @@ extern "C" evhtp_res on_auth_conn_err_callback(evhtp_connection_t *connection,
     // S3 client has already disconnected, ignore
     s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
            "S3 Client has already disconnected.\n");
+    // Calling failed handler to do proper cleanup to avoid leaks
+    // i.e cleanup of S3Request and respective action chain.
+    context->on_failed_handler()();  // Invoke the handler.
     return EVHTP_RES_OK;
   }
   context->set_op_status_for(0, S3AsyncOpStatus::connection_failed,
@@ -83,6 +86,9 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
     // S3 client has already disconnected, ignore
     s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
            "S3 Client has already disconnected.\n");
+    // Calling failed handler to do proper cleanup to avoid leaks
+    // i.e cleanup of S3Request and respective action chain.
+    context->on_failed_handler()();  // Invoke the handler.
     return EVHTP_RES_OK;
   }
 
@@ -153,6 +159,9 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
     // S3 client has already disconnected, ignore
     s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
            "S3 Client has already disconnected.\n");
+    // Calling failed handler to do proper cleanup to avoid leaks
+    // i.e cleanup of S3Request and respective action chain.
+    context->on_failed_handler()();  // Invoke the handler.
     return EVHTP_RES_OK;
   }
 

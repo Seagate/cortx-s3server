@@ -124,6 +124,7 @@ S3RequestObject::~S3RequestObject() {
                   request_timer.elapsed_time_in_millisec());
   if (ev_req) {
     ev_req->cbarg = NULL;
+    ev_req = NULL;
   }
   if (reply_buffer != NULL) {
     evbuffer_free(reply_buffer);

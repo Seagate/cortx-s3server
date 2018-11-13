@@ -231,7 +231,10 @@ class S3RequestObject {
 
   void client_has_disconnected() {
     is_client_connected = false;
-    ev_req = NULL;
+    if (ev_req) {
+      ev_req->cbarg = NULL;
+      ev_req = NULL;
+    }
   }
 
   bool client_connected() { return is_client_connected; }
