@@ -97,6 +97,7 @@ public class AuthServerTest {
     private boolean https = false;
     private boolean http = true;
     private boolean enableFaultInjection = false;
+    private String defaultHost= "0.0.0.0";
     private String logLevel = "DEBUG";
     private String logConfigFilePath = "/path/to/log/config/file";
 
@@ -121,6 +122,7 @@ public class AuthServerTest {
         doReturn(http).when(AuthServerConfig.class, "isHttpEnabled");
         doReturn(https).when(AuthServerConfig.class, "isHttpsEnabled");
         doReturn(httpsPort).when(AuthServerConfig.class, "getHttpsPort");
+        doReturn(defaultHost).when(AuthServerConfig.class, "getDefaultHost");
         doReturn(logConfigFilePath).when(AuthServerConfig.class, "getLogConfigFile");
     }
 
@@ -156,7 +158,7 @@ public class AuthServerTest {
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpEnabled");
         doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
-                any(EventExecutorGroup.class), anyInt());
+                any(EventExecutorGroup.class), any(String.class), anyInt());
 
         AuthServer.main(new String[]{});
 
@@ -186,7 +188,7 @@ public class AuthServerTest {
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpEnabled");
         doReturn(serverChannel).when(AuthServer.class, "httpServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
-                any(EventExecutorGroup.class), anyInt());
+                any(EventExecutorGroup.class), any(String.class), anyInt());
 
         AuthServer.main(new String[]{});
 
@@ -217,7 +219,7 @@ public class AuthServerTest {
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpsEnabled");
         doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
-                any(EventExecutorGroup.class), anyInt());
+                any(EventExecutorGroup.class), any(String.class), anyInt());
 
         AuthServer.main(new String[]{});
 
@@ -258,7 +260,7 @@ public class AuthServerTest {
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpsEnabled");
         doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
-                any(EventExecutorGroup.class), anyInt());
+                any(EventExecutorGroup.class),any(String.class), anyInt());
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
 
         AuthServer.main(new String[]{});
@@ -291,7 +293,7 @@ public class AuthServerTest {
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpEnabled");
         doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
-                any(EventExecutorGroup.class), anyInt());
+                any(EventExecutorGroup.class), any(String.class), anyInt());
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
 
         AuthServer.main(new String[]{});
@@ -324,7 +326,7 @@ public class AuthServerTest {
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isHttpsEnabled");
         doReturn(serverChannel).when(AuthServer.class, "httpsServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
-                any(EventExecutorGroup.class), anyInt());
+                any(EventExecutorGroup.class), any(String.class), anyInt());
         doReturn(Boolean.TRUE).when(AuthServerConfig.class, "isFaultInjectionEnabled");
 
         AuthServer.main(new String[]{});
@@ -383,7 +385,7 @@ public class AuthServerTest {
         serverChannel = mock(Channel.class);
         doReturn(serverChannel).when(AuthServer.class, "httpServerBootstrap",
                 any(EventLoopGroup.class), any(EventLoopGroup.class),
-                any(EventExecutorGroup.class), anyInt());
+                any(EventExecutorGroup.class), any(String.class), anyInt());
 
         channelFuture = mock(ChannelFuture.class);
         when(serverChannel.closeFuture()).thenReturn(channelFuture);
@@ -485,6 +487,7 @@ public class AuthServerTest {
         EventLoopGroup workerGroup = mock(EventLoopGroup.class);
         EventExecutorGroup executorGroup = mock(EventExecutorGroup.class);
         int port = 80;
+        String defaultHost = "0.0.0.0";
 
         ServerBootstrap serverBootstrap = mock(ServerBootstrap.class);
         whenNew(ServerBootstrap.class).withNoArguments().thenReturn(serverBootstrap);
@@ -504,15 +507,15 @@ public class AuthServerTest {
 
         Channel serverChannel = mock(Channel.class);
         ChannelFuture channelFuture = mock(ChannelFuture.class);
-        when(serverBootstrap.bind(port)).thenReturn(channelFuture);
+        when(serverBootstrap.bind(defaultHost, port)).thenReturn(channelFuture);
         when(channelFuture.sync()).thenReturn(channelFuture);
         when(channelFuture.channel()).thenReturn(serverChannel);
 
         Object channel = WhiteboxImpl.invokeMethod(AuthServer.class,
-                "httpServerBootstrap", bossGroup, workerGroup, executorGroup, port);
+                "httpServerBootstrap", bossGroup, workerGroup, executorGroup, defaultHost, port);
 
         assertTrue(channel instanceof Channel);
-        verify(serverBootstrap).bind(port);
+        verify(serverBootstrap).bind(defaultHost, port);
         verify(channelFuture).sync();
         verify(channelFuture).channel();
     }
@@ -520,6 +523,7 @@ public class AuthServerTest {
     @Test
     public void httpsServerBootstrapTest() throws Exception {
         int port = 443;
+        String defaultHost = "0.0.0.0";
 
         ServerBootstrap serverBootstrap = mock(ServerBootstrap.class);
         whenNew(ServerBootstrap.class).withNoArguments().thenReturn(serverBootstrap);
@@ -539,16 +543,16 @@ public class AuthServerTest {
 
         Channel serverChannel = mock(Channel.class);
         ChannelFuture channelFuture = mock(ChannelFuture.class);
-        when(serverBootstrap.bind(port)).thenReturn(channelFuture);
+        when(serverBootstrap.bind(defaultHost, port)).thenReturn(channelFuture);
         when(channelFuture.sync()).thenReturn(channelFuture);
         when(channelFuture.channel()).thenReturn(serverChannel);
 
         Object channel = WhiteboxImpl.invokeMethod(AuthServer.class,
-                "httpsServerBootstrap", bossGroup, workerGroup, executorGroup, port);
+                "httpsServerBootstrap", bossGroup, workerGroup, executorGroup, defaultHost, port);
 
         assertTrue(channel instanceof Channel);
 
-        verify(serverBootstrap).bind(port);
+        verify(serverBootstrap).bind(defaultHost, port);
         verify(channelFuture).sync();
         verify(channelFuture).channel();
     }

@@ -10,23 +10,6 @@
     - lustre-client-devel
     - kmod-lustre-client
 
-- name: Add mappings to /etc/hosts (for S3 system tests)
-  blockinfile:
-    path: /etc/hosts
-    block: |
-      {{ item.ip }} {{ item.name }}
-    marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
-  with_items:
-    - { name: seagatebucket.s3.seagate.com, ip: 127.0.0.1 }
-    - { name: seagate-bucket.s3.seagate.com, ip: 127.0.0.1 }
-    - { name: seagatebucket123.s3.seagate.com, ip: 127.0.0.1 }
-    - { name: seagate.bucket.s3.seagate.com, ip: 127.0.0.1 }
-    - { name: s3-us-west-2.seagate.com, ip: 127.0.0.1 }
-    - { name: seagatebucket.s3-us-west-2.seagate.com, ip: 127.0.0.1 }
-    - { name: iam.seagate.com, ip: 127.0.0.1 }
-    - { name: sts.seagate.com, ip: 127.0.0.1 }
-    - { name: s3.seagate.com, ip: 127.0.0.1 }
-
 - name: Install patched s3cmd deps
   yum:
     name: python-magic

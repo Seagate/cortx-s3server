@@ -175,6 +175,10 @@ public class AuthServerConfig {
         return Integer.parseInt(authServerConfig.getProperty("httpsPort"));
     }
 
+    public static String getDefaultHost() {
+        return authServerConfig.getProperty("defaultHost");
+    }
+
     public static String getKeyStoreName() {
         return authServerConfig.getProperty("s3KeyStoreName");
     }

@@ -23,6 +23,11 @@ Run setup script to configure dev vm
 cd <s3 src>
 ./scripts/env/dev/init.sh
 ```
+* Do NOT use following script directly on Real cluster as it is configured with fully qualified DNS.
+For dev VM its safe to run following script to update host entries in /etc/hosts
+```sh
+./update-hosts.sh
+```
 
 Run Build and tests
 ```sh

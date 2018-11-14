@@ -163,8 +163,9 @@ public class AuthServer {
 
         if (AuthServerConfig.isHttpEnabled()) {
             int httpPort = AuthServerConfig.getHttpPort();
+            String host = AuthServerConfig.getDefaultHost();
             Channel serverChannel = httpServerBootstrap(bossGroup, workerGroup,
-                    executorGroup, httpPort
+                    executorGroup, host, httpPort
             );
             serverChannels.add(serverChannel);
             logger.info("Auth server is listening on HTTP port " + httpPort);
@@ -173,8 +174,9 @@ public class AuthServer {
 
         if (AuthServerConfig.isHttpsEnabled()) {
             int httpsPort = AuthServerConfig.getHttpsPort();
+            String host = AuthServerConfig.getDefaultHost();
             Channel serverChannel = httpsServerBootstrap(bossGroup, workerGroup,
-                    executorGroup, httpsPort
+                    executorGroup, host, httpsPort
             );
             serverChannels.add(serverChannel);
             logger.info("Auth server is listening on HTTPS port " + httpsPort);
@@ -193,7 +195,7 @@ public class AuthServer {
      */
     private static Channel httpServerBootstrap(EventLoopGroup bossGroup,
             EventLoopGroup workerGroup, EventExecutorGroup executorGroup,
-            int port) throws InterruptedException {
+            String host, int port) throws InterruptedException {
         ServerBootstrap b = new ServerBootstrap();
         b.option(ChannelOption.SO_BACKLOG, 1024);
         b.group(bossGroup, workerGroup)
@@ -201,13 +203,13 @@ public class AuthServer {
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new AuthServerHTTPInitializer(executorGroup));
 
-        Channel serverChannel = b.bind(port).sync().channel();
+        Channel serverChannel = b.bind(host, port).sync().channel();
         return serverChannel;
     }
 
     private static Channel httpsServerBootstrap(EventLoopGroup bossGroup,
             EventLoopGroup workerGroup, EventExecutorGroup executorGroup,
-            int port) throws InterruptedException {
+            String host, int port) throws InterruptedException {
         ServerBootstrap b = new ServerBootstrap();
         b.option(ChannelOption.SO_BACKLOG, 1024);
         b.group(bossGroup, workerGroup)
@@ -215,7 +217,7 @@ public class AuthServer {
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .childHandler(new AuthServerHTTPSInitializer(executorGroup));
 
-        Channel serverChannel = b.bind(port).sync().channel();
+        Channel serverChannel = b.bind(host, port).sync().channel();
         return serverChannel;
     }
 }
