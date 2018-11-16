@@ -552,6 +552,7 @@ void S3RequestObject::respond_error(
     set_out_header_value("Content-Length",
                          std::to_string(response_xml.length()));
     set_out_header_value("x-amzn-RequestId", request_id);
+    set_out_header_value("Connection", "close");
     for (auto& header : headers) {
       set_out_header_value(header.first.c_str(), header.second.c_str());
     }
