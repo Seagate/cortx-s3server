@@ -42,3 +42,17 @@ std::string S3CommonUtilities::trim(const std::string &str) {
   std::string tempstr = str;
   return ltrim(rtrim(tempstr));
 }
+
+bool S3CommonUtilities::stoul(const std::string &str, unsigned long &value) {
+  bool isvalid = true;
+  try {
+    value = std::stoul(str);
+  }
+  catch (const std::invalid_argument &ia) {
+    isvalid = false;
+  }
+  catch (const std::out_of_range &oor) {
+    isvalid = false;
+  }
+  return isvalid;
+}

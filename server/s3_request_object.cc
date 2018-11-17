@@ -296,15 +296,9 @@ std::string S3RequestObject::get_content_length_str() {
 bool S3RequestObject::validate_content_length() {
   bool is_content_length_valid = true;
   unsigned long content_length = 0;
-  try {
-    content_length = std::stoul(get_content_length_str());
-  }
-  catch (const std::invalid_argument& ia) {
-    is_content_length_valid = false;
-  }
-  catch (const std::out_of_range& oor) {
-    is_content_length_valid = false;
-  }
+
+  is_content_length_valid =
+      S3CommonUtilities::stoul(get_content_length_str(), content_length);
 
   // check content length is greater than SIZE_MAX
   if (content_length > SIZE_MAX) {
@@ -316,15 +310,9 @@ bool S3RequestObject::validate_content_length() {
   std::string data_length_key = "x-amz-decoded-content-length";
   std::string data_length = get_header_value(data_length_key);
   if (!data_length.empty()) {
-    try {
-      content_length = std::stoul(data_length);
-    }
-    catch (const std::invalid_argument& ia) {
-      is_content_length_valid = false;
-    }
-    catch (const std::out_of_range& oor) {
-      is_content_length_valid = false;
-    }
+    is_content_length_valid =
+        S3CommonUtilities::stoul(data_length, content_length);
+
     // check content length is greater than SIZE_MAX
     if (content_length > SIZE_MAX) {
       is_content_length_valid = false;

@@ -55,5 +55,9 @@ class S3CommonUtilities {
   // horizontal tab (0x09, '\t')
   // vertical tab (0x0b, '\v')
   static std::string trim(const std::string &str);
+  // wrapper method for std::stoul
+  // return true, when string is valid to convert
+  // else return false
+  static bool stoul(const std::string &str, unsigned long &value);
 };
 #endif

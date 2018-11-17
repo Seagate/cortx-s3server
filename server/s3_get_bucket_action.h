@@ -67,7 +67,7 @@ class S3GetBucketAction : public S3Action {
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
   void setup_steps();
-  void object_list_setup();
+  void validate_request();
   void fetch_bucket_info();
   void fetch_bucket_info_failed();
   void get_next_objects();

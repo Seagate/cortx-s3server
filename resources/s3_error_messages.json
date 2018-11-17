@@ -51,6 +51,10 @@
     "Description": "Supplied credentials are not owned by account id specified in action URI.",
     "httpcode": 400
   },
+  "InvalidArgument": {
+    "Description": "Invalid Argument.",
+    "httpcode": 400
+  },
   "NoSuchBucket": {
     "Description": "The specified bucket does not exist.",
     "httpcode": 404

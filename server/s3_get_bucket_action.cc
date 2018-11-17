@@ -25,6 +25,7 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_option.h"
+#include "s3_common_utilities.h"
 
 S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
@@ -56,20 +57,20 @@ S3GetBucketAction::S3GetBucketAction(
     object_metada_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
-  object_list_setup();
   setup_steps();
   // TODO request param validations
 }
 
 void S3GetBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
+  add_task(std::bind(&S3GetBucketAction::validate_request, this));
   add_task(std::bind(&S3GetBucketAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetBucketAction::get_next_objects, this));
   add_task(std::bind(&S3GetBucketAction::send_response_to_s3_client, this));
   // ...
 }
 
-void S3GetBucketAction::object_list_setup() {
+void S3GetBucketAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   object_list.set_bucket_name(request->get_bucket_name());
@@ -95,10 +96,17 @@ void S3GetBucketAction::object_list_setup() {
     max_keys = 1000;
     object_list.set_max_keys("1000");
   } else {
-    max_keys = std::stoul(max_k);
+    if (!S3CommonUtilities::stoul(max_k, max_keys)) {
+      s3_log(S3_LOG_DEBUG, request_id, "invalid max-keys = %s\n",
+             max_k.c_str());
+      set_s3_error("InvalidArgument");
+      send_response_to_s3_client();
+      return;
+    }
     object_list.set_max_keys(max_k);
   }
   s3_log(S3_LOG_DEBUG, request_id, "max-keys = %s\n", max_k.c_str());
+  next();
 }
 
 void S3GetBucketAction::fetch_bucket_info() {
@@ -133,8 +141,13 @@ void S3GetBucketAction::get_next_objects() {
   clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
 
-  if (object_list_index_oid.u_hi == 0ULL &&
-      object_list_index_oid.u_lo == 0ULL) {
+  if (max_keys == 0) {
+    // as requested max_keys is 0
+    // Go ahead and respond.
+    fetch_successful = true;
+    send_response_to_s3_client();
+  } else if (object_list_index_oid.u_hi == 0ULL &&
+             object_list_index_oid.u_lo == 0ULL) {
     fetch_successful = true;
     send_response_to_s3_client();
   } else {
