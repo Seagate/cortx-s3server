@@ -56,8 +56,6 @@ S3GetServiceAction::S3GetServiceAction(
   }
 
   setup_steps();
-  bucket_list.set_owner_name(request->get_user_name());
-  bucket_list.set_owner_id(request->get_user_id());
   bucket_list_index_oid = {0ULL, 0ULL};
 }
 
@@ -71,13 +69,13 @@ void S3GetServiceAction::setup_steps() {
 
 void S3GetServiceAction::fetch_bucket_list_index_oid() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
+  bucket_list.set_owner_name(request->get_user_name());
+  bucket_list.set_owner_id(request->get_user_id());
   account_user_index_metadata =
       acct_user_idx_metadata_factory->create_s3_account_user_idx_metadata(
           request);
   account_user_index_metadata->load(std::bind(&S3GetServiceAction::next, this),
                                     std::bind(&S3GetServiceAction::next, this));
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

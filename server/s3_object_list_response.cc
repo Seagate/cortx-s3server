@@ -18,6 +18,7 @@
  */
 
 #include "s3_object_list_response.h"
+#include "s3_common_utilities.h"
 #include "s3_log.h"
 
 S3ObjectListResponse::S3ObjectListResponse()
@@ -139,112 +140,155 @@ std::string& S3ObjectListResponse::get_upload_id() { return upload_id; }
 
 std::string& S3ObjectListResponse::get_xml() {
   // clang-format off
-  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  response_xml += "<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
-  response_xml += "<Name>" + bucket_name + "</Name>\n"
-                  "<Prefix>" + request_prefix + "</Prefix>\n"
-                  "<Delimiter>" + request_delimiter + "</Delimiter>\n"
-                  "<Marker>" + request_marker_key + "</Marker>\n"
-                  "<MaxKeys>" + max_keys + "</MaxKeys>\n"
-                  "<NextMarker>" + next_marker_key + "</NextMarker>\n"
-                  "<IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
+  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  response_xml +=
+      "<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+  response_xml += S3CommonUtilities::format_xml_string("Name", bucket_name);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("Prefix", request_prefix);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("Delimiter", request_delimiter);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("Marker", request_marker_key);
+  response_xml += S3CommonUtilities::format_xml_string("MaxKeys", max_keys);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("NextMarker", next_marker_key);
+  response_xml += S3CommonUtilities::format_xml_string(
+      "IsTruncated", (response_is_truncated ? "true" : "false"));
 
   for (auto&& object : object_list) {
-    response_xml += "<Contents>\n"
-                    "  <Key>" + object->get_object_name() + "</Key>\n"
-                    "  <LastModified>" + object->get_last_modified_iso() + "</LastModified>\n"
-                    "  <ETag>" + object->get_md5() + "</ETag>\n"
-                    "  <Size>" + object->get_content_length_str() + "</Size>\n"
-                    "  <StorageClass>" + object->get_storage_class() + "</StorageClass>\n"
-                    "  <Owner>\n"
-                    "    <ID>" + object->get_user_id() + "</ID>\n"
-                    "    <DisplayName>" + object->get_user_name() + "</DisplayName>\n"
-                    "  </Owner>\n"
-                    "</Contents>";
+    response_xml += "<Contents>";
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Key", object->get_object_name());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "LastModified", object->get_last_modified_iso());
+    response_xml +=
+        S3CommonUtilities::format_xml_string("ETag", object->get_md5());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "Size", object->get_content_length_str());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "StorageClass", object->get_storage_class());
+    response_xml += "<Owner>";
+    response_xml +=
+        S3CommonUtilities::format_xml_string("ID", object->get_user_id());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "DisplayName", object->get_user_name());
+    response_xml += "</Owner>";
+    response_xml += "</Contents>";
   }
 
   for (auto&& prefix : common_prefixes) {
-    response_xml += "<CommonPrefixes>\n"
-                    "  <Prefix>" + prefix + "</Prefix>\n"
-        "</CommonPrefixes>";
+    response_xml += "<CommonPrefixes>";
+    response_xml += S3CommonUtilities::format_xml_string("Prefix", prefix);
+    response_xml += "</CommonPrefixes>";
   }
 
-  response_xml += "</ListBucketResult>\n";
+  response_xml += "</ListBucketResult>";
   // clang-format on
   return response_xml;
 }
 
 std::string& S3ObjectListResponse::get_multiupload_xml() {
   // clang-format off
-  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  response_xml += "<ListMultipartUploadsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
-  response_xml += "<Bucket>" + bucket_name + "</Bucket>"
-                  "<KeyMarker>" + request_marker_key + "</KeyMarker>"
-                  "<UploadIdMarker>" + request_marker_uploadid + "</UploadIdMarker>"
-                  "<NextKeyMarker>" + next_marker_key + "</NextKeyMarker>"
-                  "<NextUploadIdMarker>" + next_marker_uploadid + "</NextUploadIdMarker>"
-                  "<MaxUploads>" + max_uploads + "</MaxUploads>\n"
-                  "<IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
+  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  response_xml +=
+      "<ListMultipartUploadsResult "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+  response_xml += S3CommonUtilities::format_xml_string("Bucket", bucket_name);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("KeyMarker", request_marker_key);
+  response_xml += S3CommonUtilities::format_xml_string("UploadIDMarker",
+                                                       request_marker_uploadid);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("NextKeyMarker", next_marker_key);
+  response_xml += S3CommonUtilities::format_xml_string("NextUploadIDMarker",
+                                                       next_marker_uploadid);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("MaxUploads", max_uploads);
+  response_xml += S3CommonUtilities::format_xml_string(
+      "IsTruncated", (response_is_truncated ? "true" : "false"));
 
   for (auto&& object : object_list) {
-    response_xml += "<Upload>\n"
-                    "  <Key>" + object->get_object_name() + "</Key>\n"
-                    "  <UploadId>" + object->get_upload_id() + "</UploadId>\n"
-                    "  <Initiator>\n"
-                    "    <ID>" + object->get_user_id() + "</ID>\n"
-                    "    <DisplayName>" + object->get_user_name() + "</DisplayName>\n"
-                    "  </Initiator>\n"
-                    "  <Owner>\n"
-                    "    <ID>" + object->get_user_id() + "</ID>\n"
-                    "    <DisplayName>" + object->get_user_name() + "</DisplayName>\n"
-                    "  </Owner>\n"
-                    "  <StorageClass>" + object->get_storage_class() + "</StorageClass>\n"
-                    "  <Initiated>" + object->get_last_modified_iso() + "</Initiated>\n"
-                    "</Upload>\n";
+    response_xml += "<Upload>";
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Key", object->get_object_name());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "UploadID", object->get_upload_id());
+    response_xml += "<Initiator>";
+    response_xml +=
+        S3CommonUtilities::format_xml_string("ID", object->get_user_id());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "DisplayName", object->get_user_name());
+    response_xml += "</Initiator>";
+    response_xml += "<Owner>";
+    response_xml +=
+        S3CommonUtilities::format_xml_string("ID", object->get_user_id());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "DisplayName", object->get_user_name());
+    response_xml += "</Owner>";
+    response_xml += S3CommonUtilities::format_xml_string("StorageClass",
+                                                         get_storage_class());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "Initiated", object->get_last_modified_iso());
+    response_xml += "</Upload>";
   }
 
   for (auto&& prefix : common_prefixes) {
-    response_xml += "<CommonPrefixes>\n"
-                    "  <Prefix>" + prefix + "</Prefix>\n"
-                    "</CommonPrefixes>";
+    response_xml += "<CommonPrefixes>";
+    response_xml += S3CommonUtilities::format_xml_string("Prefix", prefix);
+    response_xml += "</CommonPrefixes>";
   }
 
-  response_xml += "</ListMultipartUploadsResult>\n";
+  response_xml += "</ListMultipartUploadsResult>";
   // clang-format on
   return response_xml;
 }
 
 std::string& S3ObjectListResponse::get_multipart_xml() {
   // clang-format off
-  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  response_xml += "<ListPartsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n";
-  response_xml += "  <Bucket>" + bucket_name + "</Bucket>\n"
-                  "  <Key>" + get_object_name() + "</Key>\n"
-                  "  <UploadID>" + get_upload_id() + "</UploadID>\n"
-                  "  <Initiator>\n"
-                  "      <ID>" + get_user_id() + "</ID>\n"
-                  "      <DisplayName>" + get_user_name() + "</DisplayName>\n"
-                  "  </Initiator>\n"
-                  "  <Owner>\n"
-                  "    <ID>" + get_account_id() + "</ID>\n"
-                  "    <DisplayName>" + get_account_name() + "</DisplayName>\n"
-                  "  </Owner>\n"
-                  "  <StorageClass>" + get_storage_class() + "</StorageClass>\n"
-                  "  <PartNumberMarker>" + request_marker_key + "</PartNumberMarker>\n"
-                  "  <NextPartNumberMarker>" + (next_marker_key.empty() ? "0" : next_marker_key) + "</NextPartNumberMarker>\n"
-                  "  <MaxParts>" + max_parts + "</MaxParts>\n"
-                  "  <IsTruncated>" + (response_is_truncated ? "true" : "false") + "</IsTruncated>\n";
+  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  response_xml +=
+      "<ListPartsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+  response_xml += S3CommonUtilities::format_xml_string("Bucket", bucket_name);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("Key", get_object_name());
+  response_xml +=
+      S3CommonUtilities::format_xml_string("UploadID", get_upload_id());
+  response_xml += "<Initiator>";
+  response_xml += S3CommonUtilities::format_xml_string("ID", get_user_id());
+  response_xml +=
+      S3CommonUtilities::format_xml_string("DisplayName", get_user_name());
+  response_xml += "</Initiator>";
+  response_xml += "<Owner>";
+  response_xml += S3CommonUtilities::format_xml_string("ID", get_account_id());
+  response_xml +=
+      S3CommonUtilities::format_xml_string("DisplayName", get_account_name());
+  response_xml += "</Owner>";
+  response_xml +=
+      S3CommonUtilities::format_xml_string("StorageClass", get_storage_class());
+  response_xml += S3CommonUtilities::format_xml_string("PartNumberMarker",
+                                                       request_marker_key);
+  response_xml += S3CommonUtilities::format_xml_string(
+      "NextPartNumberMarker",
+      (next_marker_key.empty() ? "0" : next_marker_key));
+  response_xml += S3CommonUtilities::format_xml_string("MaxParts", max_parts);
+  response_xml += S3CommonUtilities::format_xml_string(
+      "IsTruncated", (response_is_truncated ? "true" : "false"));
 
   for (auto&& part : part_list) {
-    response_xml += "  <Part>\n"
-                    "  <PartNumber>" + part.second->get_part_number() + "</PartNumber>\n"
-                    "  <LastModified>" + part.second->get_last_modified_iso() + "</LastModified>\n"
-                    "  <ETag>" + part.second->get_md5() + "</ETag>\n"
-                    "  <Size>" + part.second->get_content_length_str() + "</Size>\n"
-                    "  </Part>\n";
+    response_xml += "<Part>";
+    response_xml += S3CommonUtilities::format_xml_string(
+        "PartNumber", part.second->get_part_number());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "LastModified", part.second->get_last_modified_iso());
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Etag", part.second->get_md5());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "Size", part.second->get_content_length_str());
+    response_xml += "</Part>";
   }
 
-  response_xml += "</ListPartsResult>\n";
+  response_xml += "</ListPartsResult>";
   // clang-format on
 
   return response_xml;

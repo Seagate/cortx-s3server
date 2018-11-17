@@ -18,6 +18,7 @@
  */
 
 #include "s3_service_list_response.h"
+#include "s3_common_utilities.h"
 
 S3ServiceListResponse::S3ServiceListResponse() {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
@@ -37,22 +38,26 @@ void S3ServiceListResponse::add_bucket(
 
 // clang-format off
 std::string& S3ServiceListResponse::get_xml() {
-  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  response_xml += "<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01\">\n";
-  response_xml += "<Owner>\n"
-                  "  <ID>" + owner_id + "</ID>\n"
-                  "  <DisplayName>" + owner_name + "</DisplayName>\n"
-                  "</Owner>\n";
-
-  response_xml += "<Buckets>\n";
+  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+  response_xml +=
+      "<ListAllMyBucketsResult>"
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01\">";
+  response_xml += "<Owner>";
+  response_xml += S3CommonUtilities::format_xml_string("ID", owner_id);
+  response_xml +=
+      S3CommonUtilities::format_xml_string("DispalyName", owner_name);
+  response_xml += "</Owner>";
+  response_xml += "<Buckets>";
   for (auto&& bucket : bucket_list) {
-    response_xml += "  <Bucket>\n"
-                    "    <Name>" + bucket->get_bucket_name() + "</Name>\n"
-                    "    <CreationDate>" + bucket->get_creation_time() + "</CreationDate>\n"
-                    "  </Bucket>\n";
+    response_xml += "<Bucket>";
+    response_xml +=
+        S3CommonUtilities::format_xml_string("Name", bucket->get_bucket_name());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "CreationDate", bucket->get_creation_time());
+    response_xml += "</Bucket>";
   }
-  response_xml += "</Buckets>\n";
-  response_xml += "</ListAllMyBucketsResult>\n";
+  response_xml += "</Buckets>";
+  response_xml += "</ListAllMyBucketsResult>";
 
   return response_xml;
 }
