@@ -54,11 +54,27 @@
     src: ./files/haproxy/503.http
     dest: /etc/haproxy/errors/
 
+- name: Setup logrotate config for haproxy
+  copy:
+    src: ./files/haproxy/logrotate/haproxy
+    dest: /etc/logrotate.d/haproxy
+
 - name: Setup haproxy config to enable logs
   copy:
     src: ./files/haproxy/rsyslog.d/haproxy.conf
     dest: /etc/rsyslog.d/haproxy.conf
   notify: restart rsyslog
+
+- name: Clean existing logrotate configuration
+  file:
+    state: absent
+    path: /etc/cron.daily/logrotate
+
+- name: Setup logrotate config for haproxy to run hourly
+  copy:
+    src: ./files/haproxy/logrotate/logrotate
+    dest: /etc/cron.hourly/logrotate
+    mode: preserve
 
 - name: Enable http port in selinux
   command: setsebool httpd_can_network_connect on -P

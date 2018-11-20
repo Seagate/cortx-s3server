@@ -59,6 +59,7 @@
     - python-futures
     - python2-s3transfer
     - python34-mock
+    - python34-ply
 
 - name: Install python modules required by S3 system tests and s3 (iam) auth cli
   yum: pkg={{item}} state=installed

@@ -45,6 +45,12 @@ Run setup script to configure rpmbuild vm
 cd <s3 src>
 ./scripts/env/rpmbuild/init.sh
 ```
+Run following script to update host entries in /etc/hosts
+```sh
+cd <s3 src>
+./update-hosts.sh
+```
+
 
 Install mero/halon
 ```sh
@@ -80,6 +86,13 @@ Ensure you have static hostname setup for the node. Example:
 hostnamectl set-hostname s3release
 # check status
 hostnamectl status
+```
+
+* Do NOT use following script directly on real cluster as it is configured with fully
+qualified DNS. Run following script to update host entries in /etc/hosts
+```sh
+cd <s3 src>
+./update-hosts.sh
 ```
 
 ```sh
