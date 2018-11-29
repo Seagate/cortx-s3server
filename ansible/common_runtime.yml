@@ -92,3 +92,9 @@
 
 - name: Create working directory for S3 server.
   file: path=/var/seagate/s3 state=directory
+
+- name: Update s3 logrotate entry in cron to run hourly
+  copy:
+    src: ./files/s3-logrotate/s3logfilerollover.sh
+    dest: /etc/cron.hourly/s3logfilerollover.sh
+    mode: 0755

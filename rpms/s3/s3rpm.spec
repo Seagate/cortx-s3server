@@ -91,6 +91,7 @@ rm -rf %{buildroot}
 %dir /var/log/seagate/
 %dir /var/log/seagate/auth
 %dir /var/log/seagate/s3
+/etc/cron.hourly/s3logfilerollover.sh
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
 /opt/seagate/auth/AuthServer-1.0-0.jar

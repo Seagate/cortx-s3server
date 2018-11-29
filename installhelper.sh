@@ -17,6 +17,7 @@ INSTALL_PREFIX=$1
 AUTH_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/auth
 S3_INSTALL_LOCATION=$INSTALL_PREFIX/opt/seagate/s3
 S3_CONFIG_FILE_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/conf
+S3_LOG_ROTATE_FILE_LOCATION=$INSTALL_PREFIX/etc/cron.hourly
 SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
 LOG_DIR_LOCATION=$INSTALL_PREFIX/var/log/seagate
 NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/nodejs
@@ -31,6 +32,7 @@ mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_CONFIG_FILE_LOCATION
+mkdir -p $S3_LOG_ROTATE_FILE_LOCATION
 mkdir -p $SERVICE_FILE_LOCATION
 mkdir -p $LOG_DIR_LOCATION/s3
 mkdir -p $LOG_DIR_LOCATION/auth
@@ -67,6 +69,9 @@ cp ./system/s3stopsystem.sh $S3_INSTALL_LOCATION/
 
 # Copy the s3 service file for systemctl multiple instance support.
 cp ./system/s3server@.service $SERVICE_FILE_LOCATION
+
+# Copy the s3 log rotate script for retaining recent modified log files
+cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 
 # Copy Auth server jar to install location
 cp -f auth/server/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION/
