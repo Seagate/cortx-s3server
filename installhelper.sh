@@ -82,6 +82,7 @@ cp -f auth/encryptcli/target/AuthPassEncryptCLI-1.0-0.jar $AUTH_INSTALL_LOCATION
 #Copy Auth Server resources to install location
 cp -ru auth/resources/static $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/authencryptcli-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties $AUTH_INSTALL_LOCATION/resources/
 

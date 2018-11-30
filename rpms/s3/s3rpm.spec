@@ -67,6 +67,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %config(noreplace) /opt/seagate/auth/resources/authserver.properties
 %config(noreplace) /opt/seagate/auth/resources/authserver-log4j2.xml
+%config(noreplace) /opt/seagate/auth/resources/authencryptcli-log4j2.xml
 %config(noreplace) /opt/seagate/auth/resources/keystore.properties
 %config(noreplace) /opt/seagate/auth/resources/static/saml-metadata.xml
 %config(noreplace) /opt/seagate/s3/conf/s3config.yaml
@@ -75,6 +76,7 @@ rm -rf %{buildroot}
 
 %attr(4600, root, root) /opt/seagate/auth/resources/authserver.properties
 %attr(4600, root, root) /opt/seagate/auth/resources/authserver-log4j2.xml
+%attr(4600, root, root) /opt/seagate/auth/resources/authencryptcli-log4j2.xml
 %attr(4600, root, root) /opt/seagate/auth/resources/keystore.properties
 
 %dir /opt/seagate/

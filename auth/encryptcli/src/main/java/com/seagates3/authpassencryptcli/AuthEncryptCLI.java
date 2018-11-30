@@ -20,12 +20,11 @@
 package com.seagates3.authpassencryptcli;
 
 import java.io.Console;
-
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +35,7 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.logging.log4j.Level;
-
+import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import com.seagates3.authencryptutil.AuthEncryptConfig;
 import com.seagates3.authencryptutil.JKSUtil;
 import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
+import com.seagates3.exception.CLIInitializationException;
 
 
 /**
@@ -53,8 +53,7 @@ import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
 public class AuthEncryptCLI {
 
     public static String AUTH_INSTALL_DIR = "/opt/seagate/auth";
-    private static final Logger logger = LoggerFactory.getLogger(
-                                 AuthEncryptCLI.class.getName());
+    private static Logger logger;
 
     /**
      * @param args
@@ -154,7 +153,26 @@ public class AuthEncryptCLI {
      * This method initializes logger
      * @throws IOException
      */
-    static void logInit() throws IOException, Exception {
+    static void logInit() throws CLIInitializationException, Exception {
+
+        AuthEncryptConfig.setLogConfigFile();
+        String logConfigFilePath = AuthEncryptConfig.getLogConfigFile();
+
+        /**
+         * If log4j config file is given, override the default Logging
+         * properties file.
+         */
+        if (logConfigFilePath != null) {
+            File logConfigFile = new File(logConfigFilePath);
+            if (logConfigFile.exists()) {
+                ConfigurationSource source = new ConfigurationSource(
+                        new FileInputStream(logConfigFile));
+                Configurator.initialize(null, source);
+            } else {
+                throw new CLIInitializationException("Logging config file "
+                                  + logConfigFilePath + " doesn't exist.");
+            }
+        }
 
         String logLevel = AuthEncryptConfig.getLogLevel();
         if (logLevel != null) {
@@ -182,7 +200,8 @@ public class AuthEncryptCLI {
         }
         try {
             logInit();
-        } catch (IOException e) {
+            logger = LoggerFactory.getLogger(AuthEncryptCLI.class.getName());
+        } catch (CLIInitializationException e) {
             System.err.println("Failed to Initialize logger");
             e.printStackTrace();
             System.exit(1);
@@ -191,7 +210,7 @@ public class AuthEncryptCLI {
         }
         String passwd = null;
 
-        logger.info("Initialization successfull");
+        logger.debug("Initialization successfull");
         if(args.length == 0) {
             passwd = readFromConsole();
         } else {
@@ -212,6 +231,6 @@ public class AuthEncryptCLI {
             System.err.println("Failed to encrypt password.");
             System.exit(1);
         }
-        logger.info("Operation completed successfully");
+        logger.debug("Operation completed successfully");
     }
 }

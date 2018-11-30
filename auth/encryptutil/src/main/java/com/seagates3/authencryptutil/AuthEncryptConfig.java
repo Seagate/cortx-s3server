@@ -86,6 +86,15 @@ public class AuthEncryptConfig {
         return authEncryptConfig.getProperty("logLevel");
     }
 
+    public static void setLogConfigFile() {
+        String logConfigFile = Paths.get(AUTH_INSTALL_DIR, "resources", "authencryptcli-log4j2.xml").toString();
+        authEncryptConfig.setProperty("logConfigFile", logConfigFile );
+    }
+
+    public static String getLogConfigFile() {
+        return authEncryptConfig.getProperty("logConfigFile");
+    }
+
     // Overide helper for UT.
     public static void overrideProperty(String key, String value) {
       authEncryptConfig.setProperty(key, value);
