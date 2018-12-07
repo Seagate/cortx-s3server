@@ -197,11 +197,11 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
   response_xml += S3CommonUtilities::format_xml_string("Bucket", bucket_name);
   response_xml +=
       S3CommonUtilities::format_xml_string("KeyMarker", request_marker_key);
-  response_xml += S3CommonUtilities::format_xml_string("UploadIDMarker",
+  response_xml += S3CommonUtilities::format_xml_string("UploadIdMarker",
                                                        request_marker_uploadid);
   response_xml +=
       S3CommonUtilities::format_xml_string("NextKeyMarker", next_marker_key);
-  response_xml += S3CommonUtilities::format_xml_string("NextUploadIDMarker",
+  response_xml += S3CommonUtilities::format_xml_string("NextUploadIdMarker",
                                                        next_marker_uploadid);
   response_xml +=
       S3CommonUtilities::format_xml_string("MaxUploads", max_uploads);
@@ -213,7 +213,7 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
     response_xml +=
         S3CommonUtilities::format_xml_string("Key", object->get_object_name());
     response_xml += S3CommonUtilities::format_xml_string(
-        "UploadID", object->get_upload_id());
+        "UploadId", object->get_upload_id());
     response_xml += "<Initiator>";
     response_xml +=
         S3CommonUtilities::format_xml_string("ID", object->get_user_id());
@@ -282,7 +282,7 @@ std::string& S3ObjectListResponse::get_multipart_xml() {
     response_xml += S3CommonUtilities::format_xml_string(
         "LastModified", part.second->get_last_modified_iso());
     response_xml +=
-        S3CommonUtilities::format_xml_string("Etag", part.second->get_md5());
+        S3CommonUtilities::format_xml_string("ETag", part.second->get_md5());
     response_xml += S3CommonUtilities::format_xml_string(
         "Size", part.second->get_content_length_str());
     response_xml += "</Part>";

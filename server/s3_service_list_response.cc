@@ -45,7 +45,7 @@ std::string& S3ServiceListResponse::get_xml() {
   response_xml += "<Owner>";
   response_xml += S3CommonUtilities::format_xml_string("ID", owner_id);
   response_xml +=
-      S3CommonUtilities::format_xml_string("DispalyName", owner_name);
+      S3CommonUtilities::format_xml_string("DisplayName", owner_name);
   response_xml += "</Owner>";
   response_xml += "<Buckets>";
   for (auto&& bucket : bucket_list) {
