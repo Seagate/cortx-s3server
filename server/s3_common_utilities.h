@@ -59,13 +59,10 @@ class S3CommonUtilities {
   // return true, when string is valid to convert
   // else return false
   static bool stoul(const std::string &str, unsigned long &value);
-  // xml_formatting_method
-  static inline std::string format_xml_string(std::string tag,
-                                              std::string value) {
-    if (value.empty()) {
-      return "<" + tag + "/>";
-    }
-    return "<" + tag + ">" + value + "</" + tag + ">";
-  }
+  // input: A string to convert to XML.
+  // returns new string with the substitution done
+  static std::string s3xmlEncodeSpecialChars(const std::string &input);
+  static std::string format_xml_string(std::string tag,
+                                       const std::string &value);
 };
 #endif

@@ -20,6 +20,7 @@
 #include "s3_common_utilities.h"
 #include <algorithm>
 #include <cctype>
+#include <libxml/parser.h>
 
 bool S3CommonUtilities::string_has_only_digits(const std::string &str) {
   return str.find_first_not_of("0123456789") == std::string::npos;
@@ -41,6 +42,26 @@ std::string &S3CommonUtilities::rtrim(std::string &str) {
 std::string S3CommonUtilities::trim(const std::string &str) {
   std::string tempstr = str;
   return ltrim(rtrim(tempstr));
+}
+
+std::string S3CommonUtilities::s3xmlEncodeSpecialChars(
+    const std::string &input) {
+  xmlChar *output = xmlEncodeSpecialChars(NULL, BAD_CAST input.c_str());
+  std::string data;
+  if (output) {
+    data = reinterpret_cast<char *>(output);
+    xmlFree(output);
+  }
+  return data;
+}
+
+std::string S3CommonUtilities::format_xml_string(std::string tag,
+                                                 const std::string &value) {
+  std::string format_string = s3xmlEncodeSpecialChars(value);
+  if (format_string.empty()) {
+    return "<" + tag + "/>";
+  }
+  return "<" + tag + ">" + format_string + "</" + tag + ">";
 }
 
 bool S3CommonUtilities::stoul(const std::string &str, unsigned long &value) {

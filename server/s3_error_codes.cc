@@ -18,7 +18,7 @@
  */
 
 #include "s3_error_codes.h"
-
+#include "s3_common_utilities.h"
 S3Error::S3Error(std::string error_code, std::string req_id,
                  std::string res_key)
     : code(error_code),
@@ -37,12 +37,13 @@ std::string& S3Error::to_xml() {
   // clang-format off
   xml_message = "";
   xml_message = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  xml_message += "<Error>\n"
-                  "  <Code>" + code + "</Code>\n"
-                  "  <Message>" + details.get_message() + "</Message>\n"
-                  "  <Resource>" + resource_key + "</Resource>\n"
-                  "  <RequestId>" + request_id + "</RequestId>\n"
-                  "</Error>\n";
+  xml_message += "<Error>\n";
+  xml_message += S3CommonUtilities::format_xml_string("Code", code);
+  xml_message +=
+      S3CommonUtilities::format_xml_string("Message", details.get_message());
+  xml_message += S3CommonUtilities::format_xml_string("Resource", resource_key);
+  xml_message += S3CommonUtilities::format_xml_string("RequestId", request_id);
+  xml_message += "</Error>\n";
   // clang-format on
   return xml_message;
 }

@@ -101,3 +101,54 @@ TEST_F(S3CommonUtilitiesTest, TrimOfStringLeftAndRight) {
   std::string input_string = "   test string   ";
   EXPECT_STREQ("test string", S3CommonUtilities::trim(input_string).c_str());
 }
+
+TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest1) {
+  std::string input_string = "abc&d";
+  EXPECT_STREQ("abc&amp;d", S3CommonUtilities::s3xmlEncodeSpecialChars(
+                                input_string).c_str());
+  EXPECT_STRNE("abc&d", S3CommonUtilities::s3xmlEncodeSpecialChars(input_string)
+                            .c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest2) {
+  std::string input_string = "abc<d";
+  EXPECT_STREQ("abc&lt;d", S3CommonUtilities::s3xmlEncodeSpecialChars(
+                               input_string).c_str());
+  EXPECT_STRNE("abc<d", S3CommonUtilities::s3xmlEncodeSpecialChars(input_string)
+                            .c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest3) {
+  std::string input_string = "abc>d";
+  EXPECT_STREQ("abc&gt;d", S3CommonUtilities::s3xmlEncodeSpecialChars(
+                               input_string).c_str());
+  EXPECT_STRNE("abc>d", S3CommonUtilities::s3xmlEncodeSpecialChars(input_string)
+                            .c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest4) {
+  std::string input_string = "abc\"d";
+  EXPECT_STREQ("abc&quot;d", S3CommonUtilities::s3xmlEncodeSpecialChars(
+                                 input_string).c_str());
+  EXPECT_STRNE("abc\"d", S3CommonUtilities::s3xmlEncodeSpecialChars(
+                             input_string).c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest5) {
+  std::string input_string = "abcd\r";
+  EXPECT_STREQ("abcd&#13;", S3CommonUtilities::s3xmlEncodeSpecialChars(
+                                input_string).c_str());
+  EXPECT_STRNE("abcd\r", S3CommonUtilities::s3xmlEncodeSpecialChars(
+                             input_string).c_str());
+}
+TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest6) {
+  std::string input_string = "";
+  EXPECT_STREQ(
+      "", S3CommonUtilities::s3xmlEncodeSpecialChars(input_string).c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest7) {
+  std::string input_string = "abcd";
+  EXPECT_STREQ(
+      "abcd", S3CommonUtilities::s3xmlEncodeSpecialChars(input_string).c_str());
+}

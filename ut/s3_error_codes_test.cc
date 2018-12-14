@@ -115,10 +115,10 @@ TEST_F(S3ErrorTest, ReturnValidErrorXml) {
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   expected_response +=
       "<Error>\n"
-      "  <Code>BucketNotEmpty</Code>\n"
-      "  <Message>The bucket you tried to delete is not empty.</Message>\n"
-      "  <Resource>SomeBucketName</Resource>\n"
-      "  <RequestId>dummy-request-id</RequestId>\n"
+      "<Code>BucketNotEmpty</Code>"
+      "<Message>The bucket you tried to delete is not empty.</Message>"
+      "<Resource>SomeBucketName</Resource>"
+      "<RequestId>dummy-request-id</RequestId>"
       "</Error>\n";
 
   EXPECT_EQ(expected_response, xml_content);
@@ -134,10 +134,10 @@ TEST_F(S3ErrorTest, Negative) {
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   expected_response +=
       "<Error>\n"
-      "  <Code>NegativeTestCase</Code>\n"
-      "  <Message>Unknown Error</Message>\n"
-      "  <Resource>SomeBucketName</Resource>\n"
-      "  <RequestId>dummy-request-id</RequestId>\n"
+      "<Code>NegativeTestCase</Code>"
+      "<Message>Unknown Error</Message>"
+      "<Resource>SomeBucketName</Resource>"
+      "<RequestId>dummy-request-id</RequestId>"
       "</Error>\n";
   EXPECT_EQ(520, error.get_http_status_code());
   EXPECT_EQ(expected_response, error.to_xml());
