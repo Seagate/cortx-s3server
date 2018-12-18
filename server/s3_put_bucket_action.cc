@@ -50,6 +50,7 @@ S3PutBucketAction::S3PutBucketAction(
 void S3PutBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3PutBucketAction::validate_request, this));
+  add_task(std::bind(&S3PutBucketAction::validate_bucket_name, this));
   add_task(std::bind(&S3PutBucketAction::read_metadata, this));
   add_task(std::bind(&S3PutBucketAction::create_bucket, this));
   add_task(std::bind(&S3PutBucketAction::send_response_to_s3_client, this));
@@ -98,6 +99,113 @@ void S3PutBucketAction::validate_request_body(std::string content) {
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutBucketAction::validate_bucket_name() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  // get bucket name
+  std::string bucket_name = request->get_bucket_name();
+
+  // bucket name should be within 3 and 63 character long
+  if ((bucket_name.size() < BUCKETNAME_MIN_LENGTH) ||
+      (bucket_name.size() > BUCKETNAME_MAX_LENGTH)) {
+    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+           bucket_name.c_str());
+    set_s3_error("InvalidBucketName");
+    send_response_to_s3_client();
+    return;
+  }
+
+  if (!((std::islower(bucket_name[0])) || (std::isdigit(bucket_name[0])))) {
+    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+           bucket_name.c_str());
+    set_s3_error("InvalidBucketName");
+    send_response_to_s3_client();
+    return;
+  }
+
+  // bucket name should not end with Period or Dash
+  if ((bucket_name.back() == '.') || (bucket_name.back() == '-')) {
+    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+           bucket_name.c_str());
+    set_s3_error("InvalidBucketName");
+    send_response_to_s3_client();
+    return;
+  }
+
+  // found_special_char flag will be set to true,
+  // when '.' or '-' found.
+  bool found_special_char = false;
+  bool valid_bucket_name = true;
+  int digit_count = 0;
+  int dot_count = 0;
+  bool is_valid_ip = true;
+
+  // Iterate through string and validate bucket naming as per
+  // https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+  for (std::string::size_type i = 0;
+       valid_bucket_name && i < bucket_name.size(); ++i) {
+    if (std::islower(bucket_name[i])) {
+      found_special_char = false;
+      is_valid_ip = false;
+    } else if (std::isdigit(bucket_name[i])) {
+      found_special_char = false;
+      digit_count++;
+    } else if (bucket_name[i] == '.') {
+      // bucket name should start with number or lowercase character
+      // bucket name should not contain consecutive period or dash,
+      // this constraint is checked with 'found_special_char' flag,
+      // this should not be true when we are iterating bucket name
+      // at either of '.' or '-'.
+      if (found_special_char) {
+        valid_bucket_name = false;
+        break;
+      }
+      if (is_valid_ip && digit_count > 3) {
+        is_valid_ip = false;
+      }
+      dot_count++;
+      found_special_char = true;
+      digit_count = 0;
+    } else if (bucket_name[i] == '-') {
+      // bucket name should start with number or lowercase character
+      // bucket name should not contain consecutive period or dash,
+      // this constraint is checked with found_special_char flag,
+      // this should not be true,when we are iterating bucket name
+      // at either of '.' or '-'.
+      if (found_special_char) {
+        valid_bucket_name = false;
+        break;
+      }
+      found_special_char = true;
+      is_valid_ip = false;
+    } else {
+      // Bucket names must not contain uppercase
+      // characters or underscores.
+      // i.e, should contain only above specified characters in if-else
+      // statement.
+      valid_bucket_name = false;
+      break;
+    }
+  }
+
+  // Bucket names must not be formatted as an IP address
+  // (for example, 192.168.5.4).
+  if (valid_bucket_name && is_valid_ip && dot_count == 3 && digit_count <= 3) {
+    valid_bucket_name = false;
+  }
+
+  // send response to client, if bucket is invalid
+  if (!valid_bucket_name) {
+    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+           bucket_name.c_str());
+    set_s3_error("InvalidBucketName");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_ERROR, "", "Exiting\n");
 }
 
 void S3PutBucketAction::read_metadata() {

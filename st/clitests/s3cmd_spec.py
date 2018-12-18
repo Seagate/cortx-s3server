@@ -217,6 +217,18 @@ S3cmdTest('s3cmd can retrieve obj info').info_object("seagatebucket", "3kfile").
 S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
+# ********** Tests to verify behaviour against InvalidBucketNames.
+S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket_1").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
+S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket-").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
+S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebu.-cket1").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
+S3cmdTest('s3cmd cannot create bucket').create_bucket("Seagatebucket1").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
+S3cmdTest('s3cmd cannot create bucket').create_bucket("se").execute_test(negative_case=True).command_should_fail()
+S3cmdTest('s3cmd cannot create bucket').create_bucket("*eagatebucket1").execute_test(negative_case=True).command_should_fail()
+S3cmdTest('s3cmd cannot create bucket').create_bucket("12.12.12.12").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
+S3cmdTest('s3cmd cannot create bucket').create_bucket("0.0.0.0").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
+S3cmdTest('s3cmd cannot create bucket').create_bucket("seagate#bucket").execute_test(negative_case=True).command_should_fail()
+S3cmdTest('s3cmd cannot create bucket').create_bucket("seagate...bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
+S3cmdTest('s3cmd cannot create bucket').create_bucket("-seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidBucketName")
 
 # Virtual Host style tests.
 Config.config_file = "virtualhoststyle.s3cfg"
@@ -394,4 +406,3 @@ S3cmdTest('s3cmd can delete bucket after setting policy/acl').delete_bucket("sea
 
 # ********** s3cmd accesslog should return NotImplemented ***********
 S3cmdTest('s3cmd accesslog should return NotImplemented/501').accesslog_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotImplemented")
-

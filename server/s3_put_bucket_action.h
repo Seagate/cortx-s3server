@@ -30,6 +30,9 @@
 #include "s3_factory.h"
 #include "s3_put_bucket_body.h"
 
+#define BUCKETNAME_MIN_LENGTH 3
+#define BUCKETNAME_MAX_LENGTH 63
+
 class S3PutBucketAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
@@ -49,6 +52,10 @@ class S3PutBucketAction : public S3Action {
   void validate_request();
   void consume_incoming_content();
   void validate_request_body(std::string content);
+  // AWS recommends that all bucket names comply with DNS naming convention
+  // See Bucket naming restrictions in below link.
+  // https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+  void validate_bucket_name();
   void read_metadata();
   void create_bucket();
   void create_bucket_failed();
@@ -59,6 +66,21 @@ class S3PutBucketAction : public S3Action {
   FRIEND_TEST(S3PutBucketActionTest, ValidateRequest);
   FRIEND_TEST(S3PutBucketActionTest, ValidateRequestInvalid);
   FRIEND_TEST(S3PutBucketActionTest, ValidateRequestMoreContent);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest1);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest2);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest3);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest4);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest5);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest6);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest1);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest2);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest3);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest4);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest5);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest6);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest7);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest8);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest9);
   FRIEND_TEST(S3PutBucketActionTest, ReadMetaData);
   FRIEND_TEST(S3PutBucketActionTest, CreateBucketAlreadyExist);
   FRIEND_TEST(S3PutBucketActionTest, CreateBucketSuccess);

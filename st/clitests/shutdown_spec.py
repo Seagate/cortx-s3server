@@ -131,7 +131,7 @@ for i, type in enumerate(config_types):
         enable_fi("enable", "always", "put_bucket_action_validate_request_shutdown_fail").\
         execute_test().command_is_successful().\
         command_response_should_not_have('ServiceUnavailable')
-    S3cmdTest('s3cmd can not create bucket').create_bucket("seagate_bucket").\
+    S3cmdTest('s3cmd can not create bucket').create_bucket("seagate-bucket").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3fiTest('s3cmd can disable Fault injection').\
@@ -140,7 +140,7 @@ for i, type in enumerate(config_types):
         command_response_should_not_have('ServiceUnavailable')
     S3cmdTest('s3cmd should not list bucket').list_buckets().execute_test().\
         command_is_successful().\
-        command_response_should_not_have('s3://seagate_bucket')
+        command_response_should_not_have('s3://seagate-bucket')
 
     S3cmdTest('s3cmd can upload 3K file').\
         upload_test("seagatebucket", "3Kfile", 3000).\

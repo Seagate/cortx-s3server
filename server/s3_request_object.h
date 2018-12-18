@@ -297,6 +297,27 @@ class S3RequestObject {
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
   FRIEND_TEST(S3RequestObjectTest, ReturnsValidUriPaths);
   FRIEND_TEST(S3RequestObjectTest, ReturnsValidRawQuery);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest1);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest2);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest3);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest4);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest5);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameValidNameTest6);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest1);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest2);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest3);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest4);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest5);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest6);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest7);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest8);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest9);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest10);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest11);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest12);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest13);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest14);
+  FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest15);
 };
 
 #endif

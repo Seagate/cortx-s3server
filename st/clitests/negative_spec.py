@@ -81,19 +81,19 @@ for i, type in enumerate(config_types):
 
     # ************ BUCKET METADATA CORRUPTION TEST ***********
     # Bucket listing shouldn't list corrupted bucket
-    S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket_1").\
+    S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket123").\
         execute_test().command_is_successful()
     S3fiTest('s3cmd enable FI bucket_metadata_corrupted').\
         enable_fi_enablen("enable", "bucket_metadata_corrupted", "2").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd does not list corrupted bucket').list_buckets().\
         execute_test().command_is_successful().\
-        command_response_should_not_have('s3://seagatebucket_1').\
+        command_response_should_not_have('s3://seagatebucket123').\
         command_response_should_have('s3://seagatebucket')
     S3fiTest('s3cmd can disable FI bucket_metadata_corrupted').\
         disable_fi("bucket_metadata_corrupted").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket_1").\
+    S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket123").\
         execute_test().command_is_successful()
 
     # If bucket metadata is corrupted then object listing within bucket shall
@@ -234,7 +234,7 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd can enable FI clovis_idx_op_fail').\
         enable_fi("enable", "always", "clovis_idx_op_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not create bucket').create_bucket("seagatebucket_1").\
+    S3cmdTest('s3cmd can not create bucket').create_bucket("seagatebucket123").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3cmdTest('s3cmd cannot upload 3K file').\
@@ -510,14 +510,14 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd can enable FI clovis_enity_create').\
         enable_fi("enable", "always", "clovis_entity_create_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not create bucket').create_bucket("seagatebucket_1").\
+    S3cmdTest('s3cmd can not create bucket').create_bucket("seagatebucket123").\
         execute_test(negative_case=True).command_should_fail()
     S3fiTest('s3cmd can disable FI clovis_enity_create').\
         disable_fi("clovis_entity_create_fail").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd does not list corrupted bucket').list_buckets().\
         execute_test().command_is_successful().\
-        command_response_should_not_have('s3://seagatebucket_1').\
+        command_response_should_not_have('s3://seagatebucket123').\
         command_response_should_have('s3://seagatebucket')
 
     # negative tests cases for put_keyval
@@ -580,24 +580,23 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd enable FI clovis idx op fail').\
         enable_fi("enable", "always", "clovis_sync_op_init_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not create bucket').create_bucket("seagatebucket_1").\
+    S3cmdTest('s3cmd can not create bucket').create_bucket("seagatebucket123").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3fiTest('s3cmd can disable FI clovis_sync_op_init_fail').\
         disable_fi("clovis_sync_op_init_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket_1").\
+    S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket123").\
         execute_test().command_is_successful()
     S3fiTest('s3cmd enable FI clovis idx op fail').\
         enable_fi("enable", "always", "clovis_sync_op_init_fail").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd cannot delete bucket').delete_bucket("seagatebucket_1").\
+    S3cmdTest('s3cmd cannot delete bucket').delete_bucket("seagatebucket123").\
         execute_test(negative_case=True).command_should_fail().\
         command_error_should_have("ServiceUnavailable")
     S3fiTest('s3cmd can disable FI clovis_sync_op_init_fail').\
         disable_fi("clovis_sync_op_init_fail").\
         execute_test().command_is_successful()
- 
 
     # object metadata save negative testing
     S3fiTest('s3cmd enable FI clovis idx op fail').\
