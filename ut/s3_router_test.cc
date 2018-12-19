@@ -196,7 +196,7 @@ TEST_F(S3RouterDispatchTest, InvokesBucketLocationApiWithPathStyle) {
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
-      .WillRepeatedly(Return("/seagate_bucket?location"));
+      .WillRepeatedly(Return("/seagate_bucket"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
   EXPECT_CALL(*mock_request, has_query_param_key(StrEq("location")))
@@ -225,7 +225,7 @@ TEST_F(S3RouterDispatchTest, InvokesBucketAclApiWithPathStyle) {
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
-      .WillRepeatedly(Return("/seagate_bucket?location"));
+      .WillRepeatedly(Return("/seagate_bucket"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
   EXPECT_CALL(*mock_request, has_query_param_key(StrEq("acl")))

@@ -100,11 +100,8 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
     : S3URI(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   std::string full_uri(request->c_get_full_path());
-  // Strip the query params
-  std::size_t qparam_start = full_uri.find("?");
-  std::string full_path(full_uri, 0, qparam_start);
   // Regex is better, but lets live with raw parsing. regex = >gcc 4.9.0
-  if (full_path.compare("/") == 0) {
+  if (full_uri.compare("/") == 0) {
     // FaultInjection request check
     std::string header_value =
         request->get_header_value("x-seagate-faultinjection");
@@ -120,20 +117,20 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
   } else {
     // Find the second forward slash.
     std::size_t pos =
-        full_path.find("/", 1);  // ignoring the first forward slash
+        full_uri.find("/", 1);  // ignoring the first forward slash
     if (pos == std::string::npos) {
       // no second slash, means only bucket name.
-      bucket_name = std::string(full_path.c_str() + 1);
+      bucket_name = std::string(full_uri.c_str() + 1);
       s3_api_type = S3ApiType::bucket;
-    } else if (pos == full_path.length() - 1) {
+    } else if (pos == full_uri.length() - 1) {
       // second slash and its last char, means only bucket name.
-      bucket_name = std::string(full_path.c_str() + 1, full_path.length() - 2);
+      bucket_name = std::string(full_uri.c_str() + 1, full_uri.length() - 2);
       s3_api_type = S3ApiType::bucket;
     } else {
       // Its an object api.
       s3_api_type = S3ApiType::object;
-      bucket_name = std::string(full_path.c_str() + 1, pos - 1);
-      object_name = std::string(full_path.c_str() + pos + 1);
+      bucket_name = std::string(full_uri.c_str() + 1, pos - 1);
+      object_name = std::string(full_uri.c_str() + pos + 1);
     }
   }
   request->set_api_type(s3_api_type);
@@ -148,16 +145,13 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(
   setup_bucket_name();
 
   std::string full_uri(request->c_get_full_path());
-  // Strip the query params
-  std::size_t qparam_start = full_uri.find("?");
-  std::string full_path(full_uri, 0, qparam_start);
-  if (full_path.compare("/") == 0) {
+  if (full_uri.compare("/") == 0) {
     s3_api_type = S3ApiType::bucket;
     request->set_api_type(s3_api_type);
   } else {
     s3_api_type = S3ApiType::object;
     request->set_api_type(s3_api_type);
-    object_name = std::string(full_path.c_str() + 1);  // ignore first slash
+    object_name = std::string(full_uri.c_str() + 1);  // ignore first slash
   }
 }
 
