@@ -119,6 +119,21 @@ public class AWSV4SignTest {
     }
 
     @Test
+    public void Authenticate_RequestSpecialQueryParams() {
+        ClientRequestToken requestToken
+                = AWSV4RequestHelper.getRequestClientTokenSpecialQuery();
+
+        try {
+            Assert.assertEquals(awsv4Sign.authenticate(requestToken, requestor),
+                    Boolean.TRUE);
+        } catch (InvalidTokenException e) {
+            e.printStackTrace();
+            Assert.fail("This Shouldn't have thrown exception");
+        }
+
+    }
+
+    @Test
     public void Authenticate_RequestVirtualHostStyleHead_True() {
         ClientRequestToken requestToken
                 = AWSV4RequestHelper.getFullHttpRequestClientTokenHEAD();

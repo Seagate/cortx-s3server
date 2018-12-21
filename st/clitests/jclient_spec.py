@@ -327,6 +327,120 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient cannot delete nonexistent bucket').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
 
+    # ********** Tests to verify objects with special characters
+    JClientTest('JClient can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec+t file').put_object("seagatebucket", "objec+t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec+').execute_test().command_is_successful().command_response_should_have('objec+t')
+    JClientTest('JClient can download objec+t file').get_object("seagatebucket", "objec+t").execute_test().command_is_successful().command_created_file("objec+t")
+    JClientTest('JClient can delete objec+t file').delete_object("seagatebucket", "objec+t").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec@t file').put_object("seagatebucket", "objec@t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec@').execute_test().command_is_successful().command_response_should_have('objec@t')
+    JClientTest('JClient can download objec@t file').get_object("seagatebucket", "objec@t").execute_test().command_is_successful().command_created_file("objec@t")
+    JClientTest('JClient can delete objec@t file').delete_object("seagatebucket", "objec@t").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec,t file').put_object("seagatebucket", "objec,t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec,').execute_test().command_is_successful().command_response_should_have('objec,t')
+    JClientTest('JClient can download objec,t file').get_object("seagatebucket", "objec,t").execute_test().command_is_successful().command_created_file("objec,t")
+    JClientTest('JClient can delete objec,t file').delete_object("seagatebucket", "objec,t").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec:t file').put_object("seagatebucket", "objec:t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec:').execute_test().command_is_successful().command_response_should_have('objec:t')
+    JClientTest('JClient can download objec:t file').get_object("seagatebucket", "objec:t").execute_test().command_is_successful().command_created_file("objec:t")
+    JClientTest('JClient can delete objec:t file').delete_object("seagatebucket", "objec:t").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec;t file').put_object("seagatebucket", "objec;t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec;').execute_test().command_is_successful().command_response_should_have('objec;t')
+    JClientTest('JClient can download objec;t file').get_object("seagatebucket", "objec;t").execute_test().command_is_successful().command_created_file("objec;t")
+    JClientTest('JClient can delete objec;t file').delete_object("seagatebucket", "objec;t").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec?t file').put_object("seagatebucket", "objec?t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec?').execute_test().command_is_successful().command_response_should_have('objec?t')
+    JClientTest('JClient can download objec?t file').get_object("seagatebucket", "objec?t").execute_test().command_is_successful().command_created_file("objec?t")
+    JClientTest('JClient can delete objec?t file').delete_object("seagatebucket", "objec?t").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec t file').put_object("seagatebucket", "objec&t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec&').execute_test().command_is_successful().command_response_should_have('objec&t')
+    JClientTest('JClient can download objec&t file').get_object("seagatebucket", "objec&t").execute_test().command_is_successful().command_created_file("objec&t")
+    JClientTest('JClient can delete objec&t file').delete_object("seagatebucket", "objec&t").execute_test().command_is_successful()
+    JClientTest('JClient can upload objec t file').put_object("seagatebucket", "objec t", 0).execute_test().command_is_successful()
+    JClientTest('JClient can list objects').list_specific_objects('seagatebucket','objec ').execute_test().command_is_successful().command_response_should_have('objec t')
+    JClientTest('JClient can download objec t file').get_object("seagatebucket", "objec t").execute_test().command_is_successful().command_created_file("objec t")
+    JClientTest('JClient can delete objec t file').delete_object("seagatebucket", "objec t").execute_test().command_is_successful()
+    JClientTest('JClient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+
+    #******************Multipart upload and list part for object names with special characters**************************************
+    JClientTest('JClient can create bucket').create_bucket("seagate.bucket").execute_test().command_is_successful()
+
+    JClientTest('Jclient can upload tes@t file with 18MB (multipart)').put_object_multipart("seagate.bucket", "tes@t", 18000000, 15)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate.bucket", "tes@t", 18000000, 1, 2)\
+            .execute_test().command_is_successful()
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate.bucket").execute_test()
+    result.command_response_should_have('tes@t')
+    upload_id = result.status.stdout.split("id - ")[1]
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate.bucket", "tes@t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagate.bucket", "tes@t", upload_id)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can delete object').delete_object("seagate.bucket", "tes@t").execute_test().command_is_successful()
+    JClientTest('Jclient can upload tes.t file with 18MB (multipart)').put_object_multipart("seagate.bucket", "tes.t", 18000000, 15)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate.bucket", "tes.t", 18000000, 1, 2)\
+            .execute_test().command_is_successful()
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate.bucket").execute_test()
+    result.command_response_should_have('tes.t')
+    upload_id = result.status.stdout.split("id - ")[1]
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate.bucket", "tes.t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagate.bucket", "tes.t", upload_id)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can delete object').delete_object("seagate.bucket", "tes.t").execute_test().command_is_successful()
+    JClientTest('Jclient can upload tes,t file with 18MB (multipart)').put_object_multipart("seagate.bucket", "tes,t", 18000000, 15)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate.bucket", "tes,t", 18000000, 1, 2)\
+            .execute_test().command_is_successful()
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate.bucket").execute_test()
+    result.command_response_should_have('tes,t')
+    upload_id = result.status.stdout.split("id - ")[1]
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate.bucket", "tes,t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagate.bucket", "tes,t", upload_id)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can delete object').delete_object("seagate.bucket", "tes,t").execute_test().command_is_successful()
+    JClientTest('Jclient can upload tes:t file with 18MB (multipart)').put_object_multipart("seagate.bucket", "tes:t", 18000000, 15)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate.bucket", "tes:t", 18000000, 1, 2)\
+            .execute_test().command_is_successful()
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate.bucket").execute_test()
+    result.command_response_should_have('tes:t')
+    upload_id = result.status.stdout.split("id - ")[1]
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate.bucket", "tes:t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagate.bucket", "tes:t", upload_id)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can delete object').delete_object("seagate.bucket", "tes:t").execute_test().command_is_successful()
+    JClientTest('Jclient can upload tes?t file with 18MB (multipart)').put_object_multipart("seagate.bucket", "tes?t", 18000000, 15)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate.bucket", "tes?t", 18000000, 1, 2)\
+            .execute_test().command_is_successful()
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate.bucket").execute_test()
+    result.command_response_should_have('tes?t')
+    upload_id = result.status.stdout.split("id - ")[1]
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate.bucket", "tes?t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagate.bucket", "tes?t", upload_id)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can delete object').delete_object("seagate.bucket", "tes?t").execute_test().command_is_successful()
+    JClientTest('Jclient can upload tes+t file with 18MB (multipart)').put_object_multipart("seagate.bucket", "tes+t", 18000000, 15)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate.bucket", "tes+t", 18000000, 1, 2)\
+            .execute_test().command_is_successful()
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate.bucket").execute_test()
+    result.command_response_should_have('tes+t')
+    upload_id = result.status.stdout.split("id - ")[1]
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate.bucket", "tes+t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JClientTest('Jclient can abort multipart upload').abort_multipart("seagate.bucket", "tes+t", upload_id)\
+            .execute_test().command_is_successful()
+    JClientTest('Jclient can delete object').delete_object("seagate.bucket", "tes+t").execute_test().command_is_successful()
+    JClientTest('Jclient can call list objects on empty bucket').list_objects('seagate.bucket').execute_test().command_is_successful()
+    JClientTest('JClient can delete bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
+
     # ************ Listing with prefix ************
     JClientTest('Jclient can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
     JClientTest('Jclient can upload a/3kfile file').put_object("seagatebucket", "3kfile", 3000, prefix="a").execute_test().command_is_successful()

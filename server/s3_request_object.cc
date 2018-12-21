@@ -38,6 +38,20 @@ extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg) {
   return 0;
 }
 
+extern "C" int consume_query_parameters(evhtp_kv_t* kvobj, void* arg) {
+  S3RequestObject* request = (S3RequestObject*)arg;
+  if (request && kvobj) {
+    if (kvobj->val) {
+      char* decoded_str = evhttp_uridecode(kvobj->val, 1, NULL);
+      request->in_query_params_copy[kvobj->key] = decoded_str;
+      free(decoded_str);
+    } else {
+      request->in_query_params_copy[kvobj->key] = "";
+    }
+  }
+  return 0;
+}
+
 S3RequestObject::S3RequestObject(
     evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
     std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory)
@@ -50,6 +64,7 @@ S3RequestObject::S3RequestObject(
       is_chunked_upload(false),
       s3_api_type(S3ApiType::unsupported),
       in_headers_copied(false),
+      in_query_params_copied(false),
       reply_buffer(NULL) {
   S3Uuid uuid;
   request_id = uuid.get_string_uuid();
@@ -81,18 +96,19 @@ S3RequestObject::S3RequestObject(
     http_method = (S3HttpVerb)ev_req->method;
     if (ev_req->uri != NULL) {
       if (ev_req->uri->path != NULL) {
-        char* decoded_str = evhttp_decode_uri(ev_req->uri->path->full);
+        char* decoded_str = evhttp_uridecode(ev_req->uri->path->full, 1, NULL);
         full_path_decoded_uri = decoded_str;
         free(decoded_str);
         if (ev_req->uri->path->file != NULL) {
-          char* decoded_str = evhttp_decode_uri(ev_req->uri->path->file);
+          char* decoded_str =
+              evhttp_uridecode(ev_req->uri->path->file, 1, NULL);
           file_path_decoded_uri = decoded_str;
           free(decoded_str);
         }
       }
       if (ev_req->uri->query_raw != NULL) {
         char* decoded_str =
-            evhttp_decode_uri((const char*)ev_req->uri->query_raw);
+            evhttp_uridecode((const char*)ev_req->uri->query_raw, 1, NULL);
         query_raw_decoded_uri = decoded_str;
         free(decoded_str);
       }
@@ -130,6 +146,22 @@ S3RequestObject::~S3RequestObject() {
     evbuffer_free(reply_buffer);
     reply_buffer = NULL;
   }
+}
+
+const std::map<std::string, std::string, compare>&
+S3RequestObject::get_query_parameters() {
+  if (!in_query_params_copied) {
+    if (client_connected() && (ev_req != NULL) && (ev_req->uri != NULL) &&
+        (ev_req->uri->query != NULL)) {
+      evhtp_obj->http_kvs_for_each(ev_req->uri->query, consume_query_parameters,
+                                   this);
+      in_query_params_copied = true;
+    } else {
+      s3_log(S3_LOG_WARN, request_id,
+             "s3 client disconnected state or ev_req(NULL).\n");
+    }
+  }
+  return in_query_params_copy;
 }
 
 S3HttpVerb S3RequestObject::http_verb() { return http_method; }
@@ -339,28 +371,21 @@ std::string& S3RequestObject::get_full_body_content_as_string() {
 
 std::string S3RequestObject::get_query_string_value(std::string key) {
   std::string val_str = "";
-  if (client_connected() && (ev_req != NULL) && (ev_req->uri != NULL)) {
-    const char* value =
-        evhtp_obj->http_kv_find(ev_req->uri->query, key.c_str());
-    if (value) {
-      char* decoded_value;
-      decoded_value = evhttp_decode_uri(value);
-      val_str = decoded_value;
-      free(decoded_value);
-    }
-  } else {
-    s3_log(S3_LOG_WARN, request_id,
-           "s3 client disconnected state or ev_req(%p).\n", ev_req);
+  if (!in_query_params_copied) {
+    get_query_parameters();
+  }
+  auto param = in_query_params_copy.find(key);
+  if (param != in_query_params_copy.end()) {
+    val_str = param->second;
   }
   return val_str;
 }
 
 bool S3RequestObject::has_query_param_key(std::string key) {
-  if (client_connected() && (ev_req != NULL) && (ev_req->uri != NULL)) {
-    return evhtp_obj->http_kvs_find_kv(ev_req->uri->query, key.c_str()) != NULL;
+  if (!in_query_params_copied) {
+    get_query_parameters();
   }
-  s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
-  return false;
+  return (in_query_params_copy.find(key) != in_query_params_copy.end());
 }
 
 // Operation params.
@@ -488,7 +513,7 @@ void S3RequestObject::send_response(int code, std::string body) {
 
   // If body not empty, write to response body.
   if (!body.empty()) {
-    evbuffer_add_printf(ev_req->buffer_out, body.c_str());
+    evbuffer_add(ev_req->buffer_out, body.c_str(), body.length());
   } else if (out_headers_copy.find("Content-Length") ==
              out_headers_copy.end()) {  // Content-Length was already set for
                                         // this request, which could be. case

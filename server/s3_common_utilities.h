@@ -64,5 +64,8 @@ class S3CommonUtilities {
   static std::string s3xmlEncodeSpecialChars(const std::string &input);
   static std::string format_xml_string(std::string tag,
                                        const std::string &value);
+  static void find_and_replaceall(std::string &data,
+                                  const std::string &to_search,
+                                  const std::string &replace_str);
 };
 #endif

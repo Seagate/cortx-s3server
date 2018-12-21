@@ -152,8 +152,8 @@ public class AWSV4RequestHelper {
 
         String authHeader = "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/"
                 + "20160321/US/s3/aws4_request,SignedHeaders=host;"
-                + "x-amz-content-sha256;x-amz-date,Signature=b9d04cd83010685a1"
-                + "085ece38657125c02a6f29093f5bd21dcd6e717f1996852";
+                + "x-amz-content-sha256;x-amz-date,Signature=b0024ea6f4b7ea025"
+                + "c890ef0c18fb576ee889feaf54b00e7b06ca11401737a2c";
 
         requestBody.put("Action", "AuthenticateUser");
         requestBody.put("Authorization", authHeader);
@@ -280,13 +280,43 @@ public class AWSV4RequestHelper {
         requestToken.setRegion("US");
         requestToken.setService("s3");
         requestToken.setSignature(
-                "b9d04cd83010685a1085ece38657125c02a6f29093f5bd21dcd6e717f1996852");
+                "b0024ea6f4b7ea025c890ef0c18fb576ee889feaf54b00e7b06ca11401737a2c");
         requestToken.setSignedHeaders(signedHeaders);
         requestToken.setSigningAlgorithm("AWS4-HMAC-SHA256");
         requestToken.setRequestPayload("");
         requestToken.setVirtualHost(Boolean.TRUE);
         requestToken.setRequestHeaders(getRequestHeadersVirtualHostStyle());
         requestToken.setBucketName("seagatebucket123");
+
+        return requestToken;
+    }
+
+    /**
+     * Create clientRequestToken for special query parameters.
+     *
+     * @return
+     */
+    public static ClientRequestToken getRequestClientTokenSpecialQuery() {
+        String signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+
+        ClientRequestToken requestToken = new ClientRequestToken();
+        requestToken.setSignedVersion(ClientRequestToken.AWSSigningVersion.V4);
+        requestToken.setAccessKeyId(ACCESS_KEY_ID);
+        requestToken.setCredentialScope("20160321/US/s3/aws4_request");
+        requestToken.setDate("20160321");
+        requestToken.setHttpMethod("GET");
+        requestToken.setUri("/seagate&bucket/");
+        requestToken.setQuery("delimiter=/");
+        requestToken.setRegion("US");
+        requestToken.setService("s3");
+        requestToken.setSignature(
+                "a64de7ff4d9f03dd71bcb2957e919258dfbe4fabd9860856636bfbe3fa63ddbc");
+        requestToken.setSignedHeaders(signedHeaders);
+        requestToken.setSigningAlgorithm("AWS4-HMAC-SHA256");
+        requestToken.setRequestPayload("");
+        requestToken.setVirtualHost(Boolean.TRUE);
+        requestToken.setRequestHeaders(getRequestHeadersVirtualHostStyle());
+        requestToken.setBucketName("seag&ate bu&cket");
 
         return requestToken;
     }

@@ -34,6 +34,7 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
     : S3Action(req),
+      multipart_object_list(req->get_query_string_value("encoding-type")),
       last_key(""),
       return_list_size(0),
       fetch_successful(false),

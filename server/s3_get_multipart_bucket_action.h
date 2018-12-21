@@ -38,8 +38,8 @@ class S3GetMultipartBucketAction : public S3Action {
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
-  std::string last_key;  // last key during each iteration
   S3ObjectListResponse multipart_object_list;
+  std::string last_key;  // last key during each iteration
   size_t return_list_size;
 
   bool fetch_successful;

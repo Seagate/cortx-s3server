@@ -54,6 +54,8 @@ class S3APIHandlerFactoryTest : public testing::Test {
         .WillRepeatedly(Return(""));
     EXPECT_CALL(*mock_request, get_query_string_value("max-keys"))
         .WillRepeatedly(Return("1000"));
+    EXPECT_CALL(*mock_request, get_query_string_value("encoding-type"))
+        .WillRepeatedly(Return(""));
 
     factory_under_test.reset(new S3APIHandlerFactory());
 

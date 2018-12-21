@@ -46,23 +46,26 @@ using ::testing::_;
             ->create_clovis_kvs_reader(request_mock, s3_clovis_api_mock); \
   } while (0)
 
-#define CREATE_ACTION_UNDER_TEST_OBJ                                 \
-  do {                                                               \
-    EXPECT_CALL(*request_mock, get_query_string_value("prefix"))     \
-        .Times(AtLeast(1))                                           \
-        .WillRepeatedly(Return("prefix"));                           \
-    EXPECT_CALL(*request_mock, get_query_string_value("delimiter"))  \
-        .Times(AtLeast(1))                                           \
-        .WillRepeatedly(Return("delimiter"));                        \
-    EXPECT_CALL(*request_mock, get_query_string_value("marker"))     \
-        .Times(AtLeast(1))                                           \
-        .WillRepeatedly(Return("marker"));                           \
-    EXPECT_CALL(*request_mock, get_query_string_value("max-keys"))   \
-        .Times(AtLeast(1))                                           \
-        .WillRepeatedly(Return("1000"));                             \
-    action_under_test_ptr = std::make_shared<S3GetBucketAction>(     \
-        request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory, \
-        bucket_meta_factory, object_meta_factory);                   \
+#define CREATE_ACTION_UNDER_TEST_OBJ                                    \
+  do {                                                                  \
+    EXPECT_CALL(*request_mock, get_query_string_value("prefix"))        \
+        .Times(AtLeast(1))                                              \
+        .WillRepeatedly(Return("prefix"));                              \
+    EXPECT_CALL(*request_mock, get_query_string_value("delimiter"))     \
+        .Times(AtLeast(1))                                              \
+        .WillRepeatedly(Return("delimiter"));                           \
+    EXPECT_CALL(*request_mock, get_query_string_value("marker"))        \
+        .Times(AtLeast(1))                                              \
+        .WillRepeatedly(Return("marker"));                              \
+    EXPECT_CALL(*request_mock, get_query_string_value("max-keys"))      \
+        .Times(AtLeast(1))                                              \
+        .WillRepeatedly(Return("1000"));                                \
+    EXPECT_CALL(*request_mock, get_query_string_value("encoding-type")) \
+        .Times(AtLeast(1))                                              \
+        .WillRepeatedly(Return(""));                                    \
+    action_under_test_ptr = std::make_shared<S3GetBucketAction>(        \
+        request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,    \
+        bucket_meta_factory, object_meta_factory);                      \
   } while (0)
 
 #define SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS                                  \

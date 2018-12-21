@@ -152,3 +152,96 @@ TEST_F(S3CommonUtilitiesTest, S3xmlEncodeSpecialCharsTest7) {
   EXPECT_STREQ(
       "abcd", S3CommonUtilities::s3xmlEncodeSpecialChars(input_string).c_str());
 }
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallTest1) {
+  std::string input_string = "test&string";
+  std::string search_string = "&";
+  std::string replace_string = "&amp;";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("test&amp;string", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallWithEmptySearchString) {
+  std::string input_string = "test&string";
+  std::string search_string = "";
+  std::string replace_string = "&amp;";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  // no chaange in input string
+  EXPECT_STREQ("test&string", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallWithEmptyReplaceString) {
+  std::string input_string = "test&string";
+  std::string search_string = "&";
+  std::string replace_string = "";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("teststring", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallWithLargeReplaceString) {
+  std::string input_string = "test&string";
+  std::string search_string = "&";
+  std::string replace_string = "replacestring_large";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("testreplacestring_largestring", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest,
+       FindAndReplaceallReplaceStringSmallerThanSearchString) {
+  std::string input_string = "test&string";
+  std::string search_string = "&string";
+  std::string replace_string = "&";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("test&", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallReplaceStringAtMultiplePlaces) {
+  std::string input_string = "&test&string&abcd&";
+  std::string search_string = "&";
+  std::string replace_string = "%26";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("%26test%26string%26abcd%26", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest,
+       FindAndReplaceallEmptyReplaceStringAtMultiplePlaces) {
+  std::string input_string = "&test&string&abcd&";
+  std::string search_string = "&";
+  std::string replace_string = "";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("teststringabcd", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallReplaceString2) {
+  std::string input_string = "test";
+  std::string search_string = "test";
+  std::string replace_string = "testtest";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("testtest", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallReplaceString3) {
+  std::string input_string = "&";
+  std::string search_string = "&";
+  std::string replace_string = "&&";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("&&", input_string.c_str());
+}
+
+TEST_F(S3CommonUtilitiesTest, FindAndReplaceallReplaceString4) {
+  std::string input_string = "test";
+  std::string search_string = "test";
+  std::string replace_string = "";
+  S3CommonUtilities::find_and_replaceall(input_string, search_string,
+                                         replace_string);
+  EXPECT_STREQ("", input_string.c_str());
+}

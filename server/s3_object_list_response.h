@@ -32,6 +32,9 @@
 #include "s3_part_metadata.h"
 
 class S3ObjectListResponse {
+  // value can be url or empty string
+  std::string encoding_type;
+
   std::string bucket_name;
   std::string object_name, user_name, user_id, storage_class, upload_id;
   std::string account_name, account_id;
@@ -56,8 +59,10 @@ class S3ObjectListResponse {
   std::string max_parts;
   std::string next_marker_uploadid;
 
+  std::string get_response_format_key_value(const std::string& key_value);
+
  public:
-  S3ObjectListResponse();
+  S3ObjectListResponse(std::string encoding_type = "");
 
   void set_bucket_name(std::string name);
   void set_object_name(std::string name);

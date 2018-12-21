@@ -42,53 +42,20 @@ std::string& S3URI::get_object_name() { return object_name; }
 S3OperationCode S3URI::get_operation_code() { return operation_code; }
 
 void S3URI::setup_operation_code() {
-  if (request->has_query_param_key("acl")) {
-    operation_code = S3OperationCode::acl;
-  } else if (request->has_query_param_key("policy")) {
-    operation_code = S3OperationCode::policy;
-  } else if (request->has_query_param_key("location")) {
-    operation_code = S3OperationCode::location;
-  } else if (request->has_query_param_key("uploads") ||
-             request->has_query_param_key("uploadid")) {
-    operation_code = S3OperationCode::multipart;
-  } else if (request->has_query_param_key("delete")) {
-    operation_code = S3OperationCode::multidelete;
-  } else if (request->has_query_param_key("encryption")) {
-    operation_code = S3OperationCode::encryption;
-  } else if (request->has_query_param_key("requestPayment")) {
-    operation_code = S3OperationCode::requestPayment;
-  } else if (request->has_query_param_key("lifecycle")) {
-    operation_code = S3OperationCode::lifecycle;
-  } else if (request->has_query_param_key("cors")) {
-    operation_code = S3OperationCode::cors;
-  } else if (request->has_query_param_key("analytics")) {
-    operation_code = S3OperationCode::analytics;
-  } else if (request->has_query_param_key("inventory")) {
-    operation_code = S3OperationCode::inventory;
-  } else if (request->has_query_param_key("metrics")) {
-    operation_code = S3OperationCode::metrics;
-  } else if (request->has_query_param_key("tagging")) {
-    operation_code = S3OperationCode::tagging;
-  } else if (request->has_query_param_key("website")) {
-    operation_code = S3OperationCode::website;
-  } else if (request->has_query_param_key("replication")) {
-    operation_code = S3OperationCode::replication;
-  } else if (request->has_query_param_key("accelerate")) {
-    operation_code = S3OperationCode::accelerate;
-  } else if (request->has_query_param_key("logging")) {
-    operation_code = S3OperationCode::logging;
-  } else if (request->has_query_param_key("notification")) {
-    operation_code = S3OperationCode::notification;
-  } else if (request->has_query_param_key("torrent")) {
-    operation_code = S3OperationCode::torrent;
-  } else if (request->has_query_param_key("versioning")) {
-    operation_code = S3OperationCode::versioning;
-  } else if (request->has_query_param_key("versions")) {
-    operation_code = S3OperationCode::versions;
-  } else if (request->has_query_param_key("select")) {
-    operation_code = S3OperationCode::selectcontent;
-  } else if (request->has_query_param_key("restore")) {
-    operation_code = S3OperationCode::restore;
+  const std::map<std::string, std::string, compare>& query_params_map =
+      request->get_query_parameters();
+  if (query_params_map.empty()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Operation code %s\n",
+           operation_code_to_str(operation_code).c_str());
+    return;
+  }
+
+  // iterate through the map and check for relative operational code
+  for (const auto& it : query_params_map) {
+    auto op_code_it = S3OperationString.find(it.first);
+    if (op_code_it != S3OperationString.end()) {
+      operation_code = op_code_it->second;
+    }
   }
 
   s3_log(S3_LOG_DEBUG, request_id, "Operation code %s\n",

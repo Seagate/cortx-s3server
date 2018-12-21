@@ -254,6 +254,123 @@ for i, val in enumerate(pathstyle_values):
     # Current version of Jcloud does not report error in deleteContainer
     # JCloudTest('Jcloud cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotPresent")
 
+    # ********** Tests to verify objects with special characters
+    JCloudTest('JCloud can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload objec+t file').put_object("seagatebucket", "objec+t", 0 , prefix="a+b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a+b').execute_test().command_is_successful().command_response_should_have('objec+t')
+    JCloudTest('JCloud can download objec+t file').get_object("seagatebucket/a+b", "objec+t").execute_test().command_is_successful().command_created_file("objec+t")
+    JCloudTest('JCloud can delete objec+t file').delete_object("seagatebucket", "a+b/objec+t").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload objec@t file').put_object("seagatebucket", "objec@t", 0, prefix="a@b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a@b').execute_test().command_is_successful().command_response_should_have('objec@t')
+    JCloudTest('JCloud can download objec@t file').get_object("seagatebucket/a@b", "objec@t").execute_test().command_is_successful().command_created_file("objec@t")
+    JCloudTest('JCloud can delete objec@t file').delete_object("seagatebucket", "a@b/objec@t").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload objec,t file').put_object("seagatebucket", "objec,t", 0, prefix="a,b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a,b').execute_test().command_is_successful().command_response_should_have('objec,t')
+    JCloudTest('JCloud can download objec,t file').get_object("seagatebucket/a,b", "objec,t").execute_test().command_is_successful().command_created_file("objec,t")
+    JCloudTest('JCloud can delete objec,t file').delete_object("seagatebucket", "a,b/objec,t").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload objec:t file').put_object("seagatebucket", "objec:t", 0, prefix="a:b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a:b').execute_test().command_is_successful().command_response_should_have('objec:t')
+    JCloudTest('JCloud can download objec:t file').get_object("seagatebucket/a:b", "objec:t").execute_test().command_is_successful().command_created_file("objec:t")
+    JCloudTest('JCloud can delete objec:t file').delete_object("seagatebucket", "a:b/objec:t").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload objec;t').put_object("seagatebucket", "objec;t", 0, prefix="a;b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a;b').execute_test().command_is_successful().command_response_should_have('objec;t')
+    JCloudTest('JCloud can download objec;t file').get_object("seagatebucket/a;b", "objec;t").execute_test().command_is_successful().command_created_file("objec;t")
+    JCloudTest('JCloud can delete objec;t file').delete_object("seagatebucket", "a;b/objec;t").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload 3k file').put_object("seagatebucket", "objec?t", 0, prefix="a?b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a?b').execute_test().command_is_successful().command_response_should_have('objec?t')
+    JCloudTest('JCloud can download objec?t file').get_object("seagatebucket/a?b", "objec?t").execute_test().command_is_successful().command_created_file("objec?t")
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagatebucket", "a?b/objec?t").execute_test().command_is_successful()
+    #Jcloud and aws gives same kind of behaviour when tried with object name with special character &,both do not list object with &.
+    #JCloudTest('JCloud can upload 3k file').put_object("seagatebucket", "objec&t", 0, prefix="a&b").execute_test().command_is_successful()
+    #JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a&b').execute_test().command_is_successful().command_response_should_have('objec&t')
+    #JCloudTest('JCloud can download objec?t file').get_object("seagatebucket/a&b", "objec&t").execute_test().command_is_successful().command_created_file("objec&t")
+    #JCloudTest('JCloud can delete objec?t file').delete_object("seagatebucket", "a&b/objec&t").execute_test().command_is_successful()
+    JCloudTest('JCloud can upload 3k file').put_object("seagatebucket", "objec t", 0, prefix="a b").execute_test().command_is_successful()
+    JCloudTest('JCloud can list objects').list_specific_objects('seagatebucket','a b').execute_test().command_is_successful().command_response_should_have('objec t')
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagatebucket", "a b/objec t").execute_test().command_is_successful()
+    JCloudTest('JCloud can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
+
+    #************* Multipart upload and List part with object name with speacial character***************
+    JCloudTest('Jcloud can create bucket').create_bucket("seagatebucket123").execute_test().command_is_successful()
+
+    JCloudTest('Jcloud can upload tes:t file with 18MB (multipart)').put_object_multipart("seagatebucket123", "tes:t", 18000000, 15).execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket123", "tes:t", 18000000, 1, 2).execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket123").execute_test()
+    result.command_response_should_have('tes:t')
+
+    upload_id = result.status.stdout.split("id - ")[1]
+
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket123", "tes:t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagatebucket123", "tes:t").execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload tes.t file with 18MB (multipart)').put_object_multipart("seagatebucket123", "tes.t", 18000000, 15).execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket123", "tes.t", 18000000, 1, 2).execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket123").execute_test()
+    result.command_response_should_have('tes.t')
+
+    upload_id = result.status.stdout.split("id - ")[1]
+
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket123", "tes.t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagatebucket123", "tes.t").execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload tes,t file with 18MB (multipart)').put_object_multipart("seagatebucket123", "tes,t", 18000000, 15).execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagatebucket123", "tes,t", 18000000, 1, 2).execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagatebucket123").execute_test()
+    result.command_response_should_have('tes,t')
+
+    upload_id = result.status.stdout.split("id - ")[1]
+
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagatebucket123", "tes,t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagatebucket123", "tes,t").execute_test().command_is_successful()
+    JCloudTest('Jcloud can create bucket').create_bucket("seagate-bucket").execute_test().command_is_successful()
+
+    JCloudTest('Jcloud can upload tes@t file with 18MB (multipart)').put_object_multipart("seagate-bucket", "tes@t", 18000000, 15).execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate-bucket", "tes@t", 18000000, 1, 2).execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate-bucket").execute_test()
+    result.command_response_should_have('tes@t')
+
+    upload_id = result.status.stdout.split("id - ")[1]
+
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate-bucket", "tes@t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagate-bucket", "tes@t").execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload tes+t file with 18MB (multipart)').put_object_multipart("seagate-bucket", "tes+t", 18000000, 15).execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate-bucket", "tes+t", 18000000, 1, 2).execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate-bucket").execute_test()
+    result.command_response_should_have('tes+t')
+
+    upload_id = result.status.stdout.split("id - ")[1]
+
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate-bucket", "tes+t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagate-bucket", "tes+t").execute_test().command_is_successful()
+    JCloudTest('Jcloud can create bucket').create_bucket("seagate.bucket").execute_test().command_is_successful()
+
+    JCloudTest('Jcloud can upload tes?t file with 18MB (multipart)').put_object_multipart("seagate.bucket", "tes?t", 18000000, 15).execute_test().command_is_successful()
+    JCloudTest('Jcloud can upload partial parts to test abort and list multipart.').partial_multipart_upload("seagate.bucket", "tes?t", 18000000, 1, 2).execute_test().command_is_successful()
+
+    result = JClientTest('Jclient can list all multipart uploads.').list_multipart("seagate.bucket").execute_test()
+    result.command_response_should_have('tes?t')
+
+    upload_id = result.status.stdout.split("id - ")[1]
+
+    result = JClientTest('Jclient can list parts of multipart upload.').list_parts("seagate.bucket", "tes?t", upload_id).execute_test()
+    result.command_response_should_have("part number - 1").command_response_should_have("part number - 2")
+    JCloudTest('Jcloud can call list objects on empty bucket').list_objects('seagate-bucket').execute_test().command_is_successful()
+    JCloudTest('Jcloud can call list objects on empty bucket').list_objects('seagate.bucket').execute_test().command_is_successful()
+    JCloudTest('Jcloud can call list objects on empty bucket').list_objects('seagatebucket123').execute_test().command_is_successful()
+    JCloudTest('JCloud can delete objec?t file').delete_object("seagate.bucket", "tes?t").execute_test().command_is_successful()
+    JCloudTest('Jcloud can delete bucket seagate-bucket').delete_bucket("seagate-bucket").execute_test().command_is_successful()
+    JCloudTest('Jcloud can delete bucket seagatebucket123').delete_bucket("seagatebucket123").execute_test().command_is_successful()
+    JCloudTest('Jcloud can delete bucket seagate.bucket').delete_bucket("seagate.bucket").execute_test().command_is_successful()
+
+
     # ************ Listing with prefix ************
     JCloudTest('JCloud can create bucket seagatebucket').create_bucket("seagatebucket").execute_test().command_is_successful()
     JCloudTest('JCloud can upload a/3kfile file').put_object("seagatebucket", "3kfile", 3000, prefix="a").execute_test().command_is_successful()

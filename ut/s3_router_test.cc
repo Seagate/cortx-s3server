@@ -32,6 +32,7 @@ using ::testing::StrEq;
 using ::testing::StrNe;
 using ::testing::Return;
 using ::testing::Mock;
+using ::testing::ReturnRef;
 
 // To use a test fixture, derive a class from testing::Test.
 class S3RouterTest : public testing::Test {
@@ -136,6 +137,10 @@ TEST_F(S3RouterTest, ReturnsFalseForEmptyEP) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesServiceApi) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, get_header_value("x-seagate-faultinjection"))
@@ -145,8 +150,6 @@ TEST_F(S3RouterDispatchTest, InvokesServiceApi) {
   EXPECT_CALL(*mock_request, c_get_full_path()).WillRepeatedly(Return("/"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq(""))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3ServiceAPIHandler> mock_api_handler =
       std::make_shared<MockS3ServiceAPIHandler>(mock_request,
@@ -166,6 +169,10 @@ TEST_F(S3RouterDispatchTest, InvokesServiceApi) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesBucketApiWithPathStyle) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
@@ -193,16 +200,17 @@ TEST_F(S3RouterDispatchTest, InvokesBucketApiWithPathStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesBucketLocationApiWithPathStyle) {
+  std::map<std::string, std::string, compare> query_params;
+  query_params["location"] = "";
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
       .WillRepeatedly(Return("/seagate_bucket"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(StrEq("location")))
-      .WillRepeatedly(Return(true));
-  EXPECT_CALL(*mock_request, has_query_param_key(StrNe("location")))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3BucketAPIHandler> mock_api_handler =
       std::make_shared<MockS3BucketAPIHandler>(mock_request,
@@ -222,16 +230,17 @@ TEST_F(S3RouterDispatchTest, InvokesBucketLocationApiWithPathStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesBucketAclApiWithPathStyle) {
+  std::map<std::string, std::string, compare> query_params;
+  query_params["acl"] = "";
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
       .WillRepeatedly(Return("/seagate_bucket"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(StrEq("acl")))
-      .WillRepeatedly(Return(true));
-  EXPECT_CALL(*mock_request, has_query_param_key(StrNe("acl")))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3BucketAPIHandler> mock_api_handler =
       std::make_shared<MockS3BucketAPIHandler>(mock_request,
@@ -251,14 +260,16 @@ TEST_F(S3RouterDispatchTest, InvokesBucketAclApiWithPathStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesObjectApiWithPathStyle) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
       .WillRepeatedly(Return("/seagate_bucket/readme.md"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq("readme.md"))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3ObjectAPIHandler> mock_api_handler =
       std::make_shared<MockS3ObjectAPIHandler>(mock_request,
@@ -278,6 +289,10 @@ TEST_F(S3RouterDispatchTest, InvokesObjectApiWithPathStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesObjectApiWithPathStyleObjNameDirStyle) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
@@ -285,8 +300,6 @@ TEST_F(S3RouterDispatchTest, InvokesObjectApiWithPathStyleObjNameDirStyle) {
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq("internal/readme.md")))
       .Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3ObjectAPIHandler> mock_api_handler =
       std::make_shared<MockS3ObjectAPIHandler>(mock_request,
@@ -306,13 +319,15 @@ TEST_F(S3RouterDispatchTest, InvokesObjectApiWithPathStyleObjNameDirStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesObjectApiWithPathStyleEmptyHostHeader) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header()).WillRepeatedly(Return(""));
   EXPECT_CALL(*mock_request, c_get_full_path())
       .WillRepeatedly(Return("/seagate_bucket/readme.md"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq("readme.md"))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3ObjectAPIHandler> mock_api_handler =
       std::make_shared<MockS3ObjectAPIHandler>(mock_request,
@@ -333,14 +348,16 @@ TEST_F(S3RouterDispatchTest, InvokesObjectApiWithPathStyleEmptyHostHeader) {
 
 TEST_F(S3RouterDispatchTest,
        InvokesObjectApiWithPathStyleNonDefaultHostHeader) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("server"));
   EXPECT_CALL(*mock_request, c_get_full_path())
       .WillRepeatedly(Return("/seagate_bucket/readme.md"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq("readme.md"))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3ObjectAPIHandler> mock_api_handler =
       std::make_shared<MockS3ObjectAPIHandler>(mock_request,
@@ -361,13 +378,15 @@ TEST_F(S3RouterDispatchTest,
 
 // Virtual host style tests
 TEST_F(S3RouterDispatchTest, InvokesBucketApiWithVirtualHostStyle) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("seagate_bucket.s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path()).WillRepeatedly(Return("/"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3BucketAPIHandler> mock_api_handler =
       std::make_shared<MockS3BucketAPIHandler>(mock_request,
@@ -387,15 +406,16 @@ TEST_F(S3RouterDispatchTest, InvokesBucketApiWithVirtualHostStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesBucketLocationApiWithVirtualHostStyle) {
+  std::map<std::string, std::string, compare> query_params;
+  query_params["location"] = "";
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("seagate_bucket.s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path()).WillRepeatedly(Return("/"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(StrEq("location")))
-      .WillRepeatedly(Return(true));
-  EXPECT_CALL(*mock_request, has_query_param_key(StrNe("location")))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3BucketAPIHandler> mock_api_handler =
       std::make_shared<MockS3BucketAPIHandler>(mock_request,
@@ -415,15 +435,16 @@ TEST_F(S3RouterDispatchTest, InvokesBucketLocationApiWithVirtualHostStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesBucketAclApiWithVirtualHostStyle) {
+  std::map<std::string, std::string, compare> query_params;
+  query_params["acl"] = "";
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("seagate_bucket.s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path()).WillRepeatedly(Return("/"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq(""))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(StrEq("acl")))
-      .WillRepeatedly(Return(true));
-  EXPECT_CALL(*mock_request, has_query_param_key(StrNe("acl")))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3BucketAPIHandler> mock_api_handler =
       std::make_shared<MockS3BucketAPIHandler>(mock_request,
@@ -443,14 +464,16 @@ TEST_F(S3RouterDispatchTest, InvokesBucketAclApiWithVirtualHostStyle) {
 }
 
 TEST_F(S3RouterDispatchTest, InvokesObjectApiWithVirtualHostStyle) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("seagate_bucket.s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
       .WillRepeatedly(Return("/readme.md"));
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq("readme.md"))).Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3ObjectAPIHandler> mock_api_handler =
       std::make_shared<MockS3ObjectAPIHandler>(mock_request,
@@ -471,6 +494,10 @@ TEST_F(S3RouterDispatchTest, InvokesObjectApiWithVirtualHostStyle) {
 
 TEST_F(S3RouterDispatchTest,
        InvokesObjectApiWithVirtualHostStyleObjNameDirStyle) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("seagate_bucket.s3.seagate.com"));
   EXPECT_CALL(*mock_request, c_get_full_path())
@@ -478,8 +505,6 @@ TEST_F(S3RouterDispatchTest,
   EXPECT_CALL(*mock_request, set_bucket_name(StrEq("seagate_bucket"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_name(StrEq("internal/readme.md")))
       .Times(1);
-  EXPECT_CALL(*mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
 
   std::shared_ptr<MockS3ObjectAPIHandler> mock_api_handler =
       std::make_shared<MockS3ObjectAPIHandler>(mock_request,

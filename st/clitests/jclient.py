@@ -8,6 +8,7 @@ from framework import S3PyCliTest
 from framework import Config
 from framework import logit
 from s3client_config import S3ClientConfig
+from shlex import quote
 
 class JClientTest(S3PyCliTest):
     jclient_cmd = "java -jar ../jclient.jar"
@@ -74,8 +75,9 @@ class JClientTest(S3PyCliTest):
         return self
 
     def list_specific_objects(self, bucket_name, object_pattern):
-        cmd =  "%s ls s3://%s/%s %s" % (self.jclient_cmd, bucket_name,
-                object_pattern, self.get_test_config())
+        s3target = "s3://" + bucket_name + "/" + object_pattern;
+        cmd =  "%s ls %s %s" % (self.jclient_cmd,
+                quote(s3target), self.get_test_config())
 
         self.with_cli(cmd)
         return self
@@ -96,11 +98,13 @@ class JClientTest(S3PyCliTest):
             self.chunked = ""
         if prefix:
             # s3://%s/%s/%s = s3://bucket/prefix/filename
-            cmd = "%s put %s s3://%s/%s/%s %s" % (self.jclient_cmd, filename,
-                bucket_name, prefix, filename, self.get_test_config())
+            s3target = "s3://" + bucket_name + "/" + prefix + "/" + filename;
+            cmd = "%s put %s %s %s" % (self.jclient_cmd, quote(filename),
+                quote(s3target), self.get_test_config())
         else:
-            cmd = "%s put %s s3://%s %s" % (self.jclient_cmd, filename,
-                bucket_name, self.get_test_config())
+            s3target = "s3://" + bucket_name;
+            cmd = "%s put %s %s %s" % (self.jclient_cmd, quote(filename),
+                quote(s3target), self.get_test_config())
 
         self.with_cli(cmd)
         return self
@@ -108,9 +112,9 @@ class JClientTest(S3PyCliTest):
     def init_mpu(self, bucket_name, filename, filesize):
         self.filename = filename
         self.filesize = filesize
-
-        cmd =  "%s initmpu %s s3://%s %s" % (self.jclient_cmd, filename,
-                bucket_name, self.get_test_config())
+        s3target = "s3://" + bucket_name;
+        cmd =  "%s initmpu %s %s %s" % (self.jclient_cmd, quote(filename),
+                quote(s3target), self.get_test_config())
 
         self.with_cli(cmd)
         return self
@@ -122,22 +126,24 @@ class JClientTest(S3PyCliTest):
             self.chunked = "-C"
         else:
             self.chunked = ""
-
-        cmd =  "%s put %s s3://%s -m %s %s" % (self.jclient_cmd, filename,
-                bucket_name, str(size_of_part), self.get_test_config())
+        s3target = "s3://" + bucket_name;
+        cmd =  "%s put %s %s -m %s %s" % (self.jclient_cmd, quote(filename),
+                quote(s3target), str(size_of_part), self.get_test_config())
 
         self.with_cli(cmd)
         return self
 
     def get_object(self, bucket_name, filename):
-        cmd =  "%s get s3://%s/%s %s %s" % (self.jclient_cmd,
-                bucket_name, filename, filename, self.get_test_config())
+        s3target = "s3://" + bucket_name + "/" + filename;
+        cmd =  "%s get %s %s %s" % (self.jclient_cmd,
+                quote(s3target), quote(filename), self.get_test_config())
         self.with_cli(cmd)
         return self
 
     def delete_object(self, bucket_name, filename):
-        cmd =  "%s del s3://%s/%s %s" % (self.jclient_cmd,
-                bucket_name, filename, self.get_test_config())
+        s3target = "s3://" + bucket_name + "/" + filename;
+        cmd =  "%s del %s %s" % (self.jclient_cmd,
+                quote(s3target), self.get_test_config())
         self.with_cli(cmd)
         return self
 
@@ -162,8 +168,9 @@ class JClientTest(S3PyCliTest):
         else:
             self.chunked = ""
 
-        cmd =  "%s partialput %s s3://%s %s -m %s %s" % (self.jclient_cmd,
-            filename, bucket_name, str(no_of_parts), str(size_of_part),
+        s3target = "s3://" + bucket_name;
+        cmd =  "%s partialput %s %s %s -m %s %s" % (self.jclient_cmd,
+            quote(filename), quote(s3target), str(no_of_parts), str(size_of_part),
             self.get_test_config())
 
         if with_upload_id:
@@ -203,15 +210,17 @@ class JClientTest(S3PyCliTest):
         return self
 
     def list_parts(self, bucket_name, file_name, upload_id):
-        cmd = "%s listmp s3://%s/%s %s %s" % (self.jclient_cmd, bucket_name,
-            file_name, upload_id, self.get_test_config())
+        s3target = "s3://" + bucket_name + "/" + file_name;
+        cmd = "%s listmp %s %s %s" % (self.jclient_cmd,
+            quote(s3target), upload_id, self.get_test_config())
 
         self.with_cli(cmd)
         return self
 
     def abort_multipart(self, bucket_name, file_name, upload_id):
-        cmd = "%s abortmp s3://%s/%s %s %s" % (self.jclient_cmd, bucket_name,
-            file_name, upload_id, self.get_test_config())
+        s3target = "s3://" + bucket_name + "/" + file_name;
+        cmd = "%s abortmp %s %s %s" % (self.jclient_cmd,
+            quote(s3target), upload_id, self.get_test_config())
 
         self.with_cli(cmd)
         return self
@@ -224,8 +233,9 @@ class JClientTest(S3PyCliTest):
         return self
 
     def head_object(self, bucket_name, file_name):
-        cmd = "%s head s3://%s/%s %s" % (self.jclient_cmd, bucket_name,
-            file_name, self.get_test_config())
+        s3target = "s3://" + bucket_name + "/" + file_name;
+        cmd = "%s head %s %s" % (self.jclient_cmd,
+            quote(s3target), self.get_test_config())
 
         self.with_cli(cmd)
         return self
@@ -250,8 +260,9 @@ class JClientTest(S3PyCliTest):
             acl_action = action + "=" + permission
 
         if file_name:
-            cmd = "%s setacl s3://%s/%s %s %s" % (self.jclient_cmd, bucket_name,
-                file_name, acl_action, self.get_test_config())
+            s3target = "s3://" + bucket_name + "/" + file_name;
+            cmd = "%s setacl %s %s %s" % (self.jclient_cmd,
+                quote(s3target), acl_action, self.get_test_config())
         else:
             cmd = "%s setacl s3://%s %s %s" % (self.jclient_cmd, bucket_name, acl_action,
                 self.get_test_config())
@@ -264,8 +275,9 @@ class JClientTest(S3PyCliTest):
         self.file_name = file_name
 
         if file_name:
-            cmd = "%s getacl s3://%s/%s %s" % (self.jclient_cmd, bucket_name,
-                file_name, self.get_test_config())
+            s3target = "s3://" + bucket_name + "/" + file_name;
+            cmd = "%s getacl %s %s" % (self.jclient_cmd,
+                quote(s3target), self.get_test_config())
         else:
             cmd = "%s getacl s3://%s %s" % (self.jclient_cmd, bucket_name,
                 self.get_test_config())

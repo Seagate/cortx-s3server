@@ -17,12 +17,14 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include <evhttp.h>
 #include "s3_object_list_response.h"
 #include "s3_common_utilities.h"
 #include "s3_log.h"
 
-S3ObjectListResponse::S3ObjectListResponse()
-    : request_prefix(""),
+S3ObjectListResponse::S3ObjectListResponse(std::string encoding_type)
+    : encoding_type(encoding_type),
+      request_prefix(""),
       request_delimiter(""),
       request_marker_key(""),
       request_marker_uploadid(""),
@@ -41,20 +43,37 @@ void S3ObjectListResponse::set_bucket_name(std::string name) {
   bucket_name = name;
 }
 
+// Encoding type used by S3 to encode object key names in the XML response.
+// If you specify encoding-type request parameter, S3 includes this element in
+// the response, and returns encoded key name values in the following response
+// elements:
+// Delimiter, KeyMarker, Prefix, NextKeyMarker, Key.
+std::string S3ObjectListResponse::get_response_format_key_value(
+    const std::string& key_value) {
+  std::string format_key_value;
+  if (encoding_type == "url") {
+    char* decoded_str = evhttp_uriencode(key_value.c_str(), -1, 1);
+    format_key_value = decoded_str;
+    free(decoded_str);
+  } else {
+    format_key_value = key_value;
+  }
+  return format_key_value;
+}
 void S3ObjectListResponse::set_object_name(std::string name) {
-  object_name = name;
+  object_name = get_response_format_key_value(name);
 }
 
 void S3ObjectListResponse::set_request_prefix(std::string prefix) {
-  request_prefix = prefix;
+  request_prefix = get_response_format_key_value(prefix);
 }
 
 void S3ObjectListResponse::set_request_delimiter(std::string delimiter) {
-  request_delimiter = delimiter;
+  request_delimiter = get_response_format_key_value(delimiter);
 }
 
 void S3ObjectListResponse::set_request_marker_key(std::string marker) {
-  request_marker_key = marker;
+  request_marker_key = get_response_format_key_value(marker);
 }
 
 void S3ObjectListResponse::set_request_marker_uploadid(std::string marker) {
@@ -76,7 +95,7 @@ void S3ObjectListResponse::set_response_is_truncated(bool flag) {
 }
 
 void S3ObjectListResponse::set_next_marker_key(std::string next) {
-  next_marker_key = next;
+  next_marker_key = get_response_format_key_value(next);
 }
 
 void S3ObjectListResponse::set_next_marker_uploadid(std::string next) {
@@ -148,6 +167,9 @@ std::string& S3ObjectListResponse::get_xml() {
       S3CommonUtilities::format_xml_string("Prefix", request_prefix);
   response_xml +=
       S3CommonUtilities::format_xml_string("Delimiter", request_delimiter);
+  if (encoding_type == "url") {
+    response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
+  }
   response_xml +=
       S3CommonUtilities::format_xml_string("Marker", request_marker_key);
   response_xml += S3CommonUtilities::format_xml_string("MaxKeys", max_keys);
@@ -158,8 +180,8 @@ std::string& S3ObjectListResponse::get_xml() {
 
   for (auto&& object : object_list) {
     response_xml += "<Contents>";
-    response_xml +=
-        S3CommonUtilities::format_xml_string("Key", object->get_object_name());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "Key", get_response_format_key_value(object->get_object_name()));
     response_xml += S3CommonUtilities::format_xml_string(
         "LastModified", object->get_last_modified_iso());
     response_xml +=
@@ -208,10 +230,14 @@ std::string& S3ObjectListResponse::get_multiupload_xml() {
   response_xml += S3CommonUtilities::format_xml_string(
       "IsTruncated", (response_is_truncated ? "true" : "false"));
 
+  if (encoding_type == "url") {
+    response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
+  }
+
   for (auto&& object : object_list) {
     response_xml += "<Upload>";
-    response_xml +=
-        S3CommonUtilities::format_xml_string("Key", object->get_object_name());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "Key", get_response_format_key_value(object->get_object_name()));
     response_xml += S3CommonUtilities::format_xml_string(
         "UploadId", object->get_upload_id());
     response_xml += "<Initiator>";
@@ -250,8 +276,8 @@ std::string& S3ObjectListResponse::get_multipart_xml() {
   response_xml +=
       "<ListPartsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
   response_xml += S3CommonUtilities::format_xml_string("Bucket", bucket_name);
-  response_xml +=
-      S3CommonUtilities::format_xml_string("Key", get_object_name());
+  response_xml += S3CommonUtilities::format_xml_string(
+      "Key", get_response_format_key_value(get_object_name()));
   response_xml +=
       S3CommonUtilities::format_xml_string("UploadID", get_upload_id());
   response_xml += "<Initiator>";
@@ -274,6 +300,10 @@ std::string& S3ObjectListResponse::get_multipart_xml() {
   response_xml += S3CommonUtilities::format_xml_string("MaxParts", max_parts);
   response_xml += S3CommonUtilities::format_xml_string(
       "IsTruncated", (response_is_truncated ? "true" : "false"));
+
+  if (encoding_type == "url") {
+    response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
+  }
 
   for (auto&& part : part_list) {
     response_xml += "<Part>";

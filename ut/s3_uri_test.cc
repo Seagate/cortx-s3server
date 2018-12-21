@@ -23,6 +23,7 @@
 using ::testing::Return;
 using ::testing::StrEq;
 using ::testing::_;
+using ::testing::ReturnRef;
 
 class S3URITEST : public testing::Test {
  protected:
@@ -40,8 +41,10 @@ class S3PathStyleURITEST : public S3URITEST {};
 class S3VirtualHostStyleURITEST : public S3URITEST {};
 
 TEST_F(S3URITEST, Constructor) {
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters()).Times(1).WillOnce(
+      ReturnRef(query_params));
 
   S3URI s3uri_test_obj(ptr_mock_request);
   EXPECT_STREQ("", s3uri_test_obj.get_bucket_name().c_str());
@@ -51,13 +54,21 @@ TEST_F(S3URITEST, Constructor) {
 }
 
 TEST_F(S3URITEST, OperationCode) {
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_)).WillOnce(Return(true));
+  std::map<std::string, std::string, compare> query_params;
+  query_params["acl"] = "";
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters()).Times(1).WillOnce(
+      ReturnRef(query_params));
 
   S3URI s3uri_test_obj(ptr_mock_request);
   EXPECT_EQ(S3OperationCode::acl, s3uri_test_obj.get_operation_code());
 }
 
 TEST_F(S3PathStyleURITEST, ServiceTest) {
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters()).Times(1).WillOnce(
+      ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
       .WillRepeatedly(Return(false));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path()).WillOnce(Return("/"));
@@ -75,8 +86,10 @@ TEST_F(S3PathStyleURITEST, BucketTest) {
   EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
   std::shared_ptr<MockS3RequestObject> ptr_mock_request =
       std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/seagate"))
       .WillOnce(Return("/TrailingSlash/"));
@@ -93,8 +106,10 @@ TEST_F(S3PathStyleURITEST, BucketTest) {
 }
 
 TEST_F(S3PathStyleURITEST, ObjectTest) {
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/seagate/8kfile"))
       .WillOnce(Return("/seagate/test.txt"))
@@ -117,8 +132,10 @@ TEST_F(S3PathStyleURITEST, ObjectTest) {
 }
 
 TEST_F(S3PathStyleURITEST, ObjectDirTest) {
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/seagate/mh/pune/8kfile"))
       .WillOnce(Return("/seagate/mh/pune/test.txt"));
@@ -135,8 +152,10 @@ TEST_F(S3PathStyleURITEST, ObjectDirTest) {
 }
 
 TEST_F(S3PathStyleURITEST, ObjectDirTrailSlashTest) {
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
       .WillOnce(Return("/seagate/mh/pune/8kfile/"))
       .WillOnce(Return("/seagate/mh/pune/test.txt"));
@@ -155,8 +174,10 @@ TEST_F(S3PathStyleURITEST, ObjectDirTrailSlashTest) {
 TEST_F(S3VirtualHostStyleURITEST, BucketTest) {
   std::string bucket;
   std::string object;
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, get_host_header())
       .WillOnce(Return("bucket_name.s3.seagate.com"));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path()).WillOnce(Return("/"));
@@ -170,8 +191,10 @@ TEST_F(S3VirtualHostStyleURITEST, BucketTest) {
 TEST_F(S3VirtualHostStyleURITEST, ObjectTest) {
   std::string bucket;
   std::string object;
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, get_host_header())
       .WillRepeatedly(Return("bucket_name.s3.seagate.com"));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -198,8 +221,10 @@ TEST_F(S3VirtualHostStyleURITEST, ObjectTest) {
 TEST_F(S3VirtualHostStyleURITEST, ObjectTrailSlashTest) {
   std::string bucket;
   std::string object;
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, get_host_header())
       .WillRepeatedly(Return("bucket_name.s3.seagate.com"));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -220,8 +245,10 @@ TEST_F(S3VirtualHostStyleURITEST, ObjectTrailSlashTest) {
 TEST_F(S3VirtualHostStyleURITEST, ObjectDirTest) {
   std::string bucket;
   std::string object;
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, get_host_header())
       .WillRepeatedly(Return("bucket_name.s3.seagate.com"));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())
@@ -242,8 +269,10 @@ TEST_F(S3VirtualHostStyleURITEST, ObjectDirTest) {
 TEST_F(S3VirtualHostStyleURITEST, ObjectDirTrailSlashTest) {
   std::string bucket;
   std::string object;
-  EXPECT_CALL(*ptr_mock_request, has_query_param_key(_))
-      .WillRepeatedly(Return(false));
+  std::map<std::string, std::string, compare> query_params;
+
+  EXPECT_CALL(*ptr_mock_request, get_query_parameters())
+      .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*ptr_mock_request, get_host_header())
       .WillRepeatedly(Return("bucket_name.s3.seagate.com"));
   EXPECT_CALL(*ptr_mock_request, c_get_full_path())

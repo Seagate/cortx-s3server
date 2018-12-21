@@ -24,6 +24,8 @@
 
 #include <stdlib.h>
 #include <string>
+#include <cstring>
+#include <map>
 
 #ifdef __cplusplus
 #define EXTERN_C_BLOCK_BEGIN extern "C" {
@@ -95,6 +97,14 @@ enum class S3OperationCode {
   selectcontent,
   restore
 };
+
+struct compare {
+  bool operator()(const std::string& lhs, const std::string& rhs) const {
+    return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
+  }
+};
+
+extern std::map<std::string, S3OperationCode, compare> S3OperationString;
 
 inline std::string operation_code_to_str(S3OperationCode code) {
   switch (code) {

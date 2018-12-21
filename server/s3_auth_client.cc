@@ -30,7 +30,7 @@
 #include "s3_fi_common.h"
 #include "s3_iem.h"
 #include "s3_option.h"
-#include "s3_url_encode.h"
+#include "s3_common_utilities.h"
 
 /* S3 Auth client callbacks */
 
@@ -318,18 +318,37 @@ void S3AuthClient::setup_auth_request_body() {
 
   const char *full_path = request->c_get_full_encoded_path();
   if (full_path != NULL) {
-    add_key_val_to_body("ClientAbsoluteUri", full_path);
+    std::string uri_full_path = full_path;
+    // in encoded uri path space is encoding as '+'
+    // but cannonical request should have '%20' for verification.
+    // decode plus into space, this special handling
+    // is not required for other charcters.
+    S3CommonUtilities::find_and_replaceall(uri_full_path, "+", "%20");
+    add_key_val_to_body("ClientAbsoluteUri", uri_full_path);
   } else {
     add_key_val_to_body("ClientAbsoluteUri", "");
   }
 
-  const char *uri_query = request->c_get_uri_query();
-  if (uri_query != NULL) {
-    s3_log(S3_LOG_DEBUG, request_id, "c_get_uri_query = %s\n", uri_query);
-    add_key_val_to_body("ClientQueryParams", uri_query);
-  } else {
-    add_key_val_to_body("ClientQueryParams", "");
+  // get the query paramters in a map
+  // eg: query_map = { {prefix, abc&def}, {delimiter, /}};
+  const std::map<std::string, std::string, compare> query_map =
+      request->get_query_parameters();
+  std::string query;
+  // iterate through the each query parameter
+  // and url-encode the values (abc%26def)
+  // then form the query (prefix=abc%26def&delimiter=%2F)
+  for (auto it : query_map) {
+    if (it.second == "") {
+      query += query.empty() ? it.first : "&" + it.first;
+    } else {
+      char *encoded_value = evhttp_encode_uri(it.second.c_str());
+      std::string encoded_value_str = encoded_value;
+      query += query.empty() ? it.first + "=" + encoded_value_str
+                             : "&" + it.first + "=" + encoded_value_str;
+      free(encoded_value);
+    }
   }
+  add_key_val_to_body("ClientQueryParams", query);
 
   // May need to take it from config
   add_key_val_to_body("Version", "2010-05-08");
@@ -339,6 +358,7 @@ void S3AuthClient::setup_auth_request_body() {
     } else if (acl_str != "") {
       add_key_val_to_body("ACL", acl_str);
     }
+
     auth_request_body = "Action=AuthorizeUser";
   } else {  // Auth request
     if (is_chunked_auth &&
@@ -350,12 +370,16 @@ void S3AuthClient::setup_auth_request_body() {
                           current_chunk_signature_from_auth);
       add_key_val_to_body("x-amz-content-sha256", hash_sha256_current_chunk);
     }
+
     auth_request_body = "Action=AuthenticateUser";
   }
 
   for (auto it : data_key_val) {
-    auth_request_body += "&" + url_encode(it.first.c_str()) + "=" +
-                         url_encode(it.second.c_str());
+    char *encoded_key = evhttp_encode_uri(it.first.c_str());
+    char *encoded_value = evhttp_encode_uri(it.second.c_str());
+    auth_request_body += std::string("&") + encoded_key + "=" + encoded_value;
+    free(encoded_key);
+    free(encoded_value);
   }
 
   if (auth_request_type == S3AuthClientOpType::authorization) {

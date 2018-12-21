@@ -32,7 +32,10 @@ S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
-    : S3Action(req), last_key(""), fetch_successful(false) {
+    : S3Action(req),
+      object_list(req->get_query_string_value("encoding-type")),
+      last_key(""),
+      fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket(List Objects).\n");
 

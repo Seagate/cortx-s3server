@@ -51,6 +51,8 @@ class S3GetMultipartPartActionTest : public testing::Test {
         .WillRepeatedly(Return("1"));
     EXPECT_CALL(*ptr_mock_request, get_query_string_value("max-parts"))
         .WillRepeatedly(Return("2"));
+    EXPECT_CALL(*ptr_mock_request, get_query_string_value("encoding-type"))
+        .WillRepeatedly(Return(""));
 
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name_test));

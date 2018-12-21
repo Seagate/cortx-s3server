@@ -58,6 +58,7 @@ enum class S3RequestError {
 };
 
 extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg);
+extern "C" int consume_query_parameters(evhtp_kv_t* kvobj, void* arg);
 
 class S3AsyncBufferOptContainerFactory;
 
@@ -108,7 +109,8 @@ class S3RequestObject {
   // Broken into helper function primarily to allow initialisations after faking
   // data.
   void initialise();
-
+  virtual const std::map<std::string, std::string, compare>&
+      get_query_parameters();
   virtual const char* c_get_uri_query();
   virtual S3HttpVerb http_verb();
   virtual const char* get_http_verb_str(S3HttpVerb method);
@@ -123,7 +125,13 @@ class S3RequestObject {
   // protected so mocks can override
   std::map<std::string, std::string> in_headers_copy;
   std::map<std::string, std::string> out_headers_copy;
+  // in_query_params_copy will have (eg:query: prefix=abc)
+  // key as query parameter key (prefix)
+  // value as query parameter value (abc)
+  // note: both key and values not url encoded.
+  std::map<std::string, std::string, compare> in_query_params_copy;
   bool in_headers_copied;
+  bool in_query_params_copied;
 
  private:
   std::string full_request_body;
@@ -135,6 +143,7 @@ class S3RequestObject {
  public:
   virtual std::map<std::string, std::string>& get_in_headers_copy();
   friend int consume_header(evhtp_kv_t* kvobj, void* arg);
+  friend int consume_query_parameters(evhtp_kv_t* kvobj, void* arg);
 
   virtual std::string get_header_value(std::string key);
   virtual std::string get_host_header();

@@ -110,7 +110,7 @@ void S3PutBucketAction::validate_bucket_name() {
   // bucket name should be within 3 and 63 character long
   if ((bucket_name.size() < BUCKETNAME_MIN_LENGTH) ||
       (bucket_name.size() > BUCKETNAME_MAX_LENGTH)) {
-    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+    s3_log(S3_LOG_ERROR, request_id, "The specified bucket(%s) is not valid.\n",
            bucket_name.c_str());
     set_s3_error("InvalidBucketName");
     send_response_to_s3_client();
@@ -118,7 +118,7 @@ void S3PutBucketAction::validate_bucket_name() {
   }
 
   if (!((std::islower(bucket_name[0])) || (std::isdigit(bucket_name[0])))) {
-    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+    s3_log(S3_LOG_ERROR, request_id, "The specified bucket(%s) is not valid.\n",
            bucket_name.c_str());
     set_s3_error("InvalidBucketName");
     send_response_to_s3_client();
@@ -127,7 +127,7 @@ void S3PutBucketAction::validate_bucket_name() {
 
   // bucket name should not end with Period or Dash
   if ((bucket_name.back() == '.') || (bucket_name.back() == '-')) {
-    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+    s3_log(S3_LOG_ERROR, request_id, "The specified bucket(%s) is not valid.\n",
            bucket_name.c_str());
     set_s3_error("InvalidBucketName");
     send_response_to_s3_client();
@@ -198,14 +198,14 @@ void S3PutBucketAction::validate_bucket_name() {
 
   // send response to client, if bucket is invalid
   if (!valid_bucket_name) {
-    s3_log(S3_LOG_INFO, request_id, "The specified bucket(%s) is not valid.\n",
+    s3_log(S3_LOG_ERROR, request_id, "The specified bucket(%s) is not valid.\n",
            bucket_name.c_str());
     set_s3_error("InvalidBucketName");
     send_response_to_s3_client();
   } else {
     next();
   }
-  s3_log(S3_LOG_ERROR, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketAction::read_metadata() {

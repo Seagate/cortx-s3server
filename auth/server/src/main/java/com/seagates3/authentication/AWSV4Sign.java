@@ -182,6 +182,12 @@ public class AWSV4Sign implements AWSSign {
 
         httpMethod = clientRequestToken.getHttpMethod();
         canonicalURI = clientRequestToken.getUri();
+        /**
+         * getCanonicalQuery is not required for s3cmd as query field in
+         * clientRequestToken is already encoded from s3server.
+         * If required in other CLI's query field needs to be URL-encoded
+         * in getCanonicalQuery.
+         */
         canonicalQuery = getCanonicalQuery(clientRequestToken.getQuery());
         canonicalHeader = createCanonicalHeader(clientRequestToken);
         hashedPayload = createHashedPayload(clientRequestToken);
@@ -478,18 +484,14 @@ public class AWSV4Sign implements AWSSign {
                 queryParams.put(subTokens[0], "");
             }
         }
-
         String canonicalString = "";
         Iterator<Map.Entry<String, String>> entries = queryParams.entrySet().iterator();
         while (entries.hasNext()) {
             Map.Entry<String, String> entry = entries.next();
-            try {
-                canonicalString += URLEncoder.encode(entry.getKey(), "UTF-8") + "=";
-                canonicalString += URLEncoder.encode(entry.getValue(), "UTF-8");
-            } catch (UnsupportedEncodingException ex) {
-                LOGGER.error("UTF-8 encoding is not supported");
-            }
-
+            // Values already url encoded by s3server
+            // so we can directly use it for verification.
+            canonicalString += entry.getKey() + "=";
+            canonicalString += entry.getValue();
             if (entries.hasNext()) {
                 canonicalString += "&";
             }

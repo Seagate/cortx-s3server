@@ -63,6 +63,9 @@ using ::testing::_;
     EXPECT_CALL(*request_mock, get_query_string_value("max-uploads"))      \
         .Times(AtLeast(1))                                                 \
         .WillRepeatedly(Return("1000"));                                   \
+    EXPECT_CALL(*request_mock, get_query_string_value("encoding-type"))    \
+        .Times(AtLeast(1))                                                 \
+        .WillRepeatedly(Return(""));                                       \
     action_under_test_ptr = std::make_shared<S3GetMultipartBucketAction>(  \
         request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,       \
         bucket_meta_factory, object_meta_factory);                         \

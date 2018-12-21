@@ -77,3 +77,22 @@ bool S3CommonUtilities::stoul(const std::string &str, unsigned long &value) {
   }
   return isvalid;
 }
+
+void S3CommonUtilities::find_and_replaceall(std::string &data,
+                                            const std::string &to_search,
+                                            const std::string &replace_str) {
+  // return, if search string is empty
+  if (to_search.empty()) return;
+  // nothing to match
+  if (data.empty()) return;
+  // Get the first occurrence
+  size_t pos = data.find(to_search);
+
+  // Repeat till end is reached
+  while (pos != std::string::npos) {
+    // Replace this occurrence of Sub String
+    data.replace(pos, to_search.size(), replace_str);
+    // Get the next occurrence from the current position
+    pos = data.find(to_search, pos + replace_str.size());
+  }
+}
