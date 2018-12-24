@@ -16,6 +16,7 @@ or to clone with your seagate gid follow the link given below.
 https://docs.google.com/document/d/17ufHPsT62dFL-5VE8r6NeADSefUa0eGgkmPNTkv-k3o/
 
 Ensure you have at least 8GB RAM for dev VM and 4GB RAM for release/rpmbuild VM.
+For custom domain configuration see S3 readme for more details.
 
 # To setup dev vm
 Run setup script to configure dev vm

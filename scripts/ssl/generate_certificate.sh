@@ -1,20 +1,86 @@
 #!/bin/bash
 set -e
 
-read -p "Enter S3 endpoint (default is s3.seagate.com): " s3_default_endpoint
-read -p "Enter S3 region endpoint (default is s3-us-west-2.seagate.com): " s3_region_endpoint
-read -p "Enter S3 iam endpoint (default is iam.seagate.com): " s3_iam_endpoint
-read -p "Enter S3 sts endpoint (default is sts.seagate.com): " s3_sts_endpoint
-read -p "Enter host S3 ip address (for dev vm use 127.0.0.1): " s3_ip_address
-read -p "Enter Open ldap domain name (default is localhost): " openldap_domainname
-read -p "Enter the key store passphrase (default is seagate): " passphrase
+USAGE() { echo "USAGE: bash $(basename "$0") [-h]
+                   [-f domain_input.conf][-d][-m]
+Configurations for generating S3 certificates.
+Optional params as below:
+    -f : Use configuration from the specified config file
+    -d : Use default configurations
+    -m : Provide manual entries for configurations
+    -h : Display help" ; exit 1; }
 
-[ "$s3_default_endpoint" == "" ] && s3_default_endpoint="s3.seagate.com"
-[ "$s3_region_endpoint" == "" ] && s3_region_endpoint="s3-us-west-2.seagate.com"
-[ "$s3_iam_endpoint" == "" ] && s3_iam_endpoint="iam.seagate.com"
-[ "$s3_sts_endpoint" == "" ] && s3_sts_endpoint="sts.seagate.com"
-[ "$openldap_domainname" == "" ] && openldap_domainname="localhost"
-[ "$passphrase" == "" ] && passphrase="seagate"
+
+SCRIPT_PATH=$(readlink -f "$0")
+BASEDIR=$(dirname "$SCRIPT_PATH")
+VALID_COMMAND_LINE_OPTIONS="f:mdh"
+
+[ $# -eq 0 ] && USAGE
+
+while getopts $VALID_COMMAND_LINE_OPTIONS option; do
+  case "${option}" in
+    f)
+      CONFIG_FILE="$BASEDIR/${OPTARG}"
+
+      if [ -f "$CONFIG_FILE" ]
+      then
+        echo "Configuration file $CONFIG_FILE found."
+
+      while IFS="=" read -r key value; do
+        case "$key" in
+          "s3_default_endpoint") s3_default_endpoint="$value" ;;
+          "s3_region_endpoint") s3_region_endpoint="$value" ;;
+          "s3_iam_endpoint") s3_iam_endpoint="$value" ;;
+          "s3_sts_endpoint") s3_sts_endpoint="$value" ;;
+          "s3_ip_address") s3_ip_address="$value" ;;
+          "openldap_domainname") openldap_domainname="$value" ;;
+          "passphrase") passphrase="$value" ;;
+        esac
+      done < $CONFIG_FILE
+      else
+        echo "Configuration file $CONFIG_FILE not found."
+        exit 1
+      fi
+      ;;
+    m)
+      read -p "Enter S3 endpoint (default is s3.seagate.com): " s3_default_endpoint
+      read -p "Enter S3 region endpoint (default is s3-us-west-2.seagate.com): " s3_region_endpoint
+      read -p "Enter S3 iam endpoint (default is iam.seagate.com): " s3_iam_endpoint
+      read -p "Enter S3 sts endpoint (default is sts.seagate.com): " s3_sts_endpoint
+      read -p "Enter host S3 ip address (for dev vm use 127.0.0.1): " s3_ip_address
+      read -p "Enter Open ldap domain name (default is localhost): " openldap_domainname
+      read -p "Enter the key store passphrase (default is seagate): " passphrase
+      ;;
+    d)
+      s3_default_endpoint="s3.seagate.com"
+      s3_region_endpoint="s3-us-west-2.seagate.com"
+      s3_iam_endpoint="iam.seagate.com"
+      s3_sts_endpoint="sts.seagate.com"
+      openldap_domainname="localhost"
+      s3_ip_address="127.0.0.1"
+      passphrase="seagate"
+      ;;
+    h|?)
+      USAGE
+      ;;
+    esac
+done
+
+echo "Using following configurations
+  S3 endpoint = $s3_default_endpoint
+  S3 region endpoint = $s3_region_endpoint
+  S3 iam endpoint = $s3_iam_endpoint
+  S3 sts endpoint = $s3_sts_endpoint
+  S3 ip address = $s3_ip_address
+  Open ldap domain name = $openldap_domainname
+  Keystore passpharse = $passphrase"
+
+[ -z $s3_default_endpoint ] && { echo "S3 endpoint is required" ; exit 1; }
+[ -z $s3_region_endpoint ] && { echo "S3 region endpoint is required" ; exit 1; }
+[ -z $s3_iam_endpoint ] && { echo "S3 iam endpoint is required" ; exit 1; }
+[ -z $s3_sts_endpoint ] && { echo "S3 sts endpoint is required" ; exit 1; }
+[ -z $openldap_domainname ] && { echo "Open ldap domain name is required" ; exit 1; }
+[ -z $passphrase ] && { echo "Key store passpharse is required" ; exit 1; }
 
 # Global file names
 s3_auth_cert_file_name="s3authserver"

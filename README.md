@@ -58,6 +58,7 @@ Steps for Dev environment:
 ./refresh_thirdparty.sh
 ./rebuildall.sh --no-mero-rpm
 ```
+
 The `./refresh_thirdparty.sh` command refreshes the third party source code.
 It will undo any changes made in third party submodules source code and will
 clone missing submodules. Normally after a fresh repo clone, this command
@@ -87,6 +88,22 @@ are present in $HOME/.seagate_src_cache and will be used in current build.
 ```
 
 Build SSL certificates and install (use defaults)
+
+# For dev vm setup, check whether following line exists
+`s3_ip_address=127.0.0.1` in <s3 src>/scripts/ssl/domain_input.conf
+
+# For release/rpmbuild setup, update S3server V4 ip-address appropriately in
+`s3_ip_address=x.x.x.x` in <s3 src>/scripts/ssl/domain_input.conf
+
+# For custom domains, update endpoints appropriately
+For example customer domains like `s3.some.customer.domain.com` update following
+entries in <s3 src>/scripts/ssl/domain_input.conf
+
+`s3_default_endpoint=s3.some.customer.domain.com`
+`s3_region_endpoint=s3-us-west-2.some.customer.domain.com`
+`s3_iam_endpoint=iam.some.customer.domain.com`
+`s3_sts_endpoint=sts.some.customer.domain.com`
+
 ```sh
 cd rpms/s3certs
 # Here "s3dev" is a tag used on the generated certificate rpms
@@ -141,6 +158,7 @@ yum install haproxy
 cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
 cp <s3-src>/scripts/haproxy/503.http /etc/haproxy/503.http
 ```
+
 ## Install SSL certificates for S3 service (haroxy)
 See Build SSL section above.
 ```sh
@@ -197,8 +215,10 @@ file. Go ahead and add those entries.
 If you are not running as root then add user to /etc/sudoers file as below:
 ```sh
 sudo visudo
+
 # Find the line `root ALL=(ALL) ALL`, add following line after current line:
 <user_name> ALL=(ALL) NOPASSWD:ALL
+
 # Warning: This gives super user privilege to all commands when invoked as sudo.
 
 # Now add s3server binary path to sudo secure path
@@ -317,7 +337,7 @@ cat s3authserver.crt s3authserver.key > s3authserver.pem
 ```
 
 ## Steps to create Key Pair for password encryption and store it in java keystore
-## This key pair will be used by AuthPassEncryptCLI and AuthServer for encryption and decryption of ldap password respectively
+**This key pair will be used by AuthPassEncryptCLI and AuthServer for encryption and decryption of ldap password respectively**
 ```sh
 keytool -genkeypair -keyalg RSA -alias s3auth_pass -keystore s3authserver.jks -storepass seagate -keypass seagate -validity 3600 -keysize 512 -dname "C=IN, ST=Maharashtra, L=Pune, O=Seagate, OU=S3, CN=iam.seagate.com" -ext SAN=dns:iam.seagate.com,dns:sts.seagate.com,dns:s3.seagate.com
 ```
@@ -406,18 +426,22 @@ By default statsd sends metrics with prefix "stats", if multiple statsd send dat
 graphite, all of them will be listed in same prefix name. To differentiate metrics
 from different S3 nodes statsd config file needs to be updated with globalPrefix
 value, for example below globalePrefix value is set to "s3node2".
-
+```
 {
-  graphitePort: 2003
-, graphiteHost: "graphite-host"
-, mgmt_port: 8126
-, port: 8125
-, graphite: {
-         legacyNamespace: false,
-         globalPrefix: "s3node2"
+    graphitePort: 2003,
+    graphiteHost: "graphite-host",
+    mgmt_port: 8126,
+    port: 8125,
+    graphite: {
+        legacyNamespace: false,
+        globalPrefix: "s3node2"
+    }
+    , backends: [
+        "./backends/graphite" ,
+        "./backends/console"
+    ]
 }
-, backends: [ "./backends/graphite" , "./backends/console" ]
-}
+```
 
 Once above config is done, run StatsD daemon as below
 ```sh
@@ -555,62 +579,78 @@ sudo firewall-cmd --reload
 
 ## Bareos Setup
 
-# Follow ansibe steps to configure bareos on VM.
+### Follow [Ansible](https://www.ansible.com/) steps to configure [Bareos](https://www.bareos.org/en/) on VM.
 ```sh
 cd <s3-src>/ansible
 cat readme
 
 ```
-# Update director configuration file
+
+* Update director configuration file
+
 ```sh
 vi /etc/bareos/bareos-dir.d/storage/s3_storage.conf
 
 ```
-## Update "Address" field with fully qualified domain name(FQDN)
-## The "Password" field should match "Password" of /etc/bareos/bareos-sd.d/director/bareos-dir.conf
+
+>**Update "Address" field with fully qualified domain name(FQDN)
+>The "Password" field should match "Password" of /etc/bareos/bareos-sd.d/director/bareos-dir.conf**
 
 
-# Ensure port 80/443 in s3server/Mero Node is open
+* Ensure port 80/443 in s3server/Mero Node is open
+
 ```sh
 iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
 
 ```
-# Update file selection in fileSet resource definition
+* Update file selection in fileSet resource definition
+
 ```sh
 vi /etc/bareos/bareos-dir.d/fileset/s3files.conf
 
 ```
-# All files in "File" are selected for backup/restore. Ensure they are present locally on VM.
 
-# Update jobdefs resource file
+* All files in "File" are selected for backup/restore. Ensure they are present locally on VM.
+
+* Update jobdefs resource file
+
 ```sh
 vi  /etc/bareos/bareos-dir.d/jobdefs/S3Job.conf
 
 ```
-# Update "Level" to select Full/Incremental/Diﬀerential backup.
 
-# Create/Update job resource definition file for backup/restore.Sample files are:
+* Update "Level" to select Full/Incremental/Diﬀerential backup.
+
+* Create/Update job resource definition file for backup/restore.Sample files are:
+
 ```sh
 vim /etc/bareos/bareos-dir.d/job/BackupToS3.conf
 vim /etc/bareos/bareos-dir.d/job/RestoreFiles.conf
 
 ```
-# Start bareos daemons/services
+
+* Start bareos daemons/services
+
 ```sh
 systemctl start bareos-dir
 systemctl start bareos-sd
 systemctl start bareos-fd
 
 ```
-# Storage Daemon Node should be able to resolve s3server/mero host <Bucket Name>.s3.seagate.com
-# Append following entries to /etc/hosts
+
+* Storage Daemon Node should be able to resolve s3server/mero host <Bucket Name>.s3.seagate.com
+
+* Append following entries to /etc/hosts
+
 ```sh
 
 192.168.64.144 seagatebucket.s3.seagate.com
 192.168.64.144 iam.seagate.com sts.seagate.com s3.seagate.com
 
 ```
-# Running a backup job.
+
+* Running a backup job.
+
 ```sh
 [root@localhost bareos]# bconsole
 *run
@@ -622,7 +662,10 @@ The defined Job resources are:
 Select Job resource (1-4): 2
 
 ```
-# Running a restore job.
+
+* Running a restore job.
+
+
 ```sh
 *restore
 Select you job id.
@@ -631,9 +674,13 @@ $ mark *
 $ done
 
 ```
-# Verifying files that have been restore
-# The restored files will be present in /tmp/bareos-restores
-# Use "md5sum" command to verify hash of files that have been restored.
+
+### Verifying files that have been restore
+
+* The restored files will be present in /tmp/bareos-restores
+
+* Use "md5sum" command to verify hash of files that have been restored.
+
 ```sh
 md5sum /tmp/bareos-restores/file.txt
 md5sum /root/file.txt
