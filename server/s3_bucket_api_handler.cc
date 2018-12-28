@@ -31,6 +31,8 @@
 #include "s3_put_bucket_acl_action.h"
 #include "s3_put_bucket_action.h"
 #include "s3_put_bucket_policy_action.h"
+#include "s3_get_bucket_tagging_action.h"
+#include "s3_put_bucket_tagging_action.h"
 #include "s3_stats.h"
 
 void S3BucketAPIHandler::create_action() {
@@ -154,9 +156,11 @@ void S3BucketAPIHandler::create_action() {
     case S3OperationCode::tagging:
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
+          action = std::make_shared<S3GetBucketTaggingAction>(request);
           s3_stats_inc("get_bucket_tagging_count");
           break;
         case S3HttpVerb::PUT:
+          action = std::make_shared<S3PutBucketTaggingAction>(request);
           s3_stats_inc("put_bucket_tagging_count");
           break;
         case S3HttpVerb::DELETE:

@@ -193,6 +193,38 @@ TEST_F(S3BucketMetadataTest, SetAcl) {
                action_under_test->bucket_ACL.get_xml_str().c_str());
 }
 
+TEST_F(S3BucketMetadataTest, GetTagsAsXml) {
+  char expected_str[] =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Tagging "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
+      "\"><TagSet><Tag><Key>organization1234</Key><Value>marketing1234</"
+      "Value></Tag><Tag><Key>organization124</Key><Value>marketing123</Value></"
+      "Tag></TagSet></Tagging>";
+  std::map<std::string, std::string> bucket_tags_map;
+  bucket_tags_map["organization124"] = "marketing123";
+  bucket_tags_map["organization1234"] = "marketing1234";
+
+  action_under_test->set_tags(bucket_tags_map);
+
+  EXPECT_STREQ(expected_str, action_under_test->get_tags_as_xml().c_str());
+}
+
+TEST_F(S3BucketMetadataTest, GetSpecialCharTagsAsXml) {
+  char expected_str[] =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Tagging "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
+      "\"><TagSet><Tag><Key>organiza$tion</Key><Value>marketin*g</Value></"
+      "Tag><Tag><Key>organizati#on124</Key><Value>marke@ting123</Value></Tag></"
+      "TagSet></Tagging>";
+  std::map<std::string, std::string> bucket_tags_map;
+  bucket_tags_map["organiza$tion"] = "marketin*g";
+  bucket_tags_map["organizati#on124"] = "marke@ting123";
+
+  action_under_test->set_tags(bucket_tags_map);
+
+  EXPECT_STREQ(expected_str, action_under_test->get_tags_as_xml().c_str());
+}
+
 TEST_F(S3BucketMetadataTest, AddSystemAttribute) {
   action_under_test->add_system_attribute("LocationConstraint", "us-east");
   EXPECT_STREQ("us-east",

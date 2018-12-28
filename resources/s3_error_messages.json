@@ -63,6 +63,10 @@
     "Description": "The specified bucket does not have a bucket policy.",
     "httpcode": 404
   },
+  "NoSuchTagSetError": {
+    "Description": "There is no tag set associated with the bucket.",
+    "httpcode": 404
+  },
   "NoSuchKey": {
     "Description": "The specified key does not exist.",
     "httpcode": 404
@@ -97,6 +101,10 @@
   },
   "MalformedXML": {
     "Description": "The XML you provided was not well-formed or did not validate against our published schema.",
+    "httpcode": 400
+  },
+  "InvalidTagError": {
+    "Description": "The tag provided was not a valid tag. This error can occur if the tag did not pass input validation.",
     "httpcode": 400
   },
   "BadDigest": {

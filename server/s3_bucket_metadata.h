@@ -76,6 +76,7 @@ class S3BucketMetadata {
   // http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
   std::string bucket_name;
   std::string bucket_policy;
+  std::map<std::string, std::string> bucket_tags;
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
 
@@ -179,6 +180,8 @@ class S3BucketMetadata {
   std::string get_owner_name();
 
   std::string& get_encoded_bucket_acl();
+  virtual std::string get_tags_as_xml();
+  virtual bool check_bucket_tags_exists();
   virtual std::string& get_policy_as_json();
   virtual std::string& get_acl_as_xml();
 
@@ -212,6 +215,7 @@ class S3BucketMetadata {
   void save_failed();
 
   virtual void setpolicy(std::string& policy_str);
+  virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
   virtual void deletepolicy();
 
   virtual void setacl(std::string& acl_str);
@@ -238,6 +242,8 @@ class S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataTest, GetSystemAttributesTest);
   FRIEND_TEST(S3BucketMetadataTest, GetSetOIDsPolicyAndLocation);
   FRIEND_TEST(S3BucketMetadataTest, DeletePolicy);
+  FRIEND_TEST(S3BucketMetadataTest, GetTagsAsXml);
+  FRIEND_TEST(S3BucketMetadataTest, GetSpecialCharTagsAsXml);
   FRIEND_TEST(S3BucketMetadataTest, AddSystemAttribute);
   FRIEND_TEST(S3BucketMetadataTest, AddUserDefinedAttribute);
   FRIEND_TEST(S3BucketMetadataTest, Load);

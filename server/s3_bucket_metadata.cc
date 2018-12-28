@@ -25,6 +25,7 @@
 #include "s3_factory.h"
 #include "s3_iem.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_common_utilities.h"
 
 S3BucketMetadata::S3BucketMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
@@ -147,6 +148,11 @@ void S3BucketMetadata::set_location_constraint(std::string location) {
 
 void S3BucketMetadata::setpolicy(std::string& policy_str) {
   bucket_policy = policy_str;
+}
+
+void S3BucketMetadata::set_tags(
+    const std::map<std::string, std::string>& tags_as_map) {
+  bucket_tags = tags_as_map;
 }
 
 void S3BucketMetadata::deletepolicy() { bucket_policy = ""; }
@@ -685,6 +691,9 @@ std::string S3BucketMetadata::to_json() {
   root["ACL"] =
       base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
   root["Policy"] = bucket_policy;
+  for (const auto& tag : bucket_tags) {
+    root["User-Defined-Tags"][tag.first] = tag.second;
+  }
 
   root["mero_object_list_index_oid_u_hi"] = object_list_index_oid_u_hi_str =
       base64_encode((unsigned char const*)&object_list_index_oid.u_hi,
@@ -761,6 +770,11 @@ int S3BucketMetadata::from_json(std::string content) {
   bucket_ACL.from_json((newroot["ACL"]).asString());
   bucket_policy = newroot["Policy"].asString();
 
+  members = newroot["User-Defined-Tags"].getMemberNames();
+  for (const auto& tag : members) {
+    bucket_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
+  }
+
   return 0;
 }
 
@@ -774,3 +788,35 @@ std::string& S3BucketMetadata::get_acl_as_xml() {
 }
 
 std::string& S3BucketMetadata::get_policy_as_json() { return bucket_policy; }
+
+std::string S3BucketMetadata::get_tags_as_xml() {
+
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::string user_defined_tags;
+  std::string tags_as_xml_str;
+
+  if (bucket_tags.empty()) {
+    return tags_as_xml_str;
+  } else {
+    for (const auto& tag : bucket_tags) {
+      user_defined_tags +=
+          "<Tag>" + S3CommonUtilities::format_xml_string("Key", tag.first) +
+          S3CommonUtilities::format_xml_string("Value", tag.second) + "</Tag>";
+    }
+
+    tags_as_xml_str =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+        "<TagSet>" +
+        user_defined_tags +
+        "</TagSet>"
+        "</Tagging>";
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "Tags xml: %s\n", tags_as_xml_str.c_str());
+  s3_log(S3_LOG_INFO, request_id, "Exiting\n");
+  return tags_as_xml_str;
+}
+
+bool S3BucketMetadata::check_bucket_tags_exists() {
+  return !bucket_tags.empty();
+}
