@@ -119,22 +119,31 @@ then
 
   echo "ossperf tests..."
   echo "Parallel worload of 5 files each of size 5000 bytes"
-  ossperf.sh -n 5 -s 5000 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg -p 2>&1
+  USE_HTTP_FLAG=""
+  if [ $use_http -eq 1 ] ; then
+    USE_HTTP_FLAG=" -x "
+  fi
+
+  ossperf.sh -n 5 -s 5000 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg -p $USE_HTTP_FLAG 2>&1
+
   if [ $? -ne 0 ]; then
     echo "ossperf -- parallel workload test succeeded"
   fi
   echo "Sequential workload of 5 files each of size 5000 bytes"
-  ossperf.sh -n 5 -s 5000 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg 2>&1
+  ossperf.sh -n 5 -s 5000 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg $USE_HTTP_FLAG 2>&1
+
   if [ $? -ne 0 ]; then
      echo "ossperf -- sequential workload test succeeded"
   fi
   # Parallel multipart workload
-  ossperf.sh -n 2 -s 18874368 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg 2>&1 -p
+  ossperf.sh -n 2 -s 18874368 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg -p $USE_HTTP_FLAG 2>&1
+
   if [ $? -ne 0 ]; then
      echo "ossperf --  parallel workload(Multipart) succeeded"
   fi
   # Sequential multipart workload
-  ossperf.sh -n 2 -s 18874368 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg 2>&1
+  ossperf.sh -n 2 -s 18874368 -b seagatebucket -c ../st/clitests/virtualhoststyle.s3cfg $USE_HTTP_FLAG 2>&1
+
   if [ $? -ne 0 ]; then
      echo "ossperf -- sequential workload(Multipart) succeeded"
   fi
