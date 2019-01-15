@@ -157,6 +157,8 @@ void S3BucketMetadata::set_tags(
 
 void S3BucketMetadata::deletepolicy() { bucket_policy = ""; }
 
+void S3BucketMetadata::delete_bucket_tags() { bucket_tags.clear(); }
+
 void S3BucketMetadata::setacl(std::string& acl_str) {
   std::string input_acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   input_acl += acl_str;

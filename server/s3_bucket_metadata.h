@@ -217,6 +217,7 @@ class S3BucketMetadata {
   virtual void setpolicy(std::string& policy_str);
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
   virtual void deletepolicy();
+  virtual void delete_bucket_tags();
 
   virtual void setacl(std::string& acl_str);
 
