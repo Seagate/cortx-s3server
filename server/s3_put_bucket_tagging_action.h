@@ -32,8 +32,8 @@
 class S3PutBucketTaggingAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3PutBucketTagsBodyFactory> put_bucket_tag_body_factory;
-  std::shared_ptr<S3PutBucketTagBody> put_bucket_tag_body;
+  std::shared_ptr<S3PutTagsBodyFactory> put_bucket_tag_body_factory;
+  std::shared_ptr<S3PutTagBody> put_bucket_tag_body;
 
   std::string new_bucket_tags;
   std::map<std::string, std::string> bucket_tags_map;
@@ -42,8 +42,7 @@ class S3PutBucketTaggingAction : public S3Action {
   S3PutBucketTaggingAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
-      std::shared_ptr<S3PutBucketTagsBodyFactory> bucket_body_factory =
-          nullptr);
+      std::shared_ptr<S3PutTagsBodyFactory> bucket_body_factory = nullptr);
 
   void setup_steps();
   void validate_request();

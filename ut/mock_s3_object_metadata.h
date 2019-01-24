@@ -54,6 +54,7 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD0(get_last_modified_iso, std::string());
   MOCK_METHOD0(get_storage_class, std::string());
   MOCK_METHOD0(get_upload_id, std::string());
+  MOCK_METHOD0(check_object_tags_exists, bool());
   MOCK_METHOD2(add_user_defined_attribute,
                void(std::string key, std::string val));
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
@@ -63,6 +64,8 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD2(remove, void(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed));
   MOCK_METHOD1(setacl, void(std::string &));
+  MOCK_METHOD1(set_tags,
+               void(const std::map<std::string, std::string>& tags_as_map));
   MOCK_METHOD2(save_metadata, void(std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed));
   MOCK_METHOD1(from_json, int(std::string content));

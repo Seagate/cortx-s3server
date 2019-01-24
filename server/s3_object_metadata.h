@@ -93,6 +93,8 @@ class S3ObjectMetadata {
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
 
+  std::map<std::string, std::string> object_tags;
+
   S3ObjectACL object_ACL;
   bool is_multipart;
 
@@ -233,6 +235,9 @@ class S3ObjectMetadata {
   // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
   virtual void setacl(std::string& input_acl_str);
+  virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
+  virtual std::string get_tags_as_xml();
+  virtual bool check_object_tags_exists();
 
   // Virtual Destructor
   virtual ~S3ObjectMetadata(){};

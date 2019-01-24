@@ -27,6 +27,7 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_common_utilities.h"
 
 void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   json_parsing_error = false;
@@ -585,6 +586,10 @@ std::string S3ObjectMetadata::to_json() {
   for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
+  for (const auto& tag : object_tags) {
+    root["User-Defined-Tags"][tag.first] = tag.second;
+  }
+
   // root["ACL"] = object_ACL.to_json();
   std::string xml_acl = object_ACL.get_xml_str();
   if (xml_acl == "") {
@@ -690,6 +695,10 @@ int S3ObjectMetadata::from_json(std::string content) {
     user_defined_attribute[it.c_str()] =
         newroot["User-Defined"][it].asString().c_str();
   }
+  members = newroot["User-Defined-Tags"].getMemberNames();
+  for (const auto& tag : members) {
+    object_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
+  }
   object_ACL.from_json(newroot["ACL"].asString());
 
   return 0;
@@ -709,4 +718,41 @@ void S3ObjectMetadata::setacl(std::string& input_acl_str) {
 
 std::string& S3ObjectMetadata::get_acl_as_xml() {
   return object_ACL.get_xml_str();
+}
+
+void S3ObjectMetadata::set_tags(
+    const std::map<std::string, std::string>& tags_as_map) {
+  object_tags = tags_as_map;
+}
+
+std::string S3ObjectMetadata::get_tags_as_xml() {
+
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::string user_defined_tags;
+  std::string tags_as_xml_str;
+
+  if (object_tags.empty()) {
+    return tags_as_xml_str;
+  } else {
+    for (const auto& tag : object_tags) {
+      user_defined_tags +=
+          "<Tag>" + S3CommonUtilities::format_xml_string("Key", tag.first) +
+          S3CommonUtilities::format_xml_string("Value", tag.second) + "</Tag>";
+    }
+
+    tags_as_xml_str =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+        "<TagSet>" +
+        user_defined_tags +
+        "</TagSet>"
+        "</Tagging>";
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "Tags xml: %s\n", tags_as_xml_str.c_str());
+  s3_log(S3_LOG_INFO, request_id, "Exiting\n");
+  return tags_as_xml_str;
+}
+
+bool S3ObjectMetadata::check_object_tags_exists() {
+  return !object_tags.empty();
 }

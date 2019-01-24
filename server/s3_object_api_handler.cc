@@ -31,6 +31,8 @@
 #include "s3_put_multiobject_action.h"
 #include "s3_put_object_acl_action.h"
 #include "s3_put_object_action.h"
+#include "s3_put_object_tagging_action.h"
+#include "s3_get_object_tagging_action.h"
 #include "s3_stats.h"
 
 void S3ObjectAPIHandler::create_action() {
@@ -140,9 +142,11 @@ void S3ObjectAPIHandler::create_action() {
     case S3OperationCode::tagging:
       switch (request->http_verb()) {
         case S3HttpVerb::GET:
+          action = std::make_shared<S3GetObjectTaggingAction>(request);
           s3_stats_inc("get_object_tagging_count");
           break;
         case S3HttpVerb::PUT:
+          action = std::make_shared<S3PutObjectTaggingAction>(request);
           s3_stats_inc("put_object_tagging_count");
           break;
         case S3HttpVerb::DELETE:

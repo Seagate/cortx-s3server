@@ -22,18 +22,18 @@
 
 #include <regex>
 #include "s3_log.h"
-#include "s3_put_bucket_tag_body.h"
+#include "s3_put_tag_body.h"
 
-S3PutBucketTagBody::S3PutBucketTagBody(std::string &xml, std::string &request)
+S3PutTagBody::S3PutTagBody(std::string &xml, std::string &request)
     : xml_content(xml), request_id(request), is_valid(false) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   parse_and_validate();
 }
 
-bool S3PutBucketTagBody::isOK() { return is_valid; }
+bool S3PutTagBody::isOK() { return is_valid; }
 
-bool S3PutBucketTagBody::parse_and_validate() {
+bool S3PutTagBody::parse_and_validate() {
   /* Sample body:
   <Tagging>
    <TagSet>
@@ -118,7 +118,7 @@ bool S3PutBucketTagBody::parse_and_validate() {
   return is_valid;
 }
 
-bool S3PutBucketTagBody::read_key_value_node(xmlNodePtr &tag_node) {
+bool S3PutTagBody::read_key_value_node(xmlNodePtr &tag_node) {
   // Validate key values node
   xmlNodePtr key_value_node = tag_node->xmlChildrenNode;
   xmlChar *key = NULL;
@@ -168,7 +168,7 @@ bool S3PutBucketTagBody::read_key_value_node(xmlNodePtr &tag_node) {
   return true;
 }
 
-bool S3PutBucketTagBody::validate_xml_tags(
+bool S3PutTagBody::validate_bucket_xml_tags(
     std::map<std::string, std::string> &bucket_tags_as_map) {
   // Apply all validation here
   // https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2//allocation-tag-restrictions.html;
@@ -193,8 +193,54 @@ bool S3PutBucketTagBody::validate_xml_tags(
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
-    if (key.length() > BUCKET_TAG_KEY_MAX_LENGTH ||
-        value.length() > (2 * BUCKET_TAG_VALUE_MAX_LENGTH)) {
+    if (key.length() > TAG_KEY_MAX_LENGTH ||
+        value.length() > (2 * TAG_VALUE_MAX_LENGTH)) {
+      s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
+      return false;
+    }
+    // Allowed characters are Unicode letters, whitespace, and numbers, plus the
+    // following special characters: + - = . _ : /
+    // Insignificant check, as it matches all entries.
+    /*
+    std::regex matcher ("((\\w|\\W|\\b|\\B|-|=|.|_|:|\/)+)");
+    if ( !regex_match(key,matcher) || !regex_match (value,matcher) ) {
+      s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
+      return false;
+    }
+    */
+  }
+  return true;
+}
+
+bool S3PutTagBody::validate_object_xml_tags(
+    std::map<std::string, std::string> &object_tags_as_map) {
+  // Apply all validation here
+  // https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2//allocation-tag-restrictions.html
+  // &;
+  // https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectPUTtagging.html
+  std::string key, value;
+  // Maximum number of tags per resource: 10
+  if (object_tags_as_map.size() > OBJECT_MAX_TAGS) {
+    s3_log(S3_LOG_WARN, request_id, "XML key-value tags Invalid.\n");
+    return false;
+  }
+  for (const auto &tag : object_tags_as_map) {
+    key = tag.first;
+    value = tag.second;
+    // Key-value pairs for bucket tagging should not be empty
+    if (key.empty() || value.empty()) {
+      s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
+      return false;
+    }
+    /* To encode 256 unicode chars, last char can use upto 2 bytes.
+     Core reason is std::string stores utf-8 bytes and hence .length()
+     returns bytes and not number of chars.
+     For refrence : https://stackoverflow.com/a/31652705
+     */
+    // Maximum key length: 128 Unicode characters &
+    // Maximum value length: 256 Unicode characters
+    if (key.length() > TAG_KEY_MAX_LENGTH ||
+        value.length() > (2 * TAG_VALUE_MAX_LENGTH)) {
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
@@ -213,6 +259,6 @@ bool S3PutBucketTagBody::validate_xml_tags(
 }
 
 const std::map<std::string, std::string> &
-S3PutBucketTagBody::get_bucket_tags_as_map() {
+S3PutTagBody::get_resource_tags_as_map() {
   return bucket_tags;
 }

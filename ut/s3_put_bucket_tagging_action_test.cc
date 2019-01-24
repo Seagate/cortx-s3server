@@ -38,9 +38,8 @@ class S3PutBucketTaggingActionTest : public testing::Test {
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
-    bucket_tag_body_factory_mock =
-        std::make_shared<MockS3PutBucketTagBodyFactory>(MockBucketTagsStr,
-                                                        MockRequestId);
+    bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
+        MockBucketTagsStr, MockRequestId);
     action_under_test_ptr = std::make_shared<S3PutBucketTaggingAction>(
         request_mock, bucket_meta_factory, bucket_tag_body_factory_mock);
     MockRequestId.assign("MockRequestId");
@@ -50,7 +49,7 @@ class S3PutBucketTaggingActionTest : public testing::Test {
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3PutBucketTaggingAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
-  std::shared_ptr<MockS3PutBucketTagBodyFactory> bucket_tag_body_factory_mock;
+  std::shared_ptr<MockS3PutTagBodyFactory> bucket_tag_body_factory_mock;
   std::map<std::string, std::string> MockBucketTags;
   std::string MockBucketTagsStr;
   std::string MockRequestId;
@@ -92,7 +91,7 @@ TEST_F(S3PutBucketTaggingActionTest, ValidateRequest) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(true));
   EXPECT_CALL(*(bucket_tag_body_factory_mock->mock_put_bucket_tag_body),
-              get_bucket_tags_as_map())
+              get_resource_tags_as_map())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(MockBucketTags));
 
@@ -149,11 +148,11 @@ TEST_F(S3PutBucketTaggingActionTest, ValidateRequestXmlTags) {
   call_count_one = 0;
 
   action_under_test_ptr->put_bucket_tag_body =
-      bucket_tag_body_factory_mock->create_put_bucket_tags_body(
+      bucket_tag_body_factory_mock->create_put_resource_tags_body(
           MockBucketTagsStr, MockRequestId);
 
   EXPECT_CALL(*(bucket_tag_body_factory_mock->mock_put_bucket_tag_body),
-              validate_xml_tags(_))
+              validate_bucket_xml_tags(_))
       .Times(1)
       .WillOnce(Return(true));
 
@@ -178,11 +177,11 @@ TEST_F(S3PutBucketTaggingActionTest, ValidateInvalidRequestXmlTags) {
       "<Value>marketing123</Value></Tag></TagSet></Tagging>";
 
   action_under_test_ptr->put_bucket_tag_body =
-      bucket_tag_body_factory_mock->create_put_bucket_tags_body(
+      bucket_tag_body_factory_mock->create_put_resource_tags_body(
           MockBucketTagsStr, MockRequestId);
 
   EXPECT_CALL(*(bucket_tag_body_factory_mock->mock_put_bucket_tag_body),
-              validate_xml_tags(_))
+              validate_bucket_xml_tags(_))
       .Times(1)
       .WillOnce(Return(false));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));

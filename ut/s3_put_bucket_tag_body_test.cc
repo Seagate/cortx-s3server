@@ -24,27 +24,26 @@
 #include "mock_s3_bucket_metadata.h"
 #include "mock_s3_request_object.h"
 #include "mock_s3_factory.h"
-#include "s3_put_bucket_tag_body.h"
+#include "s3_put_tag_body.h"
 
 using ::testing::Invoke;
 using ::testing::AtLeast;
 using ::testing::ReturnRef;
 
-class S3PutBucketTagBodyTest : public testing::Test {
+class S3PutTagBodyTest : public testing::Test {
  protected:
-  S3PutBucketTagBodyTest() {
-    put_bucket_tag_body_factory =
-        std::make_shared<S3PutBucketTagsBodyFactory>();
+  S3PutTagBodyTest() {
+    put_bucket_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
   bool result = false;
   std::string RequestId;
   std::string BucketTagsStr;
   std::map<std::string, std::string> bucket_tags_map;
-  std::shared_ptr<S3PutBucketTagBody> put_bucket_tag_body;
-  std::shared_ptr<S3PutBucketTagsBodyFactory> put_bucket_tag_body_factory;
+  std::shared_ptr<S3PutTagBody> put_bucket_tag_body;
+  std::shared_ptr<S3PutTagsBodyFactory> put_bucket_tag_body_factory;
 };
 
-TEST_F(S3PutBucketTagBodyTest, ValidateRequestBodyXml) {
+TEST_F(S3PutTagBodyTest, ValidateRequestBodyXml) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
@@ -54,13 +53,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateRequestBodyXml) {
   RequestId.assign("RequestId");
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
   result = put_bucket_tag_body->isOK();
   EXPECT_TRUE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateRequestCompareContents) {
+TEST_F(S3PutTagBodyTest, ValidateRequestCompareContents) {
   std::map<std::string, std::string> request_tags_map;
   bool map_compare;
   BucketTagsStr.assign(
@@ -74,9 +73,9 @@ TEST_F(S3PutBucketTagBodyTest, ValidateRequestCompareContents) {
   bucket_tags_map["organization1234"] = "marketing1234";
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
-  request_tags_map = put_bucket_tag_body->get_bucket_tags_as_map();
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
+  request_tags_map = put_bucket_tag_body->get_resource_tags_as_map();
 
   map_compare = (bucket_tags_map.size() == request_tags_map.size()) &&
                 (std::equal(bucket_tags_map.begin(), bucket_tags_map.end(),
@@ -86,7 +85,7 @@ TEST_F(S3PutBucketTagBodyTest, ValidateRequestCompareContents) {
   EXPECT_TRUE(map_compare);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateRepeatedKeysXml) {
+TEST_F(S3PutTagBodyTest, ValidateRepeatedKeysXml) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
@@ -96,13 +95,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateRepeatedKeysXml) {
   RequestId.assign("RequestId");
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
   result = put_bucket_tag_body->isOK();
   EXPECT_FALSE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateEmptyTagSetXml) {
+TEST_F(S3PutTagBodyTest, ValidateEmptyTagSetXml) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet></TagSet></"
@@ -110,13 +109,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateEmptyTagSetXml) {
   RequestId.assign("RequestId");
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
   result = put_bucket_tag_body->isOK();
   EXPECT_TRUE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateEmptyTagsXml) {
+TEST_F(S3PutTagBodyTest, ValidateEmptyTagsXml) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet><Tag></Tag></"
@@ -124,13 +123,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateEmptyTagsXml) {
   RequestId.assign("RequestId");
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
   result = put_bucket_tag_body->isOK();
   EXPECT_FALSE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateEmptyKeyXml) {
+TEST_F(S3PutTagBodyTest, ValidateEmptyKeyXml) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet><Tag><Key></"
@@ -138,13 +137,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateEmptyKeyXml) {
   RequestId.assign("RequestId");
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
   result = put_bucket_tag_body->isOK();
   EXPECT_FALSE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateEmptyValueXml) {
+TEST_F(S3PutTagBodyTest, ValidateEmptyValueXml) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
@@ -153,13 +152,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateEmptyValueXml) {
   RequestId.assign("RequestId");
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
   result = put_bucket_tag_body->isOK();
   EXPECT_FALSE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateValidRequestTags) {
+TEST_F(S3PutTagBodyTest, ValidateValidRequestTags) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
@@ -171,13 +170,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateValidRequestTags) {
   bucket_tags_map["employee"] = "test";
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
-  result = put_bucket_tag_body->validate_xml_tags(bucket_tags_map);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
+  result = put_bucket_tag_body->validate_bucket_xml_tags(bucket_tags_map);
   EXPECT_TRUE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateRequestInvalidTagSize) {
+TEST_F(S3PutTagBodyTest, ValidateRequestInvalidTagSize) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
@@ -194,13 +193,13 @@ TEST_F(S3PutBucketTagBodyTest, ValidateRequestInvalidTagSize) {
   bucket_tags_map["employee"] = "test";
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
-  result = put_bucket_tag_body->validate_xml_tags(bucket_tags_map);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
+  result = put_bucket_tag_body->validate_bucket_xml_tags(bucket_tags_map);
   EXPECT_FALSE(result);
 }
 
-TEST_F(S3PutBucketTagBodyTest, ValidateRequestInvalidTagCount) {
+TEST_F(S3PutTagBodyTest, ValidateRequestInvalidTagCount) {
   BucketTagsStr.assign(
       "<Tagging "
       "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
@@ -212,8 +211,8 @@ TEST_F(S3PutBucketTagBodyTest, ValidateRequestInvalidTagCount) {
     bucket_tags_map["organization" + std::to_string(max_tag_size)] = "seagate";
 
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(BucketTagsStr,
-                                                               RequestId);
-  result = put_bucket_tag_body->validate_xml_tags(bucket_tags_map);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
+  result = put_bucket_tag_body->validate_bucket_xml_tags(bucket_tags_map);
   EXPECT_FALSE(result);
 }

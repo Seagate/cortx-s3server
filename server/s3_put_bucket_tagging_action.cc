@@ -24,7 +24,7 @@
 S3PutBucketTaggingAction::S3PutBucketTaggingAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
-    std::shared_ptr<S3PutBucketTagsBodyFactory> bucket_body_factory)
+    std::shared_ptr<S3PutTagsBodyFactory> bucket_body_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -40,8 +40,7 @@ S3PutBucketTaggingAction::S3PutBucketTaggingAction(
   if (bucket_body_factory) {
     put_bucket_tag_body_factory = bucket_body_factory;
   } else {
-    put_bucket_tag_body_factory =
-        std::make_shared<S3PutBucketTagsBodyFactory>();
+    put_bucket_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
   setup_steps();
 }
@@ -89,10 +88,10 @@ void S3PutBucketTaggingAction::consume_incoming_content() {
 void S3PutBucketTaggingAction::validate_request_body(std::string content) {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   put_bucket_tag_body =
-      put_bucket_tag_body_factory->create_put_bucket_tags_body(content,
-                                                               request_id);
+      put_bucket_tag_body_factory->create_put_resource_tags_body(content,
+                                                                 request_id);
   if (put_bucket_tag_body->isOK()) {
-    bucket_tags_map = put_bucket_tag_body->get_bucket_tags_as_map();
+    bucket_tags_map = put_bucket_tag_body->get_resource_tags_as_map();
     next();
   } else {
     set_s3_error("MalformedXML");
@@ -104,9 +103,7 @@ void S3PutBucketTaggingAction::validate_request_body(std::string content) {
 void S3PutBucketTaggingAction::validate_request_xml_tags() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
-  bool valid = false;
-  valid = put_bucket_tag_body->validate_xml_tags(bucket_tags_map);
-  if (valid) {
+  if (put_bucket_tag_body->validate_bucket_xml_tags(bucket_tags_map)) {
     next();
   } else {
     set_s3_error("InvalidTagError");
