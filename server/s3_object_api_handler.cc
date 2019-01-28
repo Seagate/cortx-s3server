@@ -33,6 +33,7 @@
 #include "s3_put_object_action.h"
 #include "s3_put_object_tagging_action.h"
 #include "s3_get_object_tagging_action.h"
+#include "s3_delete_object_tagging_action.h"
 #include "s3_stats.h"
 
 void S3ObjectAPIHandler::create_action() {
@@ -150,6 +151,7 @@ void S3ObjectAPIHandler::create_action() {
           s3_stats_inc("put_object_tagging_count");
           break;
         case S3HttpVerb::DELETE:
+          action = std::make_shared<S3DeleteObjectTaggingAction>(request);
           s3_stats_inc("delete_object_tagging_count");
           break;
         default:

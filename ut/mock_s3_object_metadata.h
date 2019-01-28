@@ -55,6 +55,7 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
   MOCK_METHOD0(get_storage_class, std::string());
   MOCK_METHOD0(get_upload_id, std::string());
   MOCK_METHOD0(check_object_tags_exists, bool());
+  MOCK_METHOD0(delete_object_tags, void());
   MOCK_METHOD2(add_user_defined_attribute,
                void(std::string key, std::string val));
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
