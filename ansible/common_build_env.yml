@@ -92,3 +92,11 @@
   yum: pkg={{item}} state=installed
   with_items:
     - git-clang-format
+
+- easy_install:
+    name: pip
+    state: latest
+
+- name: Install AWS CLI
+  pip: name=awscli state=latest
+

@@ -19,6 +19,8 @@ class Config:
     client_execution_timeout = None
     request_timeout = None
     socket_timeout = None
+    aws_shared_credential_file = "aws_credential_file"
+    aws_config_file = "aws_config_file"
     python = 'python3.4'
 
 class CloudConfig:
