@@ -32,6 +32,7 @@
 /* libevhtp */
 #include <gtest/gtest_prod.h>
 #include "evhtp_wrapper.h"
+#include "event_wrapper.h"
 
 #include "s3_async_buffer_opt.h"
 #include "s3_chunk_payload_parser.h"
@@ -72,6 +73,7 @@ class S3RequestObject {
   std::string user_id;  // Unique
   std::string account_name;
   std::string account_id;  // Unique
+  struct event* client_read_timer_event;
 
   std::string request_id;
 
@@ -84,12 +86,15 @@ class S3RequestObject {
   std::shared_ptr<S3AsyncBufferOptContainer> buffered_input;
 
   std::function<void()> incoming_data_callback;
+  std::function<void()> client_read_timeout_callback;
 
   std::unique_ptr<EvhtpInterface> evhtp_obj;
+  std::unique_ptr<EventInterface> event_obj;
 
   S3Timer request_timer;
 
   bool is_client_connected;
+  bool s3_client_read_timedout;
 
   bool is_chunked_upload;
   S3ChunkPayloadParser chunk_parser;
@@ -101,9 +106,11 @@ class S3RequestObject {
   virtual void set_query_params(const char* query_params);
 
  public:
-  S3RequestObject(evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
-                  std::shared_ptr<S3AsyncBufferOptContainerFactory>
-                      async_buf_factory = nullptr);
+  S3RequestObject(
+      evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
+      std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory =
+          nullptr,
+      EventInterface* event_obj_ptr = nullptr);
   virtual ~S3RequestObject();
 
   // Broken into helper function primarily to allow initialisations after faking
@@ -120,6 +127,11 @@ class S3RequestObject {
   void set_api_type(S3ApiType apitype);
   virtual S3ApiType get_api_type();
   virtual bool is_valid_ipaddress(std::string& ipaddr);
+  virtual void set_start_client_request_read_timeout();
+  virtual void stop_client_read_timer();
+  virtual void restart_client_read_timer();
+  virtual void free_client_read_timer();
+  virtual void trigger_client_read_timeout_callback();
 
  protected:
   // protected so mocks can override
@@ -217,9 +229,15 @@ class S3RequestObject {
       s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
       return;
     }
+    if (s3_client_read_timedout) {
+      s3_log(S3_LOG_WARN, request_id, "Read timeout has triggered.\n");
+      return;
+    }
     if (!is_paused) {
       s3_log(S3_LOG_DEBUG, "", "Pausing the request for sock %d...\n",
              ev_req->conn->sock);
+      // In case if there is timer event pending then stop/delete it
+      stop_client_read_timer();
       evhtp_obj->http_request_pause(ev_req);
       is_paused = true;
     }
@@ -231,12 +249,18 @@ class S3RequestObject {
       return;
     }
     if (is_paused) {
+      // delete timer event, if its pending.
+      stop_client_read_timer();
+      // Set read timeout
+      set_start_client_request_read_timeout();
       s3_log(S3_LOG_DEBUG, "", "Resuming the request for sock %d...\n",
              ev_req->conn->sock);
       evhtp_obj->http_request_resume(ev_req);
       is_paused = false;
     }
   }
+
+  bool is_request_paused() { return is_paused; }
 
   void client_has_disconnected() {
     is_client_connected = false;
@@ -247,6 +271,7 @@ class S3RequestObject {
   }
 
   bool client_connected() { return is_client_connected; }
+  bool is_s3_client_read_timedout() { return s3_client_read_timedout; }
 
   virtual bool is_chunked() { return is_chunked_upload; }
 
@@ -275,6 +300,12 @@ class S3RequestObject {
     notify_read_watermark = notify_on_size;
     incoming_data_callback = callback;
     resume();  // resume reading if it was paused
+  }
+
+  virtual void set_client_read_timeout_callback(
+      std::function<void()> callback) {
+    // Callback that will be called when read timeout event triggers
+    client_read_timeout_callback = callback;
   }
 
   void notify_incoming_data(evbuf_t* buf);
@@ -327,6 +358,13 @@ class S3RequestObject {
   FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest13);
   FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest14);
   FRIEND_TEST(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest15);
+  FRIEND_TEST(S3RequestObjectTest, SetStartClientRequestReadTimeout);
+  FRIEND_TEST(S3RequestObjectTest, StopClientReadTimerNull);
+  FRIEND_TEST(S3RequestObjectTest, StopClientReadTimer);
+  FRIEND_TEST(S3RequestObjectTest, FreeReadTimer);
+  FRIEND_TEST(S3RequestObjectTest, FreeReadTimerNull);
+  FRIEND_TEST(S3RequestObjectTest, TriggerClientReadTimeoutNoCallback);
+  FRIEND_TEST(S3RequestObjectTest, TriggerClientReadTimeout);
 };
 
 #endif

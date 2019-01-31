@@ -118,8 +118,10 @@ extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
   S3Router *router = static_cast<S3Router *>(arg);
 
   EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+  EventInterface *event_obj_ptr = new EventWrapper();
   std::shared_ptr<S3RequestObject> s3_request =
-      std::make_shared<S3RequestObject>(req, evhtp_obj_ptr);
+      std::make_shared<S3RequestObject>(req, evhtp_obj_ptr, nullptr,
+                                        event_obj_ptr);
 
   // validate content length against out of range
   // and invalid argument
@@ -171,22 +173,36 @@ extern "C" evhtp_res dispatch_request(evhtp_request_t *req,
                  (evhtp_hook)on_client_request_fini, NULL);
 
   router->dispatch(s3_request);
+  if (!s3_request->get_buffered_input()->is_freezed()) {
+    s3_request->set_start_client_request_read_timeout();
+  }
 
   return EVHTP_RES_OK;
 }
 
 extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
                                           void *arg) {
-  s3_log(S3_LOG_DEBUG, "", "Received Request body %zu bytes for sock = %d\n",
-         evbuffer_get_length(buf), req->conn->sock);
-
   S3RequestObject *request = static_cast<S3RequestObject *>(req->cbarg);
   s3_log(S3_LOG_DEBUG, "", "S3RequestObject(%p)\n", request);
   if (request) {
+    s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
+           "Received Request body %zu bytes for sock = %d\n",
+           evbuffer_get_length(buf), req->conn->sock);
+    // Data has arrived so disable read timeout
+    request->stop_client_read_timer();
     evbuf_t *s3_buf = evbuffer_new();
     evbuffer_add_buffer(s3_buf, buf);
 
     request->notify_incoming_data(s3_buf);
+    if (!request->get_buffered_input()->is_freezed() &&
+        !request->is_request_paused()) {
+      // Set the read timeout event, in case if more data
+      // is expected.
+      s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
+             "Setting Read timeout for s3 client\n");
+      request->set_start_client_request_read_timeout();
+    }
+
   } else {
     evhtp_unset_all_hooks(&req->conn->hooks);
     evhtp_unset_all_hooks(&req->hooks);

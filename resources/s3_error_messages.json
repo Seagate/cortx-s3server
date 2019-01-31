@@ -87,6 +87,10 @@
     "Description": "The request could not be understood by the server due to malformed syntax. The client should not repeat the request without modifications.",
     "httpcode": 400
   },
+  "RequestTimeout": {
+    "Description": "The client did not produce a request within the time that the server was prepared to wait.",
+    "httpcode": 400
+  },
   "NoSuchUpload": {
     "Description": "The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.",
     "httpcode": 404

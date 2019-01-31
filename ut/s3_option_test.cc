@@ -79,6 +79,7 @@ TEST_F(S3OptionsTest, Constructor) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
+  EXPECT_EQ(5, instance->get_client_req_read_timeout_secs());
 }
 
 TEST_F(S3OptionsTest, SingletonCheck) {
@@ -121,6 +122,7 @@ TEST_F(S3OptionsTest, GetOptionsfromFile) {
   EXPECT_EQ("127.9.7.5", instance->get_statsd_ip_addr());
   EXPECT_EQ(9125, instance->get_statsd_port());
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
+  EXPECT_EQ(5, instance->get_client_req_read_timeout_secs());
   EXPECT_EQ("s3stats-whitelist-test.yaml",
             instance->get_stats_whitelist_filename());
 }

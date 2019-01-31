@@ -69,6 +69,7 @@ class S3Option {
   unsigned short s3_bind_port;
   unsigned short max_retry_count;
   unsigned short retry_interval_millisec;
+  unsigned short s3_client_req_read_timeout_secs;
 
   std::string auth_ip_addr;
   unsigned short auth_port;
@@ -200,6 +201,7 @@ class S3Option {
     clovis_idx_fetch_count = 100;
 
     retry_interval_millisec = 0;
+    s3_client_req_read_timeout_secs = 5;
     max_retry_count = 0;
 
     stats_enable = false;
@@ -281,6 +283,7 @@ class S3Option {
   unsigned short get_clovis_layout_id();
   std::vector<int> get_clovis_unit_sizes_for_mem_pool();
   unsigned short get_clovis_units_per_request();
+  unsigned short get_client_req_read_timeout_secs();
   unsigned int get_clovis_write_payload_size(int layoutid);
   unsigned int get_clovis_read_payload_size(int layoutid);
   int get_clovis_idx_fetch_count();

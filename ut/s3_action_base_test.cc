@@ -31,6 +31,7 @@ using ::testing::Mock;
 using ::testing::Return;
 using ::testing::Eq;
 using ::testing::_;
+using ::testing::AtLeast;
 
 // Before you create an object of this class, ensure
 // auth is disabled for unit tests.
@@ -96,6 +97,27 @@ TEST_F(S3ActionTest, Constructor) {
   EXPECT_EQ(0, ptr_s3Actionobject->rollback_list.size());
   EXPECT_EQ(NULL, call_count_one);
   EXPECT_EQ(NULL, call_count_two);
+}
+
+TEST_F(S3ActionTest, ClientReadTimeoutCallBackRollback) {
+  ptr_s3Actionobject->rollback_state = S3ActionState::start;
+  ptr_s3Actionobject->add_task_rollback(
+      std::bind(&S3ActionTest::func_callback_one, this));
+  ptr_s3Actionobject->add_task_rollback(
+      std::bind(&S3ActionTest::func_callback_two, this));
+  ptr_s3Actionobject->client_read_timeout_callback();
+  EXPECT_TRUE(call_count_two == 1);
+  EXPECT_EQ("RequestTimeout", ptr_s3Actionobject->s3_error_code);
+}
+
+TEST_F(S3ActionTest, ClientReadTimeoutCallBack) {
+  ptr_s3Actionobject->rollback_state = S3ActionState::complete;
+  ptr_s3Actionobject->add_task_rollback(
+      std::bind(&S3ActionTest::func_callback_one, this));
+  EXPECT_TRUE(call_count_one == 0);
+  ptr_s3Actionobject->client_read_timeout_callback();
+  EXPECT_TRUE(call_count_one == 0);
+  EXPECT_TRUE(ptr_s3Actionobject->response_called == 1);
 }
 
 TEST_F(S3ActionTest, AddTask) {

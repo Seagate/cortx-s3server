@@ -128,6 +128,7 @@ class S3Action {
   void set_s3_error(std::string code);
   std::string& get_s3_error_code();
   bool is_error_state();
+  void client_read_timeout_callback();
 
  protected:
   void add_task(std::function<void()> task) { task_list.push_back(task); }
@@ -222,6 +223,8 @@ class S3Action {
   virtual void send_retry_error_to_s3_client(int retry_after_in_secs = 1);
 
   FRIEND_TEST(S3ActionTest, Constructor);
+  FRIEND_TEST(S3ActionTest, ClientReadTimeoutCallBackRollback);
+  FRIEND_TEST(S3ActionTest, ClientReadTimeoutCallBack);
   FRIEND_TEST(S3ActionTest, AddTask);
   FRIEND_TEST(S3ActionTest, AddTaskRollback);
   FRIEND_TEST(S3ActionTest, TasklistRun);

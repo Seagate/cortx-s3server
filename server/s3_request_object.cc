@@ -52,15 +52,32 @@ extern "C" int consume_query_parameters(evhtp_kv_t* kvobj, void* arg) {
   return 0;
 }
 
+extern "C" void s3_client_read_timeout_cb(evutil_socket_t fd, short event,
+                                          void* arg) {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  S3RequestObject* request = static_cast<S3RequestObject*>(arg);
+  if (request == NULL) {
+    return;
+  }
+  request->get_buffered_input()->freeze();
+  s3_log(S3_LOG_WARN, request->get_request_id().c_str(),
+         "Read timeout Occured\n");
+  request->free_client_read_timer();
+  request->trigger_client_read_timeout_callback();
+  return;
+}
+
 S3RequestObject::S3RequestObject(
     evhtp_request_t* req, EvhtpInterface* evhtp_obj_ptr,
-    std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory)
+    std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buf_factory,
+    EventInterface* event_obj_ptr)
     : ev_req(req),
       http_method(S3HttpVerb::UNKNOWN),
       is_paused(false),
       notify_read_watermark(0),
       total_bytes_received(0),
       is_client_connected(true),
+      s3_client_read_timedout(false),
       is_chunked_upload(false),
       s3_api_type(S3ApiType::unsupported),
       in_headers_copied(false),
@@ -74,6 +91,12 @@ S3RequestObject::S3RequestObject(
     async_buffer_factory = async_buf_factory;
   } else {
     async_buffer_factory = std::make_shared<S3AsyncBufferOptContainerFactory>();
+  }
+
+  if (event_obj_ptr) {
+    event_obj.reset(event_obj_ptr);
+  } else {
+    event_obj = std::unique_ptr<EventWrapper>(new EventWrapper());
   }
 
   buffered_input = async_buffer_factory->create_async_buffer(
@@ -91,6 +114,7 @@ S3RequestObject::S3RequestObject(
   }
 
   request_error = S3RequestError::None;
+  client_read_timer_event = NULL;
   evhtp_obj.reset(evhtp_obj_ptr);
   if (ev_req != NULL) {
     http_method = (S3HttpVerb)ev_req->method;
@@ -146,6 +170,7 @@ S3RequestObject::~S3RequestObject() {
     evbuffer_free(reply_buffer);
     reply_buffer = NULL;
   }
+  free_client_read_timer();
 }
 
 const std::map<std::string, std::string, compare>&
@@ -172,6 +197,61 @@ const char* S3RequestObject::get_http_verb_str(S3HttpVerb method) {
 
 void S3RequestObject::set_full_path(const char* full_path) {
   full_path_decoded_uri = full_path;
+}
+
+void S3RequestObject::set_start_client_request_read_timeout() {
+  // Set the timer event, so that if data doesn't arrive within a
+  // configured timeframe, then send error to client.
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (s3_client_read_timedout) {
+    return;
+  }
+  struct timeval tv;
+  tv.tv_usec = 0;
+  tv.tv_sec = g_option_instance->get_client_req_read_timeout_secs();
+  if (client_read_timer_event == NULL) {
+    // Create timer event
+    client_read_timer_event =
+        event_obj->new_event(g_option_instance->get_eventbase(), -1, 0,
+                             s3_client_read_timeout_cb, (void*)this);
+  }
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Setting client read timeout to %ld seconds\n", tv.tv_sec);
+  event_obj->add_event(client_read_timer_event, &tv);
+  return;
+}
+
+void S3RequestObject::stop_client_read_timer() {
+  if (client_read_timer_event != NULL) {
+    if (event_obj->pending_event(client_read_timer_event, EV_TIMEOUT)) {
+      s3_log(S3_LOG_DEBUG, request_id, "Deleting client read timer\n");
+      event_obj->del_event(client_read_timer_event);
+    }
+  }
+  return;
+}
+
+void S3RequestObject::restart_client_read_timer() {
+  // delete any pending timer
+  stop_client_read_timer();
+  // Set new timer
+  set_start_client_request_read_timeout();
+  return;
+}
+
+void S3RequestObject::free_client_read_timer() {
+  if (client_read_timer_event != NULL) {
+    s3_log(S3_LOG_DEBUG, request_id.c_str(), "Calling event free\n");
+    event_obj->free_event(client_read_timer_event);
+    client_read_timer_event = NULL;
+  }
+}
+
+void S3RequestObject::trigger_client_read_timeout_callback() {
+  s3_client_read_timedout = true;
+  if (client_read_timeout_callback) {
+    client_read_timeout_callback();
+  }
 }
 
 const char* S3RequestObject::c_get_full_path() {
@@ -432,6 +512,10 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
   if (buf == NULL) {
     // Very unlikely
     s3_log(S3_LOG_WARN, request_id, "Exiting due to buf(NULL)\n");
+    return;
+  }
+  if (s3_client_read_timedout) {
+    s3_log(S3_LOG_WARN, request_id, "Exiting due to read timeout\n");
     return;
   }
   // Keep buffering till someone starts listening.

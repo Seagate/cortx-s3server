@@ -40,6 +40,9 @@ S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
   state = S3ActionState::start;
   rollback_state = S3ActionState::start;
   mem_profile.reset(new S3MemoryProfile());
+  // Set the callback that will be called, when read timeout happens
+  request->set_client_read_timeout_callback(
+      std::bind(&S3Action::client_read_timeout_callback, this));
   if (auth_factory) {
     auth_client_factory = auth_factory;
   } else {
@@ -54,6 +57,16 @@ S3Action::~S3Action() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
 void S3Action::set_s3_error(std::string code) {
   state = S3ActionState::error;
   s3_error_code = code;
+}
+
+void S3Action::client_read_timeout_callback() {
+  set_s3_error("RequestTimeout");
+  if (rollback_state == S3ActionState::start) {
+    rollback_start();
+  } else {
+    send_response_to_s3_client();
+  }
+  return;
 }
 
 std::string& S3Action::get_s3_error_code() { return s3_error_code; }
@@ -104,7 +117,8 @@ void S3Action::start() {
 
 // Step to next async step.
 void S3Action::next() {
-  if (check_shutdown_signal && check_shutdown_and_rollback()) {
+  if ((check_shutdown_signal && check_shutdown_and_rollback()) ||
+      request->is_s3_client_read_timedout()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
@@ -112,7 +126,7 @@ void S3Action::next() {
     if (request->client_connected()) {
       task_list[task_iteration_index++]();
     } else {
-      i_am_done();
+      rollback_start();
     }
   } else {
     done();

@@ -21,6 +21,7 @@
 #include "s3_error_codes.h"
 #include "s3_request_object.h"
 #include "mock_evhtp_wrapper.h"
+#include "mock_event_wrapper.h"
 
 using ::testing::_;
 using ::testing::Mock;
@@ -39,18 +40,23 @@ class S3RequestObjectTest : public testing::Test {
     evbase = event_base_new();
     ev_request = evhtp_request_new(dummy_request_cb, evbase);
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
-    request = new S3RequestObject(ev_request, evhtp_obj_ptr);
+    EventInterface *s3_event_obj_ptr = new EventWrapper();
+    request =
+        new S3RequestObject(ev_request, evhtp_obj_ptr, NULL, s3_event_obj_ptr);
 
     mock_evhtp_obj_ptr = new MockEvhtpWrapper();
-    request_with_mock_http =
-        new S3RequestObject(ev_request, mock_evhtp_obj_ptr);
+    mock_event_obj_ptr = new MockEventWrapper();
+    request_with_mock_http_event = new S3RequestObject(
+        ev_request, mock_evhtp_obj_ptr, nullptr, mock_event_obj_ptr);
+    callback_called = false;
   }
 
   ~S3RequestObjectTest() {
     delete request;
 
     mock_evhtp_obj_ptr = NULL;
-    delete request_with_mock_http;
+    mock_event_obj_ptr = NULL;
+    delete request_with_mock_http_event;
 
     event_base_free(evbase);
   }
@@ -115,8 +121,13 @@ class S3RequestObjectTest : public testing::Test {
   S3RequestObject *request;
   evhtp_request_t *ev_request;  // To fill test data
   evbase_t *evbase;
+  bool callback_called;
   MockEvhtpWrapper *mock_evhtp_obj_ptr;
-  S3RequestObject *request_with_mock_http;
+  MockEventWrapper *mock_event_obj_ptr;
+  S3RequestObject *request_with_mock_http_event;
+
+ public:
+  void callback_func() { callback_called = true; }
 };
 
 TEST_F(S3RequestObjectTest, ReturnsValidRawQuery) {
@@ -393,9 +404,9 @@ TEST_F(S3RequestObjectTest,
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_send_reply(_, _)).Times(1);
 
   // Set once like HEAD obect test
-  request_with_mock_http->set_out_header_value("Content-Length", "0");
+  request_with_mock_http_event->set_out_header_value("Content-Length", "0");
 
-  request_with_mock_http->send_response(S3HttpSuccess200);
+  request_with_mock_http_event->send_response(S3HttpSuccess200);
 }
 
 TEST_F(S3RequestObjectTest, ValidateContentLengthSendResponseOnce) {
@@ -406,5 +417,56 @@ TEST_F(S3RequestObjectTest, ValidateContentLengthSendResponseOnce) {
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(2);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_send_reply(_, _)).Times(1);
 
-  request_with_mock_http->send_response(S3HttpSuccess200);
+  request_with_mock_http_event->send_response(S3HttpSuccess200);
+}
+
+TEST_F(S3RequestObjectTest, SetStartClientRequestReadTimeout) {
+  EXPECT_CALL(*mock_event_obj_ptr, new_event(_, _, _, _, _)).Times(1);
+  EXPECT_CALL(*mock_event_obj_ptr, add_event(_, _)).Times(1);
+  request_with_mock_http_event->set_start_client_request_read_timeout();
+  request_with_mock_http_event->free_client_read_timer();
+}
+
+TEST_F(S3RequestObjectTest, StopClientReadTimerNull) {
+  request_with_mock_http_event->client_read_timer_event = NULL;
+  EXPECT_CALL(*mock_event_obj_ptr, pending_event(_, _, _)).Times(0);
+  EXPECT_CALL(*mock_event_obj_ptr, del_event(_)).Times(0);
+  request_with_mock_http_event->stop_client_read_timer();
+}
+
+TEST_F(S3RequestObjectTest, StopClientReadTimer) {
+  request_with_mock_http_event->client_read_timer_event =
+      (struct event *)0xffff;
+  EXPECT_CALL(*mock_event_obj_ptr, pending_event(_, _, _))
+      .Times(1)
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*mock_event_obj_ptr, del_event(_)).Times(1);
+  request_with_mock_http_event->stop_client_read_timer();
+}
+
+TEST_F(S3RequestObjectTest, FreeReadTimer) {
+  request_with_mock_http_event->client_read_timer_event =
+      (struct event *)0xffff;
+  EXPECT_CALL(*mock_event_obj_ptr, free_event(_)).Times(1);
+  request_with_mock_http_event->free_client_read_timer();
+  EXPECT_TRUE(request_with_mock_http_event->client_read_timer_event == NULL);
+}
+
+TEST_F(S3RequestObjectTest, FreeReadTimerNull) {
+  EXPECT_CALL(*mock_event_obj_ptr, free_event(_)).Times(0);
+  request_with_mock_http_event->free_client_read_timer();
+}
+
+TEST_F(S3RequestObjectTest, TriggerClientReadTimeoutNoCallback) {
+  request_with_mock_http_event->client_read_timeout_callback = nullptr;
+  request_with_mock_http_event->trigger_client_read_timeout_callback();
+  EXPECT_TRUE(request_with_mock_http_event->s3_client_read_timedout);
+}
+
+TEST_F(S3RequestObjectTest, TriggerClientReadTimeout) {
+  request_with_mock_http_event->client_read_timeout_callback =
+      std::bind(&S3RequestObjectTest::callback_func, this);
+  request_with_mock_http_event->trigger_client_read_timeout_callback();
+  EXPECT_TRUE(callback_called);
+  EXPECT_TRUE(request_with_mock_http_event->s3_client_read_timedout);
 }

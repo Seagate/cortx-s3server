@@ -88,6 +88,11 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_INTERVAL_MILLISEC");
       retry_interval_millisec =
           s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLIENT_REQ_READ_TIMEOUT_SECS");
+      s3_client_req_read_timeout_secs =
+          s3_option_node["S3_CLIENT_REQ_READ_TIMEOUT_SECS"]
+              .as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_STATS");
       stats_enable = s3_option_node["S3_ENABLE_STATS"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
@@ -288,6 +293,11 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_RETRY_INTERVAL_MILLISEC");
       retry_interval_millisec =
           s3_option_node["S3_RETRY_INTERVAL_MILLISEC"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLIENT_REQ_READ_TIMEOUT_SECS");
+      s3_client_req_read_timeout_secs =
+          s3_option_node["S3_CLIENT_REQ_READ_TIMEOUT_SECS"]
+              .as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
       log_buffering_enable =
           s3_option_node["S3_LOG_ENABLE_BUFFERING"].as<bool>();
@@ -759,6 +769,10 @@ int S3Option::get_clovis_idx_fetch_count() { return clovis_idx_fetch_count; }
 
 void S3Option::set_clovis_idx_fetch_count(short count) {
   clovis_idx_fetch_count = count;
+}
+
+unsigned short S3Option::get_client_req_read_timeout_secs() {
+  return s3_client_req_read_timeout_secs;
 }
 
 unsigned int S3Option::get_clovis_write_payload_size(int layoutid) {
