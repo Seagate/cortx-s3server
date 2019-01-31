@@ -59,8 +59,27 @@ void S3HeadObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(std::bind(&S3HeadObjectAction::next, this),
-                        std::bind(&S3HeadObjectAction::next, this));
+  bucket_metadata->load(
+      std::bind(&S3HeadObjectAction::next, this),
+      std::bind(&S3HeadObjectAction::fetch_bucket_info_failed, this));
+}
+
+void S3HeadObjectAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3HeadObjectAction::fetch_object_info() {
@@ -86,21 +105,6 @@ void S3HeadObjectAction::fetch_object_info() {
           std::bind(&S3HeadObjectAction::next, this),
           std::bind(&S3HeadObjectAction::fetch_object_info_failed, this));
     }
-  } else {
-    if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-      s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
-      set_s3_error("NoSuchBucket");
-    } else if (bucket_metadata->get_state() ==
-               S3BucketMetadataState::failed_to_launch) {
-      s3_log(
-          S3_LOG_ERROR, request_id,
-          "Bucket metadata load operation failed due to pre launch failure\n");
-      set_s3_error("ServiceUnavailable");
-    } else {
-      s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
-      set_s3_error("InternalError");
-    }
-    send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

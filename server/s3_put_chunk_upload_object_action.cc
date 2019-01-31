@@ -156,9 +156,28 @@ void S3PutChunkUploadObjectAction::fetch_bucket_info() {
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(std::bind(&S3PutChunkUploadObjectAction::next, this),
-                        std::bind(&S3PutChunkUploadObjectAction::next, this));
+  bucket_metadata->load(
+      std::bind(&S3PutChunkUploadObjectAction::next, this),
+      std::bind(&S3PutChunkUploadObjectAction::fetch_bucket_info_failed, this));
 
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -180,23 +199,6 @@ void S3PutChunkUploadObjectAction::fetch_object_info() {
           std::bind(&S3PutChunkUploadObjectAction::fetch_object_info_status,
                     this),
           std::bind(&S3PutChunkUploadObjectAction::next, this));
-    }
-  } else {
-    if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-      s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
-      set_s3_error("NoSuchBucket");
-      send_response_to_s3_client();
-    } else if (bucket_metadata->get_state() ==
-               S3BucketMetadataState::failed_to_launch) {
-      s3_log(
-          S3_LOG_ERROR, request_id,
-          "Bucket metadata load operation failed due to pre launch failure\n");
-      set_s3_error("ServiceUnavailable");
-      send_response_to_s3_client();
-    } else {
-      s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed\n");
-      set_s3_error("InternalError");
-      send_response_to_s3_client();
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

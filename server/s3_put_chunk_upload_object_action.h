@@ -85,6 +85,7 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void chunk_auth_failed();
 
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void fetch_object_info();
   void fetch_object_info_status();
   void create_object();
@@ -110,6 +111,12 @@ class S3PutChunkUploadObjectAction : public S3Action {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, FetchBucketInfo);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               FetchObjectInfoWhenBucketNotPresent);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoWhenBucketFailed);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoWhenBucketFailedToLaunch);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
+              FetchObjectInfoWhenBucketAccessDenied);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,

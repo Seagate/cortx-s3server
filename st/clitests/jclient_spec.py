@@ -4,6 +4,7 @@ import os
 from framework import Config
 from framework import S3PyCliTest
 from jclient import JClientTest
+from auth import AuthTest
 from s3client_config import S3ClientConfig
 
 # Helps debugging
@@ -31,6 +32,19 @@ S3PyCliTest('Before_all').before_all()
 
 S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
 S3ClientConfig.secret_key = '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'
+
+# Create Account
+# Extract the response elements from response which has the following format
+# <Key 1> = <Value 1>, <Key 2> = <Value 2> ... <Key n> = <Value n>
+def get_response_elements(response):
+    response_elements = {}
+    key_pairs = response.split(',')
+
+    for key_pair in key_pairs:
+        tokens = key_pair.split('=')
+        response_elements[tokens[0].strip()] = tokens[1].strip()
+
+    return response_elements
 
 # Path style tests.
 pathstyle_values = [True, False]
@@ -85,6 +99,106 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can verify object existence').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have("3kfile")
 
     JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('tester: FULL_CONTROL')
+
+    # ************ cross account tests ********
+    account_args = {}
+    account_args['AccountName'] = 's3secondaccount'
+    account_args['Email'] = 's3secondaccount@seagate.com'
+    account_args['ldapuser'] = 'sgiamadmin'
+    account_args['ldappasswd'] = 'ldapadmin'
+    test_msg = "Create account s3secondaccount"
+    s3secondaccount_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    auth_test = AuthTest(test_msg)
+    result = auth_test.create_account(**account_args).execute_test()
+    result.command_should_match_pattern(s3secondaccount_response_pattern)
+    s3secondaccount_response_elements = get_response_elements(result.status.stdout)
+
+    # ************ Create bucket in s3secondaccount account************
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JClientTest('Jclient can create bucket in s3secondaccount account')\
+        .create_bucket("seagate-bucket").execute_test().command_is_successful()
+
+    # ************ List buckets ************
+    JClientTest('Jclient can list buckets from s3secondaccount account')\
+        .list_buckets().execute_test().command_is_successful().command_response_should_have('seagate-bucket')
+
+    # ************ List buckets of specific account************
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JClientTest('Jclient can list buckets').list_buckets().execute_test()\
+        .command_is_successful().command_response_should_have('seagatebucket')\
+        .command_is_successful().command_response_should_not_have('seagate-bucket')
+
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JClientTest('Jclient can list buckets from seagate-bucket')\
+        .list_buckets().execute_test().command_is_successful().command_response_should_not_have('seagatebucket')\
+        .command_is_successful().command_response_should_have('seagate-bucket')
+
+    # ************ create bucket that already exsting and owned by another account************
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JClientTest('Jclient can not create bucket with name exsting in other account')\
+        .create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("BucketAlreadyExists")
+
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JClientTest('Jclient can not create bucket with name exsting in other account').create_bucket("seagate-bucket")\
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyExists")
+
+    # ************ delete bucket owned by another account************
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JClientTest('Jclient can not delete bucket owned by another account')\
+        .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("Access Denied")
+
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JClientTest('Jclient can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("Access Denied")
+
+    # ************ upload object to a bucket owned by another account************
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JClientTest('Jclient can not upload 3k file to bucket owned by another account')\
+        .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("Access Denied")
+
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JClientTest('Jclient can not upload 3k file to bucket owned by another account')\
+        .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
+        .command_should_fail().command_error_should_have("Access Denied")
+
+    # ************ try to delete account which is having bucket ************
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    test_msg = "Jclient Cannot delete account s3secondaccount with buckets"
+    account_args = {'AccountName': 's3secondaccount'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+        .command_response_should_have("Account cannot be deleted")
+
+    # ************ delete bucket using owner account************
+    JClientTest('Jclient can delete bucket')\
+        .delete_bucket("seagate-bucket").execute_test().command_is_successful()
+
+    # ************ List buckets of specific account************
+    JClientTest('Jclient can list buckets of s3secondaccount account')\
+        .list_buckets().execute_test().command_is_successful()\
+        .command_is_successful().command_response_should_have('')
+
+    # ************ try to delete empty account ************
+    test_msg = "Cannot delete account s3secondaccount with buckets"
+    account_args = {'AccountName': 's3secondaccount'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+        .command_response_should_have("Account deleted successfully")
+
+    # restore default access key and secret key.
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
 
     # ACL Tests.
     # Bucket ACL Tests.

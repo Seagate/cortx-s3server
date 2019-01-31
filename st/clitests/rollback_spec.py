@@ -44,7 +44,6 @@ Config.config_file = "pathstyle.s3cfg"
 
 # ************ Create bucket Fail ************
 # Note: We clean kvs entries using cqlsh(cassandra-kvs) for this test to work
-s3kvs.delete_user_info()
 S3fiTest('s3cmd enable FI create index fail').enable_fi("enable", "always", "clovis_idx_create_fail").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot create bucket').create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()

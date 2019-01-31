@@ -30,9 +30,7 @@
 S3BucketMetadata::S3BucketMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
-    std::shared_ptr<S3AccountUserIdxMetadataFactory>
-        s3_account_user_idx_metadata_factory)
+    std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory)
     : request(req), json_parsing_error(false) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
@@ -41,7 +39,6 @@ S3BucketMetadata::S3BucketMetadata(
   user_name = request->get_user_name();
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
-  salted_bucket_list_index_name = get_account_index_id();
   salted_multipart_list_index_name = get_multipart_index_name();
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
@@ -62,14 +59,6 @@ S3BucketMetadata::S3BucketMetadata(
   } else {
     clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
-
-  if (s3_account_user_idx_metadata_factory) {
-    account_user_index_metadata_factory = s3_account_user_idx_metadata_factory;
-  } else {
-    account_user_index_metadata_factory =
-        std::make_shared<S3AccountUserIdxMetadataFactory>();
-  }
-
   bucket_policy = "";
 
   collision_salt = "index_salt_";
@@ -77,7 +66,6 @@ S3BucketMetadata::S3BucketMetadata(
 
   // name of the index which holds all objects key values within a bucket
   salted_object_list_index_name = get_object_list_index_name();
-  bucket_list_index_oid = {0ULL, 0ULL};
   object_list_index_oid = {0ULL, 0ULL};  // Object List index default id
   multipart_index_oid = {0ULL, 0ULL};    // Multipart index default id
 
@@ -110,10 +98,6 @@ std::string S3BucketMetadata::get_owner_name() {
   return system_defined_attribute["Owner-User"];
 }
 
-struct m0_uint128 S3BucketMetadata::get_bucket_list_index_oid() {
-  return bucket_list_index_oid;
-}
-
 struct m0_uint128 S3BucketMetadata::get_multipart_index_oid() {
   return multipart_index_oid;
 }
@@ -128,10 +112,6 @@ std::string S3BucketMetadata::get_object_list_index_oid_u_hi_str() {
 
 std::string S3BucketMetadata::get_object_list_index_oid_u_lo_str() {
   return object_list_index_oid_u_lo_str;
-}
-
-void S3BucketMetadata::set_bucket_list_index_oid(struct m0_uint128 oid) {
-  bucket_list_index_oid = oid;
 }
 
 void S3BucketMetadata::set_multipart_index_oid(struct m0_uint128 oid) {
@@ -176,211 +156,7 @@ void S3BucketMetadata::add_user_defined_attribute(std::string key,
   user_defined_attribute[key] = val;
 }
 
-// AWS recommends that all bucket names comply with DNS naming convention
-// See Bucket naming restrictions in above link.
-void S3BucketMetadata::validate_bucket_name() {
-  // TODO
-}
 
-void S3BucketMetadata::validate() {
-  // TODO
-}
-
-void S3BucketMetadata::load(std::function<void(void)> on_success,
-                            std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
-
-  current_op = S3BucketMetadataCurrentOp::fetching;
-  fetch_bucket_list_index_oid();
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::fetch_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  if (!account_user_index_metadata) {
-    account_user_index_metadata =
-        account_user_index_metadata_factory
-            ->create_s3_account_user_idx_metadata(request);
-  }
-  account_user_index_metadata->load(
-      std::bind(&S3BucketMetadata::fetch_bucket_list_index_oid_success, this),
-      std::bind(&S3BucketMetadata::fetch_bucket_list_index_oid_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::fetch_bucket_list_index_oid_success() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  bucket_list_index_oid =
-      account_user_index_metadata->get_bucket_list_index_oid();
-  if (current_op == S3BucketMetadataCurrentOp::saving) {
-    save_bucket_info();
-  } else if (current_op == S3BucketMetadataCurrentOp::fetching) {
-    load_bucket_info();
-  } else if (current_op == S3BucketMetadataCurrentOp::deleting) {
-    remove_bucket_info();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::fetch_bucket_list_index_oid_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  if (account_user_index_metadata->get_state() ==
-      S3AccountUserIdxMetadataState::missing) {
-    state = S3BucketMetadataState::missing;
-    if (current_op == S3BucketMetadataCurrentOp::saving ||
-        current_op == S3BucketMetadataCurrentOp::fetching) {
-      collision_attempt_count = 0;
-      create_bucket_list_index();
-    } else {
-      this->handler_on_failed();
-    }
-  } else if (account_user_index_metadata->get_state() ==
-             S3AccountUserIdxMetadataState::failed_to_launch) {
-    s3_log(
-        S3_LOG_ERROR, request_id,
-        "Failed to fetch Bucket List index oid from Account User index. Please "
-        "retry after some time\n");
-    state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
-  } else {
-    s3_log(
-        S3_LOG_ERROR, request_id,
-        "Failed to fetch Bucket List index oid from Account User index. Please "
-        "retry after some time\n");
-    state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
-  }
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::load_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, s3_clovis_api);
-  clovis_kv_reader->get_keyval(
-      bucket_list_index_oid, bucket_name,
-      std::bind(&S3BucketMetadata::load_bucket_info_successful, this),
-      std::bind(&S3BucketMetadata::load_bucket_info_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::load_bucket_info_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (this->from_json(clovis_kv_reader->get_value()) != 0) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Json Parsing failed. Index oid ="
-           "%" SCNx64 " : %" SCNx64 ", Key = %s Value = %s\n",
-           bucket_list_index_oid.u_hi, bucket_list_index_oid.u_lo,
-           bucket_name.c_str(), clovis_kv_reader->get_value().c_str());
-    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-           S3_IEM_METADATA_CORRUPTED_JSON);
-
-    json_parsing_error = true;
-    load_bucket_info_failed();
-  } else {
-    state = S3BucketMetadataState::present;
-    this->handler_on_success();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::load_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  if (json_parsing_error) {
-    state = S3BucketMetadataState::failed;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::missing) {
-    s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata is missing\n");
-    state = S3BucketMetadataState::missing;
-  } else if (clovis_kv_reader->get_state() ==
-             S3ClovisKVSReaderOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id, "Loading of bucket metadata failed\n");
-    state = S3BucketMetadataState::failed_to_launch;
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Loading of bucket metadata failed\n");
-    state = S3BucketMetadataState::failed;
-  }
-  this->handler_on_failed();
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::save(std::function<void(void)> on_success,
-                            std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
-  current_op = S3BucketMetadataCurrentOp::saving;
-  if (bucket_list_index_oid.u_lo == 0ULL &&
-      bucket_list_index_oid.u_hi == 0ULL) {
-    // If there is no index oid then read it
-    fetch_bucket_list_index_oid();
-  } else {
-    if (object_list_index_oid.u_lo == 0ULL &&
-        object_list_index_oid.u_hi == 0ULL) {
-      // create object list index, multipart index and then save bucket info
-      collision_attempt_count = 0;
-      create_object_list_index();
-    } else {
-      save_bucket_info();
-    }
-  }
-}
-
-void S3BucketMetadata::create_bucket_list_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  if (collision_attempt_count == 0) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
-  }
-  clovis_kv_writer->create_index(
-      salted_bucket_list_index_name,
-      std::bind(&S3BucketMetadata::create_bucket_list_index_successful, this),
-      std::bind(&S3BucketMetadata::create_bucket_list_index_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_bucket_list_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  bucket_list_index_oid = clovis_kv_writer->get_oid();
-  save_bucket_list_index_oid();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_bucket_list_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
-    // create_bucket_list_index is called when there is no id for that index,
-    // Hence if clovis returned its present then its due to collision.
-    handle_collision(
-        get_account_index_id(), salted_bucket_list_index_name,
-        std::bind(&S3BucketMetadata::create_bucket_list_index, this));
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id, "Bucket list index creation failed.\n");
-    state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Index creation failed.\n");
-    state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
 
 void S3BucketMetadata::handle_collision(std::string base_index_name,
                                         std::string& salted_index_name,
@@ -415,231 +191,6 @@ void S3BucketMetadata::regenerate_new_index_name(
     std::string base_index_name, std::string& salted_index_name) {
   salted_index_name = base_index_name + collision_salt +
                       std::to_string(collision_attempt_count);
-}
-
-void S3BucketMetadata::save_bucket_list_index_oid() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (!account_user_index_metadata) {
-    account_user_index_metadata =
-        account_user_index_metadata_factory
-            ->create_s3_account_user_idx_metadata(request);
-  }
-  account_user_index_metadata->set_bucket_list_index_oid(bucket_list_index_oid);
-
-  account_user_index_metadata->save(
-      std::bind(&S3BucketMetadata::save_bucket_list_index_oid_successful, this),
-      std::bind(&S3BucketMetadata::save_bucket_list_index_oid_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::save_bucket_list_index_oid_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (current_op == S3BucketMetadataCurrentOp::fetching &&
-      state == S3BucketMetadataState::missing) {
-    // We just created bucket list container, so bucket metadata is missing
-    // hence call failure callback
-    this->handler_on_failed();
-  } else if (current_op == S3BucketMetadataCurrentOp::saving) {
-    collision_attempt_count = 0;
-    create_object_list_index();
-  } else {
-    this->handler_on_success();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::save_bucket_list_index_oid_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_ERROR, request_id,
-         "Saving of Bucket list index oid metadata failed\n");
-  if (account_user_index_metadata->get_state() ==
-      S3AccountUserIdxMetadataState::failed_to_launch) {
-    state = S3BucketMetadataState::failed_to_launch;
-  } else {
-    state = S3BucketMetadataState::failed;
-  }
-  this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::save_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  // Set up system attributes
-  system_defined_attribute["Owner-User"] = user_name;
-  system_defined_attribute["Owner-User-id"] = user_id;
-  system_defined_attribute["Owner-Account"] = account_name;
-  system_defined_attribute["Owner-Account-id"] = account_id;
-
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
-  }
-  clovis_kv_writer->put_keyval(
-      bucket_list_index_oid, bucket_name, this->to_json(),
-      std::bind(&S3BucketMetadata::save_bucket_info_successful, this),
-      std::bind(&S3BucketMetadata::save_bucket_info_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::save_bucket_info_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_object_list_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
-  }
-  S3UriToMeroOID(s3_clovis_api, salted_object_list_index_name.c_str(),
-                 request_id, &object_list_index_oid, S3ClovisEntityType::index);
-
-  clovis_kv_writer->create_index_with_oid(
-      object_list_index_oid,
-      std::bind(&S3BucketMetadata::create_object_list_index_successful, this),
-      std::bind(&S3BucketMetadata::create_object_list_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_multipart_list_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
-  }
-
-  S3UriToMeroOID(s3_clovis_api, salted_multipart_list_index_name.c_str(),
-                 request_id, &multipart_index_oid, S3ClovisEntityType::index);
-
-  clovis_kv_writer->create_index_with_oid(
-      multipart_index_oid,
-      std::bind(&S3BucketMetadata::create_multipart_list_index_successful,
-                this),
-      std::bind(&S3BucketMetadata::create_multipart_list_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_object_list_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  collision_attempt_count = 0;
-  create_multipart_list_index();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_object_list_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
-    // create_object_list_index is called when there is no bucket,
-    // Hence if clovis returned its present then its due to collision.
-    handle_collision(
-        get_object_list_index_name(), salted_object_list_index_name,
-        std::bind(&S3BucketMetadata::create_object_list_index, this));
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id, "Object list Index creation failed.\n");
-    state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Object list Index creation failed.\n");
-    state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_multipart_list_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  save_bucket_info();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::create_multipart_list_index_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
-    // create_multipart_list_index is called when there is no bucket,
-    // Hence if clovis returned its present then its due to collision.
-    handle_collision(
-        get_multipart_index_name(), salted_multipart_list_index_name,
-        std::bind(&S3BucketMetadata::create_multipart_list_index, this));
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id, "Multipart list Index creation failed.\n");
-    state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Multipart list Index creation failed.\n");
-    state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::save_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_ERROR, request_id, "Saving of Bucket metadata failed\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
-    state = S3BucketMetadataState::failed_to_launch;
-  } else {
-    state = S3BucketMetadataState::failed;
-  }
-  this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::remove(std::function<void(void)> on_success,
-                              std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
-
-  if (state == S3BucketMetadataState::present) {
-    remove_bucket_info();
-  } else {
-    current_op = S3BucketMetadataCurrentOp::deleting;
-    fetch_bucket_list_index_oid();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::remove_bucket_info() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
-  }
-  clovis_kv_writer->delete_keyval(
-      bucket_list_index_oid, bucket_name,
-      std::bind(&S3BucketMetadata::remove_bucket_info_successful, this),
-      std::bind(&S3BucketMetadata::remove_bucket_info_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::remove_bucket_info_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3BucketMetadata::remove_bucket_info_failed() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_ERROR, request_id, "Removal of Bucket metadata failed\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
-    state = S3BucketMetadataState::failed_to_launch;
-  } else {
-    state = S3BucketMetadataState::failed;
-  }
-  this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 std::string S3BucketMetadata::create_default_acl() {

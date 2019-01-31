@@ -24,7 +24,6 @@
 
 #include <memory>
 
-#include "mock_s3_account_user_idx_metadata.h"
 #include "mock_s3_async_buffer_opt_container.h"
 #include "mock_s3_auth_client.h"
 #include "mock_s3_bucket_metadata.h"
@@ -39,6 +38,7 @@
 #include "mock_s3_put_bucket_body.h"
 #include "mock_s3_request_object.h"
 #include "mock_s3_put_tag_body.h"
+#include "mock_s3_global_bucket_index_metadata.h"
 #include "s3_factory.h"
 
 class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
@@ -292,22 +292,22 @@ class MockS3AuthClientFactory : public S3AuthClientFactory {
   std::shared_ptr<MockS3AuthClient> mock_auth_client;
 };
 
-class MockS3AccountUserIdxMetadataFactory
-    : public S3AccountUserIdxMetadataFactory {
+class MockS3GlobalBucketIndexMetadataFactory
+    : public S3GlobalBucketIndexMetadataFactory {
  public:
-  MockS3AccountUserIdxMetadataFactory(std::shared_ptr<S3RequestObject> req)
-      : S3AccountUserIdxMetadataFactory() {
-    mock_account_user_index_metadata =
-        std::make_shared<MockS3AccountUserIdxMetadata>(req);
+  MockS3GlobalBucketIndexMetadataFactory(std::shared_ptr<S3RequestObject> req)
+      : S3GlobalBucketIndexMetadataFactory() {
+    mock_global_bucket_index_metadata =
+        std::make_shared<MockS3GlobalBucketIndexMetadata>(req);
   }
 
-  std::shared_ptr<S3AccountUserIdxMetadata> create_s3_account_user_idx_metadata(
-      std::shared_ptr<S3RequestObject> req) {
-    return mock_account_user_index_metadata;
+  std::shared_ptr<S3GlobalBucketIndexMetadata>
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req) {
+    return mock_global_bucket_index_metadata;
   }
 
-  std::shared_ptr<MockS3AccountUserIdxMetadata>
-      mock_account_user_index_metadata;
+  std::shared_ptr<MockS3GlobalBucketIndexMetadata>
+      mock_global_bucket_index_metadata;
 };
 
 #endif

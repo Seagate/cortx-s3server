@@ -47,6 +47,7 @@ class S3DeleteBucketPolicyAction : public S3Action {
   void setup_steps();
 
   void fetch_bucket_metadata();
+  void fetch_bucket_metadata_failed();
 
   void delete_bucket_policy();
   void delete_bucket_policy_successful();

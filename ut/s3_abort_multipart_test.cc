@@ -149,7 +149,46 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest3) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
 
-  action_under_test->get_multipart_metadata();
+  action_under_test->fetch_bucket_metadata_failed();
+}
+
+TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest4) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(403, _)).Times(1);
+
+  action_under_test->fetch_bucket_metadata_failed();
+}
+
+TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest5) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+
+  action_under_test->fetch_bucket_metadata_failed();
+}
+
+TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest6) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+
+  action_under_test->fetch_bucket_metadata_failed();
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest1) {

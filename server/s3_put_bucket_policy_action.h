@@ -47,6 +47,7 @@ class S3PutBucketPolicyAction : public S3Action {
   void set_policy();
   void set_policy_failed();
   void get_metadata();
+  void get_metadata_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
@@ -55,6 +56,9 @@ class S3PutBucketPolicyAction : public S3Action {
   FRIEND_TEST(S3PutBucketPolicyActionTest, ValidateRequestMoreContent);
   FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicy);
   FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicyWhenBucketMissing);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicyWhenBucketFailed);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicyWhenBucketFailedToLaunch);
+  FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicyWhenBucketAccessDenied);
   FRIEND_TEST(S3PutBucketPolicyActionTest,
               SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3PutBucketPolicyActionTest, SendResponseToClientMalformedXML);

@@ -226,7 +226,7 @@ class S3ClovisKVSWriter {
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValSuccess);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValFailed);
   FRIEND_TEST(S3ClovisKvsWritterTest, DelKeyValEmpty);
-  FRIEND_TEST(S3BucketMetadataTest, CreateBucketListIndexSuccessful);
+  FRIEND_TEST(S3BucketMetadataV1Test, CreateBucketListIndexSuccessful);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessful);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulOnlyCreateIndex);
   FRIEND_TEST(S3PartMetadataTest, CreatePartIndexSuccessfulSaveMetadata);

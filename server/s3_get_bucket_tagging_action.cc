@@ -76,6 +76,8 @@ void S3GetBucketTaggingAction::get_metadata_failed() {
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_ERROR, request_id, "Bucket metadata load operation failed\n");
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
   } else {
     set_s3_error("InternalError");
     s3_log(S3_LOG_ERROR, request_id,

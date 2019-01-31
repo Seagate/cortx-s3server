@@ -115,6 +115,9 @@ class S3PutObjectAction : public S3Action {
   FRIEND_TEST(S3PutObjectActionTest, VaidateSpecialCharTagsCase2);
   FRIEND_TEST(S3PutObjectActionTest, FetchBucketInfo);
   FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
+  FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailedTolaunch);
+  FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailed);
+  FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketAccessDenied);
   FRIEND_TEST(S3PutObjectActionTest,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3PutObjectActionTest,

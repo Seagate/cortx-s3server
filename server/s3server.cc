@@ -48,11 +48,17 @@
 /* Program options */
 #include <unistd.h>
 
+#define GLOBAL_BUCKET_LIST_INDEX_OID_U_LO 1
+#define BUCKET_METADATA_LIST_INDEX_OID_U_LO 2
+
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 evbase_t *global_evbase_handle;
 extern struct m0_clovis_realm clovis_uber_realm;
-struct m0_uint128 root_account_user_index_oid;
+// index will have bucket and account information
+struct m0_uint128 global_bucket_list_index_oid;
+// index will have bucket metada information
+struct m0_uint128 bucket_metadata_list_index_oid;
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
@@ -206,15 +212,16 @@ void fatal_libevent(int err) {
 }
 
 // This function will initialize global variable, should not be removed
-void initialize_global_var() {
+void init_s3_index_oid(struct m0_uint128 &global_index_oid,
+                       const uint64_t &u_lo_index_offset) {
   struct m0_uint128 temp = {0ULL, 0ULL};
-  temp.u_lo = 1;
-  // reserving an oid for root index -- M0_CLOVIS_ID_APP + 1
-  m0_uint128_add(&root_account_user_index_oid, &M0_CLOVIS_ID_APP, &temp);
-  struct m0_fid index_fid = M0_FID_TINIT('x', root_account_user_index_oid.u_hi,
-                                         root_account_user_index_oid.u_lo);
-  root_account_user_index_oid.u_hi = index_fid.f_container;
-  root_account_user_index_oid.u_lo = index_fid.f_key;
+  temp.u_lo = u_lo_index_offset;
+  // reserving an oid for global index -- M0_CLOVIS_ID_APP + u_lo_index_offset
+  m0_uint128_add(&global_index_oid, &M0_CLOVIS_ID_APP, &temp);
+  struct m0_fid index_fid =
+      M0_FID_TINIT('x', global_index_oid.u_hi, global_index_oid.u_lo);
+  global_index_oid.u_hi = index_fid.f_container;
+  global_index_oid.u_lo = index_fid.f_key;
 }
 
 bool init_auth_ssl() {
@@ -246,8 +253,9 @@ void fini_auth_ssl() {
   SSL_COMP_free_compression_methods();
 }
 
-// This index will be holding the ids for the Account, User index
-int create_s3_user_index(std::string index_name) {
+// This index will be holding the ids for the bucket
+int create_global_index(struct m0_uint128 &root_index_oid,
+                        const uint64_t &u_lo_index_offset) {
   int rc;
   struct m0_clovis_op *ops[1] = {NULL};
   struct m0_clovis_op *sync_op = NULL;
@@ -255,9 +263,9 @@ int create_s3_user_index(std::string index_name) {
 
   memset(&idx, 0, sizeof(idx));
   ops[0] = NULL;
-  // reserving an oid for root index -- M0_CLOVIS_ID_APP + 1
-  initialize_global_var();
-  m0_clovis_idx_init(&idx, &clovis_uber_realm, &root_account_user_index_oid);
+  // reserving an oid for root index -- M0_CLOVIS_ID_APP + offset
+  init_s3_index_oid(root_index_oid, u_lo_index_offset);
+  m0_clovis_idx_init(&idx, &clovis_uber_realm, &root_index_oid);
   m0_clovis_entity_create(NULL, &idx.in_entity, &ops[0]);
   m0_clovis_op_launch(ops, 1);
 
@@ -469,9 +477,22 @@ int main(int argc, char **argv) {
     return rc;
   }
 
-  rc = create_s3_user_index(ACCOUNT_USER_INDEX_NAME);
+  // global_bucket_list_index_oid - will hold bucket name as key, its owner
+  // account information and region as value.
+  rc = create_global_index(global_bucket_list_index_oid,
+                           GLOBAL_BUCKET_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to create a KVS index\n");
+    s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
+    fini_auth_ssl();
+    return rc;
+  }
+
+  // bucket_metadata_list_index_oid - will hold accountid/bucket_name as key,
+  // bucket medata as value.
+  rc = create_global_index(bucket_metadata_list_index_oid,
+                           BUCKET_METADATA_LIST_INDEX_OID_U_LO);
+  if (rc < 0) {
+    s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
     fini_auth_ssl();
     return rc;
   }

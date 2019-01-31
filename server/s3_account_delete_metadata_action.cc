@@ -24,12 +24,11 @@
 #include "s3_iem.h"
 #include "s3_account_delete_metadata_action.h"
 
+extern struct m0_uint128 bucket_metadata_list_index_oid;
+
 S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3ClovisKVSWriterFactory> kvs_writer_factory,
-    std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory,
-    std::shared_ptr<S3AccountUserIdxMetadataFactory>
-        s3_account_user_idx_metadata_factory)
+    std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   // get the account_id from uri
@@ -40,24 +39,12 @@ S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  if (s3_account_user_idx_metadata_factory) {
-    account_user_index_metadata_factory = s3_account_user_idx_metadata_factory;
-  } else {
-    account_user_index_metadata_factory =
-        std::make_shared<S3AccountUserIdxMetadataFactory>();
-  }
-  if (kvs_writer_factory) {
-    clovis_kvs_writer_factory = kvs_writer_factory;
-  } else {
-    clovis_kvs_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
-  }
+
   if (kvs_reader_factory) {
     clovis_kvs_reader_factory = kvs_reader_factory;
   } else {
     clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
   }
-
-  bucket_list_index_oid = {0ULL, 0ULL};
   setup_steps();
 }
 
@@ -65,16 +52,7 @@ void S3AccountDeleteMetadataAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3AccountDeleteMetadataAction::validate_request, this));
   add_task(std::bind(
-      &S3AccountDeleteMetadataAction::fetch_bucket_list_index_oid, this));
-  add_task(std::bind(
-      &S3AccountDeleteMetadataAction::validate_fetched_bucket_list_index_oid,
-      this));
-  add_task(std::bind(
       &S3AccountDeleteMetadataAction::fetch_first_bucket_metadata, this));
-  add_task(std::bind(&S3AccountDeleteMetadataAction::remove_account_index_info,
-                     this));
-  add_task(std::bind(&S3AccountDeleteMetadataAction::remove_bucket_list_index,
-                     this));
   add_task(std::bind(&S3AccountDeleteMetadataAction::send_response_to_s3_client,
                      this));
   // ...
@@ -101,55 +79,13 @@ void S3AccountDeleteMetadataAction::validate_request() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3AccountDeleteMetadataAction::fetch_bucket_list_index_oid() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  if (!account_user_index_metadata) {
-    account_user_index_metadata =
-        account_user_index_metadata_factory
-            ->create_s3_account_user_idx_metadata(request);
-  }
-  account_user_index_metadata->load(
-      std::bind(&S3AccountDeleteMetadataAction::next, this),
-      std::bind(&S3AccountDeleteMetadataAction::next, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AccountDeleteMetadataAction::validate_fetched_bucket_list_index_oid() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  if (account_user_index_metadata->get_state() ==
-      S3AccountUserIdxMetadataState::present) {
-    bucket_list_index_oid =
-        account_user_index_metadata->get_bucket_list_index_oid();
-    if (bucket_list_index_oid.u_lo == 0ULL &&
-        bucket_list_index_oid.u_hi == 0ULL) {
-      s3_log(S3_LOG_INFO, request_id,
-             "Account user index metadata present, but bucket list index is "
-             "missing.\n");
-      send_response_to_s3_client();
-    } else {
-      s3_log(S3_LOG_INFO, request_id, "Bucket list index exists\n");
-      next();
-    }
-  } else if (account_user_index_metadata->get_state() ==
-             S3AccountUserIdxMetadataState::missing) {
-    s3_log(S3_LOG_INFO, request_id, "Bucket list index is missing\n");
-    send_response_to_s3_client();
-  } else {
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
+  bucket_account_id_key_prefix = account_id_from_uri + "/";
   clovis_kv_reader->next_keyval(
-      bucket_list_index_oid, "", 1,
+      bucket_metadata_list_index_oid, bucket_account_id_key_prefix, 1,
       std::bind(&S3AccountDeleteMetadataAction::
                      fetch_first_bucket_metadata_successful,
                 this),
@@ -161,12 +97,21 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata() {
 
 void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Account: %s has at least one Bucket. Account delete should not be "
-         "allowed.\n",
-         account_id_from_uri.c_str());
-  set_s3_error("AccountNotEmpty");
-  send_response_to_s3_client();
+  auto& kvps = clovis_kv_reader->get_key_values();
+  for (auto& kv : kvps) {
+    // account_id_from_uri has buckets
+    if (kv.first.find(bucket_account_id_key_prefix) != std::string::npos) {
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Account: %s has at least one Bucket. Account delete should not "
+             "be allowed.\n",
+             account_id_from_uri.c_str());
+      set_s3_error("AccountNotEmpty");
+      send_response_to_s3_client();
+    } else {  // no buckets found in given account
+      next();
+    }
+    break;
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -189,73 +134,6 @@ void S3AccountDeleteMetadataAction::fetch_first_bucket_metadata_failed() {
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AccountDeleteMetadataAction::remove_account_index_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  account_user_index_metadata->remove(
-      std::bind(
-          &S3AccountDeleteMetadataAction::remove_account_index_info_successful,
-          this),
-      std::bind(
-          &S3AccountDeleteMetadataAction::remove_account_index_info_failed,
-          this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AccountDeleteMetadataAction::remove_account_index_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (account_user_index_metadata->get_state() ==
-      S3AccountUserIdxMetadataState::deleted) {
-    // Account metadata delete success
-    next();
-  } else {
-    s3_log(S3_LOG_WARN, request_id, "Failed to delete account metadata\n");
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AccountDeleteMetadataAction::remove_account_index_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_ERROR, request_id, "Account metadata cleanup failed.\n");
-  if (account_user_index_metadata->get_state() ==
-      S3AccountUserIdxMetadataState::failed_to_launch) {
-    set_s3_error("ServiceUnavailable");
-  } else {
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AccountDeleteMetadataAction::remove_bucket_list_index() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  // Can happen when only index is present
-  if (clovis_kv_writer == nullptr) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
-  }
-  clovis_kv_writer->delete_index(
-      bucket_list_index_oid,
-      std::bind(&S3AccountDeleteMetadataAction::next, this),
-      std::bind(&S3AccountDeleteMetadataAction::remove_bucket_list_index_failed,
-                this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AccountDeleteMetadataAction::remove_bucket_list_index_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  s3_log(S3_LOG_ERROR, request_id, "Account delete index failed.\n");
-  if (clovis_kv_writer->get_state() ==
-      S3ClovisKVSWriterOpState::failed_to_launch) {
-    set_s3_error("ServiceUnavailable");
-  } else {
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

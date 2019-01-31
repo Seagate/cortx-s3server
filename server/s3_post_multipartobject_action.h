@@ -77,6 +77,7 @@ class S3PostMultipartObjectAction : public S3Action {
   void setup_steps();
 
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void fetch_object_info();
   void fetch_object_info_status();
   void check_upload_is_inprogress();

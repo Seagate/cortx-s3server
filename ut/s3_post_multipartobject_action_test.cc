@@ -128,13 +128,6 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
   action_under_test->check_upload_is_inprogress();
 
   EXPECT_EQ(1, call_count_one);
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::missing));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  action_under_test->check_upload_is_inprogress();
 }
 
 TEST_F(S3PostMultipartObjectTest, FetchObjectInfoMultipartPresent) {

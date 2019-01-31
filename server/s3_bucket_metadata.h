@@ -28,12 +28,10 @@
 #include <memory>
 #include <string>
 
-#include "s3_account_user_index_metadata.h"
 #include "s3_bucket_acl.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_log.h"
-#include "s3_request_object.h"
 #include "s3_request_object.h"
 
 enum class S3BucketMetadataState {
@@ -47,17 +45,15 @@ enum class S3BucketMetadataState {
 // Forward declarations
 class S3ClovisKVSReaderFactory;
 class S3ClovisKVSWriterFactory;
-class S3AccountUserIdxMetadataFactory;
 
 class S3BucketMetadata {
   // Holds mainly system-defined metadata (creation date etc)
   // Partially supported on need bases, some of these are placeholders
- private:
+ protected:
   std::string account_name;
   std::string account_id;
   std::string user_name;
   std::string user_id;
-  std::string salted_bucket_list_index_name;
   std::string salted_object_list_index_name;
   std::string salted_multipart_list_index_name;
 
@@ -82,22 +78,19 @@ class S3BucketMetadata {
 
   S3BucketACL bucket_ACL;
 
-  struct m0_uint128 bucket_list_index_oid;
-
   struct m0_uint128 multipart_index_oid;
   struct m0_uint128 object_list_index_oid;
   std::string object_list_index_oid_u_hi_str;
   std::string object_list_index_oid_u_lo_str;
 
   std::shared_ptr<S3RequestObject> request;
+
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
-  std::shared_ptr<S3AccountUserIdxMetadataFactory>
-      account_user_index_metadata_factory;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -106,56 +99,17 @@ class S3BucketMetadata {
   S3BucketMetadataState state;
   S3BucketMetadataCurrentOp current_op;
 
-  std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
-
   // `true` in case of json parsing failure
   bool json_parsing_error;
 
   std::string request_id;
 
- private:
-  std::string get_account_index_id() { return "ACCOUNTUSER/" + account_id; }
 
-  void fetch_bucket_list_index_oid();
-  void fetch_bucket_list_index_oid_success();
-  void fetch_bucket_list_index_oid_failed();
 
-  void load_bucket_info();
-  void load_bucket_info_successful();
-  void load_bucket_info_failed();
 
-  void create_bucket_list_index();
-  void create_bucket_list_index_successful();
-  void create_bucket_list_index_failed();
-
-  void create_object_list_index();
-  void create_object_list_index_successful();
-  void create_object_list_index_failed();
-
-  void create_multipart_list_index();
-  void create_multipart_list_index_successful();
-  void create_multipart_list_index_failed();
-
-  void save_bucket_list_index_oid();
-  void save_bucket_list_index_oid_successful();
-  void save_bucket_list_index_oid_failed();
 
   std::string create_default_acl();
 
-  void save_bucket_info();
-  void save_bucket_info_successful();
-  void save_bucket_info_failed();
-
-  void remove_bucket_info();
-  void remove_bucket_info_successful();
-  void remove_bucket_info_failed();
-
-  // AWS recommends that all bucket names comply with DNS naming convention
-  // See Bucket naming restrictions in above link.
-  void validate_bucket_name();
-
-  // Any other validations we want to do on metadata
-  void validate();
   void handle_collision(std::string base_index_name,
                         std::string& salted_index_name,
                         std::function<void(void)> callback);
@@ -169,9 +123,7 @@ class S3BucketMetadata {
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
           nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory =
-          nullptr,
-      std::shared_ptr<S3AccountUserIdxMetadataFactory>
-          s3_account_user_idx_metadata_factory = nullptr);
+          nullptr);
 
   std::string get_bucket_name();
   std::string get_creation_time();
@@ -185,12 +137,10 @@ class S3BucketMetadata {
   virtual std::string& get_policy_as_json();
   virtual std::string& get_acl_as_xml();
 
-  virtual struct m0_uint128 get_bucket_list_index_oid();
   virtual struct m0_uint128 get_multipart_index_oid();
   virtual struct m0_uint128 get_object_list_index_oid();
   std::string get_object_list_index_oid_u_hi_str();
   std::string get_object_list_index_oid_u_lo_str();
-  void set_bucket_list_index_oid(struct m0_uint128 id);
   void set_multipart_index_oid(struct m0_uint128 id);
   void set_object_list_index_oid(struct m0_uint128 id);
   std::string get_object_list_index_name() { return "BUCKET/" + bucket_name; }
@@ -205,14 +155,10 @@ class S3BucketMetadata {
   void add_user_defined_attribute(std::string key, std::string val);
 
   virtual void load(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
-  void load_successful();
-  void load_failed();
+                    std::function<void(void)> on_failed) = 0;
 
   virtual void save(std::function<void(void)> on_success,
-                    std::function<void(void)> on_failed);
-  void save_successful();
-  void save_failed();
+                    std::function<void(void)> on_failed) = 0;
 
   virtual void setpolicy(std::string& policy_str);
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
@@ -222,18 +168,12 @@ class S3BucketMetadata {
   virtual void setacl(std::string& acl_str);
 
   virtual void remove(std::function<void(void)> on_success,
-                      std::function<void(void)> on_failed);
-  void remove_successful();
-  void remove_failed();
-
-  // void save_idx_metadata();
-  // void save_idx_metadata_successful();
-  // void save_idx_metadata_failed();
+                      std::function<void(void)> on_failed) = 0;
 
   virtual S3BucketMetadataState get_state() { return state; }
 
   // Streaming to json
-  std::string to_json();
+  virtual std::string to_json();
 
   // returns 0 on success, -1 on parsing error
   virtual int from_json(std::string content);

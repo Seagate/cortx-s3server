@@ -51,6 +51,7 @@ class S3DeleteObjectAction : public S3Action {
   void setup_steps();
 
   void fetch_bucket_info();
+  void fetch_bucket_metadata_failed();
   void fetch_object_info();
   void delete_metadata();
   void delete_object();
@@ -61,6 +62,10 @@ class S3DeleteObjectAction : public S3Action {
   FRIEND_TEST(S3DeleteObjectActionTest, FetchBucketInfo);
   FRIEND_TEST(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
   FRIEND_TEST(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketFetchFailed);
+  FRIEND_TEST(S3DeleteObjectActionTest,
+              FetchObjectInfoWhenBucketFetchFailedToLaunch);
+  FRIEND_TEST(S3DeleteObjectActionTest,
+              FetchObjectInfoWhenBucketFetchAccessDenied);
   FRIEND_TEST(S3DeleteObjectActionTest,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3DeleteObjectActionTest,

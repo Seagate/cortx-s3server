@@ -25,17 +25,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "mock_s3_clovis_wrapper.h"
-#include "s3_bucket_metadata.h"
+#include "s3_bucket_metadata_v1.h"
 #include "s3_request_object.h"
 
 using ::testing::_;
 using ::testing::Return;
 
-class MockS3BucketMetadata : public S3BucketMetadata {
+class MockS3BucketMetadata : public S3BucketMetadataV1 {
  public:
   MockS3BucketMetadata(std::shared_ptr<S3RequestObject> req,
                        std::shared_ptr<MockS3Clovis> s3_mock_clovis_api)
-      : S3BucketMetadata(req, s3_mock_clovis_api) {}
+      : S3BucketMetadataV1(req, s3_mock_clovis_api) {}
   MOCK_METHOD2(load, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD0(get_state, S3BucketMetadataState());

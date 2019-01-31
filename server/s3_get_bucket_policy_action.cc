@@ -74,6 +74,8 @@ void S3GetBucketPolicyAction::get_metadata_failed() {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata load operation failed due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_ERROR, request_id, "Bucket metadata load operation failed\n");
     set_s3_error("NoSuchBucket");

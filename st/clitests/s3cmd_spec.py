@@ -6,6 +6,7 @@ from s3cmd import S3cmdTest
 from jclient import JClientTest
 from s3client_config import S3ClientConfig
 from s3kvstool import S3kvTest
+from auth import AuthTest
 import s3kvs
 
 # Helps debugging
@@ -52,12 +53,126 @@ s3kvs.clean_all_data()
 s3kvs.create_s3root_index()
 S3cmdTest('s3cmd cannot fetch info for nonexistent bucket').info_bucket("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket").command_response_should_not_have('WARNING')
 
+# Create Account
+# Extract the response elements from response which has the following format
+# <Key 1> = <Value 1>, <Key 2> = <Value 2> ... <Key n> = <Value n>
+def get_response_elements(response):
+    response_elements = {}
+    key_pairs = response.split(',')
+
+    for key_pair in key_pairs:
+        tokens = key_pair.split('=')
+        response_elements[tokens[0].strip()] = tokens[1].strip()
+
+    return response_elements
+
+account_args = {}
+account_args['AccountName'] = 's3secondaccount'
+account_args['Email'] = 's3secondaccount@seagate.com'
+account_args['ldapuser'] = 'sgiamadmin'
+account_args['ldappasswd'] = 'ldapadmin'
+
+test_msg = "Create account s3secondaccount"
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+auth_test = AuthTest(test_msg)
+result = auth_test.create_account(**account_args).execute_test()
+result.command_should_match_pattern(account_response_pattern)
+account_response_elements = get_response_elements(result.status.stdout)
+
+# ************ Create bucket in s3secondaccount account************
+S3cmdTest('s3cmd can create bucket in s3secondaccount account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .create_bucket("s3secondaccount").execute_test().command_is_successful()
+
+# ************ List buckets ************
+S3cmdTest('s3cmd can list buckets from s3secondaccount account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .list_buckets().execute_test().command_is_successful().command_response_should_have('s3://s3secondaccount')
 
 # ************ Create bucket ************
 S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
 
+# ************ List buckets of specific account************
+S3cmdTest('s3cmd can list buckets').list_buckets().execute_test()\
+    .command_is_successful().command_response_should_have('s3://seagatebucket')\
+    .command_is_successful().command_response_should_not_have('s3://s3secondaccount')
+
+S3cmdTest('s3cmd can list buckets')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .list_buckets().execute_test().command_is_successful().command_response_should_not_have('s3://seagatebucket')\
+    .command_is_successful().command_response_should_have('s3://s3secondaccount')
+
+# ************ create bucket that already exsting and owned by another account************
+S3cmdTest('s3cmd can not create bucket with name exsting in other account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .create_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+    .command_error_should_have("BucketAlreadyExists")
+
+S3cmdTest('s3cmd can not create bucket with name exsting in other account').create_bucket("s3secondaccount")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyExists")
+
+# ************ info_bucket owned by another account************
+S3cmdTest('s3cmd can not access bucket owned by another account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .info_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+    .command_error_should_have("AccessDenied")
+
+S3cmdTest('s3cmd can not access bucket owned by another account').info_bucket("s3secondaccount")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+# ************ delete bucket owned by another account************
+S3cmdTest('s3cmd can not delete bucket owned by another account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+    .command_error_should_have("AccessDenied")
+
+S3cmdTest('s3cmd can not deelte bucket owned by another account').delete_bucket("s3secondaccount")\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+# ************ upload object to a bucket owned by another account************
+S3cmdTest('s3cmd can not upload 3k file to bucket owned by another account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
+    .command_error_should_have("AccessDenied")
+
+S3cmdTest('s3cmd can not upload 3k file to bucket owned by another account')\
+    .upload_test("s3secondaccount", "3kfile", 3000).execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("AccessDenied")
+
+# Overwriting values of access key and secret key given by
+S3ClientConfig.access_key_id = account_response_elements['AccessKeyId']
+S3ClientConfig.secret_key = account_response_elements['SecretKey']
+
+# ************ try to delete account which is having bucket ************
+test_msg = "Cannot delete account s3secondaccount with buckets"
+account_args = {'AccountName': 's3secondaccount'}
+AuthTest(test_msg).delete_account(**account_args).execute_test()\
+    .command_response_should_have("Account cannot be deleted")
+
+# ************ delete bucket using owner account************
+S3cmdTest('s3cmd can delete bucket')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .delete_bucket("s3secondaccount").execute_test().command_is_successful()
+
+# ************ List buckets of specific account************
+S3cmdTest('s3cmd can list buckets of s3secondaccount account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .list_buckets().execute_test().command_is_successful()\
+    .command_is_successful().command_response_should_have('')
+
+# ************ try to delete empty account ************
+test_msg = "Cannot delete account s3secondaccount with buckets"
+account_args = {'AccountName': 's3secondaccount'}
+AuthTest(test_msg).delete_account(**account_args).execute_test()\
+    .command_response_should_have("Account deleted successfully")
+
+# restore access key and secret key.
+S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+S3ClientConfig.secret_key = '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'
+
 # ************ List buckets ************
 S3cmdTest('s3cmd can list buckets').list_buckets().execute_test().command_is_successful().command_response_should_have('s3://seagatebucket')
+
 
 # ************ 3k FILE TEST ************
 S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()

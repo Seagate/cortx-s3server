@@ -78,9 +78,28 @@ void S3DeleteObjectAction::fetch_bucket_info() {
 
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(std::bind(&S3DeleteObjectAction::next, this),
-                        std::bind(&S3DeleteObjectAction::next, this));
+  bucket_metadata->load(
+      std::bind(&S3DeleteObjectAction::next, this),
+      std::bind(&S3DeleteObjectAction::fetch_bucket_metadata_failed, this));
 
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3DeleteObjectAction::fetch_bucket_metadata_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
+  if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else if (bucket_metadata_state == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata_state == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -101,21 +120,6 @@ void S3DeleteObjectAction::fetch_object_info() {
       object_metadata->load(std::bind(&S3DeleteObjectAction::next, this),
                             std::bind(&S3DeleteObjectAction::next, this));
     }
-  } else {
-    if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-      s3_log(S3_LOG_WARN, request_id, "Bucket not found\n");
-      set_s3_error("NoSuchBucket");
-    } else if (bucket_metadata->get_state() ==
-               S3BucketMetadataState::failed_to_launch) {
-      s3_log(
-          S3_LOG_ERROR, request_id,
-          "Bucket metadata load operation failed due to pre launch failure\n");
-      set_s3_error("ServiceUnavailable");
-    } else {
-      s3_log(S3_LOG_WARN, request_id, "Failed to look up Bucket metadata\n");
-      set_s3_error("InternalError");
-    }
-    send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

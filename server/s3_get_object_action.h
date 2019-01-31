@@ -66,6 +66,7 @@ class S3GetObjectAction : public S3Action {
   void setup_steps();
 
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void fetch_object_info();
   void validate_object_info();
   void check_full_or_range_object_read();
@@ -83,6 +84,10 @@ class S3GetObjectAction : public S3Action {
   FRIEND_TEST(S3GetObjectActionTest, FetchBucketInfo);
   FRIEND_TEST(S3GetObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
   FRIEND_TEST(S3GetObjectActionTest, FetchObjectInfoWhenBucketFetchFailed);
+  FRIEND_TEST(S3GetObjectActionTest,
+              FetchObjectInfoWhenBucketFetchFailedToLaunch);
+  FRIEND_TEST(S3GetObjectActionTest,
+              FetchObjectInfoWhenBucketFetchAccessDenied);
   FRIEND_TEST(S3GetObjectActionTest,
               FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);
   FRIEND_TEST(S3GetObjectActionTest,

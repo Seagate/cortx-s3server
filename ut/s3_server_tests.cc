@@ -41,7 +41,8 @@ extern "C" {
 const char *auth_ip_addr = "127.0.0.1";
 uint16_t auth_port = 8095;
 extern int s3log_level;
-struct m0_uint128 root_account_user_index_oid;
+struct m0_uint128 global_bucket_list_index_oid;
+struct m0_uint128 bucket_metadata_list_index_oid;
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 extern S3Stats *g_stats_instance;

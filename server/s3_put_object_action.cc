@@ -132,18 +132,18 @@ void S3PutObjectAction::fetch_bucket_info_failed() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
-    send_response_to_s3_client();
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
   } else if (bucket_metadata->get_state() ==
              S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata load operation failed due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Bucket metadata fetch failed\n");
     set_s3_error("InternalError");
-    send_response_to_s3_client();
   }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

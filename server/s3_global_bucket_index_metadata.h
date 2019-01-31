@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2016 SEAGATE LLC
+ * COPYRIGHT 2019 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -13,14 +13,14 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author:  Rajesh Nambiar   <rajesh.nambiar@seagate.com>
- * Original creation date: 20-July-2016
+ * Original author:  Prashanth Vanaparthy   <prashanth.vanaparthy@seagate.com>
+ * Original creation date: 30-Jan-2019
  */
 
 #pragma once
 
-#ifndef __S3_SERVER_S3_ACCOUNT_USER_METADATA_H__
-#define __S3_SERVER_S3_ACCOUNT_USER_METADATA_H__
+#ifndef __S3_SERVER_GLOBAL_BUCKET_INDEX_METADATA_H__
+#define __S3_SERVER_GLOBAL_BUCKET_INDEX_METADATA_H__
 
 #include <string>
 
@@ -35,7 +35,7 @@
 class S3ClovisKVSReaderFactory;
 class S3ClovisKVSWriterFactory;
 
-enum class S3AccountUserIdxMetadataState {
+enum class S3GlobalBucketIndexMetadataState {
   empty,  // Initial state, no lookup done
   // Ops on root index
   created,  // create root success
@@ -50,23 +50,18 @@ enum class S3AccountUserIdxMetadataState {
   failed_to_launch,  // pre launch operation failed
 };
 
-class S3AccountUserIdxMetadata {
-  // Holds mainly system-defined metadata
-  // Partially supported on need basis, some of these are placeholders
-  // ACCOUNTUSERINDEX  (Account User Index)
-  //    Key = "ACCOUNTUSER/<Account id>" | Value = "Account user Index
-  //    OID", account and user info
-  // "Account user Index OID" = OID of index containing bucket list
+class S3GlobalBucketIndexMetadata {
+  // Holds bucket, account and region information
+  //    Key = "bucket name" | Value = "Account information, region"
+
  private:
+  // below entries will holds bucket owner information
   std::string account_name;
   std::string account_id;
-  std::string user_name;
-  std::string user_id;
-
-  // The name for a AccountUserIndex
-  std::string account_user_index_name;
+  std::string bucket_name;
+  // region
+  std::string location_constraint;
   std::string request_id;
-  struct m0_uint128 bucket_list_index_oid;
 
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -79,16 +74,13 @@ class S3AccountUserIdxMetadata {
   std::function<void()> handler_on_success;
   std::function<void()> handler_on_failed;
 
-  S3AccountUserIdxMetadataState state;
+  S3GlobalBucketIndexMetadataState state;
 
   // `true` in case of json parsing failure
   bool json_parsing_error;
 
- private:
-  std::string get_account_index_id() { return "ACCOUNTUSER/" + account_id; }
-
  public:
-  S3AccountUserIdxMetadata(
+  S3GlobalBucketIndexMetadata(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_apii = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
@@ -98,27 +90,18 @@ class S3AccountUserIdxMetadata {
 
   std::string get_account_name();
   std::string get_account_id();
+  void set_location_constraint(const std::string &location) {
+    location_constraint = location;
+  }
 
-  std::string get_user_name();
-  std::string get_user_id();
-
-  struct m0_uint128 get_bucket_list_index_oid();
-  void set_bucket_list_index_oid(struct m0_uint128 id);
-
-  // Load attributes
-  void add_system_attribute(std::string key, std::string val);
-  void add_user_defined_attribute(std::string key, std::string val);
-
-  // Blocking operation.
-  // Will only create index once with a reserved OID
-  void create_root_account_user_index();
+  std::string get_location_constraint() { return location_constraint; }
 
   // Load Account user info(bucket list oid)
   virtual void load(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
   virtual void load_successful();
   virtual void load_failed();
-  virtual ~S3AccountUserIdxMetadata() {}
+  virtual ~S3GlobalBucketIndexMetadata() {}
 
   // Save Account user info(bucket list oid)
   virtual void save(std::function<void(void)> on_success,
@@ -132,7 +115,7 @@ class S3AccountUserIdxMetadata {
   void remove_successful();
   void remove_failed();
 
-  virtual S3AccountUserIdxMetadataState get_state() { return state; }
+  virtual S3GlobalBucketIndexMetadataState get_state() { return state; }
 
   // Streaming to/from json
   std::string to_json();
@@ -140,23 +123,23 @@ class S3AccountUserIdxMetadata {
   int from_json(std::string content);
 
   // For Google mocks
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, Constructor);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, Load);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadSuccessful);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadSuccessfulJsonError);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadFailed);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, LoadFailedMissing);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, Save);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveSuccessful);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveFailed);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, SaveFailedToLaunch);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, Remove);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveSuccessful);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveFailed);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, RemoveFailedToLaunch);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, ToJson);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, FromJson);
-  FRIEND_TEST(S3AccountUserIdxMetadataTest, FromJsonError);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Constructor);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Load);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadSuccessful);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadSuccessfulJsonError);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadFailed);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, LoadFailedMissing);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Save);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveSuccessful);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailed);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, SaveFailedToLaunch);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, Remove);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveSuccessful);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailed);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, RemoveFailedToLaunch);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, ToJson);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, FromJson);
+  FRIEND_TEST(S3GlobalBucketIndexMetadataTest, FromJsonError);
 };
 
 #endif

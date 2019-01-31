@@ -74,6 +74,8 @@ void S3DeleteObjectTaggingAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
   } else if (bucket_metadata->get_state() ==
              S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,

@@ -26,12 +26,13 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
+extern struct m0_uint128 bucket_metadata_list_index_oid;
+
 S3GetServiceAction::S3GetServiceAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
-    std::shared_ptr<S3AccountUserIdxMetadataFactory> user_idx_md_factory)
-    : S3Action(req), last_key(""), fetch_successful(false) {
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
+    : S3Action(req), last_key(""), key_prefix(""), fetch_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
@@ -48,76 +49,47 @@ S3GetServiceAction::S3GetServiceAction(
     s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
   }
 
-  if (user_idx_md_factory) {
-    acct_user_idx_metadata_factory = user_idx_md_factory;
-  } else {
-    acct_user_idx_metadata_factory =
-        std::make_shared<S3AccountUserIdxMetadataFactory>();
-  }
-
   setup_steps();
   bucket_list_index_oid = {0ULL, 0ULL};
 }
 
 void S3GetServiceAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetServiceAction::fetch_bucket_list_index_oid, this));
+  add_task(std::bind(&S3GetServiceAction::initialization, this));
   add_task(std::bind(&S3GetServiceAction::get_next_buckets, this));
   add_task(std::bind(&S3GetServiceAction::send_response_to_s3_client, this));
   // ...
 }
 
-void S3GetServiceAction::fetch_bucket_list_index_oid() {
+void S3GetServiceAction::initialization() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_list.set_owner_name(request->get_user_name());
   bucket_list.set_owner_id(request->get_user_id());
-  account_user_index_metadata =
-      acct_user_idx_metadata_factory->create_s3_account_user_idx_metadata(
-          request);
-  account_user_index_metadata->load(std::bind(&S3GetServiceAction::next, this),
-                                    std::bind(&S3GetServiceAction::next, this));
+  // to filter keys
+  key_prefix = get_search_bucket_prefix();
+  // fetch the keys having account id as a prefix
+  last_key = key_prefix;
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetServiceAction::get_next_buckets() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (account_user_index_metadata->get_state() ==
-      S3AccountUserIdxMetadataState::present) {
-    bucket_list_index_oid =
-        account_user_index_metadata->get_bucket_list_index_oid();
-  } else if (account_user_index_metadata->get_state() ==
-             S3AccountUserIdxMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Bucket metadata load operation failed due to pre launch failure\n");
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
-    return;
-  } else if (account_user_index_metadata->get_state() ==
-             S3AccountUserIdxMetadataState::failed) {
-    set_s3_error("InternalError");
-    send_response_to_s3_client();
-    return;
-  }
 
-  if (bucket_list_index_oid.u_hi == 0ULL &&
-      bucket_list_index_oid.u_lo == 0ULL) {
-    fetch_successful = true;  // With no entries.
-    send_response_to_s3_client();
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket list from KV store\n");
-    size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket list from KV store\n");
+  size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
 
-    clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
-        request, s3_clovis_api);
-    clovis_kv_reader->next_keyval(
-        bucket_list_index_oid, last_key, count,
-        std::bind(&S3GetServiceAction::get_next_buckets_successful, this),
-        std::bind(&S3GetServiceAction::get_next_buckets_failed, this));
-  }
+  clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
+      request, s3_clovis_api);
+  clovis_kv_reader->next_keyval(
+      bucket_metadata_list_index_oid, last_key, count,
+      std::bind(&S3GetServiceAction::get_next_buckets_successful, this),
+      std::bind(&S3GetServiceAction::get_next_buckets_failed, this));
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
@@ -134,7 +106,13 @@ void S3GetServiceAction::get_next_buckets_successful() {
   auto& kvps = clovis_kv_reader->get_key_values();
   size_t length = kvps.size();
   bool atleast_one_json_error = false;
+  bool retrived_all_keys = false;
   for (auto& kv : kvps) {
+    // process the only keys which is having requested accountid as prefix
+    if (kv.first.find(key_prefix) == std::string::npos) {
+      retrived_all_keys = true;
+      break;
+    }
     auto bucket = bucket_metadata_factory->create_bucket_metadata_obj(request);
     if (bucket->from_json(kv.second.second) != 0) {
       atleast_one_json_error = true;
@@ -158,7 +136,7 @@ void S3GetServiceAction::get_next_buckets_successful() {
   // We ask for more if there is any.
   size_t count_we_requested =
       S3Option::get_instance()->get_clovis_idx_fetch_count();
-  if (kvps.size() < count_we_requested) {
+  if ((kvps.size() < count_we_requested) || retrived_all_keys) {
     // Go ahead and respond.
     fetch_successful = true;
     send_response_to_s3_client();

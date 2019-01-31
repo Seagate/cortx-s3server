@@ -23,10 +23,10 @@
 #ifndef __S3_SERVER_S3_FACTORY_H__
 #define __S3_SERVER_S3_FACTORY_H__
 
-#include "s3_account_user_index_metadata.h"
+#include "s3_global_bucket_index_metadata.h"
 #include "s3_async_buffer_opt.h"
 #include "s3_auth_client.h"
-#include "s3_bucket_metadata.h"
+#include "s3_bucket_metadata_v1.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_clovis_reader.h"
@@ -44,7 +44,7 @@ class S3BucketMetadataFactory {
       std::shared_ptr<S3RequestObject> req) {
     s3_log(S3_LOG_DEBUG, "",
            "S3BucketMetadataFactory::create_bucket_metadata_obj\n");
-    return std::make_shared<S3BucketMetadata>(req);
+    return std::make_shared<S3BucketMetadataV1>(req);
   }
 };
 
@@ -194,15 +194,15 @@ class S3AuthClientFactory {
   }
 };
 
-class S3AccountUserIdxMetadataFactory {
+class S3GlobalBucketIndexMetadataFactory {
  public:
-  virtual ~S3AccountUserIdxMetadataFactory() {}
-  virtual std::shared_ptr<S3AccountUserIdxMetadata>
-  create_s3_account_user_idx_metadata(std::shared_ptr<S3RequestObject> req) {
+  virtual ~S3GlobalBucketIndexMetadataFactory() {}
+  virtual std::shared_ptr<S3GlobalBucketIndexMetadata>
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req) {
     s3_log(S3_LOG_DEBUG, "",
-           "S3AccountUserIdxMetadataFactory::create_s3_account_user_idx_"
+           "S3GlobalBucketIndexMetadataFactory::create_s3_root_bucket_index_"
            "metadata\n");
-    return std::make_shared<S3AccountUserIdxMetadata>(req);
+    return std::make_shared<S3GlobalBucketIndexMetadata>(req);
   }
 };
 

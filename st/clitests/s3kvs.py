@@ -20,6 +20,12 @@ def _find_keyval_json(record):
             return json_keyval_string
     return ""
 
+# Extract account id
+def _extract_account_id(json_keyval):
+    keyval = json.loads(json_keyval)
+    account_id = keyval['account_id']
+    return account_id
+
 # Extract object id for bucket/object
 def _extract_oid(json_keyval, bucket=True):
     keyval = json.loads(json_keyval)
@@ -37,27 +43,27 @@ def _extract_oid(json_keyval, bucket=True):
     return oid_val
 
 # Helper to fetch System Test user record from kvs
-def _fetch_test_user_info():
-    result = S3kvTest('kvtest can list user records').root_index_records().execute_test(ignore_err=True)
+def _fetch_test_bucket_account_info(bucket_name):
+    result = S3kvTest('kvtest can list user records').root_bucket_account_index_records().execute_test(ignore_err=True)
     root_index_records = result.status.stdout.split('----------------------------------------------')
-    test_record_key =  "ACCOUNTUSER/12345"
-    test_user_record = _find_record(test_record_key, root_index_records)
-    return test_user_record
+    bucket_json_keyval_string = _find_record(bucket_name, root_index_records)
+    test_user_record_json = _find_keyval_json(bucket_json_keyval_string)
+    account_id = _extract_account_id(test_user_record_json)
+    assert account_id, "account id not found for bucket:%s" % bucket_name
+    return account_id
 
 # Fetch given bucket record for System Test user account
 def _fetch_bucket_info(bucket_name):
-    test_user_record = _fetch_test_user_info()
-    test_user_json_keyval = _find_keyval_json(test_user_record)
-    oid_decoded = _extract_oid(test_user_json_keyval, bucket=True)
-    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(oid_decoded, "", 5).execute_test(ignore_err=True)
-    test_user_bucket_list = result.status.stdout.split('----------------------------------------------')
-    bucket_record = _find_record(bucket_name, test_user_bucket_list)
+    root_bucket_metadata_oid = S3kvTest('Kvtest fetch bucket metadata index').root_bucket_metadata_index()
+    result = S3kvTest('Kvtest list user bucket(s)').next_keyval(root_bucket_metadata_oid, bucket_name, 5).execute_test(ignore_err=True)
+    test_bucket_list = result.status.stdout.split('----------------------------------------------')
+    bucket_record = _find_record(bucket_name, test_bucket_list)
     return bucket_record
 
 # Fetch bucket record, assert on failure
 def _fail_fetch_bucket_info(bucket_name):
     bucket_record = _fetch_bucket_info(bucket_name)
-    assert bucket_record,"bucket:%s not found!" % bucket_name
+    assert bucket_record, "bucket:%s not found!" % bucket_name
     return bucket_record
 
 # Given bucket record, fetch key value pair, if exist
@@ -71,9 +77,11 @@ def _fetch_object_info(key_name, bucket_record):
 
 # Test for record in bucket
 def expect_object_in_bucket(bucket_name, key):
-    bucket_record = _fail_fetch_bucket_info(bucket_name)
+    test_account_id = _fetch_test_bucket_account_info(bucket_name)
+    test_bucket_name = test_account_id + "/" + bucket_name
+    bucket_record = _fail_fetch_bucket_info(test_bucket_name)
     file_record = _fetch_object_info(key, bucket_record)
-    assert file_record,"key:%s not found in bucket %s!" % key % bucket_name
+    assert file_record, "key:%s not found in bucket %s!" % key % bucket_name
     return file_record
 
 # Fetch acl from metadata for given bucket
@@ -130,7 +138,9 @@ def check_bucket_acl(bucket_name, acl="", default_acl_test=False):
     else:
         test_against_acl = acl
 
-    bucket_acl = _fetch_bucket_acl(bucket_name)
+    test_account_id = _fetch_test_bucket_account_info(bucket_name)
+    test_bucket_name = test_account_id + "/" + bucket_name
+    bucket_acl = _fetch_bucket_acl(test_bucket_name)
 
     if (bucket_acl == test_against_acl):
         print("Success")
@@ -151,34 +161,44 @@ def delete_file_info(bucket_name,key):
 
 # Delete bucket record
 def delete_bucket_info(bucket_name):
-    bucket_record = _fail_fetch_bucket_info(bucket_name)
+    # get account id for given bucket(A1/bucket_name) from global bucket account id index
+    test_account_id = _fetch_test_bucket_account_info(bucket_name)
+    test_bucket_name = test_account_id + "/" + bucket_name
+    bucket_record = _fail_fetch_bucket_info(test_bucket_name)
     bucket_json_keyval = _find_keyval_json(bucket_record)
     oid_decoded = _extract_oid(bucket_json_keyval, bucket=False)
     # Check if bucket is empty
     if _check_bucket_not_empty(bucket_record):
         result = S3kvTest('Kvtest delete bucket record').delete_index(oid_decoded).execute_test(ignore_err=True)
-
-    # delete bucket record from test user bucket list
-    test_user_record = _fetch_test_user_info()
-    test_user_json_keyval = _find_keyval_json(test_user_record)
-    oid_decoded = _extract_oid(test_user_json_keyval,bucket=True)
-    result = S3kvTest('Kvtest delete bucket').delete_keyval(oid_decoded,bucket_name).execute_test(ignore_err=True)
-    bucket_record = _fetch_bucket_info(bucket_name)
+    # delete given bucket(A1/bucket_name) from bucket metadata index
+    root_bucket_metadata_oid = S3kvTest('Kvtest fetch bucket metadata index').root_bucket_metadata_index()
+    result = S3kvTest('Kvtest delete bucket').delete_keyval(root_bucket_metadata_oid,test_bucket_name).execute_test(ignore_err=True)
+    # delete the bucket information from from global bucket account id index
+    root_bucket_account_index = S3kvTest('Kvtest fetch root bucket accountid index').root_bucket_account_index()
+    # verification
+    result = S3kvTest('Kvtest delete bucket').delete_keyval(root_bucket_account_index,bucket_name).execute_test(ignore_err=True)
+    result = S3kvTest('kvtest can list user records').root_bucket_account_index_records().execute_test(ignore_err=True)
+    root_index_records = result.status.stdout.split('----------------------------------------------')
+    bucket_json_keyval_string = _find_record(bucket_name, root_index_records)
+    assert not bucket_json_keyval_string,"bucket:%s entry not deleted!" % bucket_name
+    bucket_record = _fetch_bucket_info(test_bucket_name)
     assert not bucket_record,"bucket:%s entry not deleted!" % bucket_name
     return
 
 # Delete User record
-def delete_user_info(user_record="ACCOUNTUSER/12345"):
-    root_oid = S3kvTest('Kvtest fetch root index').root_index()
-    result = S3kvTest('Kvtest delete user record').delete_keyval(root_oid,user_record).execute_test(ignore_err=True)
-    return
+# def delete_user_info(user_record="12345"):
+#     root_oid = S3kvTest('Kvtest fetch root index').root_bucket_account_index()
+#     result = S3kvTest('Kvtest delete user record').delete_keyval(root_oid,user_record).execute_test(ignore_err=True)
+#     return
 
 # Clean all data
 def clean_all_data():
-    result = S3kvTest('Kvtest remove root index').delete_root_index().execute_test(ignore_err=True)
+    result = S3kvTest('Kvtest remove global bucket account list index').delete_root_bucket_account_index().execute_test(ignore_err=True)
+    result = S3kvTest('Kvtest remove global bucket metadata list index').delete_root_bucket_metadata_index().execute_test(ignore_err=True)
     return
 
 def create_s3root_index():
-    result = S3kvTest('Kvtest create root index').create_root_index().execute_test(ignore_err=True)
+    result = S3kvTest('Kvtest create global bucket account list index').create_root_bucket_account_index().execute_test(ignore_err=True)
+    result = S3kvTest('Kvtest create global bucket metadata list index').create_root_bucket_metadata_index().execute_test(ignore_err=True)
     return
 

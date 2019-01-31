@@ -19,7 +19,6 @@
 
 #include <memory>
 
-#include "mock_s3_account_user_idx_metadata.h"
 #include "mock_s3_bucket_metadata.h"
 #include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
@@ -60,13 +59,10 @@ class S3GetServiceActionTest : public testing::Test {
         ptr_mock_request, s3_clovis_api_mock);
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
-    user_idx_md_factory =
-        std::make_shared<MockS3AccountUserIdxMetadataFactory>(ptr_mock_request);
 
     // Object to be tested.
-    action_under_test.reset(
-        new S3GetServiceAction(ptr_mock_request, clovis_kvs_reader_factory,
-                               bucket_meta_factory, user_idx_md_factory));
+    action_under_test.reset(new S3GetServiceAction(
+        ptr_mock_request, clovis_kvs_reader_factory, bucket_meta_factory));
   }
 
   std::shared_ptr<MockS3Clovis> s3_clovis_api_mock;
@@ -75,7 +71,6 @@ class S3GetServiceActionTest : public testing::Test {
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
-  std::shared_ptr<MockS3AccountUserIdxMetadataFactory> user_idx_md_factory;
   struct m0_uint128 object_list_indx_oid;
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
@@ -91,36 +86,9 @@ TEST_F(S3GetServiceActionTest, ConstructorTest) {
   EXPECT_NE(0, action_under_test->number_of_tasks());
 }
 
-// Verify that fetch bucket list indeed calls get_bucket_list_index_oid if user
-// index metadata is present.
-TEST_F(S3GetServiceActionTest,
-       GetNextBucketCallsGetBucketListIndexIfMetadataPresent) {
-  EXPECT_CALL(*(user_idx_md_factory->mock_account_user_index_metadata),
-              get_state())
-      .Times(1)
-      .WillOnce(Return(S3AccountUserIdxMetadataState::present));
-  user_idx_md_factory->mock_account_user_index_metadata
-      ->set_bucket_list_index_oid(zero_oid_idx);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
-  action_under_test->account_user_index_metadata =
-      user_idx_md_factory->mock_account_user_index_metadata;
-  action_under_test->get_next_buckets();
-}
-
-// Verify that fetch bucket list does not call get_bucket_list_index_oid if user
-// index metadata is failed.
-TEST_F(S3GetServiceActionTest,
-       GetNextBucketDoesNotCallsGetBucketListIndexIfMetadataFailed) {
-  EXPECT_CALL(*(user_idx_md_factory->mock_account_user_index_metadata),
-              get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::failed));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(S3HttpFailed500, _))
-      .Times(AtLeast(1));
-  action_under_test->account_user_index_metadata =
-      user_idx_md_factory->mock_account_user_index_metadata;
+TEST_F(S3GetServiceActionTest, GetNextBucketTest) {
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test->get_next_buckets();
 }
 
@@ -144,8 +112,6 @@ TEST_F(S3GetServiceActionTest, GetNextBucketSuccessful) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), from_json(_))
       .WillRepeatedly(Return(0));
 
-  action_under_test->account_user_index_metadata =
-      user_idx_md_factory->mock_account_user_index_metadata;
   action_under_test->get_next_buckets_successful();
 
   EXPECT_EQ(3, action_under_test->bucket_list.get_bucket_count());
@@ -188,14 +154,6 @@ TEST_F(S3GetServiceActionTest, GetNextBucketFailedClovisReaderStatePresent) {
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   // Check state of the object.
   EXPECT_FALSE(action_under_test->fetch_successful);
-}
-
-// Verify fetch_bucket_list_idx_oid with mocked version of S3UserIdxMetadata.
-TEST_F(S3GetServiceActionTest, FetchBucketListIndexOidWithMockedIdxMetadata) {
-  EXPECT_CALL(*(user_idx_md_factory->mock_account_user_index_metadata),
-              load(_, _))
-      .Times(1);
-  action_under_test->fetch_bucket_list_index_oid();
 }
 
 TEST_F(S3GetServiceActionTest, SendResponseToClientServiceUnavailable) {

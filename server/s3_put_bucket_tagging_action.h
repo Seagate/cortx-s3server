@@ -52,6 +52,7 @@ class S3PutBucketTaggingAction : public S3Action {
   void save_tags_to_bucket_metadata();
   void save_tags_to_bucket_metadata_failed();
   void get_metadata();
+  void get_metadata_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
@@ -64,6 +65,9 @@ class S3PutBucketTaggingAction : public S3Action {
   FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateRequestMoreContent);
   FRIEND_TEST(S3PutBucketTaggingActionTest, SetTags);
   FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketMissing);
+  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailed);
+  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailedToLaunch);
+  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketAccessDenied);
   FRIEND_TEST(S3PutBucketTaggingActionTest,
               SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3PutBucketTaggingActionTest, SendResponseToClientMalformedXML);

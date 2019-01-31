@@ -167,7 +167,7 @@ TEST_F(S3GetMultipartPartActionTest, GetMultiPartMetadataMissingTest) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
 
-  action_under_test->get_multipart_metadata();
+  action_under_test->fetch_bucket_info_failed();
   EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
 }
 
@@ -181,8 +181,37 @@ TEST_F(S3GetMultipartPartActionTest, GetMultiPartMetadataFailedTest) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 
-  action_under_test->get_multipart_metadata();
+  action_under_test->fetch_bucket_info_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3GetMultipartPartActionTest, GetMultiPartMetadataFailedToLaunchTest) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+
+  action_under_test->fetch_bucket_info_failed();
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3GetMultipartPartActionTest, GetMultiPartMetadataAccessDeniedTest) {
+  action_under_test->bucket_metadata =
+      bucket_meta_factory->mock_bucket_metadata;
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(403, _)).Times(1);
+
+  action_under_test->fetch_bucket_info_failed();
+  EXPECT_STREQ("AccessDenied", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3GetMultipartPartActionTest,

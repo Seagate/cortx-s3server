@@ -24,7 +24,6 @@
 
 #include <memory>
 
-#include "s3_account_user_index_metadata.h"
 #include "s3_action_base.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_service_list_response.h"
@@ -34,16 +33,14 @@ class S3GetServiceAction : public S3Action {
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   m0_uint128 bucket_list_index_oid;
   std::string last_key;  // last key during each iteration
+  std::string key_prefix;  // holds account id
   S3ServiceListResponse bucket_list;
-  std::shared_ptr<S3AccountUserIdxMetadata> account_user_index_metadata;
-  std::shared_ptr<S3AccountUserIdxMetadataFactory>
-      acct_user_idx_metadata_factory;
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   bool fetch_successful;
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
-  // Helpers
-  std::string get_account_index_id() {
-    return "ACCOUNTUSER/" + request->get_account_id();
+
+  std::string get_search_bucket_prefix() {
+    return request->get_account_id() + "/";
   }
 
  public:
@@ -52,11 +49,9 @@ class S3GetServiceAction : public S3Action {
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
           nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory =
-          nullptr,
-      std::shared_ptr<S3AccountUserIdxMetadataFactory> user_idx_md_factory =
           nullptr);
   void setup_steps();
-  void fetch_bucket_list_index_oid();
+  void initialization();
   void get_next_buckets();
   void get_next_buckets_successful();
   void get_next_buckets_failed();

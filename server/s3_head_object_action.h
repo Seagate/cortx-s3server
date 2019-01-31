@@ -46,6 +46,7 @@ class S3HeadObjectAction : public S3Action {
   void setup_steps();
 
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void fetch_object_info();
   void fetch_object_info_failed();
   void send_response_to_s3_client();
@@ -54,6 +55,10 @@ class S3HeadObjectAction : public S3Action {
   FRIEND_TEST(S3HeadObjectActionTest, FetchBucketInfo);
   FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
   FRIEND_TEST(S3HeadObjectActionTest, FetchObjectInfoWhenBucketFetchFailed);
+  FRIEND_TEST(S3HeadObjectActionTest,
+              FetchObjectInfoWhenBucketFetchFailedToLaunch);
+  FRIEND_TEST(S3HeadObjectActionTest,
+              FetchObjectInfoWhenBucketFetchAccessDenied);
   FRIEND_TEST(S3HeadObjectActionTest,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3HeadObjectActionTest,

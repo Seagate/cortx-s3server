@@ -131,27 +131,6 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.internalServerError();
         }
 
-        //Notify S3 Server of new account creation
-        LOGGER.debug("Sending create account [" + account.getName() +
-                                   "] notification to S3 Server");
-        ServerResponse resp = s3.notifyNewAccount(account.getId(),
-                rootAccessKey.getId(), rootAccessKey.getSecretKey());
-        if(!resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
-            LOGGER.error("Account [" + account.getName() + "] create "
-                + "notification failed, Starting cleaunup.");
-            //Oops.. s3 notification failed, delete just now created account
-            internalRequest = true;
-            requestor.setId(root.getId());
-            ServerResponse response = delete();
-
-            if (!response.getResponseStatus().equals(HttpResponseStatus.OK)) {
-                LOGGER.error("Account [" + account.getName() + "] delete "
-                        + "failed statusCode:" + response.getResponseStatus());
-                return response;
-            }
-            return resp;
-        }
-
         return accountResponseGenerator.generateCreateResponse(account, root,
                 rootAccessKey);
     }

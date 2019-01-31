@@ -66,6 +66,8 @@ class S3cmdTest(S3PyCliTest):
             "--host=" + host + " --host-bucket=" + host + " ls ")
         else:
             self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " ls ")
+
+        self.command = self.command + self.credentials
         return self
 
     def info_bucket(self, bucket_name, host=None):
@@ -76,6 +78,8 @@ class S3cmdTest(S3PyCliTest):
              " info " + " s3://" + self.bucket_name)
         else:
             self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " info " + " s3://" + self.bucket_name)
+
+        self.command = self.command + self.credentials
         return self
 
     def info_object(self, bucket_name, filename, host=None):
@@ -109,6 +113,8 @@ class S3cmdTest(S3PyCliTest):
             " ls " + " s3://" + self.bucket_name)
         else:
             self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " ls " + " s3://" + self.bucket_name)
+
+        self.command = self.command + self.credentials
         return self
 
     def list_all_objects(self):
@@ -138,6 +144,7 @@ class S3cmdTest(S3PyCliTest):
         else:
             self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " put " + quote(self.filename) + " " +
 quote(s3target))
+        self.command = self.command + self.credentials
         return self
 
     def upload_copy_test(self, bucket_name, srcfile, destfile):

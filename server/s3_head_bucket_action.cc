@@ -67,6 +67,8 @@ void S3HeadBucketAction::read_metadata_failed() {
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_ERROR, request_id, "Bucket metadata not found\n");
     set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
   } else {
     s3_log(S3_LOG_ERROR, request_id, "Bucket metadata failed to load\n");
     set_s3_error("InternalError");

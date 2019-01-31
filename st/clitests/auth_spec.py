@@ -685,31 +685,6 @@ def delete_account_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("attempted to delete a resource that has attached subordinate entities")
 
-    test_msg = "Cannot create account s3test1 on clovis_idx_op fail"
-    S3fiTest('s3cmd enable FI clovis idx op fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "1", "99").\
-        execute_test().command_is_successful()
-    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': \
-        S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
-    account_response_pattern = "Account wasn't created"
-    result = AuthTest(test_msg).create_account(**account_args).execute_test()
-    result.command_should_match_pattern(account_response_pattern)
-    S3fiTest('s3cmd disable Fault injection').\
-        disable_fi("clovis_idx_op_fail").\
-        execute_test().command_is_successful()
-
-    test_msg = "Cannot create account s3test1 on create_index of clovis_entity_create fail"
-    S3fiTest('s3cmd enable FI clovis idx op fail').\
-        enable_fi("enable", "always", "clovis_entity_create_fail").\
-        execute_test().command_is_successful()
-    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
-    account_response_pattern = "Account wasn't created"
-    result = AuthTest(test_msg).create_account(**account_args).execute_test()
-    result.command_should_match_pattern(account_response_pattern)
-    S3fiTest('s3cmd disable Fault injection').\
-        disable_fi("clovis_entity_create_fail").\
-        execute_test().command_is_successful()
-
     # Test: create a account s3test1 and try to delete account s3test1 using access
     # key and secret key of account s3test. Account delete operation should fail.
     test_msg = "Create account s3test1"
@@ -783,19 +758,8 @@ def delete_account_tests():
 
     # Test: Account cannot be deleted on clovis_idx_op fail
     test_msg = "Cannot delete account s3test1 on clovis_idx_op fail"
-    S3fiTest('s3cmd enable FI clovis idx op fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "1", "99").\
-        execute_test().command_is_successful()
-    account_args = {'AccountName': 's3test1'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test()\
-            .command_response_should_have("Account cannot be deleted")
-    S3fiTest('s3cmd disable Fault injection').\
-        disable_fi("clovis_idx_op_fail").\
-        execute_test().command_is_successful()
-
-    test_msg = "Cannot delete account s3test1 on delete account index of clovis_idx_op fail"
-    S3fiTest('s3cmd enable FI clovis idx op fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "2", "99").\
+    S3fiTest('s3cmd can enable FI clovis_idx_op_fail').\
+        enable_fi("enable", "always", "clovis_idx_op_fail").\
         execute_test().command_is_successful()
     account_args = {'AccountName': 's3test1'}
     AuthTest(test_msg).delete_account(**account_args).execute_test()\

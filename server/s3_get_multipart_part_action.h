@@ -80,6 +80,7 @@ class S3GetMultipartPartAction : public S3Action {
   void get_key_object_successful();
   void get_key_object_failed();
   void fetch_bucket_info();
+  void fetch_bucket_info_failed();
   void get_multipart_metadata();
   void send_response_to_s3_client();
 
@@ -92,6 +93,10 @@ class S3GetMultipartPartAction : public S3Action {
               GetMultiPartMetadataPresentOIDNullTest);
   FRIEND_TEST(S3GetMultipartPartActionTest, GetMultiPartMetadataMissingTest);
   FRIEND_TEST(S3GetMultipartPartActionTest, GetMultiPartMetadataFailedTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetMultiPartMetadataFailedToLaunchTest);
+  FRIEND_TEST(S3GetMultipartPartActionTest,
+              GetMultiPartMetadataAccessDeniedTest);
   FRIEND_TEST(S3GetMultipartPartActionTest,
               GetkeyObjectMetadataPresentUploadMisMatchTest);
   FRIEND_TEST(S3GetMultipartPartActionTest,

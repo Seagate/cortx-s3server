@@ -66,17 +66,15 @@ for i, type in enumerate(config_types):
     S3cmdTest('s3cmd can list buckets').list_buckets().execute_test().\
         command_is_successful().command_response_should_have('s3://seagatebucket')
 
-    # ************ ACCOUNT USER IDX METADATA CORRUPTION TEST ***********
-    # If Account user idx metadata is corrupted then bucket listing shall
-    # return an error
-    S3fiTest('s3cmd enable FI account_user_idx_metadata_corrupted').\
-        enable_fi("enable", "always", "account_user_idx_metadata_corrupted").\
+    # ************ BUCKET METADATA CORRUPTION TEST ***********
+    # Bucket listing shouldn't list corrupted bucket
+    S3fiTest('s3cmd enable FI bucket_metadata_corrupted').\
+        enable_fi("enable", "always", "bucket_metadata_corrupted").\
         execute_test().command_is_successful()
-    S3cmdTest('s3cmd can not list bucket').list_buckets().\
-        execute_test(negative_case=True).command_should_fail().\
-        command_error_should_have("InternalError")
-    S3fiTest('s3cmd can disable FI account_user_idx_metadata_corrupted').\
-        disable_fi("account_user_idx_metadata_corrupted").\
+    S3cmdTest('s3cmd can not list corrupted bucket metadata').list_buckets().\
+        execute_test().command_is_successful().command_response_should_have('')
+    S3fiTest('s3cmd can disable FI bucket_metadata_corrupted').\
+        disable_fi("bucket_metadata_corrupted").\
         execute_test().command_is_successful()
 
     # ************ BUCKET METADATA CORRUPTION TEST ***********
@@ -698,7 +696,7 @@ for i, type in enumerate(config_types):
 
     # list bucket negative test
     S3fiTest('s3cmd enable FI clovis idx op fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "1", "99").\
+        enable_fi("enable", "always", "clovis_idx_op_fail").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not list buckets').list_buckets().\
         execute_test(negative_case=True).command_should_fail().\

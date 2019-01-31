@@ -48,23 +48,14 @@ class S3AccountDeleteMetadataActionTest : public testing::Test {
     ptr_mock_request->set_account_id("account_test");
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
-    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
-        ptr_mock_request, ptr_mock_s3_clovis_api);
-
-    s3_account_user_idx_metadata_factory =
-        std::make_shared<MockS3AccountUserIdxMetadataFactory>(ptr_mock_request);
 
     action_under_test.reset(new S3AccountDeleteMetadataAction(
-        ptr_mock_request, ptr_mock_s3_clovis_api, clovis_kvs_writer_factory,
-        clovis_kvs_reader_factory, s3_account_user_idx_metadata_factory));
+        ptr_mock_request, ptr_mock_s3_clovis_api, clovis_kvs_reader_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
-  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
-  std::shared_ptr<MockS3AccountUserIdxMetadataFactory>
-      s3_account_user_idx_metadata_factory;
   std::shared_ptr<S3AccountDeleteMetadataAction> action_under_test;
 
   S3CallBack S3AccountDeleteMetadataAction_callbackobj;
@@ -76,8 +67,9 @@ class S3AccountDeleteMetadataActionTest : public testing::Test {
 };
 
 TEST_F(S3AccountDeleteMetadataActionTest, Constructor) {
-  struct m0_uint128 zero_oid = {0ULL, 0ULL};
-  EXPECT_OID_EQ(zero_oid, action_under_test->bucket_list_index_oid);
+  EXPECT_NE(0, action_under_test->number_of_tasks());
+  EXPECT_STREQ("", action_under_test->account_id_from_uri.c_str());
+  EXPECT_STREQ("", action_under_test->bucket_account_id_key_prefix.c_str());
 }
 
 TEST_F(S3AccountDeleteMetadataActionTest, ValidateRequestSuceess) {
@@ -110,91 +102,10 @@ TEST_F(S3AccountDeleteMetadataActionTest, ValidateRequestFailed) {
                action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3AccountDeleteMetadataActionTest, FetchBucketListIndexOid) {
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      load(_, _)).Times(1);
-
-  action_under_test->fetch_bucket_list_index_oid();
-  EXPECT_TRUE(action_under_test->account_user_index_metadata != NULL);
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest,
-       ValidateFetchedBucketListIndexOidMissing) {
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(2)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::missing));
-  EXPECT_CALL(*ptr_mock_request, send_response(204, _)).Times(AtLeast(1));
-
-  action_under_test->validate_fetched_bucket_list_index_oid();
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest,
-       ValidateFetchedBucketListIndexOidPresent) {
-  struct m0_uint128 oid = {0x1ffff, 0x1ffff};
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::present));
-
-  // set the OID
-  s3_account_user_idx_metadata_factory->mock_account_user_index_metadata
-      ->set_bucket_list_index_oid(oid);
-
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
-  action_under_test->validate_fetched_bucket_list_index_oid();
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest,
-       ValidateFetchedBucketListIndexOidPresentZeroOid) {
-  struct m0_uint128 zero_oid = {0ULL, 0ULL};
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-
-  EXPECT_CALL(*ptr_mock_request, send_response(204, _)).Times(AtLeast(1));
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::present));
-
-  // set the OID
-  s3_account_user_idx_metadata_factory->mock_account_user_index_metadata
-      ->set_bucket_list_index_oid(zero_oid);
-  action_under_test->validate_fetched_bucket_list_index_oid();
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest,
-       ValidateFetchedBucketListIndexOidFailed) {
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(2)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::failed));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-  action_under_test->validate_fetched_bucket_list_index_oid();
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
 TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadata) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
-
+  action_under_test->account_id_from_uri = "account_test123";
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _)).Times(1);
 
@@ -202,11 +113,46 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadata) {
 }
 
 TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataExist) {
+  std::map<std::string, std::pair<int, std::string>> mymap;
+  action_under_test->bucket_account_id_key_prefix = "12345/";
+  mymap.insert(std::make_pair(
+      "12345/seagate_bucket",
+      std::make_pair(
+          0,
+          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file1\"}")));
+  action_under_test->clovis_kv_reader =
+      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values())
+      .Times(1)
+      .WillOnce(ReturnRef(mymap));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(409, _)).Times(AtLeast(1));
   action_under_test->fetch_first_bucket_metadata_successful();
   EXPECT_STREQ("AccountNotEmpty",
                action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataNotExist) {
+  std::map<std::string, std::pair<int, std::string>> mymap;
+  action_under_test->bucket_account_id_key_prefix = "4567/";
+  mymap.insert(std::make_pair(
+      "12345/seagate_bucket",
+      std::make_pair(
+          0,
+          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file1\"}")));
+  action_under_test->clovis_kv_reader =
+      clovis_kvs_reader_factory->mock_clovis_kvs_reader;
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values())
+      .Times(1)
+      .WillOnce(ReturnRef(mymap));
+
+  // Mock out the next calls on action.
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
+  action_under_test->fetch_first_bucket_metadata_successful();
 }
 
 TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataMissing) {
@@ -237,119 +183,6 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataFailed) {
       std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
   action_under_test->fetch_first_bucket_metadata_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest, RemoveAccountIndexInfo) {
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      remove(_, _)).Times(1);
-  action_under_test->remove_account_index_info();
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest,
-       RemoveAccountIndexInfoSuccessWithDeleteState) {
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::deleted));
-
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
-
-  action_under_test->remove_account_index_info_successful();
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest,
-       RemoveAccountIndexInfoSuccessWithFailedState) {
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::failed));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
-
-  action_under_test->remove_account_index_info_successful();
-  EXPECT_EQ(0, call_count_one);
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest, RemoveAccountIndexInfoFailed) {
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::failed));
-  action_under_test->remove_account_index_info_failed();
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest,
-       RemoveAccountIndexInfoFailedToLaunch) {
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(AtLeast(1));
-  action_under_test->account_user_index_metadata =
-      s3_account_user_idx_metadata_factory->mock_account_user_index_metadata;
-  EXPECT_CALL(
-      *(s3_account_user_idx_metadata_factory->mock_account_user_index_metadata),
-      get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3AccountUserIdxMetadataState::failed_to_launch));
-  action_under_test->remove_account_index_info_failed();
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest, RemoveBucketListIndex) {
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_index(_, _, _)).Times(1);
-  action_under_test->remove_bucket_list_index();
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest, RemoveBucketListIndexFailed) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
-  action_under_test->remove_bucket_list_index_failed();
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AccountDeleteMetadataActionTest, RemoveBucketListIndexFailedToLaunch) {
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed_to_launch));
-  action_under_test->remove_bucket_list_index_failed();
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3AccountDeleteMetadataActionTest, SendResponseToInternalError) {

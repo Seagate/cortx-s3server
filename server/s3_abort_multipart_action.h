@@ -70,6 +70,7 @@ class S3AbortMultipartAction : public S3Action {
   void setup_steps();
 
   void fetch_bucket_info();
+  void fetch_bucket_metadata_failed();
   void get_multipart_metadata();
   void delete_multipart_failed();
   void delete_object();
@@ -86,6 +87,9 @@ class S3AbortMultipartAction : public S3Action {
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest3);
+  FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest4);
+  FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest5);
+  FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest6);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest3);
