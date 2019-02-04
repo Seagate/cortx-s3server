@@ -289,6 +289,8 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction) {
       .WillOnce(Return(""));
   EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-copy-source")))
       .WillOnce(Return(""));
+  EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-tagging")))
+      .WillOnce(Return(""));
 
   handler_under_test->create_action();
 

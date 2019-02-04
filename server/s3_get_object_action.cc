@@ -136,6 +136,12 @@ void S3GetObjectAction::validate_object_info() {
         (content_length == 0) ? content_length : (content_length - 1);
     s3_log(S3_LOG_DEBUG, request_id, "Found object of size %zu\n",
            content_length);
+    if (object_metadata->check_object_tags_exists()) {
+      request->set_out_header_value(
+          "x-amz-tagging-count",
+          std::to_string(object_metadata->object_tags_count()));
+    }
+
     if (content_length == 0) {
       request->set_out_header_value("Last-Modified",
                                     object_metadata->get_last_modified_gmt());
@@ -146,6 +152,7 @@ void S3GetObjectAction::validate_object_info() {
       for (auto it : object_metadata->get_user_attributes()) {
         request->set_out_header_value(it.first, it.second);
       }
+
       request->send_reply_start(S3HttpSuccess200);
       send_response_to_s3_client();
     } else {

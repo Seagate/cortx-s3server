@@ -758,3 +758,5 @@ std::string S3ObjectMetadata::get_tags_as_xml() {
 bool S3ObjectMetadata::check_object_tags_exists() {
   return !object_tags.empty();
 }
+
+int S3ObjectMetadata::object_tags_count() { return object_tags.size(); }

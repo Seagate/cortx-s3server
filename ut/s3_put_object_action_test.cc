@@ -43,8 +43,6 @@ using ::testing::DefaultValue;
 #define CREATE_OBJECT_METADATA                                             \
   do {                                                                     \
     CREATE_BUCKET_METADATA;                                                \
-    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state()) \
-        .WillOnce(Return(S3BucketMetadataState::present));                 \
     bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(  \
         object_list_indx_oid);                                             \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))  \
@@ -90,9 +88,14 @@ class S3PutObjectActionTest : public testing::Test {
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         ptr_mock_request, oid, ptr_mock_s3_clovis_api);
 
+    bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
+        MockObjectTagsStr, MockRequestId);
+
+    EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PutObjectAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
-        object_meta_factory, clovis_writer_factory));
+        object_meta_factory, clovis_writer_factory,
+        bucket_tag_body_factory_mock));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -100,6 +103,7 @@ class S3PutObjectActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3PutTagBodyFactory> bucket_tag_body_factory_mock;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   std::shared_ptr<S3PutObjectAction> action_under_test;
@@ -108,7 +112,10 @@ class S3PutObjectActionTest : public testing::Test {
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
   int layout_id;
+  std::map<std::string, std::string> request_header_map;
 
+  std::string MockObjectTagsStr;
+  std::string MockRequestId;
   int call_count_one;
 
  public:
@@ -126,6 +133,116 @@ TEST_F(S3PutObjectActionTest, FetchBucketInfo) {
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
 }
 
+TEST_F(S3PutObjectActionTest, ValidateRequestTags) {
+  call_count_one = 0;
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "key1=value1&key2=value2";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_))
+      .WillOnce(Return("key1=value1&key2=value2"));
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutObjectActionTest::func_callback_one, this));
+
+  action_under_test->validate_x_amz_tagging_if_present();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutObjectActionTest, VaidateEmptyTags) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase1) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "key1=";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return("key1="));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase2) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "key1=value1&=value2";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_))
+      .WillOnce(Return("key1=value1&=value2"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+// Count of tags exceding limit.
+
+TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase3) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] =
+      "key1=value1&key2=value2&key3=value3&key4=value4&key5=value5&key6=value6&"
+      "key7=value7&key8=value8&key9=value9&key10=value10&key11=value11";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return(
+      "key1=value1&key2=value2&key3=value3&key4=value4&key5=value5&key6=value6&"
+      "key7=value7&key8=value8&key9=value9&key10=value10&key11=value11"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+// Case 1 : URL encoded
+TEST_F(S3PutObjectActionTest, VaidateSpecialCharTagsCase1) {
+  call_count_one = 0;
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "ke%26y=valu%26e&ke%25y=valu%25e";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_))
+      .WillOnce(Return("ke%26y=valu%26e&ke%25y=valu%25e"));
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutObjectActionTest::func_callback_one, this));
+
+  action_under_test->validate_x_amz_tagging_if_present();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+// Case 2 : Non URL encoded
+TEST_F(S3PutObjectActionTest, VaidateSpecialCharTagsCase2) {
+  call_count_one = 0;
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "ke+y=valu+e&ke-y=valu-e";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_))
+      .WillOnce(Return("ke+y=valu+e&ke-y=valu-e"));
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutObjectActionTest::func_callback_one, this));
+
+  action_under_test->validate_x_amz_tagging_if_present();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
 TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
   CREATE_BUCKET_METADATA;
 
@@ -136,7 +253,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
 
-  action_under_test->fetch_object_info();
+  action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
@@ -178,7 +295,7 @@ TEST_F(S3PutObjectActionTest,
   action_under_test->add_task(
       std::bind(&S3PutObjectActionTest::func_callback_one, this));
 
-  action_under_test->fetch_object_info();
+  action_under_test->fetch_bucket_info_successful();
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_TRUE(action_under_test->bucket_metadata != nullptr);

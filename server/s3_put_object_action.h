@@ -32,6 +32,7 @@
 #include "s3_factory.h"
 #include "s3_object_metadata.h"
 #include "s3_timer.h"
+#include "evhtp_wrapper.h"
 
 class S3PutObjectAction : public S3Action {
   struct m0_uint128 old_object_oid;
@@ -54,7 +55,10 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
+  std::shared_ptr<S3PutTagBody> put_object_tag_body;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::map<std::string, std::string> new_object_tags_map;
 
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
@@ -68,13 +72,19 @@ class S3PutObjectAction : public S3Action {
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr);
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr);
 
   void setup_steps();
   // void start();
 
   void fetch_bucket_info();
+  void validate_x_amz_tagging_if_present();
+  void parse_x_amz_tagging_header(std::string content);
+  void validate_tags();
   void fetch_object_info();
+  void fetch_bucket_info_successful();
+  void fetch_bucket_info_failed();
   void fetch_object_info_status();
   void create_object();
   void create_object_failed();
@@ -96,6 +106,13 @@ class S3PutObjectAction : public S3Action {
   void rollback_create_failed();
 
   FRIEND_TEST(S3PutObjectActionTest, ConstructorTest);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateRequestTags);
+  FRIEND_TEST(S3PutObjectActionTest, VaidateEmptyTags);
+  FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase1);
+  FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase2);
+  FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase3);
+  FRIEND_TEST(S3PutObjectActionTest, VaidateSpecialCharTagsCase1);
+  FRIEND_TEST(S3PutObjectActionTest, VaidateSpecialCharTagsCase2);
   FRIEND_TEST(S3PutObjectActionTest, FetchBucketInfo);
   FRIEND_TEST(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent);
   FRIEND_TEST(S3PutObjectActionTest,

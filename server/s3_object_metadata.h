@@ -239,6 +239,7 @@ class S3ObjectMetadata {
   virtual void delete_object_tags();
   virtual std::string get_tags_as_xml();
   virtual bool check_object_tags_exists();
+  virtual int object_tags_count();
 
   // Virtual Destructor
   virtual ~S3ObjectMetadata(){};

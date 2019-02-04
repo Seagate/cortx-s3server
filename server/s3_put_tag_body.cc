@@ -28,7 +28,9 @@ S3PutTagBody::S3PutTagBody(std::string &xml, std::string &request)
     : xml_content(xml), request_id(request), is_valid(false) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  parse_and_validate();
+  if (!xml.empty()) {
+    parse_and_validate();
+  }
 }
 
 bool S3PutTagBody::isOK() { return is_valid; }
