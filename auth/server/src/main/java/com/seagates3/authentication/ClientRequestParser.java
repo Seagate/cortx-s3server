@@ -86,7 +86,7 @@ public class ClientRequestParser {
         return clientrequesttoken;
     }
 
-    public static AWSRequestParser getAWSRequestParser(
+    private static AWSRequestParser getAWSRequestParser(
             ClientRequestToken.AWSSigningVersion awsSigningVersion) {
 
         String signVersion = awsSigningVersion.toString();

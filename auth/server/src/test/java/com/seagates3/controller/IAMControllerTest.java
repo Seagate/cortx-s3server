@@ -46,6 +46,8 @@ import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
 import org.powermock.core.classloader.annotations.MockPolicy;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.api.mockito.PowerMockito;
+
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.internal.WhiteboxImpl;
 
@@ -55,7 +57,7 @@ import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.*;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -98,7 +100,7 @@ public class IAMControllerTest {
         iamApiAuthorizer = mock(IAMApiAuthorizer.class);
 
         controller = new IAMController();
-        requestBody = new TreeMap<>();
+        requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
     @Test
@@ -290,17 +292,17 @@ public class IAMControllerTest {
     }
 
     @Test
-    public void serveTest_ValidRequest() throws Exception {
+    public void serveTest_ValidV2Request() throws Exception {
+
         requestBody.put("Action", "AuthenticateUser");
-        requestBody.put("Host", "iam.seagate.com:9086");
+        requestBody.put("host", "s3.seagate.com");
         requestBody.put("authorization","AWS RqkWRyVIQrq5Aq9eMUt1HQ:"
                 + "frJIUN8DYpKDtOLCwo//yllqDzg=");
-        ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
-        AWSRequestParser awsrequestparser = mock(AWSRequestParser.class);
-        SignatureValidator signatureValidator = mock(SignatureValidator.class);
 
+        ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
+        SignatureValidator signatureValidator = mock(SignatureValidator.class);
         Account account = mock(Account.class);
-        when(requestor.getName()).thenReturn("tylerdurden");
+        when(requestor.getName()).thenReturn("tyle/rdurden");
         when(requestor.getAccount()).thenReturn(account);
         when(account.getId()).thenReturn("NS5144");
         when(account.getName()).thenReturn("jack");
@@ -309,21 +311,26 @@ public class IAMControllerTest {
                 = mock(AuthenticationResponseGenerator.class);
         when(ClientRequestParser.parse(httpRequest, requestBody))
                 .thenCallRealMethod();
-        when((ClientRequestParser.getAWSRequestParser(any(ClientRequestToken.
-                AWSSigningVersion.class)))).thenReturn(awsrequestparser);
-        when(awsrequestparser.parse(requestBody))
-                .thenReturn(clientRequestToken);
-        when(RequestorService.getRequestor(clientRequestToken))
+        PowerMockito.when(ClientRequestParser.class, "getAWSRequestParser",
+                 any(ClientRequestToken.AWSSigningVersion.class)).thenCallRealMethod();
+        PowerMockito.when(ClientRequestParser.class, "toRequestParserClass",
+                 anyString()).thenCallRealMethod();
+        String[] endpoints = {"s3-us.seagate.com", "s3-europe.seagate.com",
+                "s3-asia.seagate.com"};
+        PowerMockito.mockStatic(AuthServerConfig.class);
+        PowerMockito.doReturn(endpoints).when(AuthServerConfig.class, "getEndpoints");
+        when(RequestorService.getRequestor(any(ClientRequestToken.class)))
                 .thenReturn(requestor);
         whenNew(SignatureValidator.class).withNoArguments()
                 .thenReturn(signatureValidator);
-        when(signatureValidator.validate(clientRequestToken, requestor))
+        when(signatureValidator.validate(any(ClientRequestToken.class), eq(requestor)))
                 .thenReturn(serverResponse);
         when(serverResponse.getResponseStatus())
                 .thenReturn(HttpResponseStatus.OK);
         whenNew(AuthenticationResponseGenerator.class).withNoArguments()
                 .thenReturn(responseGenerator);
-        when(responseGenerator.generateAuthenticatedResponse(requestor, clientRequestToken))
+        when(responseGenerator.generateAuthenticatedResponse(eq(requestor),
+                any(ClientRequestToken.class)))
                 .thenReturn(serverResponse);
         when(serverResponse.getResponseBody())
                 .thenReturn("<AuthenticateUser>");
@@ -333,6 +340,58 @@ public class IAMControllerTest {
 
         assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
+
+    @Test
+    public void serveTest_ValidV4Request() throws Exception {
+        requestBody.put("Action", "AuthenticateUser");
+        requestBody.put("host", "s3.seagate.com");
+        requestBody.put("authorization","AWS4-HMAC-SHA256w Credential=AKIAJTYX36YCKQ"
+                +"SAJT7Q/20190223/US/s3/aws4_request,SignedHeaders=host;x-amz-content"
+                +"-sha256;x-amz-date,Signature=63c12bb559dafad96dad0ed9630d76986a6c21f"
+                +"7d0702a767da78ed0342dda28");
+
+        ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
+        SignatureValidator signatureValidator = mock(SignatureValidator.class);
+        Account account = mock(Account.class);
+        when(requestor.getName()).thenReturn("tyle/rdurden");
+        when(requestor.getAccount()).thenReturn(account);
+        when(account.getId()).thenReturn("NS5144");
+        when(account.getName()).thenReturn("jack");
+
+        AuthenticationResponseGenerator responseGenerator
+                = mock(AuthenticationResponseGenerator.class);
+        when(ClientRequestParser.parse(httpRequest, requestBody))
+                .thenCallRealMethod();
+        PowerMockito.when(ClientRequestParser.class, "getAWSRequestParser",
+                 any(ClientRequestToken.AWSSigningVersion.class)).thenCallRealMethod();
+        PowerMockito.when(ClientRequestParser.class, "toRequestParserClass",
+                 anyString()).thenCallRealMethod();
+        String[] endpoints = {"s3-us.seagate.com", "s3-europe.seagate.com",
+                "s3-asia.seagate.com"};
+        PowerMockito.mockStatic(AuthServerConfig.class);
+        PowerMockito.doReturn(endpoints).when(AuthServerConfig.class, "getEndpoints");
+        when(RequestorService.getRequestor(any(ClientRequestToken.class)))
+                .thenReturn(requestor);
+        whenNew(SignatureValidator.class).withNoArguments()
+                .thenReturn(signatureValidator);
+        when(signatureValidator.validate(any(ClientRequestToken.class), eq(requestor)))
+                .thenReturn(serverResponse);
+        when(serverResponse.getResponseStatus())
+                .thenReturn(HttpResponseStatus.OK);
+        whenNew(AuthenticationResponseGenerator.class).withNoArguments()
+                .thenReturn(responseGenerator);
+        when(responseGenerator.generateAuthenticatedResponse(eq(requestor),
+                any(ClientRequestToken.class)))
+                .thenReturn(serverResponse);
+        when(serverResponse.getResponseBody())
+                .thenReturn("<AuthenticateUser>");
+
+        IAMController controller = new IAMController();
+        ServerResponse response = controller.serve(httpRequest, requestBody);
+
+        assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    }
+
 
     @Test
     public void serveTest_InvalidParams() throws Exception {

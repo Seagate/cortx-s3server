@@ -27,7 +27,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  */
 public abstract class AbstractResponseGenerator {
 
-	public ServerResponse badRequest() {
+    public ServerResponse badRequest() {
         String errorMessage = "Bad Request. Check request headers and body.";
 
         return formatResponse(HttpResponseStatus.BAD_REQUEST,
