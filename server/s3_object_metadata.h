@@ -236,6 +236,7 @@ class S3ObjectMetadata {
   virtual int from_json(std::string content);
   virtual void setacl(std::string& input_acl_str);
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
+  virtual const std::map<std::string, std::string>& get_tags();
   virtual void delete_object_tags();
   virtual std::string get_tags_as_xml();
   virtual bool check_object_tags_exists();

@@ -17,6 +17,11 @@ class AwsTest(S3PyCliTest):
         super(AwsTest, self).__init__(description)
 
     def setup(self):
+        if hasattr(self, 'filename') and hasattr(self, 'filesize'):
+            file_to_create = os.path.join(self.working_dir, self.filename)
+            logit("Creating file [%s] with size [%d]" % (file_to_create, self.filesize))
+            with open(file_to_create, 'wb') as fout:
+                fout.write(os.urandom(self.filesize))
         super(AwsTest, self).setup()
 
     def run(self):
@@ -67,3 +72,65 @@ class AwsTest(S3PyCliTest):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + " delete-bucket " + "--bucket " + bucket_name)
         return self
+
+    def put_object_with_tagging(self, bucket_name,filename, filesize, tags=None):
+        self.filename = filename
+        self.filesize = filesize
+        self.bucket_name = bucket_name
+        self.tagset = tags
+        self.with_cli("aws s3api " + " put-object " + " --bucket " + bucket_name + " --key " + filename
+                      + " --tagging " + quote(self.tagset) )
+        return self
+
+    def put_object_tagging(self, bucket_name,filename, tags=None):
+        self.filename = filename
+        self.bucket_name = bucket_name
+        tagset = self.tagset(tags)
+        self.with_cli("aws s3api " + " put-object-tagging " + " --bucket " + bucket_name + " --key " + filename
+                      + " --tagging " + quote(tagset) )
+        return self
+
+    def list_object_tagging(self, bucket_name, object_name):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + "get-object-tagging " + " --bucket " + bucket_name + " --key " + object_name)
+        return self
+
+    def delete_object_tagging(self, bucket_name, object_name):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + "delete-object-tagging " + "--bucket " + bucket_name + " --key " + object_name)
+        return self
+
+    def delete_object(self, bucket_name, object_name):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + "delete-object " + "--bucket " + bucket_name + " --key " + object_name)
+        return self
+
+    def create_multipart_upload(self, bucket_name, filename, filesize, tags=None):
+        self.filename = filename
+        self.filesize = filesize
+        self.bucket_name = bucket_name
+        self.tagset = tags
+        self.with_cli("aws s3api " + " create-multipart-upload " + " --bucket " + bucket_name + " --key " + filename
+                      + " --tagging " + quote(self.tagset) )
+        return self
+
+    def upload_part(self, bucket_name, filename, filesize, key_name ,part_number, upload_id):
+        self.filename = filename
+        self.filesize = filesize
+        self.key_name = key_name
+        self.bucket_name = bucket_name
+        self.part_number=part_number
+        self.upload_id=upload_id
+        self.with_cli("aws s3api " + " upload-part  " + " --bucket " + bucket_name + " --key " + key_name
+                      + " --part-number " + part_number + " --body " + filename + " --upload-id " + upload_id)
+        return self
+
+    def complete_multipart_upload(self, bucket_name, key_name, parts, upload_id):
+        self.key_name = key_name
+        self.bucket_name = bucket_name
+        self.parts = parts
+        self.upload_id = upload_id
+        self.with_cli("aws s3api " + " complete-multipart-upload " + " --multipart-upload " + quote(parts) + " --bucket " + bucket_name + " --key " + key_name
+                      + " --upload-id " + upload_id )
+        return self
+

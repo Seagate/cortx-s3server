@@ -55,30 +55,40 @@ class S3PostMultipartObjectTest : public testing::Test {
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     // Owned and deleted by shared_ptr in S3PostMultipartObjectAction
-    bucket_meta_factory = new MockS3BucketMetadataFactory(ptr_mock_request);
-    object_mp_meta_factory = new MockS3ObjectMultipartMetadataFactory(
-        ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true, upload_id);
-    object_meta_factory = new MockS3ObjectMetadataFactory(
+    bucket_meta_factory =
+        std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
+    object_mp_meta_factory =
+        std::make_shared<MockS3ObjectMultipartMetadataFactory>(
+            ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
+            upload_id);
+    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
-    part_meta_factory =
-        new MockS3PartMetadataFactory(ptr_mock_request, oid, upload_id, 0);
-    clovis_writer_factory = new MockS3ClovisWriterFactory(
+    part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
+        ptr_mock_request, oid, upload_id, 0);
+    clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         ptr_mock_request, oid, ptr_mock_s3_clovis_api);
+    bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
+        MockObjectTagsStr, MockRequestId);
 
+    EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PostMultipartObjectAction(
         ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
         object_meta_factory, part_meta_factory, clovis_writer_factory,
-        ptr_mock_s3_clovis_api));
+        bucket_tag_body_factory_mock, ptr_mock_s3_clovis_api));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
-  MockS3BucketMetadataFactory *bucket_meta_factory;
-  MockS3ObjectMetadataFactory *object_meta_factory;
-  MockS3PartMetadataFactory *part_meta_factory;
-  MockS3ObjectMultipartMetadataFactory *object_mp_meta_factory;
-  MockS3ClovisWriterFactory *clovis_writer_factory;
+  std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
+  std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
+  std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
+  std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
+  std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3PutTagBodyFactory> bucket_tag_body_factory_mock;
   std::shared_ptr<S3PostMultipartObjectAction> action_under_test;
+  std::map<std::string, std::string> request_header_map;
+  std::string MockObjectTagsStr;
+  std::string MockRequestId;
   struct m0_uint128 mp_indx_oid;
   struct m0_uint128 object_list_indx_oid;
   struct m0_uint128 oid;
@@ -101,6 +111,34 @@ TEST_F(S3PostMultipartObjectTest, FetchBucketInfo) {
       .Times(AtLeast(1));
   action_under_test->fetch_bucket_info();
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
+}
+
+TEST_F(S3PostMultipartObjectTest, ValidateRequestTags) {
+  call_count_one = 0;
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "key1=value1&key2=value2";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_))
+      .WillOnce(Return("key1=value1&key2=value2"));
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+
+  action_under_test->validate_x_amz_tagging_if_present();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostMultipartObjectTest, VaidateEmptyTags) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return(""));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PostMultipartObjectTest, UploadInProgress) {

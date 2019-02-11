@@ -725,6 +725,10 @@ void S3ObjectMetadata::set_tags(
   object_tags = tags_as_map;
 }
 
+const std::map<std::string, std::string>& S3ObjectMetadata::get_tags() {
+  return object_tags;
+}
+
 void S3ObjectMetadata::delete_object_tags() { object_tags.clear(); }
 
 std::string S3ObjectMetadata::get_tags_as_xml() {

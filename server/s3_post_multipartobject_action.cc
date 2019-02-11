@@ -24,14 +24,17 @@
 #include "s3_log.h"
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_post_multipartobject_action.h"
+#include <evhttp.h>
 
 S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3RequestObject> req,
-    S3BucketMetadataFactory* bucket_meta_factory,
-    S3ObjectMultipartMetadataFactory* object_mp_meta_factory,
-    S3ObjectMetadataFactory* object_meta_factory,
-    S3PartMetadataFactory* part_meta_factory,
-    S3ClovisWriterFactory* clovis_s3_factory,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
+    std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
+    std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<ClovisAPI> clovis_api)
     : S3Action(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -70,33 +73,39 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
   if (bucket_meta_factory) {
-    bucket_metadata_factory.reset(bucket_meta_factory);
+    bucket_metadata_factory = bucket_meta_factory;
   } else {
-    bucket_metadata_factory.reset(new S3BucketMetadataFactory());
+    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory.reset(object_meta_factory);
+    object_metadata_factory = object_meta_factory;
   } else {
-    object_metadata_factory.reset(new S3ObjectMetadataFactory());
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (object_mp_meta_factory) {
-    object_mp_metadata_factory.reset(object_mp_meta_factory);
+    object_mp_metadata_factory = object_mp_meta_factory;
   } else {
-    object_mp_metadata_factory.reset(new S3ObjectMultipartMetadataFactory());
+    object_mp_metadata_factory =
+        std::make_shared<S3ObjectMultipartMetadataFactory>();
   }
 
   if (clovis_s3_factory) {
-    clovis_writer_factory.reset(clovis_s3_factory);
+    clovis_writer_factory = clovis_s3_factory;
   } else {
-    clovis_writer_factory.reset(new S3ClovisWriterFactory());
+    clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
   if (part_meta_factory) {
-    part_metadata_factory.reset(part_meta_factory);
+    part_metadata_factory = part_meta_factory;
   } else {
-    part_metadata_factory.reset(new S3PartMetadataFactory());
+    part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
+  }
+  if (put_tags_body_factory) {
+    put_object_tag_body_factory = put_tags_body_factory;
+  } else {
+    put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
 
   setup_steps();
@@ -104,7 +113,13 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
 
 void S3PostMultipartObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
+
   add_task(std::bind(&S3PostMultipartObjectAction::fetch_bucket_info, this));
+  if (!request->get_header_value("x-amz-tagging").empty()) {
+
+    add_task(std::bind(
+        &S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this));
+  }
   add_task(std::bind(&S3PostMultipartObjectAction::check_upload_is_inprogress,
                      this));
   add_task(std::bind(&S3PostMultipartObjectAction::fetch_object_info, this));
@@ -123,16 +138,28 @@ void S3PostMultipartObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
-
   bucket_metadata->load(
-      std::bind(&S3PostMultipartObjectAction::next, this),
+      std::bind(&S3PostMultipartObjectAction::fetch_bucket_info_successful,
+                this),
       std::bind(&S3PostMultipartObjectAction::fetch_bucket_info_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::fetch_bucket_info_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     set_s3_error("AccessDenied");
@@ -142,9 +169,61 @@ void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
            "Bucket metadata load operation failed due to pre launch failure\n");
     set_s3_error("ServiceUnavailable");
   } else {
+    s3_log(S3_LOG_ERROR, request_id, "Bucket metadata fetch failed\n");
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::validate_x_amz_tagging_if_present() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::string new_object_tags = request->get_header_value("x-amz-tagging");
+  s3_log(S3_LOG_DEBUG, request_id, "Received tags= %s\n",
+         new_object_tags.c_str());
+  if (!new_object_tags.empty()) {
+    parse_x_amz_tagging_header(new_object_tags);
+  } else {
+    set_s3_error("InvalidTagError");
+    send_response_to_s3_client();
+  }
+}
+
+void S3PostMultipartObjectAction::parse_x_amz_tagging_header(
+    std::string content) {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  struct evkeyvalq key_value;
+  memset(&key_value, 0, sizeof(key_value));
+  if (0 == evhttp_parse_query_str(content.c_str(), &key_value)) {
+    char* decoded_key = NULL;
+    for (struct evkeyval* header = key_value.tqh_first; header;
+         header = header->next.tqe_next) {
+
+      decoded_key = evhttp_decode_uri(header->key);
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Successfully parsed the Key Values=%s %s", decoded_key,
+             header->value);
+      new_object_tags_map[decoded_key] = header->value;
+    }
+    validate_tags();
+  } else {
+    set_s3_error("InvalidTagError");
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::validate_tags() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::string xml;
+  put_object_tag_body = std::make_shared<S3PutTagBody>(xml, request_id);
+
+  if (put_object_tag_body->validate_object_xml_tags(new_object_tags_map)) {
+    next();
+  } else {
+    set_s3_error("InvalidTagError");
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -410,6 +489,9 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
       object_multipart_metadata->add_user_defined_attribute(it.first,
                                                             it.second);
     }
+  }
+  if (!new_object_tags_map.empty()) {
+    object_multipart_metadata->set_tags(new_object_tags_map);
   }
   object_multipart_metadata->set_oid(oid);
   object_multipart_metadata->set_part_index_oid(

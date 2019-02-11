@@ -32,6 +32,7 @@
 #include "s3_part_metadata.h"
 #include "s3_timer.h"
 #include "s3_uuid.h"
+#include "evhtp_wrapper.h"
 
 class S3PostMultipartObjectAction : public S3Action {
   struct m0_uint128 oid;
@@ -56,7 +57,10 @@ class S3PostMultipartObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
+  std::shared_ptr<S3PutTagBody> put_object_tag_body;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::map<std::string, std::string> new_object_tags_map;
 
  protected:
   void set_oid(struct m0_uint128 new_oid) { oid = new_oid; }
@@ -67,16 +71,22 @@ class S3PostMultipartObjectAction : public S3Action {
  public:
   S3PostMultipartObjectAction(
       std::shared_ptr<S3RequestObject> req,
-      S3BucketMetadataFactory* bucket_meta_factory = NULL,
-      S3ObjectMultipartMetadataFactory* object_mp_meta_factory = NULL,
-      S3ObjectMetadataFactory* object_meta_factory = NULL,
-      S3PartMetadataFactory* part_meta_factory = NULL,
-      S3ClovisWriterFactory* clovis_writer_factory = NULL,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
+          nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
+      std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
+      std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory = nullptr,
+      std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   void setup_steps();
 
+  void validate_x_amz_tagging_if_present();
+  void parse_x_amz_tagging_header(std::string content);
+  void validate_tags();
   void fetch_bucket_info();
+  void fetch_bucket_info_successful();
   void fetch_bucket_info_failed();
   void fetch_object_info();
   void fetch_object_info_status();
@@ -106,6 +116,8 @@ class S3PostMultipartObjectAction : public S3Action {
   FRIEND_TEST(S3PostMultipartObjectTest, ConstructorTest);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchBucketInfo);
   FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgress);
+  FRIEND_TEST(S3PostMultipartObjectTest, ValidateRequestTags);
+  FRIEND_TEST(S3PostMultipartObjectTest, VaidateEmptyTags);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObject);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailed);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObjectFailedToLaunch);
