@@ -26,7 +26,8 @@ DEFINE_string(s3config, "/opt/seagate/s3/conf/s3config.yaml",
 DEFINE_string(s3layoutmap, "/opt/seagate/s3/conf/s3_obj_layout_mapping.yaml",
               "S3 Clovis layout mapping file for different object sizes");
 
-DEFINE_string(s3host, "0.0.0.0", "S3 server bind address");
+DEFINE_string(s3hostv4, "", "S3 server ipv4 bind address");
+DEFINE_string(s3hostv6, "", "S3 server ipv6 bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 
@@ -45,7 +46,7 @@ DEFINE_int32(clovislayoutid, 9, "For options please see the readme");
 DEFINE_string(clovisprofilefid, "<0x7000000000000001:0>", "Clovis profile FID");
 DEFINE_string(clovisprocessfid, "<0x7200000000000000:0>", "Clovis process FID");
 
-DEFINE_string(authhost, "127.0.0.1", "Auth server host");
+DEFINE_string(authhost, "ipv4:127.0.0.1", "Auth server host");
 DEFINE_int32(authport, 8095, "Auth server port");
 DEFINE_bool(disable_auth, false, "Disable authentication");
 
@@ -81,9 +82,15 @@ int parse_and_load_config_options(int argc, char **argv) {
   // Override with options set on command line
   gflags::CommandLineFlagInfo flag_info;
 
-  gflags::GetCommandLineFlagInfo("s3host", &flag_info);
+  gflags::GetCommandLineFlagInfo("s3hostv4", &flag_info);
   if (!flag_info.is_default) {
-    option_instance->set_cmdline_option(S3_OPTION_BIND_ADDR,
+    option_instance->set_cmdline_option(S3_OPTION_IPV4_BIND_ADDR,
+                                        flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("s3hostv6", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_IPV6_BIND_ADDR,
                                         flag_info.current_value.c_str());
   }
 

@@ -47,7 +47,7 @@ while getopts $VALID_COMMAND_LINE_OPTIONS option; do
       read -p "Enter S3 region endpoint (default is s3-us-west-2.seagate.com): " s3_region_endpoint
       read -p "Enter S3 iam endpoint (default is iam.seagate.com): " s3_iam_endpoint
       read -p "Enter S3 sts endpoint (default is sts.seagate.com): " s3_sts_endpoint
-      read -p "Enter host S3 ip address (for dev vm use 127.0.0.1): " s3_ip_address
+      read -p "Enter host S3 ip address (for dev vm use 127.0.0.1,::1): " s3_ip_address
       read -p "Enter Open ldap domain name (default is localhost): " openldap_domainname
       read -p "Enter the key store passphrase (default is seagate): " passphrase
       ;;
@@ -57,7 +57,7 @@ while getopts $VALID_COMMAND_LINE_OPTIONS option; do
       s3_iam_endpoint="iam.seagate.com"
       s3_sts_endpoint="sts.seagate.com"
       openldap_domainname="localhost"
-      s3_ip_address="127.0.0.1"
+      s3_ip_address="127.0.0.1,::1"
       passphrase="seagate"
       ;;
     h|?)
@@ -107,7 +107,7 @@ function generate_s3_certs()
   echo $s3_region_endpoint | tr , '\n' >> $dns_list_file
   if [ ! -z "$s3_ip_address" ]
   then
-    echo $s3_ip_address >> $dns_list_file
+    echo $s3_ip_address | tr , '\n' >> $dns_list_file
   fi
 
   # generate s3 ssl cert files

@@ -1,5 +1,5 @@
 diff --git a/evhtp.c b/evhtp.c
-index a97c836..497f179 100644
+index a97c836..6f3f5e2 100644
 --- a/evhtp.c
 +++ b/evhtp.c
 @@ -69,6 +69,7 @@ static evhtp_path_t       * _evhtp_path_new(const char * data, size_t len);
@@ -82,7 +82,61 @@ index a97c836..497f179 100644
  
      if (sa->sa_family == AF_INET6) {
          int rc;
-@@ -4439,3 +4485,9 @@ evhtp_request_status(evhtp_request_t * r) {
+@@ -4358,6 +4404,9 @@ evhtp_connection_t *
+ evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, evhtp_ssl_ctx_t * ctx) {
+     evhtp_connection_t * conn;
+     struct sockaddr_in   sin;
++    struct sockaddr_in6 sin6;
++    struct sockaddr   * sa;
++    size_t              sin_len;
+ 
+     evhtp_assert(evbase != NULL);
+ 
+@@ -4365,9 +4414,29 @@ evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, ev
+         return NULL;
+     }
+ 
+-    sin.sin_family      = AF_INET;
+-    sin.sin_addr.s_addr = inet_addr(addr);
+-    sin.sin_port        = htons(port);
++    if (!strncmp(addr, "ipv6:", 5)) {
++        memset(&sin6, 0, sizeof(sin6));
++
++        addr           += 5;
++        sin_len          = sizeof(struct sockaddr_in6);
++        sin6.sin6_family = AF_INET6;
++        sin6.sin6_port   = htons(port);
++
++        evutil_inet_pton(AF_INET6, addr, &sin6.sin6_addr);
++        sa = (struct sockaddr *)&sin6;
++    } else {
++        if (!strncmp(addr, "ipv4:", 5)) {
++            addr += 5;
++        }
++
++        sin_len             = sizeof(struct sockaddr_in);
++
++        sin.sin_family      = AF_INET;
++        sin.sin_port        = htons(port);
++        sin.sin_addr.s_addr = inet_addr(addr);
++
++        sa = (struct sockaddr *)&sin;
++    }
+ 
+     conn->ssl           = SSL_new(ctx);
+     conn->evbase        = evbase;
+@@ -4378,9 +4447,7 @@ evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, ev
+     bufferevent_setcb(conn->bev, NULL, NULL,
+                       _evhtp_connection_eventcb, conn);
+ 
+-    bufferevent_socket_connect(conn->bev,
+-                               (struct sockaddr *)&sin, sizeof(sin));
+-
++    bufferevent_socket_connect(conn->bev, sa, sin_len);
+ 
+     return conn;
+ }
+@@ -4439,3 +4506,9 @@ evhtp_request_status(evhtp_request_t * r) {
      return htparser_get_status(r->conn->parser);
  }
  

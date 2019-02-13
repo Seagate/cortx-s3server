@@ -3,7 +3,8 @@
 set -e
 
 usage() {
-  echo 'Usage: ./runalltest.sh [--no-mero-rpm][--no-ut-run][--no-st-run][--no-ossperf-run][--no-https]'
+  echo 'Usage: ./runalltest.sh [--no-mero-rpm][--no-ut-run][--no-st-run][--no-ossperf-run][--no-https]
+        [--use-ipv6]'
   echo '                       [--help]'
   echo 'Optional params as below:'
   echo '          --no-mero-rpm    : Use mero libs from source code (third_party/mero)'
@@ -12,12 +13,13 @@ usage() {
   echo '          --no-ut-run      : Do not run UTs, Default (false)'
   echo '          --no-st-run      : Do not run STs, Default (false)'
   echo '          --no-https       : Use http for STs, Default (false)'
+  echo '          --use-ipv6       : Use ipv6 for STs, Default (false)'
   echo '          --no-ossperf-run : Do not run parallel/sequential perf tests by ossperf tool, Default (false)'
   echo '          --help (-h)      : Display help'
 }
 
 # read the options
-OPTS=`getopt -o h --long no-mero-rpm,no-ut-run,no-st-run,no-https,no-ossperf-run,help -n 'runalltest.sh' -- "$@"`
+OPTS=`getopt -o h --long no-mero-rpm,no-ut-run,no-st-run,no-https,use-ipv6,no-ossperf-run,help -n 'runalltest.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
@@ -26,6 +28,7 @@ no_ut_run=0
 no_st_run=0
 use_http=0
 no_ossperf_run=0
+use_ipv6=0
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
@@ -33,6 +36,7 @@ while true; do
     --no-ut-run) no_ut_run=1; shift ;;
     --no-st-run) no_st_run=1; shift ;;
     --no-https) use_http=1; shift ;;
+    --use-ipv6) use_ipv6=1; shift ;;
     --no-ossperf-run) no_ossperf_run=1; shift ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
@@ -97,13 +101,19 @@ fi
 
 if [ $no_st_run -eq 0 ]
 then
+  use_ipv6_arg=""
+  if [ $use_ipv6 -eq 1 ]
+  then
+    use_ipv6_arg="--use_ipv6"
+  fi
+
   CLITEST_SRC=`pwd`/st/clitests
   cd $CLITEST_SRC
   if [ $use_http -eq 1 ]
   then
-     sh ./runallsystest.sh --no_https
+     sh ./runallsystest.sh --no_https $use_ipv6_arg
   else
-     sh ./runallsystest.sh
+     sh ./runallsystest.sh $use_ipv6_arg
   fi
 fi
 

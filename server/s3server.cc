@@ -355,10 +355,44 @@ void log_resource_limits() {
   }
 }
 
+evhtp_t *create_evhtp_handle(evbase_t *evbase_handle, S3Router *router,
+                             void *arg) {
+  evhtp_t *htp = evhtp_new(global_evbase_handle, NULL);
+#if defined SO_REUSEPORT
+  if (g_option_instance->is_s3_reuseport_enabled()) {
+    htp->enable_reuseport = 1;
+  }
+#else
+  if (g_option_instance->is_s3_reuseport_enabled()) {
+    s3_log(
+        S3_LOG_ERROR,
+        "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
+    return NULL;
+  }
+#endif
+
+  // So we can support queries like s3.com/bucketname?location or ?acl
+  // So we can support empty queries (for s3fs) like s3.com/bucketname?prefix=
+  evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS |
+                                  EVHTP_PARSE_QUERY_FLAG_ALLOW_EMPTY_VALS);
+
+  // Main request processing (processing headers & body) is done in hooks
+  evhtp_set_post_accept_cb(htp, set_s3_connection_handlers, router);
+
+  // This handler is just like complete the request processing & respond
+  evhtp_set_gencb(htp, s3_handler, NULL);
+  return htp;
+}
+
+void free_evhtp_handle(evhtp_t *htp) {
+  if (htp) {
+    evhtp_unbind_socket(htp);
+    evhtp_free(htp);
+  }
+}
+
 int main(int argc, char **argv) {
   int rc = 0;
-  const char *bind_addr;
-  uint16_t bind_port;
 
   // Load Any configs.
   if (parse_and_load_config_options(argc, argv) < 0) {
@@ -429,19 +463,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_ERROR, "", "Couldn't make base notifiable!");
     return 1;
   }
-  evhtp_t *htp = evhtp_new(global_evbase_handle, NULL);
-#if defined SO_REUSEPORT
-  if (g_option_instance->is_s3_reuseport_enabled()) {
-    htp->enable_reuseport = 1;
-  }
-#else
-  if (g_option_instance->is_s3_reuseport_enabled()) {
-    s3_log(
-        S3_LOG_ERROR,
-        "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");
-    return 1;
-  }
-#endif
+
   event_set_fatal_callback(fatal_libevent);
   if (g_option_instance->is_s3_ssl_auth_enabled()) {
     if (!init_auth_ssl()) {
@@ -450,22 +472,34 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
+
   S3Router *router =
       new S3Router(new S3APIHandlerFactory(), new S3UriFactory());
 
-  // So we can support queries like s3.com/bucketname?location or ?acl
-  // So we can support empty queries (for s3fs) like s3.com/bucketname?prefix=
-  evhtp_set_parser_flags(htp, EVHTP_PARSE_QUERY_FLAG_ALLOW_NULL_VALS |
-                                  EVHTP_PARSE_QUERY_FLAG_ALLOW_EMPTY_VALS);
+  std::string ipv4_bind_addr;
+  std::string ipv6_bind_addr;
+  uint16_t bind_port;
 
-  // Main request processing (processing headers & body) is done in hooks
-  evhtp_set_post_accept_cb(htp, set_s3_connection_handlers, router);
-
-  // This handler is just like complete the request processing & respond
-  evhtp_set_gencb(htp, s3_handler, NULL);
+  evhtp_t *htp_ipv4 = NULL;
+  evhtp_t *htp_ipv6 = NULL;
 
   bind_port = g_option_instance->get_s3_bind_port();
-  bind_addr = g_option_instance->get_bind_addr().c_str();
+  ipv4_bind_addr = g_option_instance->get_ipv4_bind_addr();
+  ipv6_bind_addr = g_option_instance->get_ipv6_bind_addr();
+
+  if (!ipv4_bind_addr.empty()) {
+    htp_ipv4 = create_evhtp_handle(global_evbase_handle, router, NULL);
+    if (htp_ipv4 == NULL) {
+      return 1;
+    }
+  }
+
+  if (!ipv6_bind_addr.empty()) {
+    htp_ipv6 = create_evhtp_handle(global_evbase_handle, router, NULL);
+    if (htp_ipv6 == NULL) {
+      return 1;
+    }
+  }
 
   // Create memory pool for clovis read operations.
   rc = S3MempoolManager::create_pool(
@@ -522,15 +556,39 @@ int main(int argc, char **argv) {
     evhtp_use_threads(htp, NULL, 4, NULL);
 #endif
 #endif
-  s3_log(S3_LOG_INFO, "", "Starting S3 listener on host = %s and port = %d!\n",
-         bind_addr, bind_port);
-  if ((rc = evhtp_bind_socket(htp, bind_addr, bind_port, 1024)) < 0) {
-    s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
-    fini_auth_ssl();
-    evhtp_free(htp);
-    fini_clovis();
-    return rc;
+
+  if (htp_ipv4) {
+    // apend ipv4: prefix to identify by evhtp_bind_socket
+    ipv4_bind_addr = "ipv4:" + ipv4_bind_addr;
+    s3_log(S3_LOG_INFO, "",
+           "Starting S3 listener on host = %s and port = %d!\n",
+           ipv4_bind_addr.c_str(), bind_port);
+    if ((rc = evhtp_bind_socket(htp_ipv4, ipv4_bind_addr.c_str(), bind_port,
+                                1024)) < 0) {
+      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
+      fini_auth_ssl();
+      evhtp_free(htp_ipv4);
+      fini_clovis();
+      return rc;
+    }
   }
+
+  if (htp_ipv6) {
+    // apend ipv6: prefix to identify by evhtp_bind_socket
+    ipv6_bind_addr = "ipv6:" + ipv6_bind_addr;
+    s3_log(S3_LOG_INFO, "",
+           "Starting S3 listener on host = %s and port = %d!\n",
+           ipv6_bind_addr.c_str(), bind_port);
+    if ((rc = evhtp_bind_socket(htp_ipv6, ipv6_bind_addr.c_str(), bind_port,
+                                1024)) < 0) {
+      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
+      fini_auth_ssl();
+      evhtp_free(htp_ipv6);
+      fini_clovis();
+      return rc;
+    }
+  }
+
   rc = event_base_loop(global_evbase_handle, 0);
   if (rc == 0) {
     s3_log(S3_LOG_DEBUG, "", "Event base loop exited normally\n");
@@ -539,8 +597,10 @@ int main(int argc, char **argv) {
            "Event base loop exited due to unhandled exception in libevent's "
            "backend\n");
   }
-  evhtp_unbind_socket(htp);
-  evhtp_free(htp);
+
+  free_evhtp_handle(htp_ipv4);
+  free_evhtp_handle(htp_ipv6);
+
   event_base_free(global_evbase_handle);
   fini_auth_ssl();
 

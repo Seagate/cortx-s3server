@@ -1,17 +1,19 @@
 #!/bin/sh
 
-USAGE="USAGE: bash $(basename "$0") [--use_http] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [--use_http] [--use_ipv6] [--help | -h]
 
 where:
 --use_http         Use HTTP for ST's
+--use_ipv6	   Use ipv6 for ST's
 --help (-h)        Display help"
 
 use_http=0
+use_ipv6=0
 
 if [ $# -eq 0 ]
 then
   echo "Using HTTPS for system tests"
-elif [ $# -gt 1 ]
+elif [ $# -gt 2 ]
 then
   echo "Invald arguments passed";
         echo "$USAGE"
@@ -20,6 +22,9 @@ else
   case "$1" in
     --use_http ) use_http=1;
         echo "Using HTTP for system tests";
+        ;;
+    --use_ipv6 ) use_ipv6=1;
+        echo "Using ipv6 for system tests";
         ;;
     --help | -h )
         echo "$USAGE"
@@ -106,6 +111,18 @@ then
   $USE_SUDO sed -i 's/enableHttpsToS3=.*$/enableHttpsToS3=false/g' /opt/seagate/auth/resources/authserver.properties
 fi
 
+# Configuration setting for ipv6 connection
+if [ $use_ipv6 -eq 1 ]
+then
+  $USE_SUDO sed -i 's/S3_SERVER_IPV4_BIND_ADDR:.*$/S3_SERVER_IPV4_BIND_ADDR: ~/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/S3_SERVER_IPV6_BIND_ADDR:.*$/S3_SERVER_IPV6_BIND_ADDR: ::\/128/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/\(\s*S3_AUTH_IP_ADDR:\s*\)ipv4:[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\(\s*.*\)/\1ipv6:::1\2/g' /opt/seagate/s3/conf/s3config.yaml
+  # backup
+  $USE_SUDO \cp /etc/haproxy/haproxy.cfg{,.bak}
+  $USE_SUDO sed -i 's/0\.0\.0\.0/::/g' /etc/haproxy/haproxy.cfg
+  $USE_SUDO systemctl restart haproxy
+fi
+
 # Start mero for new tests
 cd $MERO_SRC
 echo "Starting new built mero services"
@@ -160,13 +177,18 @@ then
   $USE_SUDO keytool -import -trustcacerts -alias s3server -noprompt -file /etc/ssl/stx-s3-clients/s3/ca.crt -keystore /etc/pki/java/cacerts -storepass changeit
 fi
 
+use_ipv6_arg=""
+if [ $use_ipv6 -eq 1 ]
+then
+  use_ipv6_arg="--use-ipv6"
+fi
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
 if [ $use_http -eq 1 ]
 then
-  ./runalltest.sh --no-mero-rpm --no-https || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  ./runalltest.sh --no-mero-rpm --no-https $use_ipv6_arg || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 else
-  ./runalltest.sh --no-mero-rpm || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  ./runalltest.sh --no-mero-rpm $use_ipv6_arg || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 fi
 
 # Disable fault injection in AuthServer
@@ -184,5 +206,12 @@ tail -50 /var/log/seagate/s3/s3server.ERROR || echo "No Errors"
 cd $MERO_SRC
 $USE_SUDO ./m0t1fs/../clovis/st/utils/mero_services.sh stop || echo "Cannot stop mero services"
 cd $S3_BUILD_DIR
+# revert ipv6 settings
+if [ $use_ipv6 -eq 1 ]
+then
+  # revert ipv6 changes
+  $USE_SUDO \mv /etc/haproxy/haproxy.cfg.bak /etc/haproxy/haproxy.cfg
+  $USE_SUDO systemctl restart haproxy
+fi
 
 exit $S3_TEST_RET_CODE

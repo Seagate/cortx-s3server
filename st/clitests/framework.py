@@ -16,6 +16,7 @@ class Config:
     tmp_wd = ''
     s3cmd_max_retries = 5
     no_ssl = False
+    use_ipv6 = False
     client_execution_timeout = None
     request_timeout = None
     socket_timeout = None

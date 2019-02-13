@@ -21,7 +21,7 @@
 #ifndef __S3_SERVER_S3_OPTION_H__
 #define __S3_SERVER_S3_OPTION_H__
 
-#define S3_OPTION_BIND_ADDR 0x0001
+#define S3_OPTION_IPV4_BIND_ADDR 0x0001
 #define S3_OPTION_BIND_PORT 0x0002
 #define S3_OPTION_CLOVIS_LOCAL_ADDR 0x0004
 #define S3_OPTION_PLACE_HOLDER_1 0x0008
@@ -39,6 +39,7 @@
 #define S3_OPTION_CLOVIS_PROF 0x8000
 #define S3_OPTION_CLOVIS_PROCESS_FID 0x10000
 #define S3_OPTION_REUSEPORT 0x20000
+#define S3_OPTION_IPV6_BIND_ADDR 0x40000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -64,7 +65,8 @@ class S3Option {
   int cmd_opt_flag;
 
   std::string s3_nodename;
-  std::string s3_bind_addr;
+  std::string s3_ipv4_bind_addr;
+  std::string s3_ipv6_bind_addr;
   std::string s3_pidfile;
   unsigned short s3_bind_port;
   unsigned short max_retry_count;
@@ -139,7 +141,8 @@ class S3Option {
   S3Option() {
     cmd_opt_flag = 0;
 
-    s3_bind_addr = FLAGS_s3host;
+    s3_ipv4_bind_addr = FLAGS_s3hostv4;
+    s3_ipv6_bind_addr = FLAGS_s3hostv6;
     s3_bind_port = FLAGS_s3port;
     s3_pidfile = "/var/run/s3server.pid";
 
@@ -236,7 +239,8 @@ class S3Option {
   bool load_all_sections(bool force_override_from_config);
 
   std::string get_s3_nodename();
-  std::string get_bind_addr();
+  std::string get_ipv4_bind_addr();
+  std::string get_ipv6_bind_addr();
   std::string get_s3_pidfile();
   unsigned short get_s3_bind_port();
 

@@ -67,8 +67,16 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FLUSH_FREQUENCY");
       log_flush_frequency_sec =
           s3_option_node["S3_LOG_FLUSH_FREQUENCY"].as<int>();
-      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_ADDR");
-      s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_IPV4_BIND_ADDR");
+      s3_ipv4_bind_addr =
+          s3_option_node["S3_SERVER_IPV4_BIND_ADDR"].as<std::string>();
+      // '~' means empty or null
+      s3_ipv4_bind_addr = (s3_ipv4_bind_addr == "~") ? "" : s3_ipv4_bind_addr;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_IPV6_BIND_ADDR");
+      s3_ipv6_bind_addr =
+          s3_option_node["S3_SERVER_IPV6_BIND_ADDR"].as<std::string>();
+      // '~' means empty or null
+      s3_ipv6_bind_addr = (s3_ipv6_bind_addr == "~") ? "" : s3_ipv6_bind_addr;
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
@@ -248,9 +256,15 @@ bool S3Option::load_section(std::string section_name,
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FILE_MAX_SIZE");
         log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
       }
-      if (!(cmd_opt_flag & S3_OPTION_BIND_ADDR)) {
-        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_ADDR");
-        s3_bind_addr = s3_option_node["S3_SERVER_BIND_ADDR"].as<std::string>();
+      if (!(cmd_opt_flag & S3_OPTION_IPV4_BIND_ADDR)) {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_IPV4_BIND_ADDR");
+        s3_ipv4_bind_addr =
+            s3_option_node["S3_SERVER_IPV4_BIND_ADDR"].as<std::string>();
+      }
+      if (!(cmd_opt_flag & S3_OPTION_IPV6_BIND_ADDR)) {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_IPV6_BIND_ADDR");
+        s3_ipv6_bind_addr =
+            s3_option_node["S3_SERVER_IPV6_BIND_ADDR"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_OPTION_STATSD_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
@@ -485,8 +499,10 @@ bool S3Option::load_all_sections(bool force_override_from_config = false) {
 }
 
 void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
-  if (option_flag & S3_OPTION_BIND_ADDR) {
-    s3_bind_addr = optarg;
+  if (option_flag & S3_OPTION_IPV4_BIND_ADDR) {
+    s3_ipv4_bind_addr = optarg;
+  } else if (option_flag & S3_OPTION_IPV6_BIND_ADDR) {
+    s3_ipv6_bind_addr = optarg;
   } else if (option_flag & S3_OPTION_BIND_PORT) {
     s3_bind_port = atoi(optarg);
   } else if (option_flag & S3_OPTION_CLOVIS_LOCAL_ADDR) {
@@ -553,7 +569,10 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_REUSEPORT = %s\n",
          (s3_reuseport) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_SERVER_BIND_ADDR = %s\n", s3_bind_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_IPV4_BIND_ADDR = %s\n",
+         s3_ipv4_bind_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_IPV6_BIND_ADDR = %s\n",
+         s3_ipv6_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
@@ -743,7 +762,9 @@ std::string S3Option::get_perf_log_filename() { return perf_log_file; }
 
 int S3Option::get_read_ahead_multiple() { return read_ahead_multiple; }
 
-std::string S3Option::get_bind_addr() { return s3_bind_addr; }
+std::string S3Option::get_ipv4_bind_addr() { return s3_ipv4_bind_addr; }
+
+std::string S3Option::get_ipv6_bind_addr() { return s3_ipv6_bind_addr; }
 
 std::string S3Option::get_default_endpoint() { return s3_default_endpoint; }
 
