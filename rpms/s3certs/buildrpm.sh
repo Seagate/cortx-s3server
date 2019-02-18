@@ -55,7 +55,7 @@ mkdir ${S3_CERTS_SRC}
 cd ${S3_CERTS_SRC}
 
 # Generate the certificates
-${BASEDIR}/../../scripts/ssl/generate_certificate.sh -f ${BASEDIR}/../../scripts/ssl/domain_input.conf
+${BASEDIR}/../../scripts/ssl/generate_certificate.sh -f domain_input.conf
 cp -r ./s3_certs_sandbox/* .
 rm -rf ./s3_certs_sandbox
 

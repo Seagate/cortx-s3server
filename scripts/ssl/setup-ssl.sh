@@ -81,7 +81,5 @@ openssl req -new -key  "$cert_name.key" -out "$cert_name.csr" -config $SSL_CNF_F
 openssl x509 -req -days 365 -in "$cert_name.csr" -CA ca.crt -CAkey ca.key -set_serial 01\
     -out "$cert_name.crt" -extfile $SSL_CNF_FILE -extensions v3_ca 2>/dev/null
 
-cat ca.crt >> $cert_name.crt
-
 echo "ssl_certificate: $CURRENT_DIR/ssl_sandbox/$cert_name.crt"
 echo "ssl_certificate_key: $CURRENT_DIR/ssl_sandbox/$cert_name.key"
