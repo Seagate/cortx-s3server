@@ -20,6 +20,7 @@
 
 #include <evhttp.h>
 #include <string>
+#include <ctime>
 
 #include "s3_error_codes.h"
 #include "s3_factory.h"
@@ -29,6 +30,7 @@
 #include "s3_stats.h"
 
 extern S3Option* g_option_instance;
+extern LoggerPtr audit_logger;
 
 // evhttp Helpers
 /* evhtp_kvs_iterator */
@@ -103,6 +105,7 @@ S3RequestObject::S3RequestObject(
       g_option_instance->get_libevent_pool_buffer_size());
 
   request_timer.start();
+  turn_around_time.start();
   bucket_name = object_name = user_name = user_id = account_name = account_id =
       "";
   // For auth disabled, use some dummy user.
@@ -111,6 +114,9 @@ S3RequestObject::S3RequestObject(
     account_id = "12345";
     user_name = "tester";
     user_id = "123";
+    audit_log_obj.set_authentication_type("QueryString");
+  } else {
+    audit_log_obj.set_authentication_type("AuthHeader");
   }
 
   request_error = S3RequestError::None;
@@ -144,6 +150,9 @@ S3RequestObject::S3RequestObject(
 
 void S3RequestObject::initialise() {
   s3_log(S3_LOG_DEBUG, request_id, "Initializing the request.\n");
+  std::time_t result = std::time(nullptr);
+  audit_log_obj.set_time_of_request_arrival(
+      (std::asctime(std::localtime(&result))));
   if (get_header_value("x-amz-content-sha256") ==
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
     is_chunked_upload = true;
@@ -158,10 +167,7 @@ void S3RequestObject::initialise() {
 
 S3RequestObject::~S3RequestObject() {
   s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
-  request_timer.stop();
-  LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
-  s3_stats_timing("total_request_time",
-                  request_timer.elapsed_time_in_millisec());
+
   if (ev_req) {
     ev_req->cbarg = NULL;
     ev_req = NULL;
@@ -586,12 +592,20 @@ void S3RequestObject::send_response(int code, std::string body) {
   s3_log(S3_LOG_INFO, request_id, "Response code: [%d]\n", code);
   s3_log(S3_LOG_INFO, request_id, "Sending response as: [%s]\n", body.c_str());
 
+  http_status = code;
+  turn_around_time.stop();
+  audit_log_obj.set_turn_around_time(
+      turn_around_time.elapsed_time_in_millisec());
+
   if (code == S3HttpFailed500) {
     s3_stats_inc("internal_error_count");
   }
 
   if (!client_connected()) {
     s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
+    request_timer.stop();
+    audit_log_obj.set_total_time(request_timer.elapsed_time_in_millisec());
+    populate_and_log_audit_info();
     return;
   }
 
@@ -608,13 +622,31 @@ void S3RequestObject::send_response(int code, std::string body) {
   set_out_header_value("x-amzn-RequestId", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
   resume();  // attempt resume just in case some one forgot
+
+  request_timer.stop();
+  LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+  s3_stats_timing("total_request_time",
+                  request_timer.elapsed_time_in_millisec());
+  audit_log_obj.set_total_time(request_timer.elapsed_time_in_millisec());
+  populate_and_log_audit_info();
 }
 
 void S3RequestObject::send_reply_start(int code) {
+  http_status = code;
+  turn_around_time.stop();
+  audit_log_obj.set_turn_around_time(
+      turn_around_time.elapsed_time_in_millisec());
   set_out_header_value("x-amzn-RequestId", request_id);
   if (client_connected()) {
     evhtp_obj->http_send_reply_start(ev_req, code);
     reply_buffer = evbuffer_new();
+  } else {
+    request_timer.stop();
+    LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+    s3_stats_timing("total_request_time",
+                    request_timer.elapsed_time_in_millisec());
+    audit_log_obj.set_total_time(request_timer.elapsed_time_in_millisec());
+    populate_and_log_audit_info();
   }
 }
 
@@ -622,13 +654,29 @@ void S3RequestObject::send_reply_body(char* data, int length) {
   if (client_connected()) {
     evbuffer_add(reply_buffer, data, length);
     evhtp_obj->http_send_reply_body(ev_req, reply_buffer);
+  } else {
+    request_timer.stop();
+    LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+    s3_stats_timing("total_request_time",
+                    request_timer.elapsed_time_in_millisec());
+    audit_log_obj.set_total_time(request_timer.elapsed_time_in_millisec());
+    populate_and_log_audit_info();
   }
 }
 
 void S3RequestObject::send_reply_end() {
   if (client_connected()) {
     evhtp_obj->http_send_reply_end(ev_req);
+    request_timer.stop();
+  } else {
+    request_timer.stop();
   }
+  LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+  s3_stats_timing("total_request_time",
+                  request_timer.elapsed_time_in_millisec());
+  audit_log_obj.set_total_time(request_timer.elapsed_time_in_millisec());
+  populate_and_log_audit_info();
+
   if (reply_buffer != NULL) {
     evbuffer_free(reply_buffer);
   }
@@ -643,6 +691,7 @@ S3ApiType S3RequestObject::get_api_type() { return s3_api_type; }
 
 void S3RequestObject::respond_error(
     std::string error_code, const std::map<std::string, std::string>& headers) {
+  audit_log_obj.set_error_code(error_code);
   if (client_connected()) {
     S3Error error(error_code, get_request_id(), get_object_uri());
     std::string& response_xml = error.to_xml();
@@ -659,6 +708,9 @@ void S3RequestObject::respond_error(
 
     send_response(error.get_http_status_code(), response_xml);
   } else {
+    request_timer.stop();
+    audit_log_obj.set_total_time(request_timer.elapsed_time_in_millisec());
+    populate_and_log_audit_info();
     s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
   }
 }
@@ -680,4 +732,30 @@ void S3RequestObject::respond_retry_after(int retry_after_in_secs) {
   respond_error("ServiceUnavailable", headers);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3RequestObject::populate_and_log_audit_info() {
+
+  audit_log_obj.set_bucket_owner_canonical_id(get_account_id());
+  audit_log_obj.set_bucket_name(bucket_name);
+  audit_log_obj.set_requester(get_account_id());
+  audit_log_obj.set_request_id(request_id);
+  audit_log_obj.set_operation(operation);
+  audit_log_obj.set_object_key(get_object_uri());
+  audit_log_obj.set_request_uri(request_uri);
+  audit_log_obj.set_http_status(http_status);
+  audit_log_obj.set_bytes_sent(total_bytes_received);
+  audit_log_obj.set_user_agent(get_header_value("User-Agent"));
+  audit_log_obj.set_version_id(get_query_string_value("versionId"));
+  audit_log_obj.set_object_size(get_header_value("Content-Length"));
+  audit_log_obj.set_host_header(get_header_value("Host"));
+
+  audit_log(audit_logger, audit_log_obj);
+}
+void S3RequestObject::set_operation(std::string operation_str) {
+  operation = operation_str;
+}
+
+void S3RequestObject::set_request_uri(std::string request_uri_str) {
+  request_uri = request_uri_str;
 }

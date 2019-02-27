@@ -71,6 +71,7 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/auth/resources/keystore.properties
 %config(noreplace) /opt/seagate/auth/resources/static/saml-metadata.xml
 %config(noreplace) /opt/seagate/s3/conf/s3config.yaml
+%config(noreplace) /opt/seagate/s3/conf/s3server_audit_log.properties
 %config(noreplace) /opt/seagate/s3/conf/s3_obj_layout_mapping.yaml
 %config(noreplace) /opt/seagate/s3/conf/s3stats-whitelist.yaml
 

@@ -30,6 +30,7 @@ extern "C" {
 #include "s3_mem_pool_manager.h"
 #include "s3_option.h"
 #include "s3_stats.h"
+#include "s3_audit_info.h"
 
 #define FOUR_KB 4096
 #define EIGHT_KB (2 * FOUR_KB)
@@ -45,6 +46,7 @@ evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 extern S3Stats *g_stats_instance;
 evbase_t *global_evbase_handle;
 extern int s3log_level;
+LoggerPtr audit_logger;
 
 static void _init_log() {
   s3log_level = S3_LOG_DEBUG;
@@ -236,9 +238,13 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   ::testing::InitGoogleMock(&argc, argv);
 
+  audit_configure_init("s3server_audit_log.properties");
+  audit_logger = Logger::getLogger("Audit_Logger");
+
   rc = RUN_ALL_TESTS();
 
   _fini_log();
+  audit_logger = 0;
 
   return rc;
 }

@@ -10,6 +10,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_REUSEPORT: false                                  # Enable reusing s3 server port
    S3_IAM_CERT_FILE: "/etc/ssl/stx-s3/s3auth/s3authserver.crt" # IAM Auth certificate file
    S3_LOG_FLUSH_FREQUENCY: 30                           # Time in seconds, after which logs will be flushed. Valid only if S3_LOG_ENABLE_BUFFERING is true. Default is 30 seconds.
+   S3_AUDIT_LOG_CONFIG: "/opt/seagate/s3/conf/s3server_audit_log.properties" # S3 Server Audit log configuration file.
    S3_SERVER_IPV4_BIND_ADDR: 0.0.0.0                    # S3 Server ipv4 bind address, 0.0.0.0 is default. ~ means option is ignored/not to listen on IPv4 address.
    S3_SERVER_IPV6_BIND_ADDR: ~                          # S3 Server ipv6 bind address, ::/128 is default. ~ means option is ignored/not to listen on IPv6 address.
    S3_SERVER_BIND_PORT: 8081                            # S3 Server port number

@@ -397,9 +397,15 @@ TEST_F(S3RequestObjectTest, SetsAccountID) {
 TEST_F(S3RequestObjectTest,
        ValidateContentLengthSetOnceOnlyForEmptySendResponse) {
   // Content-Length Header should be set only once
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Length"] = "123";
+  input_headers["Host"] = "siddhi.s3.seagate.com";
+  input_headers["User-Agent"] = "Curl";
+  fake_in_headers(input_headers);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_new(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_evhtp_obj_ptr,
               http_header_new(StrEq("Content-Length"), _, _, _)).Times(1);
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_find(_, _)).Times(3);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(2);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_send_reply(_, _)).Times(1);
 
@@ -411,7 +417,13 @@ TEST_F(S3RequestObjectTest,
 
 TEST_F(S3RequestObjectTest, ValidateContentLengthSendResponseOnce) {
   // Content-Length Header should be set only once
+  std::map<std::string, std::string> input_headers;
+  input_headers["Content-Length"] = "123";
+  input_headers["Host"] = "siddhi.s3.seagate.com";
+  input_headers["User-Agent"] = "Curl";
+  fake_in_headers(input_headers);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_new(_, _, _, _)).Times(1);
+  EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_find(_, _)).Times(3);
   EXPECT_CALL(*mock_evhtp_obj_ptr,
               http_header_new(StrEq("Content-Length"), _, _, _)).Times(1);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(2);

@@ -41,6 +41,7 @@
 #include "s3_perf_logger.h"
 #include "s3_timer.h"
 #include "s3_uuid.h"
+#include "s3_audit_info.h"
 
 enum class S3HttpVerb {
   HEAD = htp_method_HEAD,
@@ -73,6 +74,9 @@ class S3RequestObject {
   std::string user_id;  // Unique
   std::string account_name;
   std::string account_id;  // Unique
+  std::string operation;
+  std::string request_uri;
+  int http_status;
   struct event* client_read_timer_event;
 
   std::string request_id;
@@ -83,6 +87,7 @@ class S3RequestObject {
                                  // more than this.
   size_t pending_in_flight;      // Total data yet to consume by observer.
   size_t total_bytes_received;
+  S3AuditInfo audit_log_obj;
   std::shared_ptr<S3AsyncBufferOptContainer> buffered_input;
 
   std::function<void()> incoming_data_callback;
@@ -92,6 +97,7 @@ class S3RequestObject {
   std::unique_ptr<EventInterface> event_obj;
 
   S3Timer request_timer;
+  S3Timer turn_around_time;
 
   bool is_client_connected;
   bool s3_client_read_timedout;
@@ -132,6 +138,9 @@ class S3RequestObject {
   virtual void restart_client_read_timer();
   virtual void free_client_read_timer();
   virtual void trigger_client_read_timeout_callback();
+  virtual void populate_and_log_audit_info();
+  virtual void set_operation(std::string operation_str);
+  virtual void set_request_uri(std::string request_uri);
 
  protected:
   // protected so mocks can override

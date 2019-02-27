@@ -60,6 +60,8 @@ void S3URI::setup_operation_code() {
 
   s3_log(S3_LOG_DEBUG, request_id, "Operation code %s\n",
          operation_code_to_str(operation_code).c_str());
+
+  request->set_operation(operation_code_to_str(operation_code));
   // Other operations - todo
 }
 
@@ -101,6 +103,7 @@ S3PathStyleURI::S3PathStyleURI(std::shared_ptr<S3RequestObject> req)
     }
   }
   request->set_api_type(s3_api_type);
+  request->set_request_uri(full_uri);
 }
 
 S3VirtualHostStyleURI::S3VirtualHostStyleURI(
@@ -120,6 +123,7 @@ S3VirtualHostStyleURI::S3VirtualHostStyleURI(
     request->set_api_type(s3_api_type);
     object_name = std::string(full_uri.c_str() + 1);  // ignore first slash
   }
+  request->set_request_uri(full_uri);
 }
 
 void S3VirtualHostStyleURI::setup_bucket_name() {

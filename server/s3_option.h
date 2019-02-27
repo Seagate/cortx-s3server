@@ -40,6 +40,7 @@
 #define S3_OPTION_CLOVIS_PROCESS_FID 0x10000
 #define S3_OPTION_REUSEPORT 0x20000
 #define S3_OPTION_IPV6_BIND_ADDR 0x40000
+#define S3_OPTION_AUDIT_CONFIG 0x80000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -60,6 +61,7 @@
 #include <string>
 #include "evhtp_wrapper.h"
 #include "s3_cli_options.h"
+#include "s3_audit_info.h"
 
 class S3Option {
   int cmd_opt_flag;
@@ -88,6 +90,7 @@ class S3Option {
   std::string log_dir;
   std::string layout_recommendation_file;
   std::string s3_iam_cert_file;
+  std::string audit_log_conf_file;
 
   int read_ahead_multiple;
   std::string log_level;
@@ -158,6 +161,7 @@ class S3Option {
 
     log_dir = "/var/log/seagate/s3";
     log_level = FLAGS_s3loglevel;
+    audit_log_conf_file = FLAGS_audit_config;
     log_file_max_size_mb = 100;  // 100 MB
     log_buffering_enable = true;
     log_flush_frequency_sec = 30;  // 30 seconds
@@ -242,6 +246,7 @@ class S3Option {
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();
   std::string get_s3_pidfile();
+  std::string get_s3_audit_config();
   unsigned short get_s3_bind_port();
 
   int get_read_ahead_multiple();
