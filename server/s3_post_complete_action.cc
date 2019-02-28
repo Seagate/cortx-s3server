@@ -21,7 +21,6 @@
 #include <libxml/xmlmemory.h>
 #include <unistd.h>
 
-#include "s3_aws_etag.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_log.h"
@@ -87,9 +86,12 @@ S3PostCompleteAction::S3PostCompleteAction(
   }
 
   object_size = 0;
+  current_parts_size = 0;
+  prev_fetched_parts_size = 0;
   post_successful = false;
+  validated_parts_count = 0;
   set_abort_multipart(false);
-
+  count_we_requested = S3Option::get_instance()->get_clovis_idx_fetch_count();
   setup_steps();
 }
 
@@ -99,7 +101,7 @@ void S3PostCompleteAction::setup_steps() {
   add_task(std::bind(&S3PostCompleteAction::load_and_validate_request, this));
   add_task(std::bind(&S3PostCompleteAction::fetch_bucket_info, this));
   add_task(std::bind(&S3PostCompleteAction::fetch_multipart_info, this));
-  add_task(std::bind(&S3PostCompleteAction::fetch_parts_info, this));
+  add_task(std::bind(&S3PostCompleteAction::get_next_parts_info, this));
   add_task(std::bind(&S3PostCompleteAction::save_metadata, this));
   add_task(std::bind(&S3PostCompleteAction::delete_part_index, this));
   add_task(std::bind(&S3PostCompleteAction::delete_parts, this));
@@ -216,15 +218,77 @@ void S3PostCompleteAction::fetch_multipart_info_failed() {
   send_response_to_s3_client();
 }
 
-void S3PostCompleteAction::fetch_parts_info() {
+void S3PostCompleteAction::get_next_parts_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Fetching parts list from KV store\n");
   clovis_kv_reader = s3_clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
   clovis_kv_reader->next_keyval(
-      multipart_metadata->get_part_index_oid(), "", parts.size(),
-      std::bind(&S3PostCompleteAction::get_parts_successful, this),
-      std::bind(&S3PostCompleteAction::get_parts_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+      multipart_metadata->get_part_index_oid(), last_key, count_we_requested,
+      std::bind(&S3PostCompleteAction::get_next_parts_info_successful, this),
+      std::bind(&S3PostCompleteAction::get_next_parts_info_failed, this));
+}
+
+void S3PostCompleteAction::get_next_parts_info_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (clovis_kv_reader->get_key_values().size() > 0) {
+    // Do validation of parts
+    if (!validate_parts()) {
+      return;
+    }
+  }
+
+  if (is_abort_multipart()) {
+    next();
+  } else {
+    if (clovis_kv_reader->get_key_values().size() < count_we_requested) {
+      // Fetched all parts
+      validated_parts_count += clovis_kv_reader->get_key_values().size();
+      if ((parts.size() != 0) ||
+          (validated_parts_count != std::stoul(total_parts))) {
+        part_metadata->set_state(S3PartMetadataState::missing_partially);
+        set_s3_error("InvalidPart");
+        send_response_to_s3_client();
+        return;
+      }
+      // All parts info processed and validated, finalize etag and move ahead.
+      etag = awsetag.finalize();
+      next();
+    } else {
+      // Continue fetching
+      validated_parts_count += count_we_requested;
+      if (!clovis_kv_reader->get_key_values().empty()) {
+        last_key = clovis_kv_reader->get_key_values().rbegin()->first;
+      }
+      get_next_parts_info();
+    }
+  }
+}
+
+void S3PostCompleteAction::get_next_parts_info_failed() {
+  if (clovis_kv_reader->get_state() == S3ClovisKVSReaderOpState::missing) {
+    // There may not be any records left
+    if ((parts.size() != 0) ||
+        (validated_parts_count != std::stoul(total_parts))) {
+      part_metadata->set_state(S3PartMetadataState::missing_partially);
+      set_s3_error("InvalidPart");
+      send_response_to_s3_client();
+      return;
+    }
+    etag = awsetag.finalize();
+    next();
+  } else {
+    if (clovis_kv_reader->get_state() ==
+        S3ClovisKVSReaderOpState::failed_to_launch) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Parts metadata next keyval operation failed due to pre launch "
+             "failure\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
 }
 
 void S3PostCompleteAction::set_abort_multipart(bool abortit) {
@@ -239,33 +303,23 @@ bool S3PostCompleteAction::is_abort_multipart() {
   return delete_multipart_object;
 }
 
-void S3PostCompleteAction::get_parts_successful() {
+bool S3PostCompleteAction::validate_parts() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  S3AwsEtag awsetag;
-  size_t curr_size;
-  size_t prev_size = 0;
   size_t part_one_size_in_multipart_metadata =
       multipart_metadata->get_part_one_size();
-  auto& kvps = clovis_kv_reader->get_key_values();
-  part_metadata = part_metadata_factory->create_part_metadata_obj(
-      request, multipart_metadata->get_part_index_oid(), upload_id, 0);
-  if (parts.size() != kvps.size()) {
-    part_metadata->set_state(S3PartMetadataState::missing_partially);
-    set_s3_error("InvalidPart");
-    send_response_to_s3_client();
-    return;
+  if (part_metadata == NULL) {
+    part_metadata = part_metadata_factory->create_part_metadata_obj(
+        request, multipart_metadata->get_part_index_oid(), upload_id, 0);
   }
   struct m0_uint128 part_index_oid = multipart_metadata->get_part_index_oid();
-  std::map<std::string, std::string>::iterator part_kv;
-  std::map<std::string, std::pair<int, std::string>>::iterator store_kv;
-
-  for (part_kv = parts.begin(); part_kv != parts.end(); part_kv++) {
-    store_kv = kvps.find(part_kv->first);
-    if (store_kv == kvps.end()) {
-      part_metadata->set_state(S3PartMetadataState::missing);
-      set_s3_error("InvalidPartOrder");
-      send_response_to_s3_client();
-      return;
+  std::map<std::string, std::pair<int, std::string>>& parts_batch_from_kvs =
+      clovis_kv_reader->get_key_values();
+  for (auto part_kv = parts.begin(); part_kv != parts.end();) {
+    auto store_kv = parts_batch_from_kvs.find(part_kv->first);
+    if (store_kv == parts_batch_from_kvs.end()) {
+      // The part from complete request not in current kvs part list
+      part_kv++;
+      continue;
     } else {
       s3_log(S3_LOG_DEBUG, request_id, "Metadata for key [%s] -> [%s]\n",
              store_kv->first.c_str(), store_kv->second.second.c_str());
@@ -282,18 +336,19 @@ void S3PostCompleteAction::get_parts_successful() {
         part_metadata->set_state(S3PartMetadataState::missing_partially);
         set_s3_error("InvalidPart");
         send_response_to_s3_client();
-        return;
+        return false;
       }
       s3_log(S3_LOG_DEBUG, request_id, "Processing Part [%s]\n",
              part_metadata->get_part_number().c_str());
 
-      curr_size = part_metadata->get_content_length();
-      if (curr_size < MINIMUM_ALLOWED_PART_SIZE &&
+      current_parts_size = part_metadata->get_content_length();
+      if (current_parts_size < MINIMUM_ALLOWED_PART_SIZE &&
           store_kv->first != total_parts) {
         s3_log(S3_LOG_ERROR, request_id,
                "The part %s size(%zu) is smaller than minimum "
                "part size allowed:%u\n",
-               store_kv->first.c_str(), curr_size, MINIMUM_ALLOWED_PART_SIZE);
+               store_kv->first.c_str(), current_parts_size,
+               MINIMUM_ALLOWED_PART_SIZE);
         set_s3_error("EntityTooSmall");
         set_abort_multipart(true);
         break;
@@ -303,63 +358,51 @@ void S3PostCompleteAction::get_parts_successful() {
         // In non chunked mode if current part size is not same as
         // that in multipart metadata and its not the last part,
         // then bail out
-        if (curr_size != part_one_size_in_multipart_metadata &&
+        if (current_parts_size != part_one_size_in_multipart_metadata &&
             store_kv->first != total_parts) {
           s3_log(S3_LOG_ERROR, request_id,
                  "The part %s size (%zu) is not "
                  "matching with part one size (%zu) "
                  "in multipart metadata\n",
-                 store_kv->first.c_str(), curr_size,
+                 store_kv->first.c_str(), current_parts_size,
                  part_one_size_in_multipart_metadata);
           set_s3_error("InvalidObjectState");
           set_abort_multipart(true);
           break;
         }
       }
-
-      if (store_kv->first != parts.begin()->first && prev_size != curr_size) {
+      if ((prev_fetched_parts_size != 0) &&
+          (prev_fetched_parts_size != current_parts_size)) {
         if (store_kv->first == total_parts) {
           // This is the last part, ignore it after size calculation
           object_size += part_metadata->get_content_length();
           awsetag.add_part_etag(part_metadata->get_md5());
+          part_kv = parts.erase(part_kv);
           continue;
         }
         s3_log(S3_LOG_ERROR, request_id,
                "The part %s size(%zu) is different "
                "from previous part size(%zu), Will be "
                "destroying the parts\n",
-               store_kv->first.c_str(), curr_size, prev_size);
+               store_kv->first.c_str(), current_parts_size,
+               prev_fetched_parts_size);
         // Will be deleting complete object along with the part index and
         // multipart kv
         set_s3_error("InvalidObjectState");
         set_abort_multipart(true);
         break;
       } else {
-        prev_size = curr_size;
+        prev_fetched_parts_size = current_parts_size;
       }
       object_size += part_metadata->get_content_length();
       awsetag.add_part_etag(part_metadata->get_md5());
+      // Remove the entry from parts map, so that in next
+      // validate_parts() we dont have to scan it again
+      part_kv = parts.erase(part_kv);
     }
   }
-  if (!is_abort_multipart()) {
-    etag = awsetag.finalize();
-  }
-  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3PostCompleteAction::get_parts_failed() {
-  if (clovis_kv_reader->get_state() ==
-      S3ClovisKVSReaderOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Parts metadata next keyval operation failed due to pre launch "
-           "failure\n");
-    set_s3_error("ServiceUnavailable");
-  } else {
-    s3_log(S3_LOG_ERROR, request_id, "Parts info missing\n");
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
+  return true;
 }
 
 void S3PostCompleteAction::save_metadata() {

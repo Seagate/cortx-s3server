@@ -30,6 +30,7 @@
 #include "s3_factory.h"
 #include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
+#include "s3_aws_etag.h"
 #include "s3_uuid.h"
 
 class S3PostCompleteAction : public S3Action {
@@ -57,6 +58,12 @@ class S3PostCompleteAction : public S3Action {
   bool delete_multipart_object;
   bool post_successful;
   void parse_xml_str(std::string &xml_str);
+  size_t count_we_requested;
+  size_t current_parts_size;
+  size_t prev_fetched_parts_size;
+  size_t validated_parts_count;
+  std::string last_key;
+  S3AwsEtag awsetag;
 
  public:
   S3PostCompleteAction(
@@ -82,8 +89,10 @@ class S3PostCompleteAction : public S3Action {
   void fetch_multipart_info();
   void fetch_multipart_info_failed();
 
-  void fetch_parts_info();
-  void get_parts_successful();
+  void get_next_parts_info();
+  void get_next_parts_info_successful();
+  void get_next_parts_info_failed();
+  bool validate_parts();
   void get_parts_failed();
   void get_part_info(int part);
   void save_metadata();
@@ -125,10 +134,12 @@ class S3PostCompleteAction : public S3Action {
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfo);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInvalidObject);
   FRIEND_TEST(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError);
-  FRIEND_TEST(S3PostCompleteActionTest, FetchPartsInfo);
+  FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsInfo);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsInfoFailed);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessful);
-  FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulInvalidPart);
+  FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsSuccessful);
+  FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsSuccessfulNext);
+  FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsSuccessfulAbortSet);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulJsonError);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulAbortMultiPart);

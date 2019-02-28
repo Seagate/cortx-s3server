@@ -353,51 +353,95 @@ TEST_F(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError) {
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PostCompleteActionTest, FetchPartsInfo) {
+TEST_F(S3PostCompleteActionTest, GetNextPartsInfo) {
   CREATE_KVS_READER_OBJ;
   CREATE_MP_METADATA_OBJ;
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _))
       .Times(1);
-  action_under_test_ptr->fetch_parts_info();
+  action_under_test_ptr->get_next_parts_info();
 }
 
-TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulInvalidPart) {
+TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessful) {
   CREATE_KVS_READER_OBJ;
   CREATE_MP_METADATA_OBJ;
-
+  action_under_test_ptr->count_we_requested = 2;
   result_keys_values.insert(
-      std::make_pair("testkey0", std::make_pair(10, "keyval")));
+      std::make_pair("testkey0", std::make_pair(10, "keyval1")));
+  result_keys_values.insert(
+      std::make_pair("testkey1", std::make_pair(11, "keyval2")));
+  result_keys_values.insert(
+      std::make_pair("testkey2", std::make_pair(12, "keyval3")));
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              next_keyval(_, _, _, _, _, _)).Times(1);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_key_values())
-      .WillRepeatedly(ReturnRef(result_keys_values));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
+  action_under_test_ptr->clear_tasks();
+  action_under_test_ptr->add_task(
+      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
 
-  action_under_test_ptr->get_parts_successful();
-  EXPECT_STREQ("InvalidPart",
-               action_under_test_ptr->get_s3_error_code().c_str());
+  action_under_test_ptr->get_next_parts_info_successful();
+  EXPECT_EQ(0, call_count_one);
+}
+
+TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessfulAbortSet) {
+  CREATE_KVS_READER_OBJ;
+  CREATE_MP_METADATA_OBJ;
+  action_under_test_ptr->count_we_requested = 2;
+
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
+  action_under_test_ptr->set_abort_multipart(true);
+  action_under_test_ptr->clear_tasks();
+  action_under_test_ptr->add_task(
+      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+
+  action_under_test_ptr->get_next_parts_info_successful();
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessfulNext) {
+  CREATE_KVS_READER_OBJ;
+  CREATE_MP_METADATA_OBJ;
+  action_under_test_ptr->count_we_requested = 5;
+  result_keys_values.insert(
+      std::make_pair("testkey0", std::make_pair(10, "keyval1")));
+  result_keys_values.insert(
+      std::make_pair("testkey1", std::make_pair(11, "keyval2")));
+  result_keys_values.insert(
+      std::make_pair("testkey2", std::make_pair(12, "keyval3")));
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              next_keyval(_, _, _, _, _, _)).Times(0);
+
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
+  action_under_test_ptr->clear_tasks();
+  action_under_test_ptr->add_task(
+      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+
+  action_under_test_ptr->total_parts = "3";
+  action_under_test_ptr->get_next_parts_info_successful();
+  EXPECT_EQ(1, call_count_one);
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
   CREATE_KVS_READER_OBJ;
   CREATE_MP_METADATA_OBJ;
 
-  result_keys_values.insert(std::make_pair("0", std::make_pair(0, "keyval1")));
-  result_keys_values.insert(std::make_pair("1", std::make_pair(0, "keyval2")));
-  result_keys_values.insert(std::make_pair("2", std::make_pair(0, "keyval3")));
+  result_keys_values.insert(std::make_pair("0", std::make_pair(10, "keyval1")));
+  result_keys_values.insert(std::make_pair("1", std::make_pair(11, "keyval2")));
+  result_keys_values.insert(std::make_pair("2", std::make_pair(12, "keyval3")));
+
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
 
   action_under_test_ptr->parts["0"] = "keyval1";
   action_under_test_ptr->parts["1"] = "keyval2";
   action_under_test_ptr->parts["2"] = "keyval3";
 
   action_under_test_ptr->total_parts = action_under_test_ptr->parts.size();
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_key_values())
-      .WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_content_length())
@@ -409,26 +453,26 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
   action_under_test_ptr->add_task(
       std::bind(&S3PostCompleteActionTest::func_callback_one, this));
 
-  action_under_test_ptr->get_parts_successful();
-  EXPECT_EQ(1, call_count_one);
+  action_under_test_ptr->validate_parts();
+  EXPECT_EQ(0, call_count_one);
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
   CREATE_KVS_READER_OBJ;
   CREATE_MP_METADATA_OBJ;
 
-  result_keys_values.insert(std::make_pair("0", std::make_pair(0, "keyval1")));
-  result_keys_values.insert(std::make_pair("1", std::make_pair(0, "keyval2")));
-  result_keys_values.insert(std::make_pair("2", std::make_pair(0, "keyval3")));
+  result_keys_values.insert(std::make_pair("0", std::make_pair(10, "keyval1")));
+  result_keys_values.insert(std::make_pair("1", std::make_pair(11, "keyval2")));
+  result_keys_values.insert(std::make_pair("2", std::make_pair(12, "keyval3")));
+
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
 
   action_under_test_ptr->parts["0"] = "keyval1";
   action_under_test_ptr->parts["1"] = "keyval2";
   action_under_test_ptr->parts["2"] = "keyval3";
 
   action_under_test_ptr->total_parts = action_under_test_ptr->parts.size();
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_key_values())
-      .WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_content_length())
@@ -437,8 +481,8 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
   action_under_test_ptr->add_task(
       std::bind(&S3PostCompleteActionTest::func_callback_one, this));
 
-  action_under_test_ptr->get_parts_successful();
-  EXPECT_EQ(1, call_count_one);
+  action_under_test_ptr->validate_parts();
+  EXPECT_EQ(0, call_count_one);
   EXPECT_STREQ("EntityTooSmall",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
@@ -448,18 +492,19 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
   CREATE_MP_METADATA_OBJ;
 
   result_keys_values.insert(std::make_pair("0", std::make_pair(0, "keyval1")));
+
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
+
   action_under_test_ptr->parts["0"] = "keyval1";
 
   action_under_test_ptr->total_parts = action_under_test_ptr->parts.size();
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_key_values())
-      .WillRepeatedly(ReturnRef(result_keys_values));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(-1));
   EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_parts_successful();
+  action_under_test_ptr->validate_parts();
   EXPECT_STREQ("InvalidPart",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
@@ -474,7 +519,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsInfoFailed) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
 
-  action_under_test_ptr->get_parts_failed();
+  action_under_test_ptr->get_next_parts_info_failed();
   EXPECT_STREQ("InternalError",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
