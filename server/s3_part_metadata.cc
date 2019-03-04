@@ -41,12 +41,9 @@ void S3PartMetadata::initialize(std::string uploadid, int part_num) {
   s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
 
   // Set the defaults
-  S3DateTime current_time;
-  current_time.init_current_time();
-  system_defined_attribute["Date"] = current_time.get_isoformat_string();
+  system_defined_attribute["Date"] = "";
   system_defined_attribute["Content-Length"] = "";
-  system_defined_attribute["Last-Modified"] =
-      current_time.get_isoformat_string();  // TODO
+  system_defined_attribute["Last-Modified"] = "";
   system_defined_attribute["Content-MD5"] = "";
 
   system_defined_attribute["x-amz-server-side-encryption"] =
@@ -130,6 +127,15 @@ std::string S3PartMetadata::get_last_modified_gmt() {
 std::string S3PartMetadata::get_last_modified_iso() {
   // we store isofmt in json
   return system_defined_attribute["Last-Modified"];
+}
+
+void S3PartMetadata::reset_date_time_to_current() {
+  // we store isofmt in json
+  S3DateTime current_time;
+  current_time.init_current_time();
+  std::string time_now = current_time.get_isoformat_string();
+  system_defined_attribute["Date"] = time_now;
+  system_defined_attribute["Last-Modified"] = time_now;
 }
 
 std::string S3PartMetadata::get_storage_class() {

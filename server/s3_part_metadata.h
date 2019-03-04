@@ -133,6 +133,7 @@ class S3PartMetadata {
   std::string get_last_modified();
   std::string get_last_modified_gmt();
   virtual std::string get_last_modified_iso();
+  virtual void reset_date_time_to_current();
   virtual std::string get_storage_class();
   virtual std::string get_upload_id();
   std::string get_part_number();

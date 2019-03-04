@@ -240,6 +240,8 @@ void S3PutMultiObjectAction::save_multipart_metadata() {
       return;
     }
   }
+  // to rest Date and Last-Modfied time object metadata
+  object_multipart_metadata->reset_date_time_to_current();
   object_multipart_metadata->set_part_one_size(current_part_one_size);
   object_multipart_metadata->save(
       std::bind(&S3PutMultiObjectAction::next, this),
@@ -517,6 +519,8 @@ void S3PutMultiObjectAction::save_metadata() {
       request, object_multipart_metadata->get_part_index_oid(), upload_id,
       part_number);
 
+  // to rest Date and Last-Modfied time object metadata
+  part_metadata->reset_date_time_to_current();
   part_metadata->set_content_length(request->get_data_length_str());
   part_metadata->set_md5(clovis_writer->get_content_md5());
   for (auto it : request->get_in_headers_copy()) {

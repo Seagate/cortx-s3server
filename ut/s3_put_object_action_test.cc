@@ -1013,6 +1013,8 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
       .WillOnce(Return(oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_oid(_))
       .Times(AtLeast(1));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              reset_date_time_to_current()).Times(AtLeast(1));
 
   std::map<std::string, std::string> input_headers;
   input_headers["x-amz-meta-item-1"] = "1024";

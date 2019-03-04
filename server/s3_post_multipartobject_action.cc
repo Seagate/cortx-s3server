@@ -493,6 +493,8 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
   if (!new_object_tags_map.empty()) {
     object_multipart_metadata->set_tags(new_object_tags_map);
   }
+  // to rest Date and Last-Modfied time object metadata
+  object_multipart_metadata->reset_date_time_to_current();
   object_multipart_metadata->set_oid(oid);
   object_multipart_metadata->set_part_index_oid(
       part_metadata->get_part_index_oid());

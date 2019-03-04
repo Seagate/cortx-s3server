@@ -522,6 +522,9 @@ TEST_F(S3PostCompleteActionTest, SaveMetadata) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), save(_, _))
       .Times(AtLeast(1));
 
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              reset_date_time_to_current()).Times(AtLeast(1));
+
   action_under_test_ptr->save_metadata();
 }
 

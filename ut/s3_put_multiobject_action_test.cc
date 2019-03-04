@@ -969,6 +969,9 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata) {
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), save(_, _))
       .Times(AtLeast(1));
 
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
+              reset_date_time_to_current()).Times(AtLeast(1));
+
   action_under_test->save_metadata();
 }
 

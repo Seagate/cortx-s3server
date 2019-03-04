@@ -88,7 +88,7 @@ TEST_F(S3PartMetadataTest, ConstructorTest) {
                metadata_under_test->system_defined_attribute["Owner-Account-id"]
                    .c_str());
   std::string date = metadata_under_test->system_defined_attribute["Date"];
-  EXPECT_STREQ("Z", date.substr(date.length() - 1).c_str());
+  EXPECT_STREQ("", date.c_str());
   EXPECT_STREQ("uploadid", metadata_under_test->upload_id.c_str());
   EXPECT_TRUE(metadata_under_test->put_metadata);
   EXPECT_STREQ("index_salt_", metadata_under_test->salt.c_str());

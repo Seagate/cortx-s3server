@@ -168,7 +168,7 @@ TEST_F(S3ObjectMetadataTest, ConstructorTest) {
       "",
       action_under_test->system_defined_attribute["Owner-Account-id"].c_str());
   std::string date = action_under_test->system_defined_attribute["Date"];
-  EXPECT_STREQ("Z", date.substr(date.length() - 1).c_str());
+  EXPECT_STREQ("", date.c_str());
 }
 
 TEST_F(S3MultipartObjectMetadataTest, ConstructorTest) {
@@ -190,7 +190,7 @@ TEST_F(S3MultipartObjectMetadataTest, ConstructorTest) {
       "",
       action_under_test->system_defined_attribute["Owner-Account-id"].c_str());
   std::string date = action_under_test->system_defined_attribute["Date"];
-  EXPECT_STREQ("Z", date.substr(date.length() - 1).c_str());
+  EXPECT_STREQ("", date.c_str());
   index_name = action_under_test->index_name;
   EXPECT_STREQ("Multipart", index_name.substr(index_name.length() - 9).c_str());
   EXPECT_STREQ("1234-1234", action_under_test->upload_id.c_str());

@@ -376,6 +376,9 @@ void S3PostCompleteAction::save_metadata() {
     for (auto it : multipart_metadata->get_user_attributes()) {
       object_metadata->add_user_defined_attribute(it.first, it.second);
     }
+
+    // to rest Date and Last-Modfied time object metadata
+    object_metadata->reset_date_time_to_current();
     object_metadata->set_tags(multipart_metadata->get_tags());
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
