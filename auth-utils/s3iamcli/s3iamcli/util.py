@@ -2,6 +2,8 @@ import sys
 import string
 import hmac
 import base64
+import datetime
+import hashlib
 from hashlib import sha1, sha256
 from s3iamcli.config import Credentials
 
@@ -58,3 +60,69 @@ def sign_request_v2(method='GET', canonical_uri='/', params={}, headers={}):
     auth_header = "AWS %s:%s" % (access_key, signature)
 
     return auth_header
+
+def create_canonical_request(method, canonical_uri, body, epoch_t, host):
+    canonical_query_string = "";
+    signed_headers = 'host;x-amz-date'
+    payload_hash = hashlib.sha256(body.encode('utf-8')).hexdigest()
+    canonical_headers = 'host:' + host + '\n' + 'x-amz-date:' + get_timestamp(epoch_t) + '\n'
+    canonical_request = method + '\n' + canonical_uri + '\n' + canonical_query_string + '\n' + \
+        canonical_headers + '\n' + signed_headers + '\n' + payload_hash
+    return canonical_request
+
+def sign(key, msg):
+    return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
+
+def getV4SignatureKey(key, dateStamp, regionName, serviceName):
+    kDate = sign(('AWS4' + key).encode('utf-8'), dateStamp)
+    kRegion = sign(kDate, regionName)
+    kService = sign(kRegion, serviceName)
+    kSigning = sign(kService, 'aws4_request')
+
+    return kSigning
+
+def create_string_to_sign_v4(method='', canonical_uri='', body='', epoch_t='',
+        algorithm='', host='' , service='', region=''):
+
+    canonical_request = create_canonical_request(method, canonical_uri,
+        body, epoch_t, host);
+
+    credential_scope = get_date(epoch_t) + '/' + region + '/' + service + '/' + 'aws4_request'
+
+    string_to_sign = algorithm + '\n' + get_timestamp(epoch_t) + '\n' + credential_scope \
+    + '\n' +  hashlib.sha256(canonical_request.encode('utf-8')).hexdigest();
+    return string_to_sign
+
+def sign_request_v4(method=None, canonical_uri='/', body='', epoch_t='',
+        host='', service='', region=''):
+
+    if method is None:
+        print("method can not be null")
+        return None
+    credential_scope = get_date(epoch_t) + '/' + region + \
+        '/' + service + '/' + 'aws4_request'
+
+    signed_headers = 'host;x-amz-date'
+
+    algorithm = 'AWS4-HMAC-SHA256';
+
+    access_key = Credentials.access_key
+    secret_key = Credentials.secret_key
+
+    string_to_sign = create_string_to_sign_v4(method, canonical_uri, body, epoch_t,
+        algorithm, host, service, region)
+
+    signing_key = getV4SignatureKey(secret_key, get_date(epoch_t), region, service);
+
+    signature = hmac.new(signing_key, (string_to_sign).encode('utf-8'), hashlib.sha256).hexdigest();
+
+    authorization_header = algorithm + ' ' + 'Credential=' + access_key + '/' + \
+        credential_scope + ', ' +'SignedHeaders=' + signed_headers + \
+        ', ' +  'Signature=' + signature
+    return authorization_header
+
+def get_date(epoch_t):
+    return epoch_t.strftime('%Y%m%d')
+
+def get_timestamp(epoch_t):
+    return epoch_t.strftime('%Y%m%dT%H%M%SZ')
