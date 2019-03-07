@@ -148,6 +148,23 @@ sudo systemctl start s3authserver
 sudo systemctl stop s3authserver
 ```
 
+## Running S3 Authserver listening on IPv4 or IPv6 only or both
+
+Enable IPv6 only
+   Set defaultHost value to ::1 or IPv6 address of local machine in /opt/seagate/auth/resources/authserver.properties
+
+   Restart Authserver
+
+Enable IPv4 only
+   Set defaultHost value to 127.0.0.1 or IPv4 address of local machine in /opt/seagate/auth/resources/authserver.properties
+
+   Restart Authserver
+
+Enable both IPv6 and IPv4 on dual stack machine
+   Set defaultHost value to 0.0.0.0 in /opt/seagate/auth/resources/authserver.properties
+
+   Restart Authserver
+
 ## Load balancer for S3
 We use haproxy as a load balancer, as well as have support for nginx. We started with
 nginx and moved to haproxy during Hermi release.
