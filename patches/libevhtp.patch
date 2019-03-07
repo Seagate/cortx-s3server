@@ -1,5 +1,5 @@
 diff --git a/evhtp.c b/evhtp.c
-index a97c836..6f3f5e2 100644
+index a97c836..de95cd8 100644
 --- a/evhtp.c
 +++ b/evhtp.c
 @@ -69,6 +69,7 @@ static evhtp_path_t       * _evhtp_path_new(const char * data, size_t len);
@@ -10,7 +10,23 @@ index a97c836..6f3f5e2 100644
  
  #define HOOK_AVAIL(var, hook_name)                 (var->hooks && var->hooks->hook_name)
  #define HOOK_FUNC(var, hook_name)                  (var->hooks->hook_name)
-@@ -1794,7 +1795,6 @@ _evhtp_connection_readcb(evbev_t * bev, void * arg) {
+@@ -1425,6 +1426,15 @@ _evhtp_request_parser_headers(htparser * p) {
+     c->request->proto     = _evhtp_protocol(htparser_get_major(p), htparser_get_minor(p));
+     c->request->status    = _evhtp_headers_hook(c->request, c->request->headers_in);
+ 
++    /* S3 edit starts */
++    // In case of ssl request _evhtp_headers_hook calls _evhtp_connection_writecb
++    // Which frees request, hence the dereferencing c->request->status crashes
++    // If request is NULL then return.
++    if (c->request == NULL) {
++      return 0;
++    }
++    /* S3 edit ends */
++
+     if (c->request->status != EVHTP_RES_OK) {
+         return -1;
+     }
+@@ -1794,7 +1804,6 @@ _evhtp_connection_readcb(evbev_t * bev, void * arg) {
      if (c->paused == 1) {
          return;
      }
@@ -18,7 +34,7 @@ index a97c836..6f3f5e2 100644
      buf   = evbuffer_pullup(bufferevent_get_input(bev), avail);
  
      htp_log_debug("buffer is\n----\n%.*s\n-----", (int)avail, (const char *)buf);
-@@ -1828,10 +1828,51 @@ _evhtp_connection_readcb(evbev_t * bev, void * arg) {
+@@ -1828,10 +1837,55 @@ _evhtp_connection_readcb(evbev_t * bev, void * arg) {
  
      evbuffer_drain(bufferevent_get_input(bev), nread);
  
@@ -53,7 +69,11 @@ index a97c836..6f3f5e2 100644
 +      /* Next bufferevent read will try to read nread more data to buffer
 +      */
 +      htp_log_debug("Ask for more nread(%zu) data (= header size).\n", nread);
-+      bufferevent_set_read_data(bev, nread);
++      if (c->ssl != NULL) {
++        bufferevent_ssl_set_read_data(bev, nread);
++      } else {
++        bufferevent_set_read_data(bev, nread);
++      }
 +
 +      if (htparser_get_content_pending(c->parser) >= g_buffer_size) {
 +        htp_log_debug("Set lowwatermark(%zu) and highwatermark(%zu).\n",
@@ -70,7 +90,7 @@ index a97c836..6f3f5e2 100644
      } else if (nread < avail) {
          /* we still have more data to read (piped request probably) */
          evhtp_connection_resume(c);
-@@ -3255,6 +3296,11 @@ evhtp_bind_sockaddr(evhtp_t * htp, struct sockaddr * sa, size_t sin_len, int bac
+@@ -3255,6 +3309,11 @@ evhtp_bind_sockaddr(evhtp_t * htp, struct sockaddr * sa, size_t sin_len, int bac
  
      setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&on, sizeof(on));
      setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on));
@@ -82,7 +102,24 @@ index a97c836..6f3f5e2 100644
  
      if (sa->sa_family == AF_INET6) {
          int rc;
-@@ -4358,6 +4404,9 @@ evhtp_connection_t *
+@@ -4323,6 +4382,16 @@ evhtp_connection_new_dns(evbase_t * evbase, struct evdns_base * dns_base,
+         struct sockaddr   * sin;
+         int                 salen;
+ 
++        /* S3 edit starts */
++        /* ip address will be prefixed with ipv4: or ipv6:
++         * trim the prefix string.
++         * Eg: ipv4:127.0.0.1 or ipv6:::1
++         */
++        if ((!strncmp(addr, "ipv4:", 5)) || !strncmp(addr, "ipv6:", 5)) {
++            addr           += 5;
++        }
++        /* S3 edit ends */
++
+         if (inet_pton(AF_INET, addr, &sin4.sin_addr)) {
+             sin4.sin_family = AF_INET;
+             sin4.sin_port   = htons(port);
+@@ -4358,6 +4427,9 @@ evhtp_connection_t *
  evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, evhtp_ssl_ctx_t * ctx) {
      evhtp_connection_t * conn;
      struct sockaddr_in   sin;
@@ -92,7 +129,7 @@ index a97c836..6f3f5e2 100644
  
      evhtp_assert(evbase != NULL);
  
-@@ -4365,9 +4414,29 @@ evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, ev
+@@ -4365,9 +4437,29 @@ evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, ev
          return NULL;
      }
  
@@ -125,7 +162,7 @@ index a97c836..6f3f5e2 100644
  
      conn->ssl           = SSL_new(ctx);
      conn->evbase        = evbase;
-@@ -4378,9 +4447,7 @@ evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, ev
+@@ -4378,9 +4470,7 @@ evhtp_connection_ssl_new(evbase_t * evbase, const char * addr, uint16_t port, ev
      bufferevent_setcb(conn->bev, NULL, NULL,
                        _evhtp_connection_eventcb, conn);
  
@@ -136,7 +173,7 @@ index a97c836..6f3f5e2 100644
  
      return conn;
  }
-@@ -4439,3 +4506,9 @@ evhtp_request_status(evhtp_request_t * r) {
+@@ -4439,3 +4529,9 @@ evhtp_request_status(evhtp_request_t * r) {
      return htparser_get_status(r->conn->parser);
  }
  

@@ -1,41 +1,62 @@
 #!/bin/sh
 
-USAGE="USAGE: bash $(basename "$0") [--use_http] [--use_ipv6] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ] [--use_ipv6] [--help | -h]
 
 where:
---use_http         Use HTTP for ST's
+--use_http_client        Use HTTP client for ST's. Default is use HTTPS client.
+--s3server_enable_ssl    Use ssl for s3server, by default its disabled
 --use_ipv6	   Use ipv6 for ST's
 --help (-h)        Display help"
 
-use_http=0
+use_http_client=0
+s3server_enable_ssl=0
 use_ipv6=0
+restart_haproxy=0
 
 if [ $# -eq 0 ]
 then
   echo "Using HTTPS for system tests"
 elif [ $# -gt 2 ]
 then
-  echo "Invald arguments passed";
+  echo "Invalid arguments passed";
         echo "$USAGE"
         exit 1
 else
-  case "$1" in
-    --use_http ) use_http=1;
-        echo "Using HTTP for system tests";
-        ;;
-    --use_ipv6 ) use_ipv6=1;
-        echo "Using ipv6 for system tests";
-        ;;
-    --help | -h )
-        echo "$USAGE"
-        exit 1
-        ;;
-    * )
-        echo "Invald argument passed";
-        echo "$USAGE"
-        exit 1
-        ;;
-  esac
+  while [ "$1" != "" ]; do
+    case "$1" in
+      --use_http_client ) use_http_client=1;
+          if [ $s3server_enable_ssl -eq 1 ]
+          then
+            echo "Invalid argument --s3server_enable_ssl"
+            echo "$USAGE"
+            exit 1
+          fi
+          echo "Using HTTP for system tests";
+          ;;
+      --use_ipv6 ) use_ipv6=1;
+          echo "Using ipv6 for system tests";
+          ;;
+      --s3server_enable_ssl ) s3server_enable_ssl=1;
+          if [ $use_http_client -eq 1 ]
+          then
+            echo "Invalid argument --use_http_client"
+            echo "$USAGE"
+            exit 1
+          fi
+          echo "System tests with ssl enabled s3server";
+          ;;
+      --help | -h )
+          echo "$USAGE"
+          exit 1
+          ;;
+      * )
+          echo "Invalid argument passed";
+          echo "$USAGE"
+          exit 1
+          ;;
+    esac
+    shift
+  done
 fi
 set -xe
 
@@ -102,7 +123,7 @@ $USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* \
                  /var/log/seagate/auth/tools/*
 
 # Configuration setting for using HTTP connection
-if [ $use_http -eq 1 ]
+if [ $use_http_client -eq 1 ]
 then
   $USE_SUDO sed -i 's/S3_ENABLE_AUTH_SSL:.*$/S3_ENABLE_AUTH_SSL: false/g' /opt/seagate/s3/conf/s3config.yaml
   $USE_SUDO sed -i 's/S3_AUTH_PORT:.*$/S3_AUTH_PORT: 9085/g' /opt/seagate/s3/conf/s3config.yaml
@@ -120,6 +141,18 @@ then
   # backup
   $USE_SUDO \cp /etc/haproxy/haproxy.cfg{,.bak}
   $USE_SUDO sed -i 's/0\.0\.0\.0/::/g' /etc/haproxy/haproxy.cfg
+  restart_haproxy=1
+fi
+
+if [ $s3server_enable_ssl -eq 1 ]
+then
+  $USE_SUDO sed -i 's/S3_SERVER_SSL_ENABLE:.*$/S3_SERVER_SSL_ENABLE: true/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/^\(\s*server\s\+s3-instance.*\)\ check/\1 check ssl verify required ca-file \/etc\/ssl\/stx-s3\/s3\/ca.crt/g' /etc/haproxy/haproxy.cfg
+  restart_haproxy=1
+fi
+
+if [ $restart_haproxy -eq 1 ]
+then
   $USE_SUDO systemctl restart haproxy
 fi
 
@@ -171,12 +204,11 @@ fi
 
 
 # Add certificate to keystore
-if [ $use_http -eq 0 ]
+if [ $use_http_client -eq 0 ]
 then
   $USE_SUDO keytool -delete -alias s3server -keystore /etc/pki/java/cacerts -storepass changeit >/dev/null || true
   $USE_SUDO keytool -import -trustcacerts -alias s3server -noprompt -file /etc/ssl/stx-s3-clients/s3/ca.crt -keystore /etc/pki/java/cacerts -storepass changeit
 fi
-
 use_ipv6_arg=""
 if [ $use_ipv6 -eq 1 ]
 then
@@ -184,7 +216,7 @@ then
 fi
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
-if [ $use_http -eq 1 ]
+if [ $use_http_client -eq 1 ]
 then
   ./runalltest.sh --no-mero-rpm --no-https $use_ipv6_arg || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 else
@@ -196,6 +228,13 @@ $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
 $USE_SUDO ./dev-stops3.sh || echo "Cannot stop s3 services"
+
+if [ $s3server_enable_ssl -eq 1 ]
+then
+  # Restore the config file
+  $USE_SUDO sed -i 's/S3_SERVER_SSL_ENABLE: true/S3_SERVER_SSL_ENABLE: false                          #Enable s3server SSL/g' /opt/seagate/s3/conf/s3config.yaml
+  $USE_SUDO sed -i 's/^\(\s*server\s\+s3-instance.* check\).*$/\1/g' /etc/haproxy/haproxy.cfg
+fi
 
 # Dump last log lines for easy lookup in jenkins
 tail -50 /var/log/seagate/s3/s3server.INFO

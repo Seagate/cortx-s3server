@@ -96,7 +96,8 @@ class S3GetObjectAction : public S3Action {
               ValidateObjectWhenMissingObjectReportNoSuckKey);
   FRIEND_TEST(S3GetObjectActionTest,
               ValidateObjectWhenObjInfoFetchFailedReportError);
-  FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse1);
+  FRIEND_TEST(S3GetObjectActionTest, ReadObjectFailedJustEndResponse2);
   FRIEND_TEST(S3GetObjectActionTest, ValidateObjectOfSizeZero);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize);
   FRIEND_TEST(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize);

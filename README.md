@@ -176,12 +176,21 @@ cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
 cp <s3-src>/scripts/haproxy/503.http /etc/haproxy/503.http
 ```
 
-## Install SSL certificates for S3 service (haroxy)
+## Install SSL certificates for S3 service (haproxy)
 See Build SSL section above.
 ```sh
 yum localinstall stx-s3-certs
 systemctl restart haproxy
 ```
+
+## How to have SSL enabled for S3 service (end to end ssl communication)
+In /etc/haproxy/haproxy.cfg replace line
+server s3-instance-1 0.0.0.0:8081 check
+with
+server s3-instance-1 0.0.0.0:8081 check ssl verify required ca-file /etc/ssl/stx-s3/s3/ca.crt
+In /opt/seagate/s3/conf/s3config.yaml file have option S3_SERVER_SSL_ENABLE
+set to true
+
 
 ## How to start/stop single instance of S3 server in Dev environment for testing?
 Execute below command from `s3server` top level directory. Before executing below

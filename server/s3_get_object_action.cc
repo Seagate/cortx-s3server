@@ -341,26 +341,7 @@ void S3GetObjectAction::check_full_or_range_object_read() {
 
 void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  request->set_out_header_value("Last-Modified",
-                                object_metadata->get_last_modified_gmt());
-  request->set_out_header_value("ETag", object_metadata->get_md5());
-  request->set_out_header_value("Accept-Ranges", "bytes");
-  request->set_out_header_value("Content-Length",
-                                std::to_string(get_requested_content_length()));
-  for (auto it : object_metadata->get_user_attributes()) {
-    request->set_out_header_value(it.first, it.second);
-  }
-  if (!request->get_header_value("Range").empty()) {
-    std::ostringstream content_range_stream;
-    content_range_stream << "bytes " << first_byte_offset_to_read << "-"
-                         << last_byte_offset_to_read << "/" << content_length;
-    request->set_out_header_value("Content-Range", content_range_stream.str());
-    // Partial Content
-    request->send_reply_start(S3HttpSuccess206);
-  } else {
-    request->send_reply_start(S3HttpSuccess200);
-  }
-  read_object_reply_started = true;
+
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
   clovis_reader = clovis_reader_factory->create_clovis_reader(
@@ -435,6 +416,29 @@ void S3GetObjectAction::send_data_to_client() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
+  if (!read_object_reply_started) {
+    request->set_out_header_value("Last-Modified",
+                                  object_metadata->get_last_modified_gmt());
+    request->set_out_header_value("ETag", object_metadata->get_md5());
+    request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value(
+        "Content-Length", std::to_string(get_requested_content_length()));
+    for (auto it : object_metadata->get_user_attributes()) {
+      request->set_out_header_value(it.first, it.second);
+    }
+    if (!request->get_header_value("Range").empty()) {
+      std::ostringstream content_range_stream;
+      content_range_stream << "bytes " << first_byte_offset_to_read << "-"
+                           << last_byte_offset_to_read << "/" << content_length;
+      request->set_out_header_value("Content-Range",
+                                    content_range_stream.str());
+      // Partial Content
+      request->send_reply_start(S3HttpSuccess206);
+    } else {
+      request->send_reply_start(S3HttpSuccess200);
+    }
+    read_object_reply_started = true;
+  }
   s3_log(S3_LOG_DEBUG, request_id, "Earlier data_sent_to_client = %zu bytes.\n",
          data_sent_to_client);
 
@@ -482,7 +486,10 @@ void S3GetObjectAction::send_data_to_client() {
 
 void S3GetObjectAction::read_object_data_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Failed to read object data from clovis\n");
-  set_s3_error("InternalError");
+  // set error only when reply is not started
+  if (!read_object_reply_started) {
+    set_s3_error("InternalError");
+  }
   send_response_to_s3_client();
 }
 

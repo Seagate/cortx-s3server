@@ -63,6 +63,8 @@
 #include "s3_cli_options.h"
 #include "s3_audit_info.h"
 
+#define DAY_IN_SECONDS 60 * 60 * 24
+
 class S3Option {
   int cmd_opt_flag;
 
@@ -92,11 +94,15 @@ class S3Option {
   std::string s3_iam_cert_file;
   std::string audit_log_conf_file;
   AuditFormatType audit_log_format;
+  std::string s3server_ssl_cert_file;
+  std::string s3server_ssl_pem_file;
+  int s3server_ssl_session_timeout_in_sec;
 
   int read_ahead_multiple;
   std::string log_level;
   int log_file_max_size_mb;
   bool s3_enable_auth_ssl;
+  bool s3server_ssl_enabled;
   bool s3_reuseport;
   bool log_buffering_enable;
   bool s3_enable_murmurhash_oid;
@@ -157,6 +163,9 @@ class S3Option {
     s3_region_endpoints.insert("s3-europe.seagate.com");
     s3_region_endpoints.insert("s3-asia.seagate.com");
     s3_iam_cert_file = "/etc/ssl/stx-s3/s3auth/s3authserver.crt";
+    s3server_ssl_session_timeout_in_sec = DAY_IN_SECONDS;
+    s3server_ssl_enabled = false;
+
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
 
@@ -250,6 +259,9 @@ class S3Option {
   std::string get_s3_audit_config();
   AuditFormatType get_s3_audit_format_type();
   unsigned short get_s3_bind_port();
+  const char* get_s3server_ssl_cert_file();
+  const char* get_s3server_ssl_pem_file();
+  int get_s3server_ssl_session_timeout();
 
   int get_read_ahead_multiple();
   std::string get_default_endpoint();
@@ -279,6 +291,7 @@ class S3Option {
   std::string get_log_level();
   int get_log_file_max_size_in_mb();
   bool is_s3_ssl_auth_enabled();
+  bool is_s3server_ssl_enabled();
   bool is_s3_reuseport_enabled();
   const char* get_iam_cert_file();
   bool is_log_buffering_enabled();

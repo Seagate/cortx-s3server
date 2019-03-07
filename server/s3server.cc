@@ -243,6 +243,29 @@ void init_s3_index_oid(struct m0_uint128 &global_index_oid,
   global_index_oid.u_lo = index_fid.f_key;
 }
 
+bool init_ssl(evhtp_t *htp) {
+  // Sample Code: libevhtp/examples/test.c
+  char *cert_file =
+      const_cast<char *>(g_option_instance->get_s3server_ssl_cert_file());
+  char *pem_file =
+      const_cast<char *>(g_option_instance->get_s3server_ssl_pem_file());
+  evhtp_ssl_cfg_t scfg;
+  memset(&scfg, '\0', sizeof(scfg));
+  scfg.pemfile = pem_file;
+  scfg.privfile = pem_file;
+  scfg.cafile = cert_file;
+  // SSL session timeout in seconds
+  scfg.ssl_ctx_timeout = g_option_instance->get_s3server_ssl_session_timeout();
+  scfg.x509_verify_cb = NULL;
+  scfg.x509_chk_issued_cb = NULL;
+
+  if (evhtp_ssl_init(htp, &scfg) != 0) {
+    s3_log(S3_LOG_ERROR, "", "evhtp_ssl_init failed\n");
+    return false;
+  }
+  return true;
+}
+
 bool init_auth_ssl() {
   const char *cert_file = g_option_instance->get_iam_cert_file();
   SSL_library_init();
@@ -516,6 +539,23 @@ int main(int argc, char **argv) {
     htp_ipv6 = create_evhtp_handle(global_evbase_handle, router, NULL);
     if (htp_ipv6 == NULL) {
       return 1;
+    }
+  }
+
+  if (g_option_instance->is_s3server_ssl_enabled()) {
+    if (htp_ipv4 != NULL) {
+      if (!init_ssl(htp_ipv4)) {
+        s3_log(S3_LOG_FATAL, "",
+               "SSL initialization failed for s3server for IPV4!\n");
+        return 1;
+      }
+    }
+    if (htp_ipv6 != NULL) {
+      if (!init_ssl(htp_ipv6)) {
+        s3_log(S3_LOG_FATAL, "",
+               "SSL initialization failed for s3server for IPV6!\n");
+        return 1;
+      }
     }
   }
 

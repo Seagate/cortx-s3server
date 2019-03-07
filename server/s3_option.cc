@@ -46,6 +46,14 @@ bool S3Option::load_section(std::string section_name,
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
+      s3server_ssl_cert_file =
+          s3_option_node["S3_SERVER_CERT_FILE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_PEM_FILE");
+      s3server_ssl_pem_file =
+          s3_option_node["S3_SERVER_PEM_FILE"].as<std::string>();
+      s3server_ssl_session_timeout_in_sec =
+          s3_option_node["S3_SERVER_SSL_SESSION_TIMEOUT"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
       s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
@@ -92,6 +100,8 @@ bool S3Option::load_section(std::string section_name,
       s3_ipv6_bind_addr = (s3_ipv6_bind_addr == "~") ? "" : s3_ipv6_bind_addr;
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
+      s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
@@ -315,8 +325,18 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REUSEPORT");
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_PEM_FILE");
+      s3server_ssl_cert_file =
+          s3_option_node["S3_SERVER_CERT_FILE"].as<std::string>();
+      s3server_ssl_pem_file =
+          s3_option_node["S3_SERVER_PEM_FILE"].as<std::string>();
+      s3server_ssl_session_timeout_in_sec =
+          s3_option_node["S3_SERVER_SSL_SESSION_TIMEOUT"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
+      s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
@@ -601,6 +621,13 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_CERT_FILE = %s\n",
+         s3server_ssl_cert_file.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_PEM_FILE = %s\n",
+         s3server_ssl_pem_file.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_SESSION_TIMEOUT = %d\n",
+         s3server_ssl_session_timeout_in_sec);
   s3_log(S3_LOG_INFO, "", "S3_READ_AHEAD_MULTIPLE = %d\n", read_ahead_multiple);
   s3_log(S3_LOG_INFO, "", "S3_PERF_LOG_FILENAME = %s\n", perf_log_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_DEFAULT_ENDPOINT = %s\n",
@@ -788,6 +815,18 @@ bool S3Option::is_s3_ssl_auth_enabled() { return s3_enable_auth_ssl; }
 
 const char* S3Option::get_iam_cert_file() { return s3_iam_cert_file.c_str(); }
 
+const char* S3Option::get_s3server_ssl_cert_file() {
+  return s3server_ssl_cert_file.c_str();
+}
+
+const char* S3Option::get_s3server_ssl_pem_file() {
+  return s3server_ssl_pem_file.c_str();
+}
+
+int S3Option::get_s3server_ssl_session_timeout() {
+  return s3server_ssl_session_timeout_in_sec;
+}
+
 std::string S3Option::get_perf_log_filename() { return perf_log_file; }
 
 int S3Option::get_read_ahead_multiple() { return read_ahead_multiple; }
@@ -873,6 +912,8 @@ void S3Option::enable_auth() { FLAGS_disable_auth = false; }
 bool S3Option::is_auth_disabled() { return FLAGS_disable_auth; }
 
 unsigned short S3Option::s3_performance_enabled() { return perf_enabled; }
+
+bool S3Option::is_s3server_ssl_enabled() { return s3server_ssl_enabled; }
 
 bool S3Option::is_fake_clovis_createobj() {
   return FLAGS_fake_clovis_createobj;

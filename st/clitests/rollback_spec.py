@@ -142,7 +142,7 @@ S3cmdTest('S3cmd can abort multipart upload').abort_multipart("seagatebucket", "
 # ************  OBJ open FI ***************
 S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
 S3fiTest('s3cmd enable FI Obj open').enable_fi("enable", "always", "clovis_obj_open_fail").execute_test().command_is_successful()
-S3cmdTest('s3cmd cannot download 3k file').download_test("seagatebucket", "3kfile").execute_test(negative_case=True).command_error_should_have("Download failed")
+S3cmdTest('s3cmd cannot download 3k file').download_test("seagatebucket", "3kfile").execute_test(negative_case=True).command_error_should_have("Internal Server Error")
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_obj_open_fail").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
 
