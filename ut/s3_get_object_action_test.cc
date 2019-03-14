@@ -410,6 +410,8 @@ TEST_F(S3GetObjectActionTest,
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              check_object_tags_exists()).WillOnce(Return(false));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length()).WillRepeatedly(Return(8000));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str()).WillRepeatedly(Return("8000"));
@@ -441,6 +443,8 @@ TEST_F(
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              check_object_tags_exists()).WillOnce(Return(false));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length()).WillRepeatedly(Return(8000));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str()).WillRepeatedly(Return("8000"));
@@ -470,6 +474,8 @@ TEST_F(S3GetObjectActionTest,
       Return("bytes=-1"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              check_object_tags_exists()).WillOnce(Return(false));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length()).WillRepeatedly(Return(8000));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
@@ -532,6 +538,8 @@ TEST_F(S3GetObjectActionTest,
       Return("bytes=0-0"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              check_object_tags_exists()).WillOnce(Return(false));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length()).WillRepeatedly(Return(8000));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),

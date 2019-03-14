@@ -27,6 +27,10 @@ void EvhtpWrapper::http_request_resume(evhtp_request_t *request) {
   evhtp_request_resume(request);
 }
 
+evhtp_proto EvhtpWrapper::http_request_get_proto(evhtp_request_t *request) {
+  return evhtp_request_get_proto(request);
+}
+
 int EvhtpWrapper::http_kvs_for_each(evhtp_kvs_t *kvs, evhtp_kvs_iterator cb,
                                     void *arg) {
   return evhtp_kvs_for_each(kvs, cb, arg);

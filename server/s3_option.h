@@ -91,6 +91,7 @@ class S3Option {
   std::string layout_recommendation_file;
   std::string s3_iam_cert_file;
   std::string audit_log_conf_file;
+  AuditFormatType audit_log_format;
 
   int read_ahead_multiple;
   std::string log_level;
@@ -247,6 +248,7 @@ class S3Option {
   std::string get_ipv6_bind_addr();
   std::string get_s3_pidfile();
   std::string get_s3_audit_config();
+  AuditFormatType get_s3_audit_format_type();
   unsigned short get_s3_bind_port();
 
   int get_read_ahead_multiple();

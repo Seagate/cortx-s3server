@@ -36,20 +36,25 @@
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 
-#define AUDIT_LOGGING  // Remove this if we don't want audit logging
-#ifdef AUDIT_LOGGING
-#define audit_log(m_logger, audit_logger_obj...)                      \
-  do {                                                                \
-    if (&(audit_logger_obj) != NULL) {                                \
-      LOG4CXX_INFO(m_logger,                                          \
-                   (audit_logger_obj.format_audit_logger()).c_str()); \
-    }                                                                 \
+#define REQUEST_TIME_SIZE 50
+
+extern LoggerPtr audit_logger;
+
+enum class AuditFormatType {
+  JSON,       // Logs audit information in Json format
+  S3_FORMAT,  // Logs in Amazon s3 access log format
+              // https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html
+  NONE,       // Disables audit logging
+};
+
+#define audit_log(audit_logger_obj...)                          \
+  do {                                                          \
+    if (&(audit_logger_obj) != NULL) {                          \
+      LOG4CXX_INFO(audit_logger, audit_logger_obj.to_string()); \
+    }                                                           \
   } while (0)
-#else
-#define audit_log(m_logger, audit_logger_obj...) \
-  do {                                           \
-  } while (0)
-#endif
+
+std::string audit_format_type_to_string(enum AuditFormatType type);
 
 bool audit_configure_init(const std::string& log_config_path);
 
@@ -100,7 +105,7 @@ class S3AuditInfo {
   // Setter methods for Audit Logger
   void set_bucket_owner_canonical_id(const std::string& bucket_owner_str);
   void set_bucket_name(const std::string& bucket_str);
-  void set_time_of_request_arrival(const std::string& time_str);
+  void set_time_of_request_arrival();
   void set_remote_ip(const std::string& remote_ip_str);
   void set_requester(const std::string& requester_str);
   void set_request_id(const std::string& request_id_str);
@@ -117,11 +122,11 @@ class S3AuditInfo {
   void set_user_agent(const std::string& user_agent_str);
   void set_version_id(const std::string& version_id_str);
   void set_host_id(const std::string& host_id_str);
-  void set_signature_version(const std::string& signature_version_str);
+  void set_signature_version(const std::string& authorization);
   void set_cipher_suite(const std::string& cipher_suite_str);
   void set_authentication_type(const std::string& authentication_type_str);
   void set_host_header(const std::string& host_header_str);
-  const std::string& format_audit_logger();
+  const std::string to_string();
 };
 
 #endif

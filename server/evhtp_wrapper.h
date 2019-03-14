@@ -38,6 +38,7 @@ class EvhtpInterface {
   virtual ~EvhtpInterface() {}
   virtual void http_request_pause(evhtp_request_t *request) = 0;
   virtual void http_request_resume(evhtp_request_t *request) = 0;
+  virtual evhtp_proto http_request_get_proto(evhtp_request_t *request) = 0;
 
   virtual int http_kvs_for_each(evhtp_kvs_t *kvs, evhtp_kvs_iterator cb,
                                 void *arg) = 0;
@@ -65,6 +66,7 @@ class EvhtpWrapper : public EvhtpInterface {
  public:
   void http_request_pause(evhtp_request_t *request);
   void http_request_resume(evhtp_request_t *request);
+  evhtp_proto http_request_get_proto(evhtp_request_t *request);
 
   int http_kvs_for_each(evhtp_kvs_t *kvs, evhtp_kvs_iterator cb, void *arg);
   const char *http_header_find(evhtp_headers_t *headers, const char *key);

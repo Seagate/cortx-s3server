@@ -19,8 +19,14 @@
 
 #include "s3_audit_info.h"
 #include "s3_log.h"
+#include "s3_option.h"
+
+#include <json/json.h>
+#include <time.h>
 #include <sys/stat.h>
+#include <regex>
 #include <string>
+#include <algorithm>
 #include <stdio.h>
 
 bool audit_configure_init(const std::string& log_config_path) {
@@ -39,6 +45,17 @@ bool audit_configure_init(const std::string& log_config_path) {
   catch (Exception&) {
     s3_log(S3_LOG_ERROR, "", "Exception occured while configuring audit logs.");
     return false;
+  }
+}
+
+std::string audit_format_type_to_string(enum AuditFormatType type) {
+  switch (type) {
+    case AuditFormatType::JSON:
+      return "JSON";
+    case AuditFormatType::S3_FORMAT:
+      return "S3_FORMAT";
+    default:
+      return "NONE";
   }
 }
 
@@ -67,18 +84,58 @@ S3AuditInfo::S3AuditInfo() {
   host_header = "-";
 }
 
-const std::string& S3AuditInfo::format_audit_logger() {
-  const std::string& formatted_log =
-      "   " + bucket_owner_canonical_id + "   " + bucket + "   [" +
-      time_of_request_arrival + "]   " + remote_ip + "   " + requester + "   " +
-      request_id + "   " + operation + "   " + object_key + "   " +
-      request_uri + "   " + std::to_string(http_status) + "   " + error_code +
-      "   " + std::to_string(bytes_sent) + "   " + object_size + "   " +
-      std::to_string(total_time) + "   " + std::to_string(turn_around_time) +
-      "   " + referrer + "   " + user_agent + "   " + version_id + "   " +
-      host_id + "   " + signature_version + "   " + cipher_suite + "   " +
-      authentication_type + "   " + host_header;
-  return formatted_log;
+const std::string S3AuditInfo::to_string() {
+
+  extern S3Option* g_option_instance;
+  AuditFormatType audit_format_type =
+      g_option_instance->get_s3_audit_format_type();
+
+  if (audit_format_type == AuditFormatType::S3_FORMAT) {
+    // Logs audit information in S3 format.
+    const std::string formatted_log =
+        bucket_owner_canonical_id + " " + bucket + " " +
+        time_of_request_arrival + " " + remote_ip + " " + requester + " " +
+        request_id + " " + operation + " " + object_key + " \"" + request_uri +
+        "\" " + std::to_string(http_status) + " " + error_code + " " +
+        std::to_string(bytes_sent) + " " + object_size + " " +
+        std::to_string(total_time) + " " + std::to_string(turn_around_time) +
+        " \"" + referrer + "\" \"" + user_agent + "\" " + version_id + " " +
+        host_id + " " + signature_version + " " + cipher_suite + " " +
+        authentication_type + " " + host_header;
+    return formatted_log;
+  } else if (audit_format_type == AuditFormatType::JSON) {
+    // Logs audit information in Json format.
+    Json::Value audit;
+
+    audit["bucket_owner"] = bucket_owner_canonical_id;
+    audit["bucket"] = bucket;
+    audit["time"] = time_of_request_arrival;
+    audit["remote_ip"] = remote_ip;
+    audit["requester"] = requester;
+    audit["request_id"] = request_id;
+    audit["operation"] = operation;
+    audit["key"] = object_key;
+    audit["request-uri"] = request_uri;
+    audit["http_status"] = std::to_string(http_status);
+    audit["error_code"] = error_code;
+    audit["bytes_sent"] = std::to_string(bytes_sent);
+    audit["object_size"] = object_size;
+    audit["total_time"] = std::to_string(total_time);
+    audit["turn_around_time"] = std::to_string(turn_around_time);
+    audit["referrer"] = referrer;
+    audit["user_agent"] = user_agent;
+    audit["version_id"] = version_id;
+    audit["host_id"] = host_id;
+    audit["signature_version"] = signature_version;
+    audit["cipher_suite"] = cipher_suite;
+    audit["authentication_type"] = authentication_type;
+    audit["host_header"] = host_header;
+
+    Json::FastWriter fastWriter;
+    return fastWriter.write(audit);
+  } else {
+    return "";  // Audit logging is disabled
+  }
 }
 
 void S3AuditInfo::set_bucket_owner_canonical_id(
@@ -90,8 +147,26 @@ void S3AuditInfo::set_bucket_name(const std::string& bucket_str) {
   bucket = bucket_str;
 }
 
-void S3AuditInfo::set_time_of_request_arrival(const std::string& time_str) {
-  time_of_request_arrival = time_str;
+void S3AuditInfo::set_time_of_request_arrival() {
+  time_t request_time;
+  struct tm* request_time_struct;
+  char time_of_request[REQUEST_TIME_SIZE];
+  time(&request_time);
+  request_time_struct = localtime(&request_time);
+
+  // Format specifiers required for strftime() as per
+  // https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html :
+  //   %d = Day of the month (01-31)
+  //   %b = Abbreviated month name
+  //   %Y = The year as a decimal number including the century.
+  //   %H = Hour in 24h format (00-23)
+  //   %M = Minutes in decimal ranging from 00 to 59.
+  //   %S = The second as a decimal number (range 00 to 60).
+  //   %z = The +hhmm or -hhmm numeric timezone
+
+  strftime(time_of_request, sizeof(time_of_request), "[%d/%b/%Y:%H:%M:%S %z]",
+           request_time_struct);
+  time_of_request_arrival = time_of_request;
 }
 
 void S3AuditInfo::set_remote_ip(const std::string& remote_ip_str) {
@@ -157,17 +232,30 @@ void S3AuditInfo::set_version_id(const std::string& version_id_str) {
 void S3AuditInfo::set_host_id(const std::string& host_id_str) {
   host_id = host_id_str;
 }
-void S3AuditInfo::set_signature_version(
-    const std::string& signature_version_str) {
-  signature_version = signature_version_str;
+
+void S3AuditInfo::set_signature_version(const std::string& authorization) {
+  if (!authorization.empty()) {
+    std::regex auth_v2("(AWS )(.*)");
+    std::regex auth_v4("(AWS4-HMAC-SHA256)(.*)");
+    if (regex_match(authorization, auth_v2)) {
+      signature_version = "SigV2";
+    } else if (regex_match(authorization, auth_v4)) {
+      signature_version = "SigV4";
+    } else {
+      signature_version = "Unknown_Signature";
+    }
+  }
 }
+
 void S3AuditInfo::set_cipher_suite(const std::string& cipher_suite_str) {
   cipher_suite = cipher_suite_str;
 }
+
 void S3AuditInfo::set_authentication_type(
     const std::string& authentication_type_str) {
   authentication_type = authentication_type_str;
 }
+
 void S3AuditInfo::set_host_header(const std::string& host_header_str) {
   host_header = host_header_str;
 }

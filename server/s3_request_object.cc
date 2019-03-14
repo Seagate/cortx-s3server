@@ -20,7 +20,7 @@
 
 #include <evhttp.h>
 #include <string>
-#include <ctime>
+#include <algorithm>
 
 #include "s3_error_codes.h"
 #include "s3_factory.h"
@@ -30,7 +30,6 @@
 #include "s3_stats.h"
 
 extern S3Option* g_option_instance;
-extern LoggerPtr audit_logger;
 
 // evhttp Helpers
 /* evhtp_kvs_iterator */
@@ -150,9 +149,7 @@ S3RequestObject::S3RequestObject(
 
 void S3RequestObject::initialise() {
   s3_log(S3_LOG_DEBUG, request_id, "Initializing the request.\n");
-  std::time_t result = std::time(nullptr);
-  audit_log_obj.set_time_of_request_arrival(
-      (std::asctime(std::localtime(&result))));
+  audit_log_obj.set_time_of_request_arrival();
   if (get_header_value("x-amz-content-sha256") ==
       "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
     is_chunked_upload = true;
@@ -689,6 +686,14 @@ void S3RequestObject::set_api_type(S3ApiType api_type) {
 
 S3ApiType S3RequestObject::get_api_type() { return s3_api_type; }
 
+void S3RequestObject::set_operation_code(S3OperationCode operation_code) {
+  s3_operation_code = operation_code;
+}
+
+S3OperationCode S3RequestObject::get_operation_code() {
+  return s3_operation_code;
+}
+
 void S3RequestObject::respond_error(
     std::string error_code, const std::map<std::string, std::string>& headers) {
   audit_log_obj.set_error_code(error_code);
@@ -736,26 +741,49 @@ void S3RequestObject::respond_retry_after(int retry_after_in_secs) {
 
 void S3RequestObject::populate_and_log_audit_info() {
 
+  s3_log(S3_LOG_DEBUG, "", "Entering");
+  std::string s3_operation_str =
+      operation_code_to_audit_str(get_operation_code());
+
+  if (!s3_operation_str.compare("NONE")) {
+    s3_operation_str.clear();
+  }
+
+  std::string audit_operation_str =
+      std::string("REST.") + get_http_verb_str(http_verb()) + std::string(".") +
+      api_type_to_str(get_api_type()) + s3_operation_str;
+
+  std::string request_uri =
+      get_http_verb_str(http_verb()) + std::string(" ") + full_path_decoded_uri;
+
+  if (!query_raw_decoded_uri.empty()) {
+    request_uri = request_uri + std::string("?") + query_raw_decoded_uri;
+  }
+
+  if (evhtp_obj->http_request_get_proto(ev_req) ==
+      evhtp_proto::EVHTP_PROTO_10) {
+    request_uri = request_uri + std::string(" HTTP/1.0");
+  } else if (evhtp_obj->http_request_get_proto(ev_req) ==
+             evhtp_proto::EVHTP_PROTO_11) {
+    request_uri = request_uri + std::string(" HTTP/1.1");
+  }
+
   audit_log_obj.set_bucket_owner_canonical_id(get_account_id());
   audit_log_obj.set_bucket_name(bucket_name);
+  audit_log_obj.set_remote_ip(get_header_value("X-Forwarded-For"));
   audit_log_obj.set_requester(get_account_id());
   audit_log_obj.set_request_id(request_id);
-  audit_log_obj.set_operation(operation);
+  audit_log_obj.set_operation(audit_operation_str);
   audit_log_obj.set_object_key(get_object_uri());
   audit_log_obj.set_request_uri(request_uri);
   audit_log_obj.set_http_status(http_status);
   audit_log_obj.set_bytes_sent(total_bytes_received);
+  audit_log_obj.set_signature_version(get_header_value("Authorization"));
   audit_log_obj.set_user_agent(get_header_value("User-Agent"));
   audit_log_obj.set_version_id(get_query_string_value("versionId"));
   audit_log_obj.set_object_size(get_header_value("Content-Length"));
   audit_log_obj.set_host_header(get_header_value("Host"));
 
-  audit_log(audit_logger, audit_log_obj);
-}
-void S3RequestObject::set_operation(std::string operation_str) {
-  operation = operation_str;
-}
-
-void S3RequestObject::set_request_uri(std::string request_uri_str) {
-  request_uri = request_uri_str;
+  audit_log(audit_log_obj);
+  s3_log(S3_LOG_DEBUG, "", "Exiting");
 }

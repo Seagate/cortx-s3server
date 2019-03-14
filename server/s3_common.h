@@ -161,6 +161,90 @@ inline std::string operation_code_to_str(S3OperationCode code) {
   }
 }
 
+inline std::string api_type_to_str(S3ApiType type) {
+  switch (type) {
+    case S3ApiType::service:
+      return "SERVICE";
+    case S3ApiType::bucket:
+      return "BUCKET";
+    case S3ApiType::object:
+      return "OBJECT";
+    case S3ApiType::management:
+      return "MANAGEMENT";
+    case S3ApiType::faultinjection:
+      return "FAULTINJECTION";
+    case S3ApiType::unsupported:
+      return "UNSUPPORTED";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+inline std::string operation_code_to_audit_str(S3OperationCode code) {
+  switch (code) {
+    case S3OperationCode::none:
+      return "NONE";
+    case S3OperationCode::acl:
+      return "ACL";
+    case S3OperationCode::encryption:
+      return "ENCRYPTION";
+    case S3OperationCode::policy:
+      return "POLICY";
+    case S3OperationCode::location:
+      return "LOCATION";
+    case S3OperationCode::multipart:
+      return "MULTIPART";
+    case S3OperationCode::multidelete:
+      return "MULTIDELETE";
+    case S3OperationCode::requestPayment:
+      return "REQUESTPAYMENT";
+    case S3OperationCode::lifecycle:
+      return "LIFECYCLE";
+    case S3OperationCode::cors:
+      return "CORS";
+    case S3OperationCode::analytics:
+      return "ANALYTICS";
+    case S3OperationCode::inventory:
+      return "INVENTORY";
+    case S3OperationCode::metrics:
+      return "METRICS";
+    case S3OperationCode::tagging:
+      return "TAGGING";
+    case S3OperationCode::website:
+      return "WEBSITE";
+    case S3OperationCode::replication:
+      return "REPLICATION";
+    case S3OperationCode::accelerate:
+      return "ACCELERATE";
+    case S3OperationCode::logging:
+      return "LOGGING";
+    case S3OperationCode::notification:
+      return "NOTIFICATION";
+    case S3OperationCode::torrent:
+      return "TORRENT";
+    case S3OperationCode::versioning:
+      return "VERSIONING";
+    case S3OperationCode::versions:
+      return "VERSIONS";
+    case S3OperationCode::selectcontent:
+      return "SELECTCONTENT";
+    case S3OperationCode::restore:
+      return "RESTORE";
+    case S3OperationCode::listuploads:
+      return "LISTUPLOADS";
+    case S3OperationCode::initupload:
+      return "INITUPLOAD";
+    case S3OperationCode::partupload:
+      return "PARTUPLOAD";
+    case S3OperationCode::completeupload:
+      return "COMPLETEUPLOAD";
+    case S3OperationCode::abortupload:
+      return "ABORTUPLOAD";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 enum class S3AsyncOpStatus {
   unknown,
   inprogress,

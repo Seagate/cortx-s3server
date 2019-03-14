@@ -59,6 +59,16 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOG_CONFIG");
       audit_log_conf_file =
           s3_option_node["S3_AUDIT_LOG_CONFIG"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOG_FORMAT_TYPE");
+      std::string audit_log_format_str =
+          s3_option_node["S3_AUDIT_LOG_FORMAT_TYPE"].as<std::string>();
+      if (!audit_log_format_str.compare("JSON")) {
+        audit_log_format = AuditFormatType::JSON;
+      } else if (!audit_log_format_str.compare("S3_FORMAT")) {
+        audit_log_format = AuditFormatType::S3_FORMAT;
+      } else {
+        audit_log_format = AuditFormatType::NONE;  // Disables audit logging
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FILE_MAX_SIZE");
       log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
@@ -260,7 +270,6 @@ bool S3Option::load_section(std::string section_name,
         audit_log_conf_file =
             s3_option_node["S3_AUDIT_LOG_CONFIG"].as<std::string>();
       }
-
       if (!(cmd_opt_flag & S3_OPTION_LOG_FILE_MAX_SIZE)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FILE_MAX_SIZE");
         log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
@@ -573,6 +582,8 @@ void S3Option::dump_options() {
          (log_buffering_enable ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOG_CONFIG = %s\n",
          audit_log_conf_file.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOG_FORMAT_TYPE = %s\n",
+         audit_format_type_to_string(audit_log_format).c_str());
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_MURMURHASH_OID = %s\n",
          (s3_enable_murmurhash_oid ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_LOG_FLUSH_FREQUENCY = %d\n",
@@ -688,6 +699,10 @@ unsigned short S3Option::get_s3_bind_port() { return s3_bind_port; }
 std::string S3Option::get_s3_pidfile() { return s3_pidfile; }
 
 std::string S3Option::get_s3_audit_config() { return audit_log_conf_file; }
+
+AuditFormatType S3Option::get_s3_audit_format_type() {
+  return audit_log_format;
+}
 
 unsigned short S3Option::get_s3_grace_period_sec() {
   return s3_grace_period_sec;

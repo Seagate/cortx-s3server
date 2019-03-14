@@ -74,8 +74,6 @@ class S3RequestObject {
   std::string user_id;  // Unique
   std::string account_name;
   std::string account_id;  // Unique
-  std::string operation;
-  std::string request_uri;
   int http_status;
   struct event* client_read_timer_event;
 
@@ -105,6 +103,7 @@ class S3RequestObject {
   bool is_chunked_upload;
   S3ChunkPayloadParser chunk_parser;
   S3ApiType s3_api_type;
+  S3OperationCode s3_operation_code;
   std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buffer_factory;
 
   virtual void set_full_path(const char* full_path);
@@ -132,6 +131,8 @@ class S3RequestObject {
   const char* c_get_file_name();
   void set_api_type(S3ApiType apitype);
   virtual S3ApiType get_api_type();
+  void set_operation_code(S3OperationCode operation_code);
+  virtual S3OperationCode get_operation_code();
   virtual bool is_valid_ipaddress(std::string& ipaddr);
   virtual void set_start_client_request_read_timeout();
   virtual void stop_client_read_timer();
@@ -139,8 +140,6 @@ class S3RequestObject {
   virtual void free_client_read_timer();
   virtual void trigger_client_read_timeout_callback();
   virtual void populate_and_log_audit_info();
-  virtual void set_operation(std::string operation_str);
-  virtual void set_request_uri(std::string request_uri);
 
  protected:
   // protected so mocks can override
