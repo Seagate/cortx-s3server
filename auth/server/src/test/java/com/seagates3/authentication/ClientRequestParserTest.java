@@ -23,6 +23,8 @@ import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.aws.AWSV2RequestHelper;
 import com.seagates3.aws.AWSV4RequestHelper;
 import com.seagates3.exception.InvalidTokenException;
+import com.seagates3.exception.InvalidAccessKeyException;
+import com.seagates3.exception.InvalidArgumentException;
 
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -63,7 +65,8 @@ public class ClientRequestParserTest {
     }
 
     @Test
-    public void parseTest_AWSSign2_PathStyle(){
+    public void parseTest_AWSSign2_PathStyle() throws InvalidAccessKeyException,
+            InvalidArgumentException{
         // Arrange
         requestBody = AWSV2RequestHelper.getRequestHeadersPathStyle();
 
@@ -76,7 +79,8 @@ public class ClientRequestParserTest {
     }
 
     @Test
-    public void parseTest_AWSSign4_VirtualHostStyle(){
+    public void parseTest_AWSSign4_VirtualHostStyle() throws InvalidAccessKeyException,
+            InvalidArgumentException{
         // Arrange
         requestBody = AWSV4RequestHelper.getRequestHeadersVirtualHostStyle();
 
@@ -89,26 +93,33 @@ public class ClientRequestParserTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void parseTest_RequestBodyNull_NullPointerException() {
+    public void parseTest_RequestBodyNull_NullPointerException() throws InvalidAccessKeyException,
+            InvalidArgumentException {
+
         ClientRequestParser.parse(httpRequest, null);
     }
 
     @Test
-    public void parseTest_AuthenticateUser_AuthorizationHeaderNull() {
+    public void parseTest_AuthenticateUser_AuthorizationHeaderNull() throws InvalidAccessKeyException,
+            InvalidArgumentException {
+
         requestBody.put("Action", "AuthenticateUser");
 
         assertNull(ClientRequestParser.parse(httpRequest, requestBody));
     }
 
     @Test
-    public void parseTest_AuthorizeUser_AuthorizationHeaderNull() {
+    public void parseTest_AuthorizeUser_AuthorizationHeaderNull() throws InvalidAccessKeyException,
+            InvalidArgumentException{
+
         requestBody.put("Action", "AuthorizeUser");
 
         assertNull(ClientRequestParser.parse(httpRequest, requestBody));
     }
 
     @Test
-    public void parseTest_OtherAction_AuthorizationHeaderNull() {
+    public void parseTest_OtherAction_AuthorizationHeaderNull() throws InvalidAccessKeyException,
+            InvalidArgumentException {
         requestBody.put("Action", "OtherAction");
         FullHttpRequest fullHttpRequest
                 = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
@@ -119,11 +130,12 @@ public class ClientRequestParserTest {
     }
 
     @Test
-    public void parseTest_InvalidToken_AuthenticateUser() {
+    public void parseTest_InvalidToken_AuthenticateUser() throws InvalidAccessKeyException,
+            InvalidArgumentException{
         requestBody.put("Action", "AuthenticateUser");
         requestBody.put("host", "iam.seagate.com:9086");
-        requestBody.put("authorization","AWS4-HMAC-SHA256 Credential=vcev ceece/"
-                + "20181001/us-west2/iam/aws4_request, SignedHeaders=host;x-amz-date, "
+        requestBody.put("authorization","AWS4-HMAC-SHA256 Credential=vcevceece/"
+                + "2018 1001/us-west2/iam/aws4_request, SignedHeaders=host;x-amz-date, "
                 + "Signature=676b4c41ad34f611ada591072cd2977cf948d4556ffca32164af1cf1b8d4f181");
 
         assertNull(ClientRequestParser.parse(httpRequest, requestBody));

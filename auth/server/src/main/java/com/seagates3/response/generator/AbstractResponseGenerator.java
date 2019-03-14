@@ -181,6 +181,13 @@ public abstract class AbstractResponseGenerator {
                 "AccountNotEmpty", errorMessage);
     }
 
+    public ServerResponse invalidArgument() {
+        String errorMessage = "Invalid Argument";
+        return formatResponse(HttpResponseStatus.BAD_REQUEST,
+                "InvalidArgument", errorMessage);
+    }
+
+
     /**
      * Use this method for internal purpose.
      *

@@ -277,23 +277,35 @@ public class IAMControllerTest {
     }
 
     @Test
-    public void serveTest_BadRequest() throws Exception {
+    public void serveTest_UnAuthorized() throws Exception {
         requestBody.put("Action", "AuthorizeUser");
-        requestBody.put("authorization","AWS AKIAIOSFODN&EXAMPL$#:"
+        requestBody.put("authorization","AWS AKIAIOSFODN&EXAMPL*#"
                 + "frJIUN8DYpKDtOLCwo//yllqDzg=");
 
         when(ClientRequestParser.parse(httpRequest, requestBody)).thenCallRealMethod();
 
         ServerResponse response = controller.serve(httpRequest, requestBody);
-
         assertThat(response.getResponseBody(),
-                containsString("The provided token is malformed or otherwise invalid."));
-        assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
+                containsString("The AWS access key Id you provided does not exist in our records."));
+        assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
     }
 
     @Test
-    public void serveTest_ValidV2Request() throws Exception {
+    public void serveTest_AccessKeyWithSpace() throws Exception {
+        requestBody.put("Action", "AuthorizeUser");
+        requestBody.put("authorization","AWS AKIA IOSFODN&EXAMPL$#:"
+                + "frJIUN8DYpKDtOLCwo//yllqDzg=");
 
+        when(ClientRequestParser.parse(httpRequest, requestBody)).thenCallRealMethod();
+
+        ServerResponse response = controller.serve(httpRequest, requestBody);
+        assertThat(response.getResponseBody(),
+                containsString("Invalid Argument"));
+               assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
+
+   }
+    @Test
+    public void serveTest_ValidV2Request() throws Exception {
         requestBody.put("Action", "AuthenticateUser");
         requestBody.put("host", "s3.seagate.com");
         requestBody.put("authorization","AWS RqkWRyVIQrq5Aq9eMUt1HQ:"

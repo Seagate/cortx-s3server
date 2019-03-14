@@ -29,6 +29,8 @@ import com.seagates3.authserver.ResourceMap;
 import com.seagates3.exception.AuthResourceNotFoundException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
+import com.seagates3.exception.InvalidArgumentException;
+
 import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.exception.InvalidUserException;
 import com.seagates3.model.AccessKey;
@@ -78,7 +80,16 @@ public class IAMController {
                 requestAction.equals("ListAccounts") ||
                       requestAction.equals("ResetAccountAccessKey")) {
              LOGGER.debug("Parsing Client Request");
-             clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
+             try {
+                 clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
+             } catch (InvalidAccessKeyException ex) {
+                 LOGGER.debug(ex.getServerResponse().getResponseBody());
+                 return ex.getServerResponse();
+             } catch(InvalidArgumentException ex) {
+                 LOGGER.debug(ex.getServerResponse().getResponseBody());
+                 return ex.getServerResponse();
+             }
+
              if (clientRequestToken == null) {
                   return responseGenerator.invalidToken();
              }
@@ -108,7 +119,15 @@ public class IAMController {
              }
         } else if (!requestAction.equals("AssumeRoleWithSAML")) {
              LOGGER.debug("Parsing Client Request");
-             clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
+             try {
+                 clientRequestToken = ClientRequestParser.parse(httpRequest, requestBody);
+             } catch (InvalidAccessKeyException ex) {
+                 LOGGER.debug(ex.getServerResponse().getResponseBody());
+                 return ex.getServerResponse();
+             } catch(InvalidArgumentException ex) {
+                 LOGGER.debug(ex.getServerResponse().getResponseBody());
+                 return ex.getServerResponse();
+             }
              /*
                * Client Request Token will be null if the request is incorrect.
              */

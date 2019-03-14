@@ -16,13 +16,22 @@
  * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
  * Original creation date: 22-Oct-2015
  */
+
 package com.seagates3.authentication;
 
 import com.seagates3.exception.InvalidTokenException;
+import com.seagates3.exception.InvalidArgumentException;
 import com.seagates3.util.IEMUtil;
 import io.netty.handler.codec.http.FullHttpRequest;
+import com.seagates3.response.generator.AuthenticationResponseGenerator;
+import com.seagates3.response.ServerResponse;
+import com.seagates3.response.generator.ResponseGenerator;
+import com.seagates3.exception.InvalidAccessKeyException;
+
 import java.util.Map;
 import org.slf4j.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import org.slf4j.LoggerFactory;
 
 public class ClientRequestParser {
@@ -33,14 +42,22 @@ public class ClientRequestParser {
             = "AWS [A-Za-z0-9-_]+:[a-zA-Z0-9+/=]+";
     private static final String AWS_V4_AUTHRORIAZATION_PATTERN
             = "AWS4-HMAC-SHA256[\\w\\W]+";
+    private ResponseGenerator responseGenerator
+            = new ResponseGenerator();
     private final static Logger LOGGER =
             LoggerFactory.getLogger(ClientRequestParser.class.getName());
+    private static final Pattern ACCESS_KEY_PATTERN  = Pattern.compile("[\\w-]+");
+    private static final Pattern V2_PATTERN = Pattern.compile("^AWS ");
+    private static final Pattern V4_PATTERN = Pattern.compile("^AWS4-HMAC-SHA256");
+
 
 
     public static ClientRequestToken parse(FullHttpRequest httpRequest,
-            Map<String, String> requestBody) {
+            Map<String, String> requestBody) throws InvalidAccessKeyException,
+            InvalidArgumentException {
         String requestAction = requestBody.get("Action");
         String authorizationHeader;
+        String AuthorizationPattern;
         ClientRequestToken.AWSSigningVersion awsSigningVersion;
 
         if (requestAction.equals("AuthenticateUser")
@@ -53,7 +70,9 @@ public class ClientRequestParser {
         if (authorizationHeader == null) {
             return null;
         }
-
+        ClientRequestParser clientRequestParser = new ClientRequestParser();
+        clientRequestParser.validateAccessKey(authorizationHeader);
+        clientRequestParser = null;
         if (authorizationHeader.matches(AWS_V2_AUTHRORIAZATION_PATTERN)) {
             awsSigningVersion = ClientRequestToken.AWSSigningVersion.V2;
         }
@@ -115,4 +134,53 @@ public class ClientRequestParser {
     private static String toRequestParserClass(String signingVersion) {
         return String.format("%s.AWSRequestParser%s", REQUEST_PARSER_PACKAGE, signingVersion);
     }
+
+    private void validateAccessKey (String authorizationHeader)
+            throws InvalidAccessKeyException, InvalidArgumentException {
+
+        ServerResponse serverResponse;
+        String access_key="";
+        String[] tokens, subTokens;
+
+        //AuthorizationHeader of v2 is of type AWS AKIAJTYX36YCKQSAJT7Q:6IaKnMXRsQcsblXItQnSNB3EJEo=
+        //V2 Pattern to match "AWS "
+        //AuthorizationHeader of v4 is of type AWS4-HMAC-SHA256 Credential=AK IAJTYX36YCKQSAJT7Q/20190314/US/s3/          aws4_request,SignedHeaders=host;x-amz-content-sha256;x-amz-date,Signature=310b0122f12459dfea171cac82bd          4930626d5a8db695fef6bc7bfd2a30a39ea3
+
+        if ((V2_PATTERN.matcher(authorizationHeader)).lookingAt()) {
+            tokens = authorizationHeader.split(":");
+            subTokens = tokens[0].split(" ");
+            if (subTokens.length != 2) {
+                serverResponse = responseGenerator.invalidArgument();
+                throw new InvalidArgumentException(serverResponse);
+            }
+            access_key=subTokens[1];
+        }
+        else if ((V4_PATTERN.matcher(authorizationHeader)).lookingAt())
+        {
+            tokens = authorizationHeader.split(",");
+            String[] credTokens, credScopeTokens;
+            subTokens = tokens[0].split("=");
+            credTokens = subTokens[1].split("/");
+            access_key=credTokens[0];
+        }
+        else
+        {
+            serverResponse = responseGenerator.invalidArgument();
+            throw new InvalidArgumentException(serverResponse);
+        }
+
+        if (access_key.contains(" ")) {
+            serverResponse = responseGenerator.invalidArgument();
+            throw new InvalidArgumentException(serverResponse);
+        }
+
+        Matcher matcher = ACCESS_KEY_PATTERN.matcher(access_key);
+
+        if (!(matcher.matches())) {
+            serverResponse = responseGenerator.invalidAccessKey();
+            throw new InvalidAccessKeyException(serverResponse);
+        }
+
+}
+
 }
