@@ -37,7 +37,7 @@ def before_all():
 def account_tests():
     account_args = {}
     account_args['AccountName'] = 's3test'
-    account_args['Email'] = 'test@seagate.com'
+    account_args['Email'] = 's3test@seagate.com'
     account_args['ldapuser'] = 'sgiamadmin'
     account_args['ldappasswd'] = 'ldapadmin'
 

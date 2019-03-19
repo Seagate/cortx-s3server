@@ -65,6 +65,7 @@
           - { src: 'ldap/cn={1}s3user.ldif', dest: '/tmp/s3ldap/cn={1}s3user.ldif' }
           - { src: 'ldap/ldap-init.ldif', dest: '/tmp/s3ldap/ldap-init.ldif' }
           - { src: 'ldap/iam-admin-access.ldif', dest: '/tmp/s3ldap/iam-admin-access.ldif' }
+          - { src: 'ldap/iam-constraints.ldif', dest: '/tmp/s3ldap/iam-constraints.ldif' }
           - { src: 'ldap/syncprov_mod.ldif', dest: '/tmp/s3ldap/syncprov_mod.ldif' }
           - { src: 'ldap/syncprov.ldif', dest: '/tmp/s3ldap/syncprov.ldif' }
 
@@ -112,6 +113,10 @@
 
       - name: Configure OpenLDAP - Setup permissions for IAM admin
         command: ldapmodify -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/iam-admin-access.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Enable IAM constraints
+        command: ldapadd -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/iam-constraints.ldif
         no_log: true
 
       - name: Copy SSL config file for openldap

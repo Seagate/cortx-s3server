@@ -119,6 +119,9 @@ rm -f $ADMIN_USERS_FILE
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
 
+# Enable IAM constraints
+ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-constraints.ldif
+
 if [[ $usessl == true ]]
 then
 #Deploy SSL certificates and enable OpenLDAP SSL port

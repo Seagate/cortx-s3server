@@ -79,7 +79,7 @@ def _use_root_credentials():
 # Test create account API
 def account_tests():
     test_msg = "Create account s3test"
-    account_args = {'AccountName': 's3test', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_args = {'AccountName': 's3test', 'Email': 's3test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
@@ -87,6 +87,13 @@ def account_tests():
 
     GlobalTestState.root_access_key = account_response_elements['AccessKeyId']
     GlobalTestState.root_secret_key = account_response_elements['SecretKey']
+
+    # Create Account again with same email ID
+    test_msg = "Create account s3test1"
+    account_args = {'AccountName': 's3test1', 'Email': 's3test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "Account wasn't created."
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
 
     test_msg = "List accounts"
     account_args = {'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
@@ -527,7 +534,7 @@ def accesskey_tests():
     '''
 
     test_msg = "Create account s3test_1"
-    account_args = {'AccountName': 's3test_1', 'Email': 'test@seagate.com', \
+    account_args = {'AccountName': 's3test_1', 'Email': 's3test_1@seagate.com', \
                    'ldapuser': S3ClientConfig.ldapuser, \
                    'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
@@ -689,7 +696,7 @@ def delete_account_tests():
     # key and secret key of account s3test. Account delete operation should fail.
     test_msg = "Create account s3test1"
 
-    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_args = {'AccountName': 's3test1', 'Email': 's3test1@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
@@ -734,7 +741,7 @@ def delete_account_tests():
     # Test: Account cannot be deleted if it contains some buckets
     test_msg = "Create account s3test1"
 
-    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_args = {'AccountName': 's3test1', 'Email': 's3test1@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
@@ -778,7 +785,7 @@ def reset_account_accesskey_tests():
 
     test_msg = "Create account s3test1"
 
-    account_args = {'AccountName': 's3test1', 'Email': 'test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_args = {'AccountName': 's3test1', 'Email': 's3test1@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
     result = AuthTest(test_msg).create_account(**account_args).execute_test()
     result.command_should_match_pattern(account_response_pattern)
