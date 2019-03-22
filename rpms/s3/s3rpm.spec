@@ -31,6 +31,8 @@ BuildRequires: glog glog-devel
 BuildRequires: gtest gtest-devel
 BuildRequires: gmock gmock-devel
 BuildRequires: git
+BuildRequires: log4cxx_eos log4cxx_eos-devel
+
 
 Requires: mero = %{h_mero_version}
 Requires: libxml2
@@ -39,6 +41,7 @@ Requires: yaml-cpp
 Requires: gflags
 Requires: glog
 Requires: pkgconfig
+Requires: log4cxx_eos log4cxx_eos-devel
 # Java used by Auth server
 Requires: java-1.8.0-openjdk-headless
 Requires: PyYAML

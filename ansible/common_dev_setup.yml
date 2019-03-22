@@ -19,7 +19,16 @@
   yum:
     name: s3cmd
     disablerepo: '*'
-    enablerepo: releases_hermi_s3server_uploads
+    enablerepo: releases_s3server_uploads
+    state: present
+
+- name: Install patched log4cxx_eos
+  yum:
+    name:
+      - log4cxx_eos
+      - log4cxx_eos-devel
+    disablerepo: '*'
+    enablerepo: releases_s3server_uploads
     state: present
 
 - name: Install tools for ST

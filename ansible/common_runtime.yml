@@ -22,8 +22,6 @@
     - yaml-cpp
     - gflags
     - glog
-    - log4cxx
-    - log4cxx-devel
 
 - name: Update to latest selinux-policy (required by latest openldap)
   yum: pkg={{item}} state=latest
