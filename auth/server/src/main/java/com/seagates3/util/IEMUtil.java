@@ -23,6 +23,7 @@ import com.seagates3.authserver.AuthServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
@@ -40,6 +41,8 @@ public class IEMUtil {
     public static final String UNPARSABLE_DATE = "048003001";
     public static final String CLASS_NOT_FOUND_EX = "048004001";
     public static final String NO_SUCH_METHOD_EX = "048004002";
+    public static final String XML_SCHEMA_VALIDATION_ERROR = "048005001";
+
 
     public static void log(Level level, String eventCode,
                            String eventCodeString, String data) {
@@ -60,7 +63,8 @@ public class IEMUtil {
                                             String data) {
         String node = String.format("\"node\": \"%s\"", getHostName());
         String time = String.format("\"time\": \"%s\"", new Date().toString());
-        String pid = String.format("\"pid\": %d", AuthServerConfig.getPid());
+        String jvm = ManagementFactory.getRuntimeMXBean().getName();
+        String pid = String.format("\"pid\": %s", jvm.substring(0, jvm.indexOf("@")));
         String jsonData = String.format("{ %s, %s, %s, %s }", time, node, pid, getLocation());
         if (data != null && !data.isEmpty()) {
             jsonData = String.format("{ %s, %s, %s, %s, %s }", time, node, pid, getLocation(), data);
