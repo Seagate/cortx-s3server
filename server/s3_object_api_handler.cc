@@ -75,6 +75,7 @@ void S3ObjectAPIHandler::create_action() {
             // Do nothing = unsupported API
           } else {
             // Multipart part uploads
+            request->set_object_size(request->get_data_length());
             action = std::make_shared<S3PutMultiObjectAction>(request);
             s3_stats_inc("put_multipart_part_request_count");
           }
@@ -104,6 +105,7 @@ void S3ObjectAPIHandler::create_action() {
           if (request->get_header_value("x-amz-content-sha256") ==
               "STREAMING-AWS4-HMAC-SHA256-PAYLOAD") {
             // chunk upload
+            request->set_object_size(request->get_data_length());
             action = std::make_shared<S3PutChunkUploadObjectAction>(request);
             s3_stats_inc("put_object_chunkupload_request_count");
           } else if (!request->get_header_value("x-amz-copy-source").empty()) {
@@ -111,6 +113,7 @@ void S3ObjectAPIHandler::create_action() {
             // Do nothing = unsupported API
           } else {
             // single chunk upload
+            request->set_object_size(request->get_data_length());
             action = std::make_shared<S3PutObjectAction>(request);
             s3_stats_inc("put_object_request_count");
           }

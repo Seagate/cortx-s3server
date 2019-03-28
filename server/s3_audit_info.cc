@@ -59,29 +59,36 @@ std::string audit_format_type_to_string(enum AuditFormatType type) {
   }
 }
 
-S3AuditInfo::S3AuditInfo() {
-  bucket_owner_canonical_id = "-";
-  bucket = "-";
-  time_of_request_arrival = "-";
-  remote_ip = "-";
-  requester = "-";
-  request_id = "-";
-  operation = "-";
-  object_key = "-";
-  request_uri = "-";
-  error_code = "-";
-  bytes_sent = 0;
-  object_size = "-";
-  total_time = 0;
-  turn_around_time = 0;
-  referrer = "-";
-  user_agent = "-";
-  version_id = "-";
-  host_id = "-";
-  signature_version = "-";
-  cipher_suite = "-";
-  authentication_type = "-";
-  host_header = "-";
+S3AuditInfo::S3AuditInfo()
+    : bucket_owner_canonical_id("-"),
+      bucket("-"),
+      time_of_request_arrival("-"),
+      remote_ip("-"),
+      requester("-"),
+      request_id("-"),
+      operation("-"),
+      object_key("-"),
+      request_uri("-"),
+      error_code("-"),
+      bytes_sent(0),
+      object_size(0),
+      total_time(0),
+      turn_around_time(0),
+      referrer("-"),
+      user_agent("-"),
+      version_id("-"),
+      host_id("-"),
+      signature_version("-"),
+      cipher_suite("-"),
+      authentication_type("-"),
+      host_header("-") {}
+
+UInt64 S3AuditInfo::convert_to_unsigned(size_t audit_member) {
+  if (audit_member > SIZE_MAX) {
+    // Error case. Returning default values.
+    return 0;
+  }
+  return static_cast<UInt64>(audit_member);
 }
 
 const std::string S3AuditInfo::to_string() {
@@ -97,11 +104,12 @@ const std::string S3AuditInfo::to_string() {
         time_of_request_arrival + " " + remote_ip + " " + requester + " " +
         request_id + " " + operation + " " + object_key + " \"" + request_uri +
         "\" " + std::to_string(http_status) + " " + error_code + " " +
-        std::to_string(bytes_sent) + " " + object_size + " " +
-        std::to_string(total_time) + " " + std::to_string(turn_around_time) +
-        " \"" + referrer + "\" \"" + user_agent + "\" " + version_id + " " +
-        host_id + " " + signature_version + " " + cipher_suite + " " +
-        authentication_type + " " + host_header;
+        std::to_string(bytes_sent) + " " + std::to_string(object_size) + " " +
+        std::to_string(bytes_received) + " " + std::to_string(total_time) +
+        " " + std::to_string(turn_around_time) + " \"" + referrer + "\" \"" +
+        user_agent + "\" " + version_id + " " + host_id + " " +
+        signature_version + " " + cipher_suite + " " + authentication_type +
+        " " + host_header;
     return formatted_log;
   } else if (audit_format_type == AuditFormatType::JSON) {
     // Logs audit information in Json format.
@@ -116,12 +124,13 @@ const std::string S3AuditInfo::to_string() {
     audit["operation"] = operation;
     audit["key"] = object_key;
     audit["request-uri"] = request_uri;
-    audit["http_status"] = std::to_string(http_status);
+    audit["http_status"] = http_status;
     audit["error_code"] = error_code;
-    audit["bytes_sent"] = std::to_string(bytes_sent);
-    audit["object_size"] = object_size;
-    audit["total_time"] = std::to_string(total_time);
-    audit["turn_around_time"] = std::to_string(turn_around_time);
+    audit["bytes_sent"] = convert_to_unsigned(bytes_sent);
+    audit["object_size"] = convert_to_unsigned(object_size);
+    audit["bytes_received"] = convert_to_unsigned(bytes_received);
+    audit["total_time"] = convert_to_unsigned(total_time);
+    audit["turn_around_time"] = convert_to_unsigned(turn_around_time);
     audit["referrer"] = referrer;
     audit["user_agent"] = user_agent;
     audit["version_id"] = version_id;
@@ -193,28 +202,28 @@ void S3AuditInfo::set_request_uri(const std::string& request_uri_str) {
   request_uri = request_uri_str;
 }
 
-void S3AuditInfo::set_http_status(int http_status_str) {
-  http_status = http_status_str;
-}
+void S3AuditInfo::set_http_status(int httpstatus) { http_status = httpstatus; }
 
 void S3AuditInfo::set_error_code(const std::string& error_code_str) {
   error_code = error_code_str;
 }
 
-void S3AuditInfo::set_bytes_sent(int bytes_sent_str) {
-  bytes_sent = bytes_sent_str;
+void S3AuditInfo::set_bytes_sent(size_t total_bytes_sent) {
+  bytes_sent = total_bytes_sent;
 }
 
-void S3AuditInfo::set_object_size(const std::string& object_size_str) {
-  object_size = object_size_str;
+void S3AuditInfo::set_bytes_received(size_t total_bytes_received) {
+  bytes_received = total_bytes_received;
 }
 
-void S3AuditInfo::set_total_time(size_t total_time_str) {
-  total_time = total_time_str;
+void S3AuditInfo::set_object_size(size_t obj_size) { object_size = obj_size; }
+
+void S3AuditInfo::set_total_time(size_t total_request_time) {
+  total_time = total_request_time;
 }
 
-void S3AuditInfo::set_turn_around_time(size_t turn_around_time_str) {
-  turn_around_time = turn_around_time_str;
+void S3AuditInfo::set_turn_around_time(size_t request_turn_around_time) {
+  turn_around_time = request_turn_around_time;
 }
 
 void S3AuditInfo::set_referrer(const std::string& referrer_str) {

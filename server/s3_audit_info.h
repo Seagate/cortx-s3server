@@ -37,6 +37,7 @@ using namespace log4cxx;
 using namespace log4cxx::helpers;
 
 #define REQUEST_TIME_SIZE 50
+typedef unsigned long long UInt64;
 
 extern LoggerPtr audit_logger;
 
@@ -80,8 +81,9 @@ class S3AuditInfo {
   std::string request_uri;  // The Request-URI part of the HTTP request message.
   int http_status;          // The numeric HTTP status code of the response.
   std::string error_code;   // The S3 Error Code, or "-" if no error occurred.
-  int bytes_sent;           // The number of response bytes sent
-  std::string object_size;  // The total size of the object in question.
+  size_t bytes_sent;        // The number of response bytes sent
+  size_t object_size;       // The total size of the object in question.
+  size_t bytes_received;    // The number of request bytes received by server.
   size_t total_time;  // The number of milliseconds the request was in flight
                       // from the server's perspective.
   size_t turn_around_time;  // The number of milliseconds that S3 spent
@@ -112,12 +114,13 @@ class S3AuditInfo {
   void set_operation(const std::string& operation_str);
   void set_object_key(const std::string& key_str);
   void set_request_uri(const std::string& request_uri_str);
-  void set_http_status(int http_status_str);
+  void set_http_status(int httpstatus);
   void set_error_code(const std::string& error_code);
-  void set_bytes_sent(int bytes_sent_str);
-  void set_object_size(const std::string& object_size_str);
-  void set_total_time(size_t total_time_str);
-  void set_turn_around_time(size_t turn_around_time_str);
+  void set_bytes_sent(size_t total_bytes_sent);
+  void set_object_size(size_t obj_size);
+  void set_bytes_received(size_t total_bytes_received);
+  void set_total_time(size_t total_request_time);
+  void set_turn_around_time(size_t request_turn_around_time);
   void set_referrer(const std::string& referrer_str);
   void set_user_agent(const std::string& user_agent_str);
   void set_version_id(const std::string& version_id_str);
@@ -127,6 +130,7 @@ class S3AuditInfo {
   void set_authentication_type(const std::string& authentication_type_str);
   void set_host_header(const std::string& host_header_str);
   const std::string to_string();
+  UInt64 convert_to_unsigned(size_t audit_member);
 };
 
 #endif

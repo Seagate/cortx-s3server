@@ -86,6 +86,8 @@ class S3RequestObject {
   size_t pending_in_flight;      // Total data yet to consume by observer.
   size_t total_bytes_received;
   S3AuditInfo audit_log_obj;
+  size_t object_size;
+  std::string http_version;
   std::shared_ptr<S3AsyncBufferOptContainer> buffered_input;
 
   std::function<void()> incoming_data_callback;
@@ -190,6 +192,7 @@ class S3RequestObject {
 
   virtual void set_out_header_value(std::string key, std::string value);
 
+  virtual void set_object_size(size_t obj_size);
   // Operation params.
   std::string get_object_uri();
 

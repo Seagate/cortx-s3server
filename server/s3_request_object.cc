@@ -107,6 +107,7 @@ S3RequestObject::S3RequestObject(
   turn_around_time.start();
   bucket_name = object_name = user_name = user_id = account_name = account_id =
       "";
+  object_size = 0;
   // For auth disabled, use some dummy user.
   if (g_option_instance->is_auth_disabled()) {
     account_name = "s3_test";
@@ -133,6 +134,13 @@ S3RequestObject::S3RequestObject(
               evhttp_uridecode(ev_req->uri->path->file, 1, NULL);
           file_path_decoded_uri = decoded_str;
           free(decoded_str);
+        }
+        if (evhtp_obj->http_request_get_proto(ev_req) ==
+            evhtp_proto::EVHTP_PROTO_10) {
+          http_version = "HTTP/1.0";
+        } else if (evhtp_obj->http_request_get_proto(ev_req) ==
+                   evhtp_proto::EVHTP_PROTO_11) {
+          http_version = "HTTP/1.1";
         }
       }
       if (ev_req->uri->query_raw != NULL) {
@@ -303,19 +311,21 @@ std::map<std::string, std::string>& S3RequestObject::get_in_headers_copy() {
 }
 
 std::string S3RequestObject::get_header_value(std::string key) {
-  if (ev_req == NULL || !client_connected()) {
-    // just being defensive here
-    s3_log(S3_LOG_WARN, request_id,
-           "s3 client disconnected state or ev_req(NULL).\n");
-    return "";
+
+  std::string val_str;
+  if (!in_headers_copied) {
+    get_in_headers_copy();
   }
-  const char* ret =
-      evhtp_obj->http_header_find(ev_req->headers_in, key.c_str());
-  if (ret == NULL) {
-    return "";
-  } else {
-    return ret;
+
+  auto header = in_headers_copy.begin();
+  while (header != in_headers_copy.end()) {
+    if (!strcasecmp(header->first.c_str(), key.c_str())) {
+      val_str = header->second.c_str();
+      break;
+    }
+    header++;
   }
+  return val_str;
 }
 
 bool S3RequestObject::is_valid_ipaddress(std::string& ipaddr) {
@@ -480,6 +490,9 @@ void S3RequestObject::set_bucket_name(const std::string& name) {
   bucket_name = name;
 }
 
+void S3RequestObject::set_object_size(size_t obj_size) {
+  object_size = obj_size;
+}
 const std::string& S3RequestObject::get_bucket_name() { return bucket_name; }
 
 void S3RequestObject::set_object_name(const std::string& name) {
@@ -609,6 +622,8 @@ void S3RequestObject::send_response(int code, std::string body) {
   // If body not empty, write to response body.
   if (!body.empty()) {
     evbuffer_add(ev_req->buffer_out, body.c_str(), body.length());
+    audit_log_obj.set_bytes_sent(evbuffer_get_length(ev_req->buffer_out));
+
   } else if (out_headers_copy.find("Content-Length") ==
              out_headers_copy.end()) {  // Content-Length was already set for
                                         // this request, which could be. case
@@ -649,6 +664,10 @@ void S3RequestObject::send_reply_start(int code) {
 
 void S3RequestObject::send_reply_body(char* data, int length) {
   if (client_connected()) {
+    // Setting object size for GET object request
+    if (length != 0) {
+      audit_log_obj.set_object_size(length);
+    }
     evbuffer_add(reply_buffer, data, length);
     evhtp_obj->http_send_reply_body(ev_req, reply_buffer);
   } else {
@@ -736,16 +755,17 @@ void S3RequestObject::respond_retry_after(int retry_after_in_secs) {
 
   respond_error("ServiceUnavailable", headers);
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
 void S3RequestObject::populate_and_log_audit_info() {
 
-  s3_log(S3_LOG_DEBUG, "", "Entering");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering");
   std::string s3_operation_str =
       operation_code_to_audit_str(get_operation_code());
 
-  if (!s3_operation_str.compare("NONE")) {
+  if (!(s3_operation_str.compare("NONE") &&
+        s3_operation_str.compare("UNKNOWN"))) {
     s3_operation_str.clear();
   }
 
@@ -760,30 +780,27 @@ void S3RequestObject::populate_and_log_audit_info() {
     request_uri = request_uri + std::string("?") + query_raw_decoded_uri;
   }
 
-  if (evhtp_obj->http_request_get_proto(ev_req) ==
-      evhtp_proto::EVHTP_PROTO_10) {
-    request_uri = request_uri + std::string(" HTTP/1.0");
-  } else if (evhtp_obj->http_request_get_proto(ev_req) ==
-             evhtp_proto::EVHTP_PROTO_11) {
-    request_uri = request_uri + std::string(" HTTP/1.1");
-  }
+  request_uri = request_uri + std::string(" ") + http_version;
 
   audit_log_obj.set_bucket_owner_canonical_id(get_account_id());
   audit_log_obj.set_bucket_name(bucket_name);
   audit_log_obj.set_remote_ip(get_header_value("X-Forwarded-For"));
+  audit_log_obj.set_bytes_received(get_content_length());
   audit_log_obj.set_requester(get_account_id());
   audit_log_obj.set_request_id(request_id);
   audit_log_obj.set_operation(audit_operation_str);
   audit_log_obj.set_object_key(get_object_uri());
   audit_log_obj.set_request_uri(request_uri);
   audit_log_obj.set_http_status(http_status);
-  audit_log_obj.set_bytes_sent(total_bytes_received);
   audit_log_obj.set_signature_version(get_header_value("Authorization"));
   audit_log_obj.set_user_agent(get_header_value("User-Agent"));
   audit_log_obj.set_version_id(get_query_string_value("versionId"));
-  audit_log_obj.set_object_size(get_header_value("Content-Length"));
+  // Setting object size for PUT object request
+  if (object_size != 0) {
+    audit_log_obj.set_object_size(object_size);
+  }
   audit_log_obj.set_host_header(get_header_value("Host"));
 
   audit_log(audit_log_obj);
-  s3_log(S3_LOG_DEBUG, "", "Exiting");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting");
 }
