@@ -197,7 +197,7 @@ TEST_F(S3ActionTest, EnableAuthTest) {
   ptr_s3Actionobject->setup_steps();
   S3Option::get_instance()->disable_auth();
   // Number of tasks in task list should be only one.
-  EXPECT_EQ(1, ptr_s3Actionobject->number_of_tasks());
+  EXPECT_EQ(2, ptr_s3Actionobject->number_of_tasks());
 }
 
 TEST_F(S3ActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag) {

@@ -439,11 +439,10 @@ void S3AuthClient::setup_auth_request_headers() {
   evhtp_headers_add_header(auth_request->headers_out,
                            evhtp_header_new("User-Agent", "s3server", 1, 1));
 
-  // Commenting till authorization support is implemented.
-  // if (auth_request_type == S3AuthClientOpType::authorization) {
-  evhtp_headers_add_header(auth_request->headers_out,
-                           evhtp_header_new("Connection", "close", 1, 1));
-  // }
+  if (auth_request_type == S3AuthClientOpType::authorization) {
+    evhtp_headers_add_header(auth_request->headers_out,
+                             evhtp_header_new("Connection", "close", 1, 1));
+  }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

@@ -84,7 +84,7 @@ void S3Action::setup_steps() {
     // add_task(std::bind( &S3Action::fetch_acl_policies, this ));
     // Commented till we implement Authorization feature completely.
     // Current authorisation implementation in AuthServer is partial
-    // add_task(std::bind( &S3Action::check_authorization, this ));
+    add_task(std::bind(&S3Action::check_authorization, this));
   }
 }
 
@@ -259,13 +259,15 @@ void S3Action::rollback_exit() {
 
 void S3Action::check_authorization() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (request->get_api_type() == S3ApiType::bucket) {
-    auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
-                                    bucket_metadata->get_policy_as_json());
-  } else if (request->get_api_type() == S3ApiType::object) {
-    auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(),
-                                    "");
-  }
+  // TODO Authorization is No op currently
+  // will enable once acl and polcy is implemented
+  // if (request->get_api_type() == S3ApiType::bucket) {
+  //  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+  //                                  bucket_metadata->get_policy_as_json());
+  // } else if (request->get_api_type() == S3ApiType::object) {
+  //  auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(),
+  //                                   "");
+  // }
   auth_client->check_authorization(
       std::bind(&S3Action::check_authorization_successful, this),
       std::bind(&S3Action::check_authorization_failed, this));
