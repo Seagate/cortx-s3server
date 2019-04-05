@@ -41,7 +41,7 @@ public class Grantee {
        canonicalId = Id;
     }
 
-    private String getCanonicalId() {
+    String getCanonicalId() {
         return canonicalId;
     }
 
@@ -49,7 +49,7 @@ public class Grantee {
         displayName = Name;
     }
 
-    private String getDisplayName() {
+    String getDisplayName() {
         return displayName;
     }
 

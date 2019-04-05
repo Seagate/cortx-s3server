@@ -35,6 +35,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import com.seagates3.authorization.AccessControlList;
 
@@ -44,16 +45,24 @@ public class AccessControlPolicy {
     Owner owner;
     AccessControlList accessControlList;
 
-    public AccessControlPolicy(String aclXmlPath) throws ParserConfigurationException,
+    public AccessControlPolicy(File xmlFile) throws ParserConfigurationException,
                       SAXException, IOException {
 
-        File xmlFile = new File(aclXmlPath);
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder;
         dBuilder = dbFactory.newDocumentBuilder();
         doc = dBuilder.parse(xmlFile);
         doc.getDocumentElement().normalize();
 
+        loadXml(doc);
+    }
+
+    public AccessControlPolicy(String xmlString) throws ParserConfigurationException,
+                      SAXException, IOException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = null;
+        builder = factory.newDocumentBuilder();
+        doc = builder.parse(new InputSource(new StringReader(xmlString)));
         loadXml(doc);
     }
 
@@ -103,6 +112,8 @@ public class AccessControlPolicy {
    }
 
    void setOwner(Owner owner) {
+       this.owner.canonicalId = owner.getCanonicalId();
+       this.owner.displayName = owner.getDisplayName();
    }
 
    Owner getOwner() {
@@ -113,7 +124,11 @@ public class AccessControlPolicy {
       return accessControlList;
    }
 
-   void setAccessControlList(AccessControlList accessControlList) {
+   void setAccessControlList(AccessControlList acl) {
+       this.accessControlList.grantList.clear();
+       for(int counter=0; counter<acl.grantList.size();counter++) {
+           this.accessControlList.addGrant(acl.grantList.get(counter));
+       }
    }
 
    // Returns ACL XML in string buffer.
@@ -121,9 +136,66 @@ public class AccessControlPolicy {
        TransformerFactory tf = TransformerFactory.newInstance();
        Transformer transformer;
        transformer = tf.newTransformer();
+       flushXmlValues();
        StringWriter writer = new StringWriter();
        transformer.transform(new DOMSource(doc), new StreamResult(writer));
        String xml = writer.getBuffer().toString();
        return xml;
    }
+
+   private void flushXmlValues(){
+       NodeList ownerNodes = doc.getElementsByTagName("Owner");
+       Node firstOwnerNode = ownerNodes.item(0);
+       Element firstOwnerElement = (Element)firstOwnerNode;
+
+       Node ownerIdNode = firstOwnerElement.getElementsByTagName("ID").item(0);
+       ownerIdNode.setTextContent(this.owner.getCanonicalId());
+
+       Node ownerDisplayNameNode = firstOwnerElement.getElementsByTagName("DisplayName").item(0);
+       ownerDisplayNameNode.setTextContent(this.owner.getDisplayName());
+
+       Node accessControlListNode = doc.getElementsByTagName("AccessControlList").item(0);
+       Element firstAccessControlListElement = (Element)accessControlListNode;
+
+       NodeList GrantNodeList = firstAccessControlListElement.getElementsByTagName("Grant");
+
+       int grantNodesLength = GrantNodeList.getLength();
+       int counter = 0;
+
+       for ( counter = 0; counter< this.accessControlList.grantList.size(); counter++) {
+
+           // When grantNodeList length is less than grantlength to be set,adding extra nodes of type grant Node.
+           if(counter>(grantNodesLength-1)) {
+               Node grantNode = GrantNodeList.item(0);
+               Node newNode=grantNode.cloneNode(true);
+               accessControlListNode.appendChild(newNode);
+           }
+
+           Node grantNode = GrantNodeList.item(counter);
+           Element grantElement = (Element)grantNode;
+
+           Node granteeIdNode = grantElement.getElementsByTagName("ID").item(0);
+           granteeIdNode.setTextContent(this.accessControlList.grantList.get(counter).grantee.getCanonicalId());
+
+           Node granteeDisplayNameNode = grantElement.getElementsByTagName("DisplayName").item(0);
+           granteeDisplayNameNode.setTextContent(this.accessControlList.grantList.get(counter).grantee.getDisplayName());
+
+           Node permissionNode = grantElement.getElementsByTagName("Permission").item(0);
+           permissionNode.setTextContent(this.accessControlList.grantList.get(counter).getPermission());
+
+       }
+
+       int indexAtNodeToBeDeleted = counter;
+
+       // When grantNode length is greater than grantlength to be set,removing nodes of type Grant.
+       if(grantNodesLength > counter) {
+             while((grantNodesLength) != counter) {
+                 Node deleteNode = GrantNodeList.item(indexAtNodeToBeDeleted);
+                 accessControlListNode.removeChild(deleteNode);
+                 counter++;
+             }
+       }
+
+   }
+
 }
