@@ -43,6 +43,8 @@ public class IEMUtil {
     public static final String NO_SUCH_METHOD_EX = "048004002";
     public static final String XML_SCHEMA_VALIDATION_ERROR = "048005001";
 
+    public static final String INVALID_REST_URI_ERROR = "048006001";
+
 
     public static void log(Level level, String eventCode,
                            String eventCodeString, String data) {
