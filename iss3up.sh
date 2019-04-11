@@ -8,6 +8,12 @@ then
   exit 1
 fi
 
+# s3 port configured in s3config.yaml
+s3_port_from_config=`python -c '
+import yaml;
+print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
+' | tr -d '\r\n'`
+
 instance=1
 if [ $# -eq 1 ]; then
   if [[ $1 =~ ^[0-9]+$ ]] && [ $1 -le $MAX_S3_INSTANCES_NUM ]; then
@@ -19,7 +25,7 @@ if [ $# -eq 1 ]; then
 fi
 
 if [[ $instance -ne 0 ]]; then
-  s3port=$((8080 + $instance))
+  s3port=$(($s3_port_from_config + $instance - 1))
   s3_pid="$(ps aux | grep "/var/run/s3server.$s3port.pid" | grep -v grep)"
   if [[ "$s3_pid" != "" ]]; then
     s3_instance=$(netstat -an | grep $s3port | grep LISTEN)

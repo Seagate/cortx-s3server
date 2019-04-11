@@ -77,17 +77,23 @@ print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"][
 `"/s3server-0x7200000000000000:0"
 mkdir -p $s3_log_dir
 
+# s3 port configured in s3config.yaml
+s3_port_from_config=`python -c '
+import yaml;
+print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_BIND_PORT"];
+' | tr -d '\r\n'`
+
 # Start the s3server
 export PATH=$PATH:/opt/seagate/s3/bin
-counter=1
+counter=0
 
-while [[ $counter -le $num_instances ]]
+while [[ $counter -lt $num_instances ]]
 do
-  clovis_local_port=`expr 100 + $counter`
-  s3port=`expr 8080 + $counter`
+  clovis_local_port=`expr 101 + $counter`
+  s3port=`expr $s3_port_from_config + $counter`
   pid_filename='/var/run/s3server.'$s3port'.pid'
   s3server --s3pidfile $pid_filename \
            --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
            --s3port $s3port --fault_injection true
-  ((counter++))
+  ((++counter))
 done
