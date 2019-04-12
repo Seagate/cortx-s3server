@@ -33,6 +33,11 @@ public interface AccountDAO {
      */
     public Account findByID(String accountID) throws DataAccessException;
 
+    /* @param canonicalId of Account.
+    *  @return Account
+    *  @throws DataAccessException
+    */
+   public Account findByCanonicalID(String canonicalID) throws DataAccessException;
     /*
      * Get account details from the database.
      */

@@ -79,6 +79,47 @@ public class AccountImpl implements AccountDAO {
         return account;
     }
 
+    @Override
+    public Account findByCanonicalID(String canonicalID) throws DataAccessException {
+        Account account = new Account();
+        account.setCanonicalId(canonicalID);
+
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+            LDAPUtils.ACCOUNT_ID};
+        String filter = String.format("(&(%s=%s)(%s=%s))",
+                LDAPUtils.CANONICAL_ID, canonicalID, LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+        LOGGER.debug("Searching canonical id: " + canonicalID);
+
+        LDAPSearchResults ldapResults;
+        try {
+            ldapResults = LDAPUtils.search(LDAPUtils.BASE_DN,
+                    LDAPConnection.SCOPE_SUB, filter, attrs
+            );
+        } catch (LDAPException ex) {
+            LOGGER.error("Failed to search account "
+                    + "of canonical Id " + canonicalID);
+            throw new DataAccessException("failed to search account.\n" + ex);
+        }
+
+        if (ldapResults.hasMore()) {
+            try {
+                LDAPEntry entry = ldapResults.next();
+                account.setName(entry.getAttribute(
+                        LDAPUtils.ORGANIZATIONAL_NAME).getStringValue());
+                account.setId(entry.getAttribute(
+                        LDAPUtils.ACCOUNT_ID).getStringValue());
+            } catch (LDAPException ex) {
+                LOGGER.error("Failed to find account details."
+                        + "of canonical id: " + canonicalID);
+                throw new DataAccessException("Failed to find account details.\n" + ex);
+            }
+        }
+
+        return account;
+    }
+
     /**
      * Fetch account details from LDAP.
      *

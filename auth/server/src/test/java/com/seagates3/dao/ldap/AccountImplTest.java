@@ -385,6 +385,59 @@ public class AccountImplTest {
 
         accountImpl.findByID("98765test");
     }
+    @Test
+    public void FindAccountByCanonicalId_AccountExists_ReturnAccountObject() throws Exception {
+        Account expectedAccount = new Account();
+        expectedAccount.setName("s3test");
+        expectedAccount.setId("98765test");
+        expectedAccount.setCanonicalId("C12345");
+        expectedAccount.setEmail("test@seagate.com");
+
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+                LDAPUtils.ACCOUNT_ID};
+        String filter = String.format("(&(%s=%s)(%s=%s))",
+                LDAPUtils.CANONICAL_ID, "C12345", LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                BASE_DN, 2, filter, attrs);
+
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+
+        Account account = accountImpl.findByCanonicalID("C12345");
+        Assert.assertThat(account, new ReflectionEquals(account));
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindAccountByCanonicalId_ShouldThrowLDAPException() throws Exception {
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+                LDAPUtils.ACCOUNT_ID};
+        String filter = String.format("(&(%s=%s)(%s=%s))",
+                LDAPUtils.CANONICAL_ID, "C12345", LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
+                BASE_DN, 2, filter, attrs);
+
+        accountImpl.findByCanonicalID("C12345");
+    }
+
+    @Test(expected = DataAccessException.class)
+    public void FindAccountByCanonicalId_GetEntryShouldThrowException() throws Exception {
+        String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME,
+                LDAPUtils.ACCOUNT_ID};
+        String filter = String.format("(&(%s=%s)(%s=%s))",
+                LDAPUtils.CANONICAL_ID, "C12345", LDAPUtils.OBJECT_CLASS,
+                LDAPUtils.ACCOUNT_OBJECT_CLASS);
+
+        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
+                BASE_DN, 2, filter, attrs);
+
+        Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
+        Mockito.when(ldapResults.next()).thenThrow(new LDAPException());
+
+        accountImpl.findByCanonicalID("C12345");
+    }
 
     @Test
     public void DeleteAccount_DeleteAccountSuccessful()
