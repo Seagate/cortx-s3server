@@ -142,7 +142,8 @@ attributetype (1.3.6.1.4.99999.2.3.24
 objectclass ( 1.3.6.1.4.99999.2.4.1 NAME 'Account'
   DESC 'S3 Account'
   SUP top STRUCTURAL
-  MUST ( o $ accountId $ mail $ canonicalId ) )
+  MUST ( o $ accountId $ mail $ canonicalId )
+  MAY ( userPassword ) )
 
 objectclass ( 1.3.6.1.4.99999.2.4.2 NAME 'iamUser'
   DESC 'S3 User'
