@@ -32,6 +32,59 @@
 #include "s3_option.h"
 #include "s3_common_utilities.h"
 
+void s3_auth_op_done_on_main_thread(evutil_socket_t, short events,
+                                    void *user_data) {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  if (user_data == NULL) {
+    s3_log(S3_LOG_ERROR, "", "Input argument user_data is NULL\n");
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    return;
+  }
+  struct user_event_context *user_context =
+      (struct user_event_context *)user_data;
+  S3AsyncOpContextBase *context = (S3AsyncOpContextBase *)user_context->app_ctx;
+  if (context == NULL) {
+    s3_log(S3_LOG_ERROR, "", "context pointer is NULL\n");
+  }
+  struct event *s3user_event = (struct event *)user_context->user_event;
+  if (s3user_event == NULL) {
+    s3_log(S3_LOG_ERROR, "", "User event is NULL\n");
+  }
+
+  if (context->is_at_least_one_op_successful()) {
+    context->on_success_handler()();  // Invoke the handler.
+  } else {
+    context->on_failed_handler()();  // Invoke the handler.
+  }
+  free(user_data);
+  // Free user event
+  if (s3user_event) event_free(s3user_event);
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+// Post success handler on main thread so that current auth callback stack can
+// unwind and let the current request-response of evhtp to complete.
+// This is primarily required as evhtp request object should not be deleted
+// during the response callbacks like auth_response.
+void s3_auth_op_success(void *application_context, int rc) {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase *)application_context;
+  s3_log(S3_LOG_DEBUG, app_ctx->get_request()->get_request_id(),
+         "Error code = %d\n", rc);
+  app_ctx->set_op_errno_for(0, rc);
+  struct user_event_context *user_ctx =
+      (struct user_event_context *)calloc(1, sizeof(struct user_event_context));
+  user_ctx->app_ctx = app_ctx;
+#ifdef S3_GOOGLE_TEST
+  evutil_socket_t test_sock = 0;
+  short events = 0;
+  s3_auth_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
+#else
+  S3PostToMainLoop((void *)user_ctx)(s3_auth_op_done_on_main_thread);
+#endif  // S3_GOOGLE_TEST
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 /* S3 Auth client callbacks */
 
 extern "C" evhtp_res on_auth_conn_err_callback(evhtp_connection_t *connection,
@@ -128,7 +181,7 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
   free(auth_response_body);
 
   if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
-    context->on_success_handler()();  // Invoke the handler.
+    s3_auth_op_success(context, 0);  // Invoke the handler.
   } else {
     context->on_failed_handler()();  // Invoke the handler.
   }
@@ -199,7 +252,7 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
   }
   free(auth_response_body);
   if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
-    context->on_success_handler()();  // Invoke the handler.
+    s3_auth_op_success(context, 0);  // Invoke the handler.
   } else {
     context->on_failed_handler()();  // Invoke the handler.
   }
