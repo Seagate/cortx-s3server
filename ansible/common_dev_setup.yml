@@ -27,8 +27,6 @@
     name:
       - log4cxx_eos
       - log4cxx_eos-devel
-    disablerepo: '*'
-    enablerepo: releases_s3server_uploads
     state: present
 
 - name: Install tools for ST
