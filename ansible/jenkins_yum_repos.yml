@@ -9,7 +9,7 @@
       yum_repository:
         name: releases_hermi_lustre
         description: Yum repo for lustre
-        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/lustre/repo/
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/hermi/last_successful/lustre/repo/
         gpgcheck: no
         priority: 1
 
@@ -17,7 +17,7 @@
       yum_repository:
         name: releases_hermi_halon
         description: Yum repo for halon
-        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/halon/repo/
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/hermi/last_successful/halon/repo/
         gpgcheck: no
         priority: 1
 
@@ -25,7 +25,7 @@
       yum_repository:
         name: releases_hermi_mero
         description: Yum repo for mero
-        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/mero/repo/
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/hermi/last_successful/mero/repo/
         gpgcheck: no
         priority: 1
 
@@ -33,7 +33,7 @@
       yum_repository:
         name: releases_hermi_s3server
         description: Yum repo for s3server
-        baseurl: http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/s3server/repo/
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/hermi/last_successful/s3server/repo/
         gpgcheck: no
         priority: 1
 
