@@ -1,27 +1,32 @@
 diff --git a/src/main/cpp/fileappender.cpp b/src/main/cpp/fileappender.cpp
-index b83f0e1..f429df6 100644
+index b83f0e1..fddfdaf 100644
 --- a/src/main/cpp/fileappender.cpp
 +++ b/src/main/cpp/fileappender.cpp
-@@ -15,6 +15,10 @@
+@@ -15,6 +15,13 @@
   * limitations under the License.
   */
- 
+
 +#include <iostream>
 +#include <string.h>
 +#include <algorithm>
 +#include <unistd.h>
++#include <sys/types.h>
++#include <pwd.h>
++#include <grp.h>
  #include <log4cxx/logstring.h>
  #include <log4cxx/fileappender.h>
  #include <log4cxx/helpers/stringhelper.h>
-@@ -28,6 +32,7 @@
+@@ -28,6 +35,9 @@
  #include <log4cxx/helpers/bytebuffer.h>
  #include <log4cxx/helpers/synchronized.h>
- 
+
++#define PWD_BUFFER_SIZE 1024   // Length as per sysconf(_SC_GETGR_R_SIZE_MAX)
++#define GRP_BUFFER_SIZE 1024   // Length as per sysconf(_SC_GETGR_R_SIZE_MAX)
 +
  using namespace log4cxx;
  using namespace log4cxx::helpers;
  using namespace log4cxx::spi;
-@@ -126,6 +131,21 @@ void FileAppender::setOption(const LogString& option,
+@@ -126,6 +136,21 @@ void FileAppender::setOption(const LogString& option,
  		LOCK_W sync(mutex);
  		fileName = stripDuplicateBackslashes(value);
  	}
@@ -43,7 +48,7 @@ index b83f0e1..f429df6 100644
  	else if (StringHelper::equalsIgnoreCase(option, LOG4CXX_STR("APPEND"), LOG4CXX_STR("append")))
  	{
  		LOCK_W sync(mutex);
-@@ -156,7 +176,6 @@ void FileAppender::activateOptions(Pool& p)
+@@ -156,7 +181,6 @@ void FileAppender::activateOptions(Pool& p)
  {
  	LOCK_W sync(mutex);
  	int errors = 0;
@@ -51,13 +56,13 @@ index b83f0e1..f429df6 100644
  	if (!fileName.empty())
  	{
  		try
-@@ -186,8 +205,50 @@ void FileAppender::activateOptions(Pool& p)
+@@ -186,8 +210,50 @@ void FileAppender::activateOptions(Pool& p)
  	{
  		WriterAppender::activateOptions(p);
  	}
 +
  }
- 
+
 +    /**
 +		The <b>filePermissions</b> property takes a string value which should be the
 +		permissions of the log file to be generated & will return its octal equivalent.
@@ -99,54 +104,55 @@ index b83f0e1..f429df6 100644
 +	}
 +    return file_mode;
 +}
- 
+
  /**
   * Replaces double backslashes (except the leading doubles of UNC's)
-@@ -304,7 +365,37 @@ void FileAppender::setFile(
- 
+@@ -304,7 +370,38 @@ void FileAppender::setFile(
+
  	try
  	{
-+		FILE *fp;
-+		// OwnerID = 0 & GroupID = 0 corresponding to 'root' account
-+		int ownerid = 0, groupid = 0;
++		/* OwnerID = 0 & GroupID = 0 corresponding to 'root' account */
++		uid_t ownerid = 0;
++		gid_t groupid = 0;
  		outStream = new FileOutputStream(filename, append1);
-+		if ( ! filePermissions.empty()){
++		if (!filePermissions.empty()){
 +		    mode_t file_mode = convert_fileperm_to_chmode(filePermissions);
 +		    chmod(filename.c_str(), file_mode);
 +		}
-+		if ( ! fileOwner.empty()){
-+			std::string fileowner_str = "id -u " + fileOwner;
-+			char fileowner[fileowner_str.size() + 1], result[10];
-+			strcpy(fileowner, fileowner_str.c_str());
++		if (!fileOwner.empty()) {
++			struct passwd passwd_result;
++			struct passwd* temp_pwd_ptr = NULL;
++			char pwd_buffer[PWD_BUFFER_SIZE] = {};
++			if (getpwnam_r(fileOwner.c_str(), &passwd_result, pwd_buffer, sizeof(pwd_buffer), &temp_pwd_ptr) != 0)
++				throw;
 +
-+			fp = popen( fileowner, "r");
-+			while (fgets( result, sizeof(result), fp) != NULL) {
-+				ownerid = atoi(result);
++			if (temp_pwd_ptr != NULL) {
++				ownerid = passwd_result.pw_uid;
 +			}
-+			pclose(fp);
 +		}
-+		if ( ! fileGroup.empty()){
-+			std::string filegroup_str = "id -u " + fileGroup;
-+			char filegroup[filegroup_str.size() + 1], result[10];
-+			strcpy(filegroup, filegroup_str.c_str());
 +
-+			fp = popen( filegroup, "r");
-+			while (fgets( result, sizeof(result), fp) != NULL) {
-+				groupid = atoi(result);
++		if (!fileGroup.empty()) {
++			struct group group_result;
++			struct group * temp_grp_ptr = NULL;
++			char grp_buffer[GRP_BUFFER_SIZE] = {};
++			if (getgrnam_r(fileGroup.c_str(), &group_result, grp_buffer, sizeof(grp_buffer), &temp_grp_ptr) != 0)
++				throw;
++
++			if (temp_grp_ptr != NULL) {
++				groupid = group_result.gr_gid;
 +			}
-+			pclose(fp);
 +		}
 +		chown(filename.c_str(), ownerid, groupid);
  	}
  	catch (IOException& ex)
  	{
-@@ -355,6 +446,5 @@ void FileAppender::setFile(
+@@ -355,6 +452,5 @@ void FileAppender::setFile(
  	this->fileName = filename;
  	this->bufferSize = bufferSize1;
  	writeHeader(p);
 -
  }
- 
+
 diff --git a/src/main/include/log4cxx/fileappender.h b/src/main/include/log4cxx/fileappender.h
 index 468f135..5274be1 100644
 --- a/src/main/include/log4cxx/fileappender.h
@@ -154,7 +160,7 @@ index 468f135..5274be1 100644
 @@ -18,6 +18,7 @@
  #ifndef _LOG4CXX_FILE_APPENDER_H
  #define _LOG4CXX_FILE_APPENDER_H
- 
+
 +#include <sys/stat.h>
  #include <log4cxx/logger.h>
  #include <log4cxx/logstring.h>
@@ -162,7 +168,7 @@ index 468f135..5274be1 100644
 @@ -62,6 +63,18 @@ class LOG4CXX_EXPORT FileAppender : public WriterAppender
  		How big should the IO buffer be? Default is 8K. */
  		int bufferSize;
- 
+
 +	    /**
 +		FilePermissions for the log files Default is rw-r--r-- . */
 +		std::string filePermissions;
@@ -181,7 +187,7 @@ index 468f135..5274be1 100644
 @@ -122,6 +135,9 @@ class LOG4CXX_EXPORT FileAppender : public WriterAppender
  		#activateOptions is called, not when the options are set.  */
  		virtual void setFile(const LogString& file);
- 
+
 +		/** Returns the mode_t equivalent for file permissions */
 +		mode_t convert_fileperm_to_chmode(std::string filePermissions);
 +
@@ -191,7 +197,7 @@ index 468f135..5274be1 100644
 @@ -158,6 +174,7 @@ class LOG4CXX_EXPORT FileAppender : public WriterAppender
  			return fileName;
  		}
- 
+
 +
  		/**
  		<p>Sets and <i>opens</i> the file where the log output will
