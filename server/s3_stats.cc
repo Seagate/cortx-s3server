@@ -53,7 +53,7 @@ int S3Stats::count(const std::string& key, int value, int retry,
   return form_and_send_msg(key, "c", std::to_string(value), retry, sample_rate);
 }
 
-int S3Stats::timing(const std::string& key, int time_ms, int retry,
+int S3Stats::timing(const std::string& key, size_t time_ms, int retry,
                     float sample_rate) {
   return form_and_send_msg(key, "ms", std::to_string(time_ms), retry,
                            sample_rate);

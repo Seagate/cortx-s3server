@@ -92,6 +92,7 @@ class S3PostMultipartObjectAction : public S3Action {
   void fetch_object_info_status();
   void check_upload_is_inprogress();
   void create_object();
+  void create_object_successful();
   void create_object_failed();
   virtual void collision_occured();
   void create_new_oid(struct m0_uint128 current_oid);

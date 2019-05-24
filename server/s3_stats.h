@@ -41,7 +41,7 @@ class S3Stats {
             float sample_rate = 1.0);
 
   // Log the time in ms for `key`
-  int timing(const std::string& key, int time_ms, int retry = 1,
+  int timing(const std::string& key, size_t time_ms, int retry = 1,
              float sample_rate = 1.0);
 
   // Set the initial gauge value for `key`

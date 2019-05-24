@@ -330,13 +330,24 @@ void S3PostMultipartObjectAction::create_object() {
   }
 
   clovis_writer->create_object(
-      std::bind(&S3PostMultipartObjectAction::next, this),
+      std::bind(&S3PostMultipartObjectAction::create_object_successful, this),
       std::bind(&S3PostMultipartObjectAction::create_object_failed, this),
       layout_id);
 
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "post_multipartobject_action_create_object_shutdown_fail");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::create_object_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  create_object_timer.stop();
+  const size_t time_in_millisecond =
+      create_object_timer.elapsed_time_in_millisec();
+  LOG_PERF("create_object_successful_ms", time_in_millisecond);
+  s3_stats_timing("multipart_create_object_success", time_in_millisecond);
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -472,11 +483,6 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
 
 void S3PostMultipartObjectAction::save_upload_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  create_object_timer.stop();
-  LOG_PERF("create_object_successful_ms",
-           create_object_timer.elapsed_time_in_millisec());
-  s3_stats_timing("multipart_create_object_success",
-                  create_object_timer.elapsed_time_in_millisec());
 
   // mark rollback point
   add_task_rollback(std::bind(

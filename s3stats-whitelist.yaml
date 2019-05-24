@@ -2,34 +2,64 @@
 # Format: <-><space><metric name>
 #       eg: - total_request_count
 ############################################################
-# Timer metrics
+# Timer metrics -- Its in milliseconds
+# Operations which involve clovis/mero, in that case the elapsed time is the time from when
+# clovis operation is launched till the time when clovis successful/failure callback is called
+# Time from the arrival of request to s3server till response send to client
 - total_request_time
+# Time to convert from uri string to oid
 - uri_to_mero_oid
 - copy_to_clovis_buf
+# buffering time till someone starts listening.
 - total_buffering_time
+# Successful object creation time before actual write
 - create_object_success
+# Failed object creation time
 - create_object_failed
+# successful object creation time for initiate multipart upload (POST Request)
 - multipart_create_object_success
+# Failed object creation time for initiate multipart upload (POST Request)
 - multipart_create_object_failed
+# sucessful object creation time for chunk upload
 - chunkupload_create_object_success
+# Failed object creation time for chunk upload
 - chunkupload_create_object_failed
+# Time taken for retrival of value(s) for the given key(s) from the index (time depends on # of keys provided)
 - get_keyval_success
+# Time taken incase if retrieval of values fails for the provided keys from index
 - get_keyval_failed
+# Time taken for sucessful create index operation
 - create_index_op_success
+# Time taken for failed create index operation
 - create_index_op_failed
+# Time taken for sucessful delete index operation
 - delete_index_op_success
+# Time taken in case when delete operation fails
 - delete_index_op_failed
+# Time taken for put key value operation (time may depend on number of keys/values passed, normally one key is passed)
+# the time doesn't include sync time
 - put_keyval_success
+# Time taken for failed put key value operation
 - put_keyval_failed
+# Time taken for sucessful delete key value
 - delete_keyval_success
+# Time taken for failed delete key value
 - delete_keyval_failed
+# Time taken for deleting single object from clovis
 - delete_object_from_clovis_success
+# Time taken in case if single object deletion fails
 - delete_object_from_clovis_failed
+# Time taken for sucessfully deleting objects from clovis (depends on number of objects to be deleted)
 - delete_objects_from_clovis_success
+# Time taken in case if objects deletion fails
 - delete_objects_from_clovis_failed
+# Time taken for sucessful write data to clovis (depends on size of data written)
 - write_to_clovis_op_success
+# Time taken in case if write data to clovis fails
 - write_to_clovis_op_failed
+# Time taken for sucessful read data (depends on number of blocks to be read)
 - read_object_data_success
+# Time taken in case of read data failure
 - read_object_data_failed
 ############################################################
 # Counter metrics
