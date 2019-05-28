@@ -6,7 +6,7 @@
 #   Dry-run 'git clang-format' and check whether code changes compy
 #   with 'clang-format'.
 clang_failed=0
-git clang-format --style=Google --extensions=c,cc,h --diff --commit HEAD~1 \
+git clang-format --style=Google --extensions=c,cc,h,java --diff --commit HEAD~1 \
     | grep -E 'clang-format did not modify any files|no modified files to format' \
     > /dev/null
 if [ $? -ne 0 ]
@@ -16,11 +16,11 @@ then
           "[ERROR:Code formatting]" \
           "One or more modified files do not comply with clang-format." \
           "Run below command to see required changes:" \
-          "'git clang-format --style=Google --extensions=c,cc,h --diff --commit HEAD~1'"
+          "'git clang-format --style=Google --extensions=c,cc,h,java --diff --commit HEAD~1'"
 fi
 
 # For untracked files (new files):
-#   Find all untracked *.cc/*.c/*.h files under 'server' & 'ut' dir.
+#   Find all untracked *.cc/*.c/*.h/*.java files under s3server dir.
 #   And check whether new files comply with 'clang-format'.
 tmpfile=/tmp/s3codeformat.$(date "+%Y.%m.%d-%H.%M.%S")
 msg_printed=0
@@ -42,7 +42,7 @@ do
     printf "\t%s\n" "$filename"
     clang_failed=1
   fi
-done < <(git status -uall -s server/ ut/ | grep '??' | grep  -E '\.(c|cc|h)$' \
+done < <(git status -uall -s server/ ut/ | grep '??' | grep  -E '\.(c|cc|h|java)$' \
         | awk '{print $2}')
 
 rm -f $tmpfile
