@@ -150,17 +150,17 @@ class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
   }
 
   std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid) {
+      std::shared_ptr<RequestObject> req, struct m0_uint128 oid) {
     return mock_clovis_writer;
   }
 
   std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<S3RequestObject> req) {
+      std::shared_ptr<RequestObject> req) {
     return mock_clovis_writer;
   }
 
   std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
+      std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
       uint64_t offset) {
     return mock_clovis_writer;
   }
@@ -198,7 +198,7 @@ class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
   }
 
   std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
-      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
     return mock_clovis_kvs_reader;
   }
@@ -217,7 +217,7 @@ class MockS3ClovisKVSWriterFactory : public S3ClovisKVSWriterFactory {
   }
 
   std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
-      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
     return mock_clovis_kvs_writer;
   }
@@ -285,7 +285,7 @@ class MockS3AuthClientFactory : public S3AuthClientFactory {
   }
 
   std::shared_ptr<S3AuthClient> create_auth_client(
-      std::shared_ptr<S3RequestObject> req) {
+      std::shared_ptr<RequestObject> req, bool skip_authorization = false) {
     return mock_auth_client;
   }
 

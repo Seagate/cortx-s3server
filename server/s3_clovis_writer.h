@@ -44,7 +44,7 @@ class S3ClovisWriterContext : public S3AsyncOpContextBase {
   std::string request_id;
 
  public:
-  S3ClovisWriterContext(std::shared_ptr<S3RequestObject> req,
+  S3ClovisWriterContext(std::shared_ptr<RequestObject> req,
                         std::function<void()> success_callback,
                         std::function<void()> failed_callback,
                         int ops_count = 1,
@@ -103,7 +103,7 @@ enum class S3ClovisWriterOpState {
 
 class S3ClovisWriter {
  private:
-  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3ClovisWriterContext> open_context;
   std::unique_ptr<S3ClovisWriterContext> create_context;
   std::unique_ptr<S3ClovisWriterContext> writer_context;
@@ -154,10 +154,10 @@ class S3ClovisWriter {
 
  public:
   // struct m0_uint128 id;
-  S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
+  S3ClovisWriter(std::shared_ptr<RequestObject> req,
                  struct m0_uint128 object_id, uint64_t offset = 0,
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  S3ClovisWriter(std::shared_ptr<S3RequestObject> req, uint64_t offset = 0,
+  S3ClovisWriter(std::shared_ptr<RequestObject> req, uint64_t offset = 0,
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisWriter();
 

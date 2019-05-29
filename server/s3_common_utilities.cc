@@ -78,6 +78,20 @@ bool S3CommonUtilities::stoul(const std::string &str, unsigned long &value) {
   return isvalid;
 }
 
+bool S3CommonUtilities::stoi(const std::string &str, int &value) {
+  bool isvalid = true;
+  try {
+    value = std::stoi(str);
+  }
+  catch (const std::invalid_argument &ia) {
+    isvalid = false;
+  }
+  catch (const std::out_of_range &oor) {
+    isvalid = false;
+  }
+  return isvalid;
+}
+
 void S3CommonUtilities::find_and_replaceall(std::string &data,
                                             const std::string &to_search,
                                             const std::string &replace_str) {

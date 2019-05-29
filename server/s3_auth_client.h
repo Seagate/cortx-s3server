@@ -35,7 +35,7 @@
 #include "s3_auth_response_success.h"
 #include "s3_log.h"
 #include "s3_option.h"
-#include "s3_request_object.h"
+#include "request_object.h"
 
 extern "C" evhtp_res on_auth_response(evhtp_request_t* req, evbuf_t* buf,
                                       void* arg);
@@ -54,7 +54,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   std::string authorization_response_xml;
 
  public:
-  S3AuthClientOpContext(std::shared_ptr<S3RequestObject> req,
+  S3AuthClientOpContext(std::shared_ptr<RequestObject> req,
                         std::function<void()> success_callback,
                         std::function<void()> failed_callback)
       : S3AsyncOpContextBase(req, success_callback, failed_callback),
@@ -101,11 +101,15 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     if (is_authorization_successful) {
       success_obj.reset(new S3AuthResponseSuccess(authorization_response_xml));
       if (success_obj->isOK()) {
-        get_request()->set_user_name(success_obj->get_user_name());
-        get_request()->set_user_id(success_obj->get_user_id());
-        get_request()->set_account_name(success_obj->get_account_name());
-        get_request()->set_account_id(success_obj->get_account_id());
-        get_request()->set_object_acl(success_obj->get_acl());
+        std::shared_ptr<S3RequestObject> s3_request =
+            std::dynamic_pointer_cast<S3RequestObject>(request);
+        if (s3_request != nullptr) {
+          s3_request->set_user_name(success_obj->get_user_name());
+          s3_request->set_user_id(success_obj->get_user_id());
+          s3_request->set_account_name(success_obj->get_account_name());
+          s3_request->set_account_id(success_obj->get_account_id());
+          s3_request->set_object_acl(success_obj->get_acl());
+        }
       } else {
         // Invalid authorisation response xml
         is_authorization_successful = false;
@@ -241,7 +245,7 @@ enum class S3AuthClientOpType { authentication, authorization };
 
 class S3AuthClient {
  private:
-  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3AuthClientOpContext> auth_context;
   std::string request_id;
 
@@ -271,14 +275,15 @@ class S3AuthClient {
   bool last_chunk_added;
 
   bool chunk_auth_aborted;
-
+  bool skip_authorization;
   void trigger_authentication(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed);
   void trigger_authentication();
   void remember_auth_details_in_request();
 
  public:
-  S3AuthClient(std::shared_ptr<S3RequestObject> req);
+  S3AuthClient(std::shared_ptr<RequestObject> req,
+               bool skip_authorization = false);
   virtual ~S3AuthClient() { s3_log(S3_LOG_DEBUG, "", "Destructor\n"); }
 
   S3AuthClientOpState get_state() { return state; }
@@ -294,6 +299,7 @@ class S3AuthClient {
   std::string get_error_code();
   std::string get_signature_from_response();
 
+  void do_skip_authorization() { skip_authorization = true; }
   void setup_auth_request_headers();
   void setup_auth_request_body();
   virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx);

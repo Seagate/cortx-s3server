@@ -29,25 +29,35 @@
 #include <gtest/gtest_prod.h>
 
 #include "s3_api_handler.h"
+#include "mero_api_handler.h"
 #include "s3_uri.h"
+#include "mero_uri.h"
 
-// Not thread-safe, but we are single threaded.
-class S3Router {
- private:
-  S3APIHandlerFactory *api_handler_factory;
-  S3UriFactory *uri_factory;
-
+class Router {
+ protected:
   // Some way to map URL pattern with handler.
   bool is_default_endpoint(std::string &endpoint);
   bool is_exact_valid_endpoint(std::string &endpoint);
   bool is_subdomain_match(std::string &endpoint);
 
  public:
+  Router() = default;
+  virtual ~Router() {};
+  // Dispatch to registered handlers.
+  virtual void dispatch(std::shared_ptr<RequestObject> request) = 0;
+};
+
+// Not thread-safe, but we are single threaded.
+class S3Router : public Router {
+ private:
+  S3APIHandlerFactory *api_handler_factory;
+  S3UriFactory *uri_factory;
+
+ public:
   S3Router(S3APIHandlerFactory *api_creator, S3UriFactory *uri_creator);
   virtual ~S3Router();
-
   // Dispatch to registered handlers.
-  void dispatch(std::shared_ptr<S3RequestObject> request);
+  void dispatch(std::shared_ptr<RequestObject> request);
 
   // For Unit testing only.
   FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingDefaultEP);
@@ -63,6 +73,33 @@ class S3Router {
   FRIEND_TEST(S3RouterTest, ReturnsFalseForInvalidEP);
   FRIEND_TEST(S3RouterTest, ReturnsFalseForEmptyEP);
   FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingEUSubRegionEP);
+};
+
+class MeroRouter : public Router {
+ private:
+  MeroAPIHandlerFactory *api_handler_factory;
+  MeroUriFactory *uri_factory;
+
+ public:
+  MeroRouter(MeroAPIHandlerFactory *api_creator, MeroUriFactory *uri_creator);
+  virtual ~MeroRouter();
+  // Dispatch to registered handlers.
+  void dispatch(std::shared_ptr<RequestObject> request);
+
+  // For Unit testing only.
+  // FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingDefaultEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsFalseForMisMatchOfDefaultEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsFalseForEmptyDefaultEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingRegionEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsFalseForMisMatchRegionEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsFalseForEmptyRegionEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingSubEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingSubRegionEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsFalseForMisMatchSubRegionEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsFalseForInvalidEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsFalseForEmptyEP);
+  // FRIEND_TEST(S3RouterTest, ReturnsTrueForMatchingEUSubRegionEP);
 };
 
 #endif

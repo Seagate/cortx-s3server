@@ -34,11 +34,10 @@ using ::testing::Return;
 
 class MockS3ClovisWriter : public S3ClovisWriter {
  public:
-  MockS3ClovisWriter(std::shared_ptr<S3RequestObject> req,
-                     struct m0_uint128 oid,
+  MockS3ClovisWriter(std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
                      std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
       : S3ClovisWriter(req, oid, 0, s3_clovis_mock_ptr) {}
-  MockS3ClovisWriter(std::shared_ptr<S3RequestObject> req,
+  MockS3ClovisWriter(std::shared_ptr<RequestObject> req,
                      std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr)
       : S3ClovisWriter(req, 0, s3_clovis_mock_ptr) {}
 

@@ -41,6 +41,7 @@ extern "C" {
 // Just to silent compiler
 struct m0_uint128 global_bucket_list_index_oid;
 struct m0_uint128 bucket_metadata_list_index_oid;
+struct m0_uint128 global_probable_dead_object_list_index_oid;
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 extern S3Stats *g_stats_instance;

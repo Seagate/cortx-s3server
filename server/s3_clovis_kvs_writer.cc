@@ -30,7 +30,7 @@
 extern struct m0_clovis_realm clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
 
-S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
+S3ClovisKVSWriter::S3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
                                      std::shared_ptr<ClovisAPI> clovis_api)
     : request(req), state(S3ClovisKVSWriterOpState::start), idx_ctx(nullptr) {
   request_id = request->get_request_id();
@@ -670,7 +670,13 @@ void S3ClovisKVSWriter::delete_keyval_successful() {
 void S3ClovisKVSWriter::delete_keyval_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (state != S3ClovisKVSWriterOpState::failed_to_launch) {
-    state = S3ClovisKVSWriterOpState::failed;
+    if (writer_context->get_errno_for(0) == -ENOENT) {
+      s3_log(S3_LOG_DEBUG, request_id, "The key doesn't exist\n");
+      state = S3ClovisKVSWriterOpState::missing;
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "Deleting the value for a key failed\n");
+      state = S3ClovisKVSWriterOpState::failed;
+    }
   }
   this->handler_on_failed();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

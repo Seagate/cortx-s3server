@@ -47,7 +47,7 @@ class S3AsyncOpResponse {
 
 class S3AsyncOpContextBase {
  protected:
-  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<RequestObject> request;
   std::function<void(void)> on_success;
   std::function<void(void)> on_failed;
 
@@ -70,13 +70,13 @@ class S3AsyncOpContextBase {
   std::string request_id;
 
  public:
-  S3AsyncOpContextBase(std::shared_ptr<S3RequestObject> req,
+  S3AsyncOpContextBase(std::shared_ptr<RequestObject> req,
                        std::function<void(void)> success,
                        std::function<void(void)> failed, int ops_cnt = 1,
                        std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3AsyncOpContextBase() {}
 
-  std::shared_ptr<S3RequestObject> get_request();
+  std::shared_ptr<RequestObject> get_request();
 
   std::function<void(void)> on_success_handler();
   std::function<void(void)> on_failed_handler();

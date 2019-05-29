@@ -96,18 +96,18 @@ class S3ClovisWriterFactory {
  public:
   virtual ~S3ClovisWriterFactory() {}
   virtual std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<S3RequestObject> req, m0_uint128 oid) {
+      std::shared_ptr<RequestObject> req, m0_uint128 oid) {
     s3_log(S3_LOG_DEBUG, "", "S3ClovisWriterFactory::create_clovis_writer\n");
     return std::make_shared<S3ClovisWriter>(req, oid);
   }
   virtual std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<S3RequestObject> req) {
+      std::shared_ptr<RequestObject> req) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisWriterFactory::create_clovis_writer with zero offset\n");
     return std::make_shared<S3ClovisWriter>(req);
   }
   virtual std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<S3RequestObject> req, m0_uint128 oid, uint64_t offset) {
+      std::shared_ptr<RequestObject> req, m0_uint128 oid, uint64_t offset) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisWriterFactory::create_clovis_writer with offset %zu\n",
            offset);
@@ -131,7 +131,7 @@ class S3ClovisKVSReaderFactory {
  public:
   virtual ~S3ClovisKVSReaderFactory() {}
   virtual std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
-      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisKVSReaderFactory::create_clovis_kvs_reader\n");
@@ -143,7 +143,7 @@ class S3ClovisKVSWriterFactory {
  public:
   virtual ~S3ClovisKVSWriterFactory() {}
   virtual std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
-      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<RequestObject> req,
       std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ClovisKVSWriterFactory::create_clovis_kvs_writer\n");
@@ -188,9 +188,9 @@ class S3AuthClientFactory {
  public:
   virtual ~S3AuthClientFactory() {}
   virtual std::shared_ptr<S3AuthClient> create_auth_client(
-      std::shared_ptr<S3RequestObject> request) {
+      std::shared_ptr<RequestObject> request, bool skip_authorization = false) {
     s3_log(S3_LOG_DEBUG, "", "S3AuthClientFactory::create_auth_client\n");
-    return std::make_shared<S3AuthClient>(request);
+    return std::make_shared<S3AuthClient>(request, skip_authorization);
   }
 };
 

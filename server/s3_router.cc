@@ -27,23 +27,13 @@
 #include "s3_router.h"
 #include "s3_stats.h"
 #include "s3_uri.h"
+#include "mero_request_object.h"
 
-S3Router::S3Router(S3APIHandlerFactory* api_creator, S3UriFactory* uri_creator)
-    : api_handler_factory(api_creator), uri_factory(uri_creator) {
-  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
-}
-
-S3Router::~S3Router() {
-  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
-  delete api_handler_factory;
-  delete uri_factory;
-}
-
-bool S3Router::is_default_endpoint(std::string& endpoint) {
+bool Router::is_default_endpoint(std::string& endpoint) {
   return S3Option::get_instance()->get_default_endpoint() == endpoint;
 }
 
-bool S3Router::is_exact_valid_endpoint(std::string& endpoint) {
+bool Router::is_exact_valid_endpoint(std::string& endpoint) {
   if (endpoint == S3Option::get_instance()->get_default_endpoint()) {
     return true;
   }
@@ -51,7 +41,7 @@ bool S3Router::is_exact_valid_endpoint(std::string& endpoint) {
          S3Option::get_instance()->get_region_endpoints().end();
 }
 
-bool S3Router::is_subdomain_match(std::string& endpoint) {
+bool Router::is_subdomain_match(std::string& endpoint) {
   // todo check if given endpoint is subdomain or default or region.
   if (endpoint.find(S3Option::get_instance()->get_default_endpoint()) !=
       std::string::npos) {
@@ -67,21 +57,34 @@ bool S3Router::is_subdomain_match(std::string& endpoint) {
   return false;
 }
 
-void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
+S3Router::S3Router(S3APIHandlerFactory* api_creator, S3UriFactory* uri_creator)
+    : api_handler_factory(api_creator), uri_factory(uri_creator) {
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+}
+
+S3Router::~S3Router() {
+  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  delete api_handler_factory;
+  delete uri_factory;
+}
+
+void S3Router::dispatch(std::shared_ptr<RequestObject> request) {
   std::string request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::shared_ptr<S3RequestObject> s3request =
+      std::dynamic_pointer_cast<S3RequestObject>(request);
   std::shared_ptr<S3APIHandler> handler;
 
   std::string host_name = request->get_host_name();
 
   s3_log(S3_LOG_DEBUG, request_id, "host_name = %s\n", host_name.c_str());
-  s3_log(S3_LOG_INFO, request_id, "uri = %s\n", request->c_get_full_path());
+  s3_log(S3_LOG_INFO, request_id, "uri = %s\n", s3request->c_get_full_path());
 
   std::unique_ptr<S3URI> uri;
   S3UriType uri_type = S3UriType::unsupported;
 
   if (host_name.empty() || is_exact_valid_endpoint(host_name) ||
-      request->is_valid_ipaddress(host_name) ||
+      s3request->is_valid_ipaddress(host_name) ||
       !is_subdomain_match(host_name)) {
     // Path style API
     // Bucket for the request will be the first slash-delimited component of the
@@ -94,25 +97,84 @@ void S3Router::dispatch(std::shared_ptr<S3RequestObject> request) {
     uri_type = S3UriType::virtual_host_style;
   }
 
-  uri =
-      std::unique_ptr<S3URI>(uri_factory->create_uri_object(uri_type, request));
+  uri = std::unique_ptr<S3URI>(
+      uri_factory->create_uri_object(uri_type, s3request));
 
-  request->set_bucket_name(uri->get_bucket_name());
-  request->set_object_name(uri->get_object_name());
+  s3request->set_bucket_name(uri->get_bucket_name());
+  s3request->set_object_name(uri->get_object_name());
   s3_log(S3_LOG_DEBUG, request_id, "Detected bucket name = %s\n",
          uri->get_bucket_name().c_str());
   s3_log(S3_LOG_DEBUG, request_id, "Detected object name = %s\n",
          uri->get_object_name().c_str());
 
   handler = api_handler_factory->create_api_handler(
-      uri->get_s3_api_type(), request, uri->get_operation_code());
+      uri->get_s3_api_type(), s3request, uri->get_operation_code());
 
   if (handler) {
     s3_stats_inc("total_request_count");
     handler->manage_self(handler);
     handler->dispatch();  // Start processing the request
   } else {
-    request->respond_unsupported_api();
+    s3request->respond_unsupported_api();
+  }
+  return;
+}
+
+MeroRouter::MeroRouter(MeroAPIHandlerFactory* api_creator,
+                       MeroUriFactory* uri_creator)
+    : api_handler_factory(api_creator), uri_factory(uri_creator) {
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+}
+
+MeroRouter::~MeroRouter() {
+  s3_log(S3_LOG_DEBUG, "", "Destructor\n");
+  delete api_handler_factory;
+  delete uri_factory;
+}
+
+void MeroRouter::dispatch(std::shared_ptr<RequestObject> request) {
+  std::string request_id = request->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::shared_ptr<MeroRequestObject> mero_request =
+      std::dynamic_pointer_cast<MeroRequestObject>(request);
+  std::shared_ptr<MeroAPIHandler> handler;
+
+  std::string host_name = mero_request->get_host_name();
+
+  s3_log(S3_LOG_DEBUG, request_id, "host_name = %s\n", host_name.c_str());
+  s3_log(S3_LOG_INFO, request_id, "uri = %s\n",
+         mero_request->c_get_full_path());
+
+  std::unique_ptr<MeroURI> uri;
+  MeroUriType uri_type = MeroUriType::unsupported;
+
+  if (host_name.empty() || is_exact_valid_endpoint(host_name) ||
+      mero_request->is_valid_ipaddress(host_name) ||
+      !is_subdomain_match(host_name)) {
+    // Path style API
+    // Request-URI
+    s3_log(S3_LOG_DEBUG, request_id, "Detected Mero PathStyleURI\n");
+    uri_type = MeroUriType::path_style;
+  }
+
+  uri = std::unique_ptr<MeroURI>(
+      uri_factory->create_uri_object(uri_type, mero_request));
+
+  mero_request->set_key_name(uri->get_key_name());
+  mero_request->set_object_oid_lo(uri->get_object_oid_lo());
+  mero_request->set_object_oid_hi(uri->get_object_oid_hi());
+  mero_request->set_index_id_lo(uri->get_index_id_lo());
+  mero_request->set_index_id_hi(uri->get_index_id_hi());
+
+  handler = api_handler_factory->create_api_handler(
+      uri->get_mero_api_type(), mero_request, uri->get_operation_code());
+
+  if (handler) {
+    s3_stats_inc("total_mero_request_count");
+    handler->manage_self(handler);
+    handler->dispatch();  // Start processing the request
+  } else {
+    mero_request->respond_unsupported_api();
   }
   return;
 }

@@ -59,6 +59,18 @@ enum class S3ApiType {
   unsupported      // Invalid or Unsupported API
 };
 
+enum class MeroApiType {
+  index,
+  keyval,
+  object,
+  faultinjection,
+  unsupported  // Invalid or Unsupported API
+};
+
+enum class MeroOperationCode {
+  none
+};
+
 enum class S3OperationCode {
   none,  // Operation on current object.
 
@@ -180,6 +192,23 @@ inline std::string api_type_to_str(S3ApiType type) {
   }
 }
 
+inline std::string api_type_to_str(MeroApiType type) {
+  switch (type) {
+    case MeroApiType::index:
+      return "INDEX";
+    case MeroApiType::keyval:
+      return "KEYVAL";
+    case MeroApiType::object:
+      return "OBJECT";
+    case MeroApiType::faultinjection:
+      return "FAULTINJECTION";
+    case MeroApiType::unsupported:
+      return "UNSUPPORTED";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 inline std::string operation_code_to_audit_str(S3OperationCode code) {
   switch (code) {
     case S3OperationCode::none:
@@ -240,6 +269,15 @@ inline std::string operation_code_to_audit_str(S3OperationCode code) {
       return "COMPLETEUPLOAD";
     case S3OperationCode::abortupload:
       return "ABORTUPLOAD";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+inline std::string operation_code_to_audit_str(MeroOperationCode code) {
+  switch (code) {
+    case MeroOperationCode::none:
+      return "NONE";
     default:
       return "UNKNOWN";
   }

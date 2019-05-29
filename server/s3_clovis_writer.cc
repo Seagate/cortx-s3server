@@ -35,7 +35,7 @@
 extern struct m0_clovis_realm clovis_uber_realm;
 extern S3Option *g_option_instance;
 
-S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
+S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
                                uint64_t offset,
                                std::shared_ptr<ClovisAPI> clovis_api)
     : request(req),
@@ -54,8 +54,16 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  S3UriToMeroOID(s3_clovis_api, request->get_object_uri().c_str(), request_id,
-                 &oid);
+
+  std::string uri_name;
+  std::shared_ptr<S3RequestObject> s3_request =
+      std::dynamic_pointer_cast<S3RequestObject>(request);
+  if (s3_request != nullptr) {
+    uri_name = s3_request->get_object_uri();
+  } else {
+    uri_name = request->c_get_full_path();
+  }
+  S3UriToMeroOID(s3_clovis_api, uri_name.c_str(), request_id, &oid);
 
   oid_list.clear();
   oid_list.push_back(oid);
@@ -64,7 +72,7 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
   place_holder_for_last_unit = NULL;
 }
 
-S3ClovisWriter::S3ClovisWriter(std::shared_ptr<S3RequestObject> req,
+S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
                                struct m0_uint128 object_id, uint64_t offset,
                                std::shared_ptr<ClovisAPI> clovis_api)
     : S3ClovisWriter(req, offset, clovis_api) {

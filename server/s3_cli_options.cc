@@ -28,7 +28,9 @@ DEFINE_string(s3layoutmap, "/opt/seagate/s3/conf/s3_obj_layout_mapping.yaml",
 
 DEFINE_string(s3hostv4, "", "S3 server ipv4 bind address");
 DEFINE_string(s3hostv6, "", "S3 server ipv6 bind address");
+DEFINE_string(merohttpapihost, "", "S3 server mero http bind address");
 DEFINE_int32(s3port, 8081, "S3 server bind port");
+DEFINE_int32(merohttpapiport, 7081, "mero http server bind port");
 DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 
 DEFINE_string(audit_config,
@@ -98,9 +100,21 @@ int parse_and_load_config_options(int argc, char **argv) {
                                         flag_info.current_value.c_str());
   }
 
+  gflags::GetCommandLineFlagInfo("merohttpapihost", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_MERO_BIND_ADDR,
+                                        flag_info.current_value.c_str());
+  }
+
   gflags::GetCommandLineFlagInfo("s3port", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_OPTION_BIND_PORT,
+                                        flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("merohttpapiport", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_MERO_BIND_PORT,
                                         flag_info.current_value.c_str());
   }
 

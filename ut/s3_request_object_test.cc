@@ -408,7 +408,6 @@ TEST_F(S3RequestObjectTest,
               http_header_new(StrEq("Content-Length"), _, _, _)).Times(1);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(2);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_send_reply(_, _)).Times(1);
-  EXPECT_CALL(*mock_evhtp_obj_ptr, http_kvs_for_each(_, _, _)).Times(1);
 
   // Set once like HEAD obect test
   request_with_mock_http_event->set_out_header_value("Content-Length", "0");
@@ -428,7 +427,6 @@ TEST_F(S3RequestObjectTest, ValidateContentLengthSendResponseOnce) {
               http_header_new(StrEq("Content-Length"), _, _, _)).Times(1);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(2);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_send_reply(_, _)).Times(1);
-  EXPECT_CALL(*mock_evhtp_obj_ptr, http_kvs_for_each(_, _, _)).Times(1);
 
   request_with_mock_http_event->send_response(S3HttpSuccess200);
 }

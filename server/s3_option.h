@@ -41,6 +41,8 @@
 #define S3_OPTION_REUSEPORT 0x20000
 #define S3_OPTION_IPV6_BIND_ADDR 0x40000
 #define S3_OPTION_AUDIT_CONFIG 0x80000
+#define S3_OPTION_MERO_BIND_PORT 0x100000
+#define S3_OPTION_MERO_BIND_ADDR 0x200000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -78,8 +80,10 @@ class S3Option {
   std::string s3_nodename;
   std::string s3_ipv4_bind_addr;
   std::string s3_ipv6_bind_addr;
+  std::string mero_http_bind_addr;
   std::string s3_pidfile;
   unsigned short s3_bind_port;
+  unsigned short mero_http_bind_port;
   unsigned short max_retry_count;
   unsigned short retry_interval_millisec;
   unsigned short s3_client_req_read_timeout_secs;
@@ -164,7 +168,9 @@ class S3Option {
 
     s3_ipv4_bind_addr = FLAGS_s3hostv4;
     s3_ipv6_bind_addr = FLAGS_s3hostv6;
+    mero_http_bind_addr = FLAGS_merohttpapihost;
     s3_bind_port = FLAGS_s3port;
+    mero_http_bind_port = FLAGS_merohttpapiport;
     s3_pidfile = "/var/run/s3server.pid";
 
     read_ahead_multiple = 1;
@@ -272,6 +278,7 @@ class S3Option {
   std::string get_s3_nodename();
   std::string get_ipv4_bind_addr();
   std::string get_ipv6_bind_addr();
+  std::string get_mero_http_bind_addr();
   std::string get_s3_pidfile();
   std::string get_s3_audit_config();
   AuditFormatType get_s3_audit_format_type();
@@ -281,6 +288,7 @@ class S3Option {
   int get_audit_logger_port();
   std::string get_audit_logger_rsyslog_msgid();
   unsigned short get_s3_bind_port();
+  unsigned short get_mero_http_bind_port();
   const char* get_s3server_ssl_cert_file();
   const char* get_s3server_ssl_pem_file();
   int get_s3server_ssl_session_timeout();

@@ -31,7 +31,7 @@
 extern struct m0_clovis_realm clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
 
-S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
+S3ClovisKVSReader::S3ClovisKVSReader(std::shared_ptr<RequestObject> req,
                                      std::shared_ptr<ClovisAPI> clovis_api)
     : request(req),
       state(S3ClovisKVSReaderOpState::start),

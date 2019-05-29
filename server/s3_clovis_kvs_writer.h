@@ -44,7 +44,7 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   std::string request_id;
 
  public:
-  S3ClovisKVSWriterContext(std::shared_ptr<S3RequestObject> req,
+  S3ClovisKVSWriterContext(std::shared_ptr<RequestObject> req,
                            std::function<void()> success_callback,
                            std::function<void()> failed_callback,
                            int ops_count = 1,
@@ -92,9 +92,9 @@ enum class S3ClovisKVSWriterOpState {
   created,
   saved,
   deleted,
-  exists,   // Object already exists
-  missing,  // Object does not exists
-  deleting  // Object is being deleted.
+  exists,   // Key already exists
+  missing,  // Key does not exists
+  deleting  // Key is being deleted.
 };
 
 class S3ClovisKVSWriter {
@@ -102,7 +102,7 @@ class S3ClovisKVSWriter {
   std::vector<struct m0_uint128> oid_list;
   std::vector<std::string> keys_list;  // used in delete multiple KV
 
-  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::unique_ptr<S3ClovisKVSWriterContext> writer_context;
   std::unique_ptr<S3ClovisKVSWriterContext> sync_context;
@@ -121,7 +121,7 @@ class S3ClovisKVSWriter {
   void clean_up_contexts();
 
  public:
-  S3ClovisKVSWriter(std::shared_ptr<S3RequestObject> req,
+  S3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
                     std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisKVSWriter();
 

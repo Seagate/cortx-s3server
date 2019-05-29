@@ -34,6 +34,7 @@
 #include "evhtp_wrapper.h"
 #include "event_wrapper.h"
 
+#include "request_object.h"
 #include "s3_async_buffer_opt.h"
 #include "s3_chunk_payload_parser.h"
 #include "s3_log.h"
@@ -43,75 +44,18 @@
 #include "s3_uuid.h"
 #include "s3_audit_info.h"
 
-enum class S3HttpVerb {
-  HEAD = htp_method_HEAD,
-  GET = htp_method_GET,
-  PUT = htp_method_PUT,
-  DELETE = htp_method_DELETE,
-  POST = htp_method_POST,
-  UNKNOWN = htp_method_UNKNOWN
-};
-
-enum class S3RequestError {
-  None,
-  EntityTooSmall,
-  InvalidPartOrder,
-  InvalidChunkFormat
-};
-
-extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg);
-extern "C" int consume_query_parameters(evhtp_kv_t* kvobj, void* arg);
-
 class S3AsyncBufferOptContainerFactory;
 
-class S3RequestObject {
-  evhtp_request_t* ev_req;
-  S3HttpVerb http_method;
+class S3RequestObject : public RequestObject {
   std::string bucket_name;
   std::string object_name;
-  // This info is fetched from auth service.
-  std::string user_name;
-  std::string user_id;  // Unique
-  std::string account_name;
-  std::string account_id;  // Unique
   std::string object_acl;
-  int http_status;
-  struct event* client_read_timer_event;
 
-  std::string request_id;
-
-  bool is_paused;  // indicates whether request is explicitly paused
-
-  size_t notify_read_watermark;  // notification sent when available data is
-                                 // more than this.
-  size_t pending_in_flight;      // Total data yet to consume by observer.
-  size_t total_bytes_received;
   S3AuditInfo audit_log_obj;
   size_t object_size;
-  std::string http_version;
-  std::shared_ptr<S3AsyncBufferOptContainer> buffered_input;
 
-  std::function<void()> incoming_data_callback;
-  std::function<void()> client_read_timeout_callback;
-
-  std::unique_ptr<EvhtpInterface> evhtp_obj;
-  std::unique_ptr<EventInterface> event_obj;
-
-  S3Timer request_timer;
-  S3Timer turn_around_time;
-
-  bool is_client_connected;
-  bool s3_client_read_timedout;
-
-  bool is_chunked_upload;
-  S3ChunkPayloadParser chunk_parser;
   S3ApiType s3_api_type;
   S3OperationCode s3_operation_code;
-  std::shared_ptr<S3AsyncBufferOptContainerFactory> async_buffer_factory;
-
-  virtual void set_full_path(const char* full_path);
-  virtual void set_file_name(const char* file_name);
-  virtual void set_query_params(const char* query_params);
 
  public:
   S3RequestObject(
@@ -121,78 +65,13 @@ class S3RequestObject {
       EventInterface* event_obj_ptr = nullptr);
   virtual ~S3RequestObject();
 
-  // Broken into helper function primarily to allow initialisations after faking
-  // data.
-  void initialise();
-  virtual const std::map<std::string, std::string, compare>&
-      get_query_parameters();
-  virtual const char* c_get_uri_query();
-  virtual S3HttpVerb http_verb();
-  virtual const char* get_http_verb_str(S3HttpVerb method);
-  virtual const char* c_get_full_path();
-  virtual const char* c_get_full_encoded_path();
-  const char* c_get_file_name();
   void set_api_type(S3ApiType apitype);
   virtual S3ApiType get_api_type();
   void set_operation_code(S3OperationCode operation_code);
   virtual S3OperationCode get_operation_code();
-  virtual bool is_valid_ipaddress(std::string& ipaddr);
-  virtual void set_start_client_request_read_timeout();
-  virtual void stop_client_read_timer();
-  virtual void restart_client_read_timer();
-  virtual void free_client_read_timer();
-  virtual void trigger_client_read_timeout_callback();
   virtual void populate_and_log_audit_info();
 
- protected:
-  // protected so mocks can override
-  std::map<std::string, std::string> in_headers_copy;
-  std::map<std::string, std::string> out_headers_copy;
-  // in_query_params_copy will have (eg:query: prefix=abc)
-  // key as query parameter key (prefix)
-  // value as query parameter value (abc)
-  // note: both key and values not url encoded.
-  std::map<std::string, std::string, compare> in_query_params_copy;
-  bool in_headers_copied;
-  bool in_query_params_copied;
-
- private:
-  std::string full_request_body;
-  std::string full_path_decoded_uri;
-  std::string file_path_decoded_uri;
-  std::string query_raw_decoded_uri;
-  S3RequestError request_error;
-
  public:
-  virtual std::map<std::string, std::string>& get_in_headers_copy();
-  friend int consume_header(evhtp_kv_t* kvobj, void* arg);
-  friend int consume_query_parameters(evhtp_kv_t* kvobj, void* arg);
-
-  virtual std::string get_header_value(std::string key);
-  virtual std::string get_host_header();
-  virtual std::string get_host_name();
-
-  // returns x-amz-decoded-content-length OR Content-Length
-  // Always prefer get_data_length*() version since it takes
-  // care of both above headers (chunked and non-chunked cases)
-  virtual size_t get_data_length();
-  virtual std::string get_data_length_str();
-  virtual bool validate_content_length();
-  virtual size_t get_content_length();
-  virtual std::string get_content_length_str();
-
-  virtual std::string& get_full_body_content_as_string();
-
-  virtual std::string get_query_string_value(std::string key);
-  virtual bool has_query_param_key(std::string key);
-
-  // xxx Remove this soon - used by Unit tests
-  struct evbuffer* buffer_in() {
-    return ev_req->buffer_in;
-  }
-
-  virtual void set_out_header_value(std::string key, std::string value);
-
   virtual void set_object_size(size_t obj_size);
   // Operation params.
   std::string get_object_uri();
@@ -204,150 +83,7 @@ class S3RequestObject {
 
   virtual void set_object_acl(const std::string& name);
   virtual const std::string& get_object_acl();
-
-  void set_user_name(const std::string& name);
-  const std::string& get_user_name();
-  void set_user_id(const std::string& id);
-  const std::string& get_user_id();
-
-  void set_account_name(const std::string& name);
-  const std::string& get_account_name();
-  void set_account_id(const std::string& id);
-  const std::string& get_account_id();
-
-  inline std::string get_request_id() { return request_id; }
-
-  S3RequestError get_request_error() { return request_error; }
-
-  void set_request_error(S3RequestError req_error) {
-    request_error = req_error;
-  }
-
-  /* INFO: https://github.com/ellzey/libevhtp/issues/93
-     Pause and resume will essentially stop and start attempting to read from
-     the client socket.
-     But also has some extra logic around it. Since the parser is a state
-     machine, you can get functions executed as data is passed to it. But what
-     if you wanted to temporarily stop that input processing? Well you have to
-     save the state on the current input, then turn off the reading.
-
-     You can do all the normal things you can do while the request is paused,
-     add output data, headers, etc. But it isn't until you use the resume
-     function will these actions actually happen on the socket. When resume is
-     called, it does an event_active(), which in turn goes back to the original
-     reader function.
-  */
-  // We specifically use this when auth is in-progress so that
-  // we dont flood with data coming from socket in user buffers.
-  virtual void pause() {
-    if (!client_connected()) {
-      s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
-      return;
-    }
-    if (s3_client_read_timedout) {
-      s3_log(S3_LOG_WARN, request_id, "Read timeout has triggered.\n");
-      return;
-    }
-    if (!is_paused) {
-      s3_log(S3_LOG_DEBUG, "", "Pausing the request for sock %d...\n",
-             ev_req->conn->sock);
-      // In case if there is timer event pending then stop/delete it
-      stop_client_read_timer();
-      evhtp_obj->http_request_pause(ev_req);
-      is_paused = true;
-    }
-  }
-
-  virtual void resume() {
-    if (!client_connected()) {
-      s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
-      return;
-    }
-    if (is_paused) {
-      // delete timer event, if its pending.
-      stop_client_read_timer();
-      // Set read timeout
-      set_start_client_request_read_timeout();
-      s3_log(S3_LOG_DEBUG, "", "Resuming the request for sock %d...\n",
-             ev_req->conn->sock);
-      evhtp_obj->http_request_resume(ev_req);
-      is_paused = false;
-    }
-  }
-
-  bool is_request_paused() { return is_paused; }
-
-  void client_has_disconnected() {
-    is_client_connected = false;
-    if (ev_req) {
-      ev_req->cbarg = NULL;
-      ev_req = NULL;
-    }
-  }
-
-  bool client_connected() { return is_client_connected; }
-  bool is_s3_client_read_timedout() { return s3_client_read_timedout; }
-
-  virtual bool is_chunked() { return is_chunked_upload; }
-
-  // pass thru functions
-  virtual bool is_chunk_detail_ready() {
-    return chunk_parser.is_chunk_detail_ready();
-  }
-
-  virtual S3ChunkDetail pop_chunk_detail() {
-    return chunk_parser.pop_chunk_detail();
-  }
-
-  // Streaming
-  // Note: Call this only if request object has to still receive from socket
-  // Setup listeners for input data (data coming from s3 clients)
-  // notify_on_size: notify when we have atleast 'notify_read_watermark' bytes
-  // of data available of if its last payload.
-
-  // Notifications are sent on socket read events. In case we already have full
-  // body
-  // in first payload, notify will just remember it and caller should grab the
-  // buffers
-  // without a listener.
-  virtual void listen_for_incoming_data(std::function<void()> callback,
-                                        size_t notify_on_size) {
-    notify_read_watermark = notify_on_size;
-    incoming_data_callback = callback;
-    resume();  // resume reading if it was paused
-  }
-
-  virtual void set_client_read_timeout_callback(
-      std::function<void()> callback) {
-    // Callback that will be called when read timeout event triggers
-    client_read_timeout_callback = callback;
-  }
-
-  void notify_incoming_data(evbuf_t* buf);
-
-  // Check whether we already have (read) the entire body.
-  virtual bool has_all_body_content() { return (pending_in_flight == 0); }
-
-  std::shared_ptr<S3AsyncBufferOptContainer> get_buffered_input() {
-    return buffered_input;
-  }
-
-  // Response Helpers
- private:
-  struct evbuffer* reply_buffer;
-
  public:
-  virtual void send_response(int code, std::string body = "");
-  virtual void send_reply_start(int code);
-  virtual void send_reply_body(char* data, int length);
-  virtual void send_reply_end();
-
-  void respond_error(std::string error_code,
-                     const std::map<std::string, std::string>& headers =
-                         std::map<std::string, std::string>());
-
-  void respond_unsupported_api();
-  virtual void respond_retry_after(int retry_after_in_secs = 1);
 
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
   FRIEND_TEST(S3RequestObjectTest, ReturnsValidUriPaths);

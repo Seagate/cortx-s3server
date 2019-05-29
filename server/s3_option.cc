@@ -56,6 +56,9 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_SSL_SESSION_TIMEOUT"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
       s3_bind_port = s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_BIND_PORT");
+      mero_http_bind_port =
+          s3_option_node["S3_SERVER_MERO_HTTP_BIND_PORT"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_SERVER_SHUTDOWN_GRACE_PERIOD");
       s3_grace_period_sec = s3_option_node["S3_SERVER_SHUTDOWN_GRACE_PERIOD"]
@@ -110,6 +113,9 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_SERVER_IPV6_BIND_ADDR"].as<std::string>();
       // '~' means empty or null
       s3_ipv6_bind_addr = (s3_ipv6_bind_addr == "~") ? "" : s3_ipv6_bind_addr;
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_IPV4_BIND_ADDR");
+      mero_http_bind_addr =
+          s3_option_node["S3_SERVER_MERO_HTTP_BIND_ADDR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_ENABLE_PERF");
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
@@ -274,6 +280,12 @@ bool S3Option::load_section(std::string section_name,
         s3_bind_port =
             s3_option_node["S3_SERVER_BIND_PORT"].as<unsigned short>();
       }
+      if (!(cmd_opt_flag & S3_OPTION_MERO_BIND_PORT)) {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                                 "S3_SERVER_MERO_HTTP_BIND_PORT");
+        mero_http_bind_port = s3_option_node["S3_SERVER_MERO_HTTP_BIND_PORT"]
+                                  .as<unsigned short>();
+      }
       if (!(cmd_opt_flag & S3_OPTION_LOG_DIR)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_DIR");
         log_dir = s3_option_node["S3_LOG_DIR"].as<std::string>();
@@ -305,6 +317,12 @@ bool S3Option::load_section(std::string section_name,
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_IPV6_BIND_ADDR");
         s3_ipv6_bind_addr =
             s3_option_node["S3_SERVER_IPV6_BIND_ADDR"].as<std::string>();
+      }
+      if (!(cmd_opt_flag & S3_OPTION_MERO_BIND_ADDR)) {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                                 "S3_SERVER_MERO_HTTP_BIND_ADDR");
+        mero_http_bind_addr =
+            s3_option_node["S3_SERVER_MERO_HTTP_BIND_ADDR"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_OPTION_STATSD_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATSD_PORT");
@@ -568,8 +586,12 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     s3_ipv4_bind_addr = optarg;
   } else if (option_flag & S3_OPTION_IPV6_BIND_ADDR) {
     s3_ipv6_bind_addr = optarg;
+  } else if (option_flag & S3_OPTION_MERO_BIND_ADDR) {
+    mero_http_bind_addr = optarg;
   } else if (option_flag & S3_OPTION_BIND_PORT) {
     s3_bind_port = atoi(optarg);
+  } else if (option_flag & S3_OPTION_MERO_BIND_PORT) {
+    mero_http_bind_port = atoi(optarg);
   } else if (option_flag & S3_OPTION_CLOVIS_LOCAL_ADDR) {
     clovis_local_addr = optarg;
   } else if (option_flag & S3_OPTION_CLOVIS_HA_ADDR) {
@@ -651,7 +673,11 @@ void S3Option::dump_options() {
          s3_ipv4_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_IPV6_BIND_ADDR = %s\n",
          s3_ipv6_bind_addr.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_MERO_HTTP_BIND_ADDR = %s\n",
+         mero_http_bind_addr.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_BIND_PORT = %d\n", s3_bind_port);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_MERO_HTTP_BIND_PORT = %d\n",
+         mero_http_bind_port);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SHUTDOWN_GRACE_PERIOD = %d\n",
          s3_grace_period_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
@@ -758,6 +784,10 @@ void S3Option::dump_options() {
 std::string S3Option::get_s3_nodename() { return s3_nodename; }
 
 unsigned short S3Option::get_s3_bind_port() { return s3_bind_port; }
+
+unsigned short S3Option::get_mero_http_bind_port() {
+  return mero_http_bind_port;
+}
 
 std::string S3Option::get_s3_pidfile() { return s3_pidfile; }
 
@@ -884,6 +914,8 @@ int S3Option::get_read_ahead_multiple() { return read_ahead_multiple; }
 std::string S3Option::get_ipv4_bind_addr() { return s3_ipv4_bind_addr; }
 
 std::string S3Option::get_ipv6_bind_addr() { return s3_ipv6_bind_addr; }
+
+std::string S3Option::get_mero_http_bind_addr() { return mero_http_bind_addr; }
 
 std::string S3Option::get_default_endpoint() { return s3_default_endpoint; }
 

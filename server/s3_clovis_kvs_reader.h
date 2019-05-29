@@ -44,7 +44,7 @@ class S3ClovisKVSReaderContext : public S3AsyncOpContextBase {
   bool has_clovis_kvs_op_context;
 
  public:
-  S3ClovisKVSReaderContext(std::shared_ptr<S3RequestObject> req,
+  S3ClovisKVSReaderContext(std::shared_ptr<RequestObject> req,
                            std::function<void()> success_callback,
                            std::function<void()> failed_callback,
                            std::shared_ptr<ClovisAPI> clovis_api = nullptr)
@@ -100,7 +100,7 @@ class S3ClovisKVSReader {
  private:
   struct m0_uint128 id;
 
-  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3ClovisKVSReaderContext> reader_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
 
@@ -130,7 +130,7 @@ class S3ClovisKVSReader {
   void clean_up_contexts();
 
  public:
-  S3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
+  S3ClovisKVSReader(std::shared_ptr<RequestObject> req,
                     std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisKVSReader();
 

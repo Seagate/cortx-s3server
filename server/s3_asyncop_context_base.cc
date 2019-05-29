@@ -22,7 +22,7 @@
 #include "s3_stats.h"
 
 S3AsyncOpContextBase::S3AsyncOpContextBase(
-    std::shared_ptr<S3RequestObject> req, std::function<void(void)> success,
+    std::shared_ptr<RequestObject> req, std::function<void(void)> success,
     std::function<void(void)> failed, int ops_cnt,
     std::shared_ptr<ClovisAPI> clovis_api)
     : request(req),
@@ -45,7 +45,7 @@ void S3AsyncOpContextBase::reset_callbacks(std::function<void(void)> success,
   return;
 }
 
-std::shared_ptr<S3RequestObject> S3AsyncOpContextBase::get_request() {
+std::shared_ptr<RequestObject> S3AsyncOpContextBase::get_request() {
   return request;
 }
 

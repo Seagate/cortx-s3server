@@ -59,6 +59,10 @@ class S3CommonUtilities {
   // return true, when string is valid to convert
   // else return false
   static bool stoul(const std::string &str, unsigned long &value);
+  // wrapper method for std::stoi
+  // return true, when string is valid to convert
+  // else return false
+  static bool stoi(const std::string &str, int &value);
   // input: A string to convert to XML.
   // returns new string with the substitution done
   static std::string s3xmlEncodeSpecialChars(const std::string &input);

@@ -281,13 +281,15 @@ extern "C" void timeout_cb_auth_retry(evutil_socket_t fd, short event,
 
 /******/
 
-S3AuthClient::S3AuthClient(std::shared_ptr<S3RequestObject> req)
+S3AuthClient::S3AuthClient(std::shared_ptr<RequestObject> req,
+                           bool skip_authorization)
     : request(req),
       state(S3AuthClientOpState::init),
       req_body_buffer(NULL),
       is_chunked_auth(false),
       last_chunk_added(false),
-      chunk_auth_aborted(false) {
+      chunk_auth_aborted(false),
+      skip_authorization(skip_authorization) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   retry_count = 0;
@@ -406,11 +408,14 @@ void S3AuthClient::setup_auth_request_body() {
   // May need to take it from config
   add_key_val_to_body("Version", "2010-05-08");
   if (auth_request_type == S3AuthClientOpType::authorization) {
-
-    if (request->get_api_type() == S3ApiType::object &&
-        request->http_verb() == S3HttpVerb::PUT &&
-        request->get_operation_code() == S3OperationCode::none) {
-      add_key_val_to_body("Request-Object-ACL", "true");
+    std::shared_ptr<S3RequestObject> s3_request =
+        std::dynamic_pointer_cast<S3RequestObject>(request);
+    if (s3_request != nullptr) {
+      if (s3_request->get_api_type() == S3ApiType::object &&
+          s3_request->http_verb() == S3HttpVerb::PUT &&
+          s3_request->get_operation_code() == S3OperationCode::none) {
+        add_key_val_to_body("Request-Object-ACL", "true");
+      }
     }
     if (policy_str != "") {
       add_key_val_to_body("Policy", policy_str);
@@ -498,7 +503,8 @@ void S3AuthClient::setup_auth_request_headers() {
   evhtp_headers_add_header(auth_request->headers_out,
                            evhtp_header_new("User-Agent", "s3server", 1, 1));
 
-  if (auth_request_type == S3AuthClientOpType::authorization) {
+  if (!skip_authorization &&
+      (auth_request_type == S3AuthClientOpType::authorization)) {
     evhtp_headers_add_header(auth_request->headers_out,
                              evhtp_header_new("Connection", "close", 1, 1));
   }
