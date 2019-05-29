@@ -44,6 +44,7 @@ public class S3ParameterValidatorUtil {
     final static int MIN_ACCESS_KEY_ID_LENGTH = 16;
     final static int MIN_ARN_LENGTH = 20;
     final static int MIN_SAML_METADATA_LENGTH = 1000;
+    final static int MAX_PASSWORD_LENGTH = 128;
 
     /**
      * TODO Fix ACCESS_KEY_ID_PATTERN. It should be "[\\w]+"
@@ -59,6 +60,8 @@ public class S3ParameterValidatorUtil {
             = "(\\u002F)|(\\u002F[\\u0021-\\u007F]+\\u002F)";
     final static String PATH_PREFIX_PATTERN = "\\u002F[\\u0021-\\u007F]*";
     final static String SAML_PROVIDER_NAME_PATTERN = "[\\w._-]+";
+    final static String PASSWORD_PATTERN =
+        "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+";
 
     /**
      * Validate the name (user name, role name etc). Length of the name should
@@ -94,6 +97,16 @@ public class S3ParameterValidatorUtil {
         }
 
         return !(path.length() < 1 || path.length() > MAX_PATH_LENGTH);
+    }
+
+   public
+    static Boolean isValidPassword(String password) {
+      if (!password.matches(PASSWORD_PATTERN)) {
+        return false;
+      }
+
+      return !(password.length() < 1 ||
+               password.length() > MAX_PASSWORD_LENGTH);
     }
 
     /**

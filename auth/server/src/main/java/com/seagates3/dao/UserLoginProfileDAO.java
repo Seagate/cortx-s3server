@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2015 SEAGATE LLC
+ * COPYRIGHT 2019 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -13,33 +13,17 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author:  Arjun Hariharan <arjun.hariharan@seagate.com>
- * Original creation date: 17-Sep-2014
+ * Original author: Abhilekh Mustapure <abhilekh.mustapure@seagate.com>
+ * Original creation date: 22-May-2019
  */
 package com.seagates3.dao;
 
-/*
- * TODO
- * Rename the enum name
- */
-public
-enum DAOResource {
-  ACCESS_KEY("AccessKey"),
-  ACCOUNT("Account"),
-  FED_USER("FedUser"),
-  GROUP("Group"),
-  POLICY("Policy"),
-  REQUESTEE("Requestee"),
-  REQUESTOR("Requestor"),
-  ROLE("Role"),
-  SAML_PROVIDER("SAMLProvider"),
-  USER("User"),
-  USER_LOGIN_PROFILE("UserLoginProfile");
-  private final String className;
-  private DAOResource(final String className) {this.className = className;}
+import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.User;
 
-    @Override
-    public String toString() {
-        return className;
-    }
+public
+interface UserLoginProfileDAO {
+
+ public
+  void save(User user) throws DataAccessException;
 }

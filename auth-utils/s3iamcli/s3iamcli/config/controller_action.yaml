@@ -50,6 +50,10 @@ createuser:
   controller : User
   action : create
   service : iam
+createuserloginprofile:
+  controller : UserLoginProfile
+  action : create
+  service : iam
 deleteaccesskey:
   controller : AccessKey
   action : delete

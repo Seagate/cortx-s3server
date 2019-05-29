@@ -68,6 +68,8 @@ public class LDAPUtils {
     public static final String POLICY_NAME = "policyName";
     public static final String POLICY_OBJECT_CLASS = "policy";
     public static final String POLICY_OU = "policies";
+    public
+     static final String PASSWORD = "userPassword";
     public static final String ROLE_NAME = "rolename";
     public static final String ROLE_ID = "roleId";
     public static final String ROLE_OBJECT_CLASS = "role";

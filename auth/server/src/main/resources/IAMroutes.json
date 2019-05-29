@@ -22,5 +22,6 @@
     "ListUsers": "User#list",
     "UpdateAccessKey": "AccessKey#update",
     "UpdateSAMLProvider": "SAMLProvider#update",
-    "UpdateUser": "User#update"
+    "UpdateUser": "User#update",
+    "CreateLoginProfile": "UserLoginProfile#create"
 }

@@ -45,6 +45,8 @@ public class User {
     private String createDate;
     private String passwordLastUsed;
     private UserType userType;
+    private
+     String password;
 
     /**
      * TODO - Remove RoleName. User Type is sufficient to identify a role user
@@ -63,6 +65,12 @@ public class User {
     public String getPath() {
         return path;
     }
+
+    public
+     String getPassword() { return password; }
+
+    public
+     void setPassword(String password) { this.password = password; }
 
     public String getId() {
         return id;

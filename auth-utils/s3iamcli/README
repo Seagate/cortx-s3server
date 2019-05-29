@@ -1,6 +1,7 @@
 APIs supported
 - Create account
 - Create, Delete, List and Update User
+- Create UserLoginProfile for User
 - Create, Delete, List and Update Access Key
 - Create, Delete and List Roles
 - Create, Delete, List and Update SAML Provider

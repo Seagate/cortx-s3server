@@ -176,6 +176,70 @@ def user_tests():
     result = AuthTest(test_msg).update_user(**user_args).execute_test()
     result.command_response_should_have("User Updated.")
 
+    test_msg = 'create login profile should fail for exceeding max allowed\
+                   password length.'
+    user_args = {}
+    maxPasswordLength = "abcdefghijklmnopqrstuvwxyzabcdefghijkabcdefghijklmnopqrstuvwxyzabcdefghijkabcdefghijklmnopqrstuvwxyzabcdefghijk\
+abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrddd";
+    user_name_flag = "-n"
+    password_flag = "--password"
+    user_args['UserName'] = "s3user1New"
+    user_args['Password'] = maxPasswordLength;
+    result = AuthTest(test_msg).create_login_profile(user_name_flag, password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("Failed to create userloginprofile.")
+
+    test_msg = 'create login profile should fail for invalid username.'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag = "--password"
+
+    user_args['UserName'] = "s3userinvalidname"
+    user_args['Password'] = "abc"
+    result = AuthTest(test_msg).create_login_profile(user_name_flag, password_flag,\
+              **user_args).execute_test()
+    result.command_response_should_have("Failed to create userloginprofile.")
+
+    test_msg = 'create login profile should fail for empty username.'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag = "--password"
+    user_args['UserName'] ="\"\""
+    user_args['Password'] = "abcdr"
+    result = AuthTest(test_msg).create_login_profile(user_name_flag, password_flag,\
+                **user_args).execute_test()
+    result.command_response_should_have("Failed to create userloginprofile.")
+
+    test_msg = 'create login profile should fail for username missing.'
+    user_args = {}
+    user_name_flag = ""
+    password_flag = "--password"
+    user_args['UserName'] =""
+    user_args['Password'] = "abcdr"
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("User name is required for user login-profile creation")
+
+    test_msg = 'create login profile should fail for password missing.'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag = ""
+    user_args['UserName'] ="abcd"
+    user_args['Password'] = ""
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("User password is required for user login-profile creation")
+
+    test_msg = 'create login profile Should succeed.'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag = "--password"
+    user_args['UserName'] ="s3user1New"
+    user_args['Password'] = "abcd"
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+              **user_args).execute_test()
+    result.command_response_should_have("User login profile created for s3user1New")
+
     test_msg = 'List Users (path prefix = /test/)'
     user_args = {'PathPrefix': '/test/'}
     list_user_pattern = "UserId = [\w-]*, UserName = s3user1New, ARN = [\S]*, Path = /test/success/$"

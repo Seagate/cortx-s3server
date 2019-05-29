@@ -18,6 +18,8 @@ class S3IamCli:
     def iam_usage(self):
         return '''
         CreateAccount -n <Account Name> -e <Email Id>
+        CreateUserLoginProfile -n <User Name>
+            --password <User Password>
         ResetAccountAccessKey -n <Account Name>
         ListAccounts
         CreateAccessKey
@@ -180,6 +182,7 @@ class S3IamCli:
         parser.add_argument("--force", help="Delete account forcefully.", action='store_true')
         parser.add_argument("--access_key", help="Access Key Id.")
         parser.add_argument("--secret_key", help="Secret Key.")
+        parser.add_argument("--password", help="Password.")
         parser.add_argument("--ldapuser", help="Ldap User Id.")
         parser.add_argument("--ldappasswd", help="Ldap Password.")
         parser.add_argument("--session_token", help="Session Token.")
