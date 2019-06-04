@@ -42,6 +42,7 @@
 #include "s3_timer.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_audit_info.h"
+#include "s3_audit_info_logger.h"
 #define FOUR_KB 4096
 
 #define WEBSTORE "/home/seagate/webstore"
@@ -505,6 +506,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  S3AuditInfoLogger::init(global_evbase_handle);
+
   event_set_fatal_callback(fatal_libevent);
   if (g_option_instance->is_s3_ssl_auth_enabled()) {
     if (!init_auth_ssl()) {
@@ -678,6 +681,7 @@ int main(int argc, char **argv) {
   s3_log(S3_LOG_DEBUG, "", "S3server exiting...\n");
   s3daemon.delete_pidfile();
   s3_stats_fini();
+  S3AuditInfoLogger::finalize();
   fini_log();
   finalize_cli_options();
 

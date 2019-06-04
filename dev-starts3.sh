@@ -15,6 +15,28 @@ then
   exit 1
 fi
 
+set +e
+tmp=$(systemctl status rsyslog)
+res=$?
+if [ "$res" -eq "4" ]
+then
+    echo "Rsyslog service not found. Exiting..."
+    exit -1
+fi
+if [ "$res" -ne "0" ]
+then
+    echo "Starting Rsyslog..."
+    tmp=$(systemctl start rsyslog)
+    res=$?
+    if [ "$res" -ne "0" ]
+    then
+        echo "Rsyslog service start failed. Exiting..."
+        exit -1
+    fi
+fi
+echo "rsyslog started"
+set -e
+
 num_instances=1
 
 if [ $# -eq 1 ]

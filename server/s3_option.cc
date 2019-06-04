@@ -77,6 +77,17 @@ bool S3Option::load_section(std::string section_name,
       } else {
         audit_log_format = AuditFormatType::NONE;  // Disables audit logging
       }
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_POLICY");
+      audit_logger_policy =
+          s3_option_node["S3_AUDIT_LOGGER_POLICY"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_HOST");
+      audit_logger_host =
+          s3_option_node["S3_AUDIT_LOGGER_HOST"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_PORT");
+      audit_logger_port = s3_option_node["S3_AUDIT_LOGGER_PORT"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_RSYSLOG_MSGID");
+      audit_logger_rsyslog_msgid =
+          s3_option_node["S3_AUDIT_LOGGER_RSYSLOG_MSGID"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_FILE_MAX_SIZE");
       log_file_max_size_mb = s3_option_node["S3_LOG_FILE_MAX_SIZE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_ENABLE_BUFFERING");
@@ -367,6 +378,17 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_WHITELIST_FILENAME");
       stats_whitelist_filename =
           s3_option_node["S3_STATS_WHITELIST_FILENAME"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_POLICY");
+      audit_logger_policy =
+          s3_option_node["S3_AUDIT_LOGGER_POLICY"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_HOST");
+      audit_logger_host =
+          s3_option_node["S3_AUDIT_LOGGER_HOST"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_PORT");
+      audit_logger_port = s3_option_node["S3_AUDIT_LOGGER_PORT"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_RSYSLOG_MSGID");
+      audit_logger_rsyslog_msgid =
+          s3_option_node["S3_AUDIT_LOGGER_RSYSLOG_MSGID"].as<std::string>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -512,23 +534,27 @@ bool S3Option::load_all_sections(bool force_override_from_config = false) {
         return false;
       }
     }
-  } catch (const YAML::RepresentationException& e) {
+  }
+  catch (const YAML::RepresentationException& e) {
     fprintf(stderr, "%s:%d:YAML::RepresentationException caught: %s\n",
             __FILE__, __LINE__, e.what());
     fprintf(stderr, "%s:%d:Yaml file %s is incorrect\n", __FILE__, __LINE__,
             option_file.c_str());
     return false;
-  } catch (const YAML::ParserException& e) {
+  }
+  catch (const YAML::ParserException& e) {
     fprintf(stderr, "%s:%d:YAML::ParserException caught: %s\n", __FILE__,
             __LINE__, e.what());
     fprintf(stderr, "%s:%d:Parsing Error in yaml file %s\n", __FILE__, __LINE__,
             option_file.c_str());
     return false;
-  } catch (const YAML::EmitterException& e) {
+  }
+  catch (const YAML::EmitterException& e) {
     fprintf(stderr, "%s:%d:YAML::EmitterException caught: %s\n", __FILE__,
             __LINE__, e.what());
     return false;
-  } catch (YAML::Exception& e) {
+  }
+  catch (YAML::Exception& e) {
     fprintf(stderr, "%s:%d:YAML::Exception caught: %s\n", __FILE__, __LINE__,
             e.what());
     return false;
@@ -604,6 +630,13 @@ void S3Option::dump_options() {
          audit_log_conf_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOG_FORMAT_TYPE = %s\n",
          audit_format_type_to_string(audit_log_format).c_str());
+  s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOGGER_POLICY = %s\n",
+         audit_logger_policy.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOGGER_HOST = %s\n",
+         audit_logger_host.c_str());
+  s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOGGER_PORT = %d\n", audit_logger_port);
+  s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOGGER_RSYSLOG_MSGID = %s\n",
+         audit_logger_rsyslog_msgid.c_str());
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_MURMURHASH_OID = %s\n",
          (s3_enable_murmurhash_oid ? "true" : "false"));
   s3_log(S3_LOG_INFO, "", "S3_LOG_FLUSH_FREQUENCY = %d\n",
@@ -729,6 +762,16 @@ std::string S3Option::get_s3_audit_config() { return audit_log_conf_file; }
 
 AuditFormatType S3Option::get_s3_audit_format_type() {
   return audit_log_format;
+}
+
+std::string S3Option::get_audit_logger_policy() { return audit_logger_policy; }
+
+std::string S3Option::get_audit_logger_host() { return audit_logger_host; }
+
+int S3Option::get_audit_logger_port() { return audit_logger_port; }
+
+std::string S3Option::get_audit_logger_rsyslog_msgid() {
+  return audit_logger_rsyslog_msgid;
 }
 
 unsigned short S3Option::get_s3_grace_period_sec() {

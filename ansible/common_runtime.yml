@@ -59,10 +59,11 @@
     src: ./files/haproxy/logrotate/haproxy
     dest: /etc/logrotate.d/haproxy
 
-- name: Setup haproxy config to enable logs
-  copy:
-    src: ./files/haproxy/rsyslog.d/haproxy.conf
-    dest: /etc/rsyslog.d/haproxy.conf
+- name: Setup rsyslog additional configs
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: './files/haproxy/rsyslog.d/haproxy.conf', dest: '/etc/rsyslog.d/haproxy.conf'}
+    - { src: './files/rsyslog-tcp-audit.conf', dest: '/etc/rsyslog.d/rsyslog-tcp-audit.conf'}
   notify: restart rsyslog
 
 - name: Clean existing logrotate configuration

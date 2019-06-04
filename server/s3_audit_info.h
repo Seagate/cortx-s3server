@@ -48,11 +48,9 @@ enum class AuditFormatType {
   NONE,       // Disables audit logging
 };
 
-#define audit_log(audit_logger_obj...)                          \
-  do {                                                          \
-    if (&(audit_logger_obj) != NULL) {                          \
-      LOG4CXX_INFO(audit_logger, audit_logger_obj.to_string()); \
-    }                                                           \
+#define audit_log(audit_msg)               \
+  do {                                     \
+    LOG4CXX_INFO(audit_logger, audit_msg); \
   } while (0)
 
 std::string audit_format_type_to_string(enum AuditFormatType type);

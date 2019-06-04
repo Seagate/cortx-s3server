@@ -94,6 +94,10 @@ class S3Option {
   std::string s3_iam_cert_file;
   std::string audit_log_conf_file;
   AuditFormatType audit_log_format;
+  std::string audit_logger_policy;
+  std::string audit_logger_host;
+  int audit_logger_port;
+  std::string audit_logger_rsyslog_msgid;
   std::string s3server_ssl_cert_file;
   std::string s3server_ssl_pem_file;
   int s3server_ssl_session_timeout_in_sec;
@@ -175,6 +179,12 @@ class S3Option {
     log_file_max_size_mb = 100;  // 100 MB
     log_buffering_enable = true;
     log_flush_frequency_sec = 30;  // 30 seconds
+
+    // possible values: "disabled", "rsyslog-tcp"
+    audit_logger_policy = "disabled";
+    audit_logger_host = "localhost";
+    audit_logger_port = 514;
+    audit_logger_rsyslog_msgid = "s3server-audit-logging";
 
     clovis_layout_id = FLAGS_clovislayoutid;
     clovis_local_addr = FLAGS_clovislocal;
@@ -258,6 +268,10 @@ class S3Option {
   std::string get_s3_pidfile();
   std::string get_s3_audit_config();
   AuditFormatType get_s3_audit_format_type();
+  std::string get_audit_logger_policy();
+  std::string get_audit_logger_host();
+  int get_audit_logger_port();
+  std::string get_audit_logger_rsyslog_msgid();
   unsigned short get_s3_bind_port();
   const char* get_s3server_ssl_cert_file();
   const char* get_s3server_ssl_pem_file();

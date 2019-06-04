@@ -93,9 +93,8 @@ UInt64 S3AuditInfo::convert_to_unsigned(size_t audit_member) {
 
 const std::string S3AuditInfo::to_string() {
 
-  extern S3Option* g_option_instance;
   AuditFormatType audit_format_type =
-      g_option_instance->get_s3_audit_format_type();
+      S3Option::get_instance()->get_s3_audit_format_type();
 
   if (audit_format_type == AuditFormatType::S3_FORMAT) {
     // Logs audit information in S3 format.
@@ -142,9 +141,10 @@ const std::string S3AuditInfo::to_string() {
 
     Json::FastWriter fastWriter;
     return fastWriter.write(audit);
-  } else {
-    return "";  // Audit logging is disabled
   }
+
+  // Audit logging is disabled
+  return "";
 }
 
 void S3AuditInfo::set_bucket_owner_canonical_id(

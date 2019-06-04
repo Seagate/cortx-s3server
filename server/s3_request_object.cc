@@ -29,6 +29,8 @@
 #include "s3_request_object.h"
 #include "s3_stats.h"
 
+#include "s3_audit_info_logger.h"
+
 extern S3Option* g_option_instance;
 
 // evhttp Helpers
@@ -77,6 +79,7 @@ S3RequestObject::S3RequestObject(
       is_paused(false),
       notify_read_watermark(0),
       total_bytes_received(0),
+      audit_log_obj(),
       is_client_connected(true),
       s3_client_read_timedout(false),
       is_chunked_upload(false),
@@ -581,8 +584,7 @@ void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
   }
   buffering_timer.stop();
   LOG_PERF(("total_buffering_time_" + std::to_string(data_bytes_received) +
-            "_bytes_ns")
-               .c_str(),
+            "_bytes_ns").c_str(),
            buffering_timer.elapsed_time_in_nanosec());
   s3_stats_timing("total_buffering_time",
                   buffering_timer.elapsed_time_in_millisec());
@@ -807,6 +809,8 @@ void S3RequestObject::populate_and_log_audit_info() {
   }
   audit_log_obj.set_host_header(get_header_value("Host"));
 
-  audit_log(audit_log_obj);
+  std::string alm = audit_log_obj.to_string();
+  S3AuditInfoLogger::save_msg(request_id, alm);
+  audit_log(alm);
   s3_log(S3_LOG_DEBUG, request_id, "Exiting");
 }
