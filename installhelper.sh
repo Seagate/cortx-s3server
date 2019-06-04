@@ -88,6 +88,7 @@ cp -f auth/resources/authserver-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authencryptcli-log4j2.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/authserver.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/

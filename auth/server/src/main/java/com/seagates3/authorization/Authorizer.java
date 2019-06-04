@@ -18,14 +18,31 @@
  */
 package com.seagates3.authorization;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 public class Authorizer {
 
-    public ServerResponse authorize(Requestor requestor) {
+  private
+   final Logger LOGGER = LoggerFactory.getLogger(Authorizer.class.getName());
+  private
+   static String defaultACP;
+
+  public
+   ServerResponse authorize(Requestor requestor,
+                            Map<String, String> requestBody) {
         AuthorizationResponseGenerator responseGenerator
                 = new AuthorizationResponseGenerator();
 
@@ -37,7 +54,34 @@ public class Authorizer {
         if (f.exists())
             return responseGenerator.unauthorizedOperation();
 
-        return responseGenerator.generateAuthorizationResponse(requestor);
+        // Initialize a  default AccessControlPolicy object and generate
+        // authorization response if request header contains param value true
+        // for-
+        // Request-Default-Object-ACL
+        if ("true".equals(requestBody.get("Request-Object-ACL"))) {
+          try {
+
+            if (defaultACP == null) {
+              defaultACP = new String(Files.readAllBytes(
+                  Paths.get(AuthServerConfig.authResourceDir +
+                            AuthServerConfig.DEFAULT_ACL_XML)));
+            }
+            AccessControlPolicy acp = new AccessControlPolicy(defaultACP);
+            acp.initDefaultACL(requestor.getAccount().getCanonicalId(),
+                               requestor.getAccount().getName());
+            return responseGenerator.generateAuthorizationResponse(
+                requestor, acp.getXml());
+          }
+          catch (ParserConfigurationException | SAXException | IOException e) {
+            LOGGER.error("Error while initializing default ACL");
+            return responseGenerator.internalServerError();
+          }
+          catch (TransformerException e) {
+            LOGGER.error("Error while generating the Authorization Response");
+            return responseGenerator.internalServerError();
+          }
+        }
+        return responseGenerator.generateAuthorizationResponse(requestor, null);
     }
 
 }

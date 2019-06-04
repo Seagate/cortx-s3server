@@ -19,6 +19,7 @@
 package com.seagates3.response.formatter.xml;
 
 import com.seagates3.response.ServerResponse;
+import com.seagates3.util.BinaryUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -55,8 +56,9 @@ public class AuthorizationResponseFormatter extends XMLResponseFormatter {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public ServerResponse authorized(
-            LinkedHashMap<String, String> responseElements, String requestId) {
+   public
+    ServerResponse authorized(LinkedHashMap<String, String> responseElements,
+                              String requestId, String acp) {
 
         Document doc;
         try {
@@ -80,6 +82,10 @@ public class AuthorizationResponseFormatter extends XMLResponseFormatter {
             resultElement.appendChild(element);
         }
 
+        // Construct a default ACL and append as a child to resultElement
+        if (acp != null)
+          resultElement.appendChild(constructDefaultACLElement(doc, acp));
+
         Element responseMetadataElement = doc.createElement("ResponseMetadata");
         responseElement.appendChild(responseMetadataElement);
 
@@ -100,4 +106,23 @@ public class AuthorizationResponseFormatter extends XMLResponseFormatter {
         return null;
     }
 
+    /**
+     * Constructs an AccessControlPolicy (ACL) Element from acp -
+     * XML, base64 encoded.
+     * @param doc
+     * @param acpXml
+     * @return - the DefaultACL element
+     */
+   private
+    Element constructDefaultACLElement(Document doc, String acpXml) {
+
+      Element aclElement = null;
+
+      if (acpXml != null) {
+        aclElement = doc.createElement("ACL");
+        aclElement.appendChild(
+            doc.createTextNode(BinaryUtil.encodeToBase64String(acpXml)));
+      }
+      return aclElement;
+    }
 }

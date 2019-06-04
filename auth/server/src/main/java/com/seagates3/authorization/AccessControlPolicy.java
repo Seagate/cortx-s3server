@@ -41,7 +41,8 @@ import com.seagates3.authorization.AccessControlList;
 
 public class AccessControlPolicy {
 
-    private static Document doc;
+  private
+   Document doc;
     Owner owner;
     AccessControlList accessControlList;
 
@@ -111,9 +112,9 @@ public class AccessControlPolicy {
 
    }
 
-   void setOwner(Owner owner) {
-       this.owner.canonicalId = owner.getCanonicalId();
-       this.owner.displayName = owner.getDisplayName();
+   void setOwner(Owner newOwner) {
+     owner.canonicalId = newOwner.getCanonicalId();
+     owner.displayName = newOwner.getDisplayName();
    }
 
    Owner getOwner() {
@@ -129,6 +130,18 @@ public class AccessControlPolicy {
        for(int counter=0; counter<acl.grantList.size();counter++) {
            this.accessControlList.addGrant(acl.grantList.get(counter));
        }
+   }
+
+   /**
+    * Creates a default {@link AccessControlPolicy} for object
+    * @param requestor
+    */
+   void initDefaultACL(String canonicalId, String name) {
+     owner = new Owner(canonicalId, name);
+     accessControlList = new AccessControlList();
+     Grantee grantee = new Grantee(canonicalId, name);
+     Grant grant = new Grant(grantee, "FULL_CONTROL");
+     accessControlList.addGrant(grant);
    }
 
    // Returns ACL XML in string buffer.

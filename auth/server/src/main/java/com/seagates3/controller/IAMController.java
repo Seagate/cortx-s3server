@@ -150,7 +150,10 @@ public class IAMController {
              LOGGER.debug("Requestor is valid.");
 
              if (requestAction.equals("AuthorizeUser")) {
-                  serverResponse = new Authorizer().authorize(requestor);
+               LOGGER.info("Authorizing user: " + requestor.getName() +
+                           " account: " + requestor.getAccount().getName());
+               serverResponse =
+                   new Authorizer().authorize(requestor, requestBody);
                   return serverResponse;
              }
 

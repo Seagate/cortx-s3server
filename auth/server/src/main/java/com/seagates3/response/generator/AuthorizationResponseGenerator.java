@@ -25,15 +25,17 @@ import java.util.LinkedHashMap;
 
 public class AuthorizationResponseGenerator extends AbstractResponseGenerator {
 
-    public ServerResponse generateAuthorizationResponse(Requestor requestor) {
+  public
+   ServerResponse generateAuthorizationResponse(Requestor requestor,
+                                                String acpXml) {
         LinkedHashMap responseElements = new LinkedHashMap();
         responseElements.put("UserId", requestor.getId());
         responseElements.put("UserName", requestor.getName());
         responseElements.put("AccountId", requestor.getAccount().getId());
         responseElements.put("AccountName", requestor.getAccount().getName());
 
-        return (ServerResponse) new AuthorizationResponseFormatter()
-                .authorized(responseElements, "0000");
+        return (ServerResponse) new AuthorizationResponseFormatter().authorized(
+            responseElements, "0000", acpXml);
     }
 
 }

@@ -50,6 +50,8 @@ public class AuthServerConfig {
     private static String samlMetadataFilePath;
     private static Properties authServerConfig;
     private static String ldapPasswd;
+    public
+     static final String DEFAULT_ACL_XML = "/defaultAclTemplate.xml";
 
     private static Logger logger;
 
