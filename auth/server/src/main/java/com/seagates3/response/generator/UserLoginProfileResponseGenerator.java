@@ -18,11 +18,12 @@
  */
 package com.seagates3.response.generator;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 
 public
 class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
@@ -34,5 +35,23 @@ class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
     responseElements.put("UserId", user.getId());
     return new XMLResponseFormatter().formatCreateResponse(
         "CreateLoginProfile", "LoginProfile", responseElements, "0000");
+  }
+
+  /**
+   * Below method will generate 'GetLoginProfile' response
+   *
+   * @param user
+   * @return LoginProfile (username and password) of the requested user
+   */
+ public
+  ServerResponse generateGetResponse(User user) {
+    LinkedHashMap<String, String> responseElements = new LinkedHashMap<>();
+    ArrayList<LinkedHashMap<String, String>> userMembers = new ArrayList<>();
+    // TODO:Password creation Date not yet set in USER pojo
+    responseElements.put("UserName", user.getName());
+    // responseElements.put("CreateDate", "2019-06-10T07:38:07Z");
+    userMembers.add(responseElements);
+    return new XMLResponseFormatter().formatGetResponse(
+        "GetLoginProfile", "LoginProfile", userMembers, "0000");
   }
 }

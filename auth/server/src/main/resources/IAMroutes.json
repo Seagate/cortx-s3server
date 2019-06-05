@@ -23,5 +23,6 @@
     "UpdateAccessKey": "AccessKey#update",
     "UpdateSAMLProvider": "SAMLProvider#update",
     "UpdateUser": "User#update",
-    "CreateLoginProfile": "UserLoginProfile#create"
+    "CreateLoginProfile": "UserLoginProfile#create",
+    "GetLoginProfile": "UserLoginProfile#list"
 }

@@ -20,6 +20,7 @@ class S3IamCli:
         CreateAccount -n <Account Name> -e <Email Id>
         CreateUserLoginProfile -n <User Name>
             --password <User Password>
+        GetUserLoginProfile -n <User Name>
         ResetAccountAccessKey -n <Account Name>
         ListAccounts
         CreateAccessKey

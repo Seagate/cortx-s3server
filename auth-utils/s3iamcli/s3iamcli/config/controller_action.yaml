@@ -109,3 +109,7 @@ updateuser:
   controller :  User
   action : update
   service : iam
+getuserloginprofile:
+  controller : UserLoginProfile
+  action : get
+  service : iam

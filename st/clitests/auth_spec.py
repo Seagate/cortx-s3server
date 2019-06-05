@@ -237,8 +237,42 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] ="s3user1New"
     user_args['Password'] = "abcd"
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
-              **user_args).execute_test()
+               **user_args).execute_test()
     result.command_response_should_have("User login profile created for s3user1New")
+
+
+    test_msg = 'GetUserLoginProfile Successful'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="s3user1New"
+    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
+    print(result)
+    result.command_response_should_have("Login Profile is")
+
+    test_msg = 'GetUserLoginProfile failed for invalid user'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="abcd"
+    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("Failed to get Login Profile")
+
+    test_msg = "Create User loginProfileTestUser (default path)"
+    user_args = {'UserName': 'loginProfileTestUser'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'GetUserLoginProfile failed for user w.o. LoginProfile created'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="loginProfileTestUser"
+    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("NoSuchEntity")
+    test_msg = 'Delete User loginProfileTestUser'
+    user_args = {}
+    user_args['UserName'] = "loginProfileTestUser"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
 
     test_msg = 'List Users (path prefix = /test/)'
     user_args = {'PathPrefix': '/test/'}

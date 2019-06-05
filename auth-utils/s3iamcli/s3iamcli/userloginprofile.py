@@ -22,5 +22,20 @@ class UserLoginProfile:
             print("Failed to create userloginprofile.")
             print(str(ex))
             return
-
         print("User login profile created for " + user_args['UserName'])
+
+    def get(self):
+        if(self.cli_args.name is None):
+            print("User name is required for getting Login Profile")
+            return
+
+        user_args = {}
+        user_args['UserName'] = self.cli_args.name
+        try:
+            result = self.iam_client.get_login_profile(**user_args)
+        except Exception as ex:
+            print("Failed to get Login Profile for "+ user_args['UserName'])
+            print(str(ex))
+            return
+        profile = (result['LoginProfile'])
+        print("Login Profile is -\nUserName = %s " % (profile['UserName']))

@@ -19,7 +19,19 @@
 
 package com.seagates3.controller;
 
-import com.seagates3.dao.AccessKeyDAO;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.UserDAO;
@@ -30,18 +42,8 @@ import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.util.KeyGenUtil;
+
 import io.netty.handler.codec.http.HttpResponseStatus;
-import java.util.Map;
-import java.util.TreeMap;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
     @PrepareForTest(
@@ -55,13 +57,24 @@ import org.powermock.modules.junit4.PowerMockRunner;
  private
   UserLoginProfileDAO userLoginProfileDAO;
  private
-  AccessKeyDAO accessKeyDAO;
- private
   final String ACCOUNT_NAME = "s3test";
  private
   final String ACCOUNT_ID = "12345";
  private
   final Account ACCOUNT;
+ private
+  final String USERID = "123";
+ private
+  final String USERNAME = "s3testuser";
+
+ private
+  UserDAO mockUserDao;
+ private
+  Map<String, String> requestBodyObj = null;
+ private
+  Requestor requestorObj = null;
+ private
+  final String GET_RESOURCE_DAO = "getResourceDAO";
 
  public
   UserLoginProfileControllerTest() {
@@ -95,6 +108,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
   @Before public void setUp() throws Exception {
     PowerMockito.mockStatic(DAODispatcher.class);
+    mockUserDao = Mockito.mock(UserDAO.class);
+    requestorObj = new Requestor();
+    requestorObj.setAccount(ACCOUNT);
+    requestBodyObj = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    requestBodyObj.put("UserName", "s3testuser");
   }
 
   @Test public void CreateUser_UserSearchFailed_ReturnInternalServerError()
@@ -174,6 +192,73 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ServerResponse response = userLoginProfileController.create();
     Assert.assertEquals(expectedResponseBody, response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.CREATED,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below method will Test successful API response when valid username and
+   * password present
+   *
+   * @throws Exception
+   */
+  @Test public void GetUserLoginProfile_Sucessful_Api_Response()
+      throws Exception {
+    User user = new User();
+    user.setAccountName(ACCOUNT_NAME);
+    user.setName(USERNAME);
+    user.setId(USERID);
+    user.setPassword("password");
+    PowerMockito.mockStatic(DAODispatcher.class);
+    PowerMockito.doReturn(mockUserDao)
+        .when(DAODispatcher.class, GET_RESOURCE_DAO, DAOResource.USER);
+    Mockito.when(mockUserDao.find(ACCOUNT_NAME, USERNAME)).thenReturn(user);
+    userLoginProfileController = Mockito.spy(
+        new UserLoginProfileController(requestorObj, requestBodyObj));
+    ServerResponse response = userLoginProfileController.list();
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+  }
+
+  /**
+   * Below method will test DataAccessException when requested user is not
+   * present inside LDAP
+   *
+   * @throws Exception
+   */
+  @Test public void GetUserLoginProfile_DataAccessException_Response()
+      throws Exception {
+    PowerMockito.mockStatic(DAODispatcher.class);
+    PowerMockito.doReturn(mockUserDao)
+        .when(DAODispatcher.class, GET_RESOURCE_DAO, DAOResource.USER);
+    Mockito.doThrow(new DataAccessException("failed to search user.\n"))
+        .when(mockUserDao)
+        .find(ACCOUNT_NAME, USERNAME);
+    userLoginProfileController = Mockito.spy(
+        new UserLoginProfileController(requestorObj, requestBodyObj));
+    ServerResponse response = userLoginProfileController.list();
+    Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below method will test NOSUCHENTITY exception when login profile is not
+   * set for requested user inside LDAP
+   *
+   * @throws Exception
+   */
+  @Test public void GetUserLoginProfile_NoSuchEntity_Response()
+      throws Exception {
+    User user = new User();
+    user.setAccountName(ACCOUNT_NAME);
+    user.setName(USERNAME);
+    user.setId(USERID);
+    PowerMockito.mockStatic(DAODispatcher.class);
+    PowerMockito.doReturn(mockUserDao)
+        .when(DAODispatcher.class, GET_RESOURCE_DAO, DAOResource.USER);
+    Mockito.when(mockUserDao.find(ACCOUNT_NAME, USERNAME)).thenReturn(user);
+    userLoginProfileController = Mockito.spy(
+        new UserLoginProfileController(requestorObj, requestBodyObj));
+    ServerResponse response = userLoginProfileController.list();
+    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                         response.getResponseStatus());
   }
 }

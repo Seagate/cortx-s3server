@@ -53,8 +53,10 @@ public class UserImplTest {
     private final String FIND_FILTER = "(cn=s3testuser)";
     private final String FIND_BYUSERID_FILTER = "(s3userid=s3UserId)";
 
-    private final String[] FIND_ATTRS = {"s3userid", "path", "rolename",
-            "objectclass", "createtimestamp"};
+    private
+     final String[] FIND_ATTRS = {"s3userid",        "path",
+                                  "rolename",        "objectclass",
+                                  "createtimestamp", "userPassword"};
     private final String[] FIND_ALL_ATTRS = {"s3userid", "cn", "path",
             "createtimestamp"};
     private final String[] FIND_BYUSERID_ATTRS = {"cn", "path", "rolename",

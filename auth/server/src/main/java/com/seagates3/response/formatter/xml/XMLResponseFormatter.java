@@ -18,14 +18,12 @@
  */
 package com.seagates3.response.formatter.xml;
 
-import com.seagates3.response.ServerResponse;
-import com.seagates3.response.formatter.AbstractResponseFormatter;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -42,277 +40,345 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class XMLResponseFormatter extends AbstractResponseFormatter {
+import com.seagates3.response.ServerResponse;
+import com.seagates3.response.formatter.AbstractResponseFormatter;
 
-    private final Logger LOGGER =
-            LoggerFactory.getLogger(XMLResponseFormatter.class.getName());
+import io.netty.handler.codec.http.HttpResponseStatus;
 
-    @Override
-    public ServerResponse formatCreateResponse(String operation, String returnObject,
-            LinkedHashMap<String, String> responseElements, String requestId) {
-        Document doc;
-        try {
-            doc = createNewDoc();
-        } catch (ParserConfigurationException ex) {
-            return null;
-        }
+public
+class XMLResponseFormatter extends AbstractResponseFormatter {
 
-        Element responseElement = doc.createElement(operation + "Response");
-        Attr attr = doc.createAttribute("xmlns");
-        attr.setValue(IAM_XMLNS);
-        responseElement.setAttributeNode(attr);
-        doc.appendChild(responseElement);
+ private
+  final Logger LOGGER =
+      LoggerFactory.getLogger(XMLResponseFormatter.class.getName());
 
-        Element resultElement = doc.createElement(operation + "Result");
-        responseElement.appendChild(resultElement);
-
-        Element returnObjElement = doc.createElement(returnObject);
-        resultElement.appendChild(returnObjElement);
-
-        for (Map.Entry<String, String> entry : responseElements.entrySet()) {
-            Element element = doc.createElement(entry.getKey());
-            element.appendChild(doc.createTextNode(entry.getValue()));
-            returnObjElement.appendChild(element);
-        }
-
-        Element responseMetaData = doc.createElement("ResponseMetadata");
-        responseElement.appendChild(responseMetaData);
-
-        Element requestIdElement = doc.createElement("RequestId");
-        requestIdElement.appendChild(doc.createTextNode(requestId));
-        responseMetaData.appendChild(requestIdElement);
-
-        String responseBody;
-        try {
-            responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.CREATED,
-                    responseBody);
-            return serverResponse;
-        } catch (TransformerException ex) {
-            LOGGER.error("Unable to decode response body");
-            LOGGER.error(ex.toString());
-        }
-
-        return null;
+  @Override public ServerResponse formatCreateResponse(
+      String operation, String returnObject,
+      LinkedHashMap<String, String> responseElements, String requestId) {
+    Document doc;
+    try {
+      doc = createNewDoc();
+    }
+    catch (ParserConfigurationException ex) {
+      return null;
     }
 
-    @Override
-    public ServerResponse formatListResponse(String operation, String returnObject,
-            ArrayList<LinkedHashMap<String, String>> responseElements,
-            Boolean isTruncated, String requestId) {
+    Element responseElement = doc.createElement(operation + "Response");
+    Attr attr = doc.createAttribute("xmlns");
+    attr.setValue(IAM_XMLNS);
+    responseElement.setAttributeNode(attr);
+    doc.appendChild(responseElement);
 
-        Document doc;
-        try {
-            doc = createNewDoc();
-        } catch (ParserConfigurationException ex) {
-            return null;
-        }
+    Element resultElement = doc.createElement(operation + "Result");
+    responseElement.appendChild(resultElement);
 
-        Element responseElement = doc.createElement(operation + "Response");
-        Attr attr = doc.createAttribute("xmlns");
-        attr.setValue(IAM_XMLNS);
-        responseElement.setAttributeNode(attr);
-        doc.appendChild(responseElement);
+    Element returnObjElement = doc.createElement(returnObject);
+    resultElement.appendChild(returnObjElement);
 
-        Element resultElement = doc.createElement(operation + "Result");
-        responseElement.appendChild(resultElement);
-
-        Element returnObjElement = doc.createElement(returnObject);
-        resultElement.appendChild(returnObjElement);
-
-        for (HashMap<String, String> member : responseElements) {
-            Element memberElement = doc.createElement("member");
-            returnObjElement.appendChild(memberElement);
-
-            for (Map.Entry<String, String> entry : member.entrySet()) {
-                Element element = doc.createElement(entry.getKey());
-                element.appendChild(doc.createTextNode(entry.getValue()));
-                memberElement.appendChild(element);
-            }
-        }
-
-        Element isTruncatedElement = doc.createElement("IsTruncated");
-        isTruncatedElement.appendChild(doc.createTextNode(isTruncated.toString()));
-        resultElement.appendChild(isTruncatedElement);
-
-        Element responseMetaData = doc.createElement("ResponseMetadata");
-        responseElement.appendChild(responseMetaData);
-
-        Element requestIdElement = doc.createElement("RequestId");
-        requestIdElement.appendChild(doc.createTextNode(requestId));
-        responseMetaData.appendChild(requestIdElement);
-
-        String responseBody;
-        try {
-            responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.OK,
-                    responseBody);
-
-            return serverResponse;
-        } catch (TransformerException ex) {
-        }
-
-        return null;
+    for (Map.Entry<String, String> entry : responseElements.entrySet()) {
+      Element element = doc.createElement(entry.getKey());
+      element.appendChild(doc.createTextNode(entry.getValue()));
+      returnObjElement.appendChild(element);
     }
 
-    @Override
-    public ServerResponse formatDeleteResponse(String operation) {
-        return success(operation);
+    Element responseMetaData = doc.createElement("ResponseMetadata");
+    responseElement.appendChild(responseMetaData);
+
+    Element requestIdElement = doc.createElement("RequestId");
+    requestIdElement.appendChild(doc.createTextNode(requestId));
+    responseMetaData.appendChild(requestIdElement);
+
+    String responseBody;
+    try {
+      responseBody = docToString(doc);
+      ServerResponse serverResponse =
+          new ServerResponse(HttpResponseStatus.CREATED, responseBody);
+      return serverResponse;
+    }
+    catch (TransformerException ex) {
+      LOGGER.error("Unable to decode response body");
+      LOGGER.error(ex.toString());
     }
 
-    @Override
-    public ServerResponse formatUpdateResponse(String operation) {
-        return success(operation);
+    return null;
+  }
+
+  @Override public ServerResponse formatListResponse(
+      String operation, String returnObject,
+      ArrayList<LinkedHashMap<String, String>> responseElements,
+      Boolean isTruncated, String requestId) {
+
+    Document doc;
+    try {
+      doc = createNewDoc();
+    }
+    catch (ParserConfigurationException ex) {
+      return null;
+    }
+    Element responseElement = doc.createElement(operation + "Response");
+    Attr attr = doc.createAttribute("xmlns");
+    attr.setValue(IAM_XMLNS);
+    responseElement.setAttributeNode(attr);
+    doc.appendChild(responseElement);
+    Element resultElement = doc.createElement(operation + "Result");
+    responseElement.appendChild(resultElement);
+
+    Element returnObjElement = doc.createElement(returnObject);
+    resultElement.appendChild(returnObjElement);
+
+    for (HashMap<String, String> member : responseElements) {
+      Element memberElement = doc.createElement("member");
+      returnObjElement.appendChild(memberElement);
+
+      for (Map.Entry<String, String> entry : member.entrySet()) {
+        Element element = doc.createElement(entry.getKey());
+        element.appendChild(doc.createTextNode(entry.getValue()));
+        memberElement.appendChild(element);
+      }
+    }
+    Element isTruncatedElement = doc.createElement("IsTruncated");
+    isTruncatedElement.appendChild(doc.createTextNode(isTruncated.toString()));
+    resultElement.appendChild(isTruncatedElement);
+    Element responseMetaData = doc.createElement("ResponseMetadata");
+    responseElement.appendChild(responseMetaData);
+
+    Element requestIdElement = doc.createElement("RequestId");
+    requestIdElement.appendChild(doc.createTextNode(requestId));
+    responseMetaData.appendChild(requestIdElement);
+
+    String responseBody;
+    try {
+      responseBody = docToString(doc);
+      ServerResponse serverResponse =
+          new ServerResponse(HttpResponseStatus.OK, responseBody);
+
+      return serverResponse;
+    }
+    catch (TransformerException ex) {
     }
 
-    @Override
-    public ServerResponse formatErrorResponse(HttpResponseStatus httpResponseStatus,
-            String code, String message) {
-        Document doc;
-        try {
-            doc = createNewDoc();
-        } catch (ParserConfigurationException ex) {
-            return null;
-        }
+    return null;
+  }
 
-        Element root = doc.createElement("ErrorResponse");
-        Attr attr = doc.createAttribute("xmlns");
-        attr.setValue(IAM_XMLNS);
-        root.setAttributeNode(attr);
-        doc.appendChild(root);
+  @Override public ServerResponse formatDeleteResponse(String operation) {
+    return success(operation);
+  }
 
-        Element errorEle = doc.createElement("Error");
-        root.appendChild(errorEle);
+  @Override public ServerResponse formatUpdateResponse(String operation) {
+    return success(operation);
+  }
 
-        Element codeEle = doc.createElement("Code");
-        codeEle.appendChild(doc.createTextNode(code));
-        errorEle.appendChild(codeEle);
-
-        Element messageEle = doc.createElement("Message");
-        messageEle.appendChild(doc.createTextNode(message));
-        errorEle.appendChild(messageEle);
-
-        Element requestIdEle = doc.createElement("RequestId");
-        requestIdEle.appendChild(doc.createTextNode("0000"));
-        root.appendChild(requestIdEle);
-
-        String responseBody;
-        try {
-            responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(httpResponseStatus,
-                    responseBody);
-
-            return serverResponse;
-        } catch (TransformerException ex) {
-        }
-
-        /**
-         * TODO - Return a failed exception. Otherwise the client will not know
-         * the reason for the failure.
-         */
-        return null;
+  @Override public ServerResponse formatErrorResponse(
+      HttpResponseStatus httpResponseStatus, String code, String message) {
+    Document doc;
+    try {
+      doc = createNewDoc();
+    }
+    catch (ParserConfigurationException ex) {
+      return null;
     }
 
-    private ServerResponse success(String operation) {
-        Document doc;
-        try {
-            doc = createNewDoc();
-        } catch (ParserConfigurationException ex) {
-            return null;
-        }
+    Element root = doc.createElement("ErrorResponse");
+    Attr attr = doc.createAttribute("xmlns");
+    attr.setValue(IAM_XMLNS);
+    root.setAttributeNode(attr);
+    doc.appendChild(root);
 
-        Element rootElement = doc.createElement(operation + "Response");
-        Attr attr = doc.createAttribute("xmlns");
-        attr.setValue(IAM_XMLNS);
-        rootElement.setAttributeNode(attr);
-        doc.appendChild(rootElement);
+    Element errorEle = doc.createElement("Error");
+    root.appendChild(errorEle);
 
-        Element responseMetaData = doc.createElement("ResponseMetadata");
-        rootElement.appendChild(responseMetaData);
+    Element codeEle = doc.createElement("Code");
+    codeEle.appendChild(doc.createTextNode(code));
+    errorEle.appendChild(codeEle);
 
-        Element requestId = doc.createElement("RequestId");
-        requestId.appendChild(doc.createTextNode("0000"));
-        responseMetaData.appendChild(requestId);
+    Element messageEle = doc.createElement("Message");
+    messageEle.appendChild(doc.createTextNode(message));
+    errorEle.appendChild(messageEle);
 
-        String responseBody;
-        try {
-            responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.OK,
-                    responseBody);
+    Element requestIdEle = doc.createElement("RequestId");
+    requestIdEle.appendChild(doc.createTextNode("0000"));
+    root.appendChild(requestIdEle);
 
-            return serverResponse;
-        } catch (TransformerException ex) {
-        }
+    String responseBody;
+    try {
+      responseBody = docToString(doc);
+      LOGGER.info(
+          "XMLResponseFormatter :: formatErrorResponse() - responseBody is - " +
+          " " + responseBody);
+      ServerResponse serverResponse =
+          new ServerResponse(httpResponseStatus, responseBody);
 
-        return null;
+      return serverResponse;
+    }
+    catch (TransformerException ex) {
     }
 
-    protected Document createNewDoc() throws ParserConfigurationException {
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+    /**
+     * TODO - Return a failed exception. Otherwise the client will not know
+     * the reason for the failure.
+     */
+    return null;
+  }
 
-        return docBuilder.newDocument();
+ private
+  ServerResponse success(String operation) {
+    Document doc;
+    try {
+      doc = createNewDoc();
+    }
+    catch (ParserConfigurationException ex) {
+      return null;
     }
 
-    protected String docToString(Document doc) throws TransformerConfigurationException, TransformerException {
-        DOMSource domSource = new DOMSource(doc);
-        StringWriter writer = new StringWriter();
-        StreamResult result = new StreamResult(writer);
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer transformer = tf.newTransformer();
-        transformer.transform(domSource, result);
+    Element rootElement = doc.createElement(operation + "Response");
+    Attr attr = doc.createAttribute("xmlns");
+    attr.setValue(IAM_XMLNS);
+    rootElement.setAttributeNode(attr);
+    doc.appendChild(rootElement);
 
-        return writer.toString();
+    Element responseMetaData = doc.createElement("ResponseMetadata");
+    rootElement.appendChild(responseMetaData);
+
+    Element requestId = doc.createElement("RequestId");
+    requestId.appendChild(doc.createTextNode("0000"));
+    responseMetaData.appendChild(requestId);
+
+    String responseBody;
+    try {
+      responseBody = docToString(doc);
+      ServerResponse serverResponse =
+          new ServerResponse(HttpResponseStatus.OK, responseBody);
+
+      return serverResponse;
+    }
+    catch (TransformerException ex) {
     }
 
-    public ServerResponse formatResetAccountAccessKeyResponse(String operation,
-                           String returnObject,
-                           LinkedHashMap<String, String> responseElements,
-                           String requestId) {
-        Document doc;
-        try {
-            doc = createNewDoc();
-        } catch (ParserConfigurationException ex) {
-            return null;
-        }
+    return null;
+  }
 
-        Element responseElement = doc.createElement(operation + "Response");
-        Attr attr = doc.createAttribute("xmlns");
-        attr.setValue(IAM_XMLNS);
-        responseElement.setAttributeNode(attr);
-        doc.appendChild(responseElement);
+ protected
+  Document createNewDoc() throws ParserConfigurationException {
+    DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+    DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 
-        Element resultElement = doc.createElement(operation + "Result");
-        responseElement.appendChild(resultElement);
+    return docBuilder.newDocument();
+  }
 
-        Element returnObjElement = doc.createElement(returnObject);
-        resultElement.appendChild(returnObjElement);
+ protected
+  String docToString(Document doc) throws TransformerConfigurationException,
+      TransformerException {
+    DOMSource domSource = new DOMSource(doc);
+    StringWriter writer = new StringWriter();
+    StreamResult result = new StreamResult(writer);
+    TransformerFactory tf = TransformerFactory.newInstance();
+    Transformer transformer = tf.newTransformer();
+    transformer.transform(domSource, result);
 
-        for (Map.Entry<String, String> entry : responseElements.entrySet()) {
-            Element element = doc.createElement(entry.getKey());
-            element.appendChild(doc.createTextNode(entry.getValue()));
-            returnObjElement.appendChild(element);
-        }
+    return writer.toString();
+  }
 
-        Element responseMetaData = doc.createElement("ResponseMetadata");
-        responseElement.appendChild(responseMetaData);
-
-        Element requestIdElement = doc.createElement("RequestId");
-        requestIdElement.appendChild(doc.createTextNode(requestId));
-        responseMetaData.appendChild(requestIdElement);
-
-        String responseBody;
-        try {
-            responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.CREATED,
-                    responseBody);
-
-            return serverResponse;
-        } catch (TransformerException ex) {
-            LOGGER.error("Unable to decode response body");
-            LOGGER.error(ex.toString());
-        }
-
-        return null;
+ public
+  ServerResponse formatResetAccountAccessKeyResponse(
+      String operation, String returnObject,
+      LinkedHashMap<String, String> responseElements, String requestId) {
+    Document doc;
+    try {
+      doc = createNewDoc();
     }
+    catch (ParserConfigurationException ex) {
+      return null;
+    }
+
+    Element responseElement = doc.createElement(operation + "Response");
+    Attr attr = doc.createAttribute("xmlns");
+    attr.setValue(IAM_XMLNS);
+    responseElement.setAttributeNode(attr);
+    doc.appendChild(responseElement);
+
+    Element resultElement = doc.createElement(operation + "Result");
+    responseElement.appendChild(resultElement);
+
+    Element returnObjElement = doc.createElement(returnObject);
+    resultElement.appendChild(returnObjElement);
+
+    for (Map.Entry<String, String> entry : responseElements.entrySet()) {
+      Element element = doc.createElement(entry.getKey());
+      element.appendChild(doc.createTextNode(entry.getValue()));
+      returnObjElement.appendChild(element);
+    }
+
+    Element responseMetaData = doc.createElement("ResponseMetadata");
+    responseElement.appendChild(responseMetaData);
+
+    Element requestIdElement = doc.createElement("RequestId");
+    requestIdElement.appendChild(doc.createTextNode(requestId));
+    responseMetaData.appendChild(requestIdElement);
+
+    String responseBody;
+    try {
+      responseBody = docToString(doc);
+      ServerResponse serverResponse =
+          new ServerResponse(HttpResponseStatus.CREATED, responseBody);
+
+      return serverResponse;
+    }
+    catch (TransformerException ex) {
+      LOGGER.error("Unable to decode response body");
+      LOGGER.error(ex.toString());
+    }
+
+    return null;
+  }
+
+  @Override public ServerResponse formatGetResponse(
+      String operation, String returnObject,
+      ArrayList<LinkedHashMap<String, String>> responseElements,
+      String requestId) {
+
+    Document doc;
+    try {
+      doc = createNewDoc();
+    }
+    catch (ParserConfigurationException ex) {
+      return null;
+    }
+    Element responseElement = doc.createElement(operation + "Response");
+    Attr attr = doc.createAttribute("xmlns");
+    attr.setValue(IAM_XMLNS);
+    responseElement.setAttributeNode(attr);
+    doc.appendChild(responseElement);
+    Element resultElement = doc.createElement(operation + "Result");
+    responseElement.appendChild(resultElement);
+
+    Element returnObjElement = doc.createElement(returnObject);
+    resultElement.appendChild(returnObjElement);
+
+    for (HashMap<String, String> member : responseElements) {
+      for (Map.Entry<String, String> entry : member.entrySet()) {
+        Element element = doc.createElement(entry.getKey());
+        element.appendChild(doc.createTextNode(entry.getValue()));
+        returnObjElement.appendChild(element);
+      }
+    }
+    Element responseMetaData = doc.createElement("ResponseMetadata");
+    responseElement.appendChild(responseMetaData);
+
+    Element requestIdElement = doc.createElement("RequestId");
+    requestIdElement.appendChild(doc.createTextNode(requestId));
+    responseMetaData.appendChild(requestIdElement);
+
+    String responseBody;
+    try {
+      responseBody = docToString(doc);
+      ServerResponse serverResponse =
+          new ServerResponse(HttpResponseStatus.OK, responseBody);
+      return serverResponse;
+    }
+    catch (TransformerException ex) {
+      LOGGER.error("Exception occurred - " + ex);
+    }
+
+    return null;
+  }
 }

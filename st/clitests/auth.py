@@ -102,6 +102,15 @@ class AuthTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def get_login_profile(self, usernameflag = None, **login_profile_args):
+        cmd = "s3iamcli getuserloginprofile --access_key '%s' --secret_key\
+                   '%s' %s %s " % (
+                 S3ClientConfig.access_key_id,
+                 S3ClientConfig.secret_key, usernameflag, login_profile_args\
+                     ['UserName'])
+        self.with_cli(cmd)
+        return self
+
     def delete_user(self, **user_args):
         cmd = "s3iamcli deleteuser --access_key '%s' --secret_key '%s' -n %s" % (
                  S3ClientConfig.access_key_id,

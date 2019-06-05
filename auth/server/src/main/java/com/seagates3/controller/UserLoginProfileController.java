@@ -18,6 +18,11 @@
  */
 package com.seagates3.controller;
 
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.UserDAO;
@@ -26,11 +31,8 @@ import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.response.generator.UserResponseGenerator;
 import com.seagates3.response.generator.UserLoginProfileResponseGenerator;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.seagates3.response.generator.UserResponseGenerator;
 
 public
 class UserLoginProfileController extends AbstractController {
@@ -84,5 +86,27 @@ class UserLoginProfileController extends AbstractController {
     }
 
     return userLoginProfileResponseGenerator.generateCreateResponse(user);
+  }
+
+  /**
+  * Below method will return login profile of the user requested
+  */
+  @Override public ServerResponse list() {
+    User user = null;
+    ServerResponse response = null;
+    try {
+      user = userDAO.find(requestor.getAccount().getName(),
+                          requestBody.get("UserName"));
+      if (user.exists() && user.getPassword() != null) {
+        response = userLoginProfileResponseGenerator.generateGetResponse(user);
+      } else {
+        response = userLoginProfileResponseGenerator.noSuchEntity();
+      }
+    }
+    catch (DataAccessException ex) {
+      response = userResponseGenerator.internalServerError();
+    }
+    LOGGER.debug("Returned response is  - " + response);
+    return response;
   }
 }
