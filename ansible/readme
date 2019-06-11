@@ -81,3 +81,18 @@ Centos 75 VM image is available at
    Your s3 should be ready after successful run
 
 ******************************* END OpenLDAP setup **************************************
+
+
+******** Follow steps mentioned below on your laptop to configure your *elasticsearch* node ******
+
+1. For ansible install, see above steps.
+
+2. Update <s3 src>/ansible/hosts file with IP address of your s3 node in section [elasticsearch]
+
+3. Run the following ansible command to setup the elasticsearch
+   # ansible-playbook -i hosts setup_elasticsearch.yml -v  -k
+   It will prompt for ssh password.
+   For ssh password, use "Xyratex"
+   Your elasticsearch should be ready after successful run
+
+******************************* END Elasticsearch setup **************************************
