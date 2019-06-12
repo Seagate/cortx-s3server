@@ -122,6 +122,13 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
 # Enable IAM constraints
 ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-constraints.ldif
 
+# Enable password policy and configure
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicymodule.ldif
+
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicyoverlay.ldif
+
+ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f /tmp/s3ldap/ppolicy-default.ldif
+
 if [[ $usessl == true ]]
 then
 #Deploy SSL certificates and enable OpenLDAP SSL port

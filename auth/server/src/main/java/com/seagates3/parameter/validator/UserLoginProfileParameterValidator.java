@@ -30,6 +30,10 @@ class UserLoginProfileParameterValidator extends AbstractParameterValidator {
              requestBody.get("Password")))) {
       return false;
     }
+    if (("true".equals(requestBody.get("PasswordResetRequired"))) &&
+        ("false".equals(requestBody.get("PasswordResetRequired")))) {
+      return false;
+    }
 
     return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
   }

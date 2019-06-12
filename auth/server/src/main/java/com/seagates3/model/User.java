@@ -47,6 +47,10 @@ public class User {
     private UserType userType;
     private
      String password;
+    private
+     String profileCreateDate;
+    private
+     String pwdResetRequired = "false";
 
     /**
      * TODO - Remove RoleName. User Type is sufficient to identify a role user
@@ -91,6 +95,12 @@ public class User {
     public String getRoleName() {
         return roleName;
     }
+
+    public
+     String getProfileCreateDate() { return profileCreateDate; }
+
+    public
+     String getPwdResetRequired() { return pwdResetRequired; }
 
     public void setName(String name) {
         this.name = name;
@@ -143,4 +153,12 @@ public class User {
 
         return UserType.ROLE_USER;
     }
+
+   public
+    void setProfileCreateDate(String pCreateDate) {
+      profileCreateDate = pCreateDate;
+    }
+
+   public
+    void setPwdResetRequired(String pwdReset) { pwdResetRequired = pwdReset; }
 }

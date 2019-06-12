@@ -58,9 +58,11 @@ public class UserImpl implements UserDAO {
         user.setAccountName(accountName);
         user.setName(userName);
 
-        String[] attrs = {LDAPUtils.USER_ID,          LDAPUtils.PATH,
-                          LDAPUtils.ROLE_NAME,        LDAPUtils.OBJECT_CLASS,
-                          LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.PASSWORD};
+        String[] attrs = {
+            LDAPUtils.USER_ID,                 LDAPUtils.PATH,
+            LDAPUtils.ROLE_NAME,               LDAPUtils.OBJECT_CLASS,
+            LDAPUtils.CREATE_TIMESTAMP,        LDAPUtils.PASSWORD,
+            LDAPUtils.PASSWORD_RESET_REQUIRED, LDAPUtils.PROFILE_CREATE_DATE};
 
         String userBaseDN = String.format(
             "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
@@ -119,11 +121,25 @@ public class UserImpl implements UserDAO {
                   entry.getAttribute(LDAPUtils.PASSWORD).getStringValue());
             }
             catch (Exception e) {
-              LOGGER.debug("Exception occurred while retrieving the password");
-              return user;
+              LOGGER.info("Password value not found in ldap");
+            }
+            try {
+              user.setPwdResetRequired(
+                  entry.getAttribute(LDAPUtils.PASSWORD_RESET_REQUIRED)
+                      .getStringValue());
+            }
+            catch (Exception e) {
+              LOGGER.info("pwdReset required value not found in ldap");
+            }
+            try {
+              user.setProfileCreateDate(
+                  (entry.getAttribute(LDAPUtils.PROFILE_CREATE_DATE)
+                       .getStringValue()));
+            }
+            catch (Exception e) {
+              LOGGER.info("profileCreateDate value not found in ldap");
             }
         }
-
         return user;
     }
 

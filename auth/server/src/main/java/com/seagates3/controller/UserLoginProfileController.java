@@ -18,6 +18,7 @@
  */
 package com.seagates3.controller;
 
+import java.util.Date;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.UserLoginProfileResponseGenerator;
 import com.seagates3.response.generator.UserResponseGenerator;
+import com.seagates3.util.DateUtil;
 
 public
 class UserLoginProfileController extends AbstractController {
@@ -79,6 +81,11 @@ class UserLoginProfileController extends AbstractController {
       if (user.getPassword() == null) {
         try {
           user.setPassword(requestBody.get("Password"));
+
+          user.setProfileCreateDate(
+              DateUtil.toLdapDate(new Date(DateUtil.getCurrentTime())));
+          user.setPwdResetRequired(
+              requestBody.get("PasswordResetRequired").toUpperCase());
           userLoginProfileDAO.save(user);
         }
         catch (DataAccessException ex) {

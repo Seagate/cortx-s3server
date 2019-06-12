@@ -63,13 +63,17 @@ public class LDAPUtils {
     public static final String ORGANIZATIONAL_UNIT_CLASS = "organizationalunit";
     public static final String ORGANIZATIONAL_UNIT_NAME = "ou";
     public static final String PATH = "path";
+    public
+     static final String PASSWORD = "userPassword";
+    public
+     static final String PASSWORD_RESET_REQUIRED = "pwdReset";
     public static final String POLICY_DOC = "policyDoc";
     public static final String POLICY_ID = "policyId";
     public static final String POLICY_NAME = "policyName";
     public static final String POLICY_OBJECT_CLASS = "policy";
     public static final String POLICY_OU = "policies";
     public
-     static final String PASSWORD = "userPassword";
+     static final String PROFILE_CREATE_DATE = "profileCreateDate";
     public static final String ROLE_NAME = "rolename";
     public static final String ROLE_ID = "roleId";
     public static final String ROLE_OBJECT_CLASS = "role";

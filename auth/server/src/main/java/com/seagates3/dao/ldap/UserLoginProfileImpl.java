@@ -73,6 +73,15 @@ class UserLoginProfileImpl implements UserLoginProfileDAO {
       attr = new LDAPAttribute(LDAPUtils.PASSWORD, user.getPassword());
       modList.add(new LDAPModification(LDAPModification.REPLACE, attr));
     }
+
+    LDAPAttribute attrDate = new LDAPAttribute(LDAPUtils.PROFILE_CREATE_DATE,
+                                               user.getProfileCreateDate());
+    modList.add(new LDAPModification(LDAPModification.REPLACE, attrDate));
+
+    LDAPAttribute attrReset = new LDAPAttribute(
+        LDAPUtils.PASSWORD_RESET_REQUIRED, user.getPwdResetRequired());
+    modList.add(new LDAPModification(LDAPModification.REPLACE, attrReset));
+
     try {
       LDAPUtils.modify(dn, modList);
     }

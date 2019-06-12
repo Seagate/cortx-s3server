@@ -20,6 +20,8 @@ class S3IamCli:
         CreateAccount -n <Account Name> -e <Email Id>
         CreateUserLoginProfile -n <User Name>
             --password <User Password>
+            --password-reset-required
+            --no-password-reset-required
         GetUserLoginProfile -n <User Name>
         ResetAccountAccessKey -n <Account Name>
         ListAccounts
@@ -87,7 +89,6 @@ class S3IamCli:
             config = yaml.safe_load(f)
 
         service = Config.service.upper()
-
         if not cli_args.no_ssl:
             Config.use_ssl = True
             service = service + '_HTTPS'
@@ -184,6 +185,7 @@ class S3IamCli:
         parser.add_argument("--access_key", help="Access Key Id.")
         parser.add_argument("--secret_key", help="Secret Key.")
         parser.add_argument("--password", help="Password.")
+        parser.add_argument("--password-reset-required", help="Password reset required on next login.", action ='store_true')
         parser.add_argument("--ldapuser", help="Ldap User Id.")
         parser.add_argument("--ldappasswd", help="Ldap Password.")
         parser.add_argument("--session_token", help="Session Token.")

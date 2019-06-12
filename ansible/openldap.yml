@@ -68,6 +68,9 @@
           - { src: 'ldap/iam-constraints.ldif', dest: '/tmp/s3ldap/iam-constraints.ldif' }
           - { src: 'ldap/syncprov_mod.ldif', dest: '/tmp/s3ldap/syncprov_mod.ldif' }
           - { src: 'ldap/syncprov.ldif', dest: '/tmp/s3ldap/syncprov.ldif' }
+          - { src: 'ldap/ppolicymodule.ldif', dest: '/tmp/s3ldap/ppolicymodule.ldif' }
+          - { src: 'ldap/ppolicyoverlay.ldif', dest: '/tmp/s3ldap/ppolicyoverlay.ldif' }
+          - { src: 'ldap/ppolicy-default.ldif', dest: '/tmp/s3ldap/ppolicy-default.ldif' }
 
       - name: Clean up old ldap files
         file:
@@ -117,6 +120,22 @@
 
       - name: Configure OpenLDAP - Enable IAM constraints
         command: ldapadd -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/iam-constraints.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Load ppolicy schema
+        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /etc/openldap/schema/ppolicy.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Load ppolicy module
+        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /tmp/s3ldap/ppolicymodule.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Load ppolicy overlay
+        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /tmp/s3ldap/ppolicyoverlay.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Configure password policy
+        command: ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w {{ openldappasswd }} -f /tmp/s3ldap/ppolicy-default.ldif
         no_log: true
 
       - name: Copy SSL config file for openldap

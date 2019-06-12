@@ -37,13 +37,17 @@ class UserLoginProfileResponseGeneratorTest {
     User user = new User();
     user.setName("testUser");
     user.setCreateDate("2019-06-10T07:38:07Z");
+    user.setProfileCreateDate("2019-06-16 15:38:53+00:00");
+    user.setPwdResetRequired("false");
     final String expectedResponseBody =
         "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
         "<GetLoginProfileResponse " +
         "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
         "<GetLoginProfileResult>" + "<LoginProfile>" +
-        "<UserName>testUser</UserName>" + "</LoginProfile>" +
-        "</GetLoginProfileResult>" + "<ResponseMetadata>" +
+        "<UserName>testUser</UserName>" +
+        "<CreateDate>2019-06-16 15:38:53+00:00</CreateDate>" +
+        "<PasswordResetRequired>false</PasswordResetRequired>" +
+        "</LoginProfile>" + "</GetLoginProfileResult>" + "<ResponseMetadata>" +
         "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
         "</GetLoginProfileResponse>";
 

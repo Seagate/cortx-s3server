@@ -95,14 +95,20 @@ import org.powermock.modules.junit4.PowerMockRunner;
     user.setName("s3testuser");
     user.setId("123");
     user.setPassword("abcdef");
+    user.setProfileCreateDate("2019-06-16 15:38:53+00:00");
+    user.setPwdResetRequired("true");
 
     String dn = "s3userid=123,ou=users,o=s3test,ou=accounts,dc=s3," +
                 "dc=seagate,dc=com";
     PowerMockito.doReturn(null)
         .when(UserLoginProfileImpl.class, "generateSSHA", any(byte[].class));
 
+    ArrayList mockList = Mockito.mock(ArrayList.class);
+    PowerMockito.whenNew(ArrayList.class).withNoArguments().thenReturn(
+        mockList);
+
     PowerMockito.doThrow(new LDAPException())
-        .when(LDAPUtils.class, "modify", dn, new ArrayList());
+        .when(LDAPUtils.class, "modify", dn, mockList);
 
     exception.expect(DataAccessException.class);
 
@@ -116,6 +122,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
     user.setName("s3testuser");
     user.setId("123");
     user.setPassword("abcd");
+    user.setProfileCreateDate("2019-06-16 15:38:53+00:00");
+    user.setPwdResetRequired("true");
 
     ArrayList modifyList = Mockito.mock(ArrayList.class);
     LDAPAttribute ldapAttribute = Mockito.mock(LDAPAttribute.class);
@@ -139,9 +147,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
     PowerMockito.verifyNew(LDAPAttribute.class)
         .withArguments("userPassword", "abcd");
-    PowerMockito.verifyNew(LDAPModification.class, times(1))
+    PowerMockito.verifyNew(LDAPModification.class, times(3))
         .withArguments(LDAPModification.REPLACE, ldapAttribute);
-    Mockito.verify(modifyList, Mockito.times(1)).add(modification);
+    Mockito.verify(modifyList, Mockito.times(3)).add(modification);
 
     PowerMockito.verifyStatic(Mockito.times(1));
     LDAPUtils.modify(dn, modifyList);

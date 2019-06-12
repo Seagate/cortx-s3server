@@ -92,6 +92,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     requestBody.put("UserName", "s3testuser");
     requestBody.put("Password", "abc");
+    requestBody.put("PasswordResetRequired", "false");
 
     userDAO = Mockito.mock(UserDAO.class);
     userLoginProfileDAO = Mockito.mock(UserLoginProfileDAO.class);
@@ -179,18 +180,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
     Mockito.doNothing().when(userDAO).save(user);
 
-    final String expectedResponseBody =
-        "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
-        "<CreateLoginProfileResponse " +
-        "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
-        "<CreateLoginProfileResult>" + "<LoginProfile>" +
-        "<UserName>s3testuser</UserName>" + "<UserId>123</UserId>" +
-        "</LoginProfile>" + "</CreateLoginProfileResult>" +
-        "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
-        "</ResponseMetadata>" + "</CreateLoginProfileResponse>";
-
     ServerResponse response = userLoginProfileController.create();
-    Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+    Assert.assertTrue(
+        response.getResponseBody().contains("<UserName>s3testuser</UserName>"));
+    Assert.assertTrue(response.getResponseBody().contains(
+        "<PasswordResetRequired>false</PasswordResetRequired>"));
     Assert.assertEquals(HttpResponseStatus.CREATED,
                         response.getResponseStatus());
   }
@@ -233,6 +227,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     user.setName(USERNAME);
     user.setId(USERID);
     user.setPassword("password");
+    user.setPwdResetRequired("false");
+    user.setProfileCreateDate("2019-06-16 15:38:53+00:00");
+
     PowerMockito.mockStatic(DAODispatcher.class);
     PowerMockito.doReturn(mockUserDao)
         .when(DAODispatcher.class, GET_RESOURCE_DAO, DAOResource.USER);

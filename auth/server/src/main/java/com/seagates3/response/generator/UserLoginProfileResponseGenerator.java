@@ -32,7 +32,9 @@ class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
   ServerResponse generateCreateResponse(User user) {
     LinkedHashMap responseElements = new LinkedHashMap();
     responseElements.put("UserName", user.getName());
-    responseElements.put("UserId", user.getId());
+    responseElements.put("PasswordResetRequired",
+                         user.getPwdResetRequired().toLowerCase());
+    responseElements.put("CreateDate", user.getProfileCreateDate());
     return new XMLResponseFormatter().formatCreateResponse(
         "CreateLoginProfile", "LoginProfile", responseElements, "0000");
   }
@@ -47,9 +49,9 @@ class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
   ServerResponse generateGetResponse(User user) {
     LinkedHashMap<String, String> responseElements = new LinkedHashMap<>();
     ArrayList<LinkedHashMap<String, String>> userMembers = new ArrayList<>();
-    // TODO:Password creation Date not yet set in USER pojo
     responseElements.put("UserName", user.getName());
-    // responseElements.put("CreateDate", "2019-06-10T07:38:07Z");
+    responseElements.put("CreateDate", user.getProfileCreateDate());
+    responseElements.put("PasswordResetRequired", user.getPwdResetRequired());
     userMembers.add(responseElements);
     return new XMLResponseFormatter().formatGetResponse(
         "GetLoginProfile", "LoginProfile", userMembers, "0000");

@@ -11,18 +11,20 @@ class UserLoginProfile:
         if(self.cli_args.password is None):
             print("User password is required for user login-profile creation")
             return
-
         user_args = {}
         user_args['UserName'] = self.cli_args.name
         user_args['Password'] = self.cli_args.password
-
+        user_args['PasswordResetRequired'] = False
+        if(self.cli_args.password_reset_required):
+            user_args['PasswordResetRequired'] = True
         try:
             result = self.iam_client.create_login_profile(**user_args)
         except Exception as ex:
             print("Failed to create userloginprofile.")
             print(str(ex))
             return
-        print("User login profile created for " + user_args['UserName'])
+        profile = (result['LoginProfile'])
+        print("Login Profile %s %s %s" % (profile['CreateDate'], profile['PasswordResetRequired'], profile['UserName']))
 
     def get(self):
         if(self.cli_args.name is None):
@@ -38,4 +40,4 @@ class UserLoginProfile:
             print(str(ex))
             return
         profile = (result['LoginProfile'])
-        print("Login Profile is -\nUserName = %s " % (profile['UserName']))
+        print("Login Profile %s %s %s" % (profile['CreateDate'], profile['PasswordResetRequired'], profile['UserName']))
