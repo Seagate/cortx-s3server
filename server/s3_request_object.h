@@ -74,6 +74,7 @@ class S3RequestObject {
   std::string user_id;  // Unique
   std::string account_name;
   std::string account_id;  // Unique
+  std::string object_acl;
   int http_status;
   struct event* client_read_timer_event;
 
@@ -200,6 +201,9 @@ class S3RequestObject {
   virtual const std::string& get_bucket_name();
   virtual void set_object_name(const std::string& name);
   virtual const std::string& get_object_name();
+
+  virtual void set_object_acl(const std::string& name);
+  virtual const std::string& get_object_acl();
 
   void set_user_name(const std::string& name);
   const std::string& get_user_name();

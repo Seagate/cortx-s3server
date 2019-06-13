@@ -36,6 +36,7 @@ class S3AuthResponseSuccess {
   std::string account_id;
   std::string signature_SHA256;
   std::string request_id;
+  std::string acl;
 
   bool parse_and_validate();
 
@@ -49,6 +50,7 @@ class S3AuthResponseSuccess {
   const std::string& get_account_id();
   const std::string& get_signature_sha256();
   const std::string& get_request_id();
+  const std::string& get_acl();
 
   FRIEND_TEST(S3AuthResponseSuccessTest, ConstructorTest);
   FRIEND_TEST(S3AuthResponseSuccessTest, GetUserName);

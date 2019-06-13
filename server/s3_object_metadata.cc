@@ -37,6 +37,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
+  object_acl = request->get_object_acl();
   state = S3ObjectMetadataState::empty;
   is_multipart = ismultipart;
   upload_id = uploadid;
@@ -533,37 +534,6 @@ void S3ObjectMetadata::remove_failed() {
   this->handler_on_failed();
 }
 
-std::string S3ObjectMetadata::create_default_acl() {
-  std::string acl_str;
-  acl_str =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-      "<AccessControlPolicy "
-      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
-      "  <Owner>\n"
-      "    <ID>" +
-      get_owner_id() +
-      "</ID>\n"
-      "      <DisplayName>" +
-      get_owner_name() +
-      "</DisplayName>\n"
-      "  </Owner>\n"
-      "  <AccessControlList>\n"
-      "    <Grant>\n"
-      "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-      "xsi:type=\"CanonicalUser\">\n"
-      "        <ID>" +
-      get_owner_id() +
-      "</ID>\n"
-      "        <DisplayName>" +
-      get_owner_name() +
-      "</DisplayName>\n"
-      "      </Grantee>\n"
-      "      <Permission>FULL_CONTROL</Permission>\n"
-      "    </Grant>\n"
-      "  </AccessControlList>\n"
-      "</AccessControlPolicy>\n";
-  return acl_str;
-}
 
 // Streaming to json
 std::string S3ObjectMetadata::to_json() {
@@ -594,15 +564,14 @@ std::string S3ObjectMetadata::to_json() {
   for (const auto& tag : object_tags) {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
-
-  // root["ACL"] = object_ACL.to_json();
   std::string xml_acl = object_ACL.get_xml_str();
   if (xml_acl == "") {
-    xml_acl = create_default_acl();
-  }
+    root["ACL"] = object_acl;
+
+  } else {
   root["ACL"] =
       base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
-
+  }
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
   ;

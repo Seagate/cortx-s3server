@@ -158,9 +158,9 @@ result=AwsTest('Aws can get object acl').get_object_acl("seagatebucketobjectacl"
 
 print("ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "123", "tester", "FULL_CONTROL")
-AclTest('acl has valid Owner').validate_owner(result, "123", "tester")
-AclTest('acl has valid Grants').validate_grant(result, "123", "tester", 1, "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
 
 AwsTest('Aws can delete object').delete_object("seagatebucketobjectacl","testObject").execute_test().command_is_successful()

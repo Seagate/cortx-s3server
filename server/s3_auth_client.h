@@ -51,7 +51,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   std::unique_ptr<S3AuthResponseError> error_obj;
 
   std::string auth_response_xml;
-  std::string authorization_response;
+  std::string authorization_response_xml;
 
  public:
   S3AuthClientOpContext(std::shared_ptr<S3RequestObject> req,
@@ -94,10 +94,26 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   }
 
-  void set_authorization_response(const char* resp, bool success = true) {
+  void set_authorization_response(const char* xml, bool success = true) {
     s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-    authorization_response = resp;
+    authorization_response_xml = xml;
     is_authorization_successful = success;
+    if (is_authorization_successful) {
+      success_obj.reset(new S3AuthResponseSuccess(authorization_response_xml));
+      if (success_obj->isOK()) {
+        get_request()->set_user_name(success_obj->get_user_name());
+        get_request()->set_user_id(success_obj->get_user_id());
+        get_request()->set_account_name(success_obj->get_account_name());
+        get_request()->set_account_id(success_obj->get_account_id());
+        get_request()->set_object_acl(success_obj->get_acl());
+      } else {
+        // Invalid authorisation response xml
+        is_authorization_successful = false;
+      }
+    } else {
+      error_obj.reset(new S3AuthResponseError(authorization_response_xml));
+    }
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   }
 
   bool auth_successful() { return is_auth_successful; }

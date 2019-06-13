@@ -61,6 +61,7 @@ class S3ObjectMetadata {
   std::string user_id;
   std::string bucket_name;
   std::string object_name;
+  std::string object_acl;
 
   std::string request_id;
 

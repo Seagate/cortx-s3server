@@ -52,6 +52,8 @@ const std::string &S3AuthResponseSuccess::get_request_id() {
   return request_id;
 }
 
+const std::string &S3AuthResponseSuccess::get_acl() { return acl; }
+
 bool S3AuthResponseSuccess::parse_and_validate() {
   s3_log(S3_LOG_DEBUG, "", "Parsing Auth server response\n");
 
@@ -149,7 +151,11 @@ bool S3AuthResponseSuccess::parse_and_validate() {
                                  (const xmlChar *)"AccountId"))) {
             s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
             account_id = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"ACL"))) {
+            s3_log(S3_LOG_DEBUG, "", "ACL =%s\n", (const char *)key);
+            acl = (const char *)key;
           }
+
           xmlFree(key);
           key = NULL;
         }

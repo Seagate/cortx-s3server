@@ -406,6 +406,12 @@ void S3AuthClient::setup_auth_request_body() {
   // May need to take it from config
   add_key_val_to_body("Version", "2010-05-08");
   if (auth_request_type == S3AuthClientOpType::authorization) {
+
+    if (request->get_api_type() == S3ApiType::object &&
+        request->http_verb() == S3HttpVerb::PUT &&
+        request->get_operation_code() == S3OperationCode::none) {
+      add_key_val_to_body("Request-Object-ACL", "true");
+    }
     if (policy_str != "") {
       add_key_val_to_body("Policy", policy_str);
     } else if (acl_str != "") {

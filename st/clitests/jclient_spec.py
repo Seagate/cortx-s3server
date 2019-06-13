@@ -98,7 +98,7 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can verify object existence').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have("3kfile")
 
-    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('tester: FULL_CONTROL')
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
 
     # ************ cross account tests ********
     account_args = {}

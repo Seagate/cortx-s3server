@@ -36,16 +36,6 @@ using ::testing::ReturnRef;
 using ::testing::AtLeast;
 using ::testing::DefaultValue;
 
-#define DEFAULT_ACL_STR                                                 \
-  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<AccessControlPolicy "   \
-  "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n  <Owner>\n    " \
-  "<ID></ID>\n      <DisplayName></DisplayName>\n  </Owner>\n  "        \
-  "<AccessControlList>\n    <Grant>\n      <Grantee "                   \
-  "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "            \
-  "xsi:type=\"CanonicalUser\">\n        <ID></ID>\n        "            \
-  "<DisplayName></DisplayName>\n      </Grantee>\n      "               \
-  "<Permission>FULL_CONTROL</Permission>\n    </Grant>\n  "             \
-  "</AccessControlList>\n</AccessControlPolicy>\n"
 
 #define DUMMY_ACL_STR "<Owner>\n<ID>1</ID>\n</Owner>"
 
@@ -657,10 +647,6 @@ TEST_F(S3ObjectMetadataTest, RemoveFailedToLaunch) {
   EXPECT_TRUE(s3objectmetadata_callbackobj.fail_called);
 }
 
-TEST_F(S3ObjectMetadataTest, CreateDefaultAcl) {
-  EXPECT_STREQ(DEFAULT_ACL_STR,
-               action_under_test->create_default_acl().c_str());
-}
 
 TEST_F(S3ObjectMetadataTest, ToJson) {
   std::string json_str = action_under_test->to_json();

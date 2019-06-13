@@ -521,6 +521,12 @@ void S3RequestObject::set_account_name(const std::string& name) {
 
 const std::string& S3RequestObject::get_account_name() { return account_name; }
 
+void S3RequestObject::set_object_acl(const std::string& acl) {
+  object_acl = acl;
+}
+
+const std::string& S3RequestObject::get_object_acl() { return object_acl; }
+
 void S3RequestObject::notify_incoming_data(evbuf_t* buf) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering with buf(%p)\n", buf);
   s3_log(S3_LOG_DEBUG, request_id, "pending_in_flight (before): %zu\n",
