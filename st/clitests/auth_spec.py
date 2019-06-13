@@ -241,12 +241,17 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result.command_response_should_have("User login profile created for s3user1New")
 
 
+    test_msg = 'create login profile failed for user with existing login profile'
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("EntityAlreadyExists")
+
+
     test_msg = 'GetUserLoginProfile Successful'
     user_args = {}
     user_name_flag = "-n"
     user_args['UserName'] ="s3user1New"
     result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
-    print(result)
     result.command_response_should_have("Login Profile is")
 
     test_msg = 'GetUserLoginProfile failed for invalid user'

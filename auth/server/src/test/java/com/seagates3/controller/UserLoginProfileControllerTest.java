@@ -196,6 +196,31 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   /**
+   * Below test will check when CreateUserLoginProfile API executed on user
+   * with existing LoginProfile, it returns an error- 'entityAlreadyExists'
+   *
+   * @throws Exception
+   */
+  @Test public void
+  CreateUserLoginProfile_ExistingUserProfile_ReturnErrorResponse()
+      throws Exception {
+    createUserLoginProfileController_CreateAPI();
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+
+    ServerResponse response = userLoginProfileController.create();
+    Assert.assertEquals(HttpResponseStatus.CONFLICT,
+                        response.getResponseStatus());
+  }
+
+  /**
    * Below method will Test successful API response when valid username and
    * password present
    *

@@ -76,12 +76,19 @@ class UserLoginProfileController extends AbstractController {
       LOGGER.error("User [" + user.getName() + "] does not exists");
       return userResponseGenerator.noSuchEntity();
     } else {
-      try {
-        user.setPassword(requestBody.get("Password"));
-        userLoginProfileDAO.save(user);
-      }
-      catch (DataAccessException ex) {
-        return userLoginProfileResponseGenerator.internalServerError();
+      if (user.getPassword() == null) {
+        try {
+          user.setPassword(requestBody.get("Password"));
+          userLoginProfileDAO.save(user);
+        }
+        catch (DataAccessException ex) {
+          LOGGER.error("Exception occurred while saving user - " +
+                       user.getName());
+          return userLoginProfileResponseGenerator.internalServerError();
+        }
+      } else {
+        LOGGER.error("LoginProfile already exists for user" + user.getName());
+        return userLoginProfileResponseGenerator.entityAlreadyExists();
       }
     }
 
@@ -89,8 +96,8 @@ class UserLoginProfileController extends AbstractController {
   }
 
   /**
-  * Below method will return login profile of the user requested
-  */
+    * Below method will return login profile of the user requested
+    */
   @Override public ServerResponse list() {
     User user = null;
     ServerResponse response = null;
