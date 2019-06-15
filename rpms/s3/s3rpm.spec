@@ -77,11 +77,13 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/s3/conf/s3server_audit_log.properties
 %config(noreplace) /opt/seagate/s3/conf/s3_obj_layout_mapping.yaml
 %config(noreplace) /opt/seagate/s3/conf/s3stats-whitelist.yaml
+%config(noreplace) /opt/seagate/auth/resources/defaultAclTemplate.xml
 
 %attr(4600, root, root) /opt/seagate/auth/resources/authserver.properties
 %attr(4600, root, root) /opt/seagate/auth/resources/authserver-log4j2.xml
 %attr(4600, root, root) /opt/seagate/auth/resources/authencryptcli-log4j2.xml
 %attr(4600, root, root) /opt/seagate/auth/resources/keystore.properties
+%attr(4600, root, root) /opt/seagate/auth/resources/defaultAclTemplate.xml
 
 %dir /opt/seagate/
 %dir /opt/seagate/auth
