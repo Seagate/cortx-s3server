@@ -41,3 +41,25 @@ class UserLoginProfile:
             return
         profile = (result['LoginProfile'])
         print("Login Profile %s %s %s" % (profile['CreateDate'], profile['PasswordResetRequired'], profile['UserName']))
+
+    def update(self):
+        if(self.cli_args.name is None):
+            print("UserName is required for UpdateUserLoginProfile")
+            return
+        user_args = {}
+        user_args['UserName'] = self.cli_args.name
+        if(not self.cli_args.password is None):
+            user_args['Password'] = self.cli_args.password
+        user_args['PasswordResetRequired'] = False
+        if(self.cli_args.password_reset_required):
+            user_args['PasswordResetRequired'] = True
+        if(self.cli_args.password is None) and (self.cli_args.password_reset_required is False) and (self.cli_args.no_password_reset_required is False):
+            print("Please provide password or password-reset flag")
+            return
+        try:
+            result = self.iam_client.update_login_profile(**user_args)
+            print("UpdateUserLoginProfile is successful")
+        except Exception as ex:
+            print("UpdateUserLoginProfile failed")
+            print(str(ex))
+            return

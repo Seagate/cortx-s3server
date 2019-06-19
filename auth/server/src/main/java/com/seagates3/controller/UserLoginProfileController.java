@@ -103,8 +103,8 @@ class UserLoginProfileController extends AbstractController {
   }
 
   /**
-    * Below method will return login profile of the user requested
-    */
+   * Below method will return login profile of the user requested
+   */
   @Override public ServerResponse list() {
     User user = null;
     ServerResponse response = null;
@@ -112,6 +112,7 @@ class UserLoginProfileController extends AbstractController {
       user = userDAO.find(requestor.getAccount().getName(),
                           requestBody.get("UserName"));
       if (user.exists() && user.getPassword() != null) {
+        LOGGER.info("Password reset flag - " + user.getPwdResetRequired());
         response = userLoginProfileResponseGenerator.generateGetResponse(user);
       } else {
         response = userLoginProfileResponseGenerator.noSuchEntity();
@@ -120,7 +121,53 @@ class UserLoginProfileController extends AbstractController {
     catch (DataAccessException ex) {
       response = userResponseGenerator.internalServerError();
     }
-    LOGGER.debug("Returned response is  - " + response);
+    LOGGER.debug("Returned response is  - " + response.getResponseBody());
+    return response;
+  }
+
+  /**
+   * Below method will update login profile of requested user.
+   */
+  @Override public ServerResponse update() throws DataAccessException {
+    User user = null;
+    ServerResponse response = null;
+    try {
+      user = userDAO.find(requestor.getAccount().getName(),
+                          requestBody.get("UserName"));
+
+      if (!user.exists()) {
+        LOGGER.error("User [" + requestBody.get("UserName") +
+                     "] does not exists");
+        response = userResponseGenerator.noSuchEntity();
+      } else {
+        if (user.getPassword() == null &&
+            (user.getProfileCreateDate() == null ||
+             user.getProfileCreateDate().isEmpty())) {
+          LOGGER.error("LoginProfile not created for user - " +
+                       requestBody.get("UserName"));
+          response = userResponseGenerator.noSuchEntity();
+        } else {
+
+          if (requestBody.get("Password") != null) {
+            user.setPassword(requestBody.get("Password"));
+            LOGGER.info("Updating old password with new password");
+          }
+
+          if (requestBody.get("PasswordResetRequired") != null) {
+            user.setPwdResetRequired(
+                requestBody.get("PasswordResetRequired").toUpperCase());
+            LOGGER.info("Updating password reset required flag");
+          }
+          userLoginProfileDAO.save(user);
+          response = userLoginProfileResponseGenerator.generateUpdateResponse();
+        }
+      }
+    }
+    catch (DataAccessException ex) {
+      LOGGER.error("Exception occurred while doing ldap operation for user - " +
+                   requestBody.get("UserName"));
+      response = userLoginProfileResponseGenerator.internalServerError();
+    }
     return response;
   }
 }

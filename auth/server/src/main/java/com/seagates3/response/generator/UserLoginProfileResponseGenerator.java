@@ -51,9 +51,22 @@ class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
     ArrayList<LinkedHashMap<String, String>> userMembers = new ArrayList<>();
     responseElements.put("UserName", user.getName());
     responseElements.put("CreateDate", user.getProfileCreateDate());
-    responseElements.put("PasswordResetRequired", user.getPwdResetRequired());
+    responseElements.put("PasswordResetRequired",
+                         user.getPwdResetRequired().toLowerCase());
     userMembers.add(responseElements);
     return new XMLResponseFormatter().formatGetResponse(
         "GetLoginProfile", "LoginProfile", userMembers, "0000");
+  }
+
+  /**
+   * Below method will generate 'UpdateLoginProfile' response
+   *
+   * @param user
+   * @return
+   */
+ public
+  ServerResponse generateUpdateResponse() {
+    return new XMLResponseFormatter().formatUpdateResponse(
+        "UpdateLoginProfile");
   }
 }

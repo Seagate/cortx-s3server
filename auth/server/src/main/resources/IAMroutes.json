@@ -9,6 +9,7 @@
     "CreateRole": "Role#create",
     "CreateSAMLProvider": "SAMLProvider#create",
     "CreateUser": "User#create",
+    "CreateLoginProfile": "UserLoginProfile#create",
     "DeleteAccessKey": "AccessKey#delete",
     "DeleteGroup": "Group#delete",
     "DeletePolicy": "Policy#delete",
@@ -16,6 +17,7 @@
     "DeleteSAMLProvider": "SAMLProvider#delete",
     "DeleteUser": "User#delete",
     "GetFederationToken": "FederationToken#create",
+    "GetLoginProfile": "UserLoginProfile#list",
     "ListAccessKeys": "AccessKey#list",
     "ListRoles": "Role#list",
     "ListSAMLProviders": "SAMLProvider#list",
@@ -23,6 +25,5 @@
     "UpdateAccessKey": "AccessKey#update",
     "UpdateSAMLProvider": "SAMLProvider#update",
     "UpdateUser": "User#update",
-    "CreateLoginProfile": "UserLoginProfile#create",
-    "GetLoginProfile": "UserLoginProfile#list"
+    "UpdateLoginProfile": "UserLoginProfile#update"
 }

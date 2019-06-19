@@ -317,7 +317,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
     result = AuthTest(test_msg).create_user(**user_args).execute_test()
     result.command_should_match_pattern(user1_response_pattern)
-    test_msg = 'GetUserLoginProfile failed for user w.o. LoginProfile created'
+    test_msg = 'GetUserLoginProfile failed for user without LoginProfile created'
     user_args = {}
     user_name_flag = "-n"
     user_args['UserName'] ="loginProfileTestUser"
@@ -328,6 +328,112 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] = "loginProfileTestUser"
     result = AuthTest(test_msg).delete_user(**user_args).execute_test()
     result.command_response_should_have("User deleted.")
+
+
+
+    test_msg = "Create User updateLoginProfileTestUser (default path)"
+    user_args = {'UserName': 'updateLoginProfileTestUser'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'Create access key (user name is updateLoginProfileTestUser)'
+    access_key_args = {}
+    access_key_args['UserName'] = 'updateLoginProfileTestUser'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+    access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+    test_msg = 'UpdateLoginProfile should fail when tried with IAM User accessKey-secretKey'
+    user_name_flag = "-n"
+    access_key_args['UserName'] ="updateLoginProfileTestUser"
+    access_key_args['Password'] = "newPassword"
+    result = AuthTest(test_msg).update_login_profile_with_user_key(user_name_flag , **access_key_args).execute_test()
+    result.command_response_should_have("InvalidUser")
+    test_msg = 'Delete access key'
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+    test_msg = 'Delete User UpdateLoginProfileTestUser'
+    user_args = {}
+    user_args['UserName'] = "updateLoginProfileTestUser"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+
+
+    test_msg = 'UpdateLoginProfile is successful'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="s3user1New"
+    user_args['Password'] = "newPassword"
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("UpdateUserLoginProfile is successful")
+
+    test_msg = 'UpdateLoginProfile fails without new password ,password-reset and no-password-reset flag entered'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="s3user1New"
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("Please provide password or password-reset flag")
+
+    test_msg = 'UpdateLoginProfile is successful with only password-reset flag entered'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="s3user1New"
+    user_args['PasswordResetRequired']=True
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("UpdateUserLoginProfile is successful")
+    test_msg = 'GetLoginProfile to validate password reset flag set to True'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="s3user1New"
+    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("True")
+
+    test_msg = "Create User updateLoginProfileTestUser (default path)"
+    user_args = {'UserName': 'updateLoginProfileTestUser'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'UpdateUserLoginProfile failed for user without LoginProfile created'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="updateLoginProfileTestUser"
+    user_args['Password'] = "newPassword"
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("NoSuchEntity")
+    test_msg = 'Delete User updateLoginProfileTestUser'
+    user_args = {}
+    user_args['UserName'] = "updateLoginProfileTestUser"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+    test_msg = 'UpdateUserLoginProfile failed for username missing.'
+    user_args = {}
+    user_name_flag = ""
+    user_args['UserName'] =""
+    user_args['Password'] = "abcd"
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result.command_response_should_have("UserName is required for UpdateUserLoginProfile")
+
+    test_msg = 'UpdateLoginProfile failed as user doesnt exist in ldap'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="dummyUser"
+    user_args['Password'] = "password"
+    result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test()		   
+    result.command_response_should_have("UpdateUserLoginProfile failed")
+
+    test_msg = 'UpdateLoginProfile failed for invalid username'
+    user_args = {}
+    user_name_flag = "-n"
+    user_args['UserName'] ="dummyUser$"
+    user_args['Password'] = "password"
+    result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test()
+    result.command_response_should_have("InvalidParameterValue")
+
+
 
 
     test_msg = 'List Users (path prefix = /test/)'

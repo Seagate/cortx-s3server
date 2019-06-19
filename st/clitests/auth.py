@@ -331,3 +331,28 @@ class AuthTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def update_login_profile(self, usernameflag = None, **login_profile_args):
+        cmd = "s3iamcli updateuserloginprofile --access_key '%s' --secret_key\
+                   '%s' %s %s" % (
+                 S3ClientConfig.access_key_id,
+                 S3ClientConfig.secret_key, usernameflag, login_profile_args['UserName'])
+        if('Password' in login_profile_args.keys()):
+            cmd += " --password %s" % login_profile_args['Password']
+        if('PasswordResetRequired' in login_profile_args.keys()):
+            cmd += " --password-reset-required"
+
+        self.with_cli(cmd)
+        return self
+
+    def update_login_profile_with_user_key(self, usernameflag = None, **login_profile_args):
+        cmd = "s3iamcli updateuserloginprofile --access_key '%s' --secret_key\
+                   '%s' %s %s" % (
+                 login_profile_args['AccessKeyId'],
+                 login_profile_args['SecretAccessKey'], usernameflag, login_profile_args['UserName'])
+        if('Password' in login_profile_args.keys()):
+            cmd += " --password %s" % login_profile_args['Password']
+        if('PasswordResetRequired' in login_profile_args.keys()):
+            cmd += " --password-reset-required"
+        self.with_cli(cmd)
+        return self
+

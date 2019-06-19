@@ -131,4 +131,16 @@ public class IAMApiAuthorizerTest {
 
         iamApiAuthorizer.authorize(requestor, requestBody);
     }
+
+    /**
+    * Below test will check invalid user authorization
+    * @throws InvalidUserException
+    */
+    @Test public void authorizeRootUserExceptionTest()
+        throws InvalidUserException {
+      IAMApiAuthorizer iamApiAuthorizer = new IAMApiAuthorizer();
+      requestor.setName("usr1");
+      exception.expect(InvalidUserException.class);
+      iamApiAuthorizer.authorizeRootUser(requestor);
+    }
 }

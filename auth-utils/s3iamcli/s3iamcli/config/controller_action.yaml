@@ -113,3 +113,7 @@ getuserloginprofile:
   controller : UserLoginProfile
   action : get
   service : iam
+updateuserloginprofile:
+  controller : UserLoginProfile
+  action : update
+  service : iam

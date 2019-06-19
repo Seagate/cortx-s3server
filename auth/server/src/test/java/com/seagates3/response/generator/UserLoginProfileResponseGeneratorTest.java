@@ -58,4 +58,21 @@ class UserLoginProfileResponseGeneratorTest {
     Assert.assertEquals(expectedResponseBody, response.getResponseBody());
     Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
+
+  /**
+   * Below test will check successful UpdateLoginProfile response
+   */
+  @Test public void generateUpdateResponseTest() {
+    UserLoginProfileResponseGenerator responseGenerator =
+        new UserLoginProfileResponseGenerator();
+    final String expectedResponseBody =
+        "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+        "<UpdateLoginProfileResponse " +
+        "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+        "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+        "</ResponseMetadata>" + "</UpdateLoginProfileResponse>";
+    ServerResponse response = responseGenerator.generateUpdateResponse();
+    Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+  }
 }

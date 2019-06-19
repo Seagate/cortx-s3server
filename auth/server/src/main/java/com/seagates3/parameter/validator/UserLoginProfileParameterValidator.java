@@ -37,4 +37,23 @@ class UserLoginProfileParameterValidator extends AbstractParameterValidator {
 
     return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
   }
+
+  @Override public Boolean isValidListParams(Map<String, String> requestBody) {
+    return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
+  }
+
+  @Override public Boolean isValidUpdateParams(
+      Map<String, String> requestBody) {
+
+    if (requestBody.get("Password") != null &&
+        !(S3ParameterValidatorUtil.isValidPassword(
+             requestBody.get("Password")))) {
+      return false;
+    }
+    if (("true".equals(requestBody.get("PasswordResetRequired"))) &&
+        ("false".equals(requestBody.get("PasswordResetRequired")))) {
+      return false;
+    }
+    return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
+  }
 }
