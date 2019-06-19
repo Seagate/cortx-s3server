@@ -74,7 +74,7 @@ def process_key_val_api(index_id, key):
             return ("Key not found.", 404)
     elif request.method == 'PUT':
         value = request.get_data()
-        _index_store[index_id][key] = value
+        _index_store[index_id][key] = value.decode("utf-8")
         return ("Created Key.", 201)
     elif request.method == 'DELETE':
         if key in _index_store[index_id]:
@@ -95,7 +95,10 @@ def process_object_api(object_id):
         if object_id in _object_store:
             abort(Response("Object already exists.", 409))
         else:
-            _object_store[object_id] = "Dummy object data."
+            value = request.get_data()
+            if value is None:
+                value = "Dummy object data."
+            _object_store[object_id] = value.decode("utf-8")
         return ("Created Object.", 201)
     elif request.method == 'DELETE':
         if object_id in _object_store:

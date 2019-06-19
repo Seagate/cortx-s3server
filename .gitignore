@@ -9,10 +9,12 @@ auth/target/
 bazel-*
 s3mempoolmgrut.*
 s3ut.*
+s3backgrounddelete/*.pyc
 server/jsoncpp.cc
 st/clitests/jclient.jar
 st/clitests/jcloudclient.jar
 st/clitests/mero_st/
+st/dummyservers/eos-core-http/*.pyc
 third_party/lustre-2.5.1-headers/
 rpmsandbox/
 *.rpm
