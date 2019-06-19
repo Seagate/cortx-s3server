@@ -95,10 +95,16 @@ class AuthTest(PyCliTest):
 
     def create_login_profile(self, usernameflag = None, passwordflag = None, **login_profile_args):
         cmd = "s3iamcli createuserloginprofile --access_key '%s' --secret_key\
-                   '%s' %s %s %s %s" % (
-                 S3ClientConfig.access_key_id,
-                 S3ClientConfig.secret_key, usernameflag, login_profile_args\
-                     ['UserName'], passwordflag,login_profile_args['Password'])
+               '%s' %s %s %s %s" % (
+               S3ClientConfig.access_key_id,
+               S3ClientConfig.secret_key, usernameflag, login_profile_args\
+               ['UserName'], passwordflag,login_profile_args['Password'])
+
+        if('PasswordResetRequired' in login_profile_args.keys()):
+           if(login_profile_args['PasswordResetRequired'] is "True"):
+              cmd += " --password-reset-required"
+           else:
+              cmd += " --no-password-reset-required"
         self.with_cli(cmd)
         return self
 

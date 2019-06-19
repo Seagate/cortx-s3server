@@ -162,6 +162,8 @@ def account_tests():
 def user_tests():
     _use_root_credentials()
 
+    date_pattern = "[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9][\+-][0-9]*:[0-9]*"
+
     test_msg = "Create User s3user1 (default path)"
     user_args = {'UserName': 's3user1'}
     user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
@@ -176,8 +178,7 @@ def user_tests():
     result = AuthTest(test_msg).update_user(**user_args).execute_test()
     result.command_response_should_have("User Updated.")
 
-    test_msg = 'create login profile should fail for exceeding max allowed\
-                   password length.'
+    test_msg = 'create user login profile should fail for exceeding max allowed password length.'
     user_args = {}
     maxPasswordLength = "abcdefghijklmnopqrstuvwxyzabcdefghijkabcdefghijklmnopqrstuvwxyzabcdefghijkabcdefghijklmnopqrstuvwxyzabcdefghijk\
 abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrddd";
@@ -189,7 +190,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
                **user_args).execute_test()
     result.command_response_should_have("Failed to create userloginprofile.")
 
-    test_msg = 'create login profile should fail for invalid username.'
+    test_msg = 'create user login profile should fail for invalid username.'
     user_args = {}
     user_name_flag = "-n"
     password_flag = "--password"
@@ -200,7 +201,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
               **user_args).execute_test()
     result.command_response_should_have("Failed to create userloginprofile.")
 
-    test_msg = 'create login profile should fail for empty username.'
+    test_msg = 'create user login profile should fail for empty username.'
     user_args = {}
     user_name_flag = "-n"
     password_flag = "--password"
@@ -210,7 +211,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
                 **user_args).execute_test()
     result.command_response_should_have("Failed to create userloginprofile.")
 
-    test_msg = 'create login profile should fail for username missing.'
+    test_msg = 'create user login profile should fail for username missing.'
     user_args = {}
     user_name_flag = ""
     password_flag = "--password"
@@ -220,7 +221,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
                **user_args).execute_test()
     result.command_response_should_have("User name is required for user login-profile creation")
 
-    test_msg = 'create login profile should fail for password missing.'
+    test_msg = 'create user login profile should fail for password missing.'
     user_args = {}
     user_name_flag = "-n"
     password_flag = ""
@@ -230,30 +231,78 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
                **user_args).execute_test()
     result.command_response_should_have("User password is required for user login-profile creation")
 
-    test_msg = 'create login profile Should succeed.'
+    test_msg = 'create user login profile should succeed.'
     user_args = {}
     user_name_flag = "-n"
     password_flag = "--password"
     user_args['UserName'] ="s3user1New"
     user_args['Password'] = "abcd"
+    login_profile_response_pattern = "Login Profile "+date_pattern+" False "+user_args['UserName']
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
                **user_args).execute_test()
-#   TODO Add a method to framework to match a pattern
-    result.command_response_should_have("Login Profile")
+    result.command_should_match_pattern(login_profile_response_pattern)
 
-
-    test_msg = 'create login profile failed for user with existing login profile'
+    test_msg = 'create user login profile failed for user with existing login profile'
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
                **user_args).execute_test()
     result.command_response_should_have("EntityAlreadyExists")
 
+    #********* Test create user login profile with --password-reset-required *********************
+    test_msg = 'Create User user01'
+    user_args = {'UserName': 'user01'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'create user login profile should succeed with --password-reset-required'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag  = "--password"
+    user_args['UserName'] = "user01"
+    user_args['Password'] = "abcd"
+    user_args['PasswordResetRequired'] = "True"
+    login_profile_response_pattern = "Login Profile "+date_pattern+" "+user_args['PasswordResetRequired']+" "+user_args['UserName']
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_should_match_pattern(login_profile_response_pattern)
+    test_msg = 'Delete User user01'
+    user_args = {}
+    user_args['UserName'] = "user01"
+    user_args['Password'] = "abcd"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
 
-    test_msg = 'GetUserLoginProfile Successful'
+    #********* Test create user login profile with --no-password-reset-required *********************
+    test_msg = 'Create User user02'
+    user_args = {'UserName': 'user02'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'create user login profile should succeed with --no-password-reset-required'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag  = "--password"
+    user_args['UserName'] = "user02"
+    user_args['Password'] = "abcd"
+    user_args['PasswordResetRequired'] = "False"
+    login_profile_response_pattern = "Login Profile "+date_pattern+" "+user_args['PasswordResetRequired']+" "+user_args['UserName']
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_should_match_pattern(login_profile_response_pattern)
+    test_msg = 'Delete User user02'
+    user_args = {}
+    user_args['UserName'] = "user02"
+    user_args['Password'] = "abcd"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+
+    test_msg = 'GetUserLoginProfile Successfull'
     user_args = {}
     user_name_flag = "-n"
     user_args['UserName'] ="s3user1New"
+    user_profile_response_pattern = "Login Profile "+date_pattern+" False "+user_args['UserName']
     result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
-    result.command_response_should_have("Login Profile")
+    result.command_should_match_pattern(user_profile_response_pattern)
 
     test_msg = 'GetUserLoginProfile failed for invalid user'
     user_args = {}
@@ -261,6 +310,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] ="abcd"
     result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
     result.command_response_should_have("Failed to get Login Profile")
+
 
     test_msg = "Create User loginProfileTestUser (default path)"
     user_args = {'UserName': 'loginProfileTestUser'}

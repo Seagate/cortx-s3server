@@ -186,6 +186,7 @@ class S3IamCli:
         parser.add_argument("--secret_key", help="Secret Key.")
         parser.add_argument("--password", help="Password.")
         parser.add_argument("--password-reset-required", help="Password reset required on next login.", action ='store_true')
+        parser.add_argument("--no-password-reset-required", help="Password reset not required .", action ='store_true')
         parser.add_argument("--ldapuser", help="Ldap User Id.")
         parser.add_argument("--ldappasswd", help="Ldap Password.")
         parser.add_argument("--session_token", help="Session Token.")
