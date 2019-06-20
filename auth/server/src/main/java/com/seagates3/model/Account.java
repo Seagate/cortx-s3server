@@ -24,6 +24,12 @@ public class Account {
     private String name;
     private String canonicalId;
     private String email;
+    private
+     String password;
+    private
+     String profileCreateDate;
+    private
+     String pwdResetRequired;
 
     public String getId() {
         return id;
@@ -61,4 +67,23 @@ public class Account {
         return id != null;
     }
 
+    public
+     String getPassword() { return password; }
+
+    public
+     void setPassword(String pwd) { password = pwd; }
+
+    public
+     void setProfileCreateDate(String createDate) {
+       profileCreateDate = createDate;
+     }
+
+    public
+     String getProfileCreateDate() { return profileCreateDate; }
+
+    public
+     void setPwdResetRequired(String pwdReset) { pwdResetRequired = pwdReset; }
+
+    public
+     String getPwdResetRequired() { return pwdResetRequired; }
 }

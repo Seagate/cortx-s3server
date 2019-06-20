@@ -174,7 +174,7 @@ public class AccountImpl implements AccountDAO {
      * fetch all accounts from database
      */
     public Account[] findAll() throws DataAccessException {
-        ArrayList accounts = new ArrayList();
+       ArrayList<Account> accounts = new ArrayList<Account>();
         Account account;
         LDAPSearchResults ldapResults;
         /*

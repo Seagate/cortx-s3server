@@ -18,9 +18,16 @@
  */
 package com.seagates3.util;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Random;
 
 public class KeyGenUtil {
+
+  private
+   static final int SALT_LENGTH = 4;
     /*
      * TODO
      * UserId and userAccessKeyIds are generated from uuid encoding it to base 64.
@@ -113,5 +120,33 @@ public class KeyGenUtil {
         char c = (char)(random.nextInt(26) + 65);
 
         return c;
+    }
+    /**
+     * This method generates SHA-1 hash of give string
+     * @param String
+     * @return
+     * @throws NoSuchAlgorithmException
+     */
+   public
+    static String generateSSHA(String text) throws NoSuchAlgorithmException {
+
+      SecureRandom secureRandom = new SecureRandom();
+      byte[] salt = new byte[SALT_LENGTH];
+      secureRandom.nextBytes(salt);
+
+      MessageDigest crypt = MessageDigest.getInstance("SHA-1");
+      crypt.reset();
+      crypt.update(text.getBytes());
+      crypt.update(salt);
+      byte[] hash = crypt.digest();
+
+      byte[] hashPlusSalt = new byte[hash.length + salt.length];
+      System.arraycopy(hash, 0, hashPlusSalt, 0, hash.length);
+      System.arraycopy(salt, 0, hashPlusSalt, hash.length, salt.length);
+
+      return new StringBuilder()
+          .append("{SSHA}")
+          .append(Base64.getEncoder().encodeToString(hashPlusSalt))
+          .toString();
     }
 }

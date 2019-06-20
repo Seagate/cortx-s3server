@@ -22,6 +22,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import java.security.NoSuchAlgorithmException;
+
 public class KeyGenUtilTest {
 
     @Test
@@ -68,5 +70,19 @@ public class KeyGenUtilTest {
 
         assertNotNull(id);
         assertFalse(id.startsWith("-") || id.startsWith("_"));
+    }
+
+    @Test public void generateSSHATest() {
+      String id = null;
+      try {
+        id = KeyGenUtil.generateSSHA("testtext");
+      }
+      catch (NoSuchAlgorithmException e) {
+        e.printStackTrace();
+        fail();
+      }
+
+      assertNotNull(id);
+      assertTrue(id.startsWith("{SSHA}"));
     }
 }

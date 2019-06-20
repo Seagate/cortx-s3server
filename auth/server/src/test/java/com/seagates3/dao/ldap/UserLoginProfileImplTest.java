@@ -26,6 +26,8 @@ import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.User;
+import com.seagates3.util.KeyGenUtil;
+
 import java.util.ArrayList;
 import org.junit.Assert;
 import org.junit.Before;
@@ -100,8 +102,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
     String dn = "s3userid=123,ou=users,o=s3test,ou=accounts,dc=s3," +
                 "dc=seagate,dc=com";
-    PowerMockito.doReturn(null)
-        .when(UserLoginProfileImpl.class, "generateSSHA", any(byte[].class));
 
     ArrayList mockList = Mockito.mock(ArrayList.class);
     PowerMockito.whenNew(ArrayList.class).withNoArguments().thenReturn(
