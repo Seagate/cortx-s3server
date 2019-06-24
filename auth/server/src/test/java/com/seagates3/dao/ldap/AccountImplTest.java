@@ -47,7 +47,10 @@ public class AccountImplTest {
 
     private final String BASE_DN = "dc=s3,dc=seagate,dc=com";
     private final String FIND_FILTER = "(&(o=s3test)(objectclass=account))";
-    private final String[] FIND_ATTRS = {"accountid", "canonicalId"};
+    private
+     final String[] FIND_ATTRS = {"accountid",        "canonicalId",
+                                  "userPassword",     "pwdReset",
+                                  "profileCreateDate"};
 
     private final String ACCOUNT_DN
             = "o=s3test,ou=accounts,dc=s3,dc=seagate,dc=com";

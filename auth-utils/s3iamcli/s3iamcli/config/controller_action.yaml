@@ -54,6 +54,10 @@ createuserloginprofile:
   controller : UserLoginProfile
   action : create
   service : iam
+createaccountloginprofile:
+  controller : AccountLoginProfile
+  action : create
+  service : iam
 deleteaccesskey:
   controller : AccessKey
   action : delete

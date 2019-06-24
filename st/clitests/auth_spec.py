@@ -433,8 +433,15 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test()
     result.command_response_should_have("InvalidParameterValue")
 
-
-
+    test_msg = 'create account login profile should succeed.'
+    user_args = {}
+    account_name_flag = "-n"
+    password_flag = "--password"
+    user_args['AccountName'] ="s3test"
+    user_args['Password'] = "abcd"
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("Account Login Profile")
 
     test_msg = 'List Users (path prefix = /test/)'
     user_args = {'PathPrefix': '/test/'}

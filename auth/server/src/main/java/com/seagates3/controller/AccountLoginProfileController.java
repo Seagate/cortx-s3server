@@ -90,8 +90,12 @@ class AccountLoginProfileController extends AbstractController {
 
           account.setProfileCreateDate(
               DateUtil.toLdapDate(new Date(DateUtil.getCurrentTime())));
-          account.setPwdResetRequired(
-              requestBody.get("PasswordResetRequired").toUpperCase());
+          if (requestBody.get("PasswordResetRequired") == null) {
+            account.setPwdResetRequired("FALSE");
+          } else {
+            account.setPwdResetRequired(
+                requestBody.get("PasswordResetRequired").toUpperCase());
+          }
           accountLoginProfileDAO.save(account);
         }
         catch (DataAccessException ex) {

@@ -132,7 +132,10 @@ public class AccountImpl implements AccountDAO {
         Account account = new Account();
         account.setName(name);
 
-        String[] attrs = {LDAPUtils.ACCOUNT_ID, LDAPUtils.CANONICAL_ID};
+        String[] attrs = {
+            LDAPUtils.ACCOUNT_ID,         LDAPUtils.CANONICAL_ID,
+            LDAPUtils.PASSWORD,           LDAPUtils.PASSWORD_RESET_REQUIRED,
+            LDAPUtils.PROFILE_CREATE_DATE};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ORGANIZATIONAL_NAME, name, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -149,7 +152,7 @@ public class AccountImpl implements AccountDAO {
             throw new DataAccessException("failed to search account.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
+        if (ldapResults != null && ldapResults.hasMore()) {
             try {
                 if (FaultPoints.fiEnabled() &&
                         FaultPoints.getInstance().isFaultPointActive("LDAP_GET_ATTR_FAIL")) {
@@ -161,12 +164,35 @@ public class AccountImpl implements AccountDAO {
                         getStringValue());
                 account.setCanonicalId(entry.getAttribute(
                         LDAPUtils.CANONICAL_ID).getStringValue());
+
+                try {
+                  account.setPassword(
+                      entry.getAttribute(LDAPUtils.PASSWORD).getStringValue());
+                }
+                catch (Exception e) {
+                  LOGGER.info("Password value not found in ldap");
+                }
+                try {
+                  account.setPwdResetRequired(
+                      entry.getAttribute(LDAPUtils.PASSWORD_RESET_REQUIRED)
+                          .getStringValue());
+                }
+                catch (Exception e) {
+                  LOGGER.info("pwdReset required value not found in ldap");
+                }
+                try {
+                  account.setProfileCreateDate(
+                      (entry.getAttribute(LDAPUtils.PROFILE_CREATE_DATE)
+                           .getStringValue()));
+                }
+                catch (Exception e) {
+                  LOGGER.info("profileCreateDate value not found in ldap");
+                }
             } catch (LDAPException ex) {
                 LOGGER.error("Failed to find details of account: " + name);
                 throw new DataAccessException("Failed to find account details.\n" + ex);
             }
         }
-
         return account;
     }
 

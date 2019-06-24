@@ -1,5 +1,6 @@
 {
     "CreateAccount": "Account#create",
+    "CreateAccountLoginProfile": "AccountLoginProfile#create",
     "DeleteAccount": "Account#delete",
     "ListAccounts": "Account#list",
     "ResetAccountAccessKey": "Account#resetAccountAccessKey",
