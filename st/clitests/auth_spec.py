@@ -164,6 +164,30 @@ def user_tests():
 
     date_pattern = "[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9][\+-][0-9]*:[0-9]*"
 
+
+#Below account creation is for aws iam cli system testing. First delete account if already exist and then create it newly
+    test_msg = "Delete account if already exist"
+    account_args = {}
+    test_msg = "Delete account aws_iam_test_account"
+    account_args = {'AccountName': 'aws_iam_test_account'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()
+
+    test_msg = "Create account aws_iam_test_account"
+    account_args = {'AccountName': 'aws_iam_test_account', 'Email': 'iam@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result.status.stdout)
+#Save the details in file
+    f = open("aws_iam_credential_file" , "w")
+    f.write("[default]\n")
+    f.write("aws_access_key_id = ")
+    f.write(account_response_elements['AccessKeyId'])
+    f.write("\naws_secret_access_key = ")
+    f.write(account_response_elements['SecretKey'])
+    f.close()
+
+
     test_msg = "Create User s3user1 (default path)"
     user_args = {'UserName': 's3user1'}
     user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"

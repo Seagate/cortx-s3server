@@ -21,7 +21,9 @@ class Config:
     request_timeout = None
     socket_timeout = None
     aws_shared_credential_file = "aws_credential_file"
+    aws_iam_shared_credential_file = "aws_iam_credential_file"
     aws_config_file = "aws_config_file"
+    aws_iam_config_file = "aws_iam_config_file"
     python = 'python3.4'
 
 class CloudConfig:

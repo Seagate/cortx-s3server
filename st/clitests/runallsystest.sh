@@ -60,6 +60,9 @@ PythonV="python3.4"
 echo "`date -u`: Running auth_spec.py..."
 $PythonV auth_spec.py
 
+echo "`date -u`: Running awsiam_spec.py..."
+$PythonV awsiam_spec.py
+
 echo "`date -u`: Running auth_spec_negative_and_fi.py..."
 $PythonV auth_spec_negative_and_fi.py
 

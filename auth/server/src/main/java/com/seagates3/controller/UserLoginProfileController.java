@@ -84,8 +84,12 @@ class UserLoginProfileController extends AbstractController {
 
           user.setProfileCreateDate(
               DateUtil.toLdapDate(new Date(DateUtil.getCurrentTime())));
-          user.setPwdResetRequired(
-              requestBody.get("PasswordResetRequired").toUpperCase());
+          if (requestBody.get("PasswordResetRequired") == null) {
+            user.setPwdResetRequired("FALSE");
+          } else {
+            user.setPwdResetRequired(
+                requestBody.get("PasswordResetRequired").toUpperCase());
+          }
           userLoginProfileDAO.save(user);
         }
         catch (DataAccessException ex) {
