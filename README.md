@@ -382,43 +382,76 @@ To generate s3server RPMs, follow build & install steps from above section
 ./makerpm
 # Above should generate a rpm file in current folder
 ```
-
 ### How to get unit test code coverage for Authserver?
 ```sh
-cd auth
+$ cd auth
+$ ./mvnbuild.sh clean
 
-mvn clean package -Djacoco.skip=false
+# Generate code coverage report
+$ ./mvnbuild.sh package
+
+# Code coverage report is generated as part of mvn build
+# coverage report location are:
+#     a) executable : s3server/auth/server/target/coverage-reports/jacoco.exec
+#     b) html       : s3server/auth/server/target/site/jacoco/index.html
+#     c) xml        : s3server/auth/server/target/site/jacoco/jacoco.xml
+#     d) csv        : s3server/auth/server/target/site/jacoco/jacoco.csv
+# surefire-reports: s3server/auth/server/target/surefire-reports
+# java classes : s3server/auth/server/target/classes
+
 ```
 ### How to get system test code coverage for Authserver?
 ```sh
 cd auth
+$ ./mvnbuild.sh clean
+$ ./mvnbuild.sh package
 
-mvn clean package
+# Start Mero server
+$ cd s3server/third_party/mero
+$ ./m0t1fs/../clovis/st/utils/mero_services.sh start
 
 # Run authserver with jacoco agent
-java -javaagent:/path/to/jacocoagent.jar=destfile=target/coverage-reports/jacoco.exec,append=false \
--jar /path/to/AuthServer-1.0-0.jar
+$ java -javaagent:/path/to/jacocoagent.jar=destfile=target/coverage-reports/jacoco.exec,append=false \
+  -jar /path/to/AuthServer-1.0-0.jar
 
 # Example:
 # Note: This example uses the jacocoagent jar file downloaded by maven in local repo
 # Maven local repo path: ${HOME}/.m2/repository
-java \
--javaagent:${HOME}/.m2/repository/org/jacoco/org.jacoco.agent/0.7.7.201606060606/\
-org.jacoco.agent-0.7.7.201606060606-runtime.jar=destfile=target/coverage-reports/\
-jacoco.exec,append=false -jar /root/mero/fe/s3/auth/target/AuthServer-1.0-0.jar
+# S3 server location : ${s3repository} e.g. /home/720368/s3repository/s3server
+$ java \
+-javaagent:${HOME}/.m2/repository/org/jacoco/org.jacoco.agent/0.8.4/\
+org.jacoco.agent-0.8.4-runtime.jar=destfile=target/coverage-reports/\
+jacoco.exec,append=false -jar ${s3repository}/auth/target/AuthServer-1.0-0.jar
 
-# Activate python test virtualenv
-source mero_st/bin/activate
+# Start s3 server
+$ cd s3server
+$ ./dev-starts3.sh
 
 # Run system test
-python auth_spec.py
+$ cd s3server/st/clitest
+$ python3 auth_spec.py
 
 # Stop auth server [ Ctrl + c ].
 
-# Generate coverage report site from coverage data file generated in above step
-$ mvn jacoco:report -Djacoco.skip=false
-```
+# Stop Mero, s3 server
+$ cd s3server/third_party/mero
+$ ./m0t1fs/../clovis/st/utils/mero_services.sh stop
+$ cd s3server/
+$ ./dev-stops3.sh
 
+# Generate coverage report site from coverage data file generated in above step
+$ ./mvnbuild.sh jacoco-report
+
+# Code coverage report is generated at
+#     a) executable : s3server/auth/server/target/coverage-reports/jacoco.exec
+#     b) html       : s3server/auth/server/target/site/jacoco/index.html
+#     c) xml        : s3server/auth/server/target/site/jacoco/jacoco.xml
+#     d) csv        : s3server/auth/server/target/site/jacoco/jacoco.csv
+# surefire-reports: s3server/auth/server/target/surefire-reports
+# java classes : s3server/auth/server/target/classes
+
+
+```
 ### How to setup ssl
 ```sh
 $ cd ssl

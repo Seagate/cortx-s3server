@@ -4,11 +4,12 @@
 
 SRC_ROOT="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd ) " )"
 
-USAGE="USAGE: bash $(basename "$0") [clean|package] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [clean|package|jacoco-report] [--help | -h]
 
 where:
 clean              clean previous build
 package            build and package
+jacoco-report      generate system test coverage report
 --help             display this help and exit"
 
 if [ -z $1 ]
@@ -34,6 +35,14 @@ case "$1" in
        mvn package
        cd $SRC_ROOT/auth/server
        mvn package
+        ;;
+    jacoco-report )
+       cd $SRC_ROOT/auth/encryptutil
+       mvn jacoco:report
+       cd $SRC_ROOT/auth/encryptcli
+       mvn jacoco:report
+       cd $SRC_ROOT/auth/server
+       mvn jacoco:report
         ;;
     --help | -h )
         echo "$USAGE"
