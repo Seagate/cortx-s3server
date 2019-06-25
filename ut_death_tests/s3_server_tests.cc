@@ -27,7 +27,7 @@
 #include "s3_mem_pool_manager.h"
 #include "s3_option.h"
 #include "s3_stats.h"
-#include "s3_audit_info.h"
+#include "s3_audit_info_logger.h"
 
 // Some declarations from s3server that are required to get compiled.
 // TODO - Remove such globals by implementing config file.
@@ -40,8 +40,7 @@ struct m0_uint128 bucket_metadata_list_index_oid;
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 extern S3Stats *g_stats_instance;
-evbase_t *global_evbase_handle;
-LoggerPtr audit_logger;
+evbase_t *global_evbase_handle = nullptr;
 
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;
@@ -65,8 +64,10 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   ::testing::InitGoogleMock(&argc, argv);
 
-  audit_configure_init("s3server_audit_log.properties");
-  audit_logger = Logger::getLogger("Audit_Logger");
+  if (S3AuditInfoLogger::init() != 0) {
+    s3_log(S3_LOG_FATAL, "", "Couldn't init audit logger!");
+    return -1;
+  }
 
   S3ErrorMessages::init_messages("resources/s3_error_messages.json");
 
@@ -87,7 +88,7 @@ int main(int argc, char **argv) {
   S3MempoolManager::destroy_instance();
 
   _fini_log();
-  audit_logger = 0;
+  S3AuditInfoLogger::finalize();
 
   if (g_stats_instance) {
     S3Stats::delete_instance();

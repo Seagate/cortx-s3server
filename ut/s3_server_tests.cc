@@ -34,7 +34,6 @@ extern "C" {
 #include "s3_mem_pool_manager.h"
 #include "s3_option.h"
 #include "s3_stats.h"
-#include "s3_audit_info.h"
 
 // Some declarations from s3server that are required to get compiled.
 // TODO - Remove such globals by implementing config file.
@@ -47,7 +46,6 @@ struct m0_uint128 bucket_metadata_list_index_oid;
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 extern S3Stats *g_stats_instance;
-LoggerPtr audit_logger;
 
 struct m0 instance;
 
@@ -78,8 +76,6 @@ static int _init_option_and_instance() {
   S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
       g_option_instance->get_layout_recommendation_file());
 
-  audit_configure_init("s3server_audit_log.properties");
-  audit_logger = Logger::getLogger("Audit_Logger");
   return 0;
 }
 
@@ -196,7 +192,6 @@ int main(int argc, char **argv) {
   mempool_fini();
   clovis_ut_fini();
   _cleanup_option_and_instance();
-  audit_logger = 0;
   _fini_log();
 
   return rc;

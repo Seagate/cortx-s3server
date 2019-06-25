@@ -18,35 +18,16 @@
  */
 
 #include "s3_audit_info.h"
+#include "s3_audit_info_logger.h"
 #include "s3_log.h"
 #include "s3_option.h"
 
 #include <json/json.h>
 #include <time.h>
-#include <sys/stat.h>
 #include <regex>
 #include <string>
 #include <algorithm>
 #include <stdio.h>
-
-bool audit_configure_init(const std::string& log_config_path) {
-  try {
-    struct stat buf;
-    if ((stat(log_config_path.c_str(), &buf) != -1) &&
-        (!log_config_path.empty())) {
-      PropertyConfigurator::configure(log_config_path);
-      return true;
-    } else {
-      // BasicConfigurator log audit information to console.
-      BasicConfigurator::configure();
-      return false;
-    }
-  }
-  catch (Exception&) {
-    s3_log(S3_LOG_ERROR, "", "Exception occured while configuring audit logs.");
-    return false;
-  }
-}
 
 std::string audit_format_type_to_string(enum AuditFormatType type) {
   switch (type) {
@@ -92,10 +73,12 @@ UInt64 S3AuditInfo::convert_to_unsigned(size_t audit_member) {
 }
 
 const std::string S3AuditInfo::to_string() {
+  if (!S3AuditInfoLogger::is_enabled()) {
+    return "";
+  }
 
   AuditFormatType audit_format_type =
       S3Option::get_instance()->get_s3_audit_format_type();
-
   if (audit_format_type == AuditFormatType::S3_FORMAT) {
     // Logs audit information in S3 format.
     const std::string formatted_log =
@@ -143,7 +126,6 @@ const std::string S3AuditInfo::to_string() {
     return fastWriter.write(audit);
   }
 
-  // Audit logging is disabled
   return "";
 }
 

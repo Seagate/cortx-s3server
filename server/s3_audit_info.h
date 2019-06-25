@@ -19,8 +19,8 @@
 
 #pragma once
 
-#ifndef __S3_SERVER_AUDIT_LOG_H__
-#define __S3_SERVER_AUDIT_LOG_H__
+#ifndef __S3_SERVER_AUDIT_INFO_H__
+#define __S3_SERVER_AUDIT_INFO_H__
 
 #include <iostream>
 #include <cstdlib>
@@ -28,34 +28,16 @@
 #include <string>
 #include <stdlib.h>
 
-#include "log4cxx/logger.h"
-#include "log4cxx/basicconfigurator.h"
-#include "log4cxx/helpers/exception.h"
-#include "log4cxx/propertyconfigurator.h"
-
-using namespace log4cxx;
-using namespace log4cxx::helpers;
-
 #define REQUEST_TIME_SIZE 50
 typedef unsigned long long UInt64;
-
-extern LoggerPtr audit_logger;
 
 enum class AuditFormatType {
   JSON,       // Logs audit information in Json format
   S3_FORMAT,  // Logs in Amazon s3 access log format
               // https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html
-  NONE,       // Disables audit logging
 };
 
-#define audit_log(audit_msg)               \
-  do {                                     \
-    LOG4CXX_INFO(audit_logger, audit_msg); \
-  } while (0)
-
 std::string audit_format_type_to_string(enum AuditFormatType type);
-
-bool audit_configure_init(const std::string& log_config_path);
 
 class S3AuditInfo {
  private:

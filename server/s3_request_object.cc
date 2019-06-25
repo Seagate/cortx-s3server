@@ -809,8 +809,9 @@ void S3RequestObject::populate_and_log_audit_info() {
   }
   audit_log_obj.set_host_header(get_header_value("Host"));
 
-  std::string alm = audit_log_obj.to_string();
-  S3AuditInfoLogger::save_msg(request_id, alm);
-  audit_log(alm);
+  if (S3AuditInfoLogger::save_msg(request_id, audit_log_obj.to_string()) < 0) {
+    s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server");
+    exit(1);
+  }
   s3_log(S3_LOG_DEBUG, request_id, "Exiting");
 }

@@ -61,8 +61,6 @@ extern struct m0_clovis_realm clovis_uber_realm;
 struct m0_uint128 global_bucket_list_index_oid;
 // index will have bucket metada information
 struct m0_uint128 bucket_metadata_list_index_oid;
-// Logger instance used to log s3 audit logs.
-LoggerPtr audit_logger;
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
@@ -454,21 +452,6 @@ int main(int argc, char **argv) {
   S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
       g_option_instance->get_layout_recommendation_file());
 
-  // Configure Audit Log for S3
-  s3_log(S3_LOG_INFO, "", "Configuring audit log using %s",
-         (g_option_instance->get_s3_audit_config()).c_str());
-  bool audit_config =
-      audit_configure_init(g_option_instance->get_s3_audit_config());
-  if (audit_config) {
-    s3_log(S3_LOG_INFO, "", "Configured audit log using configuration file");
-  } else {
-    s3_log(S3_LOG_FATAL, "",
-           "Configuration file for audit log not found. Using defaults");
-    return -1;
-  }
-
-  audit_logger = Logger::getLogger("Audit_Logger");
-
   // Init stats
   rc = s3_stats_init();
   if (rc < 0) {
@@ -506,7 +489,10 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  S3AuditInfoLogger::init(global_evbase_handle);
+  if (S3AuditInfoLogger::init() != 0) {
+    s3_log(S3_LOG_FATAL, "", "Couldn't init audit logger!");
+    return 1;
+  }
 
   event_set_fatal_callback(fatal_libevent);
   if (g_option_instance->is_s3_ssl_auth_enabled()) {
@@ -667,8 +653,6 @@ int main(int argc, char **argv) {
 
   /* Clean-up */
   fini_clovis();
-  // https://stackoverflow.com/questions/6704522/log4cxx-is-throwing-exception-on-logger
-  audit_logger = 0;
 
   event_destroy_mempool();
 
@@ -681,6 +665,7 @@ int main(int argc, char **argv) {
   s3_log(S3_LOG_DEBUG, "", "S3server exiting...\n");
   s3daemon.delete_pidfile();
   s3_stats_fini();
+  // https://stackoverflow.com/questions/6704522/log4cxx-is-throwing-exception-on-logger
   S3AuditInfoLogger::finalize();
   fini_log();
   finalize_cli_options();

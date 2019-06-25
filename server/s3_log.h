@@ -47,31 +47,36 @@ extern int s3log_level;
 //    only if S3 log level is set to DEBUG.
 // 2. Logging a FATAL message terminates the program (after the message is
 //    logged).
-#define s3_log(loglevel, requestid, fmt, ...)                              \
-  do {                                                                     \
-    int glog_level = loglevel;                                             \
-    if ((loglevel == S3_LOG_DEBUG) && (s3log_level == S3_LOG_DEBUG)) {     \
-      glog_level = S3_LOG_INFO;                                            \
-    }                                                                      \
-    std::string req_id = requestid;                                        \
-    req_id = req_id.empty() ? S3_DEFAULT_REQID : req_id;                   \
-    if (glog_level != S3_LOG_DEBUG) {                                      \
-      int log_buf_len = snprintf(NULL, 0, "[%s] [ReqID: %s] " fmt "\n",    \
-                                 __func__, req_id.c_str(), ##__VA_ARGS__); \
-      log_buf_len++;                                                       \
-      std::unique_ptr<char[]> log_buf(new char[log_buf_len]);              \
-      snprintf(log_buf.get(), log_buf_len, "[%s] [ReqID: %s] " fmt "\n",   \
-               __func__, req_id.c_str(), ##__VA_ARGS__);                   \
-      if (glog_level == S3_LOG_INFO) {                                     \
-        LOG(INFO) << log_buf.get();                                        \
-      } else if (glog_level == S3_LOG_WARN) {                              \
-        LOG(WARNING) << log_buf.get();                                     \
-      } else if (glog_level == S3_LOG_ERROR) {                             \
-        LOG(ERROR) << log_buf.get();                                       \
-      } else if (glog_level == S3_LOG_FATAL) {                             \
-        LOG(FATAL) << log_buf.get();                                       \
-      }                                                                    \
-    }                                                                      \
+#define s3_log(loglevel, requestid, fmt, ...)                           \
+  do {                                                                  \
+    int s3_log__glog_level__ = (loglevel);                              \
+    if ((s3_log__glog_level__ == S3_LOG_DEBUG) &&                       \
+        (s3log_level == S3_LOG_DEBUG)) {                                \
+      s3_log__glog_level__ = S3_LOG_INFO;                               \
+    }                                                                   \
+    std::string s3_log__req_id__ = (requestid);                         \
+    s3_log__req_id__ =                                                  \
+        s3_log__req_id__.empty() ? S3_DEFAULT_REQID : s3_log__req_id__; \
+    if (s3_log__glog_level__ != S3_LOG_DEBUG) {                         \
+      int s3_log__log_buf_len__ =                                       \
+          snprintf(NULL, 0, "[%s] [ReqID: %s] " fmt "\n", __func__,     \
+                   s3_log__req_id__.c_str(), ##__VA_ARGS__);            \
+      s3_log__log_buf_len__++;                                          \
+      std::unique_ptr<char[]> s3_log__log_buf__(                        \
+          new char[s3_log__log_buf_len__]);                             \
+      snprintf(s3_log__log_buf__.get(), s3_log__log_buf_len__,          \
+               "[%s] [ReqID: %s] " fmt "\n", __func__,                  \
+               s3_log__req_id__.c_str(), ##__VA_ARGS__);                \
+      if (s3_log__glog_level__ == S3_LOG_INFO) {                        \
+        LOG(INFO) << s3_log__log_buf__.get();                           \
+      } else if (s3_log__glog_level__ == S3_LOG_WARN) {                 \
+        LOG(WARNING) << s3_log__log_buf__.get();                        \
+      } else if (s3_log__glog_level__ == S3_LOG_ERROR) {                \
+        LOG(ERROR) << s3_log__log_buf__.get();                          \
+      } else if (s3_log__glog_level__ == S3_LOG_FATAL) {                \
+        LOG(FATAL) << s3_log__log_buf__.get();                          \
+      }                                                                 \
+    }                                                                   \
   } while (0)
 
 // Note:

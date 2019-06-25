@@ -11,8 +11,8 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_IAM_CERT_FILE: "/etc/ssl/stx-s3/s3auth/s3authserver.crt" # IAM Auth certificate file
    S3_LOG_FLUSH_FREQUENCY: 3                            # Time in seconds, after which logs will be flushed. Valid only if S3_LOG_ENABLE_BUFFERING is true. Default is 30 seconds.
    S3_AUDIT_LOG_CONFIG: "/opt/seagate/s3/conf/s3server_audit_log.properties" # S3 Server Audit log configuration file.
-   S3_AUDIT_LOG_FORMAT_TYPE: "JSON"                     # S3 Server Audit log format type. JSON logs in json format & S3_FORMAT logs in s3 format. NONE will disable audit logging.
-   S3_AUDIT_LOGGER_POLICY: "disabled"                   # Audit info logger policy: disabled - logger disabled; rsyslog-tcp - send logs to rsyslog via tcp socket
+   S3_AUDIT_LOG_FORMAT_TYPE: "JSON"                     # S3 Server Audit log format type. JSON logs in json format & S3_FORMAT logs in s3 format.
+   S3_AUDIT_LOGGER_POLICY: "disabled"                   # Audit info logger policy: disabled - logger disabled; rsyslog-tcp - send logs to rsyslog via tcp socket; log4cxx - use log4cxx; syslog - send logs to rsyslog via syslog call;
    S3_AUDIT_LOGGER_HOST: "localhost"                    # Remote host name to connect to if logger needs to work via network
    S3_AUDIT_LOGGER_PORT: 514                            # Remote port to connect to if logger needs to work via network
    S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"  # Rsyslog msgid to filter messages

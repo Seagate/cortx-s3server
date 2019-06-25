@@ -51,6 +51,13 @@
     }                                                                       \
   } while (0)
 
+#define S3_OPTION_VALUE_INVALID_AND_RET(option, value)                      \
+  do {                                                                      \
+    fprintf(stderr, "%s:%d:option [%s], value [%s] is invalid\n", __FILE__, \
+            __LINE__, (option), (value).c_str());                           \
+    return false;                                                           \
+  } while (0)
+
 #include <gtest/gtest_prod.h>
 #include <limits.h>
 #include <netdb.h>
@@ -203,7 +210,7 @@ class S3Option {
     // libevent_pool_buffer_size is used for each item in this
     clovis_read_pool_initial_buffer_count = 10;   // 10 buffer
     clovis_read_pool_expandable_count = 1048576;  // 1mb
-    clovis_read_pool_max_threshold = 104857600;  // 100mb
+    clovis_read_pool_max_threshold = 104857600;   // 100mb
 
     libevent_pool_buffer_size = 4096;
     libevent_pool_initial_size = 10485760;
@@ -269,6 +276,7 @@ class S3Option {
   std::string get_s3_audit_config();
   AuditFormatType get_s3_audit_format_type();
   std::string get_audit_logger_policy();
+  void set_audit_logger_policy(std::string const&);
   std::string get_audit_logger_host();
   int get_audit_logger_port();
   std::string get_audit_logger_rsyslog_msgid();

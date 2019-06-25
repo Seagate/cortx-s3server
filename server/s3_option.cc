@@ -75,7 +75,8 @@ bool S3Option::load_section(std::string section_name,
       } else if (!audit_log_format_str.compare("S3_FORMAT")) {
         audit_log_format = AuditFormatType::S3_FORMAT;
       } else {
-        audit_log_format = AuditFormatType::NONE;  // Disables audit logging
+        S3_OPTION_VALUE_INVALID_AND_RET("S3_AUDIT_LOG_FORMAT_TYPE",
+                                        audit_log_format_str);
       }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_POLICY");
       audit_logger_policy =
@@ -765,6 +766,10 @@ AuditFormatType S3Option::get_s3_audit_format_type() {
 }
 
 std::string S3Option::get_audit_logger_policy() { return audit_logger_policy; }
+
+void S3Option::set_audit_logger_policy(std::string const& policy) {
+  audit_logger_policy = policy;
+}
 
 std::string S3Option::get_audit_logger_host() { return audit_logger_host; }
 
