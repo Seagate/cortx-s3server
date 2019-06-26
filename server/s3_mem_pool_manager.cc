@@ -59,7 +59,15 @@ int S3MempoolManager::initialize(std::vector<int> unit_sizes,
         CREATE_ALIGNED_MEMORY, &handle);
 
     if (rc != 0) {
-      s3_log(S3_LOG_DEBUG, "", "FATAL: Memory pool creation failed!\n");
+      s3_log(S3_LOG_ERROR, "", "FATAL: Memory pool creation failed!\n");
+      if (rc == S3_MEMPOOL_THRESHOLD_EXCEEDED) {
+        s3_log(S3_LOG_ERROR, "",
+               "Pool allocation crossing current threshold value %zu, increase "
+               "threshold value (S3_CLOVIS_READ_POOL_MAX_THRESHOLD) or "
+               "decrease pool allocation size "
+               "(S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT) \n",
+               mem_get_free_space_func());
+      }
       return rc;
     }
     pool_of_mem_pool[unit_size] = handle;

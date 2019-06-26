@@ -170,7 +170,7 @@ int mempool_create_with_shared_mem(
   }
 
   if (pool_initial_size > mem_get_free_space_func()) {
-    return S3_MEMPOOL_ERROR;
+    return S3_MEMPOOL_THRESHOLD_EXCEEDED;
   }
 
   rc = mempool_create(pool_item_size, pool_initial_size, pool_expansion_size, 0,

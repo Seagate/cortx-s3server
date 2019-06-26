@@ -40,6 +40,7 @@ extern "C" {
 #define MEMORY_ALIGNMENT 4096
 #define S3_MEMPOOL_ERROR -1
 #define S3_MEMPOOL_INVALID_ARG -2
+#define S3_MEMPOOL_THRESHOLD_EXCEEDED -3
 
 typedef void *MemoryPoolHandle;
 
