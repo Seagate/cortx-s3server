@@ -43,13 +43,13 @@ class AccountLoginProfileResponseGenerator extends AbstractResponseGenerator {
   ServerResponse generateGetResponse(Account account) {
     LinkedHashMap<String, String> responseElements = new LinkedHashMap<>();
     ArrayList<LinkedHashMap<String, String>> accountAttr = new ArrayList<>();
-    responseElements.put("UserName", account.getName());
+    responseElements.put("AccountName", account.getName());
     responseElements.put("CreateDate", account.getProfileCreateDate());
     responseElements.put("PasswordResetRequired",
                          account.getPwdResetRequired().toLowerCase());
     accountAttr.add(responseElements);
     return new XMLResponseFormatter().formatGetResponse(
-        "GetLoginProfile", "LoginProfile", accountAttr, "0000");
+        "GetAccountLoginProfile", "LoginProfile", accountAttr, "0000");
   }
 
   /**

@@ -40,15 +40,15 @@ class AccountLoginProfileResponseGeneratorTest {
     account.setPwdResetRequired("false");
     final String expectedResponseBody =
         "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
-        "<GetLoginProfileResponse " +
+        "<GetAccountLoginProfileResponse " +
         "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
-        "<GetLoginProfileResult>" + "<LoginProfile>" +
-        "<UserName>testUser</UserName>" +
+        "<GetAccountLoginProfileResult>" + "<LoginProfile>" +
+        "<AccountName>testUser</AccountName>" +
         "<CreateDate>2019-06-16 15:38:53+00:00</CreateDate>" +
         "<PasswordResetRequired>false</PasswordResetRequired>" +
-        "</LoginProfile>" + "</GetLoginProfileResult>" + "<ResponseMetadata>" +
-        "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
-        "</GetLoginProfileResponse>";
+        "</LoginProfile>" + "</GetAccountLoginProfileResult>" +
+        "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+        "</ResponseMetadata>" + "</GetAccountLoginProfileResponse>";
 
     AccountLoginProfileResponseGenerator responseGenerator =
         new AccountLoginProfileResponseGenerator();

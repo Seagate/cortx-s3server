@@ -18,6 +18,7 @@
     "DeleteSAMLProvider": "SAMLProvider#delete",
     "DeleteUser": "User#delete",
     "GetFederationToken": "FederationToken#create",
+    "GetAccountLoginProfile": "AccountLoginProfile#list",
     "GetLoginProfile": "UserLoginProfile#list",
     "ListAccessKeys": "AccessKey#list",
     "ListRoles": "Role#list",

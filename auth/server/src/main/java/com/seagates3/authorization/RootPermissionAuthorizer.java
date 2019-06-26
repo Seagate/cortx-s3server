@@ -35,6 +35,7 @@ class RootPermissionAuthorizer {
     actionsSet.add("CreateLoginProfile");
     actionsSet.add("UpdateLoginProfile");
     actionsSet.add("GetLoginProfile");
+    actionsSet.add("GetAccountLoginProfile");
   }
 
  public

@@ -467,6 +467,42 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
                **user_args).execute_test()
     result.command_response_should_have("Account Login Profile")
 
+    test_msg = 'GetAccountLoginProfile Successfull'
+    account__args = {}
+    account_name_flag = "-n"
+    account_args['AccountName'] ="s3test"
+    account_profile_response_pattern = "Account Login Profile"
+    result = AuthTest(test_msg).get_account_login_profile(account_name_flag , **account_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+
+    test_msg = "Create User getaccountloginprofiletest"
+    user_args = {'UserName': 'getaccountloginprofiletest'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'Create access key'
+    account_args = {}
+    account_args['UserName'] = 'getaccountloginprofiletest'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**account_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    account_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+    account_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+    test_msg = 'GetAccountLoginProfile should fail when tried with IAM User accessKey-secretKey'
+    account_name_flag = "-n"
+    account_args['AccountName'] ="s3test"
+    result = AuthTest(test_msg).get_account_login_profile(account_name_flag , **account_args).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action.")
+    test_msg = 'Delete access key'
+    result = AuthTest(test_msg).delete_access_key(**account_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+    test_msg = 'Delete User getaccountloginprofiletest'
+    user_args = {}
+    user_args['UserName'] = "getaccountloginprofiletest"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
     test_msg = 'List Users (path prefix = /test/)'
     user_args = {'PathPrefix': '/test/'}
     list_user_pattern = "UserId = [\w-]*, UserName = s3user1New, ARN = [\S]*, Path = /test/success/$"
