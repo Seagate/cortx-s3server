@@ -19,8 +19,10 @@
 package com.seagates3.controller;
 
 import com.seagates3.dao.AccountDAO;
+import com.seagates3.dao.AccountLoginProfileDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
+import com.seagates3.dao.UserLoginProfileDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
@@ -57,6 +59,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
   final Account ACCOUNT;
  private
   AccountDAO mockAccountDao;
+ private
+  AccountLoginProfileDAO mockAccountLoginProfileDao;
  private
   final String GET_RESOURCE_DAO = "getResourceDAO";
  private
@@ -129,5 +133,30 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ServerResponse response = accountLoginProfileController.list();
     Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                         response.getResponseStatus());
+  }
+
+  @Test public void UpdateUserLoginProfile_Sucessful_Api_Response()
+      throws Exception {
+
+    ACCOUNT.setId(ACCOUNT_ID);
+    ACCOUNT.setName(ACCOUNT_NAME);
+    ACCOUNT.setPassword("password");
+    ACCOUNT.setPwdResetRequired("false");
+    ACCOUNT.setProfileCreateDate("2019-06-16 15:38:53+00:00");
+    PowerMockito.mockStatic(DAODispatcher.class);
+    PowerMockito.doReturn(mockAccountDao)
+        .when(DAODispatcher.class, GET_RESOURCE_DAO, DAOResource.ACCOUNT);
+    Mockito.when(mockAccountDao.find(ACCOUNT_NAME)).thenReturn(ACCOUNT);
+    mockAccountLoginProfileDao = Mockito.mock(AccountLoginProfileDAO.class);
+    PowerMockito.doReturn(mockAccountLoginProfileDao)
+        .when(DAODispatcher.class, "getResourceDAO",
+              DAOResource.ACCOUNT_LOGIN_PROFILE);
+    Mockito.doNothing().when(mockAccountLoginProfileDao).save(ACCOUNT);
+
+    accountLoginProfileController = Mockito.spy(
+        new AccountLoginProfileController(requestorObj, requestBodyObj));
+
+    ServerResponse response = accountLoginProfileController.update();
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
 }

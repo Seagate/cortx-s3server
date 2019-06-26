@@ -62,6 +62,10 @@ getaccountloginprofile:
   controller : AccountLoginProfile
   action : list
   service : iam
+updateaccountloginprofile:
+  controller : AccountLoginProfile
+  action : update
+  service : iam
 deleteaccesskey:
   controller : AccessKey
   action : delete

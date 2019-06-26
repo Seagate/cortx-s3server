@@ -468,11 +468,21 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result.command_response_should_have("Account Login Profile")
 
     test_msg = 'GetAccountLoginProfile Successfull'
-    account__args = {}
+    account_args = {}
     account_name_flag = "-n"
     account_args['AccountName'] ="s3test"
     account_profile_response_pattern = "Account Login Profile"
     result = AuthTest(test_msg).get_account_login_profile(account_name_flag , **account_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+
+    test_msg = 'UpdateAccountLoginProfile Successfull'
+    account_args = {}
+    account_name_flag = "-n"
+    password_flag = "--password"
+    account_args['AccountName'] ="s3test"
+    account_args['Password'] ="s3test456"
+    account_profile_response_pattern = "Account login profile updated."
+    result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **account_args).execute_test()
     result.command_should_match_pattern(account_profile_response_pattern)
 
     test_msg = "Create User getaccountloginprofiletest"

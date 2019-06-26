@@ -89,12 +89,31 @@ class IAMApiAuthorizer {
   }
 
   /**
-   * Authorize user at root level to perform invoked action with given
-   * access key and secret key.
+   * Check if Account is performing operation on self only
    */
+ private
+  static Boolean isSameAccount(Map<String, String> requestBody,
+                               Requestor requestor) {
+    return requestBody.get("AccountName")
+        .equals(requestor.getAccount().getName());
+  }
+
+  /**
+    * Authorize user at root level to perform invoked action with given
+    * access key and secret key.
+    */
  public
-  void authorizeRootUser(Requestor requestor) throws InvalidUserException {
+  void authorizeRootUser(Requestor requestor, Map<String, String> requestBody)
+      throws InvalidUserException {
     if (!(hasRootUserCredentials(requestor))) {
+      LOGGER.debug("User doesn't have permission to perform invoked action");
+      ServerResponse serverResponse = responseGenerator.invalidUser();
+      throw new InvalidUserException(serverResponse);
+    }
+    // If It's Account action like createaccountloginprofile
+    // then check if its same account
+    if ((requestBody.get("AccountName") != null) &&
+        (!isSameAccount(requestBody, requestor))) {
       LOGGER.debug("User doesn't have permission to perform invoked action");
       ServerResponse serverResponse = responseGenerator.invalidUser();
       throw new InvalidUserException(serverResponse);

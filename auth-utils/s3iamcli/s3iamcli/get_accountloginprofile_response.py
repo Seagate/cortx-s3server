@@ -1,6 +1,8 @@
 import logging
 from collections import OrderedDict
 from s3iamcli.authserver_response import AuthServerResponse
+import datetime
+from datetime import timezone
 
 class GetAccountLoginProfileResponse(AuthServerResponse):
 
@@ -10,8 +12,11 @@ class GetAccountLoginProfileResponse(AuthServerResponse):
         if self.accountloginprofile is None:
             print("No account login profile found.")
             return
+        datestr = self.get_value(self.accountloginprofile, 'CreateDate')
+        date_time_obj = datetime.datetime.strptime(datestr, '%Y%m%d%H%M%SZ')
+        createdate = date_time_obj.replace(tzinfo=timezone.utc).isoformat()
         print("Account Login Profile: CreateDate = %s, PasswordResetRequired = %s, AccountName = %s" %
-              (self.get_value(self.accountloginprofile, 'CreateDate'),
+              (createdate,
                self.get_value(self.accountloginprofile, 'PasswordResetRequired'),
                self.get_value(self.accountloginprofile, 'AccountName')))
 

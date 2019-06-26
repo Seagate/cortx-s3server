@@ -226,7 +226,7 @@ class IAMController {
       try {
         if (RootPermissionAuthorizer.getInstance().containsAction(
                 requestAction)) {
-          new IAMApiAuthorizer().authorizeRootUser(requestor);
+          new IAMApiAuthorizer().authorizeRootUser(requestor, requestBody);
         } else {
           new IAMApiAuthorizer().authorize(requestor, requestBody);
         }

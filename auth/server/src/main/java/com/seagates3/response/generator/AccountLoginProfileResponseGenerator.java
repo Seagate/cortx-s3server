@@ -70,4 +70,17 @@ class AccountLoginProfileResponseGenerator extends AbstractResponseGenerator {
     return new XMLResponseFormatter().formatCreateResponse(
         "CreateAccountLoginProfile", "LoginProfile", responseElements, "0000");
   }
+
+  /**
+   * This method will generate 'CreateAccountLoginProfile' response
+   *
+   * @param Account
+   * @return LoginProfile XML of the requested account
+ */
+
+ public
+  ServerResponse generateUpdateResponse() {
+    return new XMLResponseFormatter().formatUpdateResponse(
+        "UpdateAccountLoginProfile");
+  }
 }

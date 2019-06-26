@@ -25,6 +25,7 @@
     "ListSAMLProviders": "SAMLProvider#list",
     "ListUsers": "User#list",
     "UpdateAccessKey": "AccessKey#update",
+    "UpdateAccountLoginProfile": "AccountLoginProfile#update",
     "UpdateSAMLProvider": "SAMLProvider#update",
     "UpdateUser": "User#update",
     "UpdateLoginProfile": "UserLoginProfile#update"

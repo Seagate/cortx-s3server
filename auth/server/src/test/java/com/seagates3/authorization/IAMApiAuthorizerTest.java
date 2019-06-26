@@ -21,6 +21,7 @@ package com.seagates3.authorization;
 
 import com.seagates3.authorization.IAMApiAuthorizer;
 import com.seagates3.exception.InvalidUserException;
+import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import org.junit.rules.ExpectedException;
 import org.junit.Rule;
@@ -140,7 +141,39 @@ public class IAMApiAuthorizerTest {
         throws InvalidUserException {
       IAMApiAuthorizer iamApiAuthorizer = new IAMApiAuthorizer();
       requestor.setName("usr1");
+      requestBody.put("UserName", "user1");
       exception.expect(InvalidUserException.class);
-      iamApiAuthorizer.authorizeRootUser(requestor);
+      iamApiAuthorizer.authorizeRootUser(requestor, requestBody);
+    }
+
+    /**
+    * Below test will check different user authorization
+    * @throws InvalidUserException
+    */
+    @Test public void authorizeRootUserDifferentUserTest()
+        throws InvalidUserException {
+      IAMApiAuthorizer iamApiAuthorizer = new IAMApiAuthorizer();
+      Account account = new Account();
+      account.setName("user1");
+      requestor.setAccount(account);
+      requestor.setName("root");
+      requestBody.put("AccountName", "user2");
+      exception.expect(InvalidUserException.class);
+      iamApiAuthorizer.authorizeRootUser(requestor, requestBody);
+    }
+    /**
+    * Below test will check non root user authorization
+    * @throws InvalidUserException
+    */
+    @Test public void authorizeRootUserNonRootUserTest()
+        throws InvalidUserException {
+      IAMApiAuthorizer iamApiAuthorizer = new IAMApiAuthorizer();
+      Account account = new Account();
+      account.setName("user1");
+      requestor.setAccount(account);
+      requestor.setName("user1");
+      requestBody.put("UserName", "user2");
+      exception.expect(InvalidUserException.class);
+      iamApiAuthorizer.authorizeRootUser(requestor, requestBody);
     }
 }

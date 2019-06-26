@@ -31,6 +31,7 @@ import com.seagates3.dao.DAOResource;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
+import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountLoginProfileResponseGenerator;
 import com.seagates3.response.generator.AccountResponseGenerator;
@@ -132,6 +133,52 @@ class AccountLoginProfileController extends AbstractController {
       response = accountLoginProfileResponseGenerator.internalServerError();
     }
     LOGGER.debug("Returned response is  - " + response);
+    return response;
+  }
+
+  /**
+   * Below method will update login profile of requested user.
+   */
+  @Override public ServerResponse update() throws DataAccessException {
+    Account account = null;
+    ServerResponse response = null;
+    try {
+      account = accountDAO.find(requestor.getAccount().getName());
+
+      if (!account.exists()) {
+        LOGGER.error("Account [" + requestor.getAccount().getName() +
+                     "] does not exists");
+        response = accountResponseGenerator.noSuchEntity();
+      } else {
+        if (account.getPassword() == null &&
+            (account.getProfileCreateDate() == null ||
+             account.getProfileCreateDate().isEmpty())) {
+          LOGGER.error("LoginProfile not created for account - " +
+                       requestor.getAccount().getName());
+          response = accountResponseGenerator.noSuchEntity();
+        } else {
+
+          if (requestBody.get("Password") != null) {
+            account.setPassword(requestBody.get("Password"));
+            LOGGER.info("Updating old password with new password");
+          }
+
+          if (requestBody.get("PasswordResetRequired") != null) {
+            account.setPwdResetRequired(
+                requestBody.get("PasswordResetRequired").toUpperCase());
+            LOGGER.info("Updating password reset required flag");
+          }
+          accountLoginProfileDAO.save(account);
+          response =
+              accountLoginProfileResponseGenerator.generateUpdateResponse();
+        }
+      }
+    }
+    catch (DataAccessException ex) {
+      LOGGER.error("Exception occurred while doing ldap operation for user - " +
+                   requestor.getAccount().getName());
+      response = accountLoginProfileResponseGenerator.internalServerError();
+    }
     return response;
   }
 }

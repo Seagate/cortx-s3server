@@ -20,10 +20,12 @@ class S3IamCli:
         CreateAccount -n <Account Name> -e <Email Id>
         CreateUserLoginProfile -n <User Name>
             --password <User Password>
-            --password-reset-required
-            --no-password-reset-required
+            [--password-reset-required | --no-password-reset-required]
         CreateAccountLoginProfile -n <Account Name>
             --password <Account Password>
+            [--password-reset-required | --no-password-reset-required]
+        UpdateAccountLoginProfile -n <Account Name>
+            [--password <Account Password>]
             [--password-reset-required | --no-password-reset-required]
         GetUserLoginProfile -n <User Name>
         UpdateUserLoginProfile -n <User Name>

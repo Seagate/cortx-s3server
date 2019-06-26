@@ -1,12 +1,17 @@
 import logging
 from s3iamcli.authserver_response import AuthServerResponse
+import datetime
+from datetime import timezone
 
 class CreateAccountLoginProfileResponse(AuthServerResponse):
 
     # Printing account info while creating user.
     def print_profile_info(self):
+        datestr = self.get_value(self.profile, 'CreateDate')
+        date_time_obj = datetime.datetime.strptime(datestr, '%Y%m%d%H%M%SZ')
+        createdate = date_time_obj.replace(tzinfo=timezone.utc).isoformat()
         print("Account Login Profile: CreateDate = %s, PasswordResetRequired = %s, AccountName = %s" %
-              (self.get_value(self.profile, 'CreateDate'),
+              (createdate,
                self.get_value(self.profile, 'PasswordResetRequired'),
                self.get_value(self.profile, 'AccountName')))
 
