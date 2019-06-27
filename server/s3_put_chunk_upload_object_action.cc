@@ -24,8 +24,10 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
+#include "s3_put_tag_body.h"
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
+#include <evhttp.h>
 
 S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -33,7 +35,8 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory,
-    std::shared_ptr<ClovisAPI> clovis_api)
+    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory)
     : S3Action(req, true, auth_factory),
       auth_failed(false),
       write_failed(false),
@@ -93,6 +96,12 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
+  if (put_tags_body_factory) {
+    put_object_tag_body_factory = put_tags_body_factory;
+  } else {
+    put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
+  }
+
   setup_steps();
 }
 
@@ -100,6 +109,11 @@ void S3PutChunkUploadObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
   add_task(std::bind(&S3PutChunkUploadObjectAction::fetch_bucket_info, this));
+  if (!request->get_header_value("x-amz-tagging").empty()) {
+    add_task(std::bind(
+        &S3PutChunkUploadObjectAction::validate_x_amz_tagging_if_present,
+        this));
+  }
   add_task(std::bind(&S3PutChunkUploadObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3PutChunkUploadObjectAction::create_object, this));
   add_task(
@@ -178,6 +192,59 @@ void S3PutChunkUploadObjectAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::validate_x_amz_tagging_if_present() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::string new_object_tags = request->get_header_value("x-amz-tagging");
+  s3_log(S3_LOG_DEBUG, request_id, "Received tags= %s\n",
+         new_object_tags.c_str());
+  if (!new_object_tags.empty()) {
+    parse_x_amz_tagging_header(new_object_tags);
+  } else {
+    set_s3_error("InvalidTagError");
+    send_response_to_s3_client();
+  }
+}
+
+void S3PutChunkUploadObjectAction::parse_x_amz_tagging_header(
+    std::string content) {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  struct evkeyvalq key_value;
+  memset(&key_value, 0, sizeof(key_value));
+  if (0 == evhttp_parse_query_str(content.c_str(), &key_value)) {
+    char* decoded_key = NULL;
+    for (struct evkeyval* header = key_value.tqh_first; header;
+         header = header->next.tqe_next) {
+
+      decoded_key = evhttp_decode_uri(header->key);
+      s3_log(S3_LOG_DEBUG, request_id,
+             "Successfully parsed the Key Values=%s %s", decoded_key,
+             header->value);
+      new_object_tags_map[decoded_key] = header->value;
+    }
+    validate_tags();
+  } else {
+    set_s3_error("InvalidTagError");
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::validate_tags() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  std::string xml;
+  std::shared_ptr<S3PutTagBody> put_object_tag_body =
+      put_object_tag_body_factory->create_put_resource_tags_body(xml,
+                                                                 request_id);
+
+  if (put_object_tag_body->validate_object_xml_tags(new_object_tags_map)) {
+    next();
+  } else {
+    set_s3_error("InvalidTagError");
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -543,17 +610,17 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
 
 void S3PutChunkUploadObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  // xxx set attributes & save
-  if (!object_metadata) {
-    object_metadata = object_metadata_factory->create_object_metadata_obj(
-        request, bucket_metadata->get_object_list_index_oid());
-  }
+  // New Object or overwrite, create new metadata and release old.
+  object_metadata = object_metadata_factory->create_object_metadata_obj(
+      request, bucket_metadata->get_object_list_index_oid());
+
   // to rest Date and Last-Modfied time object metadata
   object_metadata->reset_date_time_to_current();
   object_metadata->set_content_length(request->get_data_length_str());
   object_metadata->set_md5(clovis_writer->get_content_md5());
   object_metadata->set_oid(clovis_writer->get_oid());
   object_metadata->set_layout_id(layout_id);
+  object_metadata->set_tags(new_object_tags_map);
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {

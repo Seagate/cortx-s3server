@@ -102,6 +102,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
   int layout_id;
+  std::map<std::string, std::string> request_header_map;
 
   int call_count_one;
 
@@ -145,6 +146,84 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, ConstructorTest) {
   EXPECT_TRUE(action_under_test->auth_completed);
   EXPECT_EQ("uri_salt_", action_under_test->salt);
   EXPECT_NE(0, action_under_test->number_of_tasks());
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, ValidateRequestTags) {
+  call_count_one = 0;
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "key1=value1&key2=value2";
+  EXPECT_CALL(*mock_request, get_header_value(_))
+      .WillOnce(Return("key1=value1&key2=value2"));
+  action_under_test->clear_tasks();
+  action_under_test->add_task(std::bind(
+      &S3PutChunkUploadObjectActionTestBase::func_callback_one, this));
+
+  action_under_test->validate_x_amz_tagging_if_present();
+
+  EXPECT_EQ(1, call_count_one);
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateEmptyTags) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "";
+  EXPECT_CALL(*mock_request, get_header_value(_)).WillOnce(Return(""));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase1) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "key1=";
+  EXPECT_CALL(*mock_request, get_header_value(_)).WillOnce(Return("key1="));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase2) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "key1=value1&=value2";
+  EXPECT_CALL(*mock_request, get_header_value(_))
+      .WillOnce(Return("key1=value1&=value2"));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+// Count of tags exceding limit.
+
+TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] =
+      "key1=value1&key2=value2&key3=value3&key4=value4&key5=value5&key6=value6&"
+      "key7=value7&key8=value8&key9=value9&key10=value10&key11=value11";
+  EXPECT_CALL(*mock_request, get_header_value(_)).WillOnce(Return(
+      "key1=value1&key2=value2&key3=value3&key4=value4&key5=value5&key6=value6&"
+      "key7=value7&key8=value8&key9=value9&key10=value10&key11=value11"));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
+  action_under_test->clear_tasks();
+
+  action_under_test->validate_x_amz_tagging_if_present();
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, FetchBucketInfo) {

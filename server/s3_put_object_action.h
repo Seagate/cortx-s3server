@@ -56,7 +56,6 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
-  std::shared_ptr<S3PutTagBody> put_object_tag_body;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::map<std::string, std::string> new_object_tags_map;
 

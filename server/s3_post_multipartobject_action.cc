@@ -216,7 +216,9 @@ void S3PostMultipartObjectAction::parse_x_amz_tagging_header(
 void S3PostMultipartObjectAction::validate_tags() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   std::string xml;
-  put_object_tag_body = std::make_shared<S3PutTagBody>(xml, request_id);
+  std::shared_ptr<S3PutTagBody> put_object_tag_body =
+      put_object_tag_body_factory->create_put_resource_tags_body(xml,
+                                                                 request_id);
 
   if (put_object_tag_body->validate_object_xml_tags(new_object_tags_map)) {
     next();
@@ -496,9 +498,8 @@ void S3PostMultipartObjectAction::save_upload_metadata() {
                                                             it.second);
     }
   }
-  if (!new_object_tags_map.empty()) {
-    object_multipart_metadata->set_tags(new_object_tags_map);
-  }
+
+  object_multipart_metadata->set_tags(new_object_tags_map);
   // to rest Date and Last-Modfied time object metadata
   object_multipart_metadata->reset_date_time_to_current();
   object_multipart_metadata->set_oid(oid);

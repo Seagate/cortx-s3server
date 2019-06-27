@@ -62,6 +62,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
+  std::map<std::string, std::string> new_object_tags_map;
 
   void create_new_oid(struct m0_uint128 current_oid);
   void collision_detected();
@@ -77,12 +79,14 @@ class S3PutChunkUploadObjectAction : public S3Action {
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr);
 
   void setup_steps();
 
   void chunk_auth_successful();
   void chunk_auth_failed();
+  void validate_tags();
 
   void fetch_bucket_info();
   void fetch_bucket_info_failed();
@@ -90,9 +94,11 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void fetch_object_info_status();
   void create_object();
   void create_object_failed();
+  void parse_x_amz_tagging_header(std::string content);
 
   void initiate_data_streaming();
   void consume_incoming_content();
+  void validate_x_amz_tagging_if_present();
   void write_object(std::shared_ptr<S3AsyncBufferOptContainer> buffer);
 
   void write_object_successful();
@@ -221,6 +227,11 @@ class S3PutChunkUploadObjectAction : public S3Action {
               ChunkAuthFailedWriteFailed);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
               ChunkAuthFailedWriteSuccessful);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, ValidateRequestTags);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateEmptyTags);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase1);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase2);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3);
 };
 
 #endif

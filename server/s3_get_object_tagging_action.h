@@ -59,8 +59,7 @@ class S3GetObjectTaggingAction : public S3Action {
   FRIEND_TEST(S3GetObjectTaggingActionTest, GetObjectMetadataFailedMissing);
   FRIEND_TEST(S3GetObjectTaggingActionTest,
               GetObjectMetadataFailedInternalError);
-  FRIEND_TEST(S3GetObjectTaggingActionTest,
-              SendResponseToClientNoSuchTagSetError);
+  FRIEND_TEST(S3GetObjectTaggingActionTest, SendResponseToClientEmptyTagSet);
   FRIEND_TEST(S3GetObjectTaggingActionTest,
               SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3GetObjectTaggingActionTest, SendResponseToClientInternalError);

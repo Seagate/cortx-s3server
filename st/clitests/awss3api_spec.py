@@ -111,8 +111,8 @@ AwsTest('Aws can create object tag for more than 10 entries').put_object_tagging
 #************** Delete Object Tag ********
 AwsTest('Aws can delete object tag').delete_object_tagging("seagatebuckettag","3kfile").execute_test().command_is_successful()
 
-AwsTest('Aws can list object tag').list_object_tagging("seagatebuckettag","3kfile").execute_test(negative_case=True)\
-    .command_should_fail().command_error_should_have("NoSuchTagSetError")
+AwsTest('Aws can list object tag').list_object_tagging("seagatebuckettag","3kfile").execute_test()\
+    .command_is_successful().command_response_should_not_have("NoSuchTagSetError")
 
 #************** Delete Object  ********
 AwsTest('Aws can delete object').delete_object("seagatebuckettag","3kfile").execute_test().command_is_successful()

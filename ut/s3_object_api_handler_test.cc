@@ -253,6 +253,8 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction) {
   EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::PUT));
   EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-content-sha256")))
       .WillOnce(Return("STREAMING-AWS4-HMAC-SHA256-PAYLOAD"));
+  EXPECT_CALL(*(mock_request), get_header_value(StrEq("x-amz-tagging")))
+      .WillOnce(Return(""));
 
   handler_under_test->create_action();
 

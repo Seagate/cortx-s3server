@@ -186,7 +186,9 @@ void S3PutObjectAction::parse_x_amz_tagging_header(std::string content) {
 void S3PutObjectAction::validate_tags() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   std::string xml;
-  put_object_tag_body = std::make_shared<S3PutTagBody>(xml, request_id);
+  std::shared_ptr<S3PutTagBody> put_object_tag_body =
+      put_object_tag_body_factory->create_put_resource_tags_body(xml,
+                                                                 request_id);
 
   if (put_object_tag_body->validate_object_xml_tags(new_object_tags_map)) {
     next();
@@ -526,20 +528,16 @@ void S3PutObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
-  // xxx set attributes & save
-  if (!object_metadata) {
-    object_metadata = object_metadata_factory->create_object_metadata_obj(
-        request, bucket_metadata->get_object_list_index_oid());
-  }
+  // New Object or overwrite, create new metadata and release old.
+  object_metadata = object_metadata_factory->create_object_metadata_obj(
+      request, bucket_metadata->get_object_list_index_oid());
 
   object_metadata->reset_date_time_to_current();
   object_metadata->set_content_length(request->get_data_length_str());
   object_metadata->set_md5(clovis_writer->get_content_md5());
   object_metadata->set_oid(clovis_writer->get_oid());
   object_metadata->set_layout_id(layout_id);
-  if (!new_object_tags_map.empty()) {
-    object_metadata->set_tags(new_object_tags_map);
-  }
+  object_metadata->set_tags(new_object_tags_map);
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {

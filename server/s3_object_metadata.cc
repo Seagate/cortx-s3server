@@ -711,23 +711,19 @@ std::string S3ObjectMetadata::get_tags_as_xml() {
   std::string user_defined_tags;
   std::string tags_as_xml_str;
 
-  if (object_tags.empty()) {
-    return tags_as_xml_str;
-  } else {
-    for (const auto& tag : object_tags) {
-      user_defined_tags +=
-          "<Tag>" + S3CommonUtilities::format_xml_string("Key", tag.first) +
-          S3CommonUtilities::format_xml_string("Value", tag.second) + "</Tag>";
-    }
-
-    tags_as_xml_str =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
-        "<TagSet>" +
-        user_defined_tags +
-        "</TagSet>"
-        "</Tagging>";
+  for (const auto& tag : object_tags) {
+    user_defined_tags +=
+        "<Tag>" + S3CommonUtilities::format_xml_string("Key", tag.first) +
+        S3CommonUtilities::format_xml_string("Value", tag.second) + "</Tag>";
   }
+
+  tags_as_xml_str =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+      "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<TagSet>" +
+      user_defined_tags +
+      "</TagSet>"
+      "</Tagging>";
   s3_log(S3_LOG_DEBUG, request_id, "Tags xml: %s\n", tags_as_xml_str.c_str());
   s3_log(S3_LOG_INFO, request_id, "Exiting\n");
   return tags_as_xml_str;

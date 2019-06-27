@@ -130,20 +130,25 @@ TEST_F(S3GetObjectTaggingActionTest, GetObjectMetadata) {
   EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
 }
 
-TEST_F(S3GetObjectTaggingActionTest, SendResponseToClientNoSuchTagSetError) {
+TEST_F(S3GetObjectTaggingActionTest, SendResponseToClientEmptyTagSet) {
+  std::string user_defined_tags;
+  std::string tags_as_xml_str =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+      "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">"
+      "<TagSet>" +
+      user_defined_tags +
+      "</TagSet>"
+      "</Tagging>";
+
   CREATE_OBJECT_METADATA;
 
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              check_object_tags_exists()).WillRepeatedly(Return(false));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, send_response(200, tags_as_xml_str))
+      .Times(AtLeast(1));
   action_under_test_ptr->get_object_metadata_successful();
 
   EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
-  EXPECT_STREQ("NoSuchTagSetError",
-               action_under_test_ptr->get_s3_error_code().c_str());
 }
 
 TEST_F(S3GetObjectTaggingActionTest, GetObjectMetadataFailedMissing) {

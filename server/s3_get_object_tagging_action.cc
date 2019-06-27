@@ -107,9 +107,6 @@ void S3GetObjectTaggingAction::get_object_metadata() {
 
 void S3GetObjectTaggingAction::get_object_metadata_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (!(object_metadata->check_object_tags_exists())) {
-    set_s3_error("NoSuchTagSetError");
-  }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
