@@ -364,4 +364,30 @@ public class LDAPUtilsTest {
         doReturn(faultPoints).when(FaultPoints.class, "getInstance");
         doReturn(Boolean.TRUE).when(faultPoints).isFaultPointActive(anyString());
     }
+
+    /**
+        * Below will check success scenario for bind call
+        * @throws LDAPException
+        */
+    @Test public void bindTest_success() throws LDAPException {
+      String dn = "";
+      String password = "";
+      PowerMockito.when(LdapConnectionManager.getConnection(dn, password))
+          .thenReturn(ldapConnection);
+      LDAPUtils.bind(dn, password);
+    }
+
+    /**
+     * Below method will test LDAPException scenario during bind
+     * @throws Exception
+     */
+    @Test(expected = LDAPException.class) public void bindTest_LDAPException()
+        throws Exception {
+      String dn = "";
+      String password = "";
+      PowerMockito.when(LdapConnectionManager.getConnection(dn, password))
+          .thenReturn(ldapConnection);
+      enableFaultInjection();
+      LDAPUtils.bind(dn, password);
+    }
 }

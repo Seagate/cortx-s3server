@@ -18,6 +18,8 @@
  */
 package com.seagates3.service;
 
+import java.util.Date;
+
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
@@ -26,7 +28,6 @@ import com.seagates3.model.AccessKey;
 import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
 import com.seagates3.util.KeyGenUtil;
-import java.util.Date;
 
 public class AccessKeyService {
 
@@ -50,3 +51,4 @@ public class AccessKeyService {
         return accessKey;
     }
 }
+

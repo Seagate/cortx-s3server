@@ -19,7 +19,6 @@
 package com.seagates3.dao.ldap;
 
 import java.io.UnsupportedEncodingException;
-import java.security.Security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,4 +109,37 @@ public class LdapConnectionManager {
     public static void releaseConnection(LDAPConnection lc) {
         ldapPool.makeConnectionAvailable(lc);
     }
+
+   public
+    static LDAPConnection getConnection(String dn,
+                                        String password) throws LDAPException {
+      LDAPConnection lc = null;
+      try {
+        if (FaultPoints.fiEnabled()) {
+          if (FaultPoints.getInstance().isFaultPointActive(
+                  "LDAP_CONNECT_FAIL")) {
+            throw new LDAPException("Connection failed",
+                                    LDAPException.CONNECT_ERROR, null);
+          } else if (FaultPoints.getInstance().isFaultPointActive(
+                         "LDAP_CONN_INTRPT")) {
+            throw new InterruptedException("Connection interrupted");
+          }
+        }
+
+        lc = ldapPool.getBoundConnection(dn, password.getBytes("UTF-8"));
+      }
+      catch (InterruptedException ex) {
+        LOGGER.error("Failed to connect to LDAP server. Cause: " +
+                     ex.getCause() + ". Message: " + ex.getMessage());
+      }
+      catch (UnsupportedEncodingException ex) {
+        LOGGER.error("UnsupportedEncodingException Cause: " + ex.getCause() +
+                     ". Message: " + ex.getMessage());
+        IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
+                    "UTF-8 encoding is not supported", null);
+      }
+
+      return lc;
+    }
 }
+

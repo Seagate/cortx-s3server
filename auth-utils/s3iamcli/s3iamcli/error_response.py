@@ -13,7 +13,7 @@ class ErrorResponse(AuthServerResponse):
         super(ErrorResponse, self).validate_response()
         self.error = None
         try:
-            self.error = self.response_dict['ErrorResponse']['Error']['Message']
+            self.error =  "An error occurred (" +  self.response_dict['ErrorResponse']['Error']['Code'] + ") : "+ self.response_dict['ErrorResponse']['Error']['Message'];
         except KeyError:
             logging.exception('Failed to obtain error response')
             self.is_valid = False

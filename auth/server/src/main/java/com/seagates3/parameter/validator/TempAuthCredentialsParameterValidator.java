@@ -1,5 +1,5 @@
 /*
- * COPYRIGHT 2018 SEAGATE LLC
+ * COPYRIGHT 2019 SEAGATE LLC
  *
  * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
  * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
@@ -13,29 +13,12 @@
  * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
  * http://www.seagate.com/contact
  *
- * Original author: Basavaraj Kirunge
- * Original creation date: 05-07-2018
+ * Original author:  Shalaka Dharap
+ * Original creation date: 27-June-2019
  */
 
-package com.seagates3.authserver;
+package com.seagates3.parameter.validator;
 
 public
-class AuthServerConstants {
- public
-  final static String INSTALL_DIR = "/opt/seagate/auth";
-
- public
-  final static String RESOURCE_DIR = "/opt/seagate/auth/resources";
-
- public
-  final static int MAX_AND_DEFAULT_ROOT_USER_DURATION = 3600;
-
- public
-  final static String DEFAULT_IAM_USER_DURATION = "43200";
-
- public
-  final static int MAX_IAM_USER_DURATION = 129600;
-
- public
-  final static int MIN_ROOT_IAM_USER_DURATION = 900;
+class TempAuthCredentialsParameterValidator extends AbstractParameterValidator {
 }

@@ -30,7 +30,6 @@ class AuthTest(PyCliTest):
     def create_account(self, **account_args):
         cmd = "s3iamcli createaccount -n %s -e %s --ldapuser %s --ldappasswd %s" % (
                  account_args['AccountName'], account_args['Email'], account_args['ldapuser'], account_args['ldappasswd'])
-
         self.with_cli(cmd)
         return self
 
@@ -427,3 +426,13 @@ class AuthTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def get_temp_auth_credentials(self,accountnameflag = None , passwordflag=None , **login_args):
+        cmd = "s3iamcli gettempauthcredentials %s %s %s %s" % (
+            accountnameflag,login_args['AccountName'], passwordflag, login_args['Password'])
+        if('UserName' in login_args.keys()):
+            cmd += " -n %s" % login_args['UserName']
+        if('Duration' in login_args.keys()):
+            cmd += " -d %s" % login_args['Duration']
+        print(cmd)
+        self.with_cli(cmd)
+        return self

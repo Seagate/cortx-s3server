@@ -7,6 +7,8 @@ from auth import AuthTest
 from s3client_config import S3ClientConfig
 from s3cmd import S3cmdTest
 from s3fi import S3fiTest
+from awss3api import AwsTest
+from shutil import copyfile
 import shutil
 
 home_dir = os.path.expanduser("~")
@@ -187,6 +189,127 @@ def user_tests():
     f.write(account_response_elements['SecretKey'])
     f.close()
 
+#GetTempAuth Start
+
+
+    #Create account
+    test_msg = "Create account tempAuthTestAccount"
+    account_args = {'AccountName': 'tempAuthTestAccount', 'Email': 'tempAuthTestAccount@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result1 = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result1.command_should_match_pattern(account_response_pattern)
+    account_response_elements = get_response_elements(result1.status.stdout)
+    access_key_args = {}
+    access_key_args['AccountName'] = "tempAuthTestAccount"
+    access_key_args['AccessKeyId'] = account_response_elements['AccessKeyId']
+    access_key_args['SecretAccessKey'] = account_response_elements['SecretKey']
+    s3test_access_key = S3ClientConfig.access_key_id
+    s3test_secret_key = S3ClientConfig.secret_key
+    S3ClientConfig.access_key_id = access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = access_key_args['SecretAccessKey']
+
+    #Create Account LoginProfile for tempAuthTestAccount"
+    test_msg = 'create account login profile should succeed.'
+    account_profile_response_pattern = "Account Login Profile: CreateDate = [\s\S]*, PasswordResetRequired = false, AccountName = [\s\S]*"
+    user_args = {}
+    account_name_flag = "-n"
+    password_flag = "--password"
+    user_args['AccountName'] ="tempAuthTestAccount"
+    user_args['Password'] = "accountpassword"
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+
+    date_pattern_for_tempAuthCred = "[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T(2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9].[0-9]*[\+-][0-9]*"
+    #Get Temp Auth Credentials for account for account
+    access_key_args['Password'] = "accountpassword"
+    test_msg = 'GetTempAuthCredentials success'
+    account_name_flag = "-a"
+    password_flag = "--password"
+    response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, ExpiryTime = "+date_pattern_for_tempAuthCred+", SessionToken = [\w/+]*$"
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result.command_should_match_pattern(response_pattern)
+    #saving temp creds into aws credentials file by taking backup of original and same is reverted back at end
+    response_elements = get_response_elements(result.status.stdout)
+    f = open("aws_credential_file_backup" , "w")
+    copyfile("aws_credential_file","aws_credential_file_backup")
+    f = open("aws_credential_file" , "w")
+    f.write("[default]\n")
+    f.write("aws_access_key_id = ")
+    f.write(response_elements['AccessKeyId'])
+    f.write("\naws_secret_access_key = ")
+    f.write(response_elements['SecretAccessKey'])
+    f.write("\naws_session_token = ")
+    f.write(response_elements['SessionToken'])
+    f.close()
+    AwsTest('Aws can create bucket').create_bucket("tempcredbucket").execute_test().command_is_successful()
+    AwsTest('Aws can delete bucket').delete_bucket("tempcredbucket").execute_test().command_is_successful()
+    f = open("aws_credential_file" , "w")
+    copyfile("aws_credential_file_backup","aws_credential_file")
+    os.remove("aws_credential_file_backup")
+
+    #Create User
+    access_key_args['UserName'] = "u1"
+    test_msg = "Create User u1"
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**access_key_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    #Create user loginprofile
+    access_key_args['Password'] = "userpassword"
+    test_msg = 'create user login profile for u1'
+    user_name_flag = "-n"
+    password_flag = "--password"
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **access_key_args).execute_test()
+    #Get Temp Auth Credentials for account for user u1
+    test_msg = 'GetTempAuthCredentials success'
+    account_name_flag = "-a"
+    password_flag = "--password"
+    response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, ExpiryTime = "+date_pattern_for_tempAuthCred+", SessionToken = [\w/+]*$"
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result.command_should_match_pattern(response_pattern)
+
+    #Get Temp Auth Credentials for account with duration more than max allowed
+    test_msg = 'GetTempAuthCredentials failure'
+    account_name_flag = "-a"
+    password_flag = "--password"
+    access_key_args['Duration'] = "500000"
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result.command_response_should_have("MaxDurationIntervalExceeded")
+
+    #Get Temp Auth Credentials for account with duration less than minimum required
+    test_msg = 'GetTempAuthCredentials failure'
+    account_name_flag = "-a"
+    password_flag = "--password"
+    access_key_args['Duration'] = "50"
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result.command_response_should_have("MinDurationIntervalNotMaintained")
+
+    #Update password Reset Flag and check
+    #update userlogin profile
+    test_msg = 'update user login profile for u1'
+    access_key_args['PasswordResetRequired']=True
+    result = AuthTest(test_msg).update_login_profile(user_name_flag ,**access_key_args).execute_test()
+    result.command_response_should_have("UpdateUserLoginProfile is successful")
+
+    #Get Temp Auth Credentials for account for passwordreset True
+    test_msg = 'GetTempAuthCredentials failure'
+    account_name_flag = "-a"
+    password_flag = "--password"
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result.command_response_should_have("PasswordResetRequired")
+
+    #Delete account
+    test_msg = "Delete account tempAuthTestAccount"
+    account_args = {'AccountName': 'tempAuthTestAccount', 'Email': 'tempAuthTestAccount@seagate.com',  'force': True}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+    S3ClientConfig.access_key_id = s3test_access_key
+    S3ClientConfig.secret_key = s3test_secret_key
+
+#GetTempAuth End
 
     test_msg = "Create User s3user1 (default path)"
     user_args = {'UserName': 's3user1'}

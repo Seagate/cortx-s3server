@@ -18,6 +18,11 @@
  */
 package com.seagates3.dao.ldap;
 
+import java.util.ArrayList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
@@ -25,9 +30,6 @@ import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.util.IEMUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.util.ArrayList;
 
 public class LDAPUtils {
 
@@ -88,9 +90,8 @@ public class LDAPUtils {
     public static final String USER_ID = "s3userid";
     public static final String USER_OU = "users";
 
-    public static String getBaseDN() {
-        return BASE_DN;
-    }
+    public
+     static String getBaseDN() { return BASE_DN; }
 
      /*
      * <IEM_INLINE_DOCUMENTATION>
@@ -291,4 +292,37 @@ public class LDAPUtils {
             }
         }
     }
+
+    /**
+     * Below method will validate user with password
+     * @param dn
+     * @param password
+     * @throws LDAPException
+     */
+   public
+    static void bind(String dn, String password) throws LDAPException {
+      LDAPConnection lc;
+      lc = LdapConnectionManager.getConnection(dn, password);
+      if (lc != null && lc.isConnected()) {
+        try {
+          if (FaultPoints.fiEnabled() &&
+              FaultPoints.getInstance().isFaultPointActive(
+                  "LDAP_BIND_ENTRY_FAIL")) {
+            throw new LDAPException();
+          }
+        }
+        catch (LDAPException ldapException) {
+          LOGGER.error("Error occurred while binding. Cause: " +
+                       ldapException.getCause() + ". Message: " +
+                       ldapException.getMessage());
+          LOGGER.debug("Stacktrace: " + ldapException);
+          IEMUtil.log(
+              IEMUtil.Level.ERROR, IEMUtil.LDAP_EX, "LDAP exception occurred",
+              String.format("\"cause\": \"%s\"", ldapException.getCause()));
+          throw ldapException;
+        }
+        finally { LdapConnectionManager.releaseConnection(lc); }
+      }
+    }
 }
+

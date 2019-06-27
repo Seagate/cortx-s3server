@@ -20,6 +20,7 @@ package com.seagates3.response.generator;
 
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
+
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 /**
@@ -241,4 +242,37 @@ public abstract class AbstractResponseGenerator {
                 responseCode, responseBody);
     }
 
+   public
+    ServerResponse invalidCredentials() {
+      String errorMessage =
+          "The request was rejected because the credentials " +
+          "used in request are invalid.";
+      return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                            "InvalidCredentials", errorMessage);
+    }
+   public
+    ServerResponse passwordResetRequired() {
+      String errorMessage =
+          "The request was rejected because the password " + "is not reset";
+
+      return formatResponse(HttpResponseStatus.UNAUTHORIZED,
+                            "PasswordResetRequired", errorMessage);
+    }
+   public
+    ServerResponse maxDurationIntervalExceeded() {
+      String errorMessage =
+          "The request was rejected because the maximum allowed interval " +
+          "duration " + "is exceeded";
+      return formatResponse(HttpResponseStatus.NOT_ACCEPTABLE,
+                            "MaxDurationIntervalExceeded", errorMessage);
+    }
+   public
+    ServerResponse minDurationIntervalViolated() {
+      String errorMessage =
+          "The request was rejected because the minimum required interval " +
+          "duration " + "is not maintained";
+      return formatResponse(HttpResponseStatus.NOT_ACCEPTABLE,
+                            "MinDurationIntervalNotMaintained", errorMessage);
+    }
 }
+

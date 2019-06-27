@@ -133,3 +133,7 @@ changepassword:
   controller : UserLoginProfile
   action : changepassword
   service : iam
+gettempauthcredentials:
+  controller : TempAuthCredentials
+  action : create
+  service : iam

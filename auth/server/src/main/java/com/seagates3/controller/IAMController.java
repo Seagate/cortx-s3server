@@ -128,7 +128,8 @@ class IAMController {
         LOGGER.error("Incorrect signature. Request not authenticated");
         return serverResponse;
       }
-    } else if (!requestAction.equals("AssumeRoleWithSAML")) {
+    } else if (!requestAction.equals("AssumeRoleWithSAML") &&
+               !requestAction.equals("GetTempAuthCredentials")) {
       LOGGER.debug("Parsing Client Request");
       try {
         clientRequestToken =
@@ -219,11 +220,14 @@ class IAMController {
      * Check if User is authorized to perform invoked action.
      * Only ldap credentials are allowed for createaccount and listaccounts.
      * Hence, createaccount and listaccounts don't require this check.
+     * Skipping GetTempAuthCredentials here because Authorization is performed-
+     * with username and password entered by user
      */
     if (!(requestAction.equals("CreateAccount") ||
           requestAction.equals("ListAccounts") ||
           requestAction.equals("ResetAccountAccessKey") ||
-          requestAction.equals("ChangePassword"))) {
+          requestAction.equals("ChangePassword") ||
+          requestAction.equals("GetTempAuthCredentials"))) {
       try {
         if (RootPermissionAuthorizer.getInstance().containsAction(
                 requestAction)) {

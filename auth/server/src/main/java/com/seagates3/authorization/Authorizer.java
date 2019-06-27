@@ -21,6 +21,7 @@ package com.seagates3.authorization;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
+import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import java.io.File;
@@ -86,7 +87,6 @@ public class Authorizer {
           }
         }
         if (requestBody.get("Validate-ACL") != null) {
-
           ACLValidation aclValidation = null;
           try {
             aclValidation = new ACLValidation(requestBody.get("Validate-ACL"));
@@ -99,5 +99,19 @@ public class Authorizer {
           return aclValidation.validate();
         }
         return responseGenerator.generateAuthorizationResponse(requestor, null);
+   }
+   /**
+      * Below method will check if user is root user or  no
+      * @param user
+      * @return
+      */
+
+  public
+   static boolean isRootUser(User user) {
+     boolean isRoot = false;
+     if ("root".equals(user.getName())) {
+       isRoot = true;
+     }
+     return isRoot;
    }
  }

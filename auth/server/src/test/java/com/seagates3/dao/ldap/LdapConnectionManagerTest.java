@@ -185,4 +185,28 @@ public class LdapConnectionManagerTest {
         doReturn(faultPoints).when(FaultPoints.class, "getInstance");
         doReturn(Boolean.TRUE).when(faultPoints).isFaultPointActive(faultPoint);
     }
+    @Test public void getConnectionParameterizedTest() throws Exception {
+      LdapConnectionManager.initLdap();
+      LDAPConnection lc = LdapConnectionManager.getConnection(
+          AuthServerConfig.getLdapLoginDN(),
+          AuthServerConfig.getLdapLoginPassword());
+      // Verify
+      assertNotNull(lc);
+      verify(ldapPool).getBoundConnection("cn=admin,dc=seagate,dc=com",
+                                          "seagate".getBytes("UTF-8"));
+    }
+
+    @Test public void
+    getConnectionParameterizedTest_ShouldFailIfLDAPConnInterrupted()
+        throws Exception {
+      enableFaultInjection("LDAP_CONN_INTRPT");
+      LdapConnectionManager.initLdap();
+      LDAPConnection lc = LdapConnectionManager.getConnection(
+          AuthServerConfig.getLdapLoginDN(),
+          AuthServerConfig.getLdapLoginPassword());
+      // Verify
+      assertNull(lc);
+      verify(ldapPool, times(0)).getBoundConnection(
+          "cn=admin,dc=seagate,dc=com", "seagate".getBytes("UTF-8"));
+    }
 }

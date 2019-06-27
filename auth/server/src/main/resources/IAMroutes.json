@@ -21,6 +21,7 @@
     "GetFederationToken": "FederationToken#create",
     "GetAccountLoginProfile": "AccountLoginProfile#list",
     "GetLoginProfile": "UserLoginProfile#list",
+    "GetTempAuthCredentials": "TempAuthCredentials#create",
     "ListAccessKeys": "AccessKey#list",
     "ListRoles": "Role#list",
     "ListSAMLProviders": "SAMLProvider#list",

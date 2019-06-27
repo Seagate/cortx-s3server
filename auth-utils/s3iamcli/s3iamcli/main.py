@@ -53,6 +53,10 @@ class S3IamCli:
             --new_password <New User Password>
         UpdateAccessKey -k <Access Key Id> -s <Active/Inactive>
             -n <User Name>
+        GetTempAuthCredentials -a <Account Name>
+            --password <Account Password>
+            [-d <Duration in seconds>]
+            [-n <User Name>]
         '''
     def iam_usage_hidden(self):
         return '''
@@ -186,6 +190,7 @@ class S3IamCli:
         parser = argparse.ArgumentParser(usage = self.iam_usage())
         parser.add_argument("action", help="Action to be performed.")
         parser.add_argument("-n", "--name", help="User Name.")
+        parser.add_argument("-a", "--account_name", help="Account Name.")
         parser.add_argument("-e", "--email", help="Email id.")
         parser.add_argument("-p", "--path", help="Path or Path Prefix.")
         parser.add_argument("-f", "--file", help="File Path.")
@@ -262,6 +267,9 @@ class S3IamCli:
             cli_args.access_key = cli_args.ldapuser
             cli_args.secret_key = cli_args.ldappasswd
 
+        elif(cli_args.action.lower() in ["gettempauthcredentials"]):
+            cli_args.access_key = ""
+            cli_args.secret_key = ""
         else:
 
             # Take credentials from declared environment variables
