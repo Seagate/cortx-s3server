@@ -55,14 +55,15 @@ class AccountLoginProfile:
             print(error_message)
 
     def create(self):
-        if(self.cli_args.name is None):
+        if(self.cli_args.name is None or self.cli_args.name is ''):
             print("Account name is required")
             return
 
-        passwordResetRequired = False
         if(self.cli_args.password is None):
             print("Account login password is required")
             return
+
+        passwordResetRequired = False;
         if(self.cli_args.password_reset_required):
             passwordResetRequired = True
 
@@ -101,10 +102,7 @@ class AccountLoginProfile:
         if(self.cli_args.name is None):
             print("Account name is required for UpdateAccountLoginProfile")
             return
-        user_args = {}
-        user_args['UserName'] = self.cli_args.name
-        if(not self.cli_args.password is None):
-            user_args['Password'] = self.cli_args.password
+
         passwordResetRequired = False
         if(self.cli_args.password_reset_required):
             passwordResetRequired = True

@@ -458,6 +458,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result.command_response_should_have("InvalidParameterValue")
 
     test_msg = 'create account login profile should succeed.'
+    account_profile_response_pattern = "Account Login Profile: CreateDate = [\s\S]*, PasswordResetRequired = false, AccountName = [\s\S]*"
     user_args = {}
     account_name_flag = "-n"
     password_flag = "--password"
@@ -465,13 +466,152 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['Password'] = "abcd"
     result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
                **user_args).execute_test()
-    result.command_response_should_have("Account Login Profile")
+    result.command_should_match_pattern(account_profile_response_pattern)
+
+    test_msg = 'create account login profile should fail for already created profile.'
+    user_args = {}
+    account_name_flag = "-n"
+    password_flag = "--password"
+    user_args['AccountName'] ="s3test"
+    user_args['Password'] = "abcd"
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("The request was rejected because it attempted to create or update a resource that already exists")
+
+    test_msg = 'create account login profile should fail for exceeding max allowed password length.'
+    user_args = {}
+    maxPasswordLength = "abcdefghijklmnopqrstuvwxyzabcdefghijkabcdefghijklmnopqrstuvwxyzabcdefghijkabcdefghijklmnopqrstuvwxyzabcdefghijk\
+abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrddd";
+    account_name_flag = "-n"
+    password_flag = "--password"
+    user_args['AccountName'] ="s3test"
+    user_args['Password'] = maxPasswordLength;
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("Account login profile wasn't created")
+
+    test_msg = 'create account login profile should fail for empty account name.'
+    user_args = {}
+    account_name_flag = "-n"
+    password_flag = "--password"
+    user_args['AccountName'] ="\"\""
+    user_args['Password'] = "abcdr"
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("Account name is required")
+
+    test_msg = 'create account login profile should fail for account missing name.'
+    user_args = {}
+    account_name_flag = ""
+    password_flag = "--password"
+    user_args['AccountName'] =""
+    user_args['Password'] = "abcdr"
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("Account name is required")
+
+    test_msg = 'create account login profile should fail for password missing.'
+    user_args = {}
+    account_name_flag = "-n"
+    password_flag = ""
+    user_args['AccountName'] ="abcd"
+    user_args['Password'] = ""
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_response_should_have("Account login password is required")
+
+    test_msg = "Create account s3test_loginprofile0"
+    account_args = {'AccountName': 's3test_loginprofile', 'Email': 's3test_loginprofile@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result1 = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result1.command_should_match_pattern(account_response_pattern)
+    account_response_elements1 = get_response_elements(result1.status.stdout)
+    test_msg = "Create User accountLoginProfileTestUser"
+    user_args = {'UserName': 'accountLoginProfileTestUser'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'Create access key (user name is accountLoginProfileTestUser)'
+    access_key_args = {}
+    access_key_args['AccountName'] = 'accountLoginProfileTestUser'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+    access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+    test_msg = 'CreateAccountLoginProfile should fail when tried with IAM User accessKey-secretKey'
+    user_name_flag = "-n"
+    password_flag = "--password"
+    access_key_args['AccountName'] ="s3test_loginprofile0"
+    access_key_args['Password'] = "newPassword"
+    result = AuthTest(test_msg).create_account_login_profile(user_name_flag , password_flag,\
+               **access_key_args).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action.")
+    test_msg = 'Delete access key'
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+    test_msg = 'Delete User accountLoginProfileTestUser'
+    user_args = {}
+    user_args['UserName'] = "accountLoginProfileTestUser"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+    test_msg = "Create account s3test_loginprofile1"
+    account_args = {'AccountName': 's3test_loginprofile1', 'Email': 's3test_loginprofile1@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result1 = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result1.command_should_match_pattern(account_response_pattern)
+    account_response_elements1 = get_response_elements(result1.status.stdout)
+    access_key_args = {}
+    access_key_args['AccountName'] = "s3test_loginprofile1"
+    access_key_args['AccessKeyId'] = account_response_elements1['AccessKeyId']
+    access_key_args['SecretAccessKey'] = account_response_elements1['SecretKey']
+    test_msg = "Create account s3test_loginprofile2"
+    account_args = {'AccountName': 's3test_loginprofile2', 'Email': 's3test_loginprofile2@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result2 = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result2.command_should_match_pattern(account_response_pattern)
+    account_response_elements2 = get_response_elements(result2.status.stdout)
+    test_msg = "Attempt: create account-login-profile for account name - s3test_loginprofile1 and access key of account s3test_loginprofile2 - Should fail."
+    access_key_args2 = {}
+    access_key_args2['AccountName'] = "s3test_loginprofile1"
+    access_key_args2['AccessKeyId'] = account_response_elements2['AccessKeyId']
+    access_key_args2['SecretAccessKey'] = account_response_elements2['SecretKey']
+    access_key_args2['Password'] = "newPassword"
+    result = AuthTest(test_msg).create_account_login_profile(user_name_flag , password_flag,\
+                           **access_key_args2).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action")
+    account_args = {}
+    test_msg = "Delete account s3test_loginprofile1"
+    account_args = {'AccountName': 's3test_loginprofile1', 'Email': 's3test_loginprofile1@seagate.com',  'force': True}
+    s3test_access_key = S3ClientConfig.access_key_id
+    s3test_secret_key = S3ClientConfig.secret_key
+    S3ClientConfig.access_key_id = access_key_args['AccessKeyId']
+    S3ClientConfig.secret_key = access_key_args['SecretAccessKey']
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+    account_args = {}
+    test_msg = "Delete account s3test_loginprofile2"
+    account_args = {'AccountName': 's3test_loginprofile2', 'Email': 's3test_loginprofile2@seagate.com',  'force': True}
+    S3ClientConfig.access_key_id = access_key_args2['AccessKeyId']
+    S3ClientConfig.secret_key = access_key_args2['SecretAccessKey']
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+            .command_response_should_have("Account deleted successfully")
+    S3ClientConfig.access_key_id = s3test_access_key
+    S3ClientConfig.secret_key = s3test_secret_key
 
     test_msg = 'GetAccountLoginProfile Successfull'
     account_args = {}
     account_name_flag = "-n"
     account_args['AccountName'] ="s3test"
-    account_profile_response_pattern = "Account Login Profile"
+    account_profile_response_pattern =  "Account Login Profile: CreateDate = [\s\S]*, PasswordResetRequired = (true|false), AccountName = [\s\S]*"
     result = AuthTest(test_msg).get_account_login_profile(account_name_flag , **account_args).execute_test()
     result.command_should_match_pattern(account_profile_response_pattern)
 
@@ -484,6 +624,69 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     account_profile_response_pattern = "Account login profile updated."
     result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **account_args).execute_test()
     result.command_should_match_pattern(account_profile_response_pattern)
+
+    test_msg = "Create account s3test_loginprofile_update"
+    account_args = {'AccountName': 's3test_loginprofile_update', 'Email': 's3test_loginprofile_update@seagate.com', \
+                   'ldapuser': S3ClientConfig.ldapuser, \
+                   'ldappasswd': S3ClientConfig.ldappasswd}
+    account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+    result1 = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result1.command_should_match_pattern(account_response_pattern)
+    account_response_elements1 = get_response_elements(result1.status.stdout)
+    access_key_args = {}
+    access_key_args['AccountName'] = "s3test_loginprofile_update"
+    access_key_args['AccessKeyId'] = account_response_elements1['AccessKeyId']
+    access_key_args['SecretAccessKey'] = account_response_elements1['SecretKey']
+    access_key_args['Password'] = "abcd"
+    test_msg = "create account-login-profile for account name - s3test_loginprofile_update with PasswordResetRequired - false."
+    account_profile_response_pattern = "Account Login Profile: CreateDate = [\s\S]*, PasswordResetRequired = false, AccountName = [\s\S]*"
+    account_name_flag = "-n"
+    password_flag = "--password"
+    result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
+                           **access_key_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+    test_msg = 'UpdateAccountLoginProfile should succeed with PasswordResetRequired set to true'
+    account_name_flag = "-n"
+    password_flag = "--password"
+    access_key_args['PasswordResetRequired'] ="True"
+    account_profile_response_pattern = "Account login profile updated."
+    result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **access_key_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+    test_msg = 'GetAccountLoginProfile Successfull'
+    account_name_flag = "-n"
+    account_profile_response_pattern =  "Account Login Profile: CreateDate = [\s\S]*, PasswordResetRequired = true, AccountName = [\s\S]*"
+    result = AuthTest(test_msg).get_account_login_profile(account_name_flag , **access_key_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+
+    test_msg = "Create User updateAccountLoginProfileTestUser"
+    user_args = {'UserName': 'updateAccountLoginProfileTestUser'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+    test_msg = 'Create access key (user name is accountLoginProfileTestUser)'
+    access_key_args = {}
+    access_key_args['AccountName'] = 'updateAccountLoginProfileTestUser'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+    access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+    access_key_args['AccountName'] = 's3test_loginprofile_update'
+    test_msg = 'UpdateAccountLoginProfile should fail for unauthorized user'
+    access_key_args['Password'] = "abcd"
+    account_name_flag = "-n"
+    password_flag = "--password"
+    result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **access_key_args).execute_test()
+    result.command_response_should_have("User is not authorized to perform invoked action.")
+    test_msg = 'Delete access key'
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+    test_msg = 'Delete User updateAccountLoginProfileTestUser'
+    user_args = {}
+    user_args['UserName'] = "updateAccountLoginProfileTestUser"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
 
     test_msg = "Create User getaccountloginprofiletest"
     user_args = {'UserName': 'getaccountloginprofiletest'}

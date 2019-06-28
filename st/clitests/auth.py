@@ -118,11 +118,18 @@ class AuthTest(PyCliTest):
         return self
 
     def create_account_login_profile(self, accountnameflag = None, passwordflag = None, **login_profile_args):
-        cmd = "s3iamcli createaccountloginprofile --access_key '%s' --secret_key\
-               '%s' %s %s %s %s" % (
-               S3ClientConfig.access_key_id,
-               S3ClientConfig.secret_key, accountnameflag, login_profile_args\
-               ['AccountName'], passwordflag,login_profile_args['Password'])
+        if 'AccessKeyId' in login_profile_args:
+            cmd = "s3iamcli createaccountloginprofile --access_key '%s' --secret_key\
+                   '%s' %s %s %s %s" % (
+                   login_profile_args['AccessKeyId'],
+                   login_profile_args['SecretAccessKey'], accountnameflag, login_profile_args\
+                   ['AccountName'], passwordflag,login_profile_args['Password'])
+        else:
+            cmd = "s3iamcli createaccountloginprofile --access_key '%s' --secret_key\
+                   '%s' %s %s %s %s" % (
+                   S3ClientConfig.access_key_id,
+                   S3ClientConfig.secret_key, accountnameflag, login_profile_args\
+                   ['AccountName'], passwordflag,login_profile_args['Password'])
 
         if('PasswordResetRequired' in login_profile_args.keys()):
            if(login_profile_args['PasswordResetRequired'] is "True"):
@@ -133,11 +140,18 @@ class AuthTest(PyCliTest):
         return self
 
     def update_account_login_profile(self, accountnameflag = None, passwordflag = None, **login_profile_args):
-        cmd = "s3iamcli updateaccountloginprofile --access_key '%s' --secret_key\
-               '%s' %s %s %s %s" % (
-               S3ClientConfig.access_key_id,
-               S3ClientConfig.secret_key, accountnameflag, login_profile_args\
-               ['AccountName'], passwordflag,login_profile_args['Password'])
+        if 'AccessKeyId' in login_profile_args:
+            cmd = "s3iamcli updateaccountloginprofile --access_key '%s' --secret_key\
+                   '%s' %s %s %s %s" % (
+                   login_profile_args['AccessKeyId'],
+                   login_profile_args['SecretAccessKey'], accountnameflag, login_profile_args\
+                   ['AccountName'], passwordflag,login_profile_args['Password'])
+        else:
+            cmd = "s3iamcli updateaccountloginprofile --access_key '%s' --secret_key\
+                   '%s' %s %s %s %s" % (
+                   S3ClientConfig.access_key_id,
+                   S3ClientConfig.secret_key, accountnameflag, login_profile_args\
+                   ['AccountName'], passwordflag,login_profile_args['Password'])
 
         if('PasswordResetRequired' in login_profile_args.keys()):
            if(login_profile_args['PasswordResetRequired'] is "True"):
