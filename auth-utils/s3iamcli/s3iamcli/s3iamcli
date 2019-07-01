@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.4
 
 import sys
 import os
@@ -8,4 +8,3 @@ from s3iamcli.main import S3IamCli
 
 cmd = S3IamCli()
 cmd.run()
-
