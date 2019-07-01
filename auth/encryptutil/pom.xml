@@ -71,7 +71,7 @@
                      <goal>report</goal>
                   </goals>
                </execution>
-               <!-- specify minimum limit for code coverage -->
+               <!-- specify minimum limit for code coverage and it will fail the build in Verify phase if criteria does not meet  -->
                <execution>
                   <id>jacoco-check</id>
                   <phase>verify</phase>
@@ -88,12 +88,12 @@
                            <limits>
                               <limit>
                                  <counter>LINE</counter>
-                                 <value>COVERRATIO</value>
+                                 <value>COVEREDRATIO</value>
                                  <minimum>${jacoco.line.coverage}</minimum>
                               </limit>
                               <limit>
                                  <counter>BRANCH</counter>
-                                 <value>COVERRATIO</value>
+                                 <value>COVEREDRATIO</value>
                                  <minimum>${jacoco.branch.coverage}</minimum>
                               </limit>
                            </limits>
