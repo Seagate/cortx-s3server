@@ -139,7 +139,9 @@ rm -rf %{buildroot}
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
+/etc/rsyslog.d/rsyslog-tcp-audit.conf
 
 %post
 systemctl daemon-reload
 systemctl enable s3authserver
+systemctl restart rsyslog

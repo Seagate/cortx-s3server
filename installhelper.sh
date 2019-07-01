@@ -21,6 +21,7 @@ S3_LOG_ROTATE_FILE_LOCATION=$INSTALL_PREFIX/etc/cron.hourly
 SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
 LOG_DIR_LOCATION=$INSTALL_PREFIX/var/log/seagate
 NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/nodejs
+RSYSLOG_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/rsyslog.d
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
@@ -39,6 +40,7 @@ mkdir -p $LOG_DIR_LOCATION/auth
 mkdir -p $LOG_DIR_LOCATION/auth/server
 mkdir -p $LOG_DIR_LOCATION/auth/tools
 mkdir -p $NODEJS_DIR_LOCATION
+mkdir -p $RSYSLOG_CFG_DIR_LOCATION
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/
@@ -101,5 +103,8 @@ cp auth/server/s3authserver.service $SERVICE_FILE_LOCATION
 
 # Copy nodejs binary
 #cp third_party/nodejs/s3_dist/bin/node $NODEJS_DIR_LOCATION/
+
+# Copy rsyslog config
+cp ./scripts/rsyslog-tcp-audit.conf $RSYSLOG_CFG_DIR_LOCATION
 
 exit 0

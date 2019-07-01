@@ -745,3 +745,64 @@ md5sum /tmp/bareos-restores/file.txt
 md5sum /root/file.txt
 
 ```
+
+# Audit logging
+
+Audit logging supports 3 types of loggers:
+* rsyslog via tcp
+* rsyslog via syslog call
+* log4cxx.
+* also it could be disabled.
+
+Following settings are responsible for audit logging
+* S3_AUDIT_LOG_CONFIG - path to configuration file for log4cxx logger
+* S3_AUDIT_LOG_FORMAT_TYPE - format of the audit log records; possible values are "JSON" and "S3_FORMAT"
+* S3_AUDIT_LOGGER_POLICY - type of the logger, possible values are
+     - disabled - logger disabled
+     - rsyslog-tcp - log to rsyslog via tcp
+     - syslog - log to rsyslog via syslog call
+     - log4cxx - log with log4cxx
+* S3_AUDIT_LOGGER_HOST - rsyslog host name to connect to
+* S3_AUDIT_LOGGER_PORT - rsyslog port to connect to
+* S3_AUDIT_LOGGER_RSYSLOG_MSGID - rsyslog msgid to filter messages
+
+## log4cxx
+
+* S3_AUDIT_LOG_CONFIG: "/opt/seagate/s3/conf/s3server_audit_log.properties"
+* S3_AUDIT_LOGGER_POLICY: "log4cxx"
+
+## syslog
+
+* S3_AUDIT_LOGGER_POLICY: "syslog"
+* S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"
+
+## rsyslog-tcp
+
+* S3_AUDIT_LOGGER_POLICY: "rsyslog-tcp"
+* S3_AUDIT_LOGGER_HOST: localhost
+* S3_AUDIT_LOGGER_PORT: 514
+* S3_AUDIT_LOGGER_RSYSLOG_MSGID: "s3server-audit-logging"
+
+## disabled
+
+* S3_AUDIT_LOGGER_POLICY: "disabled"
+
+## other values will lead to s3server stop
+
+## Notes
+
+* in case of **rsyslog-tcp** and **syslog** s3server config values must correspond to
+rsyslog settings from /etc/rsyslog.d/ directory
+
+* default configuration file for rsyslog is s3server/scripts/rsyslog-tcp-audit.conf
+
+* configuration file for rsyslog should be copied manually to /etc/rsyslog.d/ dir
+
+* rsyslog should be started before s3server
+
+* any changes to s3server config and/or to rsyslog config should be done in the following order
+     - stop s3server
+     - stop rsyslog
+     - change configs
+     - start rsyslog
+     - start s3server
