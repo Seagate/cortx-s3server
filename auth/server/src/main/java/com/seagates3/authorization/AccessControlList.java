@@ -53,9 +53,15 @@ public class AccessControlList {
     void setGrant(Grant grant) {
     }
 
+    /**
+     * Get the grant for specified Canonical ID
+     * @param CanonicalID
+     * @return - {@link Grant}
+     */
     Grant getGrant(String CanonicalID) {
+      if (CanonicalID == null) return null;
         for (int counter = 0; counter < grantList.size(); counter++) {
-            if(grantList.get(counter).grantee.canonicalId == CanonicalID) {
+          if (CanonicalID.equals(grantList.get(counter).grantee.canonicalId)) {
                 return grantList.get(counter);
             }
         }

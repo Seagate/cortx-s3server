@@ -243,36 +243,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertEquals(expectedResponseBody, response.getResponseBody());
   }
 
-  @Test public void serveTest_Unauthorized() throws Exception {
-    requestBody.put("Action", "AuthorizeUser");
-    ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
-    Account account = mock(Account.class);
-    File file = mock(File.class);
-    when(ClientRequestParser.parse(httpRequest, requestBody))
-        .thenReturn(clientRequestToken);
-    when(requestor.getId()).thenReturn("MH12");
-    when(requestor.getName()).thenReturn("tylerdurden");
-    when(requestor.getAccount()).thenReturn(account);
-    when(account.getId()).thenReturn("NS5144");
-    when(account.getName()).thenReturn("jack");
-    when(RequestorService.getRequestor(clientRequestToken))
-        .thenReturn(requestor);
-    when(file.exists()).thenReturn(Boolean.TRUE);
-    whenNew(File.class)
-        .withArguments("/tmp/seagate_s3_user_unauthorized")
-        .thenReturn(file);
-    when(AuthServerConfig.getReqId()).thenReturn("0000");
-
-    ServerResponse response = controller.serve(httpRequest, requestBody);
-
-    assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
-    assertThat(response.getResponseBody(),
-               containsString(
-                   "You are not authorized to perform this operation. Check " +
-                   "your IAM policies," +
-                   " and ensure that you are using the correct access keys."));
-  }
-
   @Test public void serveTest_IncorrectSignature() throws Exception {
     requestBody.put("Action", "CreateUser");
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);

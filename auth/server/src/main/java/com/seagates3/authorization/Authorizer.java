@@ -19,12 +19,11 @@
 package com.seagates3.authorization;
 
 import com.seagates3.authserver.AuthServerConfig;
-import com.seagates3.exception.DataAccessException;
+import com.seagates3.exception.BadRequestException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -34,7 +33,6 @@ import javax.xml.transform.TransformerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
-import com.seagates3.util.XMLValidatorUtil;
 
 public class Authorizer {
 
@@ -42,22 +40,31 @@ public class Authorizer {
    final Logger LOGGER = LoggerFactory.getLogger(Authorizer.class.getName());
   private
    static String defaultACP;
-  private
-   static String xsdPath;
 
   public
    ServerResponse authorize(Requestor requestor,
                             Map<String, String> requestBody) {
         AuthorizationResponseGenerator responseGenerator
                 = new AuthorizationResponseGenerator();
-
-        /**
-         * TODO - This is a temporary solution. Write the logic to authorize the
-         * user.
-         */
-        File f = new File("/tmp/seagate_s3_user_unauthorized");
-        if (f.exists())
-            return responseGenerator.unauthorizedOperation();
+        LOGGER.debug("request body : " + requestBody.toString());
+        try {
+          if (!new ACLAuthorizer().isAuthorized(requestor, requestBody)) {
+            // TODO temporary comment till authserver receives ACL from
+            // s3server
+            // return responseGenerator.unauthorizedOperation();
+          }
+        }
+        catch (ParserConfigurationException | SAXException | IOException e1) {
+          LOGGER.error("Error while initializing ACP.");
+          // TODO temporary comment till authserver receives ACL from
+          // s3server
+          // return responseGenerator.badRequest();
+        }
+        catch (BadRequestException e2) {
+          // TODO temporary comment till authserver receives ACL from
+          // s3server
+          // return responseGenerator.badRequest();
+        }
 
         // Initialize a  default AccessControlPolicy object and generate
         // authorization response if request header contains param value true
