@@ -19,6 +19,7 @@
 package com.seagates3.response.generator;
 
 import com.seagates3.authentication.ClientRequestToken;
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.AuthenticationResponseFormatter;
@@ -36,6 +37,7 @@ public class AuthenticationResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("SignatureSHA256", requestToken.getSignature());
 
         return (ServerResponse) new AuthenticationResponseFormatter()
-                .formatAuthenticatedResponse(responseElements, "0000");
+            .formatAuthenticatedResponse(responseElements,
+                                         AuthServerConfig.getReqId());
     }
 }

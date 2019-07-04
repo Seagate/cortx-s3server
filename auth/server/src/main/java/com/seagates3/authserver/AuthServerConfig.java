@@ -35,6 +35,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.seagates3.authencryptutil.JKSUtil;
 import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
@@ -304,5 +305,23 @@ public class AuthServerConfig {
 
     public static boolean isEnableHttpsToS3() {
        return Boolean.valueOf(authServerConfig.getProperty("enableHttpsToS3"));
+    }
+
+    /**
+     * Set Request ID
+     */
+   public
+    static void setReqId(String reqId) { MDC.put("ReqId", reqId); }
+    /**
+     * Get Request ID
+     */
+   public
+    static String getReqId() {
+      String reqId = MDC.get("ReqId");
+      if (reqId == null) {
+        // Set to some dummy value for Unit tests where Req Id is not set
+        reqId = "0000";
+      }
+      return reqId;
     }
 }

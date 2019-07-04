@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
@@ -35,8 +36,9 @@ public class UserResponseGenerator extends AbstractResponseGenerator {
         String arnValue = String.format("arn:aws:iam::1:user/%s", user.getName());
         responseElements.put("Arn", arnValue);
 
-        return new XMLResponseFormatter().formatCreateResponse("CreateUser",
-                "User", responseElements, "0000");
+        return new XMLResponseFormatter().formatCreateResponse(
+            "CreateUser", "User", responseElements,
+            AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateDeleteResponse() {
@@ -67,8 +69,9 @@ public class UserResponseGenerator extends AbstractResponseGenerator {
             userMemebers.add(responseElements);
         }
 
-        return new XMLResponseFormatter().formatListResponse("ListUsers",
-                "Users", userMemebers, false, "0000");
+        return new XMLResponseFormatter().formatListResponse(
+            "ListUsers", "Users", userMemebers, false,
+            AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateUpdateResponse() {

@@ -28,6 +28,8 @@ import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.FaultPointsResponseGenerator;
 import com.seagates3.response.generator.ResponseGenerator;
+import com.seagates3.util.BinaryUtil;
+
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -59,6 +61,9 @@ public class AuthServerPostHandler {
 
     public void run() {
         Map<String, String> requestBody = getHttpRequestBodyAsMap();
+
+        // Generate request Id per request
+        AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
 
         if (httpRequest.getUri().startsWith("/saml")) {
             LOGGER.debug("Calling SAML WebSSOControler.");

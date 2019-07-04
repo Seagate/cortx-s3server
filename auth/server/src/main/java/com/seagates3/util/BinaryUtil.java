@@ -258,6 +258,16 @@ public class BinaryUtil {
     }
 
     /*
+     * Generate random alphanumeric UUID string
+     */
+   public
+    static String getAlphaNumericUUID() {
+      UUID uid = UUID.randomUUID();
+      String id = uid.toString().replace("-", "");
+      return id;
+    }
+
+    /*
      * Generate random UUID
      */
     public static byte[] getRandomUUIDAsByteArray() {

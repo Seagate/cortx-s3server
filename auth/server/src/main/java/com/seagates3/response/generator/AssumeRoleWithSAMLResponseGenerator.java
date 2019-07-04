@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.SAMLResponseTokens;
 import com.seagates3.model.User;
@@ -58,6 +59,7 @@ public class AssumeRoleWithSAMLResponseGenerator
         samlAttributes.put("NameQualifier", "S4jYAZtpWsPHGsy1j5sKtEKOyW4=");
 
         return new AssumeRoleWithSAMLResponseFormatter().formatCreateResponse(
-                credentials, federatedUser, samlAttributes, "6", "0000");
+            credentials, federatedUser, samlAttributes, "6",
+            AuthServerConfig.getReqId());
     }
 }

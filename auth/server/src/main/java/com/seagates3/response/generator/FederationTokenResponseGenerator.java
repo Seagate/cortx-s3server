@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
@@ -41,7 +42,7 @@ public class FederationTokenResponseGenerator extends AbstractResponseGenerator 
         String fedUseIdVal = String.format("%s:%s", user.getId(), user.getName());
         federatedUser.put("FederatedUserId", fedUseIdVal);
 
-        return new FederationTokenResponseFormatter().formatCreateResponse(credentials, federatedUser,
-                "6", "0000");
+        return new FederationTokenResponseFormatter().formatCreateResponse(
+            credentials, federatedUser, "6", AuthServerConfig.getReqId());
     }
 }

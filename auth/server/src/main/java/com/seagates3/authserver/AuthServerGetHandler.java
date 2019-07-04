@@ -20,6 +20,7 @@ package com.seagates3.authserver;
 
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
+import com.seagates3.util.BinaryUtil;
 import com.seagates3.util.IEMUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -72,7 +73,8 @@ public class AuthServerGetHandler {
 
     public void run() {
         LOGGER.debug("Get handler called.");
-
+        // Set Request ID
+        AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
         if (httpRequest.getUri().startsWith("/static")) {
             Path staticFilePath = Paths.get(AuthServerConstants.RESOURCE_DIR,
                                                                      httpRequest.getUri());

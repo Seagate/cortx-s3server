@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.SAMLSessionResponseFormatter;
@@ -39,7 +40,7 @@ public class SAMLSessionResponseGenerator extends AbstractResponseGenerator {
         userDetailsElements.put("AccountName", requestor.getAccount().getName());
 
         return new SAMLSessionResponseFormatter().formatCreateReponse(
-                credElements, userDetailsElements, "0000");
+            credElements, userDetailsElements, AuthServerConfig.getReqId());
     }
 
 }

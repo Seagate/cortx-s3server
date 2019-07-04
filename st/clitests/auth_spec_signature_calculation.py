@@ -5,6 +5,7 @@ import http.client, urllib.parse
 import ssl
 import json
 import xmltodict
+import re
 from framework import Config
 from s3client_config import S3ClientConfig
 
@@ -26,7 +27,12 @@ class AuthHTTPClient:
         return response_data
 
 def check_response(expected_response, test_response):
-    assert test_response.decode("utf-8") in expected_response
+    #assert test_response.decode("utf-8") in expected_response
+    #Request id is dynamically generated, so compare string
+    #skipping request id
+    expected = expected_response.split("0000")
+    assert expected[0] in test_response.decode("utf-8")
+    assert expected[1] in test_response.decode("utf-8")
     print("Response has [%s]." % (test_response))
 
 test_data = {}

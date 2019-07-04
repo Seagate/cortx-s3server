@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Role;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
@@ -35,8 +36,9 @@ public class RoleResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("CreateDate", role.getCreateDate());
         responseElements.put("RoleId", role.getRoleId());
 
-        return new XMLResponseFormatter().formatCreateResponse("CreateRole",
-                "Role", responseElements, "0000");
+        return new XMLResponseFormatter().formatCreateResponse(
+            "CreateRole", "Role", responseElements,
+            AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateDeleteResponse() {
@@ -63,7 +65,8 @@ public class RoleResponseGenerator extends AbstractResponseGenerator {
             roleMemebers.add(responseElements);
         }
 
-        return (ServerResponse) new XMLResponseFormatter().formatListResponse("ListRoles",
-                "Roles", roleMemebers, false, "0000");
+        return (ServerResponse) new XMLResponseFormatter().formatListResponse(
+            "ListRoles", "Roles", roleMemebers, false,
+            AuthServerConfig.getReqId());
     }
 }

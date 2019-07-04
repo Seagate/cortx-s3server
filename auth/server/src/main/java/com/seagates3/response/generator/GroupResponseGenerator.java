@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Group;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
@@ -33,8 +34,9 @@ public class GroupResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("GroupName", group.getName());
         responseElements.put("CreateDate", group.getCreateDate());
 
-        return new XMLResponseFormatter().formatCreateResponse("CreateGroup",
-                "Group", responseElements, "0000");
+        return new XMLResponseFormatter().formatCreateResponse(
+            "CreateGroup", "Group", responseElements,
+            AuthServerConfig.getReqId());
     }
 
 }

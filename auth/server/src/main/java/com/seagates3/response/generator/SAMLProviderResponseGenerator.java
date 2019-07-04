@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.SAMLProvider;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.SAMLProviderResponseFormatter;
@@ -34,7 +35,8 @@ public class SAMLProviderResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("Arn", arnValue);
 
         return new SAMLProviderResponseFormatter().formatCreateResponse(
-                "CreateSAMLProvider", null, responseElements, "0000");
+            "CreateSAMLProvider", null, responseElements,
+            AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateDeleteResponse() {
@@ -43,8 +45,8 @@ public class SAMLProviderResponseGenerator extends AbstractResponseGenerator {
     }
 
     public ServerResponse generateUpdateResponse(String name) {
-        return new SAMLProviderResponseFormatter().formatUpdateResponse(
-                name, "0000");
+       return new SAMLProviderResponseFormatter().formatUpdateResponse(
+           name, AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateListResponse(SAMLProvider[] samlProviderList) {
@@ -63,7 +65,8 @@ public class SAMLProviderResponseGenerator extends AbstractResponseGenerator {
             providerMembers.add(responseElements);
         }
 
-        return new XMLResponseFormatter().formatListResponse("ListSAMLProviders",
-                "SAMLProviderList", providerMembers, false, "0000");
+        return new XMLResponseFormatter().formatListResponse(
+            "ListSAMLProviders", "SAMLProviderList", providerMembers, false,
+            AuthServerConfig.getReqId());
     }
 }

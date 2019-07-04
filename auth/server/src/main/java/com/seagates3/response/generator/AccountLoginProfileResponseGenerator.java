@@ -22,6 +22,7 @@ package com.seagates3.response.generator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Account;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
@@ -49,7 +50,8 @@ class AccountLoginProfileResponseGenerator extends AbstractResponseGenerator {
                          account.getPwdResetRequired().toLowerCase());
     accountAttr.add(responseElements);
     return new XMLResponseFormatter().formatGetResponse(
-        "GetAccountLoginProfile", "LoginProfile", accountAttr, "0000");
+        "GetAccountLoginProfile", "LoginProfile", accountAttr,
+        AuthServerConfig.getReqId());
   }
 
   /**
@@ -68,7 +70,8 @@ class AccountLoginProfileResponseGenerator extends AbstractResponseGenerator {
                          account.getPwdResetRequired().toLowerCase());
     responseElements.put("CreateDate", account.getProfileCreateDate());
     return new XMLResponseFormatter().formatCreateResponse(
-        "CreateAccountLoginProfile", "LoginProfile", responseElements, "0000");
+        "CreateAccountLoginProfile", "LoginProfile", responseElements,
+        AuthServerConfig.getReqId());
   }
 
   /**

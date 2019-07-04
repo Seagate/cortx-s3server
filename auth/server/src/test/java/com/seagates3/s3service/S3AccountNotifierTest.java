@@ -98,7 +98,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                         "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -124,7 +124,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -150,7 +150,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_BAD_REQUEST);
@@ -176,7 +176,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_BAD_REQUEST);
@@ -202,7 +202,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_NO_CONTENT);
@@ -254,7 +254,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                      "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -280,7 +280,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_CONFLICT);
@@ -305,7 +305,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_BAD_REQUEST);
@@ -331,7 +331,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_BAD_REQUEST);
@@ -357,7 +357,7 @@ public class S3AccountNotifierTest {
                                       "getDefaultEndpoint");
         doReturn(true).when(AuthServerConfig.class,
                                        "isEnableHttpsToS3");
-
+        doReturn("0000").when(AuthServerConfig.class, "getReqId");
         S3HttpResponse s3Resp = new S3HttpResponse();
 
         s3Resp.setHttpCode(HttpStatus.SC_BAD_REQUEST);

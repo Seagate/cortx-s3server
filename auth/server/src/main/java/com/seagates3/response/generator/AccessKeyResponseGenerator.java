@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.AccessKey;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.AccessKeyResponseFormatter;
@@ -36,7 +37,8 @@ public class AccessKeyResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("SecretAccessKey", accessKey.getSecretKey());
 
         return new AccessKeyResponseFormatter().formatCreateResponse(
-                "CreateAccessKey", "AccessKey", responseElements, "0000");
+            "CreateAccessKey", "AccessKey", responseElements,
+            AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateDeleteResponse() {
@@ -58,8 +60,8 @@ public class AccessKeyResponseGenerator extends AbstractResponseGenerator {
             accessKeyMembers.add(responseElements);
         }
 
-        return new AccessKeyResponseFormatter().formatListResponse(userName,
-                accessKeyMembers, false, "0000");
+        return new AccessKeyResponseFormatter().formatListResponse(
+            userName, accessKeyMembers, false, AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateUpdateResponse() {

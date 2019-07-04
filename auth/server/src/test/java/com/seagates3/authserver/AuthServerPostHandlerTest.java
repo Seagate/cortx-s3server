@@ -73,7 +73,7 @@ public class AuthServerPostHandlerTest {
     public void setUp() throws Exception {
         mockStatic(AuthServerConfig.class);
         ctx = mock(ChannelHandlerContext.class);
-
+        when(AuthServerConfig.getReqId()).thenReturn("0000");
         fullHttpRequest = new DefaultFullHttpRequest(
                 HttpVersion.HTTP_1_1, HttpMethod.POST, "/", getRequestBodyAsByteBuf());
     }

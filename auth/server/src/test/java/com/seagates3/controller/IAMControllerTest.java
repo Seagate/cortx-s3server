@@ -221,11 +221,13 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
     Account account = mock(Account.class);
     File file = mock(File.class);
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
     when(requestor.getId()).thenReturn("MH12");
     when(requestor.getName()).thenReturn("tylerdurden");
     when(requestor.getAccount()).thenReturn(account);
+
     when(account.getId()).thenReturn("NS5144");
     when(account.getName()).thenReturn("jack");
     when(RequestorService.getRequestor(clientRequestToken))
@@ -259,6 +261,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     whenNew(File.class)
         .withArguments("/tmp/seagate_s3_user_unauthorized")
         .thenReturn(file);
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
 
     ServerResponse response = controller.serve(httpRequest, requestBody);
 
@@ -330,6 +333,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Action", "AuthorizeUser");
     requestBody.put("authorization", "AWS AKIAIOSFODN&EXAMPL*#" +
                                          "frJIUN8DYpKDtOLCwo//yllqDzg=");
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
 
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenCallRealMethod();
@@ -346,6 +350,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Action", "AuthorizeUser");
     requestBody.put("authorization", "AWS AKIA IOSFODN&EXAMPL$#:" +
                                          "frJIUN8DYpKDtOLCwo//yllqDzg=");
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
 
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenCallRealMethod();
@@ -459,6 +464,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(IAMResourceMapper.getResourceMap("ListAccounts"))
         .thenReturn(resourceMap);
     when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
     when(signatureValidator.validate(clientRequestToken, requestor))
@@ -488,6 +494,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(IAMResourceMapper.getResourceMap("ListAccounts"))
         .thenThrow(AuthResourceNotFoundException.class);
     when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
     when(signatureValidator.validate(clientRequestToken, requestor))
@@ -510,6 +517,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   @Test public void serveTest_InvalidLdapUser() throws Exception {
     requestBody.put("Action", "CreateAccount");
     when(AuthServerConfig.getLdapLoginCN()).thenReturn("admin");
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
     when(clientRequestToken.getAccessKeyId()).thenReturn("user");
@@ -720,6 +728,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(signatureValidator.validate(clientRequestToken, requestor))
         .thenReturn(serverResponse);
     when(serverResponse.getResponseStatus()).thenReturn(HttpResponseStatus.OK);
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
+
     when(IAMResourceMapper.getResourceMap("CreateAccessKey"))
         .thenReturn(resourceMap);
     doReturn(Boolean.TRUE)
@@ -808,6 +818,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
     when(accDao.findAll()).thenReturn(accounts);
 
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
     ServerResponse result = WhiteboxImpl.invokeMethod(
         controller, "performAction", resourceMap, requestBody, requestor);
 

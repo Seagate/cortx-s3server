@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.AuthorizationResponseFormatter;
@@ -35,7 +36,7 @@ public class AuthorizationResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("AccountName", requestor.getAccount().getName());
 
         return (ServerResponse) new AuthorizationResponseFormatter().authorized(
-            responseElements, "0000", acpXml);
+            responseElements, AuthServerConfig.getReqId(), acpXml);
     }
 
 }

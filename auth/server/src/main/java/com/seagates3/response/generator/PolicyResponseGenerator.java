@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.Policy;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
@@ -37,7 +38,8 @@ public class PolicyResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("CreateDate", policy.getCreateDate());
         responseElements.put("UpdateDate", policy.getUpdateDate());
 
-        return new XMLResponseFormatter().formatCreateResponse("CreatePolicy",
-                "Policy", responseElements, "0000");
+        return new XMLResponseFormatter().formatCreateResponse(
+            "CreatePolicy", "Policy", responseElements,
+            AuthServerConfig.getReqId());
     }
 }

@@ -21,6 +21,7 @@ package com.seagates3.response.generator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
@@ -36,7 +37,8 @@ class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
                          user.getPwdResetRequired().toLowerCase());
     responseElements.put("CreateDate", user.getProfileCreateDate());
     return new XMLResponseFormatter().formatCreateResponse(
-        "CreateLoginProfile", "LoginProfile", responseElements, "0000");
+        "CreateLoginProfile", "LoginProfile", responseElements,
+        AuthServerConfig.getReqId());
   }
 
   /**
@@ -55,7 +57,8 @@ class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
                          user.getPwdResetRequired().toLowerCase());
     userMembers.add(responseElements);
     return new XMLResponseFormatter().formatGetResponse(
-        "GetLoginProfile", "LoginProfile", userMembers, "0000");
+        "GetLoginProfile", "LoginProfile", userMembers,
+        AuthServerConfig.getReqId());
   }
 
   /**

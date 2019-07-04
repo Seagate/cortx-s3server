@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.Account;
 import com.seagates3.model.User;
@@ -40,8 +41,9 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("RootSecretKeyId", rootAccessKey.getSecretKey());
         responseElements.put("Status", rootAccessKey.getStatus());
 
-        return (ServerResponse) new XMLResponseFormatter().formatCreateResponse("CreateAccount",
-                "Account", responseElements, "0000");
+        return (ServerResponse) new XMLResponseFormatter().formatCreateResponse(
+            "CreateAccount", "Account", responseElements,
+            AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateListResponse(Object[] responseObjects) {
@@ -59,8 +61,9 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
             accountMembers.add(responseElements);
         }
 
-        return new XMLResponseFormatter().formatListResponse("ListAccounts",
-                "Accounts", accountMembers, false, "0000");
+        return new XMLResponseFormatter().formatListResponse(
+            "ListAccounts", "Accounts", accountMembers, false,
+            AuthServerConfig.getReqId());
     }
 
     public ServerResponse generateDeleteResponse() {
@@ -78,9 +81,10 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("RootSecretKeyId", rootAccessKey.getSecretKey());
         responseElements.put("Status", rootAccessKey.getStatus());
 
-        return (ServerResponse)
-           new XMLResponseFormatter().formatResetAccountAccessKeyResponse(
-               "ResetAccountAccessKey","Account", responseElements, "0000");
+        return (ServerResponse) new XMLResponseFormatter()
+            .formatResetAccountAccessKeyResponse("ResetAccountAccessKey",
+                                                 "Account", responseElements,
+                                                 AuthServerConfig.getReqId());
     }
 
     @Override

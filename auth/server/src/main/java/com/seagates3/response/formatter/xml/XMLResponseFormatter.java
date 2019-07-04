@@ -36,10 +36,12 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.AbstractResponseFormatter;
 
@@ -196,7 +198,7 @@ class XMLResponseFormatter extends AbstractResponseFormatter {
     errorEle.appendChild(messageEle);
 
     Element requestIdEle = doc.createElement("RequestId");
-    requestIdEle.appendChild(doc.createTextNode("0000"));
+    requestIdEle.appendChild(doc.createTextNode(AuthServerConfig.getReqId()));
     root.appendChild(requestIdEle);
 
     String responseBody;
@@ -240,7 +242,7 @@ class XMLResponseFormatter extends AbstractResponseFormatter {
     rootElement.appendChild(responseMetaData);
 
     Element requestId = doc.createElement("RequestId");
-    requestId.appendChild(doc.createTextNode("0000"));
+    requestId.appendChild(doc.createTextNode(AuthServerConfig.getReqId()));
     responseMetaData.appendChild(requestId);
 
     String responseBody;
