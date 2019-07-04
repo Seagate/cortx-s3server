@@ -7,23 +7,34 @@ import pprint
 import sys
 import os
 import urllib
-
-from config import Config
+import logging
 
 class EOSCoreClient:
 
-    def __init__(self):
-        pass
+    _config = None
+    _logger = None
+
+    def __init__(self, config, logger = None):
+        if (logger is None):
+            self._logger = logging.getLogger("EOSCoreClient")
+        else:
+            self._logger = logger
+        self._config = config
 
     def _get_connection(self):
-
-        endpoint_url = urllib.parse.urlparse(Config.endpoint).netloc
+        try:
+            endpoint_url = urllib.parse.urlparse( self._config.get_eos_core_endpoint() ).netloc
+        except KeyError as ex:
+            self._logger.error(str(ex))
+            return None
         return http.client.HTTPConnection(endpoint_url)
 
     def put(self, request_uri, body=None, headers=None):
 
         conn = self._get_connection()
-        if headers == None:
+        if ( conn is None ):
+            raise TypeError("Failed to create connection instance")
+        if ( headers is None ):
             headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
 
         conn.request('PUT', request_uri, body, headers)
@@ -36,7 +47,9 @@ class EOSCoreClient:
     def get(self, request_uri, body=None, headers=None):
 
         conn = self._get_connection()
-        if headers == None:
+        if ( conn is None ):
+            raise TypeError("Failed to create connection instance")
+        if ( headers is None ):
             headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
 
         conn.request('GET', request_uri, body, headers)
@@ -49,7 +62,9 @@ class EOSCoreClient:
     def delete(self, request_uri, body=None, headers=None):
 
         conn = self._get_connection()
-        if headers == None:
+        if ( conn is None ):
+            raise TypeError("Failed to create connection instance")
+        if ( headers is None ):
             headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
 
         conn.request('DELETE', request_uri, body, headers)
