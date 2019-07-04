@@ -201,6 +201,21 @@ public abstract class AbstractResponseGenerator {
                             errorMessage);
     }
 
+   public
+    ServerResponse invalidPassword() {
+      String errorMessage =
+          "Either the new password or the old password was incorrect.";
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidPassword",
+                            errorMessage);
+    }
+
+   public
+    ServerResponse invalidUserType() {
+      String errorMessage = "Only IAM user can change their own password.";
+      return formatResponse(HttpResponseStatus.UNAUTHORIZED, "InvalidUserType",
+                            errorMessage);
+    }
+
     /**
      * Use this method for internal purpose.
      *

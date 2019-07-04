@@ -59,4 +59,7 @@ abstract class AbstractResponseFormatter {
       String operation, String returnObject,
       ArrayList<LinkedHashMap<String, String>> responseElements,
       String requestId);
+
+ public
+  abstract ServerResponse formatChangePasswordResponse(String operation);
 }

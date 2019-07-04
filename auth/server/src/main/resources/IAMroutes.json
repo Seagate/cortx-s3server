@@ -1,4 +1,5 @@
 {
+    "ChangePassword": "UserLoginProfile#changepassword",
     "CreateAccount": "Account#create",
     "CreateAccountLoginProfile": "AccountLoginProfile#create",
     "DeleteAccount": "Account#delete",

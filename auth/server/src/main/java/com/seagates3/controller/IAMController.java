@@ -222,7 +222,8 @@ class IAMController {
      */
     if (!(requestAction.equals("CreateAccount") ||
           requestAction.equals("ListAccounts") ||
-          requestAction.equals("ResetAccountAccessKey"))) {
+          requestAction.equals("ResetAccountAccessKey") ||
+          requestAction.equals("ChangePassword"))) {
       try {
         if (RootPermissionAuthorizer.getInstance().containsAction(
                 requestAction)) {

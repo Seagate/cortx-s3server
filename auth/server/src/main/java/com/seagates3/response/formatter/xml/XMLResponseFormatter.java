@@ -170,6 +170,11 @@ class XMLResponseFormatter extends AbstractResponseFormatter {
     return success(operation);
   }
 
+  @Override public ServerResponse formatChangePasswordResponse(
+      String operation) {
+    return success(operation);
+  }
+
   @Override public ServerResponse formatErrorResponse(
       HttpResponseStatus httpResponseStatus, String code, String message) {
     Document doc;

@@ -89,4 +89,15 @@ public abstract class AbstractParameterValidator {
     public Boolean isValidUpdateParams(Map<String, String> requestBody) {
         return true;
     }
+
+    /**
+     * Abstract implementation to check changePassword request parameters.
+     *
+     * @param requestBody TreeMap of input parameters.
+     * @return true
+     */
+   public
+    Boolean isValidChangepasswordParams(Map<String, String> requestBody) {
+      return true;
+    }
 }

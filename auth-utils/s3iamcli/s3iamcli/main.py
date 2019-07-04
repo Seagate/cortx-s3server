@@ -49,6 +49,8 @@ class S3IamCli:
             [-p <Path Prefix>]
         UpdateUser -n <Old User Name>
             --new_user <New User Name> [-p <New Path>]
+        ChangePassword --old_password <Old User Password>
+            --new_password <New User Password>
         UpdateAccessKey -k <Access Key Id> -s <Active/Inactive>
             -n <User Name>
         '''
@@ -194,6 +196,8 @@ class S3IamCli:
         parser.add_argument("--access_key", help="Access Key Id.")
         parser.add_argument("--secret_key", help="Secret Key.")
         parser.add_argument("--password", help="Password.")
+        parser.add_argument("--old_password", help="Old Password.")
+        parser.add_argument("--new_password", help="New Password.")
         parser.add_argument("--password-reset-required", help="Password reset required on next login.", action ='store_true')
         parser.add_argument("--no-password-reset-required", help="No password reset required on next login.", action ='store_true')
         parser.add_argument("--ldapuser", help="Ldap User Id.")
@@ -312,7 +316,7 @@ class S3IamCli:
 
         action = controller_action[cli_args.action.lower()]['action']
 
-        # Call the method of the controller i.e Create, Delete, Update or List
+        # Call the method of the controller i.e Create, Delete, Update, List or ChangePassword
         try:
             getattr(controller_obj, action)()
         except Exception as ex:

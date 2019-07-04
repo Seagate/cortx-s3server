@@ -174,4 +174,55 @@ class UserLoginProfileController extends AbstractController {
     }
     return response;
   }
+
+  /**
+  * Below method will change password for current IAM user.
+  * @throws DataAccessException
+  */
+  @Override public ServerResponse changepassword() throws DataAccessException {
+    User user = null;
+    ServerResponse response = null;
+    try {
+      user =
+          userDAO.find(requestor.getAccount().getName(), requestor.getName());
+      if (!user.exists()) {
+        LOGGER.error("User [" + requestor.getName() + "] does not exists");
+        response = userResponseGenerator.noSuchEntity();
+      } else {
+        if (user.getName().equals("root")) {
+          LOGGER.error("Only IAm Users can change their own password");
+          return userResponseGenerator.invalidUserType();
+        }
+        if (user.getPassword() == null) {
+          LOGGER.error("LoginProfile not created for user - " +
+                       requestor.getName());
+          return userResponseGenerator.noSuchEntity();
+        } else {
+          String oldPassword = requestBody.get("OldPassword");
+          String newPassword = requestBody.get("NewPassword");
+          if (oldPassword != null && newPassword != null) {
+            if (user.getPassword().equals(oldPassword) &&
+                !oldPassword.equals(newPassword)) {
+              user.setPassword(newPassword);
+              user.setPwdResetRequired("FALSE");
+              LOGGER.info("changing old password with new password");
+              userLoginProfileDAO.save(user);
+              response = userLoginProfileResponseGenerator
+                             .generateChangePasswordResponse();
+            } else {
+              response = userResponseGenerator.invalidPassword();
+            }
+          } else {
+            response = userResponseGenerator.missingParameter();
+          }
+        }
+      }
+    }
+    catch (DataAccessException ex) {
+      LOGGER.error("Exception occurred while doing ldap operation for user - " +
+                   requestor.getName());
+      response = userLoginProfileResponseGenerator.internalServerError();
+    }
+    return response;
+  }
 }

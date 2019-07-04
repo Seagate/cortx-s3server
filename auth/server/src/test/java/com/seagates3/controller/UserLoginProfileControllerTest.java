@@ -391,4 +391,240 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = userLoginProfileController.update();
     Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
+
+  /**
+   * Below test will check successful API response for ChangePassword for
+   * IAM user
+   * @throws Exception
+   */
+  @Test public void ChangePassword_Successful_Response() throws Exception {
+
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestBody.put("OldPassword", "password1");
+    userLoginProfileController.requestBody.put("NewPassword", "password2");
+    userLoginProfileController.requestor.setId("123");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password1");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    Assert.assertEquals("password2", user.getPassword());
+    Assert.assertEquals("FALSE", user.getPwdResetRequired());
+  }
+
+  /**
+   * Below test will check 'NoSuchEntity' response when user is not
+   * existing in ldap API response for ChangePassword
+   * @throws Exception
+   */
+  @Test public void ChangePassword_UserNotExists_Response() throws Exception {
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below test will check 'InvalidUserType' response when root/Account
+   * user tries to change password using ChangePassword command
+   * @throws Exception
+   */
+  @Test public void ChangePassword_InvalidUserType_Response() throws Exception {
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestor.setName("root");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("root");
+    user.setId("123");
+    user.setPassword("password1");
+
+    Mockito.when(userDAO.find("s3test", "root")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below will test 'NoSuchEntity' response scenario when ChangePassword
+   * is called on user which is not having LoginProfile set
+   * @throws Exception
+   */
+  @Test public void ChangePassword_UserProfileNotCreated_Response()
+      throws Exception {
+
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestor.setId("123");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below will test 'MissingParameter' response scenario when
+   * ChangePassword is called on user without passing OldPassword as input
+   * parameter
+   * @throws Exception
+   */
+  @Test public void ChangePassword_MissingParameter_OldPassword_Response()
+      throws Exception {
+
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestBody.put("NewPassword", "password2");
+    userLoginProfileController.requestor.setId("123");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password1");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below will test 'MissingParameter' response scenario when
+   * ChangePassword is called on user without passing NewPassword as input
+   * parameter
+   * @throws Exception
+   */
+  @Test public void ChangePassword_MissingParameter_NewPassword_Response()
+      throws Exception {
+
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestBody.put("OldPassword", "password1");
+    userLoginProfileController.requestor.setId("123");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password1");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below will test 'InvalidPassword' response scenario when
+   * ChangePassword is called on user when user's current password and
+   * oldPassword
+   * parameter value is different
+   * @throws Exception
+   */
+  @Test public void ChangePassword_InvalidPassword_Response() throws Exception {
+
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestBody.put("OldPassword", "xyz");
+    userLoginProfileController.requestBody.put("NewPassword", "password2");
+    userLoginProfileController.requestor.setId("123");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password1");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below will test 'InvalidPassword' response scenario when
+   * ChangePassword is called on user when user's newPassword and oldPassword
+   * parameter values are same
+   * @throws Exception
+   */
+  @Test public void ChangePassword_InvalidPassword_SamePassword_Response()
+      throws Exception {
+
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestBody.put("OldPassword", "password1");
+    userLoginProfileController.requestBody.put("NewPassword", "password1");
+    userLoginProfileController.requestor.setId("123");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password1");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below test will check error response when ldap returns exception on
+   * not finding requested user
+   * @throws Exception
+   */
+  @Test public void ChangePassword__DataAccessException_Response()
+      throws Exception {
+
+    createUserLoginProfileController_CreateAPI();
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser"))
+        .thenThrow(new DataAccessException("failed to search user.\n"));
+    final String expectedResponseBody =
+        "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+        "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+        "<Error><Code>InternalFailure</Code>" +
+        "<Message>The request processing has failed because of an " +
+        "unknown error, exception or failure.</Message></Error>" +
+        "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+    Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                        response.getResponseStatus());
+  }
 }

@@ -48,4 +48,7 @@ public abstract class AbstractController {
     public ServerResponse update() throws DataAccessException {
         return null;
     }
+
+    public
+     ServerResponse changepassword() throws DataAccessException { return null; }
 }

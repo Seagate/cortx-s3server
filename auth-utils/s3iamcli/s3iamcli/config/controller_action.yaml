@@ -129,3 +129,7 @@ updateuserloginprofile:
   controller : UserLoginProfile
   action : update
   service : iam
+changepassword:
+  controller : UserLoginProfile
+  action : changepassword
+  service : iam

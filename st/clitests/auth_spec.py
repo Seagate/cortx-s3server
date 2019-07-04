@@ -457,6 +457,151 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test()
     result.command_response_should_have("InvalidParameterValue")
 
+
+    #*************************Test s3iamcli ChangePassword for IAM user******************
+    test_msg = "Create User changePasswordUserLoginProfileTestUser "
+    user_args = {'UserName': 'changePasswordUserLoginProfileTestUser'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+
+    test_msg = 'Create access key (user name is changePasswordUserLoginProfileTestUser)'
+    access_key_args = {}
+    user_access_key_args = {}
+    access_key_args['UserName'] = 'changePasswordUserLoginProfileTestUser'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    user_access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+    user_access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+
+    test_msg = 'create user login profile for changePasswordUserLoginProfileTestUser.'
+    user_args = {}
+    user_name_flag = "-n"
+    password_flag = "--password"
+    user_args['UserName'] ="changePasswordUserLoginProfileTestUser"
+    user_args['Password'] = "abcd"
+    login_profile_response_pattern = "Login Profile "+date_pattern+" False "+user_args['UserName']
+    result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
+               **user_args).execute_test()
+    result.command_should_match_pattern(login_profile_response_pattern)
+
+    test_msg = 'ChangePassword should fail with root accessKey-secretKey, user OldPassword and NewPassword.'
+    account_user_access_key_args = {}
+    account_user_access_key_args['AccessKeyId'] = S3ClientConfig.access_key_id
+    account_user_access_key_args['SecretAccessKey'] = S3ClientConfig.secret_key
+    account_user_access_key_args['OldPassword'] ="abcd"
+    account_user_access_key_args['NewPassword'] = "pqrs"
+    result = AuthTest(test_msg).change_user_password(**account_user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword failed")
+    result.command_response_should_have("InvalidUserType")
+
+    test_msg = 'ChangePassword should fail with IAM user accessKey-secretKey,NewPassword and invalid oldPassword.'
+    test_access_key_args = {}
+    test_access_key_args['AccessKeyId'] = user_access_key_args['AccessKeyId']
+    test_access_key_args['SecretAccessKey'] = user_access_key_args['SecretAccessKey']
+    test_access_key_args['NewPassword'] = "pqrs"
+    test_access_key_args['OldPassword'] = "pqrs"
+    result = AuthTest(test_msg).change_user_password(**test_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword failed")
+    result.command_response_should_have("InvalidPassword")
+
+    test_msg = 'ChangePassword with IAM User accessKey-secretKey, OldPassword and NewPassowrd should succeed.'
+    user_access_key_args['OldPassword'] ="abcd"
+    user_access_key_args['NewPassword'] = "pqrs"
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword is successful")
+
+    test_msg = 'Two subsequent ChangePassword with valid password value should succeed - first changepassword'
+    user_access_key_args['OldPassword'] ="pqrs"
+    user_access_key_args['NewPassword'] = "vcxv"
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword is successful")
+    test_msg = 'Two subsequent ChangePassword with valid password value should succeed - second changepassword'
+    user_access_key_args['OldPassword'] ="vcxv"
+    user_access_key_args['NewPassword'] = "xyzd"
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword is successful")
+
+    test_msg = 'ChangePassword with same value for oldPassword and newPassword should fail.'
+    user_access_key_args['OldPassword'] ="xyzd"
+    user_access_key_args['NewPassword'] = "xyzd"
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword failed")
+    result.command_response_should_have("InvalidPassword")
+
+    test_msg = 'ChangePassword with empty value i.e\"\" for newPassword should fail.'
+    user_access_key_args['OldPassword'] ="xyzd"
+    user_access_key_args['NewPassword'] = "\"\""
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword failed")
+    result.command_response_should_have("Invalid length for parameter NewPassword")
+
+    test_msg = 'ChangePassword with special character i.e. xyzd\\t as newPassword should succeed.'
+    user_access_key_args['OldPassword'] ="xyzd"
+    user_access_key_args['NewPassword'] = "xyzd\\t"
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword is successful")
+
+    test_msg = 'ChangePassword with space i.e." avc " as newPassword should succeed.'
+    user_access_key_args['OldPassword'] ="xyzd\\t"
+    user_access_key_args['NewPassword'] = " avc "
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword is successful")
+
+    test_msg = 'ChangePassword with special character e.g x#?*% as newPassword should succeed.'
+    user_access_key_args['OldPassword'] =" avc "
+    user_access_key_args['NewPassword'] = "x#?*%"
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword is successful")
+
+    test_msg = "Create User TestUser "
+    user_args = {'UserName': 'TestUser'}
+    user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result.command_should_match_pattern(user1_response_pattern)
+
+    test_msg = 'Create access key (user name is TestUser)'
+    access_key_args = {}
+    test_user_access_key_args = {}
+    access_key_args['UserName'] = 'TestUser'
+    accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result.command_should_match_pattern(accesskey_response_pattern)
+    accesskey_response_elements = get_response_elements(result.status.stdout)
+    test_user_access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+    test_user_access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+
+    test_msg = 'ChangePassword should fail with another IAM user(i.e.TestUser) accessKey-secretKey, OldPassword and NewPassword.'
+    test_user_access_key_args['OldPassword'] ="pqrs"
+    test_user_access_key_args['NewPassword'] = "xyza"
+    result = AuthTest(test_msg).change_user_password(**account_user_access_key_args).execute_test()
+    result.command_response_should_have("ChangePassword failed")
+    result.command_response_should_have("InvalidUserType")
+
+    test_msg = 'Delete access key for changePasswordUserLoginProfileTestUser'
+    result = AuthTest(test_msg).delete_access_key(**user_access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+    test_msg = 'Delete access key for TestUser'
+    result = AuthTest(test_msg).delete_access_key(**test_user_access_key_args).execute_test()
+    result.command_response_should_have("Access key deleted.")
+
+    test_msg = 'Delete User changePasswordUserLoginProfileTestUser'
+    user_args = {}
+    user_args['UserName'] = "changePasswordUserLoginProfileTestUser"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+    test_msg = 'Delete User TestUser'
+    user_args = {}
+    user_args['UserName'] = "TestUser"
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result.command_response_should_have("User deleted.")
+
+
+
     test_msg = 'create account login profile should succeed.'
     account_profile_response_pattern = "Account Login Profile: CreateDate = [\s\S]*, PasswordResetRequired = false, AccountName = [\s\S]*"
     user_args = {}
@@ -763,9 +908,8 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     S3ClientConfig.secret_key =  None
     result = AuthTest(test_msg).list_users(**user_args).execute_test(False, False, stdin_values)
     result.command_should_match_pattern(list_user_pattern)
-
-
     '''
+
     _use_root_credentials()
     test_msg = 'Reset s3user1 user attributes (path and name)'
     user_args = {}

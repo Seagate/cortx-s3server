@@ -117,6 +117,15 @@ class AuthTest(PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def change_user_password(self, **login_profile_args):
+        cmd = "s3iamcli changepassword --access_key '%s' --secret_key\
+                   '%s' --old_password %s --new_password %s " % (
+                 login_profile_args['AccessKeyId'],
+                 login_profile_args['SecretAccessKey'], login_profile_args\
+                     ['OldPassword'], login_profile_args['NewPassword'])
+        self.with_cli(cmd)
+        return self
+
     def create_account_login_profile(self, accountnameflag = None, passwordflag = None, **login_profile_args):
         if 'AccessKeyId' in login_profile_args:
             cmd = "s3iamcli createaccountloginprofile --access_key '%s' --secret_key\

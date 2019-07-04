@@ -72,4 +72,14 @@ class UserLoginProfileResponseGenerator extends AbstractResponseGenerator {
     return new XMLResponseFormatter().formatUpdateResponse(
         "UpdateLoginProfile");
   }
+
+  /**
+  * Below method will generate 'ChangePassword' response
+  * @return
+  */
+ public
+  ServerResponse generateChangePasswordResponse() {
+    return new XMLResponseFormatter().formatChangePasswordResponse(
+        "ChangePassword");
+  }
 }

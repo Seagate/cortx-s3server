@@ -56,4 +56,23 @@ class UserLoginProfileParameterValidator extends AbstractParameterValidator {
     }
     return S3ParameterValidatorUtil.isValidName(requestBody.get("UserName"));
   }
+
+  /**
+  * Validate IAM user changePassword parameters i.e. OldPassword and NewPassowrd
+  */
+  @Override public Boolean isValidChangepasswordParams(
+      Map<String, String> requestBody) {
+
+    if (requestBody.get("OldPassword") != null &&
+        !(S3ParameterValidatorUtil.isValidPassword(
+             requestBody.get("OldPassword")))) {
+      return false;
+    }
+    if (requestBody.get("NewPassword") != null &&
+        !(S3ParameterValidatorUtil.isValidPassword(
+             requestBody.get("NewPassword")))) {
+      return false;
+    }
+    return true;
+  }
 }

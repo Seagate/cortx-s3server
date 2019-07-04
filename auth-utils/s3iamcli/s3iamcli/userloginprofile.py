@@ -63,3 +63,21 @@ class UserLoginProfile:
             print("UpdateUserLoginProfile failed")
             print(str(ex))
             return
+
+    def changepassword(self):
+        if(self.cli_args.old_password is None):
+            print("OldPassword is required for changing user password")
+            return
+        if(self.cli_args.new_password is None):
+            print("NewPassword is required for changing user password")
+            return
+        user_args = {}
+        user_args['OldPassword'] = self.cli_args.old_password
+        user_args['NewPassword'] = self.cli_args.new_password
+        try:
+            result = self.iam_client.change_password(**user_args)
+            print("ChangePassword is successful")
+        except Exception as ex:
+            print("ChangePassword failed")
+            print(str(ex))
+            return
