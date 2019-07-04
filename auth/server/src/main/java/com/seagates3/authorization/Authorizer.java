@@ -19,6 +19,7 @@
 package com.seagates3.authorization;
 
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
@@ -32,6 +33,7 @@ import javax.xml.transform.TransformerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
+import com.seagates3.util.XMLValidatorUtil;
 
 public class Authorizer {
 
@@ -39,6 +41,8 @@ public class Authorizer {
    final Logger LOGGER = LoggerFactory.getLogger(Authorizer.class.getName());
   private
    static String defaultACP;
+  private
+   static String xsdPath;
 
   public
    ServerResponse authorize(Requestor requestor,
@@ -81,7 +85,19 @@ public class Authorizer {
             return responseGenerator.internalServerError();
           }
         }
-        return responseGenerator.generateAuthorizationResponse(requestor, null);
-    }
+        if (requestBody.get("Validate-ACL") != null) {
 
-}
+          ACLValidation aclValidation = null;
+          try {
+            aclValidation = new ACLValidation(requestBody.get("Validate-ACL"));
+          }
+          catch (ParserConfigurationException | SAXException | IOException e) {
+            LOGGER.error("Error while Parsing ACLXML");
+            return responseGenerator.invalidACL();
+          }
+
+          return aclValidation.validate();
+        }
+        return responseGenerator.generateAuthorizationResponse(requestor, null);
+   }
+ }

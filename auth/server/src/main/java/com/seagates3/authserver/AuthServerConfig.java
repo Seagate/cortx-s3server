@@ -53,7 +53,8 @@ public class AuthServerConfig {
     private static String ldapPasswd;
     public
      static final String DEFAULT_ACL_XML = "/defaultAclTemplate.xml";
-
+    public
+     static final String XSD_PATH = "/AmazonS3.xsd";
     private static Logger logger;
 
     /**

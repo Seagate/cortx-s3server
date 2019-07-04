@@ -10,17 +10,25 @@ import java.util.TreeMap;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.dao.ldap.LDAPUtils;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
-
-public
-class AuthorizerTest {
+@RunWith(PowerMockRunner.class)
+    @PrepareForTest({LDAPUtils.class, ACLValidation.class})
+    @PowerMockIgnore({"javax.management.*"}) public class AuthorizerTest {
 
  private
   Map<String, String> requestBody = null;
@@ -32,6 +40,10 @@ class AuthorizerTest {
   Authorizer authorizer;
   AuthorizationResponseGenerator responseGenerator =
       new AuthorizationResponseGenerator();
+ private
+  LDAPSearchResults ldapResults;
+ private
+  final String BASE_DN = "dc=s3,dc=seagate,dc=com";
 
  private
   String serverResponseStringWithoutAcl =
@@ -59,6 +71,9 @@ class AuthorizerTest {
 
   @Before public void setup() {
     authorizer = new Authorizer();
+    ldapResults = Mockito.mock(LDAPSearchResults.class);
+    PowerMockito.mockStatic(LDAPUtils.class);
+    PowerMockito.mockStatic(ACLValidation.class);
   }
 
   @Test public void validateServerResponseWithRequestHeaderAsTrue() {
@@ -98,5 +113,204 @@ class AuthorizerTest {
                  actualServerResponse.getResponseStatus());
     assertTrue(actualServerResponse.getResponseBody().matches(
         "[\\s\\S]*\\<ACL\\>[\\s\\S]*\\<\\/ACL\\>[\\s\\S]*"));
+  }
+
+  @Test public void authorize_validate_acl_internal_server_error() {
+    ServerResponse actualServerResponse = null;
+    String acl = "";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl);
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void authorize_validate_acl_invalid_permission() {
+    ServerResponse actualServerResponse = null;
+    String acl_invalid_permission =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl_invalid_permission);
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void authorize_validate_acl_malformed() {
+    ServerResponse actualServerResponse = null;
+    String acl_malformed =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>READ</Permission></Grant>" +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71b103e16d027d" +
+        "</ID>" + "<DisplayName>myapp</DisplayName></Grantee>" +
+        "<Permission>READ</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl_malformed);
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void authorize_validate_acl_missing_owner() {
+    ServerResponse actualServerResponse = null;
+    String acl_missing_owner =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" +
+        "<AccessControlList>" + "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl_missing_owner);
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void authorize_validate_acl_invalid_nograntee() {
+    ServerResponse actualServerResponse = null;
+    String acl_invalid_nograntee =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" +
+        "<Permission>READ</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl_invalid_nograntee);
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void authorize_validate_acl_invalid_nopermission() {
+    ServerResponse actualServerResponse = null;
+    String acl_no_permission =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "</Grant></AccessControlList>" + "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl_no_permission);
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
+  }
+  @Test public void authorize_validate_acl_valid_id() throws Exception {
+    ServerResponse actualServerResponse = null;
+    String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID};
+    String filter =
+        String.format("(&(%s=%s)(%s=%s))", LDAPUtils.CANONICAL_ID, "C12345",
+                      LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl);
+
+    PowerMockito
+        .when(
+             ACLValidation.class, "checkIdExists",
+             "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71",
+             "kirungeb")
+        .thenReturn(true);
+
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void authorize_validate_acl_invalid_id() throws Exception {
+    ServerResponse actualServerResponse = null;
+    String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID};
+    String filter =
+        String.format("(&(%s=%s)(%s=%s))", LDAPUtils.CANONICAL_ID, "C12345",
+                      LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Validate-ACL", acl);
+
+    PowerMockito
+        .when(
+             ACLValidation.class, "checkIdExists",
+             "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71",
+             "kirungeb")
+        .thenReturn(false);
+
+    authorizer.authorize(requestor, requestBody);
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
   }
 }

@@ -187,6 +187,19 @@ public abstract class AbstractResponseGenerator {
                 "InvalidArgument", errorMessage);
     }
 
+   public
+    ServerResponse invalidID() {
+      String errorMessage = "InvalidID";
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidID",
+                            errorMessage);
+    }
+
+   public
+    ServerResponse invalidACL() {
+      String errorMessage = "InvalidACL";
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidACL",
+                            errorMessage);
+    }
 
     /**
      * Use this method for internal purpose.
