@@ -361,6 +361,7 @@ class S3Option {
   // Check if any fake out options are provided.
   bool is_fake_clovis_createobj();
   bool is_fake_clovis_writeobj();
+  bool is_fake_clovis_readobj();
   bool is_fake_clovis_deleteobj();
   bool is_fake_clovis_createidx();
   bool is_fake_clovis_deleteidx();

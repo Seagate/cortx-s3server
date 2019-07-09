@@ -806,3 +806,21 @@ rsyslog settings from /etc/rsyslog.d/ directory
      - change configs
      - start rsyslog
      - start s3server
+
+
+# Clovis Stubs
+
+There are number of command line parameters to fake clovis functionality.
+It is possible to use all of them at once or just a subset
+* --fake_clovis_writeobj - stub for clovis write object with all zeros
+* --fake_clovis_readobj - stub for clovis read object with all zeros
+* --fake_clovis_createidx - stub for clovis create idx - does nothing
+* --fake_clovis_deleteidx - stub for clovis delete idx - does nothing
+* --fake_clovis_getkv - stub for clovis get key-value - read from memory hash map
+* --fake_clovis_putkv - stub for clovis put kye-value - stores in memory hash map
+* --fake_clovis_deletekv - stub for clovis delete key-value - deletes from memory hash map
+
+Note: for proper KV mocking one should use following combination
+```
+--fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true
+```

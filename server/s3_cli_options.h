@@ -54,6 +54,7 @@ DECLARE_bool(fake_authorization);
 
 DECLARE_bool(fake_clovis_createobj);
 DECLARE_bool(fake_clovis_writeobj);
+DECLARE_bool(fake_clovis_readobj);
 DECLARE_bool(fake_clovis_deleteobj);
 DECLARE_bool(fake_clovis_createidx);
 DECLARE_bool(fake_clovis_deleteidx);

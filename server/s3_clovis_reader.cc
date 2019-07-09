@@ -238,7 +238,7 @@ bool S3ClovisReader::read_object() {
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
 
-  s3_clovis_api->clovis_op_launch(ctx->ops, 1);
+  s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::readobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return true;
 }

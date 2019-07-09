@@ -58,6 +58,7 @@ DEFINE_bool(fake_authorization, false, "Fake out authorization");
 
 DEFINE_bool(fake_clovis_createobj, false, "Fake out clovis create object");
 DEFINE_bool(fake_clovis_writeobj, false, "Fake out clovis write object data");
+DEFINE_bool(fake_clovis_readobj, false, "Fake out clovis read object data");
 DEFINE_bool(fake_clovis_deleteobj, false, "Fake out clovis delete object");
 DEFINE_bool(fake_clovis_createidx, false, "Fake out clovis create index");
 DEFINE_bool(fake_clovis_deleteidx, false, "Fake out clovis delete index");

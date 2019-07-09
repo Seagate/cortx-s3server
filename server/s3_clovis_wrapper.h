@@ -40,6 +40,7 @@ enum class ClovisOpType {
   openobj,
   createobj,
   writeobj,
+  readobj,
   deleteobj,
   createidx,
   deleteidx,
@@ -127,6 +128,10 @@ class ConcreteClovisAPI : public ClovisAPI {
     }
   }
 
+  bool is_clovis_sync_should_be_faked() {
+    return S3Option::get_instance()->is_fake_clovis_putkv();
+  }
+
  public:
   int init_clovis_api() { return init_clovis(); }
 
@@ -154,11 +159,17 @@ class ConcreteClovisAPI : public ClovisAPI {
 
   int clovis_sync_entity_add(struct m0_clovis_op *sync_op,
                              struct m0_clovis_entity *entity) {
+    if (is_clovis_sync_should_be_faked()) {
+      return 0;
+    }
     return m0_clovis_sync_entity_add(sync_op, entity);
   }
 
   int clovis_sync_op_add(struct m0_clovis_op *sync_op,
                          struct m0_clovis_op *op) {
+    if (is_clovis_sync_should_be_faked()) {
+      return 0;
+    }
     return m0_clovis_sync_op_add(sync_op, op);
   }
 
@@ -219,6 +230,7 @@ class ConcreteClovisAPI : public ClovisAPI {
     if ((config->is_fake_clovis_createobj() &&
          type == ClovisOpType::createobj) ||
         (config->is_fake_clovis_writeobj() && type == ClovisOpType::writeobj) ||
+        (config->is_fake_clovis_readobj() && type == ClovisOpType::readobj) ||
         (config->is_fake_clovis_deleteobj() &&
          type == ClovisOpType::deleteobj) ||
         (config->is_fake_clovis_createidx() &&

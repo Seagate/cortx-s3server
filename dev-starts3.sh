@@ -109,6 +109,17 @@ print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"][
 export PATH=$PATH:/opt/seagate/s3/bin
 counter=0
 
+# s3server cmd parameters allowing to fake some clovis functionality
+# --fake_clovis_writeobj - stub for clovis write object with all zeros
+# --fake_clovis_readobj - stub for clovis read object with all zeros
+# --fake_clovis_createidx - stub for clovis create idx - does nothing
+# --fake_clovis_deleteidx - stub for clovis delete idx - does nothing
+# --fake_clovis_getkv - stub for clovis get key-value - read from memory hash map
+# --fake_clovis_putkv - stub for clovis put kye-value - stores in memory hash map
+# --fake_clovis_deletekv - stub for clovis delete key-value - deletes from memory hash map
+# for proper KV mocking one should use following combination
+#    --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true
+
 while [[ $counter -lt $num_instances ]]
 do
   clovis_local_port=`expr 101 + $counter`

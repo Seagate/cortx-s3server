@@ -727,6 +727,8 @@ void S3Option::dump_options() {
          FLAGS_fake_clovis_createobj);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_writeobj = %d\n",
          FLAGS_fake_clovis_writeobj);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_readobj = %d\n",
+         FLAGS_fake_clovis_readobj);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deleteobj = %d\n",
          FLAGS_fake_clovis_deleteobj);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_createidx = %d\n",
@@ -968,6 +970,8 @@ bool S3Option::is_fake_clovis_createobj() {
 }
 
 bool S3Option::is_fake_clovis_writeobj() { return FLAGS_fake_clovis_writeobj; }
+
+bool S3Option::is_fake_clovis_readobj() { return FLAGS_fake_clovis_readobj; }
 
 bool S3Option::is_fake_clovis_deleteobj() {
   return FLAGS_fake_clovis_deleteobj;

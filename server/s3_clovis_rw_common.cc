@@ -22,6 +22,9 @@
 #include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_post_to_main_loop.h"
+#include "s3_clovis_kvs_reader.h"
+#include "s3_clovis_kvs_writer.h"
+#include "s3_fake_clovis_kvs.h"
 
 /*
  *  <IEM_INLINE_DOCUMENTATION>
@@ -195,6 +198,46 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   // This can be mocked from GTest but system tests call this method too,
   // where m0_clovis_rc can't be mocked.
   op->op_rc = 0;  // fake success
+
+  s3_log(S3_LOG_DEBUG, "", "R %d, W %d, N %d cur %d", M0_CLOVIS_IC_GET,
+         M0_CLOVIS_IC_PUT, M0_CLOVIS_IC_NEXT, op->op_code);
+  if (op->op_code == M0_CLOVIS_IC_GET) {
+    struct s3_clovis_context_obj *ctx =
+        (struct s3_clovis_context_obj *)op->op_datum;
+
+    S3ClovisKVSReaderContext *read_ctx =
+        (S3ClovisKVSReaderContext *)ctx->application_context;
+
+    op->op_rc = S3FakeClovisKvs::instance()->kv_read(
+        op->op_entity->en_id, *read_ctx->get_clovis_kvs_op_ctx());
+  } else if (M0_CLOVIS_IC_NEXT == op->op_code) {
+    struct s3_clovis_context_obj *ctx =
+        (struct s3_clovis_context_obj *)op->op_datum;
+
+    S3ClovisKVSReaderContext *read_ctx =
+        (S3ClovisKVSReaderContext *)ctx->application_context;
+
+    op->op_rc = S3FakeClovisKvs::instance()->kv_next(
+        op->op_entity->en_id, *read_ctx->get_clovis_kvs_op_ctx());
+  } else if (M0_CLOVIS_IC_PUT == op->op_code) {
+    struct s3_clovis_context_obj *ctx =
+        (struct s3_clovis_context_obj *)op->op_datum;
+
+    S3ClovisKVSWriterContext *write_ctx =
+        (S3ClovisKVSWriterContext *)ctx->application_context;
+
+    op->op_rc = S3FakeClovisKvs::instance()->kv_write(
+        op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());
+  } else if (M0_CLOVIS_IC_DEL == op->op_code) {
+    struct s3_clovis_context_obj *ctx =
+        (struct s3_clovis_context_obj *)op->op_datum;
+
+    S3ClovisKVSWriterContext *write_ctx =
+        (S3ClovisKVSWriterContext *)ctx->application_context;
+
+    op->op_rc = S3FakeClovisKvs::instance()->kv_del(
+        op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());
+  }
 
   // Free user event
   event_free((struct event *)user_context->user_event);

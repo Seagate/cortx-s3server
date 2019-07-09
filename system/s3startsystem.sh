@@ -51,6 +51,19 @@ profile_fid="<$MERO_PROFILE_FID>"
 process_fid="<$MERO_PROCESS_FID>"
 s3port=$MERO_S3SERVER_PORT
 
+
+# s3server cmd parameters allowing to fake some clovis functionality
+# --fake_clovis_writeobj - stub for clovis write object with all zeros
+# --fake_clovis_readobj - stub for clovis read object with all zeros
+# --fake_clovis_createidx - stub for clovis create idx - does nothing
+# --fake_clovis_deleteidx - stub for clovis delete idx - does nothing
+# --fake_clovis_getkv - stub for clovis get key-value - read from memory hash map
+# --fake_clovis_putkv - stub for clovis put kye-value - stores in memory hash map
+# --fake_clovis_deletekv - stub for clovis delete key-value - deletes from memory hash map
+# for proper KV mocking one should use following combination
+#    --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true
+
+
 pid_filename='/var/run/s3server.'$1'.pid'
 s3server --s3pidfile $pid_filename \
          --clovislocal $local_ep --clovisha $ha_ep \
