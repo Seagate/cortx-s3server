@@ -44,6 +44,7 @@ public class S3ParameterValidatorUtil {
     final static int MIN_ACCESS_KEY_ID_LENGTH = 16;
     final static int MIN_ARN_LENGTH = 20;
     final static int MIN_SAML_METADATA_LENGTH = 1000;
+    final static int MIN_PASSWORD_LENGTH = 6;
     final static int MAX_PASSWORD_LENGTH = 128;
 
     /**
@@ -106,6 +107,23 @@ public class S3ParameterValidatorUtil {
       }
 
       return !(password.length() < 1 ||
+               password.length() > MAX_PASSWORD_LENGTH);
+    }
+
+    /**
+     * Validate the password as per password policy. Allowed range
+     * is between 6 and 128.
+     *
+     * @param password user password.
+     * @return true if password follows password policy.
+     */
+   public
+    static Boolean validatePasswordPolicy(String password) {
+      if (!password.matches(PASSWORD_PATTERN)) {
+        return false;
+      }
+
+      return !(password.length() < MIN_PASSWORD_LENGTH ||
                password.length() > MAX_PASSWORD_LENGTH);
     }
 

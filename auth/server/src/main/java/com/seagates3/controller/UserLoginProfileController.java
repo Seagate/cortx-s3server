@@ -24,6 +24,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.seagates3.authorization.Authorizer;
 import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.UserDAO;
@@ -31,6 +32,7 @@ import com.seagates3.dao.UserLoginProfileDAO;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
+import com.seagates3.parameter.validator.S3ParameterValidatorUtil;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.UserLoginProfileResponseGenerator;
 import com.seagates3.response.generator.UserResponseGenerator;
@@ -78,10 +80,21 @@ class UserLoginProfileController extends AbstractController {
       LOGGER.error("User [" + user.getName() + "] does not exists");
       return userResponseGenerator.noSuchEntity();
     } else {
+      if (Authorizer.isRootUser(user)) {
+        LOGGER.error(
+            "Cannot create account login profile with CreateUserLoginProfile");
+        return userResponseGenerator.invalidUserType("Create");
+      }
       if (user.getPassword() == null) {
         try {
+          // Validate new password as per password policy
+          if (!S3ParameterValidatorUtil.validatePasswordPolicy(
+                   requestBody.get("Password"))) {
+            LOGGER.error(
+                "Password does not conform to the account password policy");
+            return userResponseGenerator.passwordPolicyVoilation();
+          }
           user.setPassword(requestBody.get("Password"));
-
           user.setProfileCreateDate(
               DateUtil.toLdapDate(new Date(DateUtil.getCurrentTime())));
           if (requestBody.get("PasswordResetRequired") == null) {
@@ -115,16 +128,30 @@ class UserLoginProfileController extends AbstractController {
     try {
       user = userDAO.find(requestor.getAccount().getName(),
                           requestBody.get("UserName"));
-      if (user.exists() && user.getPassword() != null) {
-        LOGGER.info("Password reset flag - " + user.getPwdResetRequired());
-        response = userLoginProfileResponseGenerator.generateGetResponse(user);
+      if (!user.exists()) {
+        LOGGER.error("User [" + user.getName() + "] does not exists");
+        return userLoginProfileResponseGenerator.noSuchEntity();
       } else {
-        response = userLoginProfileResponseGenerator.noSuchEntity();
+        if (Authorizer.isRootUser(user)) {
+          LOGGER.error(
+              "Cannot get account login profile with GetUserLoginProfile");
+          return userResponseGenerator.invalidUserType("Get");
+        }
+        if (user.getPassword() == null) {
+          LOGGER.error("LoginProfile not created for user - " +
+                       requestBody.get("UserName"));
+          return userResponseGenerator.noSuchEntity();
+        } else {
+          LOGGER.info("Password reset flag - " + user.getPwdResetRequired());
+          response =
+              userLoginProfileResponseGenerator.generateGetResponse(user);
+        }
       }
     }
     catch (DataAccessException ex) {
       response = userResponseGenerator.internalServerError();
     }
+
     LOGGER.debug("Returned response is  - " + response.getResponseBody());
     return response;
   }
@@ -144,6 +171,11 @@ class UserLoginProfileController extends AbstractController {
                      "] does not exists");
         response = userResponseGenerator.noSuchEntity();
       } else {
+        if (Authorizer.isRootUser(user)) {
+          LOGGER.error("Cannot update account login profile with " +
+                       "UpdateUserLoginProfile");
+          return userResponseGenerator.invalidUserType("Update");
+        }
         if (user.getPassword() == null &&
             (user.getProfileCreateDate() == null ||
              user.getProfileCreateDate().isEmpty())) {
@@ -153,6 +185,14 @@ class UserLoginProfileController extends AbstractController {
         } else {
 
           if (requestBody.get("Password") != null) {
+            // Validate new password as per password policy
+            if (!S3ParameterValidatorUtil.validatePasswordPolicy(
+                     requestBody.get("Password"))) {
+              LOGGER.error(
+                  "Password does not conform to the account password policy");
+              return userResponseGenerator.passwordPolicyVoilation();
+            }
+
             user.setPassword(requestBody.get("Password"));
             LOGGER.info("Updating old password with new password");
           }
@@ -189,8 +229,8 @@ class UserLoginProfileController extends AbstractController {
         LOGGER.error("User [" + requestor.getName() + "] does not exists");
         response = userResponseGenerator.noSuchEntity();
       } else {
-        if (user.getName().equals("root")) {
-          LOGGER.error("Only IAm Users can change their own password");
+        if (Authorizer.isRootUser(user)) {
+          LOGGER.error("Only IAM Users can change their own password");
           return userResponseGenerator.invalidUserType();
         }
         if (user.getPassword() == null) {
@@ -203,6 +243,14 @@ class UserLoginProfileController extends AbstractController {
           if (oldPassword != null && newPassword != null) {
             if (user.getPassword().equals(oldPassword) &&
                 !oldPassword.equals(newPassword)) {
+              // Validate new password as per password policy
+              if (!S3ParameterValidatorUtil.validatePasswordPolicy(
+                       newPassword)) {
+                LOGGER.error(
+                    "Password does not conform to the account password policy");
+                return userResponseGenerator.passwordPolicyVoilation();
+              }
+
               user.setPassword(newPassword);
               user.setPwdResetRequired("FALSE");
               LOGGER.info("changing old password with new password");

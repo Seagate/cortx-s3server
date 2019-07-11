@@ -205,14 +205,31 @@ public abstract class AbstractResponseGenerator {
    public
     ServerResponse invalidPassword() {
       String errorMessage =
-          "Either the new password or the old password was incorrect.";
+          "Either the new password or the old password was incorrect";
       return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidPassword",
                             errorMessage);
     }
 
    public
+    ServerResponse passwordPolicyVoilation() {
+      String errorMessage =
+          "Password does not conform to the account password policy";
+      return formatResponse(HttpResponseStatus.BAD_REQUEST,
+                            "PasswordPolicyVoilation", errorMessage);
+    }
+
+   public
     ServerResponse invalidUserType() {
-      String errorMessage = "Only IAM user can change their own password.";
+      String errorMessage = "Only IAM user can change their own password";
+      return formatResponse(HttpResponseStatus.UNAUTHORIZED, "InvalidUserType",
+                            errorMessage);
+    }
+
+   public
+    ServerResponse invalidUserType(String operation) {
+      String errorMessage = "Cannot " + operation.toLowerCase() +
+                            " account login profile" + " with " + operation +
+                            "UserLoginProfile";
       return formatResponse(HttpResponseStatus.UNAUTHORIZED, "InvalidUserType",
                             errorMessage);
     }

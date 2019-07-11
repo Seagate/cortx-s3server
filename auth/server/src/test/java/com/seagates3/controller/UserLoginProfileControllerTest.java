@@ -91,7 +91,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Map<String, String> requestBody =
         new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     requestBody.put("UserName", "s3testuser");
-    requestBody.put("Password", "abc");
+    requestBody.put("Password", "abcdef");
     requestBody.put("PasswordResetRequired", "false");
 
     userDAO = Mockito.mock(UserDAO.class);
@@ -215,6 +215,54 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   /**
+   * Below test will check when CreateUserLoginProfile API executed on root
+   * user, it returns - 'InvalidUserType'
+   *
+   * @throws Exception
+   */
+  @Test public void CreateUserLoginProfile_InvalidUserType_Response()
+      throws Exception {
+    createUserLoginProfileController_CreateAPI();
+
+    User user = new User();
+    user.setAccountName(ACCOUNT_NAME);
+    user.setName("root");
+    user.setId(USERID);
+    user.setPassword("password");
+
+    Mockito.when(userDAO.find(ACCOUNT_NAME, USERNAME)).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.create();
+    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below test will check when CreateUserLoginProfile API executed on user
+   * with new password length less than 6, it returns -
+   *'PasswordPolicyVoilation'
+   *
+   * @throws Exception
+   */
+  @Test public void CreateUserLoginProfile_PasswordPolicyVoilation_Response()
+      throws Exception {
+    createUserLoginProfileController_CreateAPI();
+
+    userLoginProfileController.requestBody.put("Password", "abcd");
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+
+    ServerResponse response = userLoginProfileController.create();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
+
+  /**
    * Below method will Test successful API response when valid username and
    * password present
    *
@@ -279,6 +327,29 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(mockUserDao.find(ACCOUNT_NAME, USERNAME)).thenReturn(user);
     userLoginProfileController = Mockito.spy(
         new UserLoginProfileController(requestorObj, requestBodyObj));
+    ServerResponse response = userLoginProfileController.list();
+    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below test will check when GetUserLoginProfile API executed on root
+   * user, it returns - 'InvalidUserType'
+   *
+   * @throws Exception
+   */
+  @Test public void GetUserLoginProfile_InvalidUserType_Response()
+      throws Exception {
+    createUserLoginProfileController_CreateAPI();
+
+    User user = new User();
+    user.setAccountName(ACCOUNT_NAME);
+    user.setName("root");
+    user.setId(USERID);
+    user.setPassword("password");
+
+    Mockito.when(userDAO.find(ACCOUNT_NAME, USERNAME)).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
     ServerResponse response = userLoginProfileController.list();
     Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
                         response.getResponseStatus());
@@ -393,8 +464,58 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   /**
+   * Below test will check when UpdateUserLoginProfile API executed on root
+   * user, it returns - 'InvalidUserType'
+   *
+   * @throws Exception
+   */
+  @Test public void UpdateUserLoginProfile_InvalidUserType_Response()
+      throws Exception {
+    createUserLoginProfileController_CreateAPI();
+
+    User user = new User();
+    user.setAccountName(ACCOUNT_NAME);
+    user.setName("root");
+    user.setId(USERID);
+    user.setPassword("password");
+
+    Mockito.when(userDAO.find(ACCOUNT_NAME, USERNAME)).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+    ServerResponse response = userLoginProfileController.update();
+    Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                        response.getResponseStatus());
+  }
+
+  /**
+   * Below test will check when UpdateUserLoginProfile API executed on user
+   * with new password length less than 6, it returns -
+   *'PasswordPolicyVoilation'
+   *
+   * @throws Exception
+   */
+  @Test public void UpdateUserLoginProfile_PasswordPolicyVoilation_Response()
+      throws Exception {
+    createUserLoginProfileController_CreateAPI();
+
+    userLoginProfileController.requestBody.put("Password", "abcd");
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+
+    ServerResponse response = userLoginProfileController.update();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
+
+  /**
    * Below test will check successful API response for ChangePassword for
    * IAM user
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_Successful_Response() throws Exception {
@@ -423,6 +544,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   /**
    * Below test will check 'NoSuchEntity' response when user is not
    * existing in ldap API response for ChangePassword
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_UserNotExists_Response() throws Exception {
@@ -443,6 +565,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   /**
    * Below test will check 'InvalidUserType' response when root/Account
    * user tries to change password using ChangePassword command
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_InvalidUserType_Response() throws Exception {
@@ -465,6 +588,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   /**
    * Below will test 'NoSuchEntity' response scenario when ChangePassword
    * is called on user which is not having LoginProfile set
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_UserProfileNotCreated_Response()
@@ -491,6 +615,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
    * Below will test 'MissingParameter' response scenario when
    * ChangePassword is called on user without passing OldPassword as input
    * parameter
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_MissingParameter_OldPassword_Response()
@@ -519,6 +644,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
    * Below will test 'MissingParameter' response scenario when
    * ChangePassword is called on user without passing NewPassword as input
    * parameter
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_MissingParameter_NewPassword_Response()
@@ -546,8 +672,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   /**
    * Below will test 'InvalidPassword' response scenario when
    * ChangePassword is called on user when user's current password and
-   * oldPassword
-   * parameter value is different
+   * oldPassword parameter value is different
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_InvalidPassword_Response() throws Exception {
@@ -576,6 +702,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
    * Below will test 'InvalidPassword' response scenario when
    * ChangePassword is called on user when user's newPassword and oldPassword
    * parameter values are same
+   *
    * @throws Exception
    */
   @Test public void ChangePassword_InvalidPassword_SamePassword_Response()
@@ -602,8 +729,40 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   /**
+   * Below test will check when ChangePassword API executed on user
+   * with new password length less than 6,
+   * it returns an error- 'PasswordPolicyVoilation'
+   *
+   * @throws Exception
+   */
+  @Test public void ChangePassword_PasswordPolicyVoilation_Response()
+      throws Exception {
+    createUserLoginProfileController_CreateAPI();
+
+    userLoginProfileController.requestBody.remove("UserName");
+    userLoginProfileController.requestBody.put("OldPassword", "password1");
+    userLoginProfileController.requestBody.put("NewPassword", "pass");
+    userLoginProfileController.requestor.setId("123");
+    userLoginProfileController.requestor.setName("s3testuser");
+
+    User user = new User();
+    user.setAccountName("s3test");
+    user.setName("s3testuser");
+    user.setId("123");
+    user.setPassword("password1");
+
+    Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
+    Mockito.doNothing().when(userDAO).save(user);
+
+    ServerResponse response = userLoginProfileController.changepassword();
+    Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
+                        response.getResponseStatus());
+  }
+
+  /**
    * Below test will check error response when ldap returns exception on
    * not finding requested user
+   *
    * @throws Exception
    */
   @Test public void ChangePassword__DataAccessException_Response()

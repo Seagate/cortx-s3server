@@ -63,7 +63,7 @@ class UserLoginProfileValidatorParameterTest {
 
   @Test public void Create_Password_True() {
     requestBody.put("UserName", "abcd");
-    requestBody.put("Password", "abvd");
+    requestBody.put("Password", "abvdef");
     assertTrue(userLoginProfileValidator.isValidCreateParams(requestBody));
   }
 }
