@@ -478,11 +478,11 @@ int main(int argc, char **argv) {
   // Call this function before creating event base
   evthread_use_pthreads();
 
-  global_evbase_handle = event_base_new();
-  g_option_instance->set_eventbase(global_evbase_handle);
-
   // Uncomment below api if we want to run libevent in debug mode
   // event_enable_debug_mode();
+
+  global_evbase_handle = event_base_new();
+  g_option_instance->set_eventbase(global_evbase_handle);
 
   if (evthread_make_base_notifiable(global_evbase_handle) < 0) {
     s3_log(S3_LOG_ERROR, "", "Couldn't make base notifiable!");

@@ -232,7 +232,7 @@ index 7518c3b..6dc18d0 100644
  bufferevent_setwatermark(struct bufferevent *bufev, short events,
      size_t lowmark, size_t highmark)
 diff --git a/bufferevent_openssl.c b/bufferevent_openssl.c
-index 7582d9b..0fc9166 100644
+index 7582d9b..16881ed 100644
 --- a/bufferevent_openssl.c
 +++ b/bufferevent_openssl.c
 @@ -61,6 +61,8 @@
@@ -244,7 +244,18 @@ index 7582d9b..0fc9166 100644
  /*
   * Define an OpenSSL bio that targets a bufferevent.
   */
-@@ -321,6 +323,9 @@ struct bufferevent_openssl {
+@@ -99,6 +101,10 @@ print_err(int val)
+ #define print_err(v) ((void)0)
+ #endif
+ 
++/* S3 edit starts */
++extern size_t g_event_max_read;
++/* S3 edit ends */
++
+ /* Called to initialize a new BIO */
+ static int
+ bio_bufferevent_new(BIO *b)
+@@ -321,6 +327,9 @@ struct bufferevent_openssl {
  
  	/* Are we currently connecting, accepting, or doing IO? */
  	unsigned state : 2;
@@ -254,7 +265,51 @@ index 7582d9b..0fc9166 100644
  };
  
  static int be_openssl_enable(struct bufferevent *, short);
-@@ -748,6 +753,16 @@ bytes_to_read(struct bufferevent_openssl *bev)
+@@ -383,6 +392,43 @@ start_reading(struct bufferevent_openssl *bev_ssl)
+ 		struct bufferevent *bev = &bev_ssl->bev.bev;
+ 		int r;
+ 		r = _bufferevent_add_event(&bev->ev_read, &bev->timeout_read);
++		/* S3 edit starts */
++		/*
++		 * This is a fix for EOS-198. Server would crash or return
++		 * timeout errors, when is tested with cosbench with SSL
++		 * enabled.  Specific scenario ivolved writing objects of size
++		 * 1000000 bytes.  Current settings force libevent to read data
++		 * in chunks of 16k, by setting low- and high-water marks to
++		 * 16k.  When reading in 16k chunks, the last chunk of data is
++		 * 576 bytes.  The issue that was observed was: libevent times
++		 * out on read, as if those 576 bytes were not sent by client.
++		 * When timeout has triggered, and S3 server has already sent
++		 * error response to client, right after that, libevent
++		 * suddenly discoveres that there's data for reading, and calls
++		 * consider_reading.  Crash was caused probably because
++		 * consider_reading calls htparser_run, and it uses parser
++		 * struct that has been already reset.
++		 *
++		 * The fix is -- if at the end of payload we see that there's
++		 * data pending, then immediately activate the event -- don't
++		 * wait until new data comes to socket.
++		 *
++		 * Since this is risky fix, condition for event activation is
++		 * specified as narrow as possible.  We check that watermark
++		 * (wm_read.low) is reduced -- this happens right after we read
++		 * last full chunk of 16k.  We check that pending data is more
++		 * or equal to watermark -- if it's less than watermark, it
++		 * means there's more data in socket, and we don't need to act.
++		 * We check that pending is more than 0 -- if it's 0, there
++		 * must be more data in socket.
++		 */
++		if (bev->wm_read.low < g_event_max_read &&
++		    SSL_pending(bev_ssl->ssl) >= bev->wm_read.low &&
++		    SSL_pending(bev_ssl->ssl) > 0) {
++			evmap_io_active(bev->ev_base, bev->ev_read.ev_fd,
++					EV_READ | EV_ET);
++		}
++		/* S3 edit ends */
+ 		if (r == 0 && bev_ssl->read_blocked_on_write)
+ 			r = _bufferevent_add_event(&bev->ev_write,
+ 			    &bev->timeout_write);
+@@ -748,6 +794,16 @@ bytes_to_read(struct bufferevent_openssl *bev)
  		result = READ_DEFAULT;
  	}
  
@@ -271,7 +326,7 @@ index 7582d9b..0fc9166 100644
  	/* Respect the rate limit */
  	limit = _bufferevent_get_read_max(&bev->bev);
  	if (result > limit) {
-@@ -778,6 +793,10 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
+@@ -778,6 +834,10 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
  		return;
  
  	n_to_read = bytes_to_read(bev_ssl);
@@ -282,7 +337,7 @@ index 7582d9b..0fc9166 100644
  
  	while (n_to_read) {
  		r = do_read(bev_ssl, n_to_read);
-@@ -799,6 +818,19 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
+@@ -799,6 +859,19 @@ consider_reading(struct bufferevent_openssl *bev_ssl)
  		 * whole SSL record anyway. */
  		n_to_read = SSL_pending(bev_ssl->ssl);
  
@@ -302,7 +357,7 @@ index 7582d9b..0fc9166 100644
  		/* XXX This if statement is actually a bad bug, added to avoid
  		 * XXX a worse bug.
  		 *
-@@ -1452,3 +1484,14 @@ bufferevent_get_openssl_error(struct bufferevent *bev)
+@@ -1452,3 +1525,14 @@ bufferevent_get_openssl_error(struct bufferevent *bev)
  	BEV_UNLOCK(bev);
  	return err;
  }
@@ -317,7 +372,6 @@ index 7582d9b..0fc9166 100644
 +    BEV_UNLOCK(bev);
 +}
 +/* S3 edit ends */
-\ No newline at end of file
 diff --git a/bufferevent_sock.c b/bufferevent_sock.c
 index 9b0caf2..5ceb1f3 100644
 --- a/bufferevent_sock.c

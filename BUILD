@@ -6,6 +6,11 @@ cc_binary(
     #                         --define MERO_LIB=<mero lib path>
     #                         --define MERO_HELPERS_LIB=<mero helpers lib path>
     #                         --define MERO_EXTRA_LIB=<mero extra lib path>
+    # To build s3server with debug symbols (to be able to analyze core files,
+    # or to run under GDB) add the following option to the command line
+    # arguments listed above:
+    #                         --strip=never
+    # Without this option, bazel strips debug symbols from the binary.
 
     name = "s3server",
 
