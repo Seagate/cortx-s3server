@@ -181,7 +181,9 @@ class UserLoginProfileController extends AbstractController {
              user.getProfileCreateDate().isEmpty())) {
           LOGGER.error("LoginProfile not created for user - " +
                        requestBody.get("UserName"));
-          response = userResponseGenerator.noSuchEntity();
+          String errorMessage =
+              "Login Profile for User " + user.getName() + " cannot be found.";
+          response = userResponseGenerator.noSuchEntity(errorMessage);
         } else {
 
           if (requestBody.get("Password") != null) {

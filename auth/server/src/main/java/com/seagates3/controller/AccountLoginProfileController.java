@@ -31,6 +31,7 @@ import com.seagates3.dao.DAOResource;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
+import com.seagates3.parameter.validator.S3ParameterValidatorUtil;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AccountLoginProfileResponseGenerator;
@@ -87,6 +88,13 @@ class AccountLoginProfileController extends AbstractController {
     } else {
       if (account.getPassword() == null) {
         try {
+          // Validate new password as per password policy
+          if (!S3ParameterValidatorUtil.validatePasswordPolicy(
+                   requestBody.get("Password"))) {
+            LOGGER.error(
+                "Password does not conform to the account password policy");
+            return accountResponseGenerator.passwordPolicyVoilation();
+          }
           account.setPassword(requestBody.get("Password"));
 
           account.setProfileCreateDate(
@@ -153,12 +161,22 @@ class AccountLoginProfileController extends AbstractController {
         if (account.getPassword() == null &&
             (account.getProfileCreateDate() == null ||
              account.getProfileCreateDate().isEmpty())) {
-          LOGGER.error("LoginProfile not created for account - " +
-                       requestor.getAccount().getName());
-          response = accountResponseGenerator.noSuchEntity();
+
+          String errorMessage = "LoginProfile not created for account - " +
+                                requestor.getAccount().getName();
+          LOGGER.error(errorMessage);
+          response = accountResponseGenerator.noSuchEntity(errorMessage);
+
         } else {
 
           if (requestBody.get("Password") != null) {
+            // Validate new password as per password policy
+            if (!S3ParameterValidatorUtil.validatePasswordPolicy(
+                     requestBody.get("Password"))) {
+              LOGGER.error(
+                  "Password does not conform to the account password policy");
+              return accountResponseGenerator.passwordPolicyVoilation();
+            }
             account.setPassword(requestBody.get("Password"));
             LOGGER.info("Updating old password with new password");
           }

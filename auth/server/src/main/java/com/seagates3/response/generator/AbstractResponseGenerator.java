@@ -291,5 +291,10 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.NOT_ACCEPTABLE,
                             "MinDurationIntervalNotMaintained", errorMessage);
     }
-}
 
+   public
+    ServerResponse noSuchEntity(String errorMessage) {
+      return formatResponse(HttpResponseStatus.UNAUTHORIZED, "NoSuchEntity",
+                            errorMessage);
+    }
+ }

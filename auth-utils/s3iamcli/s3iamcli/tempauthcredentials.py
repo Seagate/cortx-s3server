@@ -52,6 +52,9 @@ class TempAuthCredentials:
         if(response['status'] == 201):
             credentials = GetTempAuthCredentialsResponse(response)
             credentials.print_credentials()
+        elif(response['status'] == 503):
+            print("GetTempAuthCredentials not successful")
+            print("An error occurred (503) when calling the GetTempAuthCredentials operation : " + response['reason'])
         else:
             print("GetTempAuthCredentials not successful")
             error = ErrorResponse(response)

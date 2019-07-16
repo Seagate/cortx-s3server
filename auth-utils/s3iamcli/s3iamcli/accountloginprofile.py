@@ -48,6 +48,9 @@ class AccountLoginProfile:
                 # unlikely message corruption case in network
                 print("Failed to list login profile")
                 sys.exit(0)
+        elif(response['status'] == 503):
+            print("Failed to get login profile")
+            print("An error occurred (503) when calling the GetAccountLoginProfile operation : " + response['reason'])
         else:
             print("Failed to get login profile")
             error = ErrorResponse(response)
@@ -92,6 +95,9 @@ class AccountLoginProfile:
                 # unlikely message corruption case in network
                 print("Account login profile was created. For details try get account login profile.")
                 sys.exit(0)
+        elif(result['status'] == 503):
+            print("Account login profile wasn't created.")
+            print("An error occurred (503) when calling the CreateAccountLoginProfile operation : " + result['reason'])
         else:
             print("Account login profile wasn't created.")
             error = ErrorResponse(result)
@@ -129,6 +135,9 @@ class AccountLoginProfile:
         if(result['status'] == 200):
             print("Account login profile updated.")
             sys.exit(0)
+        elif(result['status'] == 503):
+            print("Account login profile wasn't Updated.")
+            print("An error occurred (503) when calling the UpdateAccountLoginProfile operation : " + result['reason'])
         else:
             print("Account login profile wasn't Updated.")
             error = ErrorResponse(result)

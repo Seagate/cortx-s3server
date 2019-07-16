@@ -47,6 +47,9 @@ class Account:
                 # unlikely message corruption case in network
                 print("Account was created. For account details try account listing.")
                 sys.exit(0)
+        elif(response['status'] == 503):
+            print("Account wasn't created.")
+            print("An error occurred (503) when calling the CreateAccount operation : " + response['reason'])
         else:
             print("Account wasn't created.")
             error = ErrorResponse(response)
@@ -81,6 +84,9 @@ class Account:
                 # unlikely message corruption case in network
                 print("Failed to list accounts.")
                 sys.exit(0)
+        elif(response['status'] == 503):
+            print("Failed to list accounts!")
+            print("An error occurred (503) when calling the ListAccounts operation : " + response['reason'])
         else:
             print("Failed to list accounts!")
             error = ErrorResponse(response)
@@ -118,6 +124,9 @@ class Account:
 
         if response['status'] == 200:
             print('Account deleted successfully.')
+        elif(response['status'] == 503):
+            print("Account cannot be deleted.")
+            print("An error occurred (503) when calling the DeleteAccount operation : " + response['reason'])
         else:
             print('Account cannot be deleted.')
             error = ErrorResponse(response)
@@ -154,6 +163,9 @@ class Account:
                 # unlikely message corruption case in network
                 print("Account access key was reset successfully.")
                 sys.exit(0)
+        elif(response['status'] == 503):
+            print("Account access key wasn't reset.")
+            print("An error occurred (503) when calling the ResetAccountAccessKey operation : " + response['reason'])
         else:
             print("Account access key wasn't reset.")
             error = ErrorResponse(response)

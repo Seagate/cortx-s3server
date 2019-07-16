@@ -231,25 +231,16 @@ def user_tests():
     response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, ExpiryTime = "+date_pattern_for_tempAuthCred+", SessionToken = [\w/+]*$"
     result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
     result.command_should_match_pattern(response_pattern)
-    #saving temp creds into aws credentials file by taking backup of original and same is reverted back at end
+    #Setting aws temporary credentials under environment variables
     response_elements = get_response_elements(result.status.stdout)
-    f = open("aws_credential_file_backup" , "w")
-    copyfile("aws_credential_file","aws_credential_file_backup")
-    f = open("aws_credential_file" , "w")
-    f.write("[default]\n")
-    f.write("aws_access_key_id = ")
-    f.write(response_elements['AccessKeyId'])
-    f.write("\naws_secret_access_key = ")
-    f.write(response_elements['SecretAccessKey'])
-    f.write("\naws_session_token = ")
-    f.write(response_elements['SessionToken'])
-    f.close()
+    os.environ["AWS_ACCESS_KEY_ID"] = response_elements['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = response_elements['SecretAccessKey']
+    os.environ["AWS_SESSION_TOKEN"] = response_elements['SessionToken']
     AwsTest('Aws can create bucket').create_bucket("tempcredbucket").execute_test().command_is_successful()
     AwsTest('Aws can delete bucket').delete_bucket("tempcredbucket").execute_test().command_is_successful()
-    f = open("aws_credential_file" , "w")
-    copyfile("aws_credential_file_backup","aws_credential_file")
-    os.remove("aws_credential_file_backup")
-
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    del os.environ["AWS_SESSION_TOKEN"]
     #Create User
     access_key_args['UserName'] = "u1"
     test_msg = "Create User u1"
@@ -383,7 +374,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = "-n"
     password_flag = "--password"
     user_args['UserName'] ="s3user1New"
-    user_args['Password'] = "abcde"
+    user_args['Password'] = "abcd"
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
                **user_args).execute_test()
     result.command_response_should_have("PasswordPolicyVoilation")

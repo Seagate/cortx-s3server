@@ -156,7 +156,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ACCOUNT.setName(ACCOUNT_NAME);
     ACCOUNT.setPwdResetRequired("false");
     ACCOUNT.setProfileCreateDate("2019-06-16 15:38:53+00:00");
-    requestBodyObj.put("Password", "abcd");
+    requestBodyObj.put("Password", "abcdefgh");
     PowerMockito.mockStatic(DAODispatcher.class);
     PowerMockito.doReturn(mockAccountDao)
         .when(DAODispatcher.class, GET_RESOURCE_DAO, DAOResource.ACCOUNT);
@@ -182,7 +182,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ACCOUNT.setName(ACCOUNT_NAME);
     ACCOUNT.setPwdResetRequired("false");
     ACCOUNT.setProfileCreateDate("2019-06-16 15:38:53+00:00");
-    requestBodyObj.put("Password", "abcd");
+    requestBodyObj.put("Password", "abcdefgh");
     requestBodyObj.put("PasswordResetRequired", "true");
 
     PowerMockito.mockStatic(DAODispatcher.class);
@@ -210,7 +210,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ACCOUNT.setName(ACCOUNT_NAME);
     ACCOUNT.setPwdResetRequired("false");
     ACCOUNT.setProfileCreateDate("2019-06-16 15:38:53+00:00");
-    requestBodyObj.put("Password", "abcd");
+    requestBodyObj.put("Password", "abcdefg");
     requestBodyObj.put("PasswordResetRequired", "false");
 
     PowerMockito.mockStatic(DAODispatcher.class);
@@ -263,7 +263,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ACCOUNT.setName(ACCOUNT_NAME);
     ACCOUNT.setPwdResetRequired("false");
     ACCOUNT.setProfileCreateDate("2019-06-16 15:38:53+00:00");
-    requestBodyObj.put("Password", "abcd");
+    requestBodyObj.put("Password", "abcdefgh");
 
     PowerMockito.mockStatic(DAODispatcher.class);
     PowerMockito.doReturn(mockAccountDao)
