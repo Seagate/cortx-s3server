@@ -18,7 +18,7 @@
       </work>
     </workstage>
     <workstage name="cleanup-5050rw">
-      <work name="cleanup-5050rw" type="cleanup" workers="_CLEANUPWRKRS_" config="cprefix=_SIZE_mb-;containers=r(1,_BUCKETS_);oprefix=50w-_HASH_;objects=r(1,_OBJECTS_)" />
+      <work name="cleanup-5050rw" type="cleanup" workers="_WORKERS_" config="cprefix=_SIZE_mb-;containers=r(1,_BUCKETS_);oprefix=50w-_HASH_;objects=r(1,_OBJECTS_)" />
     </workstage>
 
 
@@ -52,3 +52,4 @@
       <work name="dispose" type="dispose" workers="1" config="cprefix=_SIZE_mb-;containers=r(1,_BUCKETS_)" />
     </workstage>
   </workflow>
+</workload>
