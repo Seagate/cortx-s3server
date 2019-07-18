@@ -134,8 +134,22 @@ print(e_tag_2)
 parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber="+str(1)+"},{ETag="+e_tag_2.strip('\n')+",PartNumber="+str(2)+"}]"
 print(parts)
 
+#************** Get object acl should fail before complete multipart upload ******
+AwsTest('Aws can get object acl').get_object_acl("seagatebuckettag", "10Mbfile").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("NoSuchKey")
+
 #************** Complete multipart upload ********
 result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete_multipart_upload("seagatebuckettag", "10Mbfile", parts, upload_id).execute_test().command_is_successful().command_response_should_have("seagatebuckettag/10Mbfile")
+
+#************* Get object ACL for multipart Upload **********
+
+aclresult=AwsTest('Aws can get object acl').get_object_acl("seagatebuckettag", "10Mbfile").execute_test().command_is_successful()
+
+print("ACL validation started..")
+AclTest('validate complete acl').validate_acl(aclresult, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(aclresult, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(aclresult, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
 
 #******** List Object Tags for Multipart Upload********
 AwsTest('Aws can list object tags for multipart upload').list_object_tagging("seagatebuckettag","10Mbfile").execute_test().command_is_successful()\
