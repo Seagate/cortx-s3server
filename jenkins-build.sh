@@ -1,26 +1,37 @@
-#!/bin/sh
+#!/sbin/sh
 
-USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ] [--use_ipv6] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
+                                    [--use_ipv6] [--skip_build] [--skip_tests]
+                                    [--fake_obj] [--fake_kvs] [--basic_test_only]
+                                    [--help | -h]
 
 where:
 --use_http_client        Use HTTP client for ST's. Default is use HTTPS client.
 --s3server_enable_ssl    Use ssl for s3server, by default its disabled
 --use_ipv6	   Use ipv6 for ST's
+--skip_build	   Do not run build step
+--skip_tests	   Do not run tests, exit before test run
+--fake_obj	   Run s3server with stubs for clovis object read/write ops
+--fake_kvs	   Run s3server with stubs for clovis kvs put/get/delete
+		   create idx/remove idx
+--basic_test_only	   Do not run all the tests. Only basic s3cmd regression
+		   tests will be run. If --fake* params provided, tests will use
+		   zero filled objects
 --help (-h)        Display help"
 
 use_http_client=0
 s3server_enable_ssl=0
 use_ipv6=0
 restart_haproxy=0
+skip_build=0
+skip_tests=0
+fake_obj=0
+fake_kvs=0
+basic_test_only=0
 
 if [ $# -eq 0 ]
 then
   echo "Using HTTPS for system tests"
-elif [ $# -gt 2 ]
-then
-  echo "Invalid arguments passed";
-        echo "$USAGE"
-        exit 1
 else
   while [ "$1" != "" ]; do
     case "$1" in
@@ -44,6 +55,21 @@ else
             exit 1
           fi
           echo "System tests with ssl enabled s3server";
+          ;;
+      --skip_build ) skip_build=1;
+          echo "Skip build step";
+          ;;
+      --skip_tests ) skip_tests=1;
+          echo "Skip test step";
+          ;;
+      --fake_obj ) fake_obj=1;
+          echo "Stubs for clovis object read/write ops";
+          ;;
+      --fake_kvs ) fake_kvs=1;
+          echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
+          ;;
+      --basic_test_only ) basic_test_only=1;
+          echo "Run basic s3cmd regression tests only";
           ;;
       --help | -h )
           echo "$USAGE"
@@ -103,7 +129,10 @@ then
   rm -rf $BUILD_CACHE_DIR
 fi
 
-./rebuildall.sh --no-mero-rpm --use-build-cache
+if [ $skip_build -eq 0 ]
+then
+    ./rebuildall.sh --no-mero-rpm --use-build-cache
+fi
 
 # Stop any old running S3 instances
 echo "Stopping any old running s3 services"
@@ -176,10 +205,21 @@ echo "Starting new built s3 services"
 retry=1
 max_retries=3
 statuss3=0
+fake_params=""
+if [ $fake_kvs -eq 1 ]
+then
+    fake_params+=" --fake_kvs"
+fi
+
+if [ $fake_obj -eq 1 ]
+then
+    fake_params+=" --fake_obj"
+fi
+
 while [[ $retry -le $max_retries ]]
 do
   statuss3=0
-  $USE_SUDO ./dev-starts3.sh
+  $USE_SUDO ./dev-starts3.sh $fake_params
   # Give it a second to start
   sleep 1
   ./iss3up.sh 1 || statuss3=$?
@@ -214,13 +254,30 @@ if [ $use_ipv6 -eq 1 ]
 then
   use_ipv6_arg="--use-ipv6"
 fi
+
+if [ $skip_tests -eq 1 ]
+then
+    echo "Skip tests. S3server will not be stopped"
+    exit 1
+fi
+
+basic_test_cmd_par=""
+if [ $basic_test_only -eq 1 ]
+then
+    basic_test_cmd_par="--basic-s3cmd-rand"
+    if [ $fake_kvs -eq 1 ] || [ $fake_obj -eq 1 ]
+    then
+        basic_test_cmd_par="--basic-s3cmd-zero"
+    fi
+fi
+
 # Run Unit tests and System tests
 S3_TEST_RET_CODE=0
 if [ $use_http_client -eq 1 ]
 then
-  ./runalltest.sh --no-mero-rpm --no-https $use_ipv6_arg || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  ./runalltest.sh --no-mero-rpm --no-https $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 else
-  ./runalltest.sh --no-mero-rpm $use_ipv6_arg || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
+  ./runalltest.sh --no-mero-rpm $use_ipv6_arg $basic_test_cmd_par || { echo "S3 Tests failed." && S3_TEST_RET_CODE=1; }
 fi
 
 # Disable fault injection in AuthServer

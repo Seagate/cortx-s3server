@@ -4,7 +4,7 @@ set -e
 
 usage() {
   echo 'Usage: ./runalltest.sh [--no-mero-rpm][--no-ut-run][--no-st-run][--no-ossperf-run][--no-https]
-        [--use-ipv6]'
+        [--use-ipv6][--basic-s3cmd-rand | --basic-s3cmd-zero]'
   echo '                       [--help]'
   echo 'Optional params as below:'
   echo '          --no-mero-rpm    : Use mero libs from source code (third_party/mero)'
@@ -15,11 +15,13 @@ usage() {
   echo '          --no-https       : Use http for STs, Default (false)'
   echo '          --use-ipv6       : Use ipv6 for STs, Default (false)'
   echo '          --no-ossperf-run : Do not run parallel/sequential perf tests by ossperf tool, Default (false)'
+  echo '          --basic-s3cmd-rand: Run only basic s3cmd regression tests with random filled objects'
+  echo '          --basic-s3cmd-zero: Run only basic s3cmd regression tests with zero filled objects'
   echo '          --help (-h)      : Display help'
 }
 
 # read the options
-OPTS=`getopt -o h --long no-mero-rpm,no-ut-run,no-st-run,no-https,use-ipv6,no-ossperf-run,help -n 'runalltest.sh' -- "$@"`
+OPTS=`getopt -o h --long no-mero-rpm,no-ut-run,no-st-run,no-https,use-ipv6,no-ossperf-run,basic-s3cmd-rand,basic-s3cmd-zero,help -n 'runalltest.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
@@ -29,6 +31,11 @@ no_st_run=0
 use_http=0
 no_ossperf_run=0
 use_ipv6=0
+
+basic_only_rand=0
+basic_only_zero=0
+cont_zero_param=""
+
 # extract options and their arguments into variables.
 while true; do
   case "$1" in
@@ -38,11 +45,19 @@ while true; do
     --no-https) use_http=1; shift ;;
     --use-ipv6) use_ipv6=1; shift ;;
     --no-ossperf-run) no_ossperf_run=1; shift ;;
+    --basic-s3cmd-rand) basic_only_rand=1; shift ;;
+    --basic-s3cmd-zero) basic_only_zero=1; cont_zero_param="--cont_zero"; shift ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
-    *) echo "Internal error!" ; exit 1 ;;
+    *) echo "Internal error! $1" ; exit 1 ;;
   esac
 done
+
+if [ $basic_only_zero -eq 1 ] && [ $basic_only_rand -eq 1 ]
+then
+    echo "Only one basic s3cmd test configuration should be specified"
+    exit 1
+fi
 
 abort()
 {
@@ -66,6 +81,18 @@ export LD_LIBRARY_PATH="$(pwd)/third_party/mero/mero/.libs/:"\
 fi
 
 WORKING_DIR=`pwd`
+
+if [ $basic_only_zero -eq 1 ] || [ $basic_only_rand -eq 1 ]
+then
+    CLITEST_SRC=`pwd`/st/clitests
+    cd $CLITEST_SRC
+
+    sh ./s3cmd_basic_reg_test.sh --config ./pathstyle.s3cfg $cont_zero_param
+
+    cd $WORKING_DIR
+    trap : 0
+    exit 0
+fi
 
 if [ $no_ut_run -eq 0 ]
 then

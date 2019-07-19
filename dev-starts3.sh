@@ -1,19 +1,12 @@
 #!/bin/sh -e
 # Script to start S3 server in dev environment.
-#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>]
+#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>] [--fake_obj] [--fake_kvs]
 #               Optional argument is:
 #                   Number of S3 server instances to start.
 #                   Max number of instances allowed = 20
 #                   Default number of instances = 1
 
 MAX_S3_INSTANCES_NUM=20
-
-if [ $# -gt 1 ]
-then
-  echo "Invalid number of arguments passed to the script"
-  echo "Usage: sudo ./dev-starts3.sh [<Number of S3 server instances>]"
-  exit 1
-fi
 
 set +e
 tmp=$(systemctl status rsyslog)
@@ -38,17 +31,30 @@ echo "rsyslog started"
 set -e
 
 num_instances=1
+fake_obj=0
+fake_kvs=0
 
-if [ $# -eq 1 ]
+if [[ $1 =~ ^[0-9]+$ ]] && [ $1 -le $MAX_S3_INSTANCES_NUM ]
 then
-  if [[ $1 =~ ^[0-9]+$ ]] && [ $1 -le $MAX_S3_INSTANCES_NUM ]
-  then
     num_instances=$1
-  else
-    echo "Invalid argument [$1], needs to be an integer <= $MAX_S3_INSTANCES_NUM"
-    exit 1
-  fi
+    shift
 fi
+
+while [ "$1" != "" ]; do
+    case "$1" in
+        --fake_obj ) fake_obj=1;
+                     echo "Stubs for clovis object read/write ops";
+                     ;;
+        --fake_kvs ) fake_kvs=1;
+                     echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
+                     ;;
+        * )
+            echo "Invalid argument passed";
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 set -x
 
@@ -120,6 +126,17 @@ counter=0
 # for proper KV mocking one should use following combination
 #    --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true
 
+fake_params=""
+if [ $fake_kvs -eq 1 ]
+then
+    fake_params+=" --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true"
+fi
+
+if [ $fake_obj -eq 1 ]
+then
+    fake_params+=" --fake_clovis_writeobj true --fake_clovis_readobj true"
+fi
+
 while [[ $counter -lt $num_instances ]]
 do
   clovis_local_port=`expr 101 + $counter`
@@ -127,6 +144,6 @@ do
   pid_filename='/var/run/s3server.'$s3port'.pid'
   s3server --s3pidfile $pid_filename \
            --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
-           --s3port $s3port --fault_injection true
+           --s3port $s3port --fault_injection true $fake_params
   ((++counter))
 done
