@@ -18,6 +18,7 @@
  */
 package com.seagates3.response.generator;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
 
@@ -197,7 +198,18 @@ public abstract class AbstractResponseGenerator {
 
    public
     ServerResponse invalidACL() {
-      String errorMessage = "InvalidACL";
+      String errorMessage =
+          "The ACL you provided was not " +
+          "well-formed or did not validate against our published schema";
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidACL",
+                            errorMessage);
+    }
+
+   public
+    ServerResponse grantListSizeViolation() {
+      String errorMessage =
+          "Number of ACL grants exceed the pre-defined limit of - " +
+          AuthServerConfig.MAX_GRANT_SIZE;
       return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidACL",
                             errorMessage);
     }

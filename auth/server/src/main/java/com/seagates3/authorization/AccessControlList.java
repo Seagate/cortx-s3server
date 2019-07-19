@@ -35,20 +35,45 @@
 package com.seagates3.authorization;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.exception.GrantListFullException;
+
 public class AccessControlList {
 
-    ArrayList<Grant> grantList = new ArrayList<Grant>();
+  private
+   ArrayList<Grant> grantList = new ArrayList<Grant>();
+  private
+   final Logger LOGGER =
+       LoggerFactory.getLogger(AccessControlList.class.getName());
 
     public AccessControlList() {
     }
 
-    ArrayList<Grant> getGrantList() {
-        return grantList;
+     ArrayList<Grant> getGrantList() { return new ArrayList<Grant>(grantList); }
+
+     /**
+      * Adds a grant to grantList if the list size is within permissible limits
+      * @param grant
+      * @throws GrantListFullException
+      */
+     void addGrant(Grant grant) throws GrantListFullException {
+
+       if (grantList.size() < AuthServerConfig.MAX_GRANT_SIZE) {
+         grantList.add(grant);
+       } else {
+         LOGGER.warn("Attempting to add Grant more than 100. Rejected");
+         throw new GrantListFullException(
+             "Addition of Grant to ACL failed as " + "it reached maximum size");
+       }
     }
 
-    void addGrant(Grant grant) {
-        grantList.add(grant);
-    }
+    /**
+     * Clear the grantList
+     */
+    void clearGrantList() { grantList.clear(); }
 
     void setGrant(Grant grant) {
     }

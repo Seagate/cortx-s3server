@@ -11,13 +11,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.ldap.LDAPUtils;
 import com.seagates3.model.Account;
@@ -35,15 +33,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  private
   static Requestor requestor = new Requestor();
  private
-  String requestHeaderName = "Request-Object-ACL";
+  String requestHeaderName = "Request-ACL";
  private
   Authorizer authorizer;
   AuthorizationResponseGenerator responseGenerator =
       new AuthorizationResponseGenerator();
- private
-  LDAPSearchResults ldapResults;
- private
-  final String BASE_DN = "dc=s3,dc=seagate,dc=com";
 
  private
   String serverResponseStringWithoutAcl =
@@ -71,7 +65,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   @Before public void setup() {
     authorizer = new Authorizer();
-    ldapResults = Mockito.mock(LDAPSearchResults.class);
     PowerMockito.mockStatic(LDAPUtils.class);
     PowerMockito.mockStatic(ACLValidation.class);
   }
@@ -244,10 +237,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
   @Test public void authorize_validate_acl_valid_id() throws Exception {
     ServerResponse actualServerResponse = null;
-    String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID};
-    String filter =
-        String.format("(&(%s=%s)(%s=%s))", LDAPUtils.CANONICAL_ID, "C12345",
-                      LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
     String acl =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
         "<AccessControlPolicy" +
@@ -280,10 +269,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   @Test public void authorize_validate_acl_invalid_id() throws Exception {
     ServerResponse actualServerResponse = null;
-    String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID};
-    String filter =
-        String.format("(&(%s=%s)(%s=%s))", LDAPUtils.CANONICAL_ID, "C12345",
-                      LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
     String acl =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
         "<AccessControlPolicy" +

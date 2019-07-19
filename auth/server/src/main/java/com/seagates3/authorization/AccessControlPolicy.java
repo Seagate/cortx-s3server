@@ -38,6 +38,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.InputSource;
 
 import com.seagates3.authorization.AccessControlList;
+import com.seagates3.exception.GrantListFullException;
 
 public class AccessControlPolicy {
 
@@ -46,8 +47,9 @@ public class AccessControlPolicy {
     Owner owner;
     AccessControlList accessControlList;
 
-    public AccessControlPolicy(File xmlFile) throws ParserConfigurationException,
-                      SAXException, IOException {
+   public
+    AccessControlPolicy(File xmlFile) throws ParserConfigurationException,
+        SAXException, IOException, GrantListFullException {
 
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder;
@@ -58,8 +60,9 @@ public class AccessControlPolicy {
         loadXml(doc);
     }
 
-    public AccessControlPolicy(String xmlString) throws ParserConfigurationException,
-                      SAXException, IOException {
+   public
+    AccessControlPolicy(String xmlString) throws ParserConfigurationException,
+        SAXException, IOException, GrantListFullException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = null;
         builder = factory.newDocumentBuilder();
@@ -68,7 +71,8 @@ public class AccessControlPolicy {
     }
 
     // Load ACL elements from XML doc.
-    private void loadXml(Document doc) {
+   private
+    void loadXml(Document doc) throws GrantListFullException {
 
         Owner owner = new Owner("", "");
         NodeList ownerNodes = doc.getElementsByTagName("Owner");
@@ -105,7 +109,7 @@ public class AccessControlPolicy {
 
             Node permission = grantitemelement.getElementsByTagName("Permission").item(0);
             grant.setPermission(permission.getTextContent());
-            accessControlList.grantList.add(grant);
+            accessControlList.addGrant(grant);
         }
 
         this.accessControlList = accessControlList;
@@ -125,18 +129,21 @@ public class AccessControlPolicy {
       return accessControlList;
    }
 
-   void setAccessControlList(AccessControlList acl) {
-       this.accessControlList.grantList.clear();
-       for(int counter=0; counter<acl.grantList.size();counter++) {
-           this.accessControlList.addGrant(acl.grantList.get(counter));
+   void setAccessControlList(AccessControlList acl)
+       throws GrantListFullException {
+     this.accessControlList.clearGrantList();
+     for (int counter = 0; counter < acl.getGrantList().size(); counter++) {
+       this.accessControlList.addGrant(acl.getGrantList().get(counter));
        }
    }
 
    /**
     * Creates a default {@link AccessControlPolicy} for object
     * @param requestor
+ * @throws GrantListFullException
     */
-   void initDefaultACL(String canonicalId, String name) {
+   void initDefaultACL(String canonicalId,
+                       String name) throws GrantListFullException {
      owner = new Owner(canonicalId, name);
      accessControlList = new AccessControlList();
      Grantee grantee = new Grantee(canonicalId, name);
@@ -175,7 +182,8 @@ public class AccessControlPolicy {
        int grantNodesLength = GrantNodeList.getLength();
        int counter = 0;
 
-       for ( counter = 0; counter< this.accessControlList.grantList.size(); counter++) {
+       for (counter = 0; counter < this.accessControlList.getGrantList().size();
+            counter++) {
 
            // When grantNodeList length is less than grantlength to be set,adding extra nodes of type grant Node.
            if(counter>(grantNodesLength-1)) {
@@ -188,14 +196,20 @@ public class AccessControlPolicy {
            Element grantElement = (Element)grantNode;
 
            Node granteeIdNode = grantElement.getElementsByTagName("ID").item(0);
-           granteeIdNode.setTextContent(this.accessControlList.grantList.get(counter).grantee.getCanonicalId());
+           granteeIdNode.setTextContent(this.accessControlList.getGrantList()
+                                            .get(counter)
+                                            .grantee.getCanonicalId());
 
            Node granteeDisplayNameNode = grantElement.getElementsByTagName("DisplayName").item(0);
-           granteeDisplayNameNode.setTextContent(this.accessControlList.grantList.get(counter).grantee.getDisplayName());
+           granteeDisplayNameNode.setTextContent(
+               this.accessControlList.getGrantList()
+                   .get(counter)
+                   .grantee.getDisplayName());
 
            Node permissionNode = grantElement.getElementsByTagName("Permission").item(0);
-           permissionNode.setTextContent(this.accessControlList.grantList.get(counter).getPermission());
-
+           permissionNode.setTextContent(this.accessControlList.getGrantList()
+                                             .get(counter)
+                                             .getPermission());
        }
 
        int indexAtNodeToBeDeleted = counter;

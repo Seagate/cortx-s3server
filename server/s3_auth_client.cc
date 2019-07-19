@@ -416,7 +416,7 @@ void S3AuthClient::setup_auth_request_body() {
            (s3_request->http_verb() == S3HttpVerb::POST &&
             s3_request->get_operation_code() == S3OperationCode::multipart)) &&
           s3_request->get_api_type() == S3ApiType::object) {
-        add_key_val_to_body("Request-Object-ACL", "true");
+        add_key_val_to_body("Request-ACL", "true");
       }
     }
 

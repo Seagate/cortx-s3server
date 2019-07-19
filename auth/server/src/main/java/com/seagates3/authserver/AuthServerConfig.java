@@ -55,6 +55,8 @@ public class AuthServerConfig {
      static final String DEFAULT_ACL_XML = "/defaultAclTemplate.xml";
     public
      static final String XSD_PATH = "/AmazonS3.xsd";
+    public
+     static final int MAX_GRANT_SIZE = 100;
     private static Logger logger;
 
     /**

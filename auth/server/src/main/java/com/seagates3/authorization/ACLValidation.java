@@ -20,16 +20,10 @@
 package com.seagates3.authorization;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashSet;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.novell.ldap.LDAPConnection;
@@ -38,7 +32,7 @@ import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.ldap.LDAPUtils;
-import com.seagates3.exception.DataAccessException;
+import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Account;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
@@ -46,10 +40,6 @@ import com.seagates3.util.XMLValidatorUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 public
 class ACLValidation {
@@ -70,11 +60,10 @@ class ACLValidation {
 
  public
   ACLValidation(String xmlString) throws ParserConfigurationException,
-      SAXException, IOException {
+      SAXException, IOException, GrantListFullException {
     responseGenerator = new AuthenticationResponseGenerator();
     this.ACLXML = xmlString;
     xsdPath = AuthServerConfig.authResourceDir + AuthServerConfig.XSD_PATH;
-    System.out.println("the" + xsdPath);
     xmlValidator = new XMLValidatorUtil(xsdPath);
     validation = validateAclxsd();
     if (validation) {
@@ -89,12 +78,7 @@ class ACLValidation {
     if (!validation) {
       return responseGenerator.invalidACL();
     }
-    validation = validateACL();
-    if (!validation) {
-      return responseGenerator.invalidID();
-    }
-
-    return responseGenerator.ok();
+    return validateACL();
   }
 
   /**
@@ -105,8 +89,6 @@ class ACLValidation {
   boolean validateAclxsd() {
 
     boolean validation = xmlValidator.validateXMLSchema(ACLXML);
-    System.out.println(validation);
-
     return validation;
   }
 
@@ -115,8 +97,12 @@ class ACLValidation {
    *
    */
 
- public
-  boolean validateACL() {
+ private
+  ServerResponse validateACL() {
+
+    if (acp.accessControlList.getGrantList().size() >
+        AuthServerConfig.MAX_GRANT_SIZE)
+      return responseGenerator.grantListSizeViolation();
 
     int counter = 0;
 
@@ -128,28 +114,29 @@ class ACLValidation {
         checkIdExists(acp.owner.getCanonicalId(), acp.owner.getDisplayName());
 
     if (aclFlag) {
-      for (counter = 0; counter < acp.accessControlList.grantList.size();
+      for (counter = 0; counter < acp.accessControlList.getGrantList().size();
            counter++) {
         /**
          * validate grantee id and grantee name
          */
 
-        aclFlag = checkIdExists(acp.accessControlList.grantList.get(counter)
+        aclFlag = checkIdExists(acp.accessControlList.getGrantList()
+                                    .get(counter)
                                     .grantee.getCanonicalId(),
-                                acp.accessControlList.grantList.get(counter)
+                                acp.accessControlList.getGrantList()
+                                    .get(counter)
                                     .grantee.getDisplayName());
 
         if (!aclFlag) {
-
-          return false;
+          return responseGenerator.invalidID();
         }
       }
 
     } else {
-      return false;
+      return responseGenerator.invalidACL();
     }
 
-    return true;
+    return responseGenerator.ok();
   }
 
   /**

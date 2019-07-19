@@ -21,8 +21,8 @@
 package com.seagates3.authorization;
 
 import com.seagates3.authorization.AccessControlPolicy;
-import org.junit.rules.ExpectedException;
-import org.junit.Rule;
+import com.seagates3.exception.GrantListFullException;
+
 import org.junit.Test;
 import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -89,8 +89,8 @@ public class AccessControlPolicyTest {
     " </AccessControlList>" +
     "</AccessControlPolicy>";
 
-    @Before
-    public void setUp() throws ParserConfigurationException, SAXException, IOException {
+    @Before public void setUp() throws ParserConfigurationException,
+        SAXException, IOException, GrantListFullException {
         File xmlFile = new File(aclXmlPath);
         accessControlPolicy = new AccessControlPolicy(xmlFile);
         acl = new AccessControlList();
@@ -121,27 +121,30 @@ public class AccessControlPolicyTest {
     @Test
     public void loadxml_GranteeName_Test() {
         AccessControlList accessControlList = accessControlPolicy.getAccessControlList();
-        assertEquals(accessControlList.grantList.get(0).grantee.displayName, "Grantee_Name");
-
+        assertEquals(
+            accessControlList.getGrantList().get(0).grantee.displayName,
+            "Grantee_Name");
     }
 
     @Test
     public void loadxml_GranteeId_Test() {
         AccessControlList accessControlList = accessControlPolicy.getAccessControlList();
-        assertEquals(accessControlList.grantList.get(0).grantee.canonicalId, "Grantee_ID");
-
+        assertEquals(
+            accessControlList.getGrantList().get(0).grantee.canonicalId,
+            "Grantee_ID");
     }
 
     @Test
     public void loadxml_GrantPermission_Test() {
         AccessControlList accessControlList = accessControlPolicy.getAccessControlList();
-        assertEquals(accessControlList.grantList.get(0).permission, "Permission");
+        assertEquals(accessControlList.getGrantList().get(0).permission,
+                     "Permission");
     }
 
     @Test
     public void loadxml_GetGranteeSize_Test() {
         AccessControlList accessControlList = accessControlPolicy.getAccessControlList();
-        assertEquals(accessControlList.grantList.size(), 1);
+        assertEquals(accessControlList.getGrantList().size(), 1);
     }
 
     @Test
@@ -162,27 +165,26 @@ public class AccessControlPolicyTest {
 
     @Test
     public void setAccessControlListGranteeId_Test() {
-        assertEquals(acl.grantList.get(1).grantee.getCanonicalId(), "id1");
+      assertEquals(acl.getGrantList().get(1).grantee.getCanonicalId(), "id1");
     }
 
     @Test
     public void setAccessControlListGranteeName_Test() {
-        assertEquals(acl.grantList.get(1).grantee.getDisplayName(), "abc1");
+      assertEquals(acl.getGrantList().get(1).grantee.getDisplayName(), "abc1");
     }
 
     @Test
     public void setAccessControlListPermission__Test() {
-        assertEquals(acl.grantList.get(1).getPermission(), "permission1");
+      assertEquals(acl.getGrantList().get(1).getPermission(), "permission1");
     }
 
     @Test
     public void setAccessControlListSize__Test() {
-        assertEquals(acl.grantList.size(),10);
-
+      assertEquals(acl.getGrantList().size(), 10);
     }
 
-    @Test
-    public void flushXmlValuesTest() throws TransformerException {
+    @Test public void flushXmlValuesTest() throws TransformerException,
+        GrantListFullException {
 
         AccessControlList  Acl = new AccessControlList();
         String xml = null;
@@ -203,9 +205,9 @@ public class AccessControlPolicyTest {
         assertTrue(xml.contains("<DisplayName>abc4</DisplayName>"));
     }
 
-   @Test
-   public void recheckAcpXml_test() throws ParserConfigurationException,
-                         TransformerException, SAXException, IOException {
+    @Test public void recheckAcpXml_test() throws ParserConfigurationException,
+        TransformerException, SAXException, IOException,
+        GrantListFullException {
 
        AccessControlList  Acl = new AccessControlList();
        Grant grant;
@@ -232,14 +234,12 @@ public class AccessControlPolicyTest {
            System.out.println(ex.getMessage());
        }
 
-       assertEquals(acp.accessControlList.grantList.size(), 10);
-
-
+       assertEquals(acp.accessControlList.getGrantList().size(), 10);
    }
 
-   @Test
-   public void checkGranteeIdForGetXmlString_test() throws ParserConfigurationException,
-                         TransformerException, SAXException, IOException {
+   @Test public void checkGranteeIdForGetXmlString_test()
+       throws ParserConfigurationException,
+       TransformerException, SAXException, IOException, GrantListFullException {
 
        AccessControlList  Acl = new AccessControlList();
        Grant grant;
@@ -265,15 +265,20 @@ public class AccessControlPolicyTest {
            System.out.println(ex.getMessage());
        }
 
-       assertEquals(acp.accessControlList.grantList.get(0).grantee.getCanonicalId(), "id0");
-       assertEquals(acp.accessControlList.grantList.get(5).grantee.getCanonicalId(), "id5");
-       assertEquals(acp.accessControlList.grantList.get(9).grantee.getCanonicalId(), "id9");
-
+       assertEquals(
+           acp.accessControlList.getGrantList().get(0).grantee.getCanonicalId(),
+           "id0");
+       assertEquals(
+           acp.accessControlList.getGrantList().get(5).grantee.getCanonicalId(),
+           "id5");
+       assertEquals(
+           acp.accessControlList.getGrantList().get(9).grantee.getCanonicalId(),
+           "id9");
    }
 
-   @Test
-   public void checkGranteeNameForGetXmlString_test() throws ParserConfigurationException,
-                         TransformerException, SAXException, IOException {
+   @Test public void checkGranteeNameForGetXmlString_test()
+       throws ParserConfigurationException,
+       TransformerException, SAXException, IOException, GrantListFullException {
 
        AccessControlList  Acl = new AccessControlList();
        Grant grant;
@@ -299,16 +304,20 @@ public class AccessControlPolicyTest {
            System.out.println(ex.getMessage());
        }
 
-       assertEquals(acp.accessControlList.grantList.get(0).grantee.getDisplayName(), "abc0");
-       assertEquals(acp.accessControlList.grantList.get(5).grantee.getDisplayName(), "abc5");
-       assertEquals(acp.accessControlList.grantList.get(9).grantee.getDisplayName(), "abc9");
-
+       assertEquals(
+           acp.accessControlList.getGrantList().get(0).grantee.getDisplayName(),
+           "abc0");
+       assertEquals(
+           acp.accessControlList.getGrantList().get(5).grantee.getDisplayName(),
+           "abc5");
+       assertEquals(
+           acp.accessControlList.getGrantList().get(9).grantee.getDisplayName(),
+           "abc9");
    }
 
-
-   @Test
-   public void checkGranteePermissionForGetXmlString_test() throws
-         ParserConfigurationException,TransformerException,SAXException,IOException {
+   @Test public void checkGranteePermissionForGetXmlString_test()
+       throws ParserConfigurationException,
+       TransformerException, SAXException, IOException, GrantListFullException {
 
        AccessControlList  Acl = new AccessControlList();
        Grant grant;
@@ -335,14 +344,17 @@ public class AccessControlPolicyTest {
            System.out.println(ex.getMessage());
        }
 
-       assertEquals(acp.accessControlList.grantList.get(0).getPermission(), "permission0");
-       assertEquals(acp.accessControlList.grantList.get(9).getPermission(), "permission9");
-       assertEquals(acp.accessControlList.grantList.get(5).getPermission(), "permission5");
+       assertEquals(acp.accessControlList.getGrantList().get(0).getPermission(),
+                    "permission0");
+       assertEquals(acp.accessControlList.getGrantList().get(9).getPermission(),
+                    "permission9");
+       assertEquals(acp.accessControlList.getGrantList().get(5).getPermission(),
+                    "permission5");
    }
 
-   @Test
-   public void validateXmlString_Test() throws
-         ParserConfigurationException,TransformerException,SAXException,IOException {
+   @Test public void validateXmlString_Test()
+       throws ParserConfigurationException,
+       TransformerException, SAXException, IOException, GrantListFullException {
 
        AccessControlPolicy ACP = null;
        try {
@@ -361,9 +373,9 @@ public class AccessControlPolicyTest {
        }
    }
 
-   @Test
-   public void nodeGrantListGreaterThanLocalACLGrantList_Test() throws
-         ParserConfigurationException,TransformerException,SAXException,IOException {
+   @Test public void nodeGrantListGreaterThanLocalACLGrantList_Test()
+       throws ParserConfigurationException,
+       TransformerException, SAXException, IOException, GrantListFullException {
 
        AccessControlPolicy ACP = null;
        try {

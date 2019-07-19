@@ -20,6 +20,7 @@ package com.seagates3.authorization;
 
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.BadRequestException;
+import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
@@ -47,6 +48,8 @@ public class Authorizer {
         AuthorizationResponseGenerator responseGenerator
                 = new AuthorizationResponseGenerator();
         LOGGER.debug("request body : " + requestBody.toString());
+
+        // Authorize the request
         try {
           if (!new ACLAuthorizer().isAuthorized(requestor, requestBody)) {
             // TODO temporary comment till authserver receives ACL from
@@ -54,11 +57,12 @@ public class Authorizer {
             // return responseGenerator.unauthorizedOperation();
           }
         }
-        catch (ParserConfigurationException | SAXException | IOException e1) {
+        catch (ParserConfigurationException | SAXException | IOException |
+               GrantListFullException e1) {
           LOGGER.error("Error while initializing ACP.");
           // TODO temporary comment till authserver receives ACL from
           // s3server
-          // return responseGenerator.badRequest();
+          // return responseGenerator.invalidACL();
         }
         catch (BadRequestException e2) {
           // TODO temporary comment till authserver receives ACL from
@@ -68,9 +72,8 @@ public class Authorizer {
 
         // Initialize a  default AccessControlPolicy object and generate
         // authorization response if request header contains param value true
-        // for-
-        // Request-Default-Object-ACL
-        if ("true".equals(requestBody.get("Request-Object-ACL"))) {
+        // for- Request-ACL
+        if ("true".equals(requestBody.get("Request-ACL"))) {
           try {
 
             if (defaultACP == null) {
@@ -86,13 +89,21 @@ public class Authorizer {
           }
           catch (ParserConfigurationException | SAXException | IOException e) {
             LOGGER.error("Error while initializing default ACL");
-            return responseGenerator.internalServerError();
+            return responseGenerator.invalidACL();
+          }
+          catch (GrantListFullException e) {
+            LOGGER.error("Error while initializing default ACL." +
+                         " Grants more than " +
+                         AuthServerConfig.MAX_GRANT_SIZE + " are not allowed.");
+            return responseGenerator.grantListSizeViolation();
           }
           catch (TransformerException e) {
             LOGGER.error("Error while generating the Authorization Response");
             return responseGenerator.internalServerError();
           }
         }
+
+        // Validate the ACL if requested
         if (requestBody.get("Validate-ACL") != null) {
           ACLValidation aclValidation = null;
           try {
@@ -100,6 +111,12 @@ public class Authorizer {
           }
           catch (ParserConfigurationException | SAXException | IOException e) {
             LOGGER.error("Error while Parsing ACLXML");
+            return responseGenerator.invalidACL();
+          }
+          catch (GrantListFullException e) {
+            LOGGER.error(
+                "Error while Parsing ACLXML. Number of grants exceeds " +
+                AuthServerConfig.MAX_GRANT_SIZE);
             return responseGenerator.invalidACL();
           }
 

@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.seagates3.exception.BadRequestException;
+import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.ACLPermissionUtil;
 
@@ -50,10 +51,11 @@ class ACLAuthorizer {
    * @throws SAXException
    * @throws IOException
    * @throws BadRequestException
+   * @throws GrantListFullException
    */
   boolean isAuthorized(Requestor requestor, Map<String, String> requestBody)
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException {
+      SAXException, IOException, BadRequestException, GrantListFullException {
 
     // TODO Temporary implementation. Need to check the scenario where a
     // create-bucket is requested which will not have ACL initially
