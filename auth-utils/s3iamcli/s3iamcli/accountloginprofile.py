@@ -119,9 +119,13 @@ class AccountLoginProfile:
         # Get host value from url https://iam.seagate.com:9443
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)
         epoch_t = datetime.datetime.utcnow();
-        body = urllib.parse.urlencode({'Action' : 'UpdateAccountLoginProfile',
-            'AccountName' : self.cli_args.name, 'Password' : self.cli_args.password,
-            'PasswordResetRequired' : passwordResetRequired})
+        if(self.cli_args.password is None):
+            body = urllib.parse.urlencode({'Action' : 'UpdateAccountLoginProfile',
+                'AccountName' : self.cli_args.name, 'PasswordResetRequired' : passwordResetRequired})
+        else:
+            body = urllib.parse.urlencode({'Action' : 'UpdateAccountLoginProfile',
+                'AccountName' : self.cli_args.name, 'Password' : self.cli_args.password,
+                'PasswordResetRequired' : passwordResetRequired})
         headers = {'content-type': 'application/x-www-form-urlencoded',
                 'Accept': 'text/plain'}
         headers['Authorization'] = sign_request_v4('POST', '/', body, epoch_t, url_parse_result.netloc,
@@ -143,3 +147,4 @@ class AccountLoginProfile:
             error = ErrorResponse(result)
             error_message = error.get_error_message()
             print(error_message)
+
