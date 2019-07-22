@@ -47,8 +47,6 @@ class MeroKVListResponse {
   bool response_is_truncated;
   std::string next_marker_key;
 
-  std::string response_xml;
-
   std::string get_response_format_key_value(const std::string& key_value);
 
  public:
@@ -67,7 +65,7 @@ class MeroKVListResponse {
   unsigned int size();
   unsigned int common_prefixes_size();
 
-  std::string& get_xml();
+  std::string as_json();
 
   // Google tests.
 };

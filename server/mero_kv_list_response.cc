@@ -17,6 +17,7 @@
  * Original creation date: 16-July-2019
  */
 
+#include <json/json.h>
 #include <evhttp.h>
 #include "mero_kv_list_response.h"
 #include "s3_common_utilities.h"
@@ -29,8 +30,7 @@ MeroKVListResponse::MeroKVListResponse(std::string encoding_type)
       request_marker_key(""),
       max_keys(""),
       response_is_truncated(false),
-      next_marker_key(""),
-      response_xml("") {
+      next_marker_key("") {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
 }
 
@@ -91,42 +91,34 @@ void MeroKVListResponse::add_common_prefix(std::string common_prefix) {
   common_prefixes.insert(common_prefix);
 }
 
-std::string& MeroKVListResponse::get_xml() {
+std::string MeroKVListResponse::as_json() {
   // clang-format off
-  response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-  response_xml +=
-      "<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
-  response_xml += S3CommonUtilities::format_xml_string("Name", index_id);
-  response_xml +=
-      S3CommonUtilities::format_xml_string("Prefix", request_prefix);
-  response_xml +=
-      S3CommonUtilities::format_xml_string("Delimiter", request_delimiter);
+  Json::Value root;
+  root["Index-Id"] = index_id;
+  root["Prefix"] = request_prefix;
+  root["Delimiter"] = request_delimiter;
   if (encoding_type == "url") {
-    response_xml += S3CommonUtilities::format_xml_string("EncodingType", "url");
+    root["EncodingType"] = "url";
   }
-  response_xml +=
-      S3CommonUtilities::format_xml_string("Marker", request_marker_key);
-  response_xml += S3CommonUtilities::format_xml_string("MaxKeys", max_keys);
-  response_xml +=
-      S3CommonUtilities::format_xml_string("NextMarker", next_marker_key);
-  response_xml += S3CommonUtilities::format_xml_string(
-      "IsTruncated", (response_is_truncated ? "true" : "false"));
+  root["Marker"] = request_marker_key;
+  root["MaxKeys"] = max_keys;
+  root["NextMarker"] = next_marker_key;
+  root["IsTruncated"] = response_is_truncated ? "true" : "false";
 
+  Json::Value keys_array;
   for (auto&& kv : kv_list) {
-    response_xml += "<Contents>";
-    response_xml += S3CommonUtilities::format_xml_string(
-        "Key", get_response_format_key_value(kv.first));
-    response_xml += "<![CDATA[" + kv.second + "]] >";
-    response_xml += "</Contents>";
+    Json::Value key_object;
+    key_object["Key"] = kv.first;
+    key_object["Value"] = kv.second;
+    keys_array.append(key_object);
   }
 
   for (auto&& prefix : common_prefixes) {
-    response_xml += "<CommonPrefixes>";
-    response_xml += S3CommonUtilities::format_xml_string("Prefix", prefix);
-    response_xml += "</CommonPrefixes>";
+    root["CommonPrefixes"] = prefix;
   }
 
-  response_xml += "</ListBucketResult>";
-  // clang-format on
-  return response_xml;
+  root["Keys"] = keys_array;
+
+  Json::FastWriter fastWriter;
+  return fastWriter.write(root);
 }

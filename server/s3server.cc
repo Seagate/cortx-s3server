@@ -217,62 +217,62 @@ extern "C" evhtp_res dispatch_mero_api_request(evhtp_request_t *req,
 
   EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
   EventInterface *event_obj_ptr = new EventWrapper();
-  std::shared_ptr<S3RequestObject> s3_request =
-      std::make_shared<S3RequestObject>(req, evhtp_obj_ptr, nullptr,
-                                        event_obj_ptr);
+  std::shared_ptr<MeroRequestObject> mero_request =
+      std::make_shared<MeroRequestObject>(req, evhtp_obj_ptr, nullptr,
+                                          event_obj_ptr);
 
   // validate content length against out of range
   // and invalid argument
-  if (!s3_request->validate_content_length()) {
-    s3_request->pause();
+  if (!mero_request->validate_content_length()) {
+    mero_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
     // Send response with 'Bad Request' code.
     s3_log(
         S3_LOG_DEBUG, "",
         "sending 'Bad Request' response to client due to invalid request...\n");
-    S3Error error("BadRequest", s3_request->get_request_id(), "");
+    S3Error error("BadRequest", mero_request->get_request_id(), "");
     std::string &response_xml = error.to_xml();
-    s3_request->set_out_header_value("Content-Type", "application/xml");
-    s3_request->set_out_header_value("Content-Length",
-                                     std::to_string(response_xml.length()));
-    s3_request->set_out_header_value("Retry-After", "1");
+    mero_request->set_out_header_value("Content-Type", "application/xml");
+    mero_request->set_out_header_value("Content-Length",
+                                       std::to_string(response_xml.length()));
+    mero_request->set_out_header_value("Retry-After", "1");
 
-    s3_request->send_response(error.get_http_status_code(), response_xml);
+    mero_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
 
   // request validation is done and we are ready to use request
   // so initialise the s3 request;
-  s3_request->initialise();
+  mero_request->initialise();
 
   if (S3Option::get_instance()->get_is_s3_shutting_down() &&
       !s3_fi_is_enabled("shutdown_system_tests_in_progress")) {
     // We are shutting down, so don't entertain new requests.
-    s3_request->pause();
+    mero_request->pause();
     evhtp_unset_all_hooks(&req->conn->hooks);
     // Send response with 'Service Unavailable' code.
     s3_log(S3_LOG_DEBUG, "", "sending 'Service Unavailable' response...\n");
-    S3Error error("ServiceUnavailable", s3_request->get_request_id(), "");
+    S3Error error("ServiceUnavailable", mero_request->get_request_id(), "");
     std::string &response_xml = error.to_xml();
-    s3_request->set_out_header_value("Content-Type", "application/xml");
-    s3_request->set_out_header_value("Content-Length",
-                                     std::to_string(response_xml.length()));
-    s3_request->set_out_header_value("Retry-After", "1");
+    mero_request->set_out_header_value("Content-Type", "application/xml");
+    mero_request->set_out_header_value("Content-Length",
+                                       std::to_string(response_xml.length()));
+    mero_request->set_out_header_value("Retry-After", "1");
 
-    s3_request->send_response(error.get_http_status_code(), response_xml);
+    mero_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
 
-  req->cbarg = s3_request.get();
+  req->cbarg = mero_request.get();
 
   evhtp_set_hook(&req->hooks, evhtp_hook_on_error,
                  (evhtp_hook)on_client_conn_err_callback, NULL);
   evhtp_set_hook(&req->hooks, evhtp_hook_on_request_fini,
                  (evhtp_hook)on_client_request_fini, NULL);
 
-  mero_router->dispatch(s3_request);
-  if (!s3_request->get_buffered_input()->is_freezed()) {
-    s3_request->set_start_client_request_read_timeout();
+  mero_router->dispatch(mero_request);
+  if (!mero_request->get_buffered_input()->is_freezed()) {
+    mero_request->set_start_client_request_read_timeout();
   }
 
   return EVHTP_RES_OK;

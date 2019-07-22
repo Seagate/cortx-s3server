@@ -238,15 +238,15 @@ void MeroKVSListingAction::send_response_to_s3_client() {
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
-    std::string& response_xml = kvs_response_list.get_xml();
+    std::string response_json_str = kvs_response_list.as_json();
 
     request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-    request->set_out_header_value("Content-Type", "application/xml");
-    s3_log(S3_LOG_DEBUG, request_id, "Object list response_xml = %s\n",
-           response_xml.c_str());
+                                  std::to_string(response_json_str.length()));
+    request->set_out_header_value("Content-Type", "application/json");
+    s3_log(S3_LOG_DEBUG, request_id, "kv list response_json_str = %s\n",
+           response_json_str.c_str());
 
-    request->send_response(S3HttpSuccess200, response_xml);
+    request->send_response(S3HttpSuccess200, response_json_str);
   } else {
     S3Error error("InternalError", request->get_request_id(),
                   request->c_get_full_path());

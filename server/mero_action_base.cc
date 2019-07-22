@@ -26,7 +26,7 @@ MeroAction::MeroAction(std::shared_ptr<MeroRequestObject> req,
                        bool check_shutdown,
                        std::shared_ptr<S3AuthClientFactory> auth_factory,
                        bool skip_auth)
-    : Action(req, check_shutdown, auth_factory, skip_auth) {
+    : Action(req, check_shutdown, auth_factory, skip_auth), request(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   auth_client->do_skip_authorization();
   setup_steps();
