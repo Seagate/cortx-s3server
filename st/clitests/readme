@@ -30,26 +30,26 @@ please update below mentioned s3cfg files.
 System tests for auth server uses the python client 's3iamcli'.
 Ensure you have all the dependencies installed for s3iamcli.
 
-Python Version 3.4.8.
-Installing python34 and required packages to run S3 Auth cli and ST tests
+Python Version 3.6.3
+Installing python36 and required packages to run S3 Auth cli and ST tests
    yum install wget epel-release
-   yum install python34
-   yum -y install python34-yaml
-   yum -y install python34-scripttest
+   yum install python36
+   yum -y install python36-yaml
+   yum -y install python36-scripttest
 
 Below python modules can be downloaded from internal release management RPM Repository location 
-or built from S3server Repo s3server/rpms/python34/buildrpm.sh script.
-  - python34-xmltodict
-  - python34-jmespath
-  - python34-botocore
-  - python34-s3transfer
-  - python34-boto3
+or built from S3server Repo s3server/rpms/python36/buildrpm.sh script.
+  - python36-xmltodict
+  - python36-jmespath
+  - python36-botocore
+  - python36-s3transfer
+  - python36-boto3
 
-   yum localinstall python34-xmltodict-0.9.0-1.el7.centos.noarch.rpm
-   yum localinstall python34-jmespath-0.9.0-1.el7.centos.noarch.rpm
-   yum localinstall python34-botocore-1.6.0-1.el7.centos.noarch.rpm
-   yum localinstall python34-s3transfer-0.1.10-1.el7.centos.noarch.rpm
-   yum localinstall python34-boto3-1.4.6-1.el7.centos.noarch.rpm
+   yum localinstall python36-xmltodict-0.9.0-1.el7.centos.noarch.rpm
+   yum localinstall python36-jmespath-0.9.0-1.el7.centos.noarch.rpm
+   yum localinstall python36-botocore-1.6.0-1.el7.centos.noarch.rpm
+   yum localinstall python36-s3transfer-0.1.10-1.el7.centos.noarch.rpm
+   yum localinstall python36-boto3-1.4.6-1.el7.centos.noarch.rpm
 
 System tests with ossperf uses tools like bc, parallel, md5sum and s3cmd
 Ensure that you have all dependencies installed for ossperf

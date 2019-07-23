@@ -38,12 +38,19 @@
     - python34-dateutil
     - python34-devel
     - python34-yaml
+    - python34-scripttest
+    - python36
+    - python36-pip
+    - python36-setuptools
+    - python36-dateutil
+    - python36-devel
+    - python36-yaml
     # - xmltodict
     # - boto3
     # - botocore
-    - python34-scripttest
+    - python36-scripttest
 
-- name: Install python modules to build python34 dependencies
+- name: Install python modules to build python36 dependencies
   yum: pkg={{item}} state=installed
   with_items:
     - pytest
@@ -51,6 +58,7 @@
     - python-keyring
     - python-nose
     - python34-nose
+    - python36-nose
     - python-mock
     - python-wheel
     - python2-botocore
@@ -59,6 +67,8 @@
     - python2-s3transfer
     - python34-mock
     - python34-ply
+    - python36-mock
+    - python36-ply
 
 - name: Install python modules required by S3 system tests and s3 (iam) auth cli
   yum: pkg={{item}} state=installed
@@ -69,6 +79,12 @@
     - python34-botocore
     - python34-s3transfer
     - python34-boto3
+    - python36-wheel
+    - python36-jmespath
+    - python36-xmltodict
+    - python36-botocore
+    - python36-s3transfer
+    - python36-boto3
 
 - name: Install bazel rpm
   yum:
@@ -98,4 +114,3 @@
 
 - name: Install AWS CLI
   pip: name=awscli state=latest
-

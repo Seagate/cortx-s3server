@@ -15,7 +15,7 @@ abort()
 trap 'abort' 0
 
 PY_EXPECTED_V=3.4.8  # at least 3.4.8 or above
-PY_VER=`python3 -c "import platform;print(platform.python_version())";`
+PY_VER=`python3.6 -c "import platform;print(platform.python_version())";`
 
 function is_x_gt_eq_to_y() {
    x=$1

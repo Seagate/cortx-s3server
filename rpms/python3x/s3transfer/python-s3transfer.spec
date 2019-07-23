@@ -1,11 +1,3 @@
-%if 0%{?rhel} && 0%{?rhel} <= 7
-%bcond_with python3
-# Minimum nose version is 1.3.3, while EL7 has 1.3.0
-%bcond_with tests
-%else
-%bcond_without python3
-%bcond_without tests
-%endif
 
 %global pypi_name s3transfer
 
@@ -42,7 +34,7 @@ Requires:       python2-botocore
 %description -n python2-%{pypi_name}
 S3transfer is a Python library for managing Amazon S3 transfers.
 
-%if %{with python3}
+%if 0%{?s3_with_python34:1}
 %package -n     python%{python3_pkgversion}-%{pypi_name}
 Summary:        An Amazon S3 Transfer Manager
 BuildRequires:  python%{python3_pkgversion}-devel
@@ -62,6 +54,26 @@ Requires:       python%{python3_pkgversion}-botocore
 S3transfer is a Python library for managing Amazon S3 transfers.
 %endif # python3
 
+%if 0%{?s3_with_python36:1}
+%package -n     python%{python3_other_pkgversion}-%{pypi_name}
+Summary:        An Amazon S3 Transfer Manager
+BuildRequires:  python%{python3_other_pkgversion}-devel
+BuildRequires:  python%{python3_other_pkgversion}-setuptools
+%if %{with tests}
+BuildRequires:  python%{python3_other_pkgversion}-nose
+BuildRequires:  python%{python3_other_pkgversion}-mock
+BuildRequires:  python%{python3_other_pkgversion}-wheel
+BuildRequires:  python%{python3_other_pkgversion}-botocore
+BuildRequires:  python%{python3_other_pkgversion}-coverage
+BuildRequires:  python%{python3_other_pkgversion}-unittest2
+%endif # tests
+Requires:       python%{python3_other_pkgversion}-botocore
+%{?python_provide:%python_provide python%{python3_other_pkgversion}-%{pypi_name}}
+
+%description -n python%{python3_other_pkgversion}-%{pypi_name}
+S3transfer is a Python library for managing Amazon S3 transfers.
+%endif # with_python36
+
 %prep
 %setup -q -n %{pypi_name}-%{version}
 # Remove online tests (see https://github.com/boto/s3transfer/issues/8)
@@ -69,22 +81,31 @@ rm -rf tests/integration
 
 %build
 %py2_build
-%if %{with python3}
+%if 0%{?s3_with_python34:1}
 %py3_build
 %endif # python3
+%if 0%{?s3_with_python36:1}
+%py3_other_build
+%endif # with_python36
 
 %install
 %py2_install
-%if %{with python3}
+%if 0%{?s3_with_python34:1}
 %py3_install
 %endif # python3
+%if 0%{?s3_with_python36:1}
+%py3_other_install
+%endif # with_python36
 
 %if %{with tests}
 %check
 nosetests-%{python2_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
-%if %{with python3}
+%if 0%{?s3_with_python34:1}
 nosetests-%{python%{python3_pkgversion}_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
 %endif # python3
+%if 0%{?s3_with_python36:1}
+nosetests-%{python%{python3_other_pkgversion}_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
+%endif # with_python36
 %endif # tests
 
 %files -n python2-%{pypi_name}
@@ -94,13 +115,21 @@ nosetests-%{python%{python3_pkgversion}_version} --with-coverage --cover-erase -
 %{python2_sitelib}/%{pypi_name}
 %{python2_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 
-%if %{with python3}
+%if 0%{?s3_with_python34:1}
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc README.rst
 %license LICENSE.txt
 %{python3_sitelib}/%{pypi_name}
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # python3
+
+%if 0%{?s3_with_python36:1}
+%files -n python%{python3_other_pkgversion}-%{pypi_name}
+%doc README.rst
+%license LICENSE.txt
+%{python3_other_sitelib}/%{pypi_name}
+%{python3_other_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
+%endif # with_python36
 
 %changelog
 * Wed Dec 28 2016 Fabio Alessandro Locati <fale@fedoraproject.org> - 0.1.10-1

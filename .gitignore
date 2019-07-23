@@ -34,3 +34,4 @@ auth/encryptcli/target/
 auth/encryptutil/target/
 auth/server/dependency-reduced-pom.xml
 auth/server/target/
+.*.sw[po]
