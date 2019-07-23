@@ -6,6 +6,8 @@ import pika
 
 from eos_core_kv_api import EOSCoreKVApi
 from eos_core_object_api import EOSCoreObjectApi
+from eos_core_index_api import EOSCoreIndexApi
+from object_recovery_validator import ObjectRecoveryValidator
 
 
 class ObjectRecoveryRabbitMq(object):
@@ -58,58 +60,30 @@ class ObjectRecoveryRabbitMq(object):
 
         return True, None
 
-    def perform_validations(self, probable_delete_oid, object_metadata_oid):
-        """Validate delete object oid with object metadata oid."""
-        if (probable_delete_oid == object_metadata_oid):
-            return True
-        self.logger.info("Oid mismatch in object metadata")
-        return False
-
-    def process_results(self, probable_delete_index):
-        """Delete probable object."""
-        for key, value in probable_delete_index.items():
-            probable_delete_object_name = json.loads(value)["obj-name"]
-            self.logger.info(
-                "Probable object id to be deleted : " + probable_delete_object_name)
-            result, get_response = EOSCoreKVApi(self.config, self.logger).get(
-                self.config.get_object_metadata_index_id(), key)
-            if(result):
-                object_metadata = json.loads(get_response.get_value())
-                object_metadata_oid = object_metadata["mero_oid_u_hi"]
-                if(self.perform_validations(key, object_metadata_oid)):
-                    self.logger.info(
-                        "Deleting following object Id : " + str(key))
-                    EOSCoreObjectApi(self.config, self.logger).delete(key)
-                    EOSCoreKVApi(self.config, self.logger).delete(
-                        self.config.get_probable_delete_index_id(), key)
-                else:
-                    EOSCoreKVApi(self.config, self.logger).delete(
-                        self.config.get_probable_delete_index_id(), key)
-                    self.logger.info(
-                        "Object name mismatch entry in metadata found for : "
-                        + probable_delete_object_name)
-            else:
-                self.logger.error(
-                    "Failed to get object metadata for : " + probable_delete_object_name)
-
     def worker(self):
         """Create worker which will process results."""
         def callback(channel, method, properties, body):
             """Process the result and send acknowledge."""
             try:
-                if (body is not None):
+                self.logger.info(
+                    " Received " +
+                    body.decode("utf-8") +
+                    "at consumer end")
+                probable_delete_records = json.loads(body.decode("utf-8"))
+                if (probable_delete_records is not None):
                     self.logger.info(
-                        " Received " + body.decode("utf-8") + "at consumer end")
-                    self.logger.info(
-                        " Processing following records in consumer" + body.decode("utf-8"))
-                    self.process_results(json.loads(body.decode("utf-8")))
+                        " Processing following records in consumer " +
+                        str(probable_delete_records))
+                    validator = ObjectRecoveryValidator(
+                        self.config, probable_delete_records, self.logger)
+                    validator.process_results()
                 channel.basic_ack(delivery_tag=method.delivery_tag)
             except BaseException:
                 self.logger.error(
                     "msg_queque callback failed." + traceback.format_exc())
 
         self._channel.basic_qos(prefetch_count=1)
-        self._channel.basic_consume(self._queque, callback, auto_ack=False)
+        self._channel.basic_consume(callback, self._queque, no_ack=False)
         self._channel.start_consuming()
 
     def receive_data(self):
