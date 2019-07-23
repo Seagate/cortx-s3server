@@ -23,6 +23,7 @@ import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
+import com.seagates3.request.validator.AclRequestValidator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import java.io.IOException;
@@ -48,7 +49,13 @@ public class Authorizer {
         AuthorizationResponseGenerator responseGenerator
                 = new AuthorizationResponseGenerator();
         LOGGER.debug("request body : " + requestBody.toString());
-
+        ServerResponse serverResponse =
+            new AclRequestValidator().validateAclRequest(requestBody);
+        if (serverResponse != null) {
+          LOGGER.error("ACL authorization request validation failed");
+          return serverResponse;
+        }
+        LOGGER.info("ACL authorization request is validated successfully");
         // Authorize the request
         try {
           if (!new ACLAuthorizer().isAuthorized(requestor, requestBody)) {

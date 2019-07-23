@@ -173,7 +173,6 @@ class IAMController {
         serverResponse = new Authorizer().authorize(requestor, requestBody);
         return serverResponse;
       }
-
       LOGGER.debug("Calling signature validator.");
 
       perf.startClock();
@@ -335,3 +334,4 @@ class IAMController {
     return null;
   }
 }
+

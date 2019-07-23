@@ -62,4 +62,7 @@ public interface AccountDAO {
      * Delete ou under account
      */
     public void deleteOu(Account account, String ou) throws DataAccessException;
+
+    public
+     Account findByEmailAddress(String emailAddress) throws DataAccessException;
 }

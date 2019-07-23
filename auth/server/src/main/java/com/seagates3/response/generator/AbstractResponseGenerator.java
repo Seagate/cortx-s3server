@@ -309,4 +309,19 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.UNAUTHORIZED, "NoSuchEntity",
                             errorMessage);
     }
+
+   public
+    ServerResponse unresolvableGrantByEmailAddress() {
+      String errorMessage =
+          "The email address you provided does not match any account on " +
+          "record.";
+      return formatResponse(HttpResponseStatus.BAD_REQUEST,
+                            "UnresolvableGrantByEmailAddress", errorMessage);
+    }
+
+   public
+    ServerResponse invalidArgument(String errorMessage) {
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidArgument",
+                            errorMessage);
+    }
  }
