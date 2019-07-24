@@ -44,3 +44,11 @@
         baseurl: http://ci-storage.mero.colo.seagate.com/releases/eos/s3server_uploads/
         gpgcheck: no
         priority: 1
+
+    - name: Add S3 local repository
+      yum_repository:
+        name: stx_local_repository
+        description: Yum local repo for S3 server dependencies
+        baseurl: http://stx-prvsnr.mero.colo.seagate.com/vendor/centos/epel/
+        gpgcheck: no
+        priority: 1

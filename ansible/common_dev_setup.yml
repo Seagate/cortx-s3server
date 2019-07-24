@@ -4,6 +4,7 @@
 # Prerequisites: common_build_env.yml and jenkins_yum_repos.yml
 
 - name: Install lustre rpms
+  when: ansible_os_family != "Redhat"
   yum: pkg={{item}} state=present
   with_items:
     - lustre-client
@@ -38,6 +39,7 @@
     - coreutils
 
 - name: Configure lnet
+  when: ansible_os_family != "Redhat"
   template:
     src: templates/lnet.conf
     dest: /etc/modprobe.d/lnet.conf
@@ -48,6 +50,7 @@
     state: present
 
 - name: Enable modprobe lnet on reboot
+  when: ansible_os_family != "Redhat"
   lineinfile:
     path: /etc/modules-load.d/lnet.conf
     line: 'lnet'
@@ -57,6 +60,7 @@
   command: lctl net up
 
 - name: Enable lnet up on reboot
+  when: ansible_os_family != "Redhat"
   lineinfile:
     path: /etc/profile
     line: 'lctl net up'

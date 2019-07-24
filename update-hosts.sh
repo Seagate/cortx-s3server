@@ -29,7 +29,7 @@ case "$1" in
         ;;
     --help | -h )
         echo "$USAGE"
-        exit 1
+        exit 0
         ;;
 esac
 
@@ -61,7 +61,7 @@ s3_host=$(grep "$HOSTNAME" /etc/hosts|wc -l)
 if [ $s3_host -ne 0 ]
 then
   echo "\"$HOSTNAME\" is already configured, cannot be added again to /etc/hosts"
-  exit 1
+  exit 0
 fi
 
 #Backup original /etc/hosts file
@@ -78,7 +78,7 @@ do
     sed -i "/^$loopback_ip/s/$/ $search_entry/" $file
   else
     echo "\"$host_entry\" is already configured, cannot be added again to /etc/hosts"
-    exit 1
+    exit 0
   fi
 done
 

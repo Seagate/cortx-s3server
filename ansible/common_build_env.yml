@@ -34,7 +34,6 @@
   yum: pkg={{item}} state=installed
   with_items:
     - python34
-    - python34-pip
     - python34-setuptools
     - python34-dateutil
     - python34-devel
