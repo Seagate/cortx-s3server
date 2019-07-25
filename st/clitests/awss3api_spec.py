@@ -67,6 +67,18 @@ for x in range(52):
 AwsTest('Aws can create bucket tag for more than 50 entries').put_bucket_tagging("seagatebucket", tag_list_with_too_many_tags).execute_test(negative_case=True)\
     .command_should_fail().command_error_should_have("InvalidTagError")
 
+
+#*********** Negative case to check invalid char(s) for key/value in bucket-tagging *********
+AwsTest('Aws can not create bucket tag with invalid char(!) in Key').put_bucket_tagging("seagatebucket", [{'Key': 's!eagate','Value': 'storage'}]).execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("InvalidTagError")
+
+AwsTest('Aws can not create bucket tag with invalid char(#) in Value').put_bucket_tagging("seagatebucket", [{'Key': 'seagate','Value': 'st#orage'}]).execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("InvalidTagError")
+
+AwsTest('Aws can not create bucket tag with invalid char(~/%) in Key/Value').put_bucket_tagging("seagatebucket", [{'Key': 's~eagate','Value': 'storag%'}]).execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("InvalidTagError")
+
+
 #************Negative case to check creation of tag for non-existant bucket*******
 AwsTest('Aws can not create bucket tag on non-existant').put_bucket_tagging("seagate-bucket", [{'Key': 'seagate','Value': 'storage'}])\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucket")

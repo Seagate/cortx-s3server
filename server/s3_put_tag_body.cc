@@ -174,17 +174,18 @@ bool S3PutTagBody::validate_bucket_xml_tags(
     std::map<std::string, std::string> &bucket_tags_as_map) {
   // Apply all validation here
   // https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2//allocation-tag-restrictions.html;
-  std::string key, value;
+
+  // Invalid characters in bucket tagging
+  const std::string invalid_char_str = "\\!{}`^%<>[]#|~?@*/";
+
   // Maximum number of tags per resource: 50
   if (bucket_tags_as_map.size() > BUCKET_MAX_TAGS) {
     s3_log(S3_LOG_WARN, request_id, "XML key-value tags Invalid.\n");
     return false;
   }
-  for (const auto &tag : bucket_tags_as_map) {
-    key = tag.first;
-    value = tag.second;
+  for (const auto &tagkv : bucket_tags_as_map) {
     // Key-value pairs for bucket tagging should not be empty
-    if (key.empty() || value.empty()) {
+    if (tagkv.first.empty() || tagkv.second.empty()) {
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
@@ -195,8 +196,8 @@ bool S3PutTagBody::validate_bucket_xml_tags(
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
-    if (key.length() > TAG_KEY_MAX_LENGTH ||
-        value.length() > (2 * TAG_VALUE_MAX_LENGTH)) {
+    if (tagkv.first.length() > TAG_KEY_MAX_LENGTH ||
+        tagkv.second.length() > (2 * TAG_VALUE_MAX_LENGTH)) {
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
@@ -210,6 +211,21 @@ bool S3PutTagBody::validate_bucket_xml_tags(
       return false;
     }
     */
+    // Handle invalid character(s) in Key or Value node
+    std::size_t found = tagkv.first.find_first_of(invalid_char_str);
+    if (std::string::npos != found) {
+      s3_log(S3_LOG_WARN, request_id,
+             "Tag Key[%s] contains an invalid character[%c].\n",
+             tagkv.first.c_str(), tagkv.first[found]);
+      return false;
+    }
+    found = tagkv.second.find_first_of(invalid_char_str);
+    if (std::string::npos != found) {
+      s3_log(S3_LOG_WARN, request_id,
+             "Tag Value[%s] contains an invalid character[%c].\n",
+             tagkv.second.c_str(), tagkv.second[found]);
+      return false;
+    }
   }
   return true;
 }
