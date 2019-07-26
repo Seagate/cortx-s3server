@@ -493,16 +493,21 @@ void S3AuthClient::setup_auth_request_headers() {
   s3_log(S3_LOG_DEBUG, request_id, "Header - Length-str = %s\n", sz_size);
 
   std::string host = request->get_host_header();
+
   if (!host.empty()) {
+
     evhtp_headers_add_header(auth_request->headers_out,
                              evhtp_header_new("Host", host.c_str(), 1, 1));
   }
+
   evhtp_headers_add_header(auth_request->headers_out,
                            evhtp_header_new("Content-Length", sz_size, 1, 1));
+
   evhtp_headers_add_header(
       auth_request->headers_out,
       evhtp_header_new("Content-Type", "application/x-www-form-urlencoded", 0,
                        0));
+
   evhtp_headers_add_header(auth_request->headers_out,
                            evhtp_header_new("User-Agent", "s3server", 1, 1));
 
@@ -783,16 +788,6 @@ void S3AuthClient::check_authentication_failed() {
 // This is same as above but will cycle through with the
 // add_checksum_for_chunk()
 // to validate each chunk we receive.
-void S3AuthClient::check_chunk_auth(std::function<void(void)> on_success,
-                                    std::function<void(void)> on_failed) {
-  is_chunked_auth = true;
-
-  check_authentication(on_success, on_failed);
-}
-
-// This is same as above but will cycle through with the
-// add_checksum_for_chunk()
-// to validate each chunk we receive.
 void S3AuthClient::init_chunk_auth_cycle(std::function<void(void)> on_success,
                                          std::function<void(void)> on_failed) {
   this->handler_on_success = on_success;
@@ -803,6 +798,7 @@ void S3AuthClient::init_chunk_auth_cycle(std::function<void(void)> on_success,
       std::bind(&S3AuthClient::chunk_auth_failed, this)));
 
   is_chunked_auth = true;
+  set_op_type(S3AuthClientOpType::authentication);
 
   // trigger is done when sign and hash are available for any chunk
 }

@@ -50,12 +50,8 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
          part_number, upload_id.c_str());
 
   layout_id = -1;  // Loaded from multipart metadata
-  if (request->is_chunked() && !S3Option::get_instance()->is_auth_disabled()) {
-    clear_tasks();  // remove default auth
-    // Add chunk style auth
-    add_task(std::bind(&S3Action::start_chunk_authentication, this));
-  } else {
-    // auth is disabled, so assume its done.
+
+  if (S3Option::get_instance()->is_auth_disabled()) {
     auth_completed = true;
   }
 

@@ -208,12 +208,6 @@ void Action::check_authentication_failed() {
   i_am_done();
 }
 
-void Action::start_chunk_authentication() {
-  auth_client->check_chunk_auth(
-      std::bind(&Action::check_authentication_successful, this),
-      std::bind(&Action::check_authentication_failed, this));
-}
-
 bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   bool is_s3_shutting_down =

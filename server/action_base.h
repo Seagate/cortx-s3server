@@ -206,7 +206,6 @@ class Action {
   void check_authentication();
   void check_authentication_successful();
   void check_authentication_failed();
-  void start_chunk_authentication();
 
   virtual void send_response_to_s3_client() = 0;
   virtual void send_retry_error_to_s3_client(int retry_after_in_secs = 1);

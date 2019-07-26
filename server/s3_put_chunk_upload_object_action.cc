@@ -58,15 +58,9 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
 
-  clear_tasks();  // remove default auth
-  if (!S3Option::get_instance()->is_auth_disabled()) {
-    // Add chunk style auth
-    add_task(std::bind(&S3Action::start_chunk_authentication, this));
-  } else {
-    // auth is disabled, so assume its done.
+  if (S3Option::get_instance()->is_auth_disabled()) {
     auth_completed = true;
   }
-
   // Note valid value is set during create object
   layout_id = -1;
 

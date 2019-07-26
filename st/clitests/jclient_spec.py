@@ -86,6 +86,9 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can upload 3k file in chunked mode').put_object("seagatebucket", "3kfilec", 3000, chunked=True).execute_test().command_is_successful()
 
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfilec").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+
+
     # ************* File Overwrite Test **********
     JClientTest('Jclient can upload 3k file in chunked mode').put_object("seagatebucket", "3kfilec", 3072, chunked=True).execute_test().command_is_successful()
 
@@ -354,6 +357,9 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can upload 18MB file (multipart) in chunked mode').put_object_multipart("seagatebucket", "18MBfilec", 18000000, 15, chunked=True)\
             .execute_test().command_is_successful()
+
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "18MBfilec").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+
 
     JClientTest('Jclient can download 18MB file uploaded in chunked mode').get_object("seagatebucket", "18MBfilec")\
             .execute_test().command_is_successful().command_created_file("18MBfilec")
