@@ -19,6 +19,7 @@
 
 #include "mero_get_key_value_action.h"
 #include "s3_error_codes.h"
+#include "s3_m0_uint128_helper.h"
 
 MeroGetKeyValueAction::MeroGetKeyValueAction(
     std::shared_ptr<MeroRequestObject> req,
@@ -51,16 +52,20 @@ void MeroGetKeyValueAction::setup_steps() {
 void MeroGetKeyValueAction::fetch_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
-      request, mero_clovis_api);
-
-  index_id.u_hi = std::stoull(request->get_index_id_hi(), nullptr, 0);
-  index_id.u_lo = std::stoull(request->get_index_id_lo(), nullptr, 0);
-
-  clovis_kv_reader->get_keyval(
-      index_id, request->get_key_name(),
-      std::bind(&MeroGetKeyValueAction::fetch_key_value_successful, this),
-      std::bind(&MeroGetKeyValueAction::fetch_key_value_failed, this));
+  index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
+                                              request->get_index_id_hi());
+  // invalid oid
+  if (index_id.u_hi == 0ULL && index_id.u_lo == 0ULL) {
+    set_s3_error("BadRequest");
+    send_response_to_s3_client();
+  } else {
+    clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
+        request, mero_clovis_api);
+    clovis_kv_reader->get_keyval(
+        index_id, request->get_key_name(),
+        std::bind(&MeroGetKeyValueAction::fetch_key_value_successful, this),
+        std::bind(&MeroGetKeyValueAction::fetch_key_value_failed, this));
+  }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

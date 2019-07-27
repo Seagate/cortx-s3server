@@ -120,6 +120,7 @@ void Action::next() {
 void Action::done() {
   task_iteration_index = 0;
   state = ActionState::complete;
+  i_am_done();
 }
 
 void Action::pause() {

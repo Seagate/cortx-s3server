@@ -20,6 +20,7 @@
 #include "mero_delete_object_action.h"
 #include "s3_error_codes.h"
 #include "s3_common_utilities.h"
+#include "s3_m0_uint128_helper.h"
 
 MeroDeleteObjectAction::MeroDeleteObjectAction(
     std::shared_ptr<MeroRequestObject> req,
@@ -47,15 +48,21 @@ void MeroDeleteObjectAction::setup_steps() {
 
 void MeroDeleteObjectAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  oid.u_hi = std::stoull(request->get_object_oid_hi(), nullptr, 0);
-  oid.u_lo = std::stoull(request->get_object_oid_lo(), nullptr, 0);
 
-  std::string object_layout_id = request->get_query_string_value("layout-id");
-  if (!S3CommonUtilities::stoi(object_layout_id, layout_id)) {
+  oid = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
+                                         request->get_index_id_hi());
+  // invalid oid
+  if (oid.u_hi == 0ULL && oid.u_lo == 0ULL) {
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
-    next();
+    std::string object_layout_id = request->get_query_string_value("layout-id");
+    if (!S3CommonUtilities::stoi(object_layout_id, layout_id)) {
+      set_s3_error("BadRequest");
+      send_response_to_s3_client();
+    } else {
+      next();
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

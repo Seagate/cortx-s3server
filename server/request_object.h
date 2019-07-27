@@ -100,6 +100,7 @@ class RequestObject {
   S3Timer turn_around_time;
 
   bool is_client_connected;
+  bool ignore_incoming_data;
   bool s3_client_read_timedout;
 
   bool is_chunked_upload;
@@ -191,7 +192,6 @@ class RequestObject {
   const std::string& get_account_name();
   void set_account_id(const std::string& id);
   const std::string& get_account_id();
-
   inline std::string get_request_id() { return request_id; }
 
   S3RequestError get_request_error() { return request_error; }
@@ -261,6 +261,9 @@ class RequestObject {
       ev_req = NULL;
     }
   }
+
+  bool is_incoming_data_ignored() { return ignore_incoming_data; }
+  void stop_processing_incoming_data() { ignore_incoming_data = true; }
 
   bool client_connected() { return is_client_connected; }
   bool is_s3_client_read_timedout() { return s3_client_read_timedout; }

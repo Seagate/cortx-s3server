@@ -46,16 +46,20 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
+  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
   size_t total_data_to_stream;
   S3Timer create_object_timer;
   S3Timer write_content_timer;
   bool write_in_progress;
 
+  std::map<std::string, std::string> probable_oid_list;
+
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::map<std::string, std::string> new_object_tags_map;
 
@@ -72,7 +76,8 @@ class S3PutObjectAction : public S3Action {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
-      std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr);
+      std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
   // void start();
@@ -96,9 +101,13 @@ class S3PutObjectAction : public S3Action {
   void write_object_failed();
   void save_metadata();
   void save_object_metadata_failed();
-  void delete_old_object_if_present();
-  void delete_old_object_failed();
   void send_response_to_s3_client();
+
+  void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_failed();
+
+  void cleanup();
+  void cleanup_oid_from_probable_dead_oid_list();
 
   // rollback functions
   void rollback_create();

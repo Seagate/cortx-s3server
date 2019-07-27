@@ -25,6 +25,7 @@
 #include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_m0_uint128_helper.h"
 
 MeroKVSListingAction::MeroKVSListingAction(
     std::shared_ptr<MeroRequestObject> req,
@@ -55,6 +56,15 @@ void MeroKVSListingAction::setup_steps() {
 
 void MeroKVSListingAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
+                                              request->get_index_id_hi());
+  // invalid oid check
+  if (index_id.u_hi == 0ULL && index_id.u_lo == 0ULL) {
+    set_s3_error("BadRequest");
+    send_response_to_s3_client();
+    return;
+  }
 
   kvs_response_list.set_index_id(request->get_index_id_hi() + "-" +
                                  request->get_index_id_lo());
@@ -96,17 +106,13 @@ void MeroKVSListingAction::validate_request() {
 void MeroKVSListingAction::get_next_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   size_t count = S3Option::get_instance()->get_clovis_idx_fetch_count();
-  index_id.u_hi = std::stoull(request->get_index_id_hi(), nullptr, 0);
-  index_id.u_lo = std::stoull(request->get_index_id_lo(), nullptr, 0);
+
   clovis_kv_reader = mero_clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, mero_clovis_api);
 
   if (max_keys == 0) {
     // as requested max_keys is 0
     // Go ahead and respond.
-    fetch_successful = true;
-    send_response_to_s3_client();
-  } else if (index_id.u_hi == 0ULL && index_id.u_lo == 0ULL) {
     fetch_successful = true;
     send_response_to_s3_client();
   } else {

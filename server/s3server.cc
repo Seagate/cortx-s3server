@@ -282,7 +282,7 @@ extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
                                           void *arg) {
   S3RequestObject *request = static_cast<S3RequestObject *>(req->cbarg);
   s3_log(S3_LOG_DEBUG, "", "S3RequestObject(%p)\n", request);
-  if (request) {
+  if (request && !request->is_incoming_data_ignored()) {
     s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
            "Received Request body %zu bytes for sock = %d\n",
            evbuffer_get_length(buf), req->conn->sock);
@@ -302,10 +302,49 @@ extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
     }
 
   } else {
+    if (request) {
+      request->stop_client_read_timer();
+    }
     evhtp_unset_all_hooks(&req->conn->hooks);
     evhtp_unset_all_hooks(&req->hooks);
     s3_log(S3_LOG_DEBUG, "",
            "S3 request failed, Ignoring data for this request \n");
+  }
+
+  return EVHTP_RES_OK;
+}
+
+extern "C" evhtp_res process_mero_api_request_data(evhtp_request_t *req,
+                                                   evbuf_t *buf, void *arg) {
+  MeroRequestObject *request = static_cast<MeroRequestObject *>(req->cbarg);
+  s3_log(S3_LOG_DEBUG, "", "MeroRequestObject(%p)\n", request);
+  if (request && !request->is_incoming_data_ignored()) {
+    s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
+           "Received Request body %zu bytes for sock = %d\n",
+           evbuffer_get_length(buf), req->conn->sock);
+    // Data has arrived so disable read timeout
+    request->stop_client_read_timer();
+    evbuf_t *s3_buf = evbuffer_new();
+    evbuffer_add_buffer(s3_buf, buf);
+
+    request->notify_incoming_data(s3_buf);
+    if (!request->get_buffered_input()->is_freezed() &&
+        !request->is_request_paused()) {
+      // Set the read timeout event, in case if more data
+      // is expected.
+      s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
+             "Setting Read timeout for mero client\n");
+      request->set_start_client_request_read_timeout();
+    }
+
+  } else {
+    if (request) {
+      request->stop_client_read_timer();
+    }
+    evhtp_unset_all_hooks(&req->conn->hooks);
+    evhtp_unset_all_hooks(&req->hooks);
+    s3_log(S3_LOG_DEBUG, "",
+           "Mero request failed, Ignoring data for this request \n");
   }
 
   return EVHTP_RES_OK;
@@ -325,7 +364,7 @@ extern "C" evhtp_res set_mero_http_api_connection_handlers(
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_headers,
                  (evhtp_hook)dispatch_mero_api_request, arg);
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_read,
-                 (evhtp_hook)process_request_data, NULL);
+                 (evhtp_hook)process_mero_api_request_data, NULL);
   return EVHTP_RES_OK;
 }
 
@@ -518,11 +557,11 @@ evhtp_t *create_evhtp_handle_for_mero(evbase_t *evbase_handle,
                                       Router *mero_router, void *arg) {
   evhtp_t *htp = evhtp_new(global_evbase_handle, NULL);
 #if defined SO_REUSEPORT
-  if (g_option_instance->is_s3_reuseport_enabled()) {
+  if (g_option_instance->is_mero_http_reuseport_enabled()) {
     htp->enable_reuseport = 1;
   }
 #else
-  if (g_option_instance->is_s3_reuseport_enabled()) {
+  if (g_option_instance->is_mero_http_reuseport_enabled()) {
     s3_log(
         S3_LOG_ERROR,
         "Option --reuseport is true however OS Doesn't support SO_REUSEPORT\n");

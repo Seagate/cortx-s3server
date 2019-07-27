@@ -27,7 +27,10 @@
 #include "s3_put_tag_body.h"
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_m0_uint128_helper.h"
 #include <evhttp.h>
+
+extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -36,7 +39,8 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory,
     std::shared_ptr<ClovisAPI> clovis_api,
-    std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory)
+    std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
+    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : S3Action(req, true, auth_factory),
       auth_failed(false),
       write_failed(false),
@@ -90,6 +94,12 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
+  if (kv_writer_factory) {
+    clovis_kv_writer_factory = kv_writer_factory;
+  } else {
+    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+  }
+
   if (put_tags_body_factory) {
     put_object_tag_body_factory = put_tags_body_factory;
   } else {
@@ -110,6 +120,11 @@ void S3PutChunkUploadObjectAction::setup_steps() {
   }
   add_task(std::bind(&S3PutChunkUploadObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3PutChunkUploadObjectAction::create_object, this));
+  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
+    add_task(std::bind(
+        &S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list,
+        this));
+  }
   add_task(
       std::bind(&S3PutChunkUploadObjectAction::initiate_data_streaming, this));
   add_task(std::bind(&S3PutChunkUploadObjectAction::save_metadata, this));
@@ -414,6 +429,7 @@ void S3PutChunkUploadObjectAction::rollback_create_failed() {
              S3ClovisWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_WARN, request_id, "Deletion of object failed\n");
     set_s3_error("ServiceUnavailable");
+    probable_oid_list.erase(S3M0Uint128Helper::to_string(new_object_oid));
     rollback_done();
   } else {
     // Log rollback failure.
@@ -423,6 +439,7 @@ void S3PutChunkUploadObjectAction::rollback_create_failed() {
            new_object_oid.u_hi, new_object_oid.u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
+    probable_oid_list.erase(S3M0Uint128Helper::to_string(new_object_oid));
     rollback_done();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -644,39 +661,36 @@ void S3PutChunkUploadObjectAction::save_object_metadata_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutChunkUploadObjectAction::delete_old_object_if_present() {
+void S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (old_object_oid.u_hi == 0ULL && old_object_oid.u_lo == 0ULL) {
-    next();
-  } else {
-    clovis_writer->set_oid(old_object_oid);
-    clovis_writer->delete_object(
-        std::bind(&S3PutChunkUploadObjectAction::next, this),
-        std::bind(&S3PutChunkUploadObjectAction::delete_old_object_failed,
-                  this),
-        old_layout_id);
+  // store old object oid
+  if (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL) {
+    std::string old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+    probable_oid_list[S3M0Uint128Helper::to_string(old_object_oid)] =
+        object_metadata->create_probable_delete_record(old_layout_id);
   }
+
+  // store new oid
+  probable_oid_list[S3M0Uint128Helper::to_string(new_object_oid)] =
+      object_metadata->create_probable_delete_record(layout_id);
+
+  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+      request, s3_clovis_api);
+  clovis_kv_writer->put_keyval(
+      global_probable_dead_object_list_index_oid, probable_oid_list,
+      std::bind(&S3PutChunkUploadObjectAction::next, this),
+      std::bind(&S3PutChunkUploadObjectAction::
+                     add_object_oid_to_probable_dead_oid_list_failed,
+                this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutChunkUploadObjectAction::delete_old_object_failed() {
+void S3PutChunkUploadObjectAction::
+    add_object_oid_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Deletion of old object with oid "
-           "%" SCNx64 " : %" SCNx64 " failed\n",
-           old_object_oid.u_hi, old_object_oid.u_lo);
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
-  } else {
-  s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
-         S3_IEM_DELETE_OBJ_FAIL_JSON);
-  s3_log(S3_LOG_ERROR, request_id,
-         "Deletion of old object with oid "
-         "%" SCNx64 " : %" SCNx64 " failed\n",
-         old_object_oid.u_hi, old_object_oid.u_lo);
-  next();
-  }
+  set_s3_error("InternalError");
+  // Trigger rollback to undo changes done and report error
+  rollback_start();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -728,7 +742,69 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   request->resume();
 
-  done();
+  cleanup();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  i_am_done();  // self delete
+}
+
+void S3PutChunkUploadObjectAction::cleanup() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  if ((object_metadata != nullptr) &&
+      (object_metadata->get_state() == S3ObjectMetadataState::saved)) {
+    // process to delete old object
+    if (clovis_writer != nullptr &&
+        (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL)) {
+      clovis_writer->set_oid(old_object_oid);
+      clovis_writer->delete_object(
+          std::bind(&S3PutChunkUploadObjectAction::
+                         cleanup_oid_from_probable_dead_oid_list,
+                    this),
+          std::bind(&S3PutChunkUploadObjectAction::
+                         cleanup_oid_from_probable_dead_oid_list,
+                    this),
+          old_layout_id);
+    } else {
+      cleanup_oid_from_probable_dead_oid_list();
+    }
+  } else {
+    // metadata failed to delete, so remove the entry from
+    // probable_dead_oid_list
+    cleanup_oid_from_probable_dead_oid_list();
+  }
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::cleanup_oid_from_probable_dead_oid_list() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::vector<std::string> clean_valid_oid_from_probable_dead_object_list_index;
+
+  if (clovis_writer != nullptr &&
+      (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL) &&
+      (clovis_writer->get_state() != S3ClovisWriterOpState::deleted ||
+       clovis_writer->get_state() != S3ClovisWriterOpState::missing)) {
+    // new object oid and metadata saved but old object oid failed to delete
+    // so erase the old object oid from probable_oid_list and
+    // this old object oid will be retained in
+    // global_probable_dead_object_list_index_oid
+    probable_oid_list.erase(S3M0Uint128Helper::to_string(old_object_oid));
+  }
+
+  // final probable_oid_list map will have valid object oids
+  // that needs to be cleanup from global_probable_dead_object_list_index_oid
+  for (auto& kv : probable_oid_list) {
+    clean_valid_oid_from_probable_dead_object_list_index.push_back(kv.first);
+  }
+
+  if (!clean_valid_oid_from_probable_dead_object_list_index.empty()) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+    clovis_kv_writer->delete_keyval(
+        global_probable_dead_object_list_index_oid,
+        clean_valid_oid_from_probable_dead_object_list_index,
+        std::bind(&Action::done, this), std::bind(&Action::done, this));
+  } else {
+    done();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

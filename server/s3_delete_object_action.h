@@ -36,26 +36,38 @@ class S3DeleteObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
 
  public:
   S3DeleteObjectAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> writer_factory = nullptr);
+      std::shared_ptr<S3ClovisWriterFactory> writer_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   void setup_steps();
 
   void fetch_bucket_info();
   void fetch_bucket_metadata_failed();
   void fetch_object_info();
+  void fetch_object_info_failed();
   void delete_metadata();
-  void delete_object();
-  void delete_object_failed();
+  void delete_metadata_failed();
+
+  void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_failed();
+
+  void cleanup();
+  void cleanup_oid_from_probable_dead_oid_list();
+
   void send_response_to_s3_client();
 
   FRIEND_TEST(S3DeleteObjectActionTest, ConstructorTest);

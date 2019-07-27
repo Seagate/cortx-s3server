@@ -19,6 +19,7 @@
 
 #include "mero_delete_key_value_action.h"
 #include "s3_error_codes.h"
+#include "s3_m0_uint128_helper.h"
 
 MeroDeleteKeyValueAction::MeroDeleteKeyValueAction(
     std::shared_ptr<MeroRequestObject> req,
@@ -58,19 +59,22 @@ void MeroDeleteKeyValueAction::setup_steps() {
 
 void MeroDeleteKeyValueAction::delete_key_value() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
+  index_id = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
+                                              request->get_index_id_hi());
+  // invalid oid
+  if (index_id.u_hi == 0ULL && index_id.u_lo == 0ULL) {
+    set_s3_error("BadRequest");
+    send_response_to_s3_client();
+  } else {
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
         request, mero_clovis_api);
   }
-
-  index_id.u_hi = std::stoull(request->get_index_id_hi(), nullptr, 0);
-  index_id.u_lo = std::stoull(request->get_index_id_lo(), nullptr, 0);
-
   clovis_kv_writer->delete_keyval(
       index_id, request->get_key_name(),
       std::bind(&MeroDeleteKeyValueAction::delete_key_value_successful, this),
       std::bind(&MeroDeleteKeyValueAction::delete_key_value_failed, this));
+  }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

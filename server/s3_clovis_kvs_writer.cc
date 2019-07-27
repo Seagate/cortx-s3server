@@ -403,6 +403,74 @@ void S3ClovisKVSWriter::delete_indexes_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3ClovisKVSWriter::put_keyval(
+    struct m0_uint128 oid, const std::map<std::string, std::string> &kv_list,
+    std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  int rc = 0;
+  oid_list.clear();
+  oid_list.push_back(oid);
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed = on_failed;
+
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(1);
+
+  writer_context.reset(new S3ClovisKVSWriterContext(
+      request, std::bind(&S3ClovisKVSWriter::put_keyval_successful, this),
+      std::bind(&S3ClovisKVSWriter::put_keyval_failed, this), 1,
+      s3_clovis_api));
+
+  writer_context->init_kvs_write_op_ctx(kv_list.size());
+
+  struct s3_clovis_idx_op_context *idx_op_ctx =
+      writer_context->get_clovis_idx_op_ctx();
+  struct s3_clovis_kvs_op_context *kvs_ctx =
+      writer_context->get_clovis_kvs_op_ctx();
+
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
+      1, sizeof(struct s3_clovis_context_obj));
+
+  op_ctx->op_index_in_launch = 0;
+  op_ctx->application_context = (void *)writer_context.get();
+
+  idx_op_ctx->cbs->oop_executed = NULL;
+  idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+  idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
+
+  size_t i = 0;
+  for (auto &kv : kv_list) {
+    set_up_key_value_store(kvs_ctx, kv.first, kv.second, i);
+    i++;
+  }
+  s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
+                                 &oid_list[0]);
+
+  rc = s3_clovis_api->clovis_idx_op(
+      &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
+      kvs_ctx->rcs, M0_OIF_OVERWRITE, &(idx_op_ctx->ops[0]));
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    state = S3ClovisKVSWriterOpState::failed_to_launch;
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
+    return;
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
+  }
+
+  idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
+
+  writer_context->start_timer_for("put_keyval");
+
+  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::putkv);
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
                                    std::string val,
                                    std::function<void(void)> on_success,
@@ -683,24 +751,24 @@ void S3ClovisKVSWriter::delete_keyval_failed() {
 }
 
 void S3ClovisKVSWriter::set_up_key_value_store(
-    struct s3_clovis_kvs_op_context *kvs_ctx, std::string key,
-    std::string val) {
+    struct s3_clovis_kvs_op_context *kvs_ctx, const std::string &key,
+    const std::string &val, size_t pos) {
   // TODO - clean up these buffers
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  kvs_ctx->keys->ov_vec.v_count[0] = key.length();
-  kvs_ctx->keys->ov_buf[0] = (char *)malloc(key.length());
-  memcpy(kvs_ctx->keys->ov_buf[0], (void *)key.c_str(), key.length());
+  kvs_ctx->keys->ov_vec.v_count[pos] = key.length();
+  kvs_ctx->keys->ov_buf[pos] = (char *)malloc(key.length());
+  memcpy(kvs_ctx->keys->ov_buf[pos], (void *)key.c_str(), key.length());
 
-  kvs_ctx->values->ov_vec.v_count[0] = val.length();
-  kvs_ctx->values->ov_buf[0] = (char *)malloc(val.length());
-  memcpy(kvs_ctx->values->ov_buf[0], (void *)val.c_str(), val.length());
+  kvs_ctx->values->ov_vec.v_count[pos] = val.length();
+  kvs_ctx->values->ov_buf[pos] = (char *)malloc(val.length());
+  memcpy(kvs_ctx->values->ov_buf[pos], (void *)val.c_str(), val.length());
 
   s3_log(S3_LOG_DEBUG, request_id, "Keys and value in clovis buffer\n");
-  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->keys->ov_buf[0] = %s\n",
-         std::string((char *)kvs_ctx->keys->ov_buf[0],
-                     kvs_ctx->keys->ov_vec.v_count[0]).c_str());
-  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->vals->ov_buf[0] = %s\n",
-         std::string((char *)kvs_ctx->values->ov_buf[0],
-                     kvs_ctx->values->ov_vec.v_count[0]).c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->keys->ov_buf[%lu] = %s\n", pos,
+         std::string((char *)kvs_ctx->keys->ov_buf[pos],
+                     kvs_ctx->keys->ov_vec.v_count[pos]).c_str());
+  s3_log(S3_LOG_DEBUG, request_id, "kvs_ctx->vals->ov_buf[%lu] = %s\n", pos,
+         std::string((char *)kvs_ctx->values->ov_buf[pos],
+                     kvs_ctx->values->ov_vec.v_count[pos]).c_str());
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

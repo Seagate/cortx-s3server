@@ -234,40 +234,59 @@ TEST_F(S3DeleteObjectActionTest, DeleteMetadataWhenObjectPresent) {
 TEST_F(S3DeleteObjectActionTest, DeleteMetadataWhenObjectAbsent) {
   CREATE_OBJECT_METADATA;
 
+  bool is_s3server_objectleak_tracking_enabled =
+      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
+
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
 
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess204, _)).Times(1);
 
-  action_under_test->delete_metadata();
+  action_under_test->fetch_object_info_failed();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
+      is_s3server_objectleak_tracking_enabled);
 }
 
 TEST_F(S3DeleteObjectActionTest, DeleteMetadataWhenObjectMetadataFetchFailed) {
   CREATE_OBJECT_METADATA;
 
+  bool is_s3server_objectleak_tracking_enabled =
+      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
+
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
 
-  action_under_test->delete_metadata();
+  action_under_test->fetch_object_info_failed();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
+      is_s3server_objectleak_tracking_enabled);
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteFailed) {
+TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteFailedToLaunch) {
   CREATE_OBJECT_METADATA;
 
+  bool is_s3server_objectleak_tracking_enabled =
+      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
+
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
+  EXPECT_CALL(*mock_request, send_response(S3HttpFailed503, _)).Times(1);
 
-  action_under_test->delete_object();
+  action_under_test->fetch_object_info_failed();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
+      is_s3server_objectleak_tracking_enabled);
 
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteSucceeded) {
@@ -285,38 +304,7 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteSucceeded) {
               delete_object(_, _, _))
       .Times(1);
 
-  action_under_test->delete_object();
-}
-
-TEST_F(S3DeleteObjectActionTest, DeleteObjectMissingShouldReportDeleted) {
-  CREATE_OBJECT_METADATA;
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisWriterOpState::missing));
-
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteObjectActionTest::func_callback_one, this));
-
-  action_under_test->delete_object_failed();
-
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3DeleteObjectActionTest, DeleteObjectFailedShouldReportDeleted) {
-  CREATE_OBJECT_METADATA;
-
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .WillRepeatedly(Return(oid));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
-
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess204, _)).Times(1);
-
-  action_under_test->delete_object_failed();
+  action_under_test->cleanup();
 }
 
 TEST_F(S3DeleteObjectActionTest, SendErrorResponse) {
@@ -340,7 +328,6 @@ TEST_F(S3DeleteObjectActionTest, SendAnyFailedResponse) {
 }
 
 TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {
-  CREATE_OBJECT_METADATA;
 
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess204, _))
       .Times(AtLeast(1));

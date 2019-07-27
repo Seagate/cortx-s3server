@@ -43,6 +43,7 @@
 #define S3_OPTION_AUDIT_CONFIG 0x80000
 #define S3_OPTION_MERO_BIND_PORT 0x100000
 #define S3_OPTION_MERO_BIND_ADDR 0x200000
+#define S3_OPTION_MERO_HTTP_REUSEPORT 0x400000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -118,7 +119,9 @@ class S3Option {
   int log_file_max_size_mb;
   bool s3_enable_auth_ssl;
   bool s3server_ssl_enabled;
+  bool s3server_objectleak_tracking_enabled;
   bool s3_reuseport;
+  bool mero_http_reuseport;
   bool log_buffering_enable;
   bool s3_enable_murmurhash_oid;
   int log_flush_frequency_sec;
@@ -182,6 +185,7 @@ class S3Option {
     s3_iam_cert_file = "/etc/ssl/stx-s3/s3auth/s3authserver.crt";
     s3server_ssl_session_timeout_in_sec = DAY_IN_SECONDS;
     s3server_ssl_enabled = false;
+    s3server_objectleak_tracking_enabled = false;
 
     s3_grace_period_sec = 10;  // 10 seconds
     is_s3_shutting_down = false;
@@ -322,7 +326,10 @@ class S3Option {
   int get_log_file_max_size_in_mb();
   bool is_s3_ssl_auth_enabled();
   bool is_s3server_ssl_enabled();
+  bool is_s3server_objectleak_tracking_enabled();
+  void set_s3server_objectleak_tracking_enabled(const bool& flag);
   bool is_s3_reuseport_enabled();
+  bool is_mero_http_reuseport_enabled();
   const char* get_iam_cert_file();
   bool is_log_buffering_enabled();
   bool is_murmurhash_oid_enabled();

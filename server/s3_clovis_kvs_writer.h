@@ -168,6 +168,10 @@ class S3ClovisKVSWriter {
   void delete_indexes_successful();
   void delete_indexes_failed();
 
+  virtual void put_keyval(struct m0_uint128 oid,
+                          const std::map<std::string, std::string>& kv_list,
+                          std::function<void(void)> on_success,
+                          std::function<void(void)> on_failed);
   // Async save operation.
   virtual void put_keyval(struct m0_uint128 oid, std::string key,
                           std::string val, std::function<void(void)> on_success,
@@ -189,7 +193,8 @@ class S3ClovisKVSWriter {
   void delete_keyval_failed();
 
   void set_up_key_value_store(struct s3_clovis_kvs_op_context* kvs_ctx,
-                              std::string key, std::string val);
+                              const std::string& key, const std::string& val,
+                              size_t pos = 0);
 
   virtual int get_op_ret_code_for(int index) {
     return writer_context->get_errno_for(index);

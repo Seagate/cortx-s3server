@@ -28,6 +28,7 @@
 #include "s3_object_metadata.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_common_utilities.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_stats.h"
 
 void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
@@ -741,3 +742,18 @@ bool S3ObjectMetadata::check_object_tags_exists() {
 }
 
 int S3ObjectMetadata::object_tags_count() { return object_tags.size(); }
+
+std::string S3ObjectMetadata::create_probable_delete_record(
+    int override_layout_id) {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  Json::Value root;
+
+  std::string index_oid_str = S3M0Uint128Helper::to_string(get_index_oid());
+
+  root["index_id"] = index_oid_str;
+  root["object_metadata_path"] = get_object_name();
+  root["object_layout_id"] = override_layout_id;
+
+  Json::FastWriter fastWriter;
+  return fastWriter.write(root);
+}

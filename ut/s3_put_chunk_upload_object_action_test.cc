@@ -1033,74 +1033,6 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SaveMetadata) {
   action_under_test->save_metadata();
 }
 
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectNotRequired) {
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(std::bind(
-      &S3PutChunkUploadObjectActionTestBase::func_callback_one, this));
-
-  action_under_test->delete_old_object_if_present();
-
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectSinceItsPresent) {
-  CREATE_OBJECT_METADATA;
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillOnce(Return(S3ObjectMetadataState::present));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
-      .Times(1)
-      .WillOnce(Return(layout_id));
-
-  struct m0_uint128 old_oid = {0x1ffff, 0x1ffff};
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .Times(1)
-      .WillOnce(Return(old_oid));
-
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(std::bind(
-      &S3PutChunkUploadObjectActionTestBase::func_callback_one, this));
-
-  action_under_test->fetch_object_info_status();
-  EXPECT_EQ(1, call_count_one);
-
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _))
-      .Times(AtLeast(1));
-
-  action_under_test->delete_old_object_if_present();
-}
-
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailed) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(std::bind(
-      &S3PutChunkUploadObjectActionTestBase::func_callback_one, this));
-
-  action_under_test->delete_old_object_failed();
-
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailedToLaunch) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
-
-  action_under_test->delete_old_object_failed();
-}
-
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendResponseWhenShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
 
@@ -1135,7 +1067,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendSuccessResponse) {
                                                       object_list_indx_oid);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillOnce(Return(S3ObjectMetadataState::saved));
+      .Times(2)
+      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
@@ -1153,7 +1086,8 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendFailedResponse) {
                                                       object_list_indx_oid);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillOnce(Return(S3ObjectMetadataState::failed));
+      .Times(2)
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(500, _)).Times(AtLeast(1));

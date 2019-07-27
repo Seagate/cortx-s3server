@@ -45,6 +45,7 @@ bool S3Option::load_section(std::string section_name,
           s3_option_node["S3_DAEMON_DO_REDIRECTION"].as<unsigned short>();
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
+      mero_http_reuseport = s3_option_node["S3_MERO_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
       s3server_ssl_cert_file =
@@ -120,6 +121,10 @@ bool S3Option::load_section(std::string section_name,
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
       s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING");
+      s3server_objectleak_tracking_enabled =
+          s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_DEFAULT_ENDPOINT");
@@ -354,6 +359,8 @@ bool S3Option::load_section(std::string section_name,
       s3_enable_auth_ssl = s3_option_node["S3_ENABLE_AUTH_SSL"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REUSEPORT");
       s3_reuseport = s3_option_node["S3_REUSEPORT"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MERO_HTTP_REUSEPORT");
+      mero_http_reuseport = s3_option_node["S3_MERO_HTTP_REUSEPORT"].as<bool>();
       s3_iam_cert_file = s3_option_node["S3_IAM_CERT_FILE"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_CERT_FILE");
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_PEM_FILE");
@@ -367,6 +374,10 @@ bool S3Option::load_section(std::string section_name,
       perf_enabled = s3_option_node["S3_ENABLE_PERF"].as<unsigned short>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_SSL_ENABLE");
       s3server_ssl_enabled = s3_option_node["S3_SERVER_SSL_ENABLE"].as<bool>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING");
+      s3server_objectleak_tracking_enabled =
+          s3_option_node["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"].as<bool>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_AHEAD_MULTIPLE");
       read_ahead_multiple = s3_option_node["S3_READ_AHEAD_MULTIPLE"].as<int>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_MAX_RETRY_COUNT");
@@ -628,6 +639,12 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     } else {
       s3_reuseport = false;
     }
+  } else if (option_flag & S3_OPTION_MERO_HTTP_REUSEPORT) {
+    if (strcmp(optarg, "true") == 0) {
+      mero_http_reuseport = true;
+    } else {
+      mero_http_reuseport = false;
+    }
   }
   cmd_opt_flag |= option_flag;
   return;
@@ -668,6 +685,8 @@ void S3Option::dump_options() {
          (s3_enable_auth_ssl) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_REUSEPORT = %s\n",
          (s3_reuseport) ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_MERO_HTTP_REUSEPORT = %s\n",
+         (mero_http_reuseport) ? "true" : "false");
   s3_log(S3_LOG_INFO, "", "S3_IAM_CERT_FILE = %s\n", s3_iam_cert_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_IPV4_BIND_ADDR = %s\n",
          s3_ipv4_bind_addr.c_str());
@@ -682,6 +701,8 @@ void S3Option::dump_options() {
          s3_grace_period_sec);
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_PERF = %d\n", perf_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_SSL_ENABLE = %d\n", s3server_ssl_enabled);
+  s3_log(S3_LOG_INFO, "", "S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING = %d\n",
+         s3server_objectleak_tracking_enabled);
   s3_log(S3_LOG_INFO, "", "S3_SERVER_CERT_FILE = %s\n",
          s3server_ssl_cert_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_SERVER_PEM_FILE = %s\n",
@@ -997,6 +1018,14 @@ unsigned short S3Option::s3_performance_enabled() { return perf_enabled; }
 
 bool S3Option::is_s3server_ssl_enabled() { return s3server_ssl_enabled; }
 
+bool S3Option::is_s3server_objectleak_tracking_enabled() {
+  return s3server_objectleak_tracking_enabled;
+}
+
+void S3Option::set_s3server_objectleak_tracking_enabled(const bool& flag) {
+  s3server_objectleak_tracking_enabled = flag;
+}
+
 bool S3Option::is_fake_clovis_createobj() {
   return FLAGS_fake_clovis_createobj;
 }
@@ -1062,5 +1091,7 @@ void S3Option::disable_murmurhash_oid() { s3_enable_murmurhash_oid = false; }
 void S3Option::enable_reuseport() { FLAGS_reuseport = true; }
 
 bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
+
+bool S3Option::is_mero_http_reuseport_enabled() { return mero_http_reuseport; }
 
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }

@@ -79,6 +79,7 @@ RequestObject::RequestObject(
       total_bytes_received(0),
       bytes_sent(0),
       is_client_connected(true),
+      ignore_incoming_data(false),
       s3_client_read_timedout(false),
       is_chunked_upload(false),
       in_headers_copied(false),
@@ -599,6 +600,7 @@ void RequestObject::send_response(int code, std::string body) {
   }
   set_out_header_value("x-amzn-RequestId", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
+  stop_processing_incoming_data();
   resume();  // attempt resume just in case some one forgot
 
   request_timer.stop();
@@ -637,10 +639,10 @@ void RequestObject::send_reply_body(char* data, int length) {
 void RequestObject::send_reply_end() {
   if (client_connected()) {
     evhtp_obj->http_send_reply_end(ev_req);
-    request_timer.stop();
-  } else {
-    request_timer.stop();
   }
+
+  request_timer.stop();
+  stop_processing_incoming_data();
   LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
   s3_stats_timing("total_request_time",
                   request_timer.elapsed_time_in_millisec());

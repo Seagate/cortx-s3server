@@ -245,6 +245,8 @@ class S3ObjectMetadata {
   virtual bool check_object_tags_exists();
   virtual int object_tags_count();
 
+  virtual std::string create_probable_delete_record(int override_layout_id);
+
   // Virtual Destructor
   virtual ~S3ObjectMetadata(){};
 
