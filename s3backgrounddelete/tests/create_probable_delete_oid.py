@@ -1,5 +1,5 @@
+"""This will generate sample data and test s3 background delete functionality."""
 #!/usr/bin/python3
-
 import sys
 import os
 
@@ -10,17 +10,24 @@ from eos_core_config import EOSCoreConfig
 from eos_core_kv_api import EOSCoreKVApi
 from eos_core_index_api import EOSCoreIndexApi
 
-#Create sample data for s3 background delete.
-if __name__ == "__main__":
-    config =  EOSCoreConfig()
-    EOSCoreIndexApi(config).put("probable_delete_index_id")
-    EOSCoreKVApi(config).put("probable_delete_index_id", "oid-1", "{ \"obj-name\" : \"bucket_1/obj_1\"}")
-    EOSCoreKVApi(config).put("probable_delete_index_id", "oid-2", "{ \"obj-name\" : \"bucket_1/obj_2\"}")
-    EOSCoreIndexApi(config).list("probable_delete_index_id")
-    EOSCoreKVApi(config).get("probable_delete_index_id","oid-1")
-    EOSCoreKVApi(config).get("probable_delete_index_id","oid-3")
 
-    #Sample object metadata
+# Create sample data for s3 background delete.
+if __name__ == "__main__":
+    CONFIG = EOSCoreConfig()
+    EOSCoreIndexApi(CONFIG).put("probable_delete_index_id")
+    EOSCoreKVApi(CONFIG).put(
+        "probable_delete_index_id",
+        "oid-1",
+        "{ \"obj-name\" : \"bucket_1/obj_1\"}")
+    EOSCoreKVApi(CONFIG).put(
+        "probable_delete_index_id",
+        "oid-2",
+        "{ \"obj-name\" : \"bucket_1/obj_2\"}")
+    EOSCoreIndexApi(CONFIG).list("probable_delete_index_id")
+    EOSCoreKVApi(CONFIG).get("probable_delete_index_id", "oid-1")
+    EOSCoreKVApi(CONFIG).get("probable_delete_index_id", "oid-3")
+
+    # Sample object metadata
     '''{
         "ACL" : "",
         "Bucket-Name" : "seagatebucket",
@@ -51,14 +58,25 @@ if __name__ == "__main__":
             }
     '''
 
-    objectid1_metadata = "{\"Object-Name\":\"bucket_1/obj_1\", \"x-amz-meta-s3cmd\": \"true\", \"mero_oid_u_hi\" : \"oid-1\",\"mero_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
+    OBJECTID1_METADATA = "{\"Object-Name\":\"bucket_1/obj_1\", \
+                           \"x-amz-meta-s3cmd\": \"true\", \
+                           \"mero_oid_u_hi\" : \"oid-1\", \
+                           \"mero_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
 
-    objectid2_metadata =  "{\"Object-Name\":\"bucket_1/obj_2\", \"x-amz-meta-s3cmd\": \"true\", \"mero_oid_u_hi\" : \"oid-2\",\"mero_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
+    OBJECTID2_METADATA = "{\"Object-Name\":\"bucket_1/obj_2\", \
+                           \"x-amz-meta-s3cmd\": \"true\", \
+                           \"mero_oid_u_hi\" : \"oid-2\", \
+                           \"mero_oid_u_lo\" : \"FzVUkUG8V+0=\"}"
 
-    EOSCoreIndexApi(config).put("object_metadata_index_id")
-    EOSCoreKVApi(config).put("object_metadata_index_id", "oid-1", objectid1_metadata)
-    EOSCoreKVApi(config).put("object_metadata_index_id", "oid-2", objectid1_metadata)
-    EOSCoreIndexApi(config).list("object_metadata_index_id")
-    EOSCoreKVApi(config).get("object_metadata_index_id","oid-1")
-    EOSCoreKVApi(config).get("object_metadata_index_id","oid-2")
-
+    EOSCoreIndexApi(CONFIG).put("object_metadata_index_id")
+    EOSCoreKVApi(CONFIG).put(
+        "object_metadata_index_id",
+        "oid-1",
+        OBJECTID1_METADATA)
+    EOSCoreKVApi(CONFIG).put(
+        "object_metadata_index_id",
+        "oid-2",
+        OBJECTID2_METADATA)
+    EOSCoreIndexApi(CONFIG).list("object_metadata_index_id")
+    EOSCoreKVApi(CONFIG).get("object_metadata_index_id", "oid-1")
+    EOSCoreKVApi(CONFIG).get("object_metadata_index_id", "oid-2")

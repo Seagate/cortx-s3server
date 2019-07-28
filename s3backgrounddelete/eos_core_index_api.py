@@ -1,7 +1,5 @@
-import http.client, urllib.parse
-import sys
-import datetime
-import json
+"""This class provides Index  REST API i.e. List, PUT."""
+
 import logging
 
 from eos_list_index_response import EOSCoreListIndexResponse
@@ -11,11 +9,13 @@ from eos_core_success_response import EOSCoreSuccessResponse
 
 # EOSCoreIndexApi supports index REST-API's List & Put
 
-class EOSCoreIndexApi(EOSCoreClient):
 
+class EOSCoreIndexApi(EOSCoreClient):
+    """EOSCoreIndexApi provides index REST-API's List and Put."""
     _logger = None
 
-    def __init__(self, config, logger = None):
+    def __init__(self, config, logger=None):
+        """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("EOSCoreIndexApi")
         else:
@@ -24,6 +24,7 @@ class EOSCoreIndexApi(EOSCoreClient):
         super(EOSCoreIndexApi, self).__init__(self.config, self._logger)
 
     def list(self, index):
+        """Perform LIST request and generate response."""
         if index is None:
             self._logger.error("Index Id is required.")
             return None
@@ -31,7 +32,7 @@ class EOSCoreIndexApi(EOSCoreClient):
         self._logger.info("Processing request in IndexAPI")
         request_uri = '/indexes/' + index
         try:
-            response = super().get(request_uri)
+            response = super(EOSCoreIndexApi, self).get(request_uri)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -41,17 +42,18 @@ class EOSCoreIndexApi(EOSCoreClient):
             return True, EOSCoreListIndexResponse(response['body'])
         else:
             self._logger.info('Failed to list Index details.')
-            return False, EOSCoreErrorResponse(response['status'], response['reason'], response['body'])
+            return False, EOSCoreErrorResponse(
+                response['status'], response['reason'], response['body'])
 
     def put(self, index):
-
+        """Perform PUT request and generate response."""
         if index is None:
             self._logger.info("Index Id is required.")
             return None
 
         request_uri = '/indexes/' + index
         try:
-            response = super().put(request_uri)
+            response = super(EOSCoreIndexApi, self).put(request_uri)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -61,4 +63,5 @@ class EOSCoreIndexApi(EOSCoreClient):
             return True, EOSCoreSuccessResponse(response['body'])
         else:
             self._logger.info('Failed to add Index.')
-            return False, EOSCoreErrorResponse(response['status'], response['reason'], response['body'])
+            return False, EOSCoreErrorResponse(
+                response['status'], response['reason'], response['body'])

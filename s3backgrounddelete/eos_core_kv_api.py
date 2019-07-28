@@ -1,6 +1,4 @@
-import http.client, urllib.parse
-import sys
-import datetime
+"""This class provides Key-value REST API i.e. GET,PUT and DELETE."""
 import logging
 
 from eos_core_client import EOSCoreClient
@@ -10,11 +8,13 @@ from eos_core_success_response import EOSCoreSuccessResponse
 
 # EOSCoreKVApi supports key-value REST-API's Put, Get & Delete
 
-class EOSCoreKVApi(EOSCoreClient):
 
+class EOSCoreKVApi(EOSCoreClient):
+    """EOSCoreKVApi provides key-value REST-API's Put, Get & Delete."""
     _logger = None
 
-    def __init__(self, config, logger = None):
+    def __init__(self, config, logger=None):
+        """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("EOSCoreKVApi")
         else:
@@ -23,7 +23,8 @@ class EOSCoreKVApi(EOSCoreClient):
         self.config = config
         super(EOSCoreKVApi, self).__init__(self.config, self._logger)
 
-    def put(self, index = None, key = None, value= None):
+    def put(self, index=None, key=None, value=None):
+        """Perform PUT request and generate response."""
         if index is None:
             self._logger.error("Index Id is required.")
             return None
@@ -34,7 +35,7 @@ class EOSCoreKVApi(EOSCoreClient):
         request_body = value
         request_uri = '/indexes/' + index + '/' + key
         try:
-            response = super().put(request_uri, request_body)
+            response = super(EOSCoreKVApi, self).put(request_uri, request_body)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -44,9 +45,11 @@ class EOSCoreKVApi(EOSCoreClient):
             return True, EOSCoreSuccessResponse(response['body'])
         else:
             self._logger.info('Failed to add key value details.')
-            return False, EOSCoreErrorResponse(response['status'], response['reason'], response['body'])
+            return False, EOSCoreErrorResponse(
+                response['status'], response['reason'], response['body'])
 
-    def get(self, index = None, key = None):
+    def get(self, index=None, key=None):
+        """Perform GET request and generate response."""
         if index is None:
             self._logger.error("Index Id is required.")
             return None
@@ -57,7 +60,7 @@ class EOSCoreKVApi(EOSCoreClient):
         request_uri = '/indexes/' + index + '/' + key
 
         try:
-            response = super().get(request_uri)
+            response = super(EOSCoreKVApi, self).get(request_uri)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -67,9 +70,11 @@ class EOSCoreKVApi(EOSCoreClient):
             return True, EOSCoreGetKVResponse(key, response['body'])
         else:
             self._logger.info('Failed to get kv details.')
-            return False, EOSCoreErrorResponse(response['status'], response['reason'], response['body'])
+            return False, EOSCoreErrorResponse(
+                response['status'], response['reason'], response['body'])
 
-    def delete(self, index = None, key = None):
+    def delete(self, index=None, key=None):
+        """Perform DELETE request and generate response."""
         if index is None:
             self._logger.error("Index Id is required.")
             return None
@@ -79,7 +84,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         request_uri = '/indexes/' + index + '/' + key
         try:
-            response = super().delete(request_uri)
+            response = super(EOSCoreKVApi, self).delete(request_uri)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -89,4 +94,5 @@ class EOSCoreKVApi(EOSCoreClient):
             return True, EOSCoreSuccessResponse(response['body'])
         else:
             self._logger.info('Failed to delete key value.')
-            return False, EOSCoreErrorResponse(response['status'], response['reason'], response['body'])
+            return False, EOSCoreErrorResponse(
+                response['status'], response['reason'], response['body'])

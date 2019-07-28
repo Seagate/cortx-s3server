@@ -1,146 +1,219 @@
-import yaml
+"""This class stores the configuration required for s3 background delete."""
+
 import sys
 import os
 import shutil
 import logging
+import yaml
 
-class EOSCoreConfig:
 
+class EOSCoreConfig(object):
+    """Configuration for s3 background delete."""
     _config = None
     _conf_file = None
 
     def __init__(self):
+        """Initialise logger and configuration."""
         self.logger = logging.getLogger(__name__ + "EOSCoreConfig")
         self._load_and_fetch_config()
 
-    def get_conf_dir(self):
+    @staticmethod
+    def get_conf_dir():
+        """Return configuration directory location."""
         return os.path.join(os.path.dirname(__file__), 'config')
 
-    def  _load_and_fetch_config(self):
-        conf_home_dir = os.path.join('/', 'opt', 'seagate', 's3', 's3backgrounddelete')
-        self._conf_file = os.path.join(conf_home_dir,'config.yaml')
+    def _load_and_fetch_config(self):
+        """Populate configuration data."""
+        conf_home_dir = os.path.join(
+            '/', 'opt', 'seagate', 's3', 's3backgrounddelete')
+        self._conf_file = os.path.join(conf_home_dir, 'config.yaml')
         if not os.path.isfile(self._conf_file):
             try:
-               os.stat(conf_home_dir)
-            except:
-               os.mkdir(conf_home_dir)
-            shutil.copy(os.path.join(self.get_conf_dir(), 's3_background_delete_config.yaml'), self._conf_file)
+                os.stat(conf_home_dir)
+            except BaseException:
+                os.mkdir(conf_home_dir)
+            shutil.copy(
+                os.path.join(
+                    self.get_conf_dir(),
+                    's3_background_delete_config.yaml'),
+                self._conf_file)
 
         if not os.access(self._conf_file, os.R_OK):
-            self.logger.error("Failed to read " + self._conf_file + " it doesn't have read access")
+            self.logger.error(
+                "Failed to read " +
+                self._conf_file +
+                " it doesn't have read access")
             sys.exit()
-        with open(self._conf_file, 'r') as f:
-            self._config = yaml.safe_load(f)
+        with open(self._conf_file, 'r') as file_config:
+            self._config = yaml.safe_load(file_config)
 
     def get_scheduler_logger_name(self):
+        """Return logger name for scheduler from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['scheduler_logger_name']:
             return self._config['logconfig']['scheduler_logger_name']
-        else :
-            raise KeyError("Could not parse scheduler loggername from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse scheduler loggername from config file " +
+                self._conf_file)
 
     def get_processor_logger_name(self):
+        """Return logger name for processor from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['processor_logger_name']:
             return self._config['logconfig']['processor_logger_name']
-        else :
-            raise KeyError("Could not parse processor loggername from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse processor loggername from config file " +
+                self._conf_file)
 
     def get_scheduler_logger_file(self):
+        """Return logger file for scheduler from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['scheduler_log_file']:
             return self._config['logconfig']['scheduler_log_file']
-        else :
-            raise KeyError("Could not parse scheduler logfile from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse scheduler logfile from config file " +
+                self._conf_file)
 
     def get_processor_logger_file(self):
+        """Return logger file for processor from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['processor_log_file']:
             return self._config['logconfig']['processor_log_file']
-        else :
-            raise KeyError("Could not parse processor loggerfile from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse processor loggerfile from config file " +
+                self._conf_file)
 
     def get_file_log_level(self):
+        """Return file log level from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['file_log_level']:
             return self._config['logconfig']['file_log_level']
-        else :
-            raise KeyError("Could not parse file loglevel from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse file loglevel from config file " +
+                self._conf_file)
 
     def get_console_log_level(self):
+        """Return console log level from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['console_log_level']:
             return self._config['logconfig']['console_log_level']
-        else :
-            raise KeyError("Could not parse console loglevel from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse console loglevel from config file " +
+                self._conf_file)
 
     def get_log_format(self):
+        """Return log format from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['log_format']:
             return self._config['logconfig']['log_format']
-        else :
-            raise KeyError("Could not parse log format from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse log format from config file " +
+                self._conf_file)
 
     def get_eos_core_endpoint(self):
+        """Return endpoint from config file or KeyError."""
         if 'eos_core' in self._config and self._config['eos_core']['endpoint']:
             return self._config['eos_core']['endpoint']
-        else :
-            raise KeyError("Could not parse endpoint from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse endpoint from config file " +
+                self._conf_file)
 
     def get_rabbitmq_username(self):
+        """Return username of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['username']:
             return self._config['rabbitmq']['username']
-        else :
-            raise KeyError("Could not parse rabbitmq username from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq username from config file " +
+                self._conf_file)
 
     def get_rabbitmq_password(self):
+        """Return password of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['password']:
             return self._config['rabbitmq']['password']
-        else :
-            raise KeyError("Could not parse rabbitmq password from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq password from config file " +
+                self._conf_file)
 
     def get_rabbitmq_host(self):
+        """Return host of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['host']:
             return self._config['rabbitmq']['host']
-        else :
-            raise KeyError("Could not parse rabbitmq host from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq host from config file " +
+                self._conf_file)
 
     def get_rabbitmq_queue_name(self):
+        """Return queue name of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['queue']:
             return self._config['rabbitmq']['queue']
-        else :
-            raise KeyError("Could not parse rabbitmq queue from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq queue from config file " +
+                self._conf_file)
 
     def get_rabbitmq_exchange(self):
-        # The exchange parameter is the name of the exchange. The empty string denotes the default or nameless exchange
-        # messages are routed to the queue with the name specified by routing_key, if it exists.
+        """
+        Return exchange name of rabbitmq from config file.
+        The exchange parameter is the name of the exchange.
+        The empty string denotes the default or nameless exchange messages are
+        routed to the queue with the name specified by routing_key,if it exists
+        """
         return self._config['rabbitmq']['exchange']
 
     def get_rabbitmq_exchange_type(self):
+        """Return exchange type of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['Exchange_Type']:
             return self._config['rabbitmq']['Exchange_Type']
-        else :
-            raise KeyError("Could not parse rabbitmq exchange_type from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq exchange_type from config file " +
+                self._conf_file)
 
     def get_rabbitmq_mode(self):
+        """Return mode of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['mode']:
             return self._config['rabbitmq']['mode']
-        else :
-            raise KeyError("Could not parse rabbitmq mode from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq mode from config file " +
+                self._conf_file)
 
     def get_rabbitmq_durable(self):
+        """Return durable of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['durable']:
             return self._config['rabbitmq']['durable']
-        else :
-            raise KeyError("Could not parse rabbitmq durable from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq durable from config file " +
+                self._conf_file)
 
     def get_schedule_interval(self):
+        """Return schedule interval of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['schedule_interval_secs']:
             return self._config['rabbitmq']['schedule_interval_secs']
-        else :
-            raise KeyError("Could not parse rabbitmq schedule interval from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse rabbitmq schedule interval from config file " +
+                self._conf_file)
 
     def get_probable_delete_index_id(self):
+        """Return probable delete index-id from config file or KeyError."""
         if 'indexid' in self._config and self._config['indexid']['probable_delete_index_id']:
             return self._config['indexid']['probable_delete_index_id']
-        else :
-            raise KeyError("Could not parse probable delete index-id config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse probable delete index-id from config file " +
+                self._conf_file)
 
     def get_object_metadata_index_id(self):
+        """Return object metadata index-id from config file or KeyError."""
         if 'indexid' in self._config and self._config['indexid']['object_metadata_index_id']:
             return self._config['indexid']['object_metadata_index_id']
-        else :
-            raise KeyError("Could not parse object metadata index-id from config file " + self._conf_file)
+        else:
+            raise KeyError(
+                "Could not parse object metadata index-id from config file " +
+                self._conf_file)
