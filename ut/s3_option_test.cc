@@ -171,7 +171,7 @@ TEST_F(S3OptionsTest, TestOverrideOptions) {
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
   EXPECT_EQ("s3stats-whitelist-test.yaml",
             instance->get_stats_whitelist_filename());
-  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
+  EXPECT_TRUE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
@@ -212,7 +212,7 @@ TEST_F(S3OptionsTest, TestDontOverrideCmdOptions) {
   EXPECT_EQ(15, instance->get_statsd_max_send_retry());
   EXPECT_EQ("s3stats-whitelist-test.yaml",
             instance->get_stats_whitelist_filename());
-  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
+  EXPECT_TRUE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadThirdPartySectionFromFile) {
@@ -258,7 +258,7 @@ TEST_F(S3OptionsTest, LoadS3SectionFromFile) {
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
-  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
+  EXPECT_TRUE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
@@ -299,7 +299,7 @@ TEST_F(S3OptionsTest, LoadSelectiveS3SectionFromFile) {
   EXPECT_EQ(2, instance->get_clovis_idx_service_id());
   EXPECT_FALSE(instance->get_clovis_is_oostore());
   EXPECT_FALSE(instance->get_clovis_is_read_verify());
-  EXPECT_FALSE(instance->is_s3_reuseport_enabled());
+  EXPECT_TRUE(instance->is_s3_reuseport_enabled());
 }
 
 TEST_F(S3OptionsTest, LoadAuthSectionFromFile) {

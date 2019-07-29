@@ -591,6 +591,7 @@ int main(int argc, char **argv) {
   rc = s3_stats_init();
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "", "Stats Init failed!!\n");
+    fini_log();
     return rc;
   }
 
@@ -604,6 +605,7 @@ int main(int argc, char **argv) {
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "", "Memory pool creation for libevent failed!\n");
     s3daemon.delete_pidfile();
+    fini_log();
     return rc;
   }
 
@@ -626,6 +628,7 @@ int main(int argc, char **argv) {
 
   if (S3AuditInfoLogger::init() != 0) {
     s3_log(S3_LOG_FATAL, "", "Couldn't init audit logger!");
+    fini_log();
     return 1;
   }
 
@@ -634,6 +637,7 @@ int main(int argc, char **argv) {
     if (!init_auth_ssl()) {
       s3_log(S3_LOG_FATAL, "",
              "SSL initialization for communication with Auth server failed!\n");
+      fini_log();
       return 1;
     }
   }
@@ -686,6 +690,7 @@ int main(int argc, char **argv) {
       if (!init_ssl(htp_ipv4)) {
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV4!\n");
+        fini_log();
         return 1;
       }
     }
@@ -693,6 +698,7 @@ int main(int argc, char **argv) {
       if (!init_ssl(htp_ipv6)) {
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV6!\n");
+        fini_log();
         return 1;
       }
     }
@@ -710,6 +716,7 @@ int main(int argc, char **argv) {
            "Memory pool creation for clovis read buffers failed!\n");
     s3daemon.delete_pidfile();
     fini_auth_ssl();
+    fini_log();
     return rc;
   }
 
@@ -721,6 +728,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "clovis_init failed!\n");
     s3daemon.delete_pidfile();
     fini_auth_ssl();
+    fini_log();
     return rc;
   }
 
@@ -731,6 +739,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
     fini_auth_ssl();
+    fini_log();
     return rc;
   }
 
@@ -741,6 +750,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
     fini_auth_ssl();
+    fini_log();
     return rc;
   }
 
@@ -751,6 +761,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
     fini_auth_ssl();
+    fini_log();
     return rc;
   }
 
@@ -776,6 +787,7 @@ int main(int argc, char **argv) {
       fini_auth_ssl();
       evhtp_free(htp_ipv4);
       fini_clovis();
+      fini_log();
       return rc;
     }
   }
@@ -792,6 +804,7 @@ int main(int argc, char **argv) {
       fini_auth_ssl();
       evhtp_free(htp_ipv6);
       fini_clovis();
+      fini_log();
       return rc;
     }
   }
@@ -808,6 +821,7 @@ int main(int argc, char **argv) {
       fini_auth_ssl();
       evhtp_free(htp_mero);
       fini_clovis();
+      fini_log();
       return rc;
     }
   }
