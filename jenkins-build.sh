@@ -1,4 +1,4 @@
-#!/sbin/sh
+#!/bin/sh
 
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--use_ipv6] [--skip_build] [--skip_tests]
