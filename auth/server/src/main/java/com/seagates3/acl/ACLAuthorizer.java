@@ -17,7 +17,7 @@
  * Original creation date: 05-July-2019
  */
 
-package com.seagates3.authorization;
+package com.seagates3.acl;
 
 import java.io.IOException;
 import java.util.Map;
@@ -53,6 +53,7 @@ class ACLAuthorizer {
    * @throws BadRequestException
    * @throws GrantListFullException
    */
+ public
   boolean isAuthorized(Requestor requestor, Map<String, String> requestBody)
       throws ParserConfigurationException,
       SAXException, IOException, BadRequestException, GrantListFullException {

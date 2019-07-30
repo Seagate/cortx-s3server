@@ -1,5 +1,7 @@
-package com.seagates3.request.validator;
+package com.seagates3.acl;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -35,6 +37,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   AccountImpl mockAccountImpl;
  private
   Account mockAccount;
+ private
+  Map<String, List<Account>> accountPermissionMap;
 
   @Before public void setup() {
     requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -42,6 +46,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     spyValidator = Mockito.spy(new AclRequestValidator());
     mockAccountImpl = Mockito.mock(AccountImpl.class);
     mockAccount = Mockito.mock(Account.class);
+    accountPermissionMap = new HashMap<>();
   }
 
   /**
@@ -49,7 +54,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
    */
   @Test public void testValidateAclRequest_canncedAclInRequest_Success() {
     requestBody.put("x-amz-acl", "public-read");
-    ServerResponse response = spyValidator.validateAclRequest(requestBody);
+    ServerResponse response =
+        spyValidator.validateAclRequest(requestBody, accountPermissionMap);
     Assert.assertNull(response);
   }
 
@@ -58,7 +64,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
    */
   @Test public void testValidateAclRequest_aclInRequestBody_Success() {
     requestBody.put("acp", "dummy_xml");
-    ServerResponse response = spyValidator.validateAclRequest(requestBody);
+    ServerResponse response =
+        spyValidator.validateAclRequest(requestBody, accountPermissionMap);
     Assert.assertNull(response);
   }
 
@@ -70,31 +77,36 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     AclRequestValidator mockValidator = Mockito.mock(AclRequestValidator.class);
     WhiteboxImpl.setInternalState(mockValidator, "responseGenerator",
                                   responseGenerator);
-    Mockito.when(mockValidator.validateAclRequest(requestBody))
-        .thenCallRealMethod();
-    Mockito.when(mockValidator.isValidPermissionHeader(requestBody, null))
+    Mockito.when(mockValidator.validateAclRequest(
+                     requestBody, accountPermissionMap)).thenCallRealMethod();
+    Mockito.when(mockValidator.isValidPermissionHeader(requestBody, null,
+                                                       accountPermissionMap))
         .thenCallRealMethod();
     requestBody.put(
         "x-amz-grant-read",
         "emailaddress=abc@seagate.com,emailaddress=xyz@seagate.com");
-    Mockito.when(mockValidator.isGranteeValid("emailaddress=abc@seagate.com",
-                                              null)).thenReturn(true);
-    Mockito.when(mockValidator.isGranteeValid("emailaddress=xyz@seagate.com",
-                                              null)).thenReturn(true);
-    ServerResponse response = mockValidator.validateAclRequest(requestBody);
+    Mockito.when(mockValidator.isGranteeValid(
+                     "emailaddress=abc@seagate.com", null, accountPermissionMap,
+                     "x-amz-grant-read")).thenReturn(true);
+    Mockito.when(mockValidator.isGranteeValid(
+                     "emailaddress=xyz@seagate.com", null, accountPermissionMap,
+                     "x-amz-grant-read")).thenReturn(true);
+    ServerResponse response =
+        mockValidator.validateAclRequest(requestBody, accountPermissionMap);
     Assert.assertNull(response);
   }
 
   /**
-   * Below test will fail when more than one acl headers/requestbody present
-   * in request
+   * Below test will fail when more than one acl headers/requestbody present in
+   * request
    */
   @Test public void testValidateAclRequest_multipleacl_InRequest_Check() {
     requestBody.put("x-amz-acl", "public-read");
     requestBody.put(
         "x-amz-grant-read",
         "emailaddress=abc@seagate.com,emailaddress=xyz@seagate.com");
-    ServerResponse response = spyValidator.validateAclRequest(requestBody);
+    ServerResponse response =
+        spyValidator.validateAclRequest(requestBody, accountPermissionMap);
     Assert.assertEquals(HttpResponseStatus.BAD_REQUEST,
                         response.getResponseStatus());
   }
@@ -112,7 +124,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.exists()).thenReturn(true);
     Assert.assertTrue(
-        spyValidator.isGranteeValid("emailaddress=xyz@seagate.com", null));
+        spyValidator.isGranteeValid("emailaddress=xyz@seagate.com", null,
+                                    accountPermissionMap, "x-amz-grant-read"));
   }
 
   /**
@@ -128,7 +141,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.exists()).thenReturn(false);
     Assert.assertFalse(
-        spyValidator.isGranteeValid("emailaddress=xyz@seagate.com", null));
+        spyValidator.isGranteeValid("emailaddress=xyz@seagate.com", null,
+                                    accountPermissionMap, "x-amz-grant-read"));
   }
 
   /**
@@ -143,7 +157,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(mockAccountImpl.findByCanonicalID("C123453"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.exists()).thenReturn(true);
-    Assert.assertTrue(spyValidator.isGranteeValid("id=C123453", null));
+    Assert.assertTrue(spyValidator.isGranteeValid(
+        "id=C123453", null, accountPermissionMap, "x-amz-grant-read"));
   }
 
   /**
@@ -158,7 +173,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(mockAccountImpl.findByCanonicalID("C123453"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.exists()).thenReturn(false);
-    Assert.assertFalse(spyValidator.isGranteeValid("id=C123453", null));
+    Assert.assertFalse(spyValidator.isGranteeValid(
+        "id=C123453", null, accountPermissionMap, "x-amz-grant-read"));
   }
 
   /**
@@ -172,6 +188,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         mockAccountImpl);
     Mockito.when(mockAccountImpl.findByCanonicalID("C123453")).thenThrow(
         new DataAccessException("failed to search given cannocal id"));
-    Assert.assertFalse(spyValidator.isGranteeValid("id=C123453", null));
+    Assert.assertFalse(spyValidator.isGranteeValid(
+        "id=C123453", null, accountPermissionMap, "x-amz-grant-read"));
   }
 }

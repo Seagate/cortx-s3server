@@ -23,34 +23,38 @@ import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.request.validator.AclRequestValidator;
+import com.seagates3.acl.AclRequestValidator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
+import com.seagates3.acl.ACLCreator;
+import com.seagates3.model.Account;
+import java.util.HashMap;
+import java.util.List;
+import com.seagates3.acl.ACLAuthorizer;
+import com.seagates3.acl.ACLValidation;
 
 public class Authorizer {
 
   private
    final Logger LOGGER = LoggerFactory.getLogger(Authorizer.class.getName());
-  private
-   static String defaultACP;
 
   public
    ServerResponse authorize(Requestor requestor,
                             Map<String, String> requestBody) {
         AuthorizationResponseGenerator responseGenerator
                 = new AuthorizationResponseGenerator();
+        Map<String, List<Account>> accountPermissionMap = new HashMap<>();
         LOGGER.debug("request body : " + requestBody.toString());
         ServerResponse serverResponse =
-            new AclRequestValidator().validateAclRequest(requestBody);
+            new AclRequestValidator().validateAclRequest(requestBody,
+                                                         accountPermissionMap);
         if (serverResponse != null) {
           LOGGER.error("ACL authorization request validation failed");
           return serverResponse;
@@ -81,18 +85,24 @@ public class Authorizer {
         // authorization response if request header contains param value true
         // for- Request-ACL
         if ("true".equals(requestBody.get("Request-ACL"))) {
-          try {
 
-            if (defaultACP == null) {
-              defaultACP = new String(Files.readAllBytes(
-                  Paths.get(AuthServerConfig.authResourceDir +
-                            AuthServerConfig.DEFAULT_ACL_XML)));
+          try {
+            String acl = null;
+            if (!accountPermissionMap.isEmpty()) {  // permission headers
+                                                    // present
+              acl = new ACLCreator().createAclFromPermissionHeaders(
+                  accountPermissionMap);
             }
-            AccessControlPolicy acp = new AccessControlPolicy(defaultACP);
-            acp.initDefaultACL(requestor.getAccount().getCanonicalId(),
-                               requestor.getAccount().getName());
-            return responseGenerator.generateAuthorizationResponse(
-                requestor, acp.getXml());
+            /*
+                 * else if (cannedAclSpecified) { serverResponse = }
+                 */      // TODO
+            else {  // neither permission headers nor canned acl requested so
+                    // create default acl
+              acl = new ACLCreator().createDefaultAcl(requestor);
+            }
+            LOGGER.info("Updated xml is - " + acl);
+            return responseGenerator.generateAuthorizationResponse(requestor,
+                                                                   acl);
           }
           catch (ParserConfigurationException | SAXException | IOException e) {
             LOGGER.error("Error while initializing default ACL");
@@ -129,6 +139,7 @@ public class Authorizer {
 
           return aclValidation.validate();
         }
+
         return responseGenerator.generateAuthorizationResponse(requestor, null);
    }
    /**

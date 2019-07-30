@@ -41,25 +41,6 @@ class UserLoginProfileValidatorParameterTest {
     requestBody = new TreeMap();
   }
 
-  @Test public void Create_PasswordLengthLessThanMin_False() {
-    requestBody.put("UserName", "abcd");
-    requestBody.put("Password", "");
-    assertFalse(userLoginProfileValidator.isValidCreateParams(requestBody));
-  }
-
-  @Test public void Create_PasswordLengthMoreThanMax_False() {
-    String maxPasswordLength = "abcdefghijklmnopqrstuvwxyzabcdefghijkj" +
-                               "abcdefghijklmnopqrstuvwxyzabcdefghijkj" +
-                               "abcdefghijklmnopqrstuvwxyzabcdefghijkj" +
-                               "abcdefghijklmnopqrstuvwxyzabcdefghijkj" +
-                               "abcdefghijklmnopqrstuvwxyzabcdefghijkj" +
-                               "abcdefghijklmnopqrstuvwxyzabcdefghijkj" +
-                               "abcdefghijklmnopqrstuvwxyzabcdefghijkj";
-
-    requestBody.put("UserName", "abcd");
-    requestBody.put("Password", maxPasswordLength);
-    assertFalse(userLoginProfileValidator.isValidCreateParams(requestBody));
-  }
 
   @Test public void Create_Password_True() {
     requestBody.put("UserName", "abcd");

@@ -17,7 +17,7 @@
  * Original creation date: 08-Jul-2019
  */
 
-package com.seagates3.authorization;
+package com.seagates3.acl;
 
 import static org.junit.Assert.assertEquals;
 

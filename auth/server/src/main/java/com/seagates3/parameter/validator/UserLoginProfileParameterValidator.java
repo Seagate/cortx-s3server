@@ -26,10 +26,6 @@ class UserLoginProfileParameterValidator extends AbstractParameterValidator {
 
  public
   Boolean isValidCreateParams(Map<String, String> requestBody) {
-    if (!(S3ParameterValidatorUtil.isValidPassword(
-             requestBody.get("Password")))) {
-      return false;
-    }
     if (("true".equals(requestBody.get("PasswordResetRequired"))) &&
         ("false".equals(requestBody.get("PasswordResetRequired")))) {
       return false;
@@ -45,11 +41,6 @@ class UserLoginProfileParameterValidator extends AbstractParameterValidator {
   @Override public Boolean isValidUpdateParams(
       Map<String, String> requestBody) {
 
-    if (requestBody.get("Password") != null &&
-        !(S3ParameterValidatorUtil.isValidPassword(
-             requestBody.get("Password")))) {
-      return false;
-    }
     if (("true".equals(requestBody.get("PasswordResetRequired"))) &&
         ("false".equals(requestBody.get("PasswordResetRequired")))) {
       return false;
@@ -58,8 +49,10 @@ class UserLoginProfileParameterValidator extends AbstractParameterValidator {
   }
 
   /**
-  * Validate IAM user changePassword parameters i.e. OldPassword and NewPassowrd
-  */
+    * Validate IAM user changePassword parameters i.e. OldPassword and
+   * NewPassowrd
+    */
+
   @Override public Boolean isValidChangepasswordParams(
       Map<String, String> requestBody) {
 
@@ -76,3 +69,4 @@ class UserLoginProfileParameterValidator extends AbstractParameterValidator {
     return true;
   }
 }
+

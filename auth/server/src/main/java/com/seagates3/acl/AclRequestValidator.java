@@ -17,7 +17,7 @@
  * Original creation date: 24-July-2019
  */
 
-package com.seagates3.request.validator;
+package com.seagates3.acl;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,11 +45,14 @@ class AclRequestValidator {
   AuthorizationResponseGenerator responseGenerator;
  protected
   static final Set<String> permissionHeadersSet = new HashSet<>();
+ protected
+  static final Set<String> cannedAclSet = new HashSet<>();
 
  public
   AclRequestValidator() {
     responseGenerator = new AuthorizationResponseGenerator();
     initializePermissionHeadersSet();
+    initializeCannedAclSet();
   }
 
   /**
@@ -65,15 +68,31 @@ class AclRequestValidator {
   }
 
   /**
-   * Below method will first check if only one of the below options is used
-   * in request- 1. canned acl 2. permission header 3. acl in requestbody and
-   * then method will perform requested account validation.
+   * Below method will initialize the set with valid canned acls
+   */
+ private
+  void initializeCannedAclSet() {
+    cannedAclSet.add("private");
+    cannedAclSet.add("public-read");
+    cannedAclSet.add("public-read-write");
+    cannedAclSet.add("authenticated-read");
+    cannedAclSet.add("bucket-owner-read");
+    cannedAclSet.add("bucket-owner-full-control");
+    cannedAclSet.add("log-delivery-write");
+  }
+
+  /**
+   * Below method will first check if only one of the below options is used in
+   * request- 1. canned acl 2. permission header 3. acl in requestbody and then
+   * method will perform requested account validation.
    *
    * @param requestBody
    * @return null- if request valid and errorResponse- if request not valid
    */
  public
-  ServerResponse validateAclRequest(Map<String, String> requestBody) {
+  ServerResponse validateAclRequest(
+      Map<String, String> requestBody,
+      Map<String, List<Account>> accountPermissionMap) {
     int isCannedAclPresent = 0, isPermissionHeaderPresent = 0,
         isAclPresentInRequestBody = 0;
     ServerResponse response = null;
@@ -100,10 +119,25 @@ class AclRequestValidator {
           response.getResponseStatus() +
           " : Request failed: More than one options are used in request");
     }
-    if (response == null && (isPermissionHeaderPresent == 1)) {
-      isValidPermissionHeader(requestBody, response);
+    if (response == null) {
+      if (isPermissionHeaderPresent == 1) {
+        isValidPermissionHeader(requestBody, response, accountPermissionMap);
+      } else if (isCannedAclPresent == 1) {
+        isValidCannedAcl(requestBody, response);
+      }
     }
+
     return response;
+  }
+
+ protected
+  boolean isValidCannedAcl(Map<String, String> requestBody,
+                           ServerResponse response) {
+    boolean isValid = true;
+    if (!cannedAclSet.contains(requestBody.get("x-amz-acl"))) {
+      isValid = false;
+    }
+    return isValid;
   }
 
   /**
@@ -113,8 +147,9 @@ class AclRequestValidator {
    * @return
    */
  protected
-  boolean isValidPermissionHeader(Map<String, String> requestBody,
-                                  ServerResponse response) {
+  boolean isValidPermissionHeader(
+      Map<String, String> requestBody, ServerResponse response,
+      Map<String, List<Account>> accountPermissionMap) {
     boolean isValid = true;
     for (String permissionHeader : permissionHeadersSet) {
       if (requestBody.get(permissionHeader) != null) {
@@ -125,7 +160,8 @@ class AclRequestValidator {
           valueList.add(tokenizer.nextToken());
         }
         for (String value : valueList) {
-          if (!isGranteeValid(value, response)) {
+          if (!isGranteeValid(value, response, accountPermissionMap,
+                              permissionHeader)) {
             LOGGER.error(response.getResponseStatus() +
                          " : Grantee acocunt not valid");
             isValid = false;
@@ -148,7 +184,9 @@ class AclRequestValidator {
    * @return true/false
    */
  protected
-  boolean isGranteeValid(String grantee, ServerResponse response) {
+  boolean isGranteeValid(String grantee, ServerResponse response,
+                         Map<String, List<Account>> accountPermissionMap,
+                         String permission) {
     boolean isValid = true;
     AccountImpl accountImpl = new AccountImpl();
     String granteeDetails = grantee.substring(grantee.indexOf('=') + 1);
@@ -166,11 +204,33 @@ class AclRequestValidator {
           response = responseGenerator.invalidArgument("Invalid id");
         }
         isValid = false;
+      } else {  // update accountPermissionMap
+        updateAccountPermissionMap(accountPermissionMap, permission, account);
       }
     }
     catch (DataAccessException e) {
       isValid = false;
     }
     return isValid;
+  }
+
+  /**
+   * Updates the map if account exists
+   *
+   * @param accountPermissionMap
+   * @param permission
+   * @param account
+   */
+ private
+  void updateAccountPermissionMap(
+      Map<String, List<Account>> accountPermissionMap, String permission,
+      Account account) {
+    if (accountPermissionMap.get(permission) == null) {
+      List<Account> accountList = new ArrayList<>();
+      accountList.add(account);
+      accountPermissionMap.put(permission, accountList);
+    } else {
+      accountPermissionMap.get(permission).add(account);
+    }
   }
 }

@@ -24,12 +24,5 @@ import java.util.Map;
 public
 class AccountLoginProfileParameterValidator extends AbstractParameterValidator {
 
- public
-  Boolean isValidCreateParams(Map<String, String> requestBody) {
-    if (!(S3ParameterValidatorUtil.isValidPassword(
-             requestBody.get("Password")))) {
-      return false;
-    }
-    return true;
-  }
 }
+

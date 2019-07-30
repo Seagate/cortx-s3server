@@ -17,7 +17,7 @@
  * Original creation date: 09-July-2019
  */
 
-package com.seagates3.authorization;
+package com.seagates3.acl;
 
 import java.io.IOException;
 import java.util.HashSet;

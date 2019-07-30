@@ -29,32 +29,24 @@
  *  </Grant>
  */
 
-package com.seagates3.authorization;
-public class Grant {
+package com.seagates3.acl;
+public
+class Grant {
 
-    String permission;
-    Grantee grantee;
+  String permission;
+  Grantee grantee;
 
-    public Grant(Grantee grantee, String permission) {
-        this.grantee = grantee;
-        this.permission = permission;
-    }
+ public
+  Grant(Grantee grantee, String permission) {
+    this.grantee = grantee;
+    this.permission = permission;
+  }
 
-    void setGrantee(Grantee gran_tee) {
-        grantee = gran_tee;
-    }
+  void setGrantee(Grantee gran_tee) { grantee = gran_tee; }
 
-    Grantee getGrantee() {
-        return grantee;
-    }
+  Grantee getGrantee() { return grantee; }
 
-    void setPermission(String permi_ssion) {
-        permission = permi_ssion;
-    }
+  void setPermission(String permi_ssion) { permission = permi_ssion; }
 
-    String getPermission() {
-        return permission;
-    }
+  String getPermission() { return permission; }
 }
-
-

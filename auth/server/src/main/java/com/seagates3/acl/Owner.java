@@ -25,33 +25,25 @@
  *  </Owner>
  */
 
-package com.seagates3.authorization;
+package com.seagates3.acl;
 
-public class Owner {
+public
+class Owner {
 
-    String canonicalId;
-    String displayName;
+  String canonicalId;
+  String displayName;
 
-    public Owner (String canonicalId, String displayName) {
-        this.canonicalId = canonicalId;
-        this.displayName = displayName;
-    }
+ public
+  Owner(String canonicalId, String displayName) {
+    this.canonicalId = canonicalId;
+    this.displayName = displayName;
+  }
 
-    void setCanonicalId(String Id) {
-       canonicalId = Id;
-    }
+  void setCanonicalId(String Id) { canonicalId = Id; }
 
-    String getCanonicalId() {
-        return canonicalId;
-    }
+  String getCanonicalId() { return canonicalId; }
 
-    void setDisplayName(String Name) {
-        displayName = Name;
-    }
+  void setDisplayName(String Name) { displayName = Name; }
 
-    String getDisplayName() {
-        return displayName;
-    }
-
+  String getDisplayName() { return displayName; }
 }
-
