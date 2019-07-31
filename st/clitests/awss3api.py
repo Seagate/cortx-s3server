@@ -14,6 +14,7 @@ class AwsTest(S3PyCliTest):
     def __init__(self, description):
         os.environ["AWS_SHARED_CREDENTIALS_FILE"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), Config.aws_shared_credential_file)
         os.environ["AWS_CONFIG_FILE"] = os.path.join(os.path.dirname(os.path.realpath(__file__)), Config.aws_config_file)
+        self.credentials = ""
         super(AwsTest, self).__init__(description)
 
     def setup(self):
@@ -103,6 +104,7 @@ class AwsTest(S3PyCliTest):
     def delete_object(self, bucket_name, object_name):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + "delete-object " + "--bucket " + bucket_name + " --key " + object_name)
+        self.command = self.command + self.credentials
         return self
 
     def create_multipart_upload(self, bucket_name, filename, filesize, tags=None):
@@ -146,3 +148,12 @@ class AwsTest(S3PyCliTest):
         self.with_cli("aws s3api " + "get-object-acl " + "--bucket " + bucket_name + " --key " + object_name + " --output " + "json ")
         return self
 
+    def get_bucket_acl(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + "get-bucket-acl " + "--bucket " + bucket_name + " --output " + "json ")
+        return self
+
+    def with_credentials(self, access_key, secret_key):
+        self.credentials = " --access_key=" + access_key +\
+                           " --secret_key=" + secret_key
+        return self

@@ -172,31 +172,3 @@ AwsTest('Aws can delete object').delete_object("seagatebuckettag","10Mbfile").ex
 
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()
-
-
-#********  Get Object ACL **********
-
-AwsTest('Aws can create bucket').create_bucket("seagatebucketobjectacl").execute_test().command_is_successful()
-
-AwsTest('Aws can create object').put_object("seagatebucketobjectacl", "testObject").execute_test().command_is_successful()
-
-result=AwsTest('Aws can get object acl').get_object_acl("seagatebucketobjectacl", "testObject").execute_test().command_is_successful()
-
-print("ACL validation started..")
-AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
-AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
-AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
-print("ACL validation Completed..")
-
-AwsTest('Aws can delete object').delete_object("seagatebucketobjectacl","testObject").execute_test().command_is_successful()
-
-#*********** Negative case to fetch acl for non-existing object ****************************
-AwsTest('Aws can not fetch acl of non-existing object').get_object_acl("seagatebucketobjectacl", "testObject").execute_test(negative_case=True)\
-    .command_should_fail().command_error_should_have("NoSuchKey")
-
-AwsTest('Aws can delete bucket').delete_bucket("seagatebucketobjectacl").execute_test().command_is_successful()
-
-#*********** Negative case to fetch acl for non-existing bucket ****************************
-AwsTest('Aws can not fetch acl of non-existing bucket').get_object_acl("seagatebucketobjectacl", "testObject").execute_test(negative_case=True)\
-    .command_should_fail().command_error_should_have("NoSuchBucket")
