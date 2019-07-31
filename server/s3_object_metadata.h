@@ -33,6 +33,7 @@
 #include "s3_clovis_kvs_writer.h"
 #include "s3_object_acl.h"
 #include "s3_request_object.h"
+#include "s3_timer.h"
 
 enum class S3ObjectMetadataState {
   empty,    // Initial state, no lookup done.
@@ -114,6 +115,7 @@ class S3ObjectMetadata {
   std::function<void()> handler_on_failed;
 
   S3ObjectMetadataState state;
+  S3Timer s3_timer;
 
   // `true` in case of json parsing failure.
   bool json_parsing_error;

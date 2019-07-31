@@ -26,6 +26,7 @@
 #include "s3_iem.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_common_utilities.h"
+#include "s3_stats.h"
 
 extern struct m0_uint128 bucket_metadata_list_index_oid;
 
@@ -66,6 +67,7 @@ void S3BucketMetadataV1::set_bucket_metadata_list_index_oid(
 void S3BucketMetadataV1::load(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_timer.start();
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -96,7 +98,6 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info() {
 
 void S3BucketMetadataV1::fetch_global_bucket_account_id_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
   bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
   // load/remove/save bucket metadata only when requested account id matches
   // with account id present in account id bucket_metadata_list_index_oid
@@ -182,6 +183,11 @@ void S3BucketMetadataV1::load_bucket_info_successful() {
     json_parsing_error = true;
     load_bucket_info_failed();
   } else {
+    s3_timer.stop();
+    const auto mss = s3_timer.elapsed_time_in_millisec();
+    LOG_PERF("load_bucket_info_ms", mss);
+    s3_stats_timing("load_bucket_info", mss);
+
     state = S3BucketMetadataState::present;
     this->handler_on_success();
   }

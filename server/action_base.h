@@ -33,6 +33,7 @@
 #include "s3_log.h"
 #include "s3_memory_profile.h"
 #include "request_object.h"
+#include "s3_timer.h"
 
 #ifdef ENABLE_FAULT_INJECTION
 
@@ -105,6 +106,8 @@ class Action {
 
   // For shutdown related system tests, if FI gets hit then set this flag
   bool is_fi_hit;
+
+  S3Timer auth_timer;
 
  protected:
   std::string request_id;

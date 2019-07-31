@@ -30,6 +30,7 @@
 #include "s3_clovis_reader.h"
 #include "s3_factory.h"
 #include "s3_object_metadata.h"
+#include "s3_timer.h"
 
 class S3GetObjectAction : public S3Action {
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
@@ -52,7 +53,9 @@ class S3GetObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
 
-  size_t get_requested_content_length() {
+  S3Timer s3_timer;
+
+  size_t get_requested_content_length() const {
     return last_byte_offset_to_read - first_byte_offset_to_read + 1;
   }
 

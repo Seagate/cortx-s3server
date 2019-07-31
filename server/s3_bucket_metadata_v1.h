@@ -30,6 +30,7 @@
 #include "s3_global_bucket_index_metadata.h"
 #include "s3_bucket_metadata.h"
 #include "s3_log.h"
+#include "s3_timer.h"
 
 // Forward declarations
 class S3GlobalBucketIndexMetadataFactory;
@@ -44,6 +45,8 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
       global_bucket_index_metadata_factory;
 
   std::shared_ptr<S3GlobalBucketIndexMetadata> global_bucket_index_metadata;
+
+  S3Timer s3_timer;
 
  private:
   void fetch_global_bucket_account_id_info();

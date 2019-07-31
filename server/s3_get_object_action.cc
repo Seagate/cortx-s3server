@@ -23,6 +23,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_common_utilities.h"
+#include "s3_stats.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -341,7 +342,6 @@ void S3GetObjectAction::check_full_or_range_object_read() {
 
 void S3GetObjectAction::read_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
   // get total number of blocks to read from an object
   set_total_blocks_to_read_from_object();
   clovis_reader = clovis_reader_factory->create_clovis_reader(
@@ -417,6 +417,7 @@ void S3GetObjectAction::send_data_to_client() {
     return;
   }
   if (!read_object_reply_started) {
+    s3_timer.start();
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
     request->set_out_header_value("ETag", object_metadata->get_md5());
@@ -438,6 +439,8 @@ void S3GetObjectAction::send_data_to_client() {
       request->send_reply_start(S3HttpSuccess200);
     }
     read_object_reply_started = true;
+  } else {
+    s3_timer.resume();
   }
   s3_log(S3_LOG_DEBUG, request_id, "Earlier data_sent_to_client = %zu bytes.\n",
          data_sent_to_client);
@@ -449,6 +452,7 @@ void S3GetObjectAction::send_data_to_client() {
          "object requested content length size(%zu).\n",
          requested_content_length);
   length = clovis_reader->get_first_block(&data);
+
   while (length > 0) {
     size_t read_data_start_offset = 0;
     blocks_already_read++;
@@ -476,9 +480,15 @@ void S3GetObjectAction::send_data_to_client() {
     request->send_reply_body(data + read_data_start_offset, length);
     length = clovis_reader->get_next_block(&data);
   }
+  s3_timer.stop();
+
   if (data_sent_to_client != requested_content_length) {
     read_object_data();
   } else {
+    const auto mss = s3_timer.elapsed_time_in_millisec();
+    LOG_PERF("get_object_send_data_ms", mss);
+    s3_stats_timing("get_object_send_data", mss);
+
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

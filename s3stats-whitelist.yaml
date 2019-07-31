@@ -61,6 +61,12 @@
 - read_object_data_success
 # Time taken in case of read data failure
 - read_object_data_failed
+# Time taken for authentication
+- check_authentication
+# S3GetObjectAction time metrics
+- load_bucket_info
+- load_object_metadata
+- get_object_send_data
 ############################################################
 # Counter metrics
 - get_bucket_location_request_count

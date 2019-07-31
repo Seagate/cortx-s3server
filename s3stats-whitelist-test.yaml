@@ -31,6 +31,10 @@
 - write_to_clovis_op_failed
 - read_object_data_success
 - read_object_data_failed
+- check_authentication
+- load_bucket_info
+- load_object_metadata
+- get_object_send_data
 ############################################################
 # Counter metrics
 - get_bucket_location_request_count

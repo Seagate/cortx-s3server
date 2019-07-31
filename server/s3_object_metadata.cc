@@ -28,6 +28,7 @@
 #include "s3_object_metadata.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_common_utilities.h"
+#include "s3_stats.h"
 
 void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   json_parsing_error = false;
@@ -284,6 +285,7 @@ void S3ObjectMetadata::validate() {
 void S3ObjectMetadata::load(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_timer.start();
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -311,6 +313,11 @@ void S3ObjectMetadata::load_successful() {
     json_parsing_error = true;
     load_failed();
   } else {
+    s3_timer.stop();
+    const auto mss = s3_timer.elapsed_time_in_millisec();
+    LOG_PERF("load_object_metadata_ms", mss);
+    s3_stats_timing("load_object_metadata", mss);
+
     state = S3ObjectMetadataState::present;
     this->handler_on_success();
   }

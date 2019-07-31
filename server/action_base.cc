@@ -179,6 +179,7 @@ void Action::rollback_exit() {
 }
 
 void Action::check_authentication() {
+  auth_timer.start();
   auth_client->check_authentication(
       std::bind(&Action::check_authentication_successful, this),
       std::bind(&Action::check_authentication_failed, this));
@@ -186,6 +187,12 @@ void Action::check_authentication() {
 
 void Action::check_authentication_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+
+  auth_timer.stop();
+  const auto mss = auth_timer.elapsed_time_in_millisec();
+  LOG_PERF("check_authentication_ms", mss);
+  s3_stats_timing("check_authentication", mss);
+
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

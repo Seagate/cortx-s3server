@@ -29,48 +29,69 @@
 // timer.start();
 // Do some operations to be timed
 // timer.stop();
+// Do some other operations
+// timer.resume();
+// Do some operations to be timed
+// timer.stop();
 // cout << "Elapsed time (ms) = " << timer.elapsed_time_in_millisec() << endl;
 // cout << "Elapsed time (nanosec) = " << timer.elapsed_time_in_nanosec() <<
 // endl << endl;
 //
 
-enum class S3TimerState { unknown, started, stopped };
-
 class S3Timer {
-  std::chrono::time_point<std::chrono::steady_clock> start_;
-  std::chrono::time_point<std::chrono::steady_clock> end_;
-  std::chrono::duration<double> difference;
+  enum class S3TimerState {
+    unknown,
+    started,
+    stopped
+  };
 
-  S3TimerState state;
+  using Clock = std::chrono::steady_clock;
+  using Duration = Clock::duration;
+
+  std::chrono::time_point<Clock> start_time;
+  std::chrono::time_point<Clock> end_time;
+  Duration difference;
+  S3TimerState state = S3TimerState::unknown;
 
  public:
-  S3Timer() : state(S3TimerState::unknown) {}
 
   void start() {
-    start_ = std::chrono::steady_clock::now();
+    start_time = Clock::now();
     state = S3TimerState::started;
+    difference = Duration();
   }
 
   void stop() {
     if (state == S3TimerState::started) {
-      end_ = std::chrono::steady_clock::now();
+      end_time = Clock::now();
       state = S3TimerState::stopped;
-      difference = end_ - start_;
+      difference += end_time - start_time;
     } else {
       state = S3TimerState::unknown;
     }
   }
 
-  size_t elapsed_time_in_millisec() {
+  void resume() {
     if (state == S3TimerState::stopped) {
-      return std::chrono::duration<double, std::milli>(difference).count();
+      start_time = Clock::now();
+      state = S3TimerState::started;
+    } else {
+      state = S3TimerState::unknown;
+    }
+  }
+
+  std::chrono::milliseconds::rep elapsed_time_in_millisec() {
+    if (state == S3TimerState::stopped) {
+      return std::chrono::duration_cast<std::chrono::milliseconds>(difference)
+          .count();
     }
     return -1;
   }
 
-  size_t elapsed_time_in_nanosec() {
+  std::chrono::nanoseconds::rep elapsed_time_in_nanosec() {
     if (state == S3TimerState::stopped) {
-      return std::chrono::duration<double, std::nano>(difference).count();
+      return std::chrono::duration_cast<std::chrono::nanoseconds>(difference)
+          .count();
     }
     return -1;
   }
