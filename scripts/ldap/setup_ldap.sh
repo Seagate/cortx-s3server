@@ -122,6 +122,9 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
 # Enable IAM constraints
 ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-constraints.ldif
 
+#Enable ppolicy schema
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /etc/openldap/schema/ppolicy.ldif
+
 # Enable password policy and configure
 ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicymodule.ldif
 

@@ -54,9 +54,3 @@ olcSyncRepl: rid=004
 -
 replace: olcMirrorMode
 olcMirrorMode: TRUE
-
-dn: olcOverlay=syncprov,olcDatabase={2}hdb,cn=config
-changetype: add
-objectClass: olcOverlayConfig
-objectClass: olcSyncProvConfig
-olcOverlay: syncprov
