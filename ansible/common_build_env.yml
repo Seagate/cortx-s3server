@@ -40,7 +40,6 @@
     - python34-yaml
     - python34-scripttest
     - python36
-    - python36-pip
     - python36-setuptools
     - python36-dateutil
     - python36-devel
