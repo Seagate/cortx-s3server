@@ -166,8 +166,8 @@ class EOSCoreConfig(object):
 
     def get_rabbitmq_exchange_type(self):
         """Return exchange type of rabbitmq from config file or KeyError."""
-        if 'rabbitmq' in self._config and self._config['rabbitmq']['Exchange_Type']:
-            return self._config['rabbitmq']['Exchange_Type']
+        if 'rabbitmq' in self._config and self._config['rabbitmq']['exchange_type']:
+            return self._config['rabbitmq']['exchange_type']
         else:
             raise KeyError(
                 "Could not parse rabbitmq exchange_type from config file " +
