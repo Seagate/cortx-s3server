@@ -52,14 +52,14 @@ secondary_secret_key = account_response_elements['SecretKey']
 bucket="seagatebucketobjectacl"
 AwsTest('Aws can create bucket').create_bucket(bucket).execute_test().command_is_successful()
 
-'''result=AwsTest('Aws can get bucket acl').get_bucket_acl(bucket).execute_test().command_is_successful()
+result=AwsTest('Aws can get bucket acl').get_bucket_acl(bucket).execute_test().command_is_successful()
 
 print("Bucket ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
 AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
-print("ACL validation Completed..")'''
+print("ACL validation Completed..")
 
 AwsTest('Aws can create object').put_object(bucket, "testObject").execute_test().command_is_successful()
 

@@ -62,7 +62,7 @@ class S3ObjectMetadata {
   std::string user_id;
   std::string bucket_name;
   std::string object_name;
-  std::string object_acl;
+  std::string default_object_acl;
 
   std::string request_id;
 
@@ -146,7 +146,6 @@ class S3ObjectMetadata {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
-  std::string create_default_acl();
   struct m0_uint128 get_index_oid();
   std::string get_bucket_index_name() { return "BUCKET/" + bucket_name; }
 
@@ -290,7 +289,6 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, RemoveSuccessful);
   FRIEND_TEST(S3ObjectMetadataTest, RemoveFailed);
   FRIEND_TEST(S3ObjectMetadataTest, RemoveFailedToLaunch);
-  FRIEND_TEST(S3ObjectMetadataTest, CreateDefaultAcl);
   FRIEND_TEST(S3ObjectMetadataTest, ToJson);
   FRIEND_TEST(S3ObjectMetadataTest, FromJson);
   FRIEND_TEST(S3MultipartObjectMetadataTest, FromJson);

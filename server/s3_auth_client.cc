@@ -411,11 +411,24 @@ void S3AuthClient::setup_auth_request_body() {
     std::shared_ptr<S3RequestObject> s3_request =
         std::dynamic_pointer_cast<S3RequestObject>(request);
     if (s3_request != nullptr) {
-      if (((s3_request->http_verb() == S3HttpVerb::PUT &&
-            s3_request->get_operation_code() == S3OperationCode::none) ||
-           (s3_request->http_verb() == S3HttpVerb::POST &&
-            s3_request->get_operation_code() == S3OperationCode::multipart)) &&
-          s3_request->get_api_type() == S3ApiType::object) {
+
+      // Set flag to request default bucket acl from authserver.
+      if ((s3_request->http_verb() == S3HttpVerb::PUT &&
+           s3_request->get_operation_code() == S3OperationCode::none &&
+           s3_request->get_api_type() == S3ApiType::bucket)) {
+
+        add_key_val_to_body("Request-ACL", "true");
+      }
+
+      // Set flag to request default object acl for api put-object, put object
+      // in complete multipart upload and put object in chunked mode
+      // from authserver.
+      else if (((s3_request->http_verb() == S3HttpVerb::PUT &&
+                 s3_request->get_operation_code() == S3OperationCode::none) ||
+                (s3_request->http_verb() == S3HttpVerb::POST &&
+                 s3_request->get_operation_code() ==
+                     S3OperationCode::multipart)) &&
+               s3_request->get_api_type() == S3ApiType::object) {
         add_key_val_to_body("Request-ACL", "true");
       }
     }

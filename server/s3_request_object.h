@@ -49,7 +49,7 @@ class S3AsyncBufferOptContainerFactory;
 class S3RequestObject : public RequestObject {
   std::string bucket_name;
   std::string object_name;
-  std::string object_acl;
+  std::string default_acl;
 
   S3AuditInfo audit_log_obj;
   size_t object_size;
@@ -81,8 +81,9 @@ class S3RequestObject : public RequestObject {
   virtual void set_object_name(const std::string& name);
   virtual const std::string& get_object_name();
 
-  virtual void set_object_acl(const std::string& name);
-  virtual const std::string& get_object_acl();
+  virtual void set_default_acl(const std::string& name);
+  virtual const std::string& get_default_acl();
+
  public:
 
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);

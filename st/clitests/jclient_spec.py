@@ -73,7 +73,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can call list objects on empty bucket').list_objects('seagatebucket').execute_test().command_is_successful()
 
     # get-bucket-acl
-    JClientTest('Jclient can get bucket ACL').get_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('tester: FULL_CONTROL')
+    JClientTest('Jclient can get bucket ACL').get_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
 
     # ************ 3k FILE TEST ************
     JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have('Bucket or Object does not exist')

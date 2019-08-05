@@ -56,6 +56,7 @@ class S3BucketMetadata {
   std::string user_id;
   std::string salted_object_list_index_name;
   std::string salted_multipart_list_index_name;
+  std::string default_bucket_acl;
 
   enum class S3BucketMetadataCurrentOp {
     none,
@@ -103,12 +104,6 @@ class S3BucketMetadata {
   bool json_parsing_error;
 
   std::string request_id;
-
-
-
-
-
-  std::string create_default_acl();
 
   void handle_collision(std::string base_index_name,
                         std::string& salted_index_name,

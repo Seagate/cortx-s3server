@@ -108,7 +108,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
           s3_request->set_user_id(success_obj->get_user_id());
           s3_request->set_account_name(success_obj->get_account_name());
           s3_request->set_account_id(success_obj->get_account_id());
-          s3_request->set_object_acl(success_obj->get_acl());
+          s3_request->set_default_acl(success_obj->get_acl());
         }
       } else {
         // Invalid authorisation response xml

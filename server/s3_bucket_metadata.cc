@@ -39,6 +39,7 @@ S3BucketMetadata::S3BucketMetadata(
   user_name = request->get_user_name();
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
+  default_bucket_acl = request->get_default_acl();
   salted_multipart_list_index_name = get_multipart_index_name();
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
@@ -193,38 +194,6 @@ void S3BucketMetadata::regenerate_new_index_name(
                       std::to_string(collision_attempt_count);
 }
 
-std::string S3BucketMetadata::create_default_acl() {
-  std::string acl_str;
-  acl_str =
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-      "<AccessControlPolicy "
-      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n"
-      "  <Owner>\n"
-      "    <ID>" +
-      get_owner_id() +
-      "</ID>\n"
-      "      <DisplayName>" +
-      get_owner_name() +
-      "</DisplayName>\n"
-      "  </Owner>\n"
-      "  <AccessControlList>\n"
-      "    <Grant>\n"
-      "      <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-      "xsi:type=\"CanonicalUser\">\n"
-      "        <ID>" +
-      get_owner_id() +
-      "</ID>\n"
-      "        <DisplayName>" +
-      get_owner_name() +
-      "</DisplayName>\n"
-      "      </Grantee>\n"
-      "      <Permission>FULL_CONTROL</Permission>\n"
-      "    </Grant>\n"
-      "  </AccessControlList>\n"
-      "</AccessControlPolicy>\n";
-  return acl_str;
-}
-
 // Streaming to json
 std::string S3BucketMetadata::to_json() {
   s3_log(S3_LOG_DEBUG, request_id, "Called\n");
@@ -239,10 +208,11 @@ std::string S3BucketMetadata::to_json() {
   }
   std::string xml_acl = bucket_ACL.get_xml_str();
   if (xml_acl == "") {
-    xml_acl = create_default_acl();
-  }
+    root["ACL"] = default_bucket_acl;
+  } else {
   root["ACL"] =
       base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
+  }
   root["Policy"] = bucket_policy;
   for (const auto& tag : bucket_tags) {
     root["User-Defined-Tags"][tag.first] = tag.second;

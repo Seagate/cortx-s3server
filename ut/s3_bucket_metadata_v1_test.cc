@@ -655,11 +655,6 @@ TEST_F(S3BucketMetadataV1Test, RemoveBucketInfoFailedToLaunch) {
   EXPECT_EQ(S3BucketMetadataState::failed_to_launch, action_under_test->state);
 }
 
-TEST_F(S3BucketMetadataV1Test, CreateDefaultAcl) {
-  EXPECT_STREQ(DEFAULT_ACL_STR,
-               action_under_test->create_default_acl().c_str());
-}
-
 TEST_F(S3BucketMetadataV1Test, ToJson) {
   std::string json_str = action_under_test->to_json();
   Json::Value newglobal;

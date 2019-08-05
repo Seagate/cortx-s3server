@@ -180,7 +180,6 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketAccountidInfoFailed);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfoFailed);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfoFailedToLaunch);
-  FRIEND_TEST(S3BucketMetadataV1Test, CreateDefaultAcl);
   FRIEND_TEST(S3BucketMetadataV1Test, ToJson);
   FRIEND_TEST(S3BucketMetadataV1Test, FromJson);
   FRIEND_TEST(S3BucketMetadataV1Test, GetEncodedBucketAcl);

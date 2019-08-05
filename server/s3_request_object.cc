@@ -91,11 +91,11 @@ S3OperationCode S3RequestObject::get_operation_code() {
   return s3_operation_code;
 }
 
-void S3RequestObject::set_object_acl(const std::string& acl) {
-  object_acl = acl;
+void S3RequestObject::set_default_acl(const std::string& acl) {
+  default_acl = acl;
 }
 
-const std::string& S3RequestObject::get_object_acl() { return object_acl; }
+const std::string& S3RequestObject::get_default_acl() { return default_acl; }
 
 void S3RequestObject::populate_and_log_audit_info() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering");

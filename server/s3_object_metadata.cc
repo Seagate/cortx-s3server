@@ -38,7 +38,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
-  object_acl = request->get_object_acl();
+  default_object_acl = request->get_default_acl();
   state = S3ObjectMetadataState::empty;
   is_multipart = ismultipart;
   upload_id = uploadid;
@@ -573,7 +573,7 @@ std::string S3ObjectMetadata::to_json() {
   }
   std::string xml_acl = object_ACL.get_xml_str();
   if (xml_acl == "") {
-    root["ACL"] = object_acl;
+    root["ACL"] = default_object_acl;
 
   } else {
   root["ACL"] =
