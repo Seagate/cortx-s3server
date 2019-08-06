@@ -25,18 +25,15 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_object_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_reader.h"
 #include "s3_factory.h"
-#include "s3_object_metadata.h"
 #include "s3_timer.h"
 
-class S3GetObjectAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
+class S3GetObjectAction : public S3ObjectAction {
+
   std::shared_ptr<S3ClovisReader> clovis_reader;
-  m0_uint128 object_list_oid;
   // Read state
   size_t total_blocks_in_object;
   size_t blocks_already_read;
@@ -48,11 +45,7 @@ class S3GetObjectAction : public S3Action {
   size_t total_blocks_to_read;
 
   bool read_object_reply_started;
-
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
-
   S3Timer s3_timer;
 
   size_t get_requested_content_length() const {
@@ -68,9 +61,9 @@ class S3GetObjectAction : public S3Action {
 
   void setup_steps();
 
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
-  void fetch_object_info();
+
+  void fetch_object_info_failed();
   void validate_object_info();
   void check_full_or_range_object_read();
   void set_total_blocks_to_read_from_object();

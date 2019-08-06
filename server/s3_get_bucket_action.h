@@ -24,17 +24,15 @@
 
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_factory.h"
 #include "s3_object_list_response.h"
 
-class S3GetBucketAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+class S3GetBucketAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metada_factory;
+  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   S3ObjectListResponse object_list;
@@ -68,7 +66,6 @@ class S3GetBucketAction : public S3Action {
 
   void setup_steps();
   void validate_request();
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
   void get_next_objects();
   void get_next_objects_successful();

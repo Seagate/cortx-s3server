@@ -233,36 +233,6 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
   EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
 
-TEST_F(S3GetObjectActionTest, ValidateObjectWhenMissingObjectReportNoSuckKey) {
-  CREATE_OBJECT_METADATA;
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
-
-  action_under_test->validate_object_info();
-
-  EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata != NULL);
-}
-
-TEST_F(S3GetObjectActionTest, ValidateObjectWhenObjInfoFetchFailedReportError) {
-  CREATE_OBJECT_METADATA;
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(AtLeast(1));
-
-  action_under_test->validate_object_info();
-
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata != NULL);
-}
-
 TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {
   CREATE_OBJECT_METADATA;
 

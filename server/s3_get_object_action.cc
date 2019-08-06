@@ -30,7 +30,7 @@ S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisReaderFactory> clovis_s3_factory)
-    : S3Action(req),
+    : S3ObjectAction(req, bucket_meta_factory, object_meta_factory),
       total_blocks_in_object(0),
       blocks_already_read(0),
       data_sent_to_client(0),
@@ -40,23 +40,10 @@ S3GetObjectAction::S3GetObjectAction(
       total_blocks_to_read(0),
       read_object_reply_started(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  object_list_oid = {0ULL, 0ULL};
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Object. Bucket[%s] Object[%s]\n",
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
-  if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
-  }
 
   if (clovis_s3_factory) {
     clovis_reader_factory = clovis_s3_factory;
@@ -69,27 +56,12 @@ S3GetObjectAction::S3GetObjectAction(
 
 void S3GetObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetObjectAction::fetch_bucket_info, this));
-  add_task(std::bind(&S3GetObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3GetObjectAction::validate_object_info, this));
   add_task(
       std::bind(&S3GetObjectAction::check_full_or_range_object_read, this));
   add_task(std::bind(&S3GetObjectAction::read_object, this));
   add_task(std::bind(&S3GetObjectAction::send_response_to_s3_client, this));
   // ...
-}
-
-void S3GetObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
-
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3GetObjectAction::next, this),
-      std::bind(&S3GetObjectAction::fetch_bucket_info_failed, this));
-  // for shutdown testcases, check FI and set shutdown signal
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "get_object_action_fetch_bucket_info_shutdown_fail");
 }
 
 void S3GetObjectAction::fetch_bucket_info_failed() {
@@ -110,30 +82,34 @@ void S3GetObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3GetObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+void S3GetObjectAction::fetch_object_info_failed() {
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
     object_list_oid = bucket_metadata->get_object_list_index_oid();
     if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      // There is no object list index, hence object doesn't exist
-      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+      s3_log(S3_LOG_ERROR, request_id, "Object not found\n");
       set_s3_error("NoSuchKey");
-      send_response_to_s3_client();
     } else {
-      object_metadata = object_metadata_factory->create_object_metadata_obj(
-          request, object_list_oid);
-
-      object_metadata->load(std::bind(&S3GetObjectAction::next, this),
-                            std::bind(&S3GetObjectAction::next, this));
+      if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+        s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
+        set_s3_error("NoSuchKey");
+      } else if (object_metadata->get_state() ==
+                 S3ObjectMetadataState::failed_to_launch) {
+        s3_log(S3_LOG_ERROR, request_id,
+               "Object metadata load operation failed due to pre launch "
+               "failure\n");
+        set_s3_error("ServiceUnavailable");
+      } else {
+        s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
+        set_s3_error("InternalError");
+      }
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  send_response_to_s3_client();
 }
 
 void S3GetObjectAction::validate_object_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     content_length = object_metadata->get_content_length();
     // as per RFC last_byte_offset_to_read is taken to be equal to one less than
     // the content length in bytes.
@@ -174,22 +150,6 @@ void S3GetObjectAction::validate_object_info() {
              total_blocks_in_object);
       next();
     }
-  } else {
-    if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
-      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-      set_s3_error("NoSuchKey");
-    } else if (object_metadata->get_state() ==
-               S3ObjectMetadataState::failed_to_launch) {
-      s3_log(
-          S3_LOG_ERROR, request_id,
-          "Object metadata load operation failed due to pre launch failure\n");
-      set_s3_error("ServiceUnavailable");
-    } else {
-      s3_log(S3_LOG_DEBUG, request_id, "Object metadata fetch failed\n");
-      set_s3_error("InternalError");
-    }
-    send_response_to_s3_client();
-  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

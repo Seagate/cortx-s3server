@@ -32,7 +32,7 @@ S3GetBucketAction::S3GetBucketAction(
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
-    : S3Action(req),
+    : S3BucketAction(req, bucket_meta_factory),
       object_list(req->get_query_string_value("encoding-type")),
       last_key(""),
       fetch_successful(false) {
@@ -55,9 +55,9 @@ S3GetBucketAction::S3GetBucketAction(
     s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
   }
   if (object_meta_factory) {
-    object_metada_factory = object_meta_factory;
+    object_metadata_factory = object_meta_factory;
   } else {
-    object_metada_factory = std::make_shared<S3ObjectMetadataFactory>();
+    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   setup_steps();
@@ -67,12 +67,26 @@ S3GetBucketAction::S3GetBucketAction(
 void S3GetBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3GetBucketAction::validate_request, this));
-  add_task(std::bind(&S3GetBucketAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetBucketAction::get_next_objects, this));
   add_task(std::bind(&S3GetBucketAction::send_response_to_s3_client, this));
   // ...
 }
-
+void S3GetBucketAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    set_s3_error("AccessDenied");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+}
 void S3GetBucketAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
@@ -110,32 +124,6 @@ void S3GetBucketAction::validate_request() {
   }
   s3_log(S3_LOG_DEBUG, request_id, "max-keys = %s\n", max_k.c_str());
   next();
-}
-
-void S3GetBucketAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3GetBucketAction::next, this),
-      std::bind(&S3GetBucketAction::fetch_bucket_info_failed, this));
-}
-
-void S3GetBucketAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    set_s3_error("NoSuchBucket");
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    set_s3_error("AccessDenied");
-  } else if (bucket_metadata->get_state() ==
-             S3BucketMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Bucket metadata load operation failed due to pre launch failure\n");
-    set_s3_error("ServiceUnavailable");
-  } else {
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
 }
 
 void S3GetBucketAction::get_next_objects() {
@@ -187,7 +175,7 @@ void S3GetBucketAction::get_next_objects_successful() {
     s3_log(S3_LOG_DEBUG, request_id, "Read Object = %s\n", kv.first.c_str());
     s3_log(S3_LOG_DEBUG, request_id, "Read Object Value = %s\n",
            kv.second.second.c_str());
-    auto object = object_metada_factory->create_object_metadata_obj(request);
+    auto object = object_metadata_factory->create_object_metadata_obj(request);
     size_t delimiter_pos = std::string::npos;
     if (request_prefix.empty() && request_delimiter.empty()) {
       if (object->from_json(kv.second.second) != 0) {

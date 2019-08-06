@@ -136,7 +136,7 @@ TEST_F(S3GetBucketActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
   EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
   EXPECT_TRUE(action_under_test_ptr->s3_clovis_kvs_reader_factory != nullptr);
-  EXPECT_TRUE(action_under_test_ptr->object_metada_factory != nullptr);
+  EXPECT_TRUE(action_under_test_ptr->object_metadata_factory != nullptr);
   // EXPECT_STREQ("marker", action_under_test_ptr->last_key.c_str());
   EXPECT_FALSE(action_under_test_ptr->fetch_successful);
 }

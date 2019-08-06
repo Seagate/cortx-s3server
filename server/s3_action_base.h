@@ -58,6 +58,11 @@ class S3Action : public Action {
   // Ensure you call this in Derived class constructor.
   virtual void setup_steps();
 
+  // TODO This can be made pure virtual once its implemented for all action
+  // class
+  virtual void load_metadata();
+  virtual void set_authorization_meta();
+
   // Common steps for all Actions like Authorization.
   void check_authorization();
   void check_authorization_successful();

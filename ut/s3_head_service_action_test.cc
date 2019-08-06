@@ -54,7 +54,7 @@ class S3HeadServiceActionTest : public testing::Test {
 // initialized to their default value.
 TEST_F(S3HeadServiceActionTest, ConstructorTest) {
   // Number of tasks in task list should be only one.
-  EXPECT_EQ(1, action_under_test->number_of_tasks());
+  EXPECT_EQ(2, action_under_test->number_of_tasks());
 }
 
 TEST_F(S3HeadServiceActionTest, SendResponseToClientServiceUnavailable) {
