@@ -68,16 +68,19 @@ AwsTest('Aws can create bucket tag for more than 50 entries').put_bucket_tagging
     .command_should_fail().command_error_should_have("InvalidTagError")
 
 
-#*********** Negative case to check invalid char(s) for key/value in bucket-tagging *********
-AwsTest('Aws can not create bucket tag with invalid char(!) in Key').put_bucket_tagging("seagatebucket", [{'Key': 's!eagate','Value': 'storage'}]).execute_test(negative_case=True)\
+#*********** Negative case to check invalid char(s) for key in bucket-tagging *********
+invalid_chars = ["!", "^", "%", "<", ">", "[", "]", "~", "|", "#", "?", "@", "*"]
+for char in invalid_chars:
+    invalid_key = "sea"+ char + "gate"
+    AwsTest('Aws can not create bucket tag with invalid char(' + char +') in Key').put_bucket_tagging("seagatebucket",  [{'Key': invalid_key, 'Value': 'storage'}]).execute_test(negative_case=True)\
     .command_should_fail().command_error_should_have("InvalidTagError")
 
-AwsTest('Aws can not create bucket tag with invalid char(#) in Value').put_bucket_tagging("seagatebucket", [{'Key': 'seagate','Value': 'st#orage'}]).execute_test(negative_case=True)\
+#*********** Negative case to check invalid char(s) for value in bucket-tagging *********
+invalid_chars = ["!", "^", "%", "<", ">", "[", "]", "~", "|", "#", "?", "@", "*"]
+for char in invalid_chars:
+    invalid_value = "stor"+ char + "age"
+    AwsTest('Aws can not create bucket tag with invalid char(' + char +') in Value').put_bucket_tagging("seagatebucket",  [{'Key': 'seagate', 'Value': invalid_value}]).execute_test(negative_case=True)\
     .command_should_fail().command_error_should_have("InvalidTagError")
-
-AwsTest('Aws can not create bucket tag with invalid char(~/%) in Key/Value').put_bucket_tagging("seagatebucket", [{'Key': 's~eagate','Value': 'storag%'}]).execute_test(negative_case=True)\
-    .command_should_fail().command_error_should_have("InvalidTagError")
-
 
 #************Negative case to check creation of tag for non-existant bucket*******
 AwsTest('Aws can not create bucket tag on non-existant').put_bucket_tagging("seagate-bucket", [{'Key': 'seagate','Value': 'storage'}])\
