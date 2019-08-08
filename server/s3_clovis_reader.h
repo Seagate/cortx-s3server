@@ -49,7 +49,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   std::string request_id;
 
  public:
-  S3ClovisReaderContext(std::shared_ptr<S3RequestObject> req,
+  S3ClovisReaderContext(std::shared_ptr<RequestObject> req,
                         std::function<void()> success_callback,
                         std::function<void()> failed_callback, int layoutid,
                         std::shared_ptr<ClovisAPI> clovis_api = nullptr)
@@ -128,6 +128,7 @@ enum class S3ClovisReaderOpState {
   start,
   failed_to_launch,
   failed,
+  reading,
   success,
   missing,  // Missing object
   ooo,      // out-of-memory
@@ -135,7 +136,7 @@ enum class S3ClovisReaderOpState {
 
 class S3ClovisReader {
  private:
-  std::shared_ptr<S3RequestObject> request;
+  std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3ClovisReaderContext> reader_context;
   std::unique_ptr<S3ClovisReaderContext> open_context;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -164,7 +165,8 @@ class S3ClovisReader {
 
   // Internal open operation so clovis can fetch required object metadata
   // for example object pool version
-  int open_object();
+  int open_object(std::function<void(void)> on_success,
+                  std::function<void(void)> on_failed);
   void open_object_successful();
   void open_object_failed();
 
@@ -178,7 +180,7 @@ class S3ClovisReader {
 
  public:
   // object id is generated at upper level and passed to this constructor
-  S3ClovisReader(std::shared_ptr<S3RequestObject> req, struct m0_uint128 id,
+  S3ClovisReader(std::shared_ptr<RequestObject> req, struct m0_uint128 id,
                  int layout_id,
                  std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisReader();
@@ -193,6 +195,9 @@ class S3ClovisReader {
   virtual bool read_object_data(size_t num_of_blocks,
                                 std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed);
+
+  virtual bool check_object_exist(std::function<void(void)> on_success,
+                                  std::function<void(void)> on_failed);
 
   // Iterate over the content.
   // Returns size of data in first block and 0 if there is no content,

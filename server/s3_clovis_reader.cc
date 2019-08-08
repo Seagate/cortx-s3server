@@ -28,7 +28,7 @@
 
 extern struct m0_clovis_realm clovis_uber_realm;
 
-S3ClovisReader::S3ClovisReader(std::shared_ptr<S3RequestObject> req,
+S3ClovisReader::S3ClovisReader(std::shared_ptr<RequestObject> req,
                                struct m0_uint128 id, int layoutid,
                                std::shared_ptr<ClovisAPI> clovis_api)
     : request(req),
@@ -76,18 +76,46 @@ bool S3ClovisReader::read_object_data(size_t num_of_blocks,
          num_of_blocks, last_index);
 
   bool rc = true;
-
+  state = S3ClovisReaderOpState::reading;
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
+
+  assert(this->handler_on_success != NULL);
+  assert(this->handler_on_failed != NULL);
 
   num_of_blocks_to_read = num_of_blocks;
 
   if (is_object_opened) {
     rc = read_object();
   } else {
-    int retcode = open_object();
+    int retcode =
+        open_object(std::bind(&S3ClovisReader::open_object_successful, this),
+                    std::bind(&S3ClovisReader::open_object_failed, this));
     if (retcode != 0) {
       this->handler_on_failed();
+      rc = false;
+    }
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  return rc;
+}
+
+bool S3ClovisReader::check_object_exist(std::function<void(void)> on_success,
+                                        std::function<void(void)> on_failed) {
+  bool rc = true;
+  this->handler_on_success = on_success;
+  this->handler_on_failed = on_failed;
+
+  assert(this->handler_on_success != NULL);
+  assert(this->handler_on_failed != NULL);
+
+  if (is_object_opened) {
+    this->handler_on_success();
+  } else {
+    int retcode =
+        open_object(std::bind(&S3ClovisReader::open_object_successful, this),
+                    std::bind(&S3ClovisReader::open_object_failed, this));
+    if (retcode != 0) {
       rc = false;
     }
   }
@@ -96,7 +124,8 @@ bool S3ClovisReader::read_object_data(size_t num_of_blocks,
   return rc;
 }
 
-int S3ClovisReader::open_object() {
+int S3ClovisReader::open_object(std::function<void(void)> on_success,
+                                std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   int rc = 0;
 
@@ -109,9 +138,8 @@ int S3ClovisReader::open_object() {
   }
   obj_ctx = create_obj_context(1);
 
-  open_context.reset(new S3ClovisReaderContext(
-      request, std::bind(&S3ClovisReader::open_object_successful, this),
-      std::bind(&S3ClovisReader::open_object_failed, this), layout_id));
+  open_context.reset(
+      new S3ClovisReaderContext(request, on_success, on_failed, layout_id));
 
   struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
       1, sizeof(struct s3_clovis_context_obj));
@@ -156,17 +184,21 @@ void S3ClovisReader::open_object_successful() {
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid.u_hi, oid.u_lo);
   is_object_opened = true;
-  if (!read_object()) {
-    // read cannot be launched, out-of-memory
-    state = S3ClovisReaderOpState::ooo;
-    s3_log(S3_LOG_ERROR, request_id,
-           "Clovis API failed: openobj(oid: ("
-           "%" SCNx64 " : %" SCNx64 "), out-of-memory)\n",
-           oid.u_hi, oid.u_lo);
-    this->handler_on_failed();
-  }
 
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  if (state == S3ClovisReaderOpState::reading) {
+    if (!read_object()) {
+      // read cannot be launched, out-of-memory
+      state = S3ClovisReaderOpState::ooo;
+      s3_log(S3_LOG_ERROR, request_id,
+             "Clovis API failed: openobj(oid: ("
+             "%" SCNx64 " : %" SCNx64 "), out-of-memory)\n",
+             oid.u_hi, oid.u_lo);
+      this->handler_on_failed();
+    }
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  } else {
+    this->handler_on_success();
+  }
 }
 
 void S3ClovisReader::open_object_failed() {

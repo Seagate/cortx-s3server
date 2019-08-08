@@ -120,8 +120,8 @@ class S3ClovisReaderFactory {
   virtual ~S3ClovisReaderFactory() {}
 
   virtual std::shared_ptr<S3ClovisReader> create_clovis_reader(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 oid,
-      int layout_id, std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
+      std::shared_ptr<RequestObject> req, struct m0_uint128 oid, int layout_id,
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
     s3_log(S3_LOG_DEBUG, "", "S3ClovisReaderFactory::create_clovis_reader\n");
     return std::make_shared<S3ClovisReader>(req, oid, layout_id, clovis_api);
   }
