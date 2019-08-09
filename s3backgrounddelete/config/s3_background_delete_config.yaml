@@ -1,5 +1,11 @@
 eos_core:                                   # Section for S3 background delete config
-   endpoint: "http://127.0.0.1:5000"  # EOS mero client will use the specified host
+   endpoint: "http://127.0.0.1:7081"                       # Service specified for EOS mero client
+   service: "eoscore"                                           # Default region specified for EOS mero client
+   default_region: "us-west2"                              # EOS mero client will use the specified host
+   access_key: "S_YU-hMoQH2BWtza2tLtVg"                    # Access Key corresponding to account-name "s3-background-delete-svc"
+   secret_key: "uw13JTMmOFzqz86eaMSbJAFd1CCB7oujkAXX4r+A"  # Secret Key corresponding to account-name "s3-background-delete-svc"
+
+
 
 logconfig:                                  # Section for scheduler & processor loggers.
 

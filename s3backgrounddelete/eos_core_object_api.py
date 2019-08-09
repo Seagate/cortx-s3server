@@ -1,9 +1,11 @@
 """This class provides Object  REST API i.e. GET,PUT and DELETE."""
 import logging
+import urllib
 
 from eos_core_error_respose import EOSCoreErrorResponse
 from eos_core_success_response import EOSCoreSuccessResponse
 from eos_core_client import EOSCoreClient
+from eos_core_util import prepare_signed_header
 
 # EOSCoreObjectApi supports object REST-API's Put, Get & Delete
 
@@ -27,14 +29,18 @@ class EOSCoreObjectApi(EOSCoreClient):
             self._logger.error("Object Id is required.")
             return
 
+        query_params = ""
         request_body = value
         request_uri = '/objects/' + oid
+
+        headers = prepare_signed_header('PUT', request_uri, query_params, request_body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
         try:
-            response = super(
-                EOSCoreObjectApi,
-                self).put(
-                    request_uri,
-                    request_body)
+            response = super(EOSCoreObjectApi, self).put(request_uri, request_body, headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -53,8 +59,17 @@ class EOSCoreObjectApi(EOSCoreClient):
             self._logger.error("Object Id is required.")
             return
         request_uri = '/objects/' + oid
+
+        query_params = ""
+        body = ""
+        headers = prepare_signed_header('GET', request_uri, query_params, body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
         try:
-            response = super(EOSCoreObjectApi, self).get(request_uri)
+            response = super(EOSCoreObjectApi, self).get(request_uri, headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -67,14 +82,29 @@ class EOSCoreObjectApi(EOSCoreClient):
             return False, EOSCoreErrorResponse(
                 response['status'], response['reason'], response['body'])
 
-    def delete(self, oid):
+    def delete(self, oid, layout_id):
         """Perform DELETE request and generate response."""
         if oid is None:
             self._logger.error("Object Id is required.")
             return
+        if layout_id is None:
+            self._logger.error("Layout Id is required.")
+            return
+
+
+        query_params = urllib.parse.urlencode({'layout-id': layout_id})
         request_uri = '/objects/' + oid
+        absolute_request_uri = request_uri + '?' + query_params
+
+        body = ''
+        headers = prepare_signed_header('DELETE', request_uri, query_params, body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
         try:
-            response = super(EOSCoreObjectApi, self).delete(request_uri)
+            response = super(EOSCoreObjectApi, self).delete(absolute_request_uri, body , headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None

@@ -5,6 +5,7 @@ from eos_core_client import EOSCoreClient
 from eos_get_kv_response import EOSCoreGetKVResponse
 from eos_core_error_respose import EOSCoreErrorResponse
 from eos_core_success_response import EOSCoreSuccessResponse
+from eos_core_util import prepare_signed_header
 
 # EOSCoreKVApi supports key-value REST-API's Put, Get & Delete
 
@@ -32,10 +33,17 @@ class EOSCoreKVApi(EOSCoreClient):
             self._logger.error("Key is required")
             return None
 
+        query_params = ""
         request_body = value
         request_uri = '/indexes/' + index + '/' + key
+        headers = prepare_signed_header('PUT', request_uri, query_params, request_body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
         try:
-            response = super(EOSCoreKVApi, self).put(request_uri, request_body)
+            response = super(EOSCoreKVApi, self).put(request_uri, request_body, headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -59,8 +67,16 @@ class EOSCoreKVApi(EOSCoreClient):
 
         request_uri = '/indexes/' + index + '/' + key
 
+        query_params = ""
+        body = ""
+        headers = prepare_signed_header('GET', request_uri, query_params, body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
         try:
-            response = super(EOSCoreKVApi, self).get(request_uri)
+            response = super(EOSCoreKVApi, self).get(request_uri, headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -83,8 +99,17 @@ class EOSCoreKVApi(EOSCoreClient):
             return None
 
         request_uri = '/indexes/' + index + '/' + key
+
+        body = ""
+        query_params = ""
+        headers = prepare_signed_header('DELETE', request_uri, query_params, body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
         try:
-            response = super(EOSCoreKVApi, self).delete(request_uri)
+            response = super(EOSCoreKVApi, self).delete(request_uri, headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None

@@ -116,7 +116,43 @@ class EOSCoreConfig(object):
             return self._config['eos_core']['endpoint']
         else:
             raise KeyError(
-                "Could not parse endpoint from config file " +
+                "Could not find eos_core endpoint from config file " +
+                self._conf_file)
+
+    def get_eos_core_service(self):
+        """Return service from config file or KeyError."""
+        if 'eos_core' in self._config and self._config['eos_core']['service']:
+            return self._config['eos_core']['service']
+        else:
+            raise KeyError(
+                "Could not find eos_core service from config file " +
+                self._conf_file)
+
+    def get_eos_core_region(self):
+        """Return region from config file or KeyError."""
+        if 'eos_core' in self._config and self._config['eos_core']['default_region']:
+            return self._config['eos_core']['default_region']
+        else:
+            raise KeyError(
+                "Could not find eos_core default_region from config file " +
+                self._conf_file)
+
+    def get_eos_core_access_key(self):
+        """Return access_key from config file or KeyError."""
+        if 'eos_core' in self._config and self._config['eos_core']['access_key']:
+            return self._config['eos_core']['access_key']
+        else:
+            raise KeyError(
+                "Could not find eos_core access_key from config file " +
+                self._conf_file)
+
+    def get_eos_core_secret_key(self):
+        """Return secret_key from config file or KeyError."""
+        if 'eos_core' in self._config and self._config['eos_core']['secret_key']:
+            return self._config['eos_core']['secret_key']
+        else:
+            raise KeyError(
+                "Could not find eos_core secret_key from config file " +
                 self._conf_file)
 
     def get_rabbitmq_username(self):

@@ -6,6 +6,8 @@ from eos_list_index_response import EOSCoreListIndexResponse
 from eos_core_client import EOSCoreClient
 from eos_core_error_respose import EOSCoreErrorResponse
 from eos_core_success_response import EOSCoreSuccessResponse
+from eos_core_util import prepare_signed_header
+
 
 # EOSCoreIndexApi supports index REST-API's List & Put
 
@@ -31,8 +33,16 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         self._logger.info("Processing request in IndexAPI")
         request_uri = '/indexes/' + index
+
+        query_params = ""
+        body = ""
+        headers = prepare_signed_header('GET', request_uri, query_params, body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
         try:
-            response = super(EOSCoreIndexApi, self).get(request_uri)
+            response = super(EOSCoreIndexApi, self).get(request_uri, headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -52,8 +62,17 @@ class EOSCoreIndexApi(EOSCoreClient):
             return None
 
         request_uri = '/indexes/' + index
+
+        query_params = ""
+        body = ""
+        headers = prepare_signed_header('PUT', request_uri, query_params, body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
         try:
-            response = super(EOSCoreIndexApi, self).put(request_uri)
+            response = super(EOSCoreIndexApi, self).put(request_uri, headers = headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None

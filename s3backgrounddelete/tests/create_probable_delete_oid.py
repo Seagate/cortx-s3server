@@ -9,6 +9,7 @@ sys.path.append(
 from eos_core_config import EOSCoreConfig
 from eos_core_kv_api import EOSCoreKVApi
 from eos_core_index_api import EOSCoreIndexApi
+from eos_core_object_api import EOSCoreObjectApi
 
 
 # Create sample data for s3 background delete.
@@ -80,3 +81,4 @@ if __name__ == "__main__":
     EOSCoreIndexApi(CONFIG).list("object_metadata_index_id")
     EOSCoreKVApi(CONFIG).get("object_metadata_index_id", "oid-1")
     EOSCoreKVApi(CONFIG).get("object_metadata_index_id", "oid-2")
+    EOSCoreObjectApi(CONFIG).delete("0x-7200000000000000x0","test")
