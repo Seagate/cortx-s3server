@@ -64,7 +64,7 @@ fi
 ###### generate pylint report #######
 #Add pylint options
 printf "%s\n" "generating pylint report.."
-OPTIONS="--rcfile=$CURRENT_DIR/pylint_config.file --reports=y"
+OPTIONS="--rcfile=$CURRENT_DIR/pylint_config.file"
 
 cd $REPORT_LOCATION
 find $SOURCE_DIR -type f -name "*.py" | xargs pylint $OPTIONS > $REPORT_LOCATION/report.txt

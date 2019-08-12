@@ -14,6 +14,10 @@
 
     ./python_check.sh <SOURCE_DIR> <OUTPUT_DIR> [--autofix | --dryrunfix]
 
+> Note: we are using pylint configuration file (i.e pylint_config.file) in order to follow google python style guide.
+> For more info about google python style guide, please see : http://google.github.io/styleguide/pyguide.html
+> and for configuration file, please see : https://github.com/google/yapf/blob/master/pylintrc
+
 ----
 ## Test examples
 ** only reports :
