@@ -170,7 +170,7 @@ public class AccountImpl implements AccountDAO {
                       entry.getAttribute(LDAPUtils.PASSWORD).getStringValue());
                 }
                 catch (Exception e) {
-                  LOGGER.info("Password value not found in ldap");
+                  LOGGER.debug("Password value not found in ldap");
                 }
                 try {
                   account.setPwdResetRequired(
@@ -178,7 +178,7 @@ public class AccountImpl implements AccountDAO {
                           .getStringValue());
                 }
                 catch (Exception e) {
-                  LOGGER.info("pwdReset required value not found in ldap");
+                  LOGGER.debug("pwdReset required value not found in ldap");
                 }
                 try {
                   account.setProfileCreateDate(
@@ -186,7 +186,7 @@ public class AccountImpl implements AccountDAO {
                            .getStringValue()));
                 }
                 catch (Exception e) {
-                  LOGGER.info("profileCreateDate value not found in ldap");
+                  LOGGER.debug("profileCreateDate value not found in ldap");
                 }
             } catch (LDAPException ex) {
                 LOGGER.error("Failed to find details of account: " + name);

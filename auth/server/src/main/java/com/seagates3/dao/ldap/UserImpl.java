@@ -121,7 +121,7 @@ public class UserImpl implements UserDAO {
                   entry.getAttribute(LDAPUtils.PASSWORD).getStringValue());
             }
             catch (Exception e) {
-              LOGGER.info("Password value not found in ldap");
+              LOGGER.debug("Password value not found in ldap");
             }
             try {
               user.setPwdResetRequired(
@@ -129,7 +129,7 @@ public class UserImpl implements UserDAO {
                       .getStringValue());
             }
             catch (Exception e) {
-              LOGGER.info("pwdReset required value not found in ldap");
+              LOGGER.debug("pwdReset required value not found in ldap");
             }
             try {
               user.setProfileCreateDate(
@@ -137,7 +137,7 @@ public class UserImpl implements UserDAO {
                        .getStringValue()));
             }
             catch (Exception e) {
-              LOGGER.info("profileCreateDate value not found in ldap");
+              LOGGER.debug("profileCreateDate value not found in ldap");
             }
         }
         return user;

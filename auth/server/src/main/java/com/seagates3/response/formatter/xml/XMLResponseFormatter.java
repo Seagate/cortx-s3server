@@ -209,7 +209,7 @@ class XMLResponseFormatter extends AbstractResponseFormatter {
     String responseBody;
     try {
       responseBody = docToString(doc);
-      LOGGER.info(
+      LOGGER.debug(
           "XMLResponseFormatter :: formatErrorResponse() - responseBody is - " +
           " " + responseBody);
       ServerResponse serverResponse =
