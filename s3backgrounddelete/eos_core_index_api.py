@@ -21,7 +21,7 @@ class EOSCoreIndexApi(EOSCoreClient):
         else:
             self._logger = logger
         self.config = config
-        super(EOSCoreIndexApi, self).__init__(self.config, self._logger)
+        super(EOSCoreIndexApi, self).__init__(self.config, logger=self._logger)
 
     def list(self, index):
         """Perform LIST request and generate response."""

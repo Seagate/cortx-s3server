@@ -19,7 +19,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         else:
             self._logger = logger
         self.config = config
-        super(EOSCoreObjectApi, self,).__init__(self.config, self._logger)
+        super(EOSCoreObjectApi, self,).__init__(self.config, logger=self._logger)
 
     def put(self, oid, value):
         """Perform PUT request and generate response."""

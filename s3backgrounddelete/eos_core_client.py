@@ -10,14 +10,19 @@ class EOSCoreClient(object):
     """creates core client."""
     _config = None
     _logger = None
+    _conn = None
 
-    def __init__(self, config, logger=None):
-        """Initialise new logger or use existing log configs."""
+    def __init__(self, config, connection=None, logger=None):
+        """Initialise core client using config, connection object and logger."""
         if (logger is None):
             self._logger = logging.getLogger("EOSCoreClient")
         else:
             self._logger = logger
         self._config = config
+        if (connection is None):
+            self._conn = self._get_connection()
+        else:
+            self._conn = connection
 
     def _get_connection(self):
         """Creates new connection."""
@@ -31,52 +36,48 @@ class EOSCoreClient(object):
 
     def put(self, request_uri, body=None, headers=None):
         """Perform PUT request and generate response."""
-
-        conn = self._get_connection()
-        if (conn is None):
+        if (self._conn is None):
             raise TypeError("Failed to create connection instance")
         if (headers is None):
             headers = {
                 "Content-type": "application/x-www-form-urlencoded",
                 "Accept": "text/plain"}
 
-        conn.request('PUT', request_uri, body, headers)
-        response = conn.getresponse()
+        self._conn.request('PUT', request_uri, body, headers)
+        response = self._conn.getresponse()
         result = {'status': response.status, 'headers': response.getheaders(),
                   'body': response.read(), 'reason': response.reason}
-        conn.close()
+        self._conn.close()
         return result
 
     def get(self, request_uri, body=None, headers=None):
         """Perform GET request and generate response."""
-        conn = self._get_connection()
-        if (conn is None):
+        if (self._conn is None):
             raise TypeError("Failed to create connection instance")
         if (headers is None):
             headers = {
                 "Content-type": "application/x-www-form-urlencoded",
                 "Accept": "text/plain"}
 
-        conn.request('GET', request_uri, body, headers)
-        response = conn.getresponse()
+        self._conn.request('GET', request_uri, body, headers)
+        response = self._conn.getresponse()
         result = {'status': response.status, 'headers': response.getheaders(),
                   'body': response.read(), 'reason': response.reason}
-        conn.close()
+        self._conn.close()
         return result
 
     def delete(self, request_uri, body=None, headers=None):
         """Perform DELETE request and generate response."""
-        conn = self._get_connection()
-        if (conn is None):
+        if (self._conn is None):
             raise TypeError("Failed to create connection instance")
         if (headers is None):
             headers = {
                 "Content-type": "application/x-www-form-urlencoded",
                 "Accept": "text/plain"}
 
-        conn.request('DELETE', request_uri, body, headers)
-        response = conn.getresponse()
+        self._conn.request('DELETE', request_uri, body, headers)
+        response = self._conn.getresponse()
         result = {'status': response.status, 'headers': response.getheaders(),
                   'body': response.read(), 'reason': response.reason}
-        conn.close()
+        self._conn.close()
         return result

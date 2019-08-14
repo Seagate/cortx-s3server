@@ -21,7 +21,7 @@ class EOSCoreKVApi(EOSCoreClient):
             self._logger = logger
         self._logger = logging.getLogger()
         self.config = config
-        super(EOSCoreKVApi, self).__init__(self.config, self._logger)
+        super(EOSCoreKVApi, self).__init__(self.config, logger=self._logger)
 
     def put(self, index=None, key=None, value=None):
         """Perform PUT request and generate response."""
