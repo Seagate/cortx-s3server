@@ -36,6 +36,7 @@ setup(
     install_requires=[
     'boto3',
     'botocore',
-    'xmltodict'
+    'xmltodict',
+    'pyyaml'
   ]
 )

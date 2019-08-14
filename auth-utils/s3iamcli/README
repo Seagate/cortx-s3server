@@ -8,20 +8,20 @@ APIs supported
 - Get Federation Token.
 - Assume role with SAML.
 
-Python Version 3.4.8 required.
+Python Version 3.6.3 required.
 
-Installing Python 3.4 and required dependencies
+Installing Python 3.6 and required dependencies
    yum install wget epel-release
-   yum install python34
-   yum install python34-yaml
+   yum install python36
+   yum install python36-pyyaml
 
 Below python module dependencies can be downloaded from internal release management RPM Repository location
 or built from S3server Repo s3server/rpms/python34/buildrpms.sh script.
-  - python34-xmltodict
-  - python34-jmespath
-  - python34-botocore
-  - python34-s3transfer
-  - python34-boto3
+  - python36-xmltodict
+  - python36-jmespath
+  - python36-botocore
+  - python36-s3transfer
+  - python36-boto3
 
 Installing s3iamcli
 s3iamcli RPM can be downloaded from internal release management RPM repository location

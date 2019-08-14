@@ -267,9 +267,9 @@ then
     cd auth-utils/s3iamcli/
     if [ $no_clean_build -eq 0 ]
     then
-      python3 setup.py install --force
+      python36 setup.py install --force
     else
-      python3 setup.py install
+      python36 setup.py install
     fi
     # Assert to check if the certificates are installed.
     rpm -q stx-s3-client-certs
