@@ -22,6 +22,7 @@
 #include "s3_common.h"
 #include "s3_error_codes.h"
 #include "s3_iem.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
@@ -623,7 +624,6 @@ void S3PutObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
-
     if (get_s3_error_code() == "ServiceUnavailable" ||
         get_s3_error_code() == "InternalError") {
       request->set_out_header_value("Connection", "close");
@@ -637,6 +637,13 @@ void S3PutObjectAction::send_response_to_s3_client() {
   } else if (object_metadata &&
              object_metadata->get_state() == S3ObjectMetadataState::saved) {
     request->set_out_header_value("ETag", clovis_writer->get_content_md5());
+
+    if (S3Option::get_instance()->is_getoid_enabled()) {
+
+      request->set_out_header_value(
+          "OID", S3M0Uint128Helper::to_string(object_metadata->get_oid()));
+    }
+
     request->send_response(S3HttpSuccess200);
   } else {
     S3Error error("InternalError", request->get_request_id(),

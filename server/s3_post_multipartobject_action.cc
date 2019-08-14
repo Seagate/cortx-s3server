@@ -22,6 +22,7 @@
 #include "s3_error_codes.h"
 #include "s3_iem.h"
 #include "s3_log.h"
+#include "s3_m0_uint128_helper.h"
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_post_multipartobject_action.h"
@@ -618,6 +619,7 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
@@ -637,6 +639,11 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     response += "<UploadId>" + upload_id + "</UploadId>";
     response += "</InitiateMultipartUploadResult>";
     request->set_out_header_value("UploadId", upload_id);
+
+    if (S3Option::get_instance()->is_getoid_enabled()) {
+      request->set_out_header_value(
+          "OID", S3M0Uint128Helper::to_string(object_metadata->get_oid()));
+    }
 
     request->send_response(S3HttpSuccess200, response);
   } else {

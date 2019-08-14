@@ -54,6 +54,7 @@ DEFINE_string(clovisprocessfid, "<0x7200000000000000:0>", "Clovis process FID");
 DEFINE_string(authhost, "ipv4:127.0.0.1", "Auth server host");
 DEFINE_int32(authport, 8095, "Auth server port");
 DEFINE_bool(disable_auth, false, "Disable authentication");
+DEFINE_bool(getoid, false, "Enable getoid in S3 request for testing");
 
 DEFINE_bool(fake_authenticate, false, "Fake out authenticate");
 DEFINE_bool(fake_authorization, false, "Fake out authorization");

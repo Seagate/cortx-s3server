@@ -1084,6 +1084,8 @@ evbase_t* S3Option::get_eventbase() { return eventbase; }
 
 void S3Option::enable_fault_injection() { FLAGS_fault_injection = true; }
 
+void S3Option::enable_get_oid() { FLAGS_getoid = true; }
+
 void S3Option::enable_murmurhash_oid() { s3_enable_murmurhash_oid = true; }
 
 void S3Option::disable_murmurhash_oid() { s3_enable_murmurhash_oid = false; }
@@ -1095,3 +1097,5 @@ bool S3Option::is_s3_reuseport_enabled() { return s3_reuseport; }
 bool S3Option::is_mero_http_reuseport_enabled() { return mero_http_reuseport; }
 
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }
+
+bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }

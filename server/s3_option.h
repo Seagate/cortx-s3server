@@ -397,7 +397,9 @@ class S3Option {
 
   // Fault injection Option
   void enable_fault_injection();
+  void enable_get_oid();
   bool is_fi_enabled();
+  bool is_getoid_enabled();
   void enable_reuseport();
   void enable_murmurhash_oid();
   void disable_murmurhash_oid();
