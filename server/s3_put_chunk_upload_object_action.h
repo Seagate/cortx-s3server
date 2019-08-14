@@ -99,6 +99,7 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void fetch_object_info_status();
   void create_object();
   void create_object_failed();
+  void create_object_successful();
   void parse_x_amz_tagging_header(std::string content);
 
   void initiate_data_streaming();

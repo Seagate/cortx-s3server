@@ -84,13 +84,10 @@ class S3ObjectMetadata {
   struct m0_uint128 index_oid;
   struct m0_uint128 part_index_oid;
 
-  std::string mero_oid_u_hi_str;
-  std::string mero_oid_u_lo_str;
-  std::string mero_old_oid_u_hi_str;
-  std::string mero_old_oid_u_lo_str;
+  std::string mero_oid_str;
+  std::string mero_old_oid_str;
 
-  std::string mero_part_oid_u_hi_str;
-  std::string mero_part_oid_u_lo_str;
+  std::string mero_part_oid_str;
 
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
@@ -178,10 +175,6 @@ class S3ObjectMetadata {
   struct m0_uint128 get_part_index_oid() {
     return part_index_oid;
   }
-
-  // returns base64 encoded strings.
-  std::string get_oid_u_hi_str() { return mero_oid_u_hi_str; }
-  std::string get_oid_u_lo_str() { return mero_oid_u_lo_str; }
 
   std::string get_owner_name();
   std::string get_owner_id();

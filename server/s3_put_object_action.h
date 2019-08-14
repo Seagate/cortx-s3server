@@ -90,6 +90,7 @@ class S3PutObjectAction : public S3Action {
   void fetch_bucket_info_failed();
   void fetch_object_info_status();
   void create_object();
+  void create_object_successful();
   void create_object_failed();
 
   void initiate_data_streaming();

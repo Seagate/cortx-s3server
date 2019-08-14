@@ -32,11 +32,15 @@ def _extract_oid(json_keyval, bucket=True):
     sbyteorder = sys.byteorder
     oid_val = S3OID()
     if bucket:
-        dec_string_oid_hi = base64.b64decode(keyval['bucket_list_index_oid_u_hi'])
-        dec_string_oid_lo = base64.b64decode(keyval['bucket_list_index_oid_u_lo'])
+        string_oid = keyval['bucket_list_index_oid']
+        oid_list = string_oid.split("-")
+        dec_string_oid_hi = base64.b64decode(oid_list[0])
+        dec_string_oid_lo = base64.b64decode(oid_list[1])
     else:
-        dec_string_oid_hi = base64.b64decode(keyval['mero_object_list_index_oid_u_hi'])
-        dec_string_oid_lo = base64.b64decode(keyval['mero_object_list_index_oid_u_lo'])
+        string_oid = keyval['mero_object_list_index_oid']
+        oid_list = string_oid.split("-")
+        dec_string_oid_hi = base64.b64decode(oid_list[0])
+        dec_string_oid_lo = base64.b64decode(oid_list[1])
     int_oid_hi = int.from_bytes(dec_string_oid_hi,byteorder=sbyteorder)
     int_oid_lo = int.from_bytes(dec_string_oid_lo,byteorder=sbyteorder)
     oid_val.set_oid(hex(int_oid_hi), hex(int_oid_lo))
@@ -97,8 +101,10 @@ def _check_bucket_not_empty(bucket_record):
     default_empty_object_list_index_oid = "AAAAAAAAAAA="
     bucket_json_keyval = _find_keyval_json(bucket_record)
     bucket_keyval = json.loads(bucket_json_keyval)
-    mero_object_list_index_oid_u_hi = bucket_keyval['mero_object_list_index_oid_u_hi']
-    mero_object_list_index_oid_u_lo = bucket_keyval['mero_object_list_index_oid_u_lo']
+    string_oid = bucket_keyval['mero_object_list_index_oid']
+    oid_list = string_oid.split("-")
+    mero_object_list_index_oid_u_hi = base64.b64decode(oid_list[0])
+    mero_object_list_index_oid_u_lo = base64.b64decode(oid_list[1])
 
     if (mero_object_list_index_oid_u_hi == default_empty_object_list_index_oid and
         mero_object_list_index_oid_u_lo == default_empty_object_list_index_oid):

@@ -470,10 +470,9 @@ void S3DeleteBucketAction::remove_object_list_index() {
 void S3DeleteBucketAction::remove_object_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_log(S3_LOG_ERROR, request_id,
-         "Failed to delete index, this will be stale in Mero: u_hi(base64) = "
-         "[%s] and u_lo(base64) = [%s]\n",
-         bucket_metadata->get_object_list_index_oid_u_hi_str().c_str(),
-         bucket_metadata->get_object_list_index_oid_u_lo_str().c_str());
+         "Failed to delete index, this will be stale in Mero: %" SCNx64
+         " : %" SCNx64 "\n",
+         object_list_index_oid.u_hi, object_list_index_oid.u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
          S3_IEM_DELETE_IDX_FAIL_JSON);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {

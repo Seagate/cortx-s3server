@@ -81,8 +81,7 @@ class S3BucketMetadata {
 
   struct m0_uint128 multipart_index_oid;
   struct m0_uint128 object_list_index_oid;
-  std::string object_list_index_oid_u_hi_str;
-  std::string object_list_index_oid_u_lo_str;
+  std::string object_list_index_oid_str;
 
   std::shared_ptr<S3RequestObject> request;
 
@@ -134,8 +133,6 @@ class S3BucketMetadata {
 
   virtual struct m0_uint128 get_multipart_index_oid();
   virtual struct m0_uint128 get_object_list_index_oid();
-  std::string get_object_list_index_oid_u_hi_str();
-  std::string get_object_list_index_oid_u_lo_str();
   void set_multipart_index_oid(struct m0_uint128 id);
   void set_object_list_index_oid(struct m0_uint128 id);
   std::string get_object_list_index_name() { return "BUCKET/" + bucket_name; }

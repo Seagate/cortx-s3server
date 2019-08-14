@@ -610,7 +610,6 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->initiate_data_streaming();
   EXPECT_FALSE(action_under_test->clovis_write_in_progress);
   EXPECT_EQ(1, call_count_one);
-  EXPECT_EQ(1, action_under_test->number_of_rollback_tasks());
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
@@ -1124,7 +1123,6 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
   action_under_test->initiate_data_streaming();
   EXPECT_FALSE(action_under_test->clovis_write_in_progress);
   EXPECT_EQ(1, call_count_one);
-  EXPECT_EQ(1, action_under_test->number_of_rollback_tasks());
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestWithAuth,

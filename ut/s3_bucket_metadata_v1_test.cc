@@ -146,12 +146,6 @@ TEST_F(S3BucketMetadataV1Test, GetSetOIDsPolicyAndLocation) {
                 action_under_test->multipart_index_oid);
   EXPECT_OID_EQ(action_under_test->get_object_list_index_oid(),
                 action_under_test->object_list_index_oid);
-  action_under_test->object_list_index_oid_u_hi_str = "1234-1234-1234";
-  EXPECT_STREQ("1234-1234-1234",
-               action_under_test->get_object_list_index_oid_u_hi_str().c_str());
-  action_under_test->object_list_index_oid_u_lo_str = "232323-232323";
-  EXPECT_STREQ("232323-232323",
-               action_under_test->get_object_list_index_oid_u_lo_str().c_str());
 
   action_under_test->set_multipart_index_oid(oid);
   EXPECT_OID_EQ(action_under_test->multipart_index_oid, oid);
@@ -670,10 +664,9 @@ TEST_F(S3BucketMetadataV1Test, FromJson) {
       "{\"ACL\":\"PD94+Cg==\",\"Bucket-Name\":\"seagatebucket\",\"System-"
       "Defined\":{\"Date\":\"2016-10-18T16:01:00.000Z\",\"Owner-Account\":\"s3_"
       "test\",\"Owner-Account-id\":\"s3accountid\",\"Owner-User\":\"tester\",\""
-      "Owner-User-id\":\"s3userid\"},\"mero_multipart_index_oid_u_hi\":\""
-      "g1qTetGfvWk=\",\"mero_multipart_index_oid_u_lo\":\"lvH6Q65xFAI=\","
-      "\"mero_object_list_index_oid_u_hi\":\"AAAAAAAAAAA=\","
-      "\"mero_object_list_index_oid_u_lo\":\"AAAAAAAAAAA=\"}";
+      "Owner-User-id\":\"s3userid\"},\"mero_multipart_index_oid\":\""
+      "g1qTetGfvWk=-lvH6Q65xFAI=\","
+      "\"mero_object_list_index_oid\":\"AAAAAAAAAAA=-AAAAAAAAAAA=\"}";
 
   action_under_test->from_json(json_str);
   EXPECT_STREQ("seagatebucket", action_under_test->bucket_name.c_str());

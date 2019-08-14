@@ -227,10 +227,10 @@ void S3AbortMultipartAction::delete_object_failed() {
       (clovis_writer->get_state() == S3ClovisWriterOpState::failed)) {
     // todo: how do we have clean up of oid for such cases? background utility?
     s3_log(S3_LOG_ERROR, request_id,
-           "Failed to delete object, this will be stale in Mero: u_hi(base64) "
-           "= [%s] and u_lo(base64) = [%s]\n",
-           object_multipart_metadata->get_oid_u_hi_str().c_str(),
-           object_multipart_metadata->get_oid_u_lo_str().c_str());
+           "Failed to delete object, this will be stale in Mero: %" SCNx64
+           " : %" SCNx64 "\n",
+           object_multipart_metadata->get_oid().u_hi,
+           object_multipart_metadata->get_oid().u_lo);
     s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
            S3_IEM_DELETE_OBJ_FAIL_JSON);
   }

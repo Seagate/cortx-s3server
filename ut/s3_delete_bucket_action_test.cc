@@ -281,14 +281,16 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccess) {
   std::map<std::string, std::pair<int, std::string>> mymap;
   mymap.insert(std::make_pair(
       "file1",
-      std::make_pair(
-          0,
-          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file1\"}")));
+      std::make_pair(0,
+                     "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":"
+                     "\"file1\",\"mero_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\","
+                     "\"mero_part_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\"}")));
   mymap.insert(std::make_pair(
       "file2",
-      std::make_pair(
-          1,
-          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file2\"}")));
+      std::make_pair(1,
+                     "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":"
+                     "\"file2\",\"mero_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\","
+                     "\"mero_part_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\"}")));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
   action_under_test->bucket_metadata->set_multipart_index_oid(oid);
@@ -343,14 +345,16 @@ TEST_F(S3DeleteBucketActionTest,
   S3Option::get_instance()->set_clovis_idx_fetch_count(1);
   mymap.insert(std::make_pair(
       "file1",
-      std::make_pair(
-          0,
-          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file1\"}")));
+      std::make_pair(0,
+                     "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":"
+                     "\"file1\",\"mero_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\","
+                     "\"mero_part_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\"}")));
   mymap.insert(std::make_pair(
       "file2",
-      std::make_pair(
-          1,
-          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"file2\"}")));
+      std::make_pair(1,
+                     "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":"
+                     "\"file2\",\"mero_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\","
+                     "\"mero_part_oid\":\"AAAAAAAANmU=-AAAAAAAANmU=\"}")));
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
 

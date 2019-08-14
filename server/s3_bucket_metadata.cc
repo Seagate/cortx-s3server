@@ -26,6 +26,7 @@
 #include "s3_iem.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_common_utilities.h"
+#include "s3_m0_uint128_helper.h"
 
 S3BucketMetadata::S3BucketMetadata(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
@@ -105,14 +106,6 @@ struct m0_uint128 S3BucketMetadata::get_multipart_index_oid() {
 
 struct m0_uint128 S3BucketMetadata::get_object_list_index_oid() {
   return object_list_index_oid;
-}
-
-std::string S3BucketMetadata::get_object_list_index_oid_u_hi_str() {
-  return object_list_index_oid_u_hi_str;
-}
-
-std::string S3BucketMetadata::get_object_list_index_oid_u_lo_str() {
-  return object_list_index_oid_u_lo_str;
 }
 
 void S3BucketMetadata::set_multipart_index_oid(struct m0_uint128 oid) {
@@ -218,19 +211,11 @@ std::string S3BucketMetadata::to_json() {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
 
-  root["mero_object_list_index_oid_u_hi"] = object_list_index_oid_u_hi_str =
-      base64_encode((unsigned char const*)&object_list_index_oid.u_hi,
-                    sizeof(object_list_index_oid.u_hi));
-  root["mero_object_list_index_oid_u_lo"] = object_list_index_oid_u_lo_str =
-      base64_encode((unsigned char const*)&object_list_index_oid.u_lo,
-                    sizeof(object_list_index_oid.u_lo));
+  root["mero_object_list_index_oid"] = object_list_index_oid_str =
+      S3M0Uint128Helper::to_string(object_list_index_oid);
 
-  root["mero_multipart_index_oid_u_hi"] =
-      base64_encode((unsigned char const*)&multipart_index_oid.u_hi,
-                    sizeof(multipart_index_oid.u_hi));
-  root["mero_multipart_index_oid_u_lo"] =
-      base64_encode((unsigned char const*)&multipart_index_oid.u_lo,
-                    sizeof(multipart_index_oid.u_lo));
+  root["mero_multipart_index_oid"] =
+      S3M0Uint128Helper::to_string(multipart_index_oid);
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
@@ -261,34 +246,13 @@ int S3BucketMetadata::from_json(std::string content) {
   user_id = system_defined_attribute["Owner-User-id"];
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];
-  object_list_index_oid_u_hi_str =
-      newroot["mero_object_list_index_oid_u_hi"].asString();
-  object_list_index_oid_u_lo_str =
-      newroot["mero_object_list_index_oid_u_lo"].asString();
+  object_list_index_oid_str = newroot["mero_object_list_index_oid"].asString();
 
-  std::string dec_object_list_index_oid_u_hi_str =
-      base64_decode(object_list_index_oid_u_hi_str);
-  std::string dec_object_list_index_oid_u_lo_str =
-      base64_decode(object_list_index_oid_u_lo_str);
+  object_list_index_oid =
+      S3M0Uint128Helper::to_m0_uint128(object_list_index_oid_str);
 
-  std::string dec_multipart_index_oid_u_hi_str =
-      base64_decode(newroot["mero_multipart_index_oid_u_hi"].asString());
-  std::string dec_multipart_index_oid_u_lo_str =
-      base64_decode(newroot["mero_multipart_index_oid_u_lo"].asString());
-
-  memcpy((void*)&object_list_index_oid.u_hi,
-         dec_object_list_index_oid_u_hi_str.c_str(),
-         dec_object_list_index_oid_u_hi_str.length());
-  memcpy((void*)&object_list_index_oid.u_lo,
-         dec_object_list_index_oid_u_lo_str.c_str(),
-         dec_object_list_index_oid_u_lo_str.length());
-
-  memcpy((void*)&multipart_index_oid.u_hi,
-         dec_multipart_index_oid_u_hi_str.c_str(),
-         dec_multipart_index_oid_u_hi_str.length());
-  memcpy((void*)&multipart_index_oid.u_lo,
-         dec_multipart_index_oid_u_lo_str.c_str(),
-         dec_multipart_index_oid_u_lo_str.length());
+  multipart_index_oid = S3M0Uint128Helper::to_m0_uint128(
+      newroot["mero_multipart_index_oid"].asString());
 
   bucket_ACL.from_json((newroot["ACL"]).asString());
   bucket_policy = newroot["Policy"].asString();

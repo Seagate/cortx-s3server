@@ -167,9 +167,10 @@ void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   std::string oid_str =
       S3M0Uint128Helper::to_string(object_metadata->get_oid());
-
-  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-      request, s3_clovis_api);
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
   clovis_kv_writer->put_keyval(
       global_probable_dead_object_list_index_oid, oid_str,
       object_metadata->create_probable_delete_record(
@@ -227,11 +228,13 @@ void S3DeleteObjectAction::send_response_to_s3_client() {
 void S3DeleteObjectAction::cleanup() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
-  if ((object_metadata != nullptr) &&
+  if (object_metadata &&
       (object_metadata->get_state() == S3ObjectMetadataState::deleted)) {
     // process to delete object
-    clovis_writer = clovis_writer_factory->create_clovis_writer(
-        request, object_metadata->get_oid());
+    if (!clovis_writer) {
+      clovis_writer = clovis_writer_factory->create_clovis_writer(
+          request, object_metadata->get_oid());
+    }
     clovis_writer->delete_object(
         std::bind(
             &S3DeleteObjectAction::cleanup_oid_from_probable_dead_oid_list,
@@ -248,12 +251,12 @@ void S3DeleteObjectAction::cleanup() {
 
 void S3DeleteObjectAction::cleanup_oid_from_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (object_metadata != nullptr &&
+  if (object_metadata &&
       S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
     m0_uint128 old_oid = object_metadata->get_oid();
     if (old_oid.u_hi != 0ULL || old_oid.u_lo != 0ULL) {
       std::string oid_str = S3M0Uint128Helper::to_string(old_oid);
-      if (clovis_kv_writer == nullptr) {
+      if (!clovis_kv_writer) {
         clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
             request, s3_clovis_api);
       }

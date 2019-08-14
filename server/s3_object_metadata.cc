@@ -246,28 +246,17 @@ std::string S3ObjectMetadata::get_md5() {
 
 void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
   oid = id;
-
-  mero_oid_u_hi_str =
-      base64_encode((unsigned char const*)&oid.u_hi, sizeof(oid.u_hi));
-  mero_oid_u_lo_str =
-      base64_encode((unsigned char const*)&oid.u_lo, sizeof(oid.u_lo));
+  mero_oid_str = S3M0Uint128Helper::to_string(oid);
 }
 
 void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
   old_oid = id;
-
-  mero_old_oid_u_hi_str =
-      base64_encode((unsigned char const*)&old_oid.u_hi, sizeof(old_oid.u_hi));
-  mero_old_oid_u_lo_str =
-      base64_encode((unsigned char const*)&old_oid.u_lo, sizeof(old_oid.u_lo));
+  mero_old_oid_str = S3M0Uint128Helper::to_string(old_oid);
 }
 
 void S3ObjectMetadata::set_part_index_oid(struct m0_uint128 id) {
   part_index_oid = id;
-  mero_part_oid_u_hi_str = base64_encode(
-      (unsigned char const*)&part_index_oid.u_hi, sizeof(part_index_oid.u_hi));
-  mero_part_oid_u_lo_str = base64_encode(
-      (unsigned char const*)&part_index_oid.u_lo, sizeof(part_index_oid.u_lo));
+  mero_part_oid_str = S3M0Uint128Helper::to_string(part_index_oid);
 }
 
 void S3ObjectMetadata::add_system_attribute(std::string key, std::string val) {
@@ -553,15 +542,12 @@ std::string S3ObjectMetadata::to_json() {
   root["layout_id"] = layout_id;
   if (is_multipart) {
     root["Upload-ID"] = upload_id;
-    root["mero_part_oid_u_hi"] = mero_part_oid_u_hi_str;
-    root["mero_part_oid_u_lo"] = mero_part_oid_u_lo_str;
-    root["mero_old_oid_u_hi"] = mero_old_oid_u_hi_str;
-    root["mero_old_oid_u_lo"] = mero_old_oid_u_lo_str;
+    root["mero_part_oid"] = mero_part_oid_str;
+    root["mero_old_oid"] = mero_old_oid_str;
     root["old_layout_id"] = old_layout_id;
   }
 
-  root["mero_oid_u_hi"] = mero_oid_u_hi_str;
-  root["mero_oid_u_lo"] = mero_oid_u_lo_str;
+  root["mero_oid"] = mero_oid_str;
 
   for (auto sit : system_defined_attribute) {
     root["System-Defined"][sit.first] = sit.second;
@@ -623,19 +609,12 @@ int S3ObjectMetadata::from_json(std::string content) {
   object_name = newroot["Object-Name"].asString();
   object_key_uri = newroot["Object-URI"].asString();
   upload_id = newroot["Upload-ID"].asString();
-  mero_part_oid_u_hi_str = newroot["mero_part_oid_u_hi"].asString();
-  mero_part_oid_u_lo_str = newroot["mero_part_oid_u_lo"].asString();
+  mero_part_oid_str = newroot["mero_part_oid"].asString();
 
-  mero_oid_u_hi_str = newroot["mero_oid_u_hi"].asString();
-  mero_oid_u_lo_str = newroot["mero_oid_u_lo"].asString();
+  mero_oid_str = newroot["mero_oid"].asString();
   layout_id = newroot["layout_id"].asInt();
 
-  std::string dec_oid_u_hi_str = base64_decode(mero_oid_u_hi_str);
-  std::string dec_oid_u_lo_str = base64_decode(mero_oid_u_lo_str);
-
-  // std::string decoded_oid_str = base64_decode(oid_str);
-  memcpy((void*)&oid.u_hi, dec_oid_u_hi_str.c_str(), dec_oid_u_hi_str.length());
-  memcpy((void*)&oid.u_lo, dec_oid_u_lo_str.c_str(), dec_oid_u_lo_str.length());
+  oid = S3M0Uint128Helper::to_m0_uint128(mero_oid_str);
 
   //
   // Old oid is needed to remove the OID when the object already exists
@@ -644,23 +623,12 @@ int S3ObjectMetadata::from_json(std::string content) {
   // will be used in post complete action.
   //
   if (is_multipart) {
-    mero_old_oid_u_hi_str = newroot["mero_old_oid_u_hi"].asString();
-    mero_old_oid_u_lo_str = newroot["mero_old_oid_u_lo"].asString();
-    dec_oid_u_hi_str = base64_decode(mero_old_oid_u_hi_str);
-    dec_oid_u_lo_str = base64_decode(mero_old_oid_u_lo_str);
-    memcpy((void*)&old_oid.u_hi, dec_oid_u_hi_str.c_str(),
-           dec_oid_u_hi_str.length());
-    memcpy((void*)&old_oid.u_lo, dec_oid_u_lo_str.c_str(),
-           dec_oid_u_lo_str.length());
+    mero_old_oid_str = newroot["mero_old_oid"].asString();
+    old_oid = S3M0Uint128Helper::to_m0_uint128(mero_old_oid_str);
     old_layout_id = newroot["old_layout_id"].asInt();
   }
 
-  dec_oid_u_hi_str = base64_decode(mero_part_oid_u_hi_str);
-  dec_oid_u_lo_str = base64_decode(mero_part_oid_u_lo_str);
-  memcpy((void*)&part_index_oid.u_hi, dec_oid_u_hi_str.c_str(),
-         dec_oid_u_hi_str.length());
-  memcpy((void*)&part_index_oid.u_lo, dec_oid_u_lo_str.c_str(),
-         dec_oid_u_lo_str.length());
+  part_index_oid = S3M0Uint128Helper::to_m0_uint128(mero_part_oid_str);
 
   Json::Value::Members members = newroot["System-Defined"].getMemberNames();
   for (auto it : members) {
