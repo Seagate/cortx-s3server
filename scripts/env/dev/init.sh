@@ -9,10 +9,7 @@ hostnamectl set-hostname s3dev
 
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 
-rpm -qa git | grep git -q
-if [ $? != 0 ]; then
-  yum install -y git
-fi
+rpm -q git || yum install -y git
 
 if [ "$OS" = "\"rhel\"" ]; then
   # We need to checkout mero, so that we can run install-build-deps
@@ -52,25 +49,8 @@ if [ "$OS" = "\"rhel\"" ]; then
   #Got error -- Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
   yum install -y deltarpm
   $BASEDIR/../../../mero/scripts/install-build-deps
-  rpm -qa s3cmd | grep s3cmd -q
-  if [ $? == 0 ]; then
-    # S3 provisioning will take care of installing appropriate s3cmd version
-    rpm -e s3cmd
-  fi
+  rpm -q s3cmd && rpm -e s3cmd
   rm -rf mero
-fi
-
-rpm -qa python34 | grep python34 -q
-if [ $? != 0 ]; then
-  yum install -y python34
-fi
-
-python_version=`python3 --version`
-if [[ $python_version != *"Python 3.4"* ]]; then
-  cd /usr/bin/
-  unlink /usr/bin/python3
-  ln -s python3.4 /usr/bin/python3
-  cd -
 fi
 
 cd $BASEDIR

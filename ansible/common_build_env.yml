@@ -33,12 +33,12 @@
 - name: Install Python and dependencies
   yum: pkg={{item}} state=installed
   with_items:
-    - python34
-    - python34-setuptools
-    - python34-dateutil
-    - python34-devel
-    - python34-yaml
-    - python34-scripttest
+#   - python34
+#   - python34-setuptools
+#   - python34-dateutil
+#   - python34-devel
+#   - python34-yaml
+#   - python34-scripttest
     - python36
     - python36-setuptools
     - python36-dateutil
@@ -56,7 +56,7 @@
     - python-jsonschema
     - python-keyring
     - python-nose
-    - python34-nose
+    #- python34-nose
     - python36-nose
     - python-mock
     - python-wheel
@@ -64,7 +64,7 @@
     - python2-jmespath
     - python-futures
     - python2-s3transfer
-    - python34-mock
+    #- python34-mock
     - python34-ply
     - python36-mock
     - python36-ply
@@ -72,12 +72,12 @@
 - name: Install python modules required by S3 system tests and s3 (iam) auth cli
   yum: pkg={{item}} state=installed
   with_items:
-    - python34-wheel
-    - python34-jmespath
-    - python34-xmltodict
-    - python34-botocore
-    - python34-s3transfer
-    - python34-boto3
+    #- python34-wheel
+    #- python34-jmespath
+    #- python34-xmltodict
+    #- python34-botocore
+    #- python34-s3transfer
+    #- python34-boto3
     - python36-wheel
     - python36-jmespath
     - python36-xmltodict
