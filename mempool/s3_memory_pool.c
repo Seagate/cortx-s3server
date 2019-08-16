@@ -164,6 +164,7 @@ int mempool_create_with_shared_mem(
     func_mark_mem_free_callback_type mem_mark_free_space_func, int flags,
     MemoryPoolHandle *p_handle) {
   int rc = 0;
+  struct mempool *pool = NULL;
   if (mem_get_free_space_func == NULL || mem_mark_used_space_func == NULL ||
       mem_mark_free_space_func == NULL || p_handle == NULL) {
     return S3_MEMPOOL_INVALID_ARG;
@@ -179,7 +180,7 @@ int mempool_create_with_shared_mem(
     return rc;
   }
 
-  struct mempool *pool = (struct mempool *)*p_handle;
+  pool = (struct mempool *)*p_handle;
 
   pool->mem_get_free_space_func = mem_get_free_space_func;
   pool->mem_mark_used_space_func = mem_mark_used_space_func;

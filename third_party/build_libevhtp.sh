@@ -1,12 +1,14 @@
 #!/bin/sh -xe
 # Script to build libevhtp.
 # git repo: https://github.com/ellzey/libevhtp.git
-# branch: develop commit: a89d9b3f9fdf2ebef41893b3d5e4466f4b0ecfda
+# gerrit repo http://gerrit.mero.colo.seagate.com:8080/libevhtp
+# previous branch: develop commit: a89d9b3f9fdf2ebef41893b3d5e4466f4b0ecfda
+# current branch: develop commit: c84f68d258d07c4015820ceb87fd17decd054bfc
 
 cd libevhtp
 
 # Apply the libevhtp patch
-patch -f -p1 < ../../patches/libevhtp.patch
+patch -f -p1 < ../../patches/libevhtp-v1.2.11.patch
 
 INSTALL_DIR=`pwd`/s3_dist
 rm -rf $INSTALL_DIR

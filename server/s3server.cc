@@ -656,14 +656,14 @@ int main(int argc, char **argv) {
     fini_log();
     return rc;
   }
-
   event_set_max_read(g_option_instance->get_libevent_max_read_size());
   evhtp_set_low_watermark(g_option_instance->get_libevent_max_read_size());
 
   // Call this function before creating event base
   evthread_use_pthreads();
 
-  // Uncomment below api if we want to run libevent in debug mode
+  // Uncomment below apis if we want to run libevent in debug mode
+  // event_enable_debug_logging(EVENT_DBG_ALL);
   // event_enable_debug_mode();
 
   global_evbase_handle = event_base_new();
@@ -874,7 +874,10 @@ int main(int argc, char **argv) {
     }
   }
 
-  rc = event_base_loop(global_evbase_handle, 0);
+  // new flag in Libevent 2.1
+  // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()
+  // to keep looping even when there are no pending events
+  rc = event_base_loop(global_evbase_handle, EVLOOP_NO_EXIT_ON_EMPTY);
   if (rc == 0) {
     s3_log(S3_LOG_DEBUG, "", "Event base loop exited normally\n");
   } else {
@@ -892,6 +895,10 @@ int main(int argc, char **argv) {
 
   /* Clean-up */
   fini_clovis();
+  // free all globally held resources
+  // so that leak-check tools dont complain
+  // Added in libevent 2.1
+  libevent_global_shutdown();
 
   event_destroy_mempool();
 
