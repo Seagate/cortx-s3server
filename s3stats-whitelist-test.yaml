@@ -35,6 +35,8 @@
 - load_bucket_info
 - load_object_metadata
 - get_object_send_data
+- put_object_save_metadata
+- evhtp_paused
 ############################################################
 # Counter metrics
 - get_bucket_location_request_count

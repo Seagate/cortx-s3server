@@ -98,6 +98,7 @@ class RequestObject {
 
   S3Timer request_timer;
   S3Timer turn_around_time;
+  S3Timer paused_timer;
 
   bool is_client_connected;
   bool ignore_incoming_data;
@@ -232,6 +233,7 @@ class RequestObject {
       stop_client_read_timer();
       evhtp_obj->http_request_pause(ev_req);
       is_paused = true;
+      paused_timer.resume();
     }
   }
 
@@ -249,6 +251,7 @@ class RequestObject {
              ev_req->conn->sock);
       evhtp_obj->http_request_resume(ev_req);
       is_paused = false;
+      paused_timer.stop();
     }
   }
 

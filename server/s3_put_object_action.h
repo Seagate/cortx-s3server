@@ -49,8 +49,7 @@ class S3PutObjectAction : public S3Action {
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
   size_t total_data_to_stream;
-  S3Timer create_object_timer;
-  S3Timer write_content_timer;
+  S3Timer s3_timer;
   bool write_in_progress;
 
   std::map<std::string, std::string> probable_oid_list;

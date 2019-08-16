@@ -106,6 +106,11 @@ RequestObject::RequestObject(
 
   request_timer.start();
   turn_around_time.start();
+
+  // Prepare 'paused_timer' for multiple resume()-stop() cycles.
+  paused_timer.start();
+  paused_timer.stop();
+
   user_name = user_id = account_name = account_id = "";
   // For auth disabled, use some dummy user.
   if (g_option_instance->is_auth_disabled()) {
@@ -607,6 +612,9 @@ void RequestObject::send_response(int code, std::string body) {
   LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
   s3_stats_timing("total_request_time",
                   request_timer.elapsed_time_in_millisec());
+  const auto mss = paused_timer.elapsed_time_in_millisec();
+  LOG_PERF("evhtp_paused_ms", mss);
+  s3_stats_timing("evhtp_paused", mss);
 }
 
 void RequestObject::send_reply_start(int code) {
@@ -646,6 +654,10 @@ void RequestObject::send_reply_end() {
   LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
   s3_stats_timing("total_request_time",
                   request_timer.elapsed_time_in_millisec());
+  const auto mss = paused_timer.elapsed_time_in_millisec();
+  LOG_PERF("evhtp_paused_ms", mss);
+  s3_stats_timing("evhtp_paused", mss);
+
   if (reply_buffer != NULL) {
     evbuffer_free(reply_buffer);
   }

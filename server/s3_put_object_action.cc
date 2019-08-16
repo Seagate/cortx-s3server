@@ -260,7 +260,7 @@ void S3PutObjectAction::fetch_object_info_status() {
 
 void S3PutObjectAction::create_object() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  create_object_timer.start();
+  s3_timer.start();
   if (tried_count == 0) {
     clovis_writer =
         clovis_writer_factory->create_clovis_writer(request, new_object_oid);
@@ -289,26 +289,20 @@ void S3PutObjectAction::create_object_failed() {
   }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
     collision_detected();
-  } else if (clovis_writer->get_state() ==
-             S3ClovisWriterOpState::failed_to_launch) {
-    create_object_timer.stop();
-    LOG_PERF("create_object_failed_ms",
-             create_object_timer.elapsed_time_in_millisec());
-    s3_stats_timing("create_object_failed",
-                    create_object_timer.elapsed_time_in_millisec());
-    s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
   } else {
-    create_object_timer.stop();
-    LOG_PERF("create_object_failed_ms",
-             create_object_timer.elapsed_time_in_millisec());
-    s3_stats_timing("create_object_failed",
-                    create_object_timer.elapsed_time_in_millisec());
-    s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
+    s3_timer.stop();
+    const auto mss = s3_timer.elapsed_time_in_millisec();
+    LOG_PERF("create_object_failed_ms", mss);
+    s3_stats_timing("create_object_failed", mss);
 
-    // Any other error report failure.
-    set_s3_error("InternalError");
+    if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
+      s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
+      set_s3_error("ServiceUnavailable");
+    } else {
+      s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");
+      // Any other error report failure.
+      set_s3_error("InternalError");
+    }
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -429,11 +423,10 @@ void S3PutObjectAction::rollback_create_failed() {
 
 void S3PutObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  create_object_timer.stop();
-  LOG_PERF("create_object_successful_ms",
-           create_object_timer.elapsed_time_in_millisec());
-  s3_stats_timing("create_object_success",
-                  create_object_timer.elapsed_time_in_millisec());
+  s3_timer.stop();
+  const auto mss = s3_timer.elapsed_time_in_millisec();
+  LOG_PERF("create_object_successful_ms", mss);
+  s3_stats_timing("create_object_success", mss);
 
   // mark rollback point
   add_task_rollback(std::bind(&S3PutObjectAction::rollback_create, this));
@@ -542,6 +535,7 @@ void S3PutObjectAction::write_object_failed() {
 
 void S3PutObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_timer.start();
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
   // New Object or overwrite, create new metadata and release old.
@@ -636,6 +630,11 @@ void S3PutObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
              object_metadata->get_state() == S3ObjectMetadataState::saved) {
+    s3_timer.stop();
+    const auto mss = s3_timer.elapsed_time_in_millisec();
+    LOG_PERF("put_object_save_metadata_ms", mss);
+    s3_stats_timing("put_object_save_metadata", mss);
+
     request->set_out_header_value("ETag", clovis_writer->get_content_md5());
 
     if (S3Option::get_instance()->is_getoid_enabled()) {

@@ -261,3 +261,17 @@ void s3_stats_fini() {
     g_stats_instance = NULL;
   }
 }
+
+int s3_stats_timing(const std::string& key, size_t value, int retry,
+                    float sample_rate) {
+
+  if (!g_option_instance->is_stats_enabled()) {
+    return 0;
+  }
+  if (value == (size_t)(-1)) {
+    s3_log(S3_LOG_ERROR, "", "Invalid time value for key %s\n", key.c_str());
+    errno = EINVAL;
+    return -1;
+  }
+  return g_stats_instance->timing(key, value, retry, sample_rate);
+}

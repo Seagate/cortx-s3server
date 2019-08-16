@@ -63,10 +63,13 @@
 - read_object_data_failed
 # Time taken for authentication
 - check_authentication
-# S3GetObjectAction time metrics
+# Time metrics for several actions
 - load_bucket_info
 - load_object_metadata
 - get_object_send_data
+- put_object_save_metadata
+# The metric shows a time when HTTP-PUT handler does not accept data from a client.
+- evhtp_paused
 ############################################################
 # Counter metrics
 - get_bucket_location_request_count

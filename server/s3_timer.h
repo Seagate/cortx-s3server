@@ -50,7 +50,7 @@ class S3Timer {
 
   std::chrono::time_point<Clock> start_time;
   std::chrono::time_point<Clock> end_time;
-  Duration difference;
+  Duration duration;
   S3TimerState state = S3TimerState::unknown;
 
  public:
@@ -58,14 +58,14 @@ class S3Timer {
   void start() {
     start_time = Clock::now();
     state = S3TimerState::started;
-    difference = Duration();
+    duration = Duration(0);
   }
 
   void stop() {
     if (state == S3TimerState::started) {
       end_time = Clock::now();
       state = S3TimerState::stopped;
-      difference += end_time - start_time;
+      duration += end_time - start_time;
     } else {
       state = S3TimerState::unknown;
     }
@@ -80,17 +80,17 @@ class S3Timer {
     }
   }
 
-  std::chrono::milliseconds::rep elapsed_time_in_millisec() {
+  std::chrono::milliseconds::rep elapsed_time_in_millisec() const {
     if (state == S3TimerState::stopped) {
-      return std::chrono::duration_cast<std::chrono::milliseconds>(difference)
+      return std::chrono::duration_cast<std::chrono::milliseconds>(duration)
           .count();
     }
     return -1;
   }
 
-  std::chrono::nanoseconds::rep elapsed_time_in_nanosec() {
+  std::chrono::nanoseconds::rep elapsed_time_in_nanosec() const {
     if (state == S3TimerState::stopped) {
-      return std::chrono::duration_cast<std::chrono::nanoseconds>(difference)
+      return std::chrono::duration_cast<std::chrono::nanoseconds>(duration)
           .count();
     }
     return -1;

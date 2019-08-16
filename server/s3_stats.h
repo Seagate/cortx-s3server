@@ -146,13 +146,8 @@ static inline int s3_stats_count(const std::string& key, int value,
   return g_stats_instance->count(key, value, retry, sample_rate);
 }
 
-static inline int s3_stats_timing(const std::string& key, int value,
-                                  int retry = 1, float sample_rate = 1.0) {
-  if (!g_option_instance->is_stats_enabled()) {
-    return 0;
-  }
-  return g_stats_instance->timing(key, value, retry, sample_rate);
-}
+int s3_stats_timing(const std::string& key, size_t value, int retry = 1,
+                    float sample_rate = 1.0);
 
 static inline int s3_stats_set_gauge(const std::string& key, int value,
                                      int retry = 1) {
