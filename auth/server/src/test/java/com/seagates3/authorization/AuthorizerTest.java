@@ -101,7 +101,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse actualServerResponse = null;
     requestBody = new TreeMap<>();
     requestBody.put(requestHeaderName, "true");
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
                  actualServerResponse.getResponseStatus());
@@ -114,7 +113,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     String acl = "";
     requestBody = new TreeMap<>();
     requestBody.put("Validate-ACL", acl);
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
@@ -138,7 +136,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("Validate-ACL", acl_invalid_permission);
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
@@ -167,7 +164,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("Validate-ACL", acl_malformed);
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
@@ -188,7 +184,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("Validate-ACL", acl_missing_owner);
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
@@ -208,7 +203,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("Validate-ACL", acl_invalid_nograntee);
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
@@ -231,7 +225,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</Grant></AccessControlList>" + "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("Validate-ACL", acl_no_permission);
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
@@ -262,7 +255,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
              "kirungeb")
         .thenReturn(true);
 
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
                  actualServerResponse.getResponseStatus());
@@ -294,9 +286,17 @@ import io.netty.handler.codec.http.HttpResponseStatus;
              "kirungeb")
         .thenReturn(false);
 
-    authorizer.authorize(requestor, requestBody);
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  @Test public void authorize_acl_requestacl_check() throws Exception {
+    ServerResponse actualServerResponse = null;
+    requestBody = new TreeMap<>();
+    requestBody.put("Request-ACL", "true");
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
                  actualServerResponse.getResponseStatus());
   }
 }

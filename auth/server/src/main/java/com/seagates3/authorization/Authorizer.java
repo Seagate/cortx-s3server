@@ -91,7 +91,7 @@ public class Authorizer {
             if (!accountPermissionMap.isEmpty()) {  // permission headers
                                                     // present
               acl = new ACLCreator().createAclFromPermissionHeaders(
-                  accountPermissionMap);
+                  requestor, accountPermissionMap);
             }
             /*
                  * else if (cannedAclSpecified) { serverResponse = }

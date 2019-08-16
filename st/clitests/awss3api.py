@@ -157,3 +157,18 @@ class AwsTest(S3PyCliTest):
         self.credentials = " --access_key=" + access_key +\
                            " --secret_key=" + secret_key
         return self
+
+    def put_object_with_permission_headers(self, bucket_name, object_name, permission_header, permission_header_value):
+        cmd = "aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + object_name +  " --" + permission_header + " " + permission_header_value
+        self.with_cli(cmd)
+        return self
+
+    def create_bucket_with_permission_headers(self, bucket_name, permission_header, permission_header_value):
+        cmd = "aws s3api" + " create-bucket " + "--bucket " + bucket_name +  " --" + permission_header + " " + permission_header_value
+        self.with_cli(cmd)
+        return self
+
+    def put_object_acl(self, bucket_name, object_name,permission_header, permission_header_value):
+        cmd = "aws s3api " + "put-object-acl " + "--bucket " + bucket_name + " --key " + object_name +  " --" + permission_header + " " + permission_header_value
+        self.with_cli(cmd)
+        return self

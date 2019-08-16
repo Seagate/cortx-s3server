@@ -436,3 +436,12 @@ class AuthTest(PyCliTest):
         print(cmd)
         self.with_cli(cmd)
         return self
+
+    @staticmethod
+    def get_response_elements(response):
+        response_elements = {}
+        key_pairs = response.split(',')
+        for key_pair in key_pairs:
+            tokens = key_pair.split('=')
+            response_elements[tokens[0].strip()] = tokens[1].strip()
+        return response_elements

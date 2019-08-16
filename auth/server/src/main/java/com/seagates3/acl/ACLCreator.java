@@ -62,29 +62,6 @@ class ACLCreator {
     actualPermissionsMap.put("x-amz-grant-write-acp", "WRITE_ACP");
     actualPermissionsMap.put("x-amz-grant-full-control", "FULL_CONTROL");
   }
-  /*
-   * public ServerResponse createCannedAcl(Requestor requestor, Map<String,
-   * String> requestBody, String defaultACP) { AuthorizationResponseGenerator
-   * responseGenerator = new AuthorizationResponseGenerator(); ServerResponse
-   * response = null; String cannedAcl = requestBody .get("x-amz-acl");
-   * String permission = null; switch (cannedAcl) { case "private":
-   * permission = "FULL_CONTROL"; break; case "public-read": permission = "";
-   * break; } try { if (defaultACP == null) { defaultACP = new
-   * String(Files.readAllBytes( Paths.get(AuthServerConfig.authResourceDir +
-   * AuthServerConfig.DEFAULT_ACL_XML))); } AccessControlPolicy acp = new
-   * AccessControlPolicy(defaultACP);
-   * acp.initACL(requestor.getAccount().getCanonicalId(),
-   * requestor.getAccount().getName(), permission); response =
-   * responseGenerator .generateAuthorizationResponse(requestor,
-   * acp.getXml()); } catch (ParserConfigurationException | SAXException |
-   * IOException e) { LOGGER.error("Error while initializing ACL"); response
-   * = responseGenerator.internalServerError(); } catch (TransformerException
-   * e) { LOGGER.error("Error while generating the Authorization Response");
-   * response = responseGenerator.internalServerError(); } catch
-   * (GrantListFullException e) {
-   * LOGGER.error("Error while adding grantee inside the ACL"); response =
-   * responseGenerator.internalServerError(); } return response; }
-   */
 
   /**
    * Below method created default acl
@@ -124,10 +101,12 @@ class ACLCreator {
    */
  public
   String createAclFromPermissionHeaders(
-      Map<String, List<Account>> accountPermissionMap)
+      Requestor requestor, Map<String, List<Account>> accountPermissionMap)
       throws GrantListFullException,
       IOException, ParserConfigurationException, SAXException,
       TransformerException {
+    Owner owner = new Owner(requestor.getAccount().getCanonicalId(),
+                            requestor.getAccount().getName());
     AccessControlList newAcl = new AccessControlList();
     AccessControlPolicy acp =
         new AccessControlPolicy(checkAndCreateDefaultAcp());
@@ -141,11 +120,14 @@ class ACLCreator {
                     " with permission - " + permission);
       }
     }
+    if ("Owner_ID".equals(acp.getOwner().getCanonicalId())) {
+      acp.setOwner(owner);
+    }
     acp.setAccessControlList(newAcl);
     return acp.getXml();
   }
 
- private
+ protected
   String checkAndCreateDefaultAcp() throws IOException,
       ParserConfigurationException, SAXException, GrantListFullException {
     if (defaultACP == null) {
@@ -156,3 +138,4 @@ class ACLCreator {
     return defaultACP;
   }
 }
+

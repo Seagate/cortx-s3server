@@ -22,16 +22,6 @@ def before_all():
     print("Configuring LDAP")
     S3PyCliTest('Before_all').before_all()
 
-def get_response_elements(response):
-    response_elements = {}
-    key_pairs = response.split(',')
-
-    for key_pair in key_pairs:
-        tokens = key_pair.split('=')
-        response_elements[tokens[0].strip()] = tokens[1].strip()
-
-    return response_elements
-
 # Run before all to setup the test environment.
 before_all()
 
@@ -43,7 +33,7 @@ account_args = {'AccountName': 'secaccount', 'Email': 'secaccount@seagate.com', 
 account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
 result = AuthTest(test_msg).create_account(**account_args).execute_test()
 result.command_should_match_pattern(account_response_pattern)
-account_response_elements = get_response_elements(result.status.stdout)
+account_response_elements = AuthTest.get_response_elements(result.status.stdout)
 
 secondary_access_key = account_response_elements['AccessKeyId']
 secondary_secret_key = account_response_elements['SecretKey']
@@ -159,3 +149,45 @@ S3ClientConfig.access_key_id = secondary_access_key
 S3ClientConfig.secret_key = secondary_secret_key
 AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
+
+#*************** Test Case 1 ***************
+# TODO Enable below tests once permission header feature available
+#test_msg = "Create account testAccount"
+#account_args = {'AccountName': 'testAccount', 'Email': 'testAccount@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': "ldapadmin"}
+#account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+#result = AuthTest(test_msg).create_account(**account_args).execute_test()
+#result.command_should_match_pattern(account_response_pattern)
+#account_response_elements = AuthTest.get_response_elements(result.status.stdout)
+#testAccount_access_key = account_response_elements['AccessKeyId']
+#testAccount_secret_key = account_response_elements['SecretKey']
+#testAccount_cannonicalid = account_response_elements['CanonicalId']
+#testAccount_email = "testAccount@seagate.com"
+#
+#AwsTest('Aws can create bucket').create_bucket("putobjacltestbucket").execute_test().command_is_successful()
+#cannonical_id = "id=" + testAccount_cannonicalid
+#AwsTest('Aws can upload 3k file with tags').put_object_with_permission_headers("putobjacltestbucket", "3kfile", "grant-read" , cannonical_id ).execute_test().command_is_successful()
+#result=AwsTest('Aws can get object acl').get_object_acl("putobjacltestbucket", "3kfile").execute_test().command_is_successful().command_response_should_have("testAccount")
+#AwsTest('Aws can delete object').delete_object("putobjacltestbucket","3kfile").execute_test().command_is_successful()
+#AwsTest('Aws can delete bucket').delete_bucket("putobjacltestbucket").execute_test().command_is_successful()
+#
+#
+##***************Test Case 2 ******************
+#cannonical_id = "id=" + testAccount_cannonicalid
+#AwsTest('Aws can create bucket').create_bucket_with_permission_headers("authorizationtestingbucket" , "grant-write", cannonical_id).execute_test().command_is_successful()
+#os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+#AwsTest('Aws can upload 3k file with tags').put_object("authorizationtestingbucket", "3kfile" ).execute_test().command_is_successful()
+#AwsTest('Aws can delete object').delete_object("authorizationtestingbucket","3kfile").execute_test().command_is_successful()
+#del os.environ["AWS_ACCESS_KEY_ID"]
+#del os.environ["AWS_SECRET_ACCESS_KEY"]
+#AwsTest('Aws can delete bucket').delete_bucket("authorizationtestingbucket").execute_test().command_is_successful()
+#
+##**************** Test Case 3 ************
+#
+#AwsTest('Aws can create bucket').create_bucket("authbucket").execute_test().command_is_successful()
+#cannonical_id = "id=" + testAccount_cannonicalid
+#AwsTest('Aws can upload 3k file with tags').put_object_with_permission_headers("authbucket", "3kfile", "grant-write-acp" , cannonical_id ).execute_test().command_is_successful()
+#os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+#AwsTest('Aws can put acl').put_object_acl("authbucket", "3kfile", "grant-read" , cannonical_id ).execute_test().command_is_successful()
+#del os.environ["AWS_ACCESS_KEY_ID"]
