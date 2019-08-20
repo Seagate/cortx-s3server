@@ -37,11 +37,11 @@ import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
 import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
-import java.io.File;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -52,6 +52,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.internal.WhiteboxImpl;
 
+import com.seagates3.acl.ACLValidation;
 import com.seagates3.authentication.ClientRequestParser;
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.authentication.SignatureValidator;
@@ -82,20 +83,18 @@ import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.service.RequestorService;
+import com.seagates3.util.BinaryUtil;
 
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @RunWith(PowerMockRunner.class) @MockPolicy(Slf4jMockPolicy.class)
-    @PowerMockIgnore({"javax.management.*"})
-    @PrepareForTest({IAMResourceMapper.class,
-                     IAMController.class,
-                     RequestorService.class,
-                     ClientRequestParser.class,
-                     Authorizer.class,
-                     AuthenticationResponseGenerator.class,
-                     AuthServerConfig.class,
-                     DAODispatcher.class}) public class IAMControllerTest {
+    @PowerMockIgnore({"javax.management.*"}) @PrepareForTest(
+        {IAMResourceMapper.class, IAMController.class,
+         RequestorService.class,  ClientRequestParser.class,
+         Authorizer.class,        AuthenticationResponseGenerator.class,
+         AuthServerConfig.class,  DAODispatcher.class,
+         ACLValidation.class}) public class IAMControllerTest {
 
  private
   IAMController controller;
@@ -113,12 +112,15 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   ClientRequestToken clientRequestToken;
  private
   SignatureValidator signatureValidator;
+ private
+  String acl;
   @Before public void setUp() throws Exception {
     mockStatic(IAMResourceMapper.class);
     mockStatic(RequestorService.class);
     mockStatic(ClientRequestParser.class);
     mockStatic(AuthServerConfig.class);
     mockStatic(ClientRequestToken.class);
+    mockStatic(ACLValidation.class);
 
     resourceMap = mock(ResourceMap.class);
     httpRequest = mock(FullHttpRequest.class);
@@ -129,6 +131,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
     controller = new IAMController();
     requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+  }
+
+  @BeforeClass public static void setUpBeforeClass() throws Exception {
+    AuthServerConfig.authResourceDir = "../resources";
   }
 
   @Test public void serveTest_Action_CreateAccount() throws Exception {
@@ -217,10 +223,21 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "Result><ResponseMetadata><RequestId>0000</RequestId></" +
         "ResponseMetadata>" + "</AuthorizeUserResponse>";
 
+    acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+          "<AccessControlPolicy " +
+          "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" +
+          " <Owner>\n" + "  <ID>MH12</ID>\n" +
+          "  <DisplayName>Owner_Name</DisplayName>\n" + " </Owner>\n" +
+          " <AccessControlList>\n" + "  <Grant>\n" + "   <Grantee " +
+          "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+          "      xsi:type=\"CanonicalUser\">\n" + "    <ID>MH12</ID>\n" +
+          "    <DisplayName>Grantee_Name</DisplayName>\n" + "   </Grantee>\n" +
+          "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+          " </AccessControlList>\n" + "</AccessControlPolicy>\n";
+
     requestBody.put("Action", "AuthorizeUser");
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
     Account account = mock(Account.class);
-    File file = mock(File.class);
     when(AuthServerConfig.getReqId()).thenReturn("0000");
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
@@ -230,12 +247,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
     when(account.getId()).thenReturn("NS5144");
     when(account.getName()).thenReturn("jack");
+    when(account.getCanonicalId()).thenReturn("MH12");
     when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
-    when(file.exists()).thenReturn(Boolean.FALSE);
-    whenNew(File.class)
-        .withArguments("/tmp/seagate_s3_user_unauthorized")
-        .thenReturn(file);
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/seagatebucket-aj01/dir-1/abc1");
+    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
 
     ServerResponse response = controller.serve(httpRequest, requestBody);
 
@@ -329,6 +346,49 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertThat(response.getResponseBody(), containsString("Invalid Argument"));
     assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
   }
+
+  @Test public void serveTest_ValidateACL() throws Exception {
+    String expectedResponseBody = "Action successful";
+
+    acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+          "<AccessControlPolicy " +
+          "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" +
+          " <Owner>\n" + "  <ID>MH12</ID>\n" +
+          "  <DisplayName>tylerdurden</DisplayName>\n" + " </Owner>\n" +
+          " <AccessControlList>\n" + "  <Grant>\n" + "   <Grantee " +
+          "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+          "      xsi:type=\"CanonicalUser\">\n" + "    <ID>MH12</ID>\n" +
+          "    <DisplayName>tylerdurden</DisplayName>\n" + "   </Grantee>\n" +
+          "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+          " </AccessControlList>\n" + "</AccessControlPolicy>\n";
+
+    requestBody.put("Action", "ValidateACL");
+    ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
+    Account account = mock(Account.class);
+    when(AuthServerConfig.getReqId()).thenReturn("0000");
+    when(ClientRequestParser.parse(httpRequest, requestBody))
+        .thenReturn(clientRequestToken);
+    when(requestor.getId()).thenReturn("MH12");
+    when(requestor.getName()).thenReturn("tylerdurden");
+    when(requestor.getAccount()).thenReturn(account);
+
+    when(account.getId()).thenReturn("MH12");
+    when(account.getName()).thenReturn("tylerdurden");
+    when(account.getCanonicalId()).thenReturn("MH12");
+    when(RequestorService.getRequestor(clientRequestToken))
+        .thenReturn(requestor);
+    PowerMockito.when(ACLValidation.class, "checkIdExists", "MH12",
+                      "tylerdurden").thenReturn(true);
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/seagatebucket-aj01/dir-1/abc1");
+    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
+
+    ServerResponse response = controller.serve(httpRequest, requestBody);
+
+    assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+    assertEquals(expectedResponseBody, response.getResponseBody());
+  }
+
   @Test public void serveTest_ValidV2Request() throws Exception {
     requestBody.put("Action", "AuthenticateUser");
     requestBody.put("host", "s3.seagate.com");

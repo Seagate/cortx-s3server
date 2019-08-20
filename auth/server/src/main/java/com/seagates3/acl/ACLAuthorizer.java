@@ -32,6 +32,7 @@ import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.ACLPermissionUtil;
+import com.seagates3.util.BinaryUtil;
 
 import io.netty.handler.codec.http.HttpMethod;
 
@@ -57,16 +58,15 @@ class ACLAuthorizer {
   boolean isAuthorized(Requestor requestor, Map<String, String> requestBody)
       throws ParserConfigurationException,
       SAXException, IOException, BadRequestException, GrantListFullException {
-
-    // TODO Temporary implementation. Need to check the scenario where a
-    // create-bucket is requested which will not have ACL initially
-    if (requestBody.get("acp") == null) {
+    String encodedACL = requestBody.get("ACL");
+    if (encodedACL == null || encodedACL.isEmpty()) {
       String ex = "Bad request. Resource ACL absent in the request.";
       LOGGER.error(ex);
       throw new BadRequestException(ex);
     }
 
-    AccessControlPolicy acl = new AccessControlPolicy(requestBody.get("acp"));
+    AccessControlPolicy acl =
+        new AccessControlPolicy(BinaryUtil.base64DecodeString(encodedACL));
     String method = requestBody.get("Method");
     if (method == null || method.isEmpty()) {
       String ex = "Invalid HTTP method: " + method;
@@ -95,12 +95,17 @@ class ACLAuthorizer {
       String permissionGrant = grant.getPermission();
       if ("FULL_CONTROL".equals(permissionGrant) ||
           requiredPermission.equals(permissionGrant)) {
+        LOGGER.debug("The resource ACL grants permission for the requestor.");
         return true;
       } else if (canonicalId.equals(acl.getOwner().getCanonicalId()) &&
                  ("READ_ACP".equals(requiredPermission) ||
                   "WRITE_ACP".equals(requiredPermission))) {
+        LOGGER.debug("The resource ACL grants permission for the requestor.");
         return true;
       } else {
+        LOGGER.info(
+            "Required permission for the requestor not present in resource " +
+            "ACL");
         return false;
       }
 

@@ -172,7 +172,13 @@ class IAMController {
                     requestor.getAccount().getName());
         serverResponse = new Authorizer().authorize(requestor, requestBody);
         return serverResponse;
+      } else if (requestAction.equals("ValidateACL")) {
+        LOGGER.info("Validating ACL: " + requestor.getName() + " account: " +
+                    requestor.getAccount().getName());
+        serverResponse = new Authorizer().validateACL(requestor, requestBody);
+        return serverResponse;
       }
+
       LOGGER.debug("Calling signature validator.");
 
       perf.startClock();

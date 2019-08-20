@@ -36,6 +36,7 @@ import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
+import com.seagates3.util.BinaryUtil;
 
 public
 class ACLAuthorizerTest {
@@ -81,12 +82,24 @@ class ACLAuthorizerTest {
       "   <Permission>READ</Permission>" + "  </Grant>" +
       " </AccessControlList>" + "</AccessControlPolicy>";
 
+  static String invalidAcpXmlString =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + " <Owner>" +
+      "  <ID>id6</ID>" + "  <DisplayName>S3test</DisplayName>" + " </Owner>" +
+      "  <Owner>" + "  <ID>Int1</ID>" + "  <DisplayName>String</DisplayName>" +
+      " </Owner>" + " <AccessControlList>" + "  <Grant>" +
+      "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
+      " xsi:type=\"CanonicalUser\">" + "    <ID>id1</ID>" +
+      "    <DisplayName>user1</DisplayName>" + "   </Grantee>" +
+      "   <Permission>READ</Permission>" + "  </Grant>" +
+      " </AccessControlList>" + "</AccessControlPolicy>";
+
   @BeforeClass public static void setUpBeforeClass() throws Exception {
     acp = new AccessControlPolicy(acpXmlString);
   }
 
   @Before public void setUp() throws Exception {
-    requestBody.put("acp", acpXmlString);
+    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acpXmlString));
   }
 
   // READ permission should grant GET access.
@@ -853,7 +866,7 @@ class ACLAuthorizerTest {
     assertEquals(false, result);
   }
 
-  // Throw BadRequestException for empty / null URI
+  // Throw BadRequestException for null URI
   @Test(
       expected =
           BadRequestException
@@ -862,7 +875,55 @@ class ACLAuthorizerTest {
       SAXException, IOException, BadRequestException, GrantListFullException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
-    requestBody.put("acp", null);
+    requestBody.put("ACL", null);
+    Account acc = new Account();
+    acc.setCanonicalId("id1");
+    requestor.setAccount(acc);
+    new ACLAuthorizer().isAuthorized(requestor, requestBody);
+  }
+
+  // Throw BadRequestException for empty URI
+  @Test(
+      expected =
+          BadRequestException
+              .class) public void testIsAuthorized_BadRequestException_Empty_ACP()
+      throws ParserConfigurationException,
+      SAXException, IOException, BadRequestException, GrantListFullException {
+    acl = acp.getAccessControlList();
+    requestBody.put("Method", "GET");
+    requestBody.put("ACL", "");
+    Account acc = new Account();
+    acc.setCanonicalId("id1");
+    requestor.setAccount(acc);
+    new ACLAuthorizer().isAuthorized(requestor, requestBody);
+  }
+
+  // Throw BadRequestException for empty URI
+  @Test(
+      expected =
+          SAXException
+              .class) public void testIsAuthorized_SAXException_InvalidSpace_ACP()
+      throws ParserConfigurationException,
+      SAXException, IOException, BadRequestException, GrantListFullException {
+    acl = acp.getAccessControlList();
+    requestBody.put("Method", "GET");
+    requestBody.put("ACL", " ");
+    Account acc = new Account();
+    acc.setCanonicalId("id1");
+    requestor.setAccount(acc);
+    new ACLAuthorizer().isAuthorized(requestor, requestBody);
+  }
+
+  // Throw BadRequestException for empty URI
+  @Test(expected =
+            SAXException
+                .class) public void testIsAuthorized_SAXException_Invalid_ACP()
+      throws ParserConfigurationException,
+      SAXException, IOException, BadRequestException, GrantListFullException {
+    acl = acp.getAccessControlList();
+    requestBody.put("Method", "GET");
+    requestBody.put("ACL",
+                    BinaryUtil.encodeToBase64String(invalidAcpXmlString));
     Account acc = new Account();
     acc.setCanonicalId("id1");
     requestor.setAccount(acc);

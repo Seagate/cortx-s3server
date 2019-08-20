@@ -64,7 +64,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
    * Below test will succeed if valid acl present in request body
    */
   @Test public void testValidateAclRequest_aclInRequestBody_Success() {
-    requestBody.put("acp", "dummy_xml");
+    requestBody.put("ACL", "dummy_xml");
     ServerResponse response =
         spyValidator.validateAclRequest(requestBody, accountPermissionMap);
     Assert.assertNull(response.getResponseStatus());
