@@ -36,11 +36,11 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 
 public
-class AclRequestValidator {
+class ACLRequestValidator {
 
  protected
   final Logger LOGGER =
-      LoggerFactory.getLogger(AclRequestValidator.class.getName());
+      LoggerFactory.getLogger(ACLRequestValidator.class.getName());
  protected
   AuthorizationResponseGenerator responseGenerator;
  protected
@@ -49,7 +49,7 @@ class AclRequestValidator {
   static final Set<String> cannedAclSet = new HashSet<>();
 
  public
-  AclRequestValidator() {
+  ACLRequestValidator() {
     responseGenerator = new AuthorizationResponseGenerator();
     initializePermissionHeadersSet();
     initializeCannedAclSet();
@@ -95,7 +95,7 @@ class AclRequestValidator {
       Map<String, List<Account>> accountPermissionMap) {
     int isCannedAclPresent = 0, isPermissionHeaderPresent = 0,
         isAclPresentInRequestBody = 0;
-    ServerResponse response = null;
+    ServerResponse response = new ServerResponse();
     // Check if canned ACL is present in request
     if (requestBody.get("x-amz-acl") != null) {
       isCannedAclPresent = 1;
@@ -108,8 +108,7 @@ class AclRequestValidator {
         requestBody.get("x-amz-grant-full-control") != null) {
       isPermissionHeaderPresent = 1;
     }
-    // TODO Check for the attribute key here
-    if (requestBody.get("acp") != null) {
+    if (requestBody.get("ACL") != null) {
       isAclPresentInRequestBody = 1;
     }
     if ((isCannedAclPresent + isPermissionHeaderPresent +
@@ -119,7 +118,8 @@ class AclRequestValidator {
           response.getResponseStatus() +
           " : Request failed: More than one options are used in request");
     }
-    if (response == null) {
+    if (response.getResponseBody() == null ||
+        response.getResponseStatus() == null) {
       if (isPermissionHeaderPresent == 1) {
         isValidPermissionHeader(requestBody, response, accountPermissionMap);
       } else if (isCannedAclPresent == 1) {
@@ -190,28 +190,45 @@ class AclRequestValidator {
     boolean isValid = true;
     AccountImpl accountImpl = new AccountImpl();
     String granteeDetails = grantee.substring(grantee.indexOf('=') + 1);
+    String actualGrantee = grantee.substring(0, grantee.indexOf('='));
     Account account = null;
     try {
-      if (grantee.contains("emailaddress=")) {
-        account = accountImpl.findByEmailAddress(granteeDetails);
-      } else if (grantee.contains("id=")) {
-        account = accountImpl.findByCanonicalID(granteeDetails);
-      }
-      if (!account.exists()) {
-        if (grantee.contains("emailaddress=")) {
-          response = responseGenerator.unresolvableGrantByEmailAddress();
-        } else if (grantee.contains("id=")) {
-          response = responseGenerator.invalidArgument("Invalid id");
+      if (granteeDetails != null && !granteeDetails.trim().isEmpty()) {
+        if (actualGrantee.equals("emailaddress")) {
+          account = accountImpl.findByEmailAddress(granteeDetails);
+        } else if (actualGrantee.equals("id")) {
+          account = accountImpl.findByCanonicalID(granteeDetails);
         }
+        // account will be null when neither email nor canonical id specified
+        if (account == null || !account.exists()) {
+          setInvalidResponse(actualGrantee, response);
+          isValid = false;
+        } else {  // update accountPermissionMap
+          updateAccountPermissionMap(accountPermissionMap, permission, account);
+        }
+      } else {
+        setInvalidResponse(actualGrantee, response);
         isValid = false;
-      } else {  // update accountPermissionMap
-        updateAccountPermissionMap(accountPermissionMap, permission, account);
       }
     }
     catch (DataAccessException e) {
       isValid = false;
     }
     return isValid;
+  }
+
+ private
+  void setInvalidResponse(String grantee, ServerResponse response) {
+    ServerResponse actualResponse = null;
+    if (grantee.equals("emailaddress")) {
+      actualResponse = responseGenerator.unresolvableGrantByEmailAddress();
+    } else if (grantee.equals("id")) {
+      actualResponse = responseGenerator.invalidArgument("Invalid id");
+    } else {
+      actualResponse = responseGenerator.invalidArgument();
+    }
+    response.setResponseBody(actualResponse.getResponseBody());
+    response.setResponseStatus(actualResponse.getResponseStatus());
   }
 
   /**
@@ -230,7 +247,27 @@ class AclRequestValidator {
       accountList.add(account);
       accountPermissionMap.put(permission, accountList);
     } else {
-      accountPermissionMap.get(permission).add(account);
+      if (!isAlreadyExists(accountPermissionMap.get(permission), account)) {
+        accountPermissionMap.get(permission).add(account);
+      }
     }
+  }
+
+  /**
+   * Below method will check if account is already present inside list or not
+   * @param accountList
+   * @param account
+   * @return true/false
+   */
+ private
+  boolean isAlreadyExists(List<Account> accountList, Account account) {
+    boolean isExists = false;
+    for (Account acc : accountList) {
+      if (acc.getCanonicalId().equals(account.getCanonicalId())) {
+        isExists = true;
+        break;
+      }
+    }
+    return isExists;
   }
 }

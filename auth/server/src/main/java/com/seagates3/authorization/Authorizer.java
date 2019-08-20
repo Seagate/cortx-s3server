@@ -23,7 +23,7 @@ import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.acl.AclRequestValidator;
+import com.seagates3.acl.ACLRequestValidator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import java.io.IOException;
@@ -53,9 +53,9 @@ public class Authorizer {
         Map<String, List<Account>> accountPermissionMap = new HashMap<>();
         LOGGER.debug("request body : " + requestBody.toString());
         ServerResponse serverResponse =
-            new AclRequestValidator().validateAclRequest(requestBody,
+            new ACLRequestValidator().validateAclRequest(requestBody,
                                                          accountPermissionMap);
-        if (serverResponse != null) {
+        if (serverResponse.getResponseStatus() != null) {
           LOGGER.error("ACL authorization request validation failed");
           return serverResponse;
         }
@@ -80,7 +80,6 @@ public class Authorizer {
           // s3server
           // return responseGenerator.badRequest();
         }
-
         // Initialize a  default AccessControlPolicy object and generate
         // authorization response if request header contains param value true
         // for- Request-ACL
@@ -91,7 +90,7 @@ public class Authorizer {
             if (!accountPermissionMap.isEmpty()) {  // permission headers
                                                     // present
               acl = new ACLCreator().createAclFromPermissionHeaders(
-                  requestor, accountPermissionMap);
+                  requestor, accountPermissionMap, requestBody);
             }
             /*
                  * else if (cannedAclSpecified) { serverResponse = }

@@ -38,6 +38,7 @@ import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
+import com.seagates3.util.BinaryUtil;
 
 public
 class ACLCreator {
@@ -50,7 +51,6 @@ class ACLCreator {
       new AuthorizationResponseGenerator();
  private
   static String defaultACP = null;
-
  public
   ACLCreator() { initPermissionsMap(); }
 
@@ -101,41 +101,49 @@ class ACLCreator {
    */
  public
   String createAclFromPermissionHeaders(
-      Requestor requestor, Map<String, List<Account>> accountPermissionMap)
-      throws GrantListFullException,
+      Requestor requestor, Map<String, List<Account>> accountPermissionMap,
+      Map<String, String> requestBody) throws GrantListFullException,
       IOException, ParserConfigurationException, SAXException,
       TransformerException {
-    Owner owner = new Owner(requestor.getAccount().getCanonicalId(),
-                            requestor.getAccount().getName());
+    AccessControlPolicy acp = null;
     AccessControlList newAcl = new AccessControlList();
-    AccessControlPolicy acp =
-        new AccessControlPolicy(checkAndCreateDefaultAcp());
-    for (String permission : accountPermissionMap.keySet()) {
-      for (Account account : accountPermissionMap.get(permission)) {
-        Grantee grantee =
-            new Grantee(account.getCanonicalId(), account.getName());
-        Grant grant = new Grant(grantee, actualPermissionsMap.get(permission));
-        newAcl.addGrant(grant);
-        LOGGER.info("Updated the acl for " + account.getName() +
-                    " with permission - " + permission);
+    if (requestBody.get("ACL") != null) {
+      acp = new AccessControlPolicy(
+          BinaryUtil.base64DecodeString(requestBody.get("ACL")));
+    } else {
+      acp = new AccessControlPolicy(checkAndCreateDefaultAcp());
       }
+      for (String permission : accountPermissionMap.keySet()) {
+        for (Account account : accountPermissionMap.get(permission)) {
+          Grantee grantee =
+              new Grantee(account.getCanonicalId(), account.getName());
+          Grant grant =
+              new Grant(grantee, actualPermissionsMap.get(permission));
+          newAcl.addGrant(grant);
+          LOGGER.info("Updated the acl for " + account.getName() +
+                      " with permission - " + permission);
+        }
+      }
+      if ("Owner_ID".equals(
+              acp.getOwner().getCanonicalId())) {  // means acl getting created
+                                                   // first time so set
+                                                   // requestor as owner
+        acp.setOwner(new Owner(requestor.getAccount().getCanonicalId(),
+                               requestor.getAccount().getName()));
+      }
+      acp.setAccessControlList(newAcl);
+      return acp.getXml();
     }
-    if ("Owner_ID".equals(acp.getOwner().getCanonicalId())) {
-      acp.setOwner(owner);
-    }
-    acp.setAccessControlList(newAcl);
-    return acp.getXml();
-  }
 
- protected
-  String checkAndCreateDefaultAcp() throws IOException,
-      ParserConfigurationException, SAXException, GrantListFullException {
-    if (defaultACP == null) {
-      defaultACP = new String(
-          Files.readAllBytes(Paths.get(AuthServerConfig.authResourceDir +
-                                       AuthServerConfig.DEFAULT_ACL_XML)));
+   protected
+    String checkAndCreateDefaultAcp() throws IOException,
+        ParserConfigurationException, SAXException, GrantListFullException {
+      if (defaultACP == null) {
+        defaultACP = new String(
+            Files.readAllBytes(Paths.get(AuthServerConfig.authResourceDir +
+                                         AuthServerConfig.DEFAULT_ACL_XML)));
+      }
+      return defaultACP;
     }
-    return defaultACP;
-  }
 }
 

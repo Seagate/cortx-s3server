@@ -191,3 +191,40 @@ AuthTest(test_msg).delete_account(**account_args).execute_test()\
 #os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
 #AwsTest('Aws can put acl').put_object_acl("authbucket", "3kfile", "grant-read" , cannonical_id ).execute_test().command_is_successful()
 #del os.environ["AWS_ACCESS_KEY_ID"]
+#del os.environ["AWS_SECRET_ACCESS_KEY"]
+#
+##**************** Test Case 4 ************
+#
+#AwsTest('Aws can create bucket').create_bucket("authbucket").execute_test().command_is_successful()
+#cannonical_id = "id=" + testAccount_cannonicalid
+#AwsTest('Aws can put bucket acl').put_bucket_acl("authbucket", "grant-read" , cannonical_id ).execute_test().command_is_successful()
+#os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+#AwsTest('Aws can put bucket acl').get_bucket_acl("authbucket").execute_test().command_is_successful()
+#del os.environ["AWS_ACCESS_KEY_ID"]
+#del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+##************* Test Case 5 ********************
+
+#AwsTest('Aws can create bucket').create_bucket("authbucket").execute_test().command_is_successful()
+#cannonical_id = "id=" + testAccount_cannonicalid
+#AwsTest('Aws can upload 3k file with tags').put_object("authbucket", "3kfile").execute_test().command_is_successful()
+#os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+#os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+#AwsTest('Aws can put acl').put_object_acl("authbucket", "3kfile", "grant-read" , cannonical_id ).execute_test().command_should_fail().command_error_should_have("AccessDenied")
+#del os.environ["AWS_ACCESS_KEY_ID"]
+#del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+##**************** Test Case 6 ************
+#
+#AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
+#cannonical_id_assignment = "id="
+#AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , cannonical_id_assignment ).execute_test().command_should_fail().command_error_should_have("Invalid id")
+#AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+
+##**************** Test Case 7 ************
+#
+#AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
+#cannonical_id_assignment = "id=invalid"
+#AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , cannonical_id_assignment ).execute_test().command_should_fail().command_error_should_have("Invalid id")
+#AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
