@@ -108,7 +108,8 @@ class S3PutObjectAction : public S3Action {
 
   void cleanup();
   void cleanup_oid_from_probable_dead_oid_list();
-
+  void cleanup_successful();
+  void cleanup_failed();
   // rollback functions
   void rollback_create();
   void rollback_create_failed();

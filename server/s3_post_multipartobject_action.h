@@ -48,9 +48,12 @@ class S3PostMultipartObjectAction : public S3Action {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
+  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::string upload_id;
 
   S3Timer create_object_timer;
+
+  std::map<std::string, std::string> probable_oid_list;
 
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
@@ -58,6 +61,7 @@ class S3PostMultipartObjectAction : public S3Action {
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::map<std::string, std::string> new_object_tags_map;
 
@@ -77,7 +81,8 @@ class S3PostMultipartObjectAction : public S3Action {
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
 
@@ -98,6 +103,7 @@ class S3PostMultipartObjectAction : public S3Action {
   void save_upload_metadata();
   void save_upload_metadata_failed();
   void create_part_meta_index();
+  void create_part_meta_index_successful();
   void create_part_meta_index_failed();
   void save_multipart_metadata();
   void save_multipart_metadata_failed();
@@ -110,6 +116,10 @@ class S3PostMultipartObjectAction : public S3Action {
   void rollback_upload_metadata_failed();
   void rollback_create_part_meta_index();
   void rollback_create_part_meta_index_failed();
+
+  void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_failed();
+  void cleanup_oid_from_probable_dead_oid_list();
 
   std::shared_ptr<S3RequestObject> get_request() { return request; }
 

@@ -25,11 +25,11 @@
 MeroHeadObjectAction::MeroHeadObjectAction(
     std::shared_ptr<MeroRequestObject> req,
     std::shared_ptr<S3ClovisReaderFactory> reader_factory)
-    : MeroAction(req), layout_id(0) {
+    : MeroAction(std::move(req)), layout_id(0) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   oid = {0ULL, 0ULL};
   if (reader_factory) {
-    clovis_reader_factory = reader_factory;
+    clovis_reader_factory = std::move(reader_factory);
   } else {
     clovis_reader_factory = std::make_shared<S3ClovisReaderFactory>();
   }
@@ -47,16 +47,19 @@ void MeroHeadObjectAction::setup_steps() {
 
 void MeroHeadObjectAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  oid = S3M0Uint128Helper::to_m0_uint128(request->get_index_id_lo(),
-                                         request->get_index_id_hi());
+  oid = S3M0Uint128Helper::to_m0_uint128(request->get_object_oid_lo(),
+                                         request->get_object_oid_hi());
   // invalid oid
-  if (oid.u_hi == 0ULL && oid.u_lo == 0ULL) {
+  if (!oid.u_hi && !oid.u_lo) {
+    s3_log(S3_LOG_ERROR, request_id, "Invalid object oid\n");
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
     std::string object_layout_id = request->get_query_string_value("layout-id");
     if (!S3CommonUtilities::stoi(object_layout_id, layout_id) ||
         (layout_id <= 0)) {
+      s3_log(S3_LOG_ERROR, request_id, "Invalid object layout-id: %s\n",
+             object_layout_id.c_str());
       set_s3_error("BadRequest");
       send_response_to_s3_client();
     } else {

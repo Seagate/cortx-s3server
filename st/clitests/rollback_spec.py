@@ -8,6 +8,7 @@ from jclient import JClientTest
 from s3client_config import S3ClientConfig
 from s3kvstool import S3kvTest
 import s3kvs
+import yaml
 
 # Helps debugging
 # Config.log_enabled = True
@@ -85,7 +86,11 @@ S3fiTest('s3cmd enable FI create index fail').enable_fi_offnonm("enable", "clovi
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
 
-S3fiTest('s3cmd enable FI PUT KV').enable_fi_offnonm("enable", "clovis_kv_put_fail", "2", "99").execute_test().command_is_successful()
+is_object_leak_track_enabled=yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
+fi_off="2"
+if is_object_leak_track_enabled:
+        fi_off="4"
+S3fiTest('s3cmd enable FI PUT KV').enable_fi_offnonm("enable", "clovis_kv_put_fail", fi_off, "99").execute_test().command_is_successful()
 S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
 S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_kv_put_fail").execute_test().command_is_successful()
 clean_18mb_multipart()

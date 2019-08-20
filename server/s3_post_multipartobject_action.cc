@@ -26,7 +26,10 @@
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_post_multipartobject_action.h"
+#include "s3_m0_uint128_helper.h"
 #include <evhttp.h>
+
+extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -36,7 +39,8 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
-    std::shared_ptr<ClovisAPI> clovis_api)
+    std::shared_ptr<ClovisAPI> clovis_api,
+    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
     : S3Action(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -109,6 +113,12 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
 
+  if (kv_writer_factory) {
+    clovis_kv_writer_factory = std::move(kv_writer_factory);
+  } else {
+    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+  }
+
   setup_steps();
 }
 
@@ -125,6 +135,11 @@ void S3PostMultipartObjectAction::setup_steps() {
                      this));
   add_task(std::bind(&S3PostMultipartObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3PostMultipartObjectAction::create_object, this));
+  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
+    add_task(std::bind(
+        &S3PostMultipartObjectAction::add_object_oid_to_probable_dead_oid_list,
+        this));
+  }
   add_task(
       std::bind(&S3PostMultipartObjectAction::create_part_meta_index, this));
   add_task(std::bind(&S3PostMultipartObjectAction::save_upload_metadata, this));
@@ -363,21 +378,26 @@ void S3PostMultipartObjectAction::create_object_successful() {
   LOG_PERF("create_object_successful_ms", request_id.c_str(),
            time_in_millisecond);
   s3_stats_timing("multipart_create_object_success", time_in_millisecond);
+  // mark rollback point
+  add_task_rollback(
+      std::bind(&S3PostMultipartObjectAction::rollback_create, this));
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PostMultipartObjectAction::create_object_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (check_shutdown_and_rollback()) {
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-    return;
-  }
+
   create_object_timer.stop();
   LOG_PERF("create_object_failed_ms", request_id.c_str(),
            create_object_timer.elapsed_time_in_millisec());
   s3_stats_timing("multipart_create_object_failed",
                   create_object_timer.elapsed_time_in_millisec());
+
+  if (check_shutdown_and_rollback()) {
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    return;
+  }
 
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
       collision_occured();
@@ -441,6 +461,44 @@ void S3PostMultipartObjectAction::create_new_oid(
   return;
 }
 
+void S3PostMultipartObjectAction::add_object_oid_to_probable_dead_oid_list() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  probable_oid_list.clear();
+  // for now, no need to track of old oid
+  // add new oid to probable object oid list
+  probable_oid_list[S3M0Uint128Helper::to_string(oid)] =
+      object_multipart_metadata->create_probable_delete_record(layout_id);
+  if (!probable_oid_list.empty()) {
+    if (!clovis_kv_writer) {
+      clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+          request, s3_clovis_api);
+    }
+    clovis_kv_writer->put_keyval(
+        global_probable_dead_object_list_index_oid, probable_oid_list,
+        std::bind(&S3PostMultipartObjectAction::next, this),
+        std::bind(&S3PostMultipartObjectAction::
+                       add_object_oid_to_probable_dead_oid_list_failed,
+                  this));
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void
+S3PostMultipartObjectAction::add_object_oid_to_probable_dead_oid_list_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  // Trigger rollback to undo changes done and report error
+  rollback_start();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3PostMultipartObjectAction::rollback_create() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   clovis_writer->set_oid(oid);
@@ -465,6 +523,7 @@ void S3PostMultipartObjectAction::rollback_create_failed() {
     if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
       set_s3_error("ServiceUnavailable");
     }
+    probable_oid_list.erase(S3M0Uint128Helper::to_string(oid));
     rollback_done();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -499,10 +558,6 @@ void S3PostMultipartObjectAction::rollback_create_part_meta_index_failed() {
 
 void S3PostMultipartObjectAction::save_upload_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  // mark rollback point
-  add_task_rollback(std::bind(
-      &S3PostMultipartObjectAction::rollback_create_part_meta_index, this));
 
   object_multipart_metadata->set_layout_id(layout_id);
 
@@ -566,15 +621,23 @@ void S3PostMultipartObjectAction::rollback_upload_metadata_failed() {
 
 void S3PostMultipartObjectAction::create_part_meta_index() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  // mark rollback point
-  add_task_rollback(
-      std::bind(&S3PostMultipartObjectAction::rollback_create, this));
+
   part_metadata =
       part_metadata_factory->create_part_metadata_obj(request, upload_id, 0);
   part_metadata->create_index(
-      std::bind(&S3PostMultipartObjectAction::next, this),
+      std::bind(&S3PostMultipartObjectAction::create_part_meta_index_successful,
+                this),
       std::bind(&S3PostMultipartObjectAction::create_part_meta_index_failed,
                 this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostMultipartObjectAction::create_part_meta_index_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // mark rollback point
+  add_task_rollback(std::bind(
+      &S3PostMultipartObjectAction::rollback_create_part_meta_index, this));
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -656,6 +719,8 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     if (S3Option::get_instance()->is_getoid_enabled()) {
       request->set_out_header_value(
           "OID", S3M0Uint128Helper::to_string(object_metadata->get_oid()));
+      request->set_out_header_value(
+          "layout-id", std::to_string(object_metadata->get_layout_id()));
     }
 
     request->send_response(S3HttpSuccess200, response);
@@ -670,7 +735,31 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
-  done();
+  cleanup_oid_from_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  i_am_done();  // self delete
+}
+
+void S3PostMultipartObjectAction::cleanup_oid_from_probable_dead_oid_list() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  std::vector<std::string> clean_valid_oid_from_probable_dead_object_list_index;
+
+  // final probable_oid_list map will have valid object oids that needs to be
+  // cleanup from global_probable_dead_object_list_index_oid
+  for (auto& kv : probable_oid_list) {
+    clean_valid_oid_from_probable_dead_object_list_index.push_back(kv.first);
+  }
+
+  if (!clean_valid_oid_from_probable_dead_object_list_index.empty()) {
+    if (!clovis_kv_writer) {
+      clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+          request, s3_clovis_api);
+    }
+    clovis_kv_writer->delete_keyval(
+        global_probable_dead_object_list_index_oid,
+        clean_valid_oid_from_probable_dead_object_list_index,
+        std::bind(&Action::done, this), std::bind(&Action::done, this));
+  } else {
+    done();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

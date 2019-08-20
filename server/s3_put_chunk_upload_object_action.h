@@ -117,6 +117,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void add_object_oid_to_probable_dead_oid_list_failed();
 
   void cleanup();
+  void cleanup_successful();
+  void cleanup_failed();
   void cleanup_oid_from_probable_dead_oid_list();
 
   // rollback functions

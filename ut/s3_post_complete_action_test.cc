@@ -628,55 +628,8 @@ TEST_F(S3PostCompleteActionTest, DeleteMultipartMetadata) {
   action_under_test_ptr->delete_multipart_metadata();
 }
 
-TEST_F(S3PostCompleteActionTest, DeleteOldObjectIfPresentNULL) {
-  CREATE_MP_METADATA_OBJ;
-  mp_indx_oid = {0x0, 0x0};
-  action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
-  action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
-
-  action_under_test_ptr->delete_old_object_if_present();
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PostCompleteActionTest, DeleteOldObjectIfPresent) {
-  CREATE_MP_METADATA_OBJ;
-  action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _))
-      .Times(AtLeast(1));
-
-  action_under_test_ptr->delete_old_object_if_present();
-}
-
-TEST_F(S3PostCompleteActionTest, DeleteOldObjectIfPresentClovisWriter) {
-  CREATE_MP_METADATA_OBJ;
-  CREATE_WRITER_OBJ;
-
-  action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _))
-      .Times(AtLeast(1));
-
-  action_under_test_ptr->delete_old_object_if_present();
-}
-
-TEST_F(S3PostCompleteActionTest, DeleteOldObjectFailed) {
-  CREATE_MP_METADATA_OBJ;
-  CREATE_WRITER_OBJ;
-  action_under_test_ptr->multipart_metadata->set_old_oid(mp_indx_oid);
-  action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
-  action_under_test_ptr->delete_old_object_failed();
-  EXPECT_EQ(1, call_count_one);
-}
-
 TEST_F(S3PostCompleteActionTest, SendResponseToClientInternalError) {
-  action_under_test_ptr->post_successful = false;
+  action_under_test_ptr->obj_metadata_updated = false;
   EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
@@ -702,7 +655,7 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
 }
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
-  action_under_test_ptr->post_successful = true;
+  action_under_test_ptr->obj_metadata_updated = true;
   EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();

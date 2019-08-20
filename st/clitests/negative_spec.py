@@ -8,6 +8,7 @@ from jclient import JClientTest
 from s3client_config import S3ClientConfig
 from s3kvstool import S3kvTest
 import s3kvs
+import yaml
 
 # Helps debugging
 # Config.log_enabled = True
@@ -320,8 +321,12 @@ for i, type in enumerate(config_types):
         disable_fi("clovis_idx_op_fail").\
         execute_test().command_is_successful()
 
+    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
+    fi_off="5"
+    if is_object_leak_track_enabled:
+        fi_off="6"
     S3fiTest('s3cmd can enable FI clovis_idx_op_fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "5", "99").\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\
@@ -338,9 +343,11 @@ for i, type in enumerate(config_types):
         abort_multipart("seagatebucket", "18MBfile", upload_id).\
         execute_test().command_is_successful()
 
-
+    fi_off="6"
+    if is_object_leak_track_enabled:
+        fi_off="7"
     S3fiTest('s3cmd can enable FI clovis_idx_op_fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "6", "99").\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
     # S3PutMultiObjectAction::fetch_multipart_metadata
     S3cmdTest('s3cmd can not upload 18MBfile file').\
@@ -358,9 +365,11 @@ for i, type in enumerate(config_types):
         abort_multipart("seagatebucket", "18MBfile", upload_id).\
         execute_test().command_is_successful()
 
-
+    fi_off="7"
+    if is_object_leak_track_enabled:
+        fi_off="9"
     S3fiTest('s3cmd can enable FI clovis_idx_op_fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "7", "99").\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\
@@ -553,8 +562,13 @@ for i, type in enumerate(config_types):
     S3fiTest('s3cmd disable Fault injection').\
         disable_fi("clovis_idx_op_fail").\
         execute_test().command_is_successful()
+
+    is_object_leak_track_enabled=yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
+    fi_off="20"
+    if is_object_leak_track_enabled:
+        fi_off="22"
     S3fiTest('s3cmd enable FI clovis idx op fail').\
-        enable_fi_offnonm("enable", "clovis_idx_op_fail", "20", "99").\
+        enable_fi_offnonm("enable", "clovis_idx_op_fail", fi_off, "99").\
         execute_test().command_is_successful()
     S3cmdTest('s3cmd can not upload 18MBfile file').\
         upload_test("seagatebucket", "18MBfile", 18000000).\

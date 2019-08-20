@@ -40,6 +40,7 @@ class S3AbortMultipartAction : public S3Action {
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
+  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::string upload_id;
   std::string bucket_name;
@@ -47,12 +48,15 @@ class S3AbortMultipartAction : public S3Action {
   m0_uint128 multipart_oid;
   m0_uint128 part_index_oid;
 
+  std::map<std::string, std::string> probable_oid_list;
+
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
 
  public:
   S3AbortMultipartAction(
@@ -65,21 +69,28 @@ class S3AbortMultipartAction : public S3Action {
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
-          nullptr);
+          nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
 
   void fetch_bucket_info();
   void fetch_bucket_metadata_failed();
   void get_multipart_metadata();
-  void delete_multipart_failed();
-  void delete_object();
-  void delete_object_failed();
+  void get_multipart_metadata_status();
   void delete_part_index_with_parts();
   void delete_part_index_with_parts_failed();
   void delete_multipart_metadata();
   void delete_multipart_metadata_failed();
   void send_response_to_s3_client();
+
+  void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_failed();
+
+  void cleanup();
+  void cleanup_successful();
+  void cleanup_failed();
+  void cleanup_oid_from_probable_dead_oid_list();
 
   // Google tests
   FRIEND_TEST(S3AbortMultipartActionTest, ConstructorTest);

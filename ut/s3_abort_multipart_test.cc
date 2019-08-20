@@ -194,68 +194,9 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest6) {
 TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest1) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
-              get_upload_id())
-      .WillOnce(Return("upload_id"));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), remove(_, _))
       .Times(1);
   action_under_test->delete_multipart_metadata();
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest2) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
-              get_upload_id())
-      .WillOnce(Return("upload_id_different"));
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), remove(_, _))
-      .Times(0);
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
-  action_under_test->delete_multipart_metadata();
-  EXPECT_STREQ("NoSuchUpload", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest3) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
-  action_under_test->delete_multipart_metadata();
-  EXPECT_STREQ("NoSuchUpload", action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest4) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  action_under_test->delete_multipart_metadata();
-  EXPECT_STREQ("ServiceUnavailable",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest5) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  action_under_test->delete_multipart_metadata();
-  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedTest) {
@@ -283,91 +224,6 @@ TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedToLaunchTest) {
   action_under_test->check_shutdown_signal_for_next_task(false);
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteObjectTest1) {
-  int layout_id = 1;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
-              get_layout_id()).WillRepeatedly(Return(layout_id));
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _))
-      .Times(1);
-  action_under_test->delete_object();
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteObjectTest2) {
-  int layout_id = 1;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
-              get_layout_id()).WillRepeatedly(Return(layout_id));
-
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::deleted));
-
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _))
-      .Times(1);
-  action_under_test->delete_object();
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteObjectTest3) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-
-  action_under_test->check_shutdown_signal_for_next_task(true);
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  action_under_test->delete_object();
-  action_under_test->check_shutdown_signal_for_next_task(false);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteObjectFailedTest1) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  action_under_test->check_shutdown_signal_for_next_task(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-
-  action_under_test->delete_object_failed();
-  action_under_test->check_shutdown_signal_for_next_task(false);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-}
-
-TEST_F(S3AbortMultipartActionTest, DeleteObjectFailedToLaunchTest) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  action_under_test->check_shutdown_signal_for_next_task(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-
-  action_under_test->delete_object_failed();
-  action_under_test->check_shutdown_signal_for_next_task(false);
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
 
 TEST_F(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest1) {

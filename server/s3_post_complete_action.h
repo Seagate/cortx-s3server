@@ -40,6 +40,7 @@ class S3PostCompleteAction : public S3Action {
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ObjectMetadata> multipart_metadata;
@@ -47,6 +48,7 @@ class S3PostCompleteAction : public S3Action {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
+  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::string upload_id;
   std::string bucket_name;
   std::string object_name;
@@ -56,7 +58,7 @@ class S3PostCompleteAction : public S3Action {
   uint64_t object_size;
   m0_uint128 multipart_index_oid;
   bool delete_multipart_object;
-  bool post_successful;
+  bool obj_metadata_updated;
   void parse_xml_str(std::string &xml_str);
   size_t count_we_requested;
   size_t current_parts_size;
@@ -64,6 +66,8 @@ class S3PostCompleteAction : public S3Action {
   size_t validated_parts_count;
   std::string last_key;
   S3AwsEtag awsetag;
+
+  std::map<std::string, std::string> probable_oid_list;
 
  public:
   S3PostCompleteAction(
@@ -76,8 +80,8 @@ class S3PostCompleteAction : public S3Action {
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
-      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory =
-          nullptr);
+      std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
+      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
 
@@ -96,6 +100,7 @@ class S3PostCompleteAction : public S3Action {
   void get_parts_failed();
   void get_part_info(int part);
   void save_metadata();
+  void save_object_metadata_succesful();
   void save_object_metadata_failed();
   void delete_multipart_metadata();
   void delete_multipart_metadata_failed();
@@ -105,9 +110,15 @@ class S3PostCompleteAction : public S3Action {
   void delete_parts_failed();
   void set_abort_multipart(bool abortit);
   bool is_abort_multipart();
-  void delete_old_object_if_present();
-  void delete_old_object_failed();
   void send_response_to_s3_client();
+
+  void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_failed();
+
+  void cleanup();
+  void cleanup_successful();
+  void cleanup_failed();
+  void cleanup_oid_from_probable_dead_oid_list();
 
   std::string get_part_index_name() {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;

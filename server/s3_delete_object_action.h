@@ -33,6 +33,7 @@
 #include "s3_object_metadata.h"
 
 class S3DeleteObjectAction : public S3Action {
+  m0_uint128 probable_dead_object_oid;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
@@ -66,6 +67,8 @@ class S3DeleteObjectAction : public S3Action {
   void add_object_oid_to_probable_dead_oid_list_failed();
 
   void cleanup();
+  void cleanup_successful();
+  void cleanup_failed();
   void cleanup_oid_from_probable_dead_oid_list();
 
   void send_response_to_s3_client();
