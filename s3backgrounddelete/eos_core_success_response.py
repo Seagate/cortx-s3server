@@ -12,3 +12,7 @@ class EOSCoreSuccessResponse(object):
     def get_response(self):
         """Return generated response."""
         return self._body
+
+    def get_success_status(self):
+        """Return success status."""
+        return self._body['status']

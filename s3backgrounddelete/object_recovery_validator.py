@@ -35,41 +35,80 @@ class ObjectRecoveryValidator:
         2. Deletes the object oid from object_metadata_index_id if oid matches.
         3. Ignores the object oid from object_metadata_index_id if there is a mismatch."""
 
-        for key, value in self.probable_delete_records.items():
-            try:
-                probable_delete_object_name = json.loads(value)["obj-name"]
-            except ValueError as e:
-                self._logger.error(
-                    "Failed to parse JSON data for: " + str(value))
-                pass
+        probable_delete_oid = self.probable_delete_records["Key"]
+        probable_delete_value = self.probable_delete_records["Value"]
 
-            self._logger.info(
-                "Probable object id to be deleted : " +
-                probable_delete_object_name)
-            result, get_response = self._kvapi.get(
-                self.config.get_object_metadata_index_id(), key)
-            if(result):
+        self._logger.info(
+            "Probable object id to be deleted : " +
+            probable_delete_oid)
+        try:
+            probable_delete_json = json.loads(probable_delete_value)
+        except ValueError as error:
+            self._logger.error(
+                "Failed to parse JSON data for: " + probable_delete_value + " due to: " + error)
+            return
+        index_id = probable_delete_json["index_id"]
+        object_layout_id = probable_delete_json["object_layout_id"]
+        object_metadata_path = probable_delete_json["object_metadata_path"]
+        delete_probable_oid = False
+
+        self._logger.info(
+            "Fetching object metadata corresponding to index id: " +
+            index_id +
+            " and key: " +
+            object_metadata_path)
+
+        ret, response_data = self._kvapi.get(index_id, object_metadata_path)
+
+        self._logger.info("Response for object metadata corresponding to object id" + str(
+            response_data.get_error_status()) + " " + response_data.get_error_message())
+
+        # Object Metadata exists. Verify the probable delete oid with oid present in object metadata
+        if(ret):
+            if(response_data.get_success_status() == 200):
                 try:
-                    object_metadata = json.loads(get_response.get_value())
+                    object_metadata = json.loads(response_data.get_value())
+                    self._logger.info(
+                        "Object metadata corresponding to object id" +
+                        str(object_metadata))
+                    object_metadata_oid = object_metadata["mero_oid"]
+                    # Object oid from object metadata equals probable delete oid
+                    if(object_metadata_oid == probable_delete_oid):
+                        self._logger.info(
+                            "Ignoring deletion for object id" +
+                            str(probable_delete_oid) +
+                            " as it matches object metadata oid ")
+                        delete_probable_oid = True
+                        pass
+                    else:
+                        self._logger.info(
+                            "Deleting following object id" +
+                            str(probable_delete_oid) +
+                            " as it mismatches object metadata oid ")
+                        delete_probable_oid, delete_response = self._objectapi.delete(
+                            probable_delete_oid, object_layout_id)
                 except ValueError as e:
                     self._logger.error(
-                        "Failed to parse JSON data for: " + str(get_response.get_value()))
-                    pass
+                        "Failed to parse JSON data for: " + str(response_data.get_value()))
+                    return
+        # Object Metadata doesn't exists. Proceed with deletion of probable delete object oid
+        elif (response_data.get_error_status() == 404):
+            self._logger.info(
+                "Deleting following object Id : " +
+                str(probable_delete_oid))
+            delete_probable_oid, delete_response = self._objectapi.delete(
+                probable_delete_oid, object_layout_id)
 
-                object_metadata_oid = object_metadata["mero_oid_u_hi"]
-                if(key == object_metadata_oid):
-                    self._logger.info(
-                        "Deleting following object Id : " + str(key))
-                    self._objectapi.delete(key)
-                    self._kvapi.delete(
-                        self.config.get_probable_delete_index_id(), key)
-                else:
-                    self._kvapi.delete(
-                        self.config.get_probable_delete_index_id(), key)
-                    self._logger.info(
-                        "Object name mismatch entry in metadata found for : " +
-                        probable_delete_object_name)
-            else:
-                self._logger.error(
-                    "Failed to get object metadata for : " +
-                    probable_delete_object_name)
+        if (delete_probable_oid):
+            # Delete oid successful delete the oid entry from probable delete index id
+            self._kvapi.delete(
+                self.config.get_probable_delete_index_id(),
+                probable_delete_oid)
+        else:
+            # Delete oid failed skip deletion of oid entry from probable delete index id
+            self._logger.error(
+                "Failed to delete following object Id " +
+                str(probable_delete_oid) +
+                " Ignoring oid delete from probable delete index id")
+            self._logger.error("Object deletion failed due to : " + delete_response.get_error_message())
+

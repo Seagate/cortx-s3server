@@ -331,22 +331,3 @@ def test_get_probable_delete_index_id_failure():
         config = EOSCoreConfig()
         del config._config['indexid']['probable_delete_index_id']
         assert config.get_probable_delete_index_id()
-
-
-def test_get_object_metadata_index_id_success():
-    """Test if object metadata index id is returned."""
-    config = EOSCoreConfig()
-    config._config['indexid']['object_metadata_index_id'] = "test_metadata_index"
-    metadata_index_id = config.get_object_metadata_index_id()
-    assert metadata_index_id == "test_metadata_index"
-
-
-def test_get_object_metadata_index_id_failure():
-    """
-    Test if object metadata index id is not specified
-    then it should throw KeyError.
-    """
-    with pytest.raises(KeyError):
-        config = EOSCoreConfig()
-        del config._config['indexid']['object_metadata_index_id']
-        assert config.get_object_metadata_index_id()

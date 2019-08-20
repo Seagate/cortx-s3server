@@ -6,7 +6,9 @@ import urllib
 import datetime
 from eos_core_config import EOSCoreConfig
 
-def create_canonical_request(method, canonical_uri, canonical_query_string, body, epoch_t, host):
+
+def create_canonical_request(
+        method, canonical_uri, canonical_query_string, body, epoch_t, host):
 
     signed_headers = 'host;x-amz-date'
     payload_hash = hashlib.sha256(body.encode('utf-8')).hexdigest()
@@ -33,7 +35,7 @@ def getV4SignatureKey(key, dateStamp, regionName, serviceName):
 def create_string_to_sign_v4(method='', canonical_uri='', canonical_query_string='', body='', epoch_t='',
                              algorithm='', host='', service='', region=''):
 
-    canonical_request = create_canonical_request(method, canonical_uri,canonical_query_string,
+    canonical_request = create_canonical_request(method, canonical_uri, canonical_query_string,
                                                  body, epoch_t, host)
 
     credential_scope = get_date(epoch_t) + '/' + \
@@ -85,14 +87,14 @@ def get_date(epoch_t):
 def get_timestamp(epoch_t):
     return epoch_t.strftime('%Y%m%dT%H%M%SZ')
 
-def prepare_signed_header( http_request, request_uri, query_params, body):
-    config = EOSCoreConfig()
-    url_parse_result  = urllib.parse.urlparse(config.get_eos_core_endpoint())
-    epoch_t = datetime.datetime.utcnow();
-    headers = {'content-type': 'application/x-www-form-urlencoded',
-            'Accept': 'text/plain'}
-    headers['Authorization'] = sign_request_v4(http_request, request_uri ,query_params, body, epoch_t, url_parse_result.netloc,
-        config.get_eos_core_service(), config.get_eos_core_region());
-    headers['X-Amz-Date'] = get_timestamp(epoch_t);
-    return headers
 
+def prepare_signed_header(http_request, request_uri, query_params, body):
+    config = EOSCoreConfig()
+    url_parse_result = urllib.parse.urlparse(config.get_eos_core_endpoint())
+    epoch_t = datetime.datetime.utcnow()
+    headers = {'content-type': 'application/x-www-form-urlencoded',
+               'Accept': 'text/plain'}
+    headers['Authorization'] = sign_request_v4(http_request, request_uri, query_params, body, epoch_t, url_parse_result.netloc,
+                                               config.get_eos_core_service(), config.get_eos_core_region())
+    headers['X-Amz-Date'] = get_timestamp(epoch_t)
+    return headers

@@ -1,6 +1,7 @@
 """This class provides Index  REST API i.e. List, PUT."""
 
 import logging
+import urllib
 
 from eos_list_index_response import EOSCoreListIndexResponse
 from eos_core_client import EOSCoreClient
@@ -25,14 +26,20 @@ class EOSCoreIndexApi(EOSCoreClient):
         self.config = config
         super(EOSCoreIndexApi, self).__init__(self.config, logger=self._logger)
 
-    def list(self, index):
+    def list(self, index_id):
         """Perform LIST request and generate response."""
-        if index is None:
+        if index_id is None:
             self._logger.error("Index Id is required.")
             return None
 
         self._logger.info("Processing request in IndexAPI")
-        request_uri = '/indexes/' + index
+
+        # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
+        # https://docs.python.org/3/library/urllib.parse.html
+        # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id) yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+        # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+
+        request_uri = '/indexes/' + urllib.parse.quote(index_id)
 
         query_params = ""
         body = ""
@@ -42,7 +49,11 @@ class EOSCoreIndexApi(EOSCoreClient):
             self._logger.error("Failed to generate v4 signature")
             return None
         try:
-            response = super(EOSCoreIndexApi, self).get(request_uri, headers = headers)
+            response = super(
+                EOSCoreIndexApi,
+                self).get(
+                request_uri,
+                headers=headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None
@@ -55,13 +66,18 @@ class EOSCoreIndexApi(EOSCoreClient):
             return False, EOSCoreErrorResponse(
                 response['status'], response['reason'], response['body'])
 
-    def put(self, index):
+    def put(self, index_id):
         """Perform PUT request and generate response."""
-        if index is None:
+        if index_id is None:
             self._logger.info("Index Id is required.")
             return None
 
-        request_uri = '/indexes/' + index
+        # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
+        # https://docs.python.org/3/library/urllib.parse.html
+        # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id) yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+        # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+
+        request_uri = '/indexes/' + urllib.parse.quote(index_id)
 
         query_params = ""
         body = ""
@@ -72,7 +88,11 @@ class EOSCoreIndexApi(EOSCoreClient):
             return None
 
         try:
-            response = super(EOSCoreIndexApi, self).put(request_uri, headers = headers)
+            response = super(
+                EOSCoreIndexApi,
+                self).put(
+                request_uri,
+                headers=headers)
         except Exception as ex:
             self._logger.error(str(ex))
             return None

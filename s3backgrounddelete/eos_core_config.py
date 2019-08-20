@@ -244,12 +244,3 @@ class EOSCoreConfig(object):
             raise KeyError(
                 "Could not parse probable delete index-id from config file " +
                 self._conf_file)
-
-    def get_object_metadata_index_id(self):
-        """Return object metadata index-id from config file or KeyError."""
-        if 'indexid' in self._config and self._config['indexid']['object_metadata_index_id']:
-            return self._config['indexid']['object_metadata_index_id']
-        else:
-            raise KeyError(
-                "Could not parse object metadata index-id from config file " +
-                self._conf_file)

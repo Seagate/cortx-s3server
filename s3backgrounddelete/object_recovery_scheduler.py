@@ -43,19 +43,27 @@ class ObjectRecoveryScheduler(object):
             if result:
                 self.logger.info(" Index listing result :" +
                                  str(index_response.get_index_content()))
-                probable_delete_oid = index_response.get_index_content()
-                self.logger.info(
-                    " Object recovery queue sending data :" +
-                    str(probable_delete_oid))
-                ret, msg = mq_client.send_data(
-                    probable_delete_oid, self.config.get_rabbitmq_queue_name())
-                if not ret:
-                    self.logger.error(
-                        " Object recovery queue send data failed :" +
-                        str(probable_delete_oid))
+                probable_delete_json = index_response.get_index_content()
+                probable_delete_oid_list = probable_delete_json["Keys"]
+                if (probable_delete_oid_list is not None):
+                    for record in probable_delete_oid_list:
+                        self.logger.info(
+                            " Object recovery queue sending data :" +
+                            str(record))
+                        ret, msg = mq_client.send_data(
+                            record, self.config.get_rabbitmq_queue_name())
+                        if not ret:
+                            self.logger.error(
+                                " Object recovery queue send data "+ str(record) +
+                                " failed :" + msg)
+                        else:
+                            self.logger.info(
+                                " Object recovery queue send data successfully :" +
+                                str(record))
+                else:
                     self.logger.info(
-                        " Object recovery queue send data successfully :" +
-                        str(probable_delete_oid))
+                        " Index listing result empty. Ignoring adding entry to object recovery queue")
+                    pass
         except BaseException:
             self.logger.error(
                 " Object recovery queue send data exception:" + traceback.format_exc())

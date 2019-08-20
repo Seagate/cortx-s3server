@@ -35,5 +35,4 @@ rabbitmq:                                    # Section for RabbitMQ configs
 
 indexid:
 
-   probable_delete_index_id: "probable_delete_index_id"      # Index id containing list of probable delete object oid.
-   object_metadata_index_id: "object_metadata_index_id"      # Index id containing object metadata
+   probable_delete_index_id: "AAAAAAAAAHg=-AwAQAAAAAAA="      # Index id containing list of probable delete object oid. This is fix index id shared with s3server.
