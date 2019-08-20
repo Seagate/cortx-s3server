@@ -12,7 +12,7 @@ class EOSCoreClient(object):
     _logger = None
     _conn = None
 
-    def __init__(self, config, connection=None, logger=None):
+    def __init__(self, config, logger=None, connection=None):
         """Initialise core client using config, connection object and logger."""
         if (logger is None):
             self._logger = logging.getLogger("EOSCoreClient")

@@ -1,7 +1,6 @@
 """
 Unit Test for EOSCoreConfig class API.
 """
-#!/usr/bin/python3
 import os
 import pytest
 
@@ -145,10 +144,9 @@ def test_get_log_format_failure():
 def test_get_eos_core_endpoint_success():
     """Test endpoint configuration in eoscore."""
     config = EOSCoreConfig()
-    config._config['eos_core']['endpoint'] = "http://127.0.0.1:5000"
+    config._config['eos_core']['endpoint'] = "http://127.0.0.1:7081"
     core_endpoint = config.get_eos_core_endpoint()
-    assert core_endpoint == "http://127.0.0.1:5000"
-
+    assert core_endpoint == "http://127.0.0.1:7081"
 
 def test_get_eos_core_endpoint_failure():
     """
@@ -159,6 +157,75 @@ def test_get_eos_core_endpoint_failure():
         del config._config['eos_core']['endpoint']
         assert config.get_eos_core_endpoint()
 
+def test_get_eos_core_service_success():
+    """Test service configuration in eoscore."""
+    config = EOSCoreConfig()
+    config._config['eos_core']['service'] = "eoscore"
+    core_service = config.get_eos_core_service()
+    assert core_service == "eoscore"
+
+def test_get_eos_core_service_failure():
+    """
+    Test if service is not configured in eoscore configuration
+    then it should throw KeyError.
+    """
+    with pytest.raises(KeyError):
+        config = EOSCoreConfig()
+        del config._config['eos_core']['service']
+        assert config.get_eos_core_service()
+
+def test_get_eos_core_region_success():
+    """Test default_region configuration in eoscore."""
+    config = EOSCoreConfig()
+    config._config['eos_core']['default_region'] = "us-west2"
+    core_region = config.get_eos_core_region()
+    assert core_region == "us-west2"
+
+def test_get_eos_core_region_failure():
+    """
+    Test if default_region is not configured in eoscore configuration
+    then it should throw KeyError.
+    """
+    with pytest.raises(KeyError):
+        config = EOSCoreConfig()
+        del config._config['eos_core']['default_region']
+        assert config.get_eos_core_region()
+
+def test_get_eos_core_access_key_success():
+    """Test access_key configuration in eoscore."""
+    config = EOSCoreConfig()
+    config._config['eos_core']['access_key'] = "S_YU-hMoQH2BWtza2tLtVg"
+    core_access_key = config.get_eos_core_access_key()
+    assert core_access_key == "S_YU-hMoQH2BWtza2tLtVg"
+
+
+def test_get_eos_core_access_key_failure():
+    """
+    Test if access_key is not configured in eoscore configuration
+    then it should throw KeyError.
+    """
+    with pytest.raises(KeyError):
+        config = EOSCoreConfig()
+        del config._config['eos_core']['access_key']
+        assert config.get_eos_core_access_key()
+
+def test_get_eos_core_access_key_success():
+    """Test secret_key configuration in eoscore."""
+    config = EOSCoreConfig()
+    config._config['eos_core']['secret_key'] = "uw13JTMmOFzqz86eaMSbJAFd1CCB7oujkAXX4r+A"
+    core_secret_key = config.get_eos_core_secret_key()
+    assert core_secret_key == "uw13JTMmOFzqz86eaMSbJAFd1CCB7oujkAXX4r+A"
+
+
+def test_get_eos_core_secret_key_failure():
+    """
+    Test if secret_key is not configured in eoscore configuration
+    then it should throw KeyError.
+    """
+    with pytest.raises(KeyError):
+        config = EOSCoreConfig()
+        del config._config['eos_core']['secret_key']
+        assert config.get_eos_core_secret_key()
 
 def test_get_rabbitmq_username_success():
     """Test rabbitmq username."""
@@ -298,9 +365,9 @@ def test_get_rabbitmq_durable_failure():
 def test_get_schedule_interval_success():
     """Test if scheduler time interval is returned."""
     config = EOSCoreConfig()
-    config._config['rabbitmq']['schedule_interval_secs'] = 1800
+    config._config['rabbitmq']['schedule_interval_secs'] = 900
     schedule_interval = config.get_schedule_interval()
-    assert schedule_interval == 1800
+    assert schedule_interval == 900
 
 
 def test_get_schedule_interval_failure():

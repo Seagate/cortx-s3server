@@ -5,7 +5,7 @@ import urllib
 from eos_core_error_respose import EOSCoreErrorResponse
 from eos_core_success_response import EOSCoreSuccessResponse
 from eos_core_client import EOSCoreClient
-from eos_core_util import prepare_signed_header
+from eos_core_util import EOSCoreUtil
 
 # EOSCoreObjectApi supports object REST-API's Put, Get & Delete
 
@@ -14,14 +14,18 @@ class EOSCoreObjectApi(EOSCoreClient):
     """EOSCoreObjectApi provides object REST-API's Get, Put and Delete."""
     _logger = None
 
-    def __init__(self, config, logger=None):
+    def __init__(self, config, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("EOSCoreObjectApi")
         else:
             self._logger = logger
         self.config = config
-        super(EOSCoreObjectApi, self).__init__(self.config, logger=self._logger)
+        if (connection is None):
+            super(EOSCoreObjectApi, self).__init__(self.config, logger = self._logger)
+        else:
+            super(EOSCoreObjectApi, self).__init__(self.config, logger=self._logger, connection=connection)
+
 
     def put(self, oid, value):
         """Perform PUT request and generate response."""
@@ -39,8 +43,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         request_uri = '/objects/' + urllib.parse.quote(oid)
 
-        headers = prepare_signed_header(
-            'PUT', request_uri, query_params, request_body)
+        headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -80,7 +83,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid) yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
 
-        headers = prepare_signed_header('GET', request_uri, query_params, body)
+        headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -126,8 +129,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ''
-        headers = prepare_signed_header(
-            'DELETE', request_uri, query_params, body)
+        headers = EOSCoreUtil.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")

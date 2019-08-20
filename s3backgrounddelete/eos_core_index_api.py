@@ -7,24 +7,28 @@ from eos_list_index_response import EOSCoreListIndexResponse
 from eos_core_client import EOSCoreClient
 from eos_core_error_respose import EOSCoreErrorResponse
 from eos_core_success_response import EOSCoreSuccessResponse
-from eos_core_util import prepare_signed_header
+from eos_core_util import EOSCoreUtil
 
 
 # EOSCoreIndexApi supports index REST-API's List & Put
-
 
 class EOSCoreIndexApi(EOSCoreClient):
     """EOSCoreIndexApi provides index REST-API's List and Put."""
     _logger = None
 
-    def __init__(self, config, logger=None):
+    def __init__(self, config, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("EOSCoreIndexApi")
         else:
             self._logger = logger
         self.config = config
-        super(EOSCoreIndexApi, self).__init__(self.config, logger=self._logger)
+        #for testing scenarios, pass the mocked http connection object in init method..
+        if (connection is None):
+            super(EOSCoreIndexApi, self).__init__(self.config, logger = self._logger)
+        else:
+            super(EOSCoreIndexApi, self).__init__(self.config, logger = self._logger, connection=connection)
+
 
     def list(self, index_id):
         """Perform LIST request and generate response."""
@@ -43,7 +47,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = prepare_signed_header('GET', request_uri, query_params, body)
+        headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -81,7 +85,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = prepare_signed_header('PUT', request_uri, query_params, body)
+        headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")

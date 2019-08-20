@@ -52,7 +52,8 @@
 - name: Install python modules to build python36 dependencies
   yum: pkg={{item}} state=installed
   with_items:
-    - pytest
+    - python36-pytest
+    - python36-pika
     - python-jsonschema
     - python-keyring
     - python-nose

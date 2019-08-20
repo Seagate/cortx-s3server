@@ -1,8 +1,8 @@
 """
 This class act as object recovery processor which consumes
-the rabbitmq mesaage queue.
+the rabbitmq message queue.
 """
-#!/usr/bin/python3
+#!/usr/bin/python3.6
 
 import traceback
 import logging

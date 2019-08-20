@@ -6,7 +6,7 @@ from eos_core_client import EOSCoreClient
 from eos_get_kv_response import EOSCoreGetKVResponse
 from eos_core_error_respose import EOSCoreErrorResponse
 from eos_core_success_response import EOSCoreSuccessResponse
-from eos_core_util import prepare_signed_header
+from eos_core_util import EOSCoreUtil
 
 # EOSCoreKVApi supports key-value REST-API's Put, Get & Delete
 
@@ -15,7 +15,7 @@ class EOSCoreKVApi(EOSCoreClient):
     """EOSCoreKVApi provides key-value REST-API's Put, Get & Delete."""
     _logger = None
 
-    def __init__(self, config, logger=None):
+    def __init__(self, config, logger=None, connection=None):
         """Initialise logger and config."""
         if (logger is None):
             self._logger = logging.getLogger("EOSCoreKVApi")
@@ -23,9 +23,13 @@ class EOSCoreKVApi(EOSCoreClient):
             self._logger = logger
         self._logger = logging.getLogger()
         self.config = config
-        super(EOSCoreKVApi, self).__init__(self.config, logger=self._logger)
+        if (connection is None):
+            super(EOSCoreKVApi, self).__init__(self.config, logger=self._logger)
+        else:
+            super(EOSCoreKVApi, self).__init__(self.config, logger=self._logger, connection=connection)
 
-    def put(self, index_id=None, object_key_name=None, value=None):
+
+    def put(self, index_id=None, object_key_name=None, value=""):
         """Perform PUT request and generate response."""
         if index_id is None:
             self._logger.error("Index Id is required.")
@@ -47,8 +51,7 @@ class EOSCoreKVApi(EOSCoreClient):
         request_uri = '/indexes/' + \
             urllib.parse.quote(index_id) + '/' + \
             urllib.parse.quote(object_key_name)
-        headers = prepare_signed_header(
-            'PUT', request_uri, query_params, request_body)
+        headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -95,7 +98,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = prepare_signed_header('GET', request_uri, query_params, body)
+        headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -142,8 +145,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         body = ""
         query_params = ""
-        headers = prepare_signed_header(
-            'DELETE', request_uri, query_params, body)
+        headers = EOSCoreUtil.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")

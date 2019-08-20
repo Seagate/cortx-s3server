@@ -2,7 +2,7 @@
 This class act as object recovery scheduler which add key value to
 the rabbitmq mesaage queue.
 """
-#!/usr/bin/python3
+#!/usr/bin/python3.6
 
 import traceback
 import sched
@@ -38,7 +38,7 @@ class ObjectRecoveryScheduler(object):
                 self.config.get_rabbitmq_durable(),
                 self.logger)
             result, index_response = EOSCoreIndexApi(
-                self.config, self.logger).list(
+                self.config, logger=self.logger).list(
                     self.config.get_probable_delete_index_id())
             if result:
                 self.logger.info(" Index listing result :" +
