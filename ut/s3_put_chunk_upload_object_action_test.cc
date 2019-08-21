@@ -335,14 +335,14 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(0);
 
-  // Mock out the next calls on action.
-  action_under_test->clear_tasks();
-  action_under_test->add_task(std::bind(
-      &S3PutChunkUploadObjectActionTestBase::func_callback_one, this));
+  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_request, send_response(500, _)).Times(1);
+  EXPECT_CALL(*mock_request, resume()).Times(1);
 
   action_under_test->fetch_object_info();
 
-  EXPECT_EQ(1, call_count_one);
+  EXPECT_STREQ("MetaDataCorruption",
+               action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != nullptr);
   EXPECT_TRUE(action_under_test->object_metadata == nullptr);
 }

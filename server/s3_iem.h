@@ -82,8 +82,7 @@ extern S3Option *g_option_instance;
 #define S3_IEM_DELETE_IDX_FAIL_JSON ""
 
 #define S3_IEM_METADATA_CORRUPTED "047006003"
-#define S3_IEM_METADATA_CORRUPTED_STR \
-  "Metadata corrupted causing Json parsing failure"
+#define S3_IEM_METADATA_CORRUPTED_STR "Metadata corrupted"
 #define S3_IEM_METADATA_CORRUPTED_JSON ""
 
 #endif  // __S3_SERVER_IEM_H__

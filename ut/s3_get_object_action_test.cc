@@ -210,7 +210,6 @@ TEST_F(S3GetObjectActionTest,
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
   action_under_test->fetch_object_info();
-
   EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata == NULL);

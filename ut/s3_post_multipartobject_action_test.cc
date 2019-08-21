@@ -163,9 +163,14 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
   action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+
   action_under_test->check_upload_is_inprogress();
 
-  EXPECT_EQ(1, call_count_one);
+  EXPECT_STREQ("MetaDataCorruption",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PostMultipartObjectTest, FetchObjectInfoMultipartPresent) {
@@ -219,11 +224,13 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoObjectNotPresent) {
 
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
       empty_oid);
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+
   action_under_test->fetch_object_info();
-  EXPECT_EQ(1, call_count_one);
+  EXPECT_STREQ("MetaDataCorruption",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectPresent) {

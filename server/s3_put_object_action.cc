@@ -219,9 +219,14 @@ void S3PutObjectAction::fetch_object_info() {
   struct m0_uint128 object_list_oid =
       bucket_metadata->get_object_list_index_oid();
   if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-    // There is no object list index, hence object doesn't exist
-    s3_log(S3_LOG_DEBUG, request_id, "No existing object, Create it.\n");
-    next();
+    // object_list_oid is null only when bucket metadata is corrupted.
+    // user has to delete and recreate the bucket again to make it work.
+    s3_log(S3_LOG_ERROR, request_id, "Bucket(%s) metadata is corrupted.\n",
+           request->get_bucket_name().c_str());
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+    set_s3_error("MetaDataCorruption");
+    send_response_to_s3_client();
   } else {
     object_metadata = object_metadata_factory->create_object_metadata_obj(
         request, object_list_oid);

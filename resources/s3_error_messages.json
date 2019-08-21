@@ -19,6 +19,10 @@
     "Description": "We encountered an internal error. Please try again.",
     "httpcode": 500
   },
+  "MetaDataCorruption": {
+    "Description": "Metadata corrupted",
+    "httpcode": 500
+  },
   "ServiceUnavailable": {
     "Description": "Reduce your request rate.",
     "httpcode": 503
