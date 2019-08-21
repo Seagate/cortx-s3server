@@ -25,13 +25,16 @@
 
 S3BucketAction::S3BucketAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req) {
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    bool check_shutdown, std::shared_ptr<S3AuthClientFactory> auth_factory,
+    bool skip_auth)
+    : S3Action(std::move(req), check_shutdown, std::move(auth_factory),
+               skip_auth) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_metadata_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
@@ -53,7 +56,9 @@ void S3BucketAction::fetch_bucket_info() {
 void S3BucketAction::load_metadata() { fetch_bucket_info(); }
 
 void S3BucketAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
                                   "");
   next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

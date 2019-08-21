@@ -115,9 +115,9 @@ class S3PutMultipartObjectActionTestNoMockAuth
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(false));
-    action_under_test.reset(new S3PutMultiObjectAction(
-        ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
-        part_meta_factory, clovis_writer_factory));
+    action_under_test.reset(
+        new S3PutMultiObjectAction(ptr_mock_request, object_mp_meta_factory,
+                                   part_meta_factory, clovis_writer_factory));
   }
 };
 
@@ -131,8 +131,8 @@ class S3PutMultipartObjectActionTestWithMockAuth
     mock_auth_factory =
         std::make_shared<MockS3AuthClientFactory>(ptr_mock_request);
     action_under_test.reset(new S3PutMultiObjectAction(
-        ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
-        part_meta_factory, clovis_writer_factory, mock_auth_factory));
+        ptr_mock_request, object_mp_meta_factory, part_meta_factory,
+        clovis_writer_factory, mock_auth_factory));
   }
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
 };
@@ -240,7 +240,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
                action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->auth_completed);
 }
-
+/*  TODO metadata fetch moved to s3_object_action class,
+//     so these test will be moved there
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, FetchBucketInfoTest) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
       .Times(AtLeast(1));
@@ -286,7 +287,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, FetchMultipartMetadata) {
       .Times(1);
   action_under_test->fetch_multipart_metadata();
 }
-
+*/
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        FetchMultiPartMetadataNoSuchUploadFailed) {
   action_under_test->object_multipart_metadata =

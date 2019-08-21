@@ -34,13 +34,11 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 S3PostCompleteAction::S3PostCompleteAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
-    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3Action(std::move(req), false) {
+    : S3ObjectAction(std::move(req), nullptr, nullptr, false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   upload_id = request->get_query_string_value("uploadId");
@@ -57,20 +55,10 @@ S3PostCompleteAction::S3PostCompleteAction(
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = std::move(bucket_meta_factory);
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
   if (clovis_kvs_reader_factory) {
     s3_clovis_kvs_reader_factory = std::move(clovis_kvs_reader_factory);
   } else {
     s3_clovis_kvs_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
-  }
-  if (object_meta_factory) {
-    object_metadata_factory = std::move(object_meta_factory);
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
   if (object_mp_meta_factory) {
     object_mp_metadata_factory = std::move(object_mp_meta_factory);
@@ -109,7 +97,6 @@ void S3PostCompleteAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
   add_task(std::bind(&S3PostCompleteAction::load_and_validate_request, this));
-  add_task(std::bind(&S3PostCompleteAction::fetch_bucket_info, this));
   add_task(std::bind(&S3PostCompleteAction::fetch_multipart_info, this));
   add_task(std::bind(&S3PostCompleteAction::get_next_parts_info, this));
   if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
@@ -171,15 +158,9 @@ void S3PostCompleteAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PostCompleteAction::fetch_bucket_info() {
+void S3PostCompleteAction::fetch_bucket_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-
-  bucket_metadata->load(
-      std::bind(&S3PostCompleteAction::next, this),
-      std::bind(&S3PostCompleteAction::fetch_bucket_info_failed, this));
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -198,6 +179,12 @@ void S3PostCompleteAction::fetch_bucket_info_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
+}
+
+void S3PostCompleteAction::fetch_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PostCompleteAction::fetch_multipart_info() {
@@ -781,5 +768,12 @@ void S3PostCompleteAction::cleanup_oid_from_probable_dead_oid_list() {
   } else {
     done();
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+void S3PostCompleteAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  "");
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

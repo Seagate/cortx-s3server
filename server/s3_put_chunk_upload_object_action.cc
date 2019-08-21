@@ -35,14 +35,11 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
-    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
-    std::shared_ptr<S3AuthClientFactory> auth_factory,
     std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3Action(std::move(req), true, std::move(auth_factory)),
+    : S3ObjectAction(std::move(req)),
       auth_failed(false),
       write_failed(false),
       clovis_write_in_progress(false),
@@ -77,18 +74,6 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   tried_count = 0;
   salt = "uri_salt_";
 
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = std::move(bucket_meta_factory);
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
-  if (object_meta_factory) {
-    object_metadata_factory = std::move(object_meta_factory);
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
-  }
-
   if (clovis_s3_factory) {
     clovis_writer_factory = std::move(clovis_s3_factory);
   } else {
@@ -113,13 +98,11 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
 void S3PutChunkUploadObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
-  add_task(std::bind(&S3PutChunkUploadObjectAction::fetch_bucket_info, this));
   if (!request->get_header_value("x-amz-tagging").empty()) {
     add_task(std::bind(
         &S3PutChunkUploadObjectAction::validate_x_amz_tagging_if_present,
         this));
   }
-  add_task(std::bind(&S3PutChunkUploadObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3PutChunkUploadObjectAction::create_object, this));
   if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
     add_task(std::bind(
@@ -172,18 +155,6 @@ void S3PutChunkUploadObjectAction::chunk_auth_failed() {
       send_response_to_s3_client();
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3PutChunkUploadObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3PutChunkUploadObjectAction::next, this),
-      std::bind(&S3PutChunkUploadObjectAction::fetch_bucket_info_failed, this));
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -258,35 +229,26 @@ void S3PutChunkUploadObjectAction::validate_tags() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutChunkUploadObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    struct m0_uint128 object_list_oid =
-        bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      // object_list_oid is null only when bucket metadata is corrupted.
-      // user has to delete and recreate the bucket again to make it work.
-      s3_log(S3_LOG_ERROR, request_id, "Bucket(%s) metadata is corrupted.\n",
-             request->get_bucket_name().c_str());
-      s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
-             S3_IEM_METADATA_CORRUPTED_JSON);
-      set_s3_error("MetaDataCorruption");
-      send_response_to_s3_client();
-    } else {
-      object_metadata = object_metadata_factory->create_object_metadata_obj(
-          request, object_list_oid);
-
-      object_metadata->load(
-          std::bind(&S3PutChunkUploadObjectAction::fetch_object_info_status,
-                    this),
-          std::bind(&S3PutChunkUploadObjectAction::next, this));
-    }
+void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  struct m0_uint128 object_list_oid =
+      bucket_metadata->get_object_list_index_oid();
+  if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+    // object_list_oid is null only when bucket metadata is corrupted.
+    // user has to delete and recreate the bucket again to make it work.
+    s3_log(S3_LOG_ERROR, request_id, "Bucket(%s) metadata is corrupted.\n",
+           request->get_bucket_name().c_str());
+    s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
+           S3_IEM_METADATA_CORRUPTED_JSON);
+    set_s3_error("MetaDataCorruption");
+    send_response_to_s3_client();
+  } else {
+    next();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutChunkUploadObjectAction::fetch_object_info_status() {
+void S3PutChunkUploadObjectAction::fetch_object_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
@@ -836,5 +798,13 @@ void S3PutChunkUploadObjectAction::cleanup_oid_from_probable_dead_oid_list() {
   } else {
     done();
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  "");
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

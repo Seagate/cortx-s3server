@@ -72,9 +72,9 @@ class S3PostMultipartObjectTest : public testing::Test {
 
     EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PostMultipartObjectAction(
-        ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
-        object_meta_factory, part_meta_factory, clovis_writer_factory,
-        bucket_tag_body_factory_mock, ptr_mock_s3_clovis_api));
+        ptr_mock_request, object_mp_meta_factory, part_meta_factory,
+        clovis_writer_factory, bucket_tag_body_factory_mock,
+        ptr_mock_s3_clovis_api));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -104,13 +104,6 @@ TEST_F(S3PostMultipartObjectTest, ConstructorTest) {
   EXPECT_EQ(0, action_under_test->tried_count);
   EXPECT_EQ("uri_salt_", action_under_test->salt);
   EXPECT_NE(0, action_under_test->number_of_tasks());
-}
-
-TEST_F(S3PostMultipartObjectTest, FetchBucketInfo) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test->fetch_bucket_info();
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
 }
 
 TEST_F(S3PostMultipartObjectTest, ValidateRequestTags) {
@@ -172,7 +165,8 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
   EXPECT_STREQ("MetaDataCorruption",
                action_under_test->get_s3_error_code().c_str());
 }
-
+/*  TODO metadata fetch moved to s3_object_action class,
+//     so these test will be moved there
 TEST_F(S3PostMultipartObjectTest, FetchObjectInfoMultipartPresent) {
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
@@ -253,7 +247,7 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectPresent) {
   action_under_test->add_task(
       std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
   struct m0_uint128 oid_before_regen = action_under_test->oid;
-  action_under_test->fetch_object_info_status();
+  action_under_test->check_multipart_object_info_status();
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_NE(empty_oid, action_under_test->old_oid);
   EXPECT_OID_NE(oid_before_regen, action_under_test->oid);
@@ -270,11 +264,11 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent) {
   action_under_test->clear_tasks();
   action_under_test->add_task(
       std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
-  action_under_test->fetch_object_info_status();
+  action_under_test->check_multipart_object_info_status();
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_EQ(zero_oid, action_under_test->old_oid);
 }
-
+*/
 TEST_F(S3PostMultipartObjectTest, CreateObject) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;

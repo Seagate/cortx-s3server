@@ -24,27 +24,22 @@
 
 #include <gtest/gtest_prod.h>
 #include <memory>
-#include "s3_action_base.h"
-#include "s3_bucket_metadata.h"
+#include "s3_object_action_base.h"
 #include "s3_clovis_writer.h"
 #include "s3_factory.h"
-#include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
 #include "s3_timer.h"
 #include "s3_uuid.h"
 #include "evhtp_wrapper.h"
 
-class S3PostMultipartObjectAction : public S3Action {
+class S3PostMultipartObjectAction : public S3ObjectAction {
   struct m0_uint128 oid;
   int layout_id;
   struct m0_uint128 old_oid;
   int old_layout_id;
-  struct m0_uint128 object_list_oid;
   struct m0_uint128 multipart_index_oid;
   short tried_count;
   std::string salt;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
@@ -55,8 +50,6 @@ class S3PostMultipartObjectAction : public S3Action {
 
   std::map<std::string, std::string> probable_oid_list;
 
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
@@ -74,10 +67,8 @@ class S3PostMultipartObjectAction : public S3Action {
  public:
   S3PostMultipartObjectAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
-      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
@@ -89,11 +80,11 @@ class S3PostMultipartObjectAction : public S3Action {
   void validate_x_amz_tagging_if_present();
   void parse_x_amz_tagging_header(std::string content);
   void validate_tags();
-  void fetch_bucket_info();
-  void fetch_bucket_info_successful();
   void fetch_bucket_info_failed();
-  void fetch_object_info();
-  void fetch_object_info_status();
+  void check_multipart_object_info_status();
+  void check_object_state();
+  void fetch_object_info_success();
+  void fetch_object_info_failed();
   void check_upload_is_inprogress();
   void create_object();
   void create_object_successful();
@@ -108,6 +99,8 @@ class S3PostMultipartObjectAction : public S3Action {
   void save_multipart_metadata();
   void save_multipart_metadata_failed();
   void send_response_to_s3_client();
+
+  void set_authorization_meta();
 
   // rollback functions
   void rollback_create();

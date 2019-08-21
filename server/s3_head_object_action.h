@@ -25,18 +25,9 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
-#include "s3_bucket_metadata.h"
-#include "s3_factory.h"
-#include "s3_object_metadata.h"
+#include "s3_object_action_base.h"
 
-class S3HeadObjectAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
-
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
-
+class S3HeadObjectAction : public S3ObjectAction {
  public:
   S3HeadObjectAction(
       std::shared_ptr<S3RequestObject> req,
@@ -45,9 +36,7 @@ class S3HeadObjectAction : public S3Action {
 
   void setup_steps();
 
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
-  void fetch_object_info();
   void fetch_object_info_failed();
   void send_response_to_s3_client();
 

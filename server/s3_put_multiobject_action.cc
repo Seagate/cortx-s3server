@@ -26,12 +26,12 @@
 
 S3PutMultiObjectAction::S3PutMultiObjectAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3AuthClientFactory> auth_factory)
-    : S3Action(req, true, auth_factory),
+    : S3ObjectAction(std::move(req), nullptr, nullptr, true,
+                     std::move(auth_factory)),
       total_data_to_stream(0),
       auth_failed(false),
       write_failed(false),
@@ -53,12 +53,6 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
 
   if (S3Option::get_instance()->is_auth_disabled()) {
     auth_completed = true;
-  }
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_mp_meta_factory) {
@@ -86,7 +80,6 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
 void S3PutMultiObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
-  add_task(std::bind(&S3PutMultiObjectAction::fetch_bucket_info, this));
   add_task(std::bind(&S3PutMultiObjectAction::fetch_multipart_metadata, this));
   if (part_number == 1) {
     // Save first part size to multipart metadata in case of non
@@ -150,21 +143,21 @@ void S3PutMultiObjectAction::chunk_auth_failed() {
   }
 }
 
-void S3PutMultiObjectAction::fetch_bucket_info() {
+void S3PutMultiObjectAction::fetch_bucket_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-
-  bucket_metadata->load(
-      std::bind(&S3PutMultiObjectAction::next, this),
-      std::bind(&S3PutMultiObjectAction::fetch_bucket_info_failed, this));
-
-  // for shutdown testcases, check FI and set shutdown signal
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_multiobject_action_fetch_bucket_info_shutdown_fail");
+  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    next();
+  } else {
+    set_s3_error("NoSuchBucket");
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
-
+void S3PutMultiObjectAction::fetch_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
 void S3PutMultiObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Bucket does not exists\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
@@ -591,5 +584,12 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
   request->resume();
 
   done();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+void S3PutMultiObjectAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  "");
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

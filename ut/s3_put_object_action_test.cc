@@ -43,6 +43,8 @@ using ::testing::DefaultValue;
 #define CREATE_OBJECT_METADATA                                             \
   do {                                                                     \
     CREATE_BUCKET_METADATA;                                                \
+    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state()) \
+        .WillOnce(Return(S3BucketMetadataState::present));                 \
     bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(  \
         object_list_indx_oid);                                             \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))  \
@@ -328,7 +330,8 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
-
+/*   TODO metadata fetch moved to s3_object_action class,
+//     so these test will be moved there
 TEST_F(S3PutObjectActionTest,
        FetchObjectInfoWhenBucketPresentAndObjIndexAbsent) {
   CREATE_BUCKET_METADATA;
@@ -353,7 +356,7 @@ TEST_F(S3PutObjectActionTest,
   EXPECT_TRUE(action_under_test->bucket_metadata != nullptr);
   EXPECT_TRUE(action_under_test->object_metadata == nullptr);
 }
-
+*/
 TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedFoundShouldHaveNewOID) {
   CREATE_OBJECT_METADATA;
 
@@ -375,7 +378,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedFoundShouldHaveNewOID) {
 
   // Remember default generated OID
   struct m0_uint128 oid_before_regen = action_under_test->new_object_oid;
-  action_under_test->fetch_object_info_status();
+  action_under_test->fetch_object_info_success();
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_NE(zero_oid_idx, action_under_test->old_object_oid);
@@ -395,7 +398,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedNotFoundShouldUseURL2OID) {
 
   // Remember default generated OID
   struct m0_uint128 oid_before_regen = action_under_test->new_object_oid;
-  action_under_test->fetch_object_info_status();
+  action_under_test->fetch_object_info_success();
 
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);
@@ -420,7 +423,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedInvalidStateReportsError) {
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
 
-  action_under_test->fetch_object_info_status();
+  action_under_test->fetch_object_info_success();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);

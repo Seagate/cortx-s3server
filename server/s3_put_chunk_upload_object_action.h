@@ -25,7 +25,7 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_object_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
@@ -33,9 +33,7 @@
 #include "s3_object_metadata.h"
 #include "s3_timer.h"
 
-class S3PutChunkUploadObjectAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
+class S3PutChunkUploadObjectAction : public S3ObjectAction {
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   int layout_id;
@@ -61,8 +59,6 @@ class S3PutChunkUploadObjectAction : public S3Action {
 
   std::map<std::string, std::string> probable_oid_list;
 
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
@@ -79,10 +75,7 @@ class S3PutChunkUploadObjectAction : public S3Action {
  public:
   S3PutChunkUploadObjectAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
-      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
-      std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
@@ -93,10 +86,9 @@ class S3PutChunkUploadObjectAction : public S3Action {
   void chunk_auth_failed();
   void validate_tags();
 
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
-  void fetch_object_info();
-  void fetch_object_info_status();
+  void fetch_object_info_success();
+  void fetch_object_info_failed();
   void create_object();
   void create_object_failed();
   void create_object_successful();
@@ -124,6 +116,8 @@ class S3PutChunkUploadObjectAction : public S3Action {
   // rollback functions
   void rollback_create();
   void rollback_create_failed();
+
+  void set_authorization_meta();
 
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, ConstructorTest);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, FetchBucketInfo);

@@ -26,19 +26,22 @@
 S3ObjectAction::S3ObjectAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
-    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
-    : S3Action(req) {
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
+    bool check_shutdown, std::shared_ptr<S3AuthClientFactory> auth_factory,
+    bool skip_auth)
+    : S3Action(std::move(req), check_shutdown, std::move(auth_factory),
+               skip_auth) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   object_list_oid = {0ULL, 0ULL};
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
+    object_metadata_factory = std::move(object_meta_factory);
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
@@ -53,11 +56,17 @@ void S3ObjectAction::fetch_bucket_info() {
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
-      std::bind(&S3ObjectAction::fetch_object_info, this),
+      std::bind(&S3ObjectAction::fetch_bucket_info_success, this),
       std::bind(&S3ObjectAction::fetch_bucket_info_failed, this));
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "get_object_action_fetch_bucket_info_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_object_action_fetch_bucket_info_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_multiobject_action_fetch_bucket_info_shutdown_fail");
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ObjectAction::fetch_object_info() {
@@ -74,12 +83,15 @@ void S3ObjectAction::fetch_object_info() {
           request, object_list_oid);
 
       object_metadata->load(
-          std::bind(&S3ObjectAction::next, this),
+          std::bind(&S3ObjectAction::fetch_object_info_success, this),
           std::bind(&S3ObjectAction::fetch_object_info_failed, this));
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+
+void S3ObjectAction::fetch_object_info_success() { next(); }
+void S3ObjectAction::fetch_bucket_info_success() { fetch_object_info(); }
 void S3ObjectAction::load_metadata() { fetch_bucket_info(); }
 
 void S3ObjectAction::set_authorization_meta() {

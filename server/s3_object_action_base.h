@@ -55,17 +55,22 @@ class S3ObjectAction : public S3Action {
   void fetch_object_info();
   virtual void fetch_bucket_info_failed() = 0;
   virtual void fetch_object_info_failed() = 0;
+  virtual void fetch_object_info_success();
+  virtual void fetch_bucket_info_success();
 
  public:
   S3ObjectAction(std::shared_ptr<S3RequestObject> req,
                  std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory =
                      nullptr,
                  std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory =
-                     nullptr);
+                     nullptr,
+                 bool check_shutdown = true,
+                 std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
+                 bool skip_auth = false);
   virtual ~S3ObjectAction();
 
   void load_metadata();
-  void set_authorization_meta();
+  virtual void set_authorization_meta();
 };
 
 #endif

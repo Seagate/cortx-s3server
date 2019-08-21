@@ -24,25 +24,19 @@
 
 #include <memory>
 
-#include "s3_action_base.h"
-#include "s3_bucket_metadata.h"
+#include "s3_object_action_base.h"
 #include "s3_clovis_writer.h"
 #include "s3_factory.h"
-#include "s3_object_metadata.h"
 #include "s3_part_metadata.h"
 #include "s3_aws_etag.h"
 #include "s3_uuid.h"
 
-class S3PostCompleteAction : public S3Action {
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+class S3PostCompleteAction : public S3ObjectAction {
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ObjectMetadata> multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
@@ -75,8 +69,6 @@ class S3PostCompleteAction : public S3Action {
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
           nullptr,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
-      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
@@ -88,8 +80,9 @@ class S3PostCompleteAction : public S3Action {
   void load_and_validate_request();
   void consume_incoming_content();
   bool validate_request_body(std::string &xml_str);
-  void fetch_bucket_info();
+  void fetch_bucket_info_success();
   void fetch_bucket_info_failed();
+  void fetch_object_info_failed();
   void fetch_multipart_info();
   void fetch_multipart_info_failed();
 
@@ -111,6 +104,7 @@ class S3PostCompleteAction : public S3Action {
   void set_abort_multipart(bool abortit);
   bool is_abort_multipart();
   void send_response_to_s3_client();
+  void set_authorization_meta();
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();

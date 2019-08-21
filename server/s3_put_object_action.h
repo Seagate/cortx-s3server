@@ -25,7 +25,7 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 #include <string>
-#include "s3_action_base.h"
+#include "s3_object_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
@@ -34,7 +34,7 @@
 #include "s3_timer.h"
 #include "evhtp_wrapper.h"
 
-class S3PutObjectAction : public S3Action {
+class S3PutObjectAction : public S3ObjectAction {
   struct m0_uint128 old_object_oid;
   int old_layout_id;
   struct m0_uint128 new_object_oid;
@@ -43,8 +43,6 @@ class S3PutObjectAction : public S3Action {
   int layout_id;
   // string used for salting the uri
   std::string salt;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
@@ -54,8 +52,6 @@ class S3PutObjectAction : public S3Action {
 
   std::map<std::string, std::string> probable_oid_list;
 
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
@@ -81,14 +77,13 @@ class S3PutObjectAction : public S3Action {
   void setup_steps();
   // void start();
 
-  void fetch_bucket_info();
   void validate_x_amz_tagging_if_present();
   void parse_x_amz_tagging_header(std::string content);
   void validate_tags();
-  void fetch_object_info();
-  void fetch_bucket_info_successful();
+  void set_authorization_meta();
   void fetch_bucket_info_failed();
-  void fetch_object_info_status();
+  void fetch_object_info_success();
+  void fetch_object_info_failed();
   void create_object();
   void create_object_successful();
   void create_object_failed();

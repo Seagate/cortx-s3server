@@ -25,7 +25,7 @@
 
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_object_action_base.h"
 #include "s3_async_buffer.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_writer.h"
@@ -33,8 +33,7 @@
 #include "s3_part_metadata.h"
 #include "s3_timer.h"
 
-class S3PutMultiObjectAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
+class S3PutMultiObjectAction : public S3ObjectAction {
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
@@ -64,7 +63,6 @@ class S3PutMultiObjectAction : public S3Action {
   void chunk_auth_failed();
   void send_chunk_details_if_any();
 
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
@@ -76,7 +74,6 @@ class S3PutMultiObjectAction : public S3Action {
  public:
   S3PutMultiObjectAction(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
@@ -85,9 +82,9 @@ class S3PutMultiObjectAction : public S3Action {
 
   void setup_steps();
   // void start();
-
-  void fetch_bucket_info();
+  void fetch_bucket_info_success();
   void fetch_bucket_info_failed();
+  void fetch_object_info_failed();
   void fetch_multipart_metadata();
   void fetch_multipart_failed();
   void fetch_firstpart_info();
@@ -106,6 +103,7 @@ class S3PutMultiObjectAction : public S3Action {
   void save_metadata();
   void save_metadata_failed();
   void send_response_to_s3_client();
+  void set_authorization_meta();
 
   // Google tests
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, ConstructorTest);

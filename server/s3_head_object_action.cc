@@ -25,43 +25,21 @@ S3HeadObjectAction::S3HeadObjectAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
-    : S3Action(req) {
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(
       S3_LOG_INFO, request_id, "S3 API: Head Object. Bucket[%s] Object[%s]\n",
       request->get_bucket_name().c_str(), request->get_object_name().c_str());
 
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
-  if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
-  }
-
   setup_steps();
 }
 
 void S3HeadObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3HeadObjectAction::fetch_bucket_info, this));
-  add_task(std::bind(&S3HeadObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3HeadObjectAction::send_response_to_s3_client, this));
   // ...
-}
-
-void S3HeadObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3HeadObjectAction::next, this),
-      std::bind(&S3HeadObjectAction::fetch_bucket_info_failed, this));
 }
 
 void S3HeadObjectAction::fetch_bucket_info_failed() {
@@ -82,10 +60,9 @@ void S3HeadObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3HeadObjectAction::fetch_object_info() {
+void S3HeadObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
+  if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     struct m0_uint128 object_list_index_oid =
         bucket_metadata->get_object_list_index_oid();
     // bypass shutdown signal check for next task
@@ -96,22 +73,8 @@ void S3HeadObjectAction::fetch_object_info() {
       // There is no object list index, hence object doesn't exist
       s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
       set_s3_error("NoSuchKey");
-      send_response_to_s3_client();
-    } else {
-      object_metadata = object_metadata_factory->create_object_metadata_obj(
-          request, object_list_index_oid);
-
-      object_metadata->load(
-          std::bind(&S3HeadObjectAction::next, this),
-          std::bind(&S3HeadObjectAction::fetch_object_info_failed, this));
     }
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3HeadObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+  } else if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     s3_log(S3_LOG_WARN, request_id, "Object not found\n");
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() ==

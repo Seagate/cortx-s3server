@@ -33,15 +33,13 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3RequestObject> req,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
-    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3Action(std::move(req)) {
+    : S3ObjectAction(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
@@ -69,25 +67,8 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   layout_id =
       S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
 
-  bucket_metadata = nullptr;
-  object_metadata = nullptr;
-  object_multipart_metadata = nullptr;
-  part_metadata = nullptr;
-  clovis_writer = nullptr;
-
   multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = std::move(bucket_meta_factory);
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
-  if (object_meta_factory) {
-    object_metadata_factory = std::move(object_meta_factory);
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
-  }
 
   if (object_mp_meta_factory) {
     object_mp_metadata_factory = std::move(object_mp_meta_factory);
@@ -125,7 +106,6 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
 void S3PostMultipartObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
-  add_task(std::bind(&S3PostMultipartObjectAction::fetch_bucket_info, this));
   if (!request->get_header_value("x-amz-tagging").empty()) {
 
     add_task(std::bind(
@@ -133,7 +113,6 @@ void S3PostMultipartObjectAction::setup_steps() {
   }
   add_task(std::bind(&S3PostMultipartObjectAction::check_upload_is_inprogress,
                      this));
-  add_task(std::bind(&S3PostMultipartObjectAction::fetch_object_info, this));
   add_task(std::bind(&S3PostMultipartObjectAction::create_object, this));
   if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
     add_task(std::bind(
@@ -149,28 +128,7 @@ void S3PostMultipartObjectAction::setup_steps() {
                      this));
   // ...
 }
-
-void S3PostMultipartObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3PostMultipartObjectAction::fetch_bucket_info_successful,
-                this),
-      std::bind(&S3PostMultipartObjectAction::fetch_bucket_info_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3PostMultipartObjectAction::fetch_bucket_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    next();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
+void S3PostMultipartObjectAction::fetch_object_info_failed() { next(); }
 void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
@@ -191,6 +149,7 @@ void S3PostMultipartObjectAction::fetch_bucket_info_failed() {
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+void S3PostMultipartObjectAction::fetch_object_info_success() { next(); }
 
 void S3PostMultipartObjectAction::validate_x_amz_tagging_if_present() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
@@ -265,14 +224,18 @@ void S3PostMultipartObjectAction::check_upload_is_inprogress() {
       send_response_to_s3_client();
     } else {
       object_multipart_metadata->load(
-          std::bind(&S3PostMultipartObjectAction::next, this),
-          std::bind(&S3PostMultipartObjectAction::next, this));
+          std::bind(
+              &S3PostMultipartObjectAction::check_multipart_object_info_status,
+              this),
+          std::bind(
+              &S3PostMultipartObjectAction::check_multipart_object_info_status,
+              this));
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PostMultipartObjectAction::fetch_object_info() {
+void S3PostMultipartObjectAction::check_multipart_object_info_status() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (object_multipart_metadata->get_state() !=
       S3ObjectMetadataState::present) {
@@ -286,6 +249,7 @@ void S3PostMultipartObjectAction::fetch_object_info() {
       s3_log(S3_LOG_DEBUG, "", "Exiting\n");
       return;
     }
+
     s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
     object_list_oid = bucket_metadata->get_object_list_index_oid();
     if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
@@ -298,13 +262,7 @@ void S3PostMultipartObjectAction::fetch_object_info() {
       set_s3_error("MetaDataCorruption");
       send_response_to_s3_client();
     } else {
-      object_metadata = object_metadata_factory->create_object_metadata_obj(
-          request, object_list_oid);
-
-      object_metadata->load(
-          std::bind(&S3PostMultipartObjectAction::fetch_object_info_status,
-                    this),
-          std::bind(&S3PostMultipartObjectAction::next, this));
+      check_object_state();
     }
   } else {
     //++
@@ -323,7 +281,7 @@ void S3PostMultipartObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PostMultipartObjectAction::fetch_object_info_status() {
+void S3PostMultipartObjectAction::check_object_state() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   S3ObjectMetadataState object_state = object_metadata->get_state();
   if (object_state == S3ObjectMetadataState::present) {
@@ -761,5 +719,12 @@ void S3PostMultipartObjectAction::cleanup_oid_from_probable_dead_oid_list() {
   } else {
     done();
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+void S3PostMultipartObjectAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  "");
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
