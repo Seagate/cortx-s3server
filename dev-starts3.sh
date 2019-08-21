@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # Script to start S3 server in dev environment.
-#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>] [--fake_obj] [--fake_kvs]
+#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>] [--fake_obj] [--fake_kvs] [--callgraph /path/to/graph]
 #               Optional argument is:
 #                   Number of S3 server instances to start.
 #                   Max number of instances allowed = 20
@@ -34,6 +34,9 @@ num_instances=1
 fake_obj=0
 fake_kvs=0
 
+callgraph_mode=0
+callgraph_out="/tmp/callgraph.out"
+
 if [[ $1 =~ ^[0-9]+$ ]] && [ $1 -le $MAX_S3_INSTANCES_NUM ]
 then
     num_instances=$1
@@ -48,6 +51,15 @@ while [ "$1" != "" ]; do
         --fake_kvs ) fake_kvs=1;
                      echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
                      ;;
+        --callgraph ) callgraph_mode=1;
+                      num_instances=1;
+                      echo "Generate call graph with valgrind";
+                      shift;
+                      if ! [[ $1 =~ ^[[:space:]]*$ ]]
+                      then
+                          callgraph_out="$1";
+                      fi
+                      ;;
         * )
             echo "Invalid argument passed";
             exit 1
@@ -137,12 +149,18 @@ then
     fake_params+=" --fake_clovis_writeobj true --fake_clovis_readobj true"
 fi
 
+callgraph_cmd=""
+if [ $callgraph_mode -eq 1 ]
+then
+    callgraph_cmd="valgrind -q --tool=callgrind --collect-jumps=yes --collect-systime=yes --callgrind-out-file=$callgraph_out"
+fi
+
 while [[ $counter -lt $num_instances ]]
 do
   clovis_local_port=`expr 101 + $counter`
   s3port=`expr $s3_port_from_config + $counter`
   pid_filename='/var/run/s3server.'$s3port'.pid'
-  s3server --s3pidfile $pid_filename \
+  $callgraph_cmd s3server --s3pidfile $pid_filename \
            --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
            --s3port $s3port --fault_injection true $fake_params
   ((++counter))

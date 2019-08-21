@@ -2,6 +2,17 @@
 # Script to stop S3 server in dev environment.
 # The script will stop all running instances of S3 server.
 
+callgraph_process=0
+callgraph_path="/tmp/callgraph.out"
+if [ "$1" == "--callgraph" ]
+then
+    callgraph_process=1
+    if ! [[ $2 =~ ^[[:space:]]*$ ]]
+    then
+        callgraph_path=$2
+    fi
+fi
+
 MAX_S3_INSTANCES_NUM=20
 
 # s3 port configured in s3config.yaml
@@ -46,3 +57,8 @@ do
 
   ((instance++))
 done
+
+if [ $callgraph_process -eq 1 ]
+then
+    callgrind_annotate --inclusive=yes --tree=both "$callgraph_path" > "$callgraph_path".annotated
+fi

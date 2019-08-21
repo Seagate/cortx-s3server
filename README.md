@@ -824,3 +824,54 @@ Note: for proper KV mocking one should use following combination
 ```
 --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true
 ```
+
+# Call graph
+
+Call graph contains relationship between functions, number of calls of each
+funtion and number of instructions executed. These info is extarcted with help
+of valgrind tool
+```
+valgrind --tool=callgrind <s3server cmd>
+```
+
+Note: valgrind profiling is extreamly slow.
+
+**dev-starts3.sh** is extended with **--callgraph** option. The option has a
+parameter - the path to valgrind raw data.
+
+Note: if **--callgraph** option is mentioned only one instance of s3server will be run.
+
+There two ways to analyze valgrind raw data. The first one is to use GUI
+application called KCachegrind. This is the prefered way since KCachegrind has
+lots drawing and analitics features.
+The other way is to convert it to text form. This is done automatically by
+providing the same option to **dev-stops3.sh** script.
+
+**dev-stops3.sh** is extended with **--callgraph** option. The option has a
+parameter - the path to valgrind raw data. It should be the same name provided
+to **dev-starts3.sh --callgraph <path-to-file>**. After the s3server stopped and
+valgrind raw data generated, tool called **callgrind_annotate** converts it
+to text form. Converted file will have the same name as raw file plus
+"*.annotated" suffix.
+
+**jenkins-build.sh** is extended with **--callgraph** option. The option has a
+parameter - the path to valgrind raw data. If valgrind package were not found in
+the system it will be installed with yum package manager.
+
+Note: if **jenkins-build.sh** were run with **--skip_tests** option s3server will
+not be stopped and **dev-stops3.sh** should be called with the same **--callgraph**
+option value.
+
+Note: **--calgraph** option could be used together with **--basic_test_only**, e.g.
+```
+jenkins-build.sh --skip_build --basic_test_only --callgraph /tmp/callgraph.out
+```
+or
+```
+jenkins-build.sh --skip_build --fake_obj --fake_kvs --basic_test_only --callgraph /tmp/callgraph.out
+```
+in both cases s3server instance will be run, simple **s3cmd** commands for
+file put/get are executed, s3server will be stopped.
+There will be two output files created
+/tmp/callgraph.out - raw valgrind generated file and
+/tmp/callgraph.out.annotated - text form

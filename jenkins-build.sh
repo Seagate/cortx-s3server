@@ -3,6 +3,7 @@
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--use_ipv6] [--skip_build] [--skip_tests]
                                     [--fake_obj] [--fake_kvs] [--basic_test_only]
+                                    [--callgraph /path/to/output/file]
                                     [--help | -h]
 
 where:
@@ -17,6 +18,8 @@ where:
 --basic_test_only	   Do not run all the tests. Only basic s3cmd regression
 		   tests will be run. If --fake* params provided, tests will use
 		   zero filled objects
+--callgraph /path/to/output/file	   Generate valgrind call graph; Especially usefull
+		   together with --basic_test_only option
 --help (-h)        Display help"
 
 use_http_client=0
@@ -28,6 +31,7 @@ skip_tests=0
 fake_obj=0
 fake_kvs=0
 basic_test_only=0
+callgraph_cmd=""
 
 if [ $# -eq 0 ]
 then
@@ -71,6 +75,15 @@ else
       --basic_test_only ) basic_test_only=1;
           echo "Run basic s3cmd regression tests only";
           ;;
+      --callgraph ) shift;
+                    if [[ $1 =~ ^[[:space:]]*$ ]]
+                    then
+                        callgraph_cmd="--callgraph /tmp/callgraph.out";
+                    else
+                        callgraph_cmd="--callgraph $1";
+                    fi
+                    echo "Generate valgrind call graph with params $callgraph_cmd";
+                    ;;
       --help | -h )
           echo "$USAGE"
           exit 1
@@ -86,18 +99,23 @@ else
 fi
 set -xe
 
+USE_SUDO=
+if [[ $EUID -ne 0 ]]; then
+  command -v sudo || (echo "Script should be run as root or sudo required." && exit 1)
+  USE_SUDO=sudo
+fi
+
+if [ "$callgraph_cmd" != "" ]
+then
+    $USE_SUDO yum -q list installed valgrind || $USE_SUDO yum -y install valgrind || (echo "Valgrind package cannot be installed" && exit 1)
+fi
+
 export PATH=/opt/seagate/s3/bin/:$PATH
 echo $PATH
 
 #git clone --recursive http://es-gerrit.xyus.xyratex.com:8080/s3server
 
 S3_BUILD_DIR=`pwd`
-
-USE_SUDO=
-if [[ $EUID -ne 0 ]]; then
-  command -v sudo || (echo "Script should be run as root or sudo required." && exit 1)
-  USE_SUDO=sudo
-fi
 
 ulimit -c unlimited
 
@@ -219,10 +237,11 @@ fi
 while [[ $retry -le $max_retries ]]
 do
   statuss3=0
-  $USE_SUDO ./dev-starts3.sh $fake_params
-  # Give it a second to start
-  sleep 1
-  ./iss3up.sh 1 || statuss3=$?
+  $USE_SUDO ./dev-starts3.sh $fake_params $callgraph_cmd
+
+  # Wait s3server to start
+  timeout 2m bash -c "while ! ./iss3up.sh; do sleep 1; done"
+  statuss3=$?
 
   if [ "$statuss3" == "0" ]; then
     echo "S3 service started successfully..."
@@ -284,7 +303,7 @@ fi
 $USE_SUDO sed -i 's/enableFaultInjection=.*$/enableFaultInjection=false/g' /opt/seagate/auth/resources/authserver.properties
 
 $USE_SUDO systemctl stop s3authserver || echo "Cannot stop s3authserver services"
-$USE_SUDO ./dev-stops3.sh || echo "Cannot stop s3 services"
+$USE_SUDO ./dev-stops3.sh $callgraph_cmd || echo "Cannot stop s3 services"
 
 if [ $s3server_enable_ssl -eq 1 ]
 then
