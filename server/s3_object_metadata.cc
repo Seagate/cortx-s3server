@@ -92,31 +92,31 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<ClovisAPI> clovis_api)
-    : request(req) {
+    : request(std::move(req)) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   initialize(ismultipart, uploadid);
 
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_clovis_api = std::move(clovis_api);
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (kv_reader_factory) {
-    clovis_kv_reader_factory = kv_reader_factory;
+    clovis_kv_reader_factory = std::move(kv_reader_factory);
   } else {
     clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
   }
 
   if (kv_writer_factory) {
-    clovis_kv_writer_factory = kv_writer_factory;
+    clovis_kv_writer_factory = std::move(kv_writer_factory);
   } else {
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
@@ -129,7 +129,7 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<ClovisAPI> clovis_api)
-    : request(req) {
+    : request(std::move(req)) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -138,24 +138,24 @@ S3ObjectMetadata::S3ObjectMetadata(
   index_oid.u_lo = bucket_idx_oid.u_lo;
 
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_clovis_api = std::move(clovis_api);
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (kv_reader_factory) {
-    clovis_kv_reader_factory = kv_reader_factory;
+    clovis_kv_reader_factory = std::move(kv_reader_factory);
   } else {
     clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
   }
 
   if (kv_writer_factory) {
-    clovis_kv_writer_factory = kv_writer_factory;
+    clovis_kv_writer_factory = std::move(kv_writer_factory);
   } else {
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
@@ -305,7 +305,7 @@ void S3ObjectMetadata::load_successful() {
   } else {
     s3_timer.stop();
     const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("load_object_metadata_ms", mss);
+    LOG_PERF("load_object_metadata_ms", request_id.c_str(), mss);
     s3_stats_timing("load_object_metadata", mss);
 
     state = S3ObjectMetadataState::present;

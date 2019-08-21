@@ -42,7 +42,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3Action(req, true, auth_factory),
+    : S3Action(std::move(req), true, std::move(auth_factory)),
       auth_failed(false),
       write_failed(false),
       clovis_write_in_progress(false),
@@ -78,31 +78,31 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   salt = "uri_salt_";
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
+    object_metadata_factory = std::move(object_meta_factory);
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (clovis_s3_factory) {
-    clovis_writer_factory = clovis_s3_factory;
+    clovis_writer_factory = std::move(clovis_s3_factory);
   } else {
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
   if (kv_writer_factory) {
-    clovis_kv_writer_factory = kv_writer_factory;
+    clovis_kv_writer_factory = std::move(kv_writer_factory);
   } else {
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
 
   if (put_tags_body_factory) {
-    put_object_tag_body_factory = put_tags_body_factory;
+    put_object_tag_body_factory = std::move(put_tags_body_factory);
   } else {
     put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
@@ -351,7 +351,7 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
   } else if (clovis_writer->get_state() ==
              S3ClovisWriterOpState::failed_to_launch) {
     create_object_timer.stop();
-    LOG_PERF("create_object_failed_ms",
+    LOG_PERF("create_object_failed_ms", request_id.c_str(),
              create_object_timer.elapsed_time_in_millisec());
     s3_stats_timing("create_object_failed",
                     create_object_timer.elapsed_time_in_millisec());
@@ -360,7 +360,7 @@ void S3PutChunkUploadObjectAction::create_object_failed() {
     send_response_to_s3_client();
   } else {
     create_object_timer.stop();
-    LOG_PERF("create_object_failed_ms",
+    LOG_PERF("create_object_failed_ms", request_id.c_str(),
              create_object_timer.elapsed_time_in_millisec());
     s3_stats_timing("create_object_failed",
                     create_object_timer.elapsed_time_in_millisec());
@@ -464,7 +464,7 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   create_object_timer.stop();
-  LOG_PERF("create_object_successful_ms",
+  LOG_PERF("create_object_successful_ms", request_id.c_str(),
            create_object_timer.elapsed_time_in_millisec());
   s3_stats_timing("chunkupload_create_object_success",
                   create_object_timer.elapsed_time_in_millisec());

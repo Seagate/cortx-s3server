@@ -40,7 +40,10 @@ S3PutObjectAction::S3PutObjectAction(
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3Action(req), total_data_to_stream(0), write_in_progress(false) {
+    : S3Action(std::move(req)),
+      total_data_to_stream(0),
+      write_in_progress(false) {
+
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Put Object. Bucket[%s] Object[%s]\n",
@@ -51,7 +54,7 @@ S3PutObjectAction::S3PutObjectAction(
   new_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_clovis_api = std::move(clovis_api);
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
@@ -65,30 +68,30 @@ S3PutObjectAction::S3PutObjectAction(
   salt = "uri_salt_";
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
+    object_metadata_factory = std::move(object_meta_factory);
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (clovis_s3_factory) {
-    clovis_writer_factory = clovis_s3_factory;
+    clovis_writer_factory = std::move(clovis_s3_factory);
   } else {
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
   if (put_tags_body_factory) {
-    put_object_tag_body_factory = put_tags_body_factory;
+    put_object_tag_body_factory = std::move(put_tags_body_factory);
   } else {
     put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
 
   if (kv_writer_factory) {
-    clovis_kv_writer_factory = kv_writer_factory;
+    clovis_kv_writer_factory = std::move(kv_writer_factory);
   } else {
     clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
   }
@@ -305,7 +308,7 @@ void S3PutObjectAction::create_object_failed() {
   } else {
     s3_timer.stop();
     const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("create_object_failed_ms", mss);
+    LOG_PERF("create_object_failed_ms", request_id.c_str(), mss);
     s3_stats_timing("create_object_failed", mss);
 
     if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
@@ -438,7 +441,7 @@ void S3PutObjectAction::initiate_data_streaming() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_timer.stop();
   const auto mss = s3_timer.elapsed_time_in_millisec();
-  LOG_PERF("create_object_successful_ms", mss);
+  LOG_PERF("create_object_successful_ms", request_id.c_str(), mss);
   s3_stats_timing("create_object_success", mss);
 
   total_data_to_stream = request->get_content_length();
@@ -645,7 +648,7 @@ void S3PutObjectAction::send_response_to_s3_client() {
              object_metadata->get_state() == S3ObjectMetadataState::saved) {
     s3_timer.stop();
     const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("put_object_save_metadata_ms", mss);
+    LOG_PERF("put_object_save_metadata_ms", request_id.c_str(), mss);
     s3_stats_timing("put_object_save_metadata", mss);
 
     request->set_out_header_value("ETag", clovis_writer->get_content_md5());

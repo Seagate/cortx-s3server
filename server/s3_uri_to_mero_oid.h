@@ -31,7 +31,7 @@ EXTERN_C_BLOCK_BEGIN
 EXTERN_C_BLOCK_END
 
 int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api,
-                   const char *uri_name, std::string &request_id,
+                   const char *uri_name, const std::string &request_id,
                    m0_uint128 *ufid,
                    S3ClovisEntityType type = S3ClovisEntityType::object);
 #endif

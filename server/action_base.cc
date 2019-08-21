@@ -37,7 +37,6 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   task_iteration_index = 0;
   rollback_index = 0;
-  s3_error_code = "";
   state = ActionState::start;
   rollback_state = ActionState::start;
   mem_profile.reset(new S3MemoryProfile());
@@ -45,11 +44,11 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
   base_request->set_client_read_timeout_callback(
       std::bind(&Action::client_read_timeout_callback, this));
   if (auth_factory) {
-    auth_client_factory = auth_factory;
+    auth_client_factory = std::move(auth_factory);
   } else {
     auth_client_factory = std::make_shared<S3AuthClientFactory>();
   }
-  auth_client = auth_client_factory->create_auth_client(req);
+  auth_client = auth_client_factory->create_auth_client(std::move(req));
   setup_steps();
 }
 
@@ -191,7 +190,7 @@ void Action::check_authentication_successful() {
 
   auth_timer.stop();
   const auto mss = auth_timer.elapsed_time_in_millisec();
-  LOG_PERF("check_authentication_ms", mss);
+  LOG_PERF("check_authentication_ms", request_id.c_str(), mss);
   s3_stats_timing("check_authentication", mss);
 
   next();

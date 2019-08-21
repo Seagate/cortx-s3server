@@ -99,6 +99,7 @@ class RequestObject {
   S3Timer request_timer;
   S3Timer turn_around_time;
   S3Timer paused_timer;
+  S3Timer buffering_timer;
 
   bool is_client_connected;
   bool ignore_incoming_data;
@@ -193,9 +194,9 @@ class RequestObject {
   const std::string& get_account_name();
   void set_account_id(const std::string& id);
   const std::string& get_account_id();
-  inline std::string get_request_id() { return request_id; }
+  const std::string& get_request_id() const { return request_id; }
 
-  S3RequestError get_request_error() { return request_error; }
+  S3RequestError get_request_error() const { return request_error; }
 
   void set_request_error(S3RequestError req_error) {
     request_error = req_error;

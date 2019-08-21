@@ -611,9 +611,18 @@ int main(int argc, char **argv) {
   S3ErrorMessages::init_messages();
   g_option_instance = S3Option::get_instance();
 
+  std::unique_ptr<S3PerfLogger> s3_perf_logger;
   // Init perf logger
   if (g_option_instance->s3_performance_enabled()) {
-    S3PerfLogger::initialize(g_option_instance->get_perf_log_filename());
+
+    s3_perf_logger.reset(
+        new S3PerfLogger(g_option_instance->get_perf_log_filename()));
+
+    if (!S3PerfLogger::is_enabled()) {
+      s3_log(S3_LOG_FATAL, "",
+             "An initialization of a performance logger failed!\n");
+      return 1;
+    }
   }
 
   S3Daemonize s3daemon;
@@ -885,10 +894,6 @@ int main(int argc, char **argv) {
   fini_clovis();
 
   event_destroy_mempool();
-
-  if (g_option_instance->s3_performance_enabled()) {
-    S3PerfLogger::finalize();
-  }
 
   delete s3_router;
   delete mero_router;

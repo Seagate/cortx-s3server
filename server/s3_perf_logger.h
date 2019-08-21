@@ -27,27 +27,24 @@
 
 // Not thread-safe, but we are single threaded.
 class S3PerfLogger {
- private:
-  static S3PerfLogger* instance;
-  S3PerfLogger(std::string log_file);
 
+  static S3PerfLogger* instance;
   std::ofstream perf_file;
 
  public:
-  ~S3PerfLogger();
-
   // Opens the Performance log file
-  static void initialize(std::string log_file = "/var/log/seagate/s3_perf.log");
+  // "/var/log/seagate/s3/perf.log" should be by default
+  S3PerfLogger(const std::string& log_file);
 
-  static S3PerfLogger* get_instance();
+  static bool is_enabled() noexcept { return instance; }
 
-  void write(const char* perf_text, size_t elapsed_time);
-
-  // Closes the Performance log file
-  static void finalize();
+  static void write(const char* perf_text, const char* req_id,
+                    size_t elapsed_time);
 };
 
-#define LOG_PERF(perf_text, elapsed_time) \
-  S3PerfLogger::get_instance()->write(perf_text, elapsed_time);
+#define LOG_PERF(perf_text, req_id, elapsed_time)         \
+  if (S3PerfLogger::is_enabled()) {                       \
+    S3PerfLogger::write(perf_text, req_id, elapsed_time); \
+  }
 
 #endif

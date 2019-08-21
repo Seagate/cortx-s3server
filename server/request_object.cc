@@ -85,12 +85,14 @@ RequestObject::RequestObject(
       in_headers_copied(false),
       in_query_params_copied(false),
       reply_buffer(NULL) {
+
   S3Uuid uuid;
   request_id = uuid.get_string_uuid();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  request_timer.start();
 
   if (async_buf_factory) {
-    async_buffer_factory = async_buf_factory;
+    async_buffer_factory = std::move(async_buf_factory);
   } else {
     async_buffer_factory = std::make_shared<S3AsyncBufferOptContainerFactory>();
   }
@@ -104,12 +106,12 @@ RequestObject::RequestObject(
   buffered_input = async_buffer_factory->create_async_buffer(
       g_option_instance->get_libevent_pool_buffer_size());
 
-  request_timer.start();
   turn_around_time.start();
-
-  // Prepare 'paused_timer' for multiple resume()-stop() cycles.
+  // Prepare timers for multiple resume()-stop() cycles.
   paused_timer.start();
   paused_timer.stop();
+  buffering_timer.start();
+  buffering_timer.stop();
 
   user_name = user_id = account_name = account_id = "";
   // For auth disabled, use some dummy user.
@@ -514,8 +516,7 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
   }
   // Keep buffering till someone starts listening.
   size_t data_bytes_received = 0;
-  S3Timer buffering_timer;
-  buffering_timer.start();
+  buffering_timer.resume();
 
   if (is_chunked_upload) {
     auto bufs = chunk_parser.run(buf);
@@ -552,11 +553,6 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     buffered_input->freeze();
   }
   buffering_timer.stop();
-  LOG_PERF(("total_buffering_time_" + std::to_string(data_bytes_received) +
-            "_bytes_ns").c_str(),
-           buffering_timer.elapsed_time_in_nanosec());
-  s3_stats_timing("total_buffering_time",
-                  buffering_timer.elapsed_time_in_millisec());
 
   if (incoming_data_callback &&
       ((buffered_input->get_content_length() >= notify_read_watermark) ||
@@ -608,13 +604,19 @@ void RequestObject::send_response(int code, std::string body) {
   stop_processing_incoming_data();
   resume();  // attempt resume just in case some one forgot
 
-  request_timer.stop();
-  LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
-  s3_stats_timing("total_request_time",
-                  request_timer.elapsed_time_in_millisec());
-  const auto mss = paused_timer.elapsed_time_in_millisec();
-  LOG_PERF("evhtp_paused_ms", mss);
+  auto mss = paused_timer.elapsed_time_in_millisec();
+  const char* creq_id = request_id.c_str();
+  LOG_PERF("evhtp_paused_ms", creq_id, mss);
   s3_stats_timing("evhtp_paused", mss);
+
+  mss = buffering_timer.elapsed_time_in_millisec();
+  LOG_PERF("total_buffering_time_ms", creq_id, mss);
+  s3_stats_timing("total_buffering_time", mss);
+
+  request_timer.stop();
+  mss = request_timer.elapsed_time_in_millisec();
+  LOG_PERF("total_request_time_ms", creq_id, mss);
+  s3_stats_timing("total_request_time", mss);
 }
 
 void RequestObject::send_reply_start(int code) {
@@ -626,7 +628,8 @@ void RequestObject::send_reply_start(int code) {
     reply_buffer = evbuffer_new();
   } else {
     request_timer.stop();
-    LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+    LOG_PERF("total_request_time_ms", request_id.c_str(),
+             request_timer.elapsed_time_in_millisec());
     s3_stats_timing("total_request_time",
                     request_timer.elapsed_time_in_millisec());
   }
@@ -638,7 +641,8 @@ void RequestObject::send_reply_body(char* data, int length) {
     evhtp_obj->http_send_reply_body(ev_req, reply_buffer);
   } else {
     request_timer.stop();
-    LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
+    LOG_PERF("total_request_time_ms", request_id.c_str(),
+             request_timer.elapsed_time_in_millisec());
     s3_stats_timing("total_request_time",
                     request_timer.elapsed_time_in_millisec());
   }
@@ -648,20 +652,26 @@ void RequestObject::send_reply_end() {
   if (client_connected()) {
     evhtp_obj->http_send_reply_end(ev_req);
   }
-
-  request_timer.stop();
   stop_processing_incoming_data();
-  LOG_PERF("total_request_time_ms", request_timer.elapsed_time_in_millisec());
-  s3_stats_timing("total_request_time",
-                  request_timer.elapsed_time_in_millisec());
-  const auto mss = paused_timer.elapsed_time_in_millisec();
-  LOG_PERF("evhtp_paused_ms", mss);
+
+  auto mss = paused_timer.elapsed_time_in_millisec();
+  const char* creq_id = request_id.c_str();
+  LOG_PERF("evhtp_paused_ms", creq_id, mss);
   s3_stats_timing("evhtp_paused", mss);
+
+  mss = buffering_timer.elapsed_time_in_millisec();
+  LOG_PERF("total_buffering_time_ms", creq_id, mss);
+  s3_stats_timing("total_buffering_time", mss);
 
   if (reply_buffer != NULL) {
     evbuffer_free(reply_buffer);
   }
   reply_buffer = NULL;
+
+  request_timer.stop();
+  mss = request_timer.elapsed_time_in_millisec();
+  LOG_PERF("total_request_time_ms", creq_id, mss);
+  s3_stats_timing("total_request_time", mss);
 }
 
 void RequestObject::respond_error(

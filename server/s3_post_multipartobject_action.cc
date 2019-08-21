@@ -37,7 +37,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<ClovisAPI> clovis_api)
-    : S3Action(req) {
+    : S3Action(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
@@ -47,7 +47,7 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
          request->get_object_name().c_str());
 
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_clovis_api = std::move(clovis_api);
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
@@ -74,37 +74,37 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
   multipart_index_oid = {0ULL, 0ULL};
   salt = "uri_salt_";
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
+    object_metadata_factory = std::move(object_meta_factory);
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (object_mp_meta_factory) {
-    object_mp_metadata_factory = object_mp_meta_factory;
+    object_mp_metadata_factory = std::move(object_mp_meta_factory);
   } else {
     object_mp_metadata_factory =
         std::make_shared<S3ObjectMultipartMetadataFactory>();
   }
 
   if (clovis_s3_factory) {
-    clovis_writer_factory = clovis_s3_factory;
+    clovis_writer_factory = std::move(clovis_s3_factory);
   } else {
     clovis_writer_factory = std::make_shared<S3ClovisWriterFactory>();
   }
 
   if (part_meta_factory) {
-    part_metadata_factory = part_meta_factory;
+    part_metadata_factory = std::move(part_meta_factory);
   } else {
     part_metadata_factory = std::make_shared<S3PartMetadataFactory>();
   }
   if (put_tags_body_factory) {
-    put_object_tag_body_factory = put_tags_body_factory;
+    put_object_tag_body_factory = std::move(put_tags_body_factory);
   } else {
     put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
@@ -360,7 +360,8 @@ void S3PostMultipartObjectAction::create_object_successful() {
   create_object_timer.stop();
   const size_t time_in_millisecond =
       create_object_timer.elapsed_time_in_millisec();
-  LOG_PERF("create_object_successful_ms", time_in_millisecond);
+  LOG_PERF("create_object_successful_ms", request_id.c_str(),
+           time_in_millisecond);
   s3_stats_timing("multipart_create_object_success", time_in_millisecond);
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -373,7 +374,7 @@ void S3PostMultipartObjectAction::create_object_failed() {
     return;
   }
   create_object_timer.stop();
-  LOG_PERF("create_object_failed_ms",
+  LOG_PERF("create_object_failed_ms", request_id.c_str(),
            create_object_timer.elapsed_time_in_millisec());
   s3_stats_timing("multipart_create_object_failed",
                   create_object_timer.elapsed_time_in_millisec());

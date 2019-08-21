@@ -30,7 +30,8 @@ S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisReaderFactory> clovis_s3_factory)
-    : S3ObjectAction(req, bucket_meta_factory, object_meta_factory),
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory)),
       total_blocks_in_object(0),
       blocks_already_read(0),
       data_sent_to_client(0),
@@ -46,7 +47,7 @@ S3GetObjectAction::S3GetObjectAction(
          request->get_object_name().c_str());
 
   if (clovis_s3_factory) {
-    clovis_reader_factory = clovis_s3_factory;
+    clovis_reader_factory = std::move(clovis_s3_factory);
   } else {
     clovis_reader_factory = std::make_shared<S3ClovisReaderFactory>();
   }
@@ -446,7 +447,7 @@ void S3GetObjectAction::send_data_to_client() {
     read_object_data();
   } else {
     const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("get_object_send_data_ms", mss);
+    LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);
     s3_stats_timing("get_object_send_data", mss);
 
     send_response_to_s3_client();

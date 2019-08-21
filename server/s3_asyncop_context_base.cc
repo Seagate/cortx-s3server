@@ -25,15 +25,14 @@ S3AsyncOpContextBase::S3AsyncOpContextBase(
     std::shared_ptr<RequestObject> req, std::function<void(void)> success,
     std::function<void(void)> failed, int ops_cnt,
     std::shared_ptr<ClovisAPI> clovis_api)
-    : request(req),
+    : request(std::move(req)),
       on_success(success),
       on_failed(failed),
       ops_count(ops_cnt),
       response_received_count(0),
       at_least_one_success(false),
-      s3_clovis_api(clovis_api != nullptr
-                        ? clovis_api
-                        : std::make_shared<ConcreteClovisAPI>()) {
+      s3_clovis_api(clovis_api ? std::move(clovis_api)
+                               : std::make_shared<ConcreteClovisAPI>()) {
   request_id = request->get_request_id();
   ops_response.resize(ops_count);
 }
@@ -108,6 +107,8 @@ void S3AsyncOpContextBase::log_timer() {
   if (operation_key.empty()) {
     return;
   }
-  LOG_PERF((operation_key + "_ms").c_str(), timer.elapsed_time_in_millisec());
+  LOG_PERF((operation_key + "_ms").c_str(), request_id.c_str(),
+           timer.elapsed_time_in_millisec());
+
   s3_stats_timing(operation_key, timer.elapsed_time_in_millisec());
 }

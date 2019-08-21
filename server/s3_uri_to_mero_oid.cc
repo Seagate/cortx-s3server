@@ -29,7 +29,7 @@
 #include "s3_iem.h"
 
 int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
-                   std::string &request_id, m0_uint128 *ufid,
+                   const std::string &request_id, m0_uint128 *ufid,
                    S3ClovisEntityType type) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   int rc;
@@ -120,7 +120,8 @@ int S3UriToMeroOID(std::shared_ptr<ClovisAPI> s3_clovis_api, const char *name,
          name, clovis_entity_type_to_string(type).c_str(), ufid->u_hi,
          ufid->u_lo);
   timer.stop();
-  LOG_PERF("S3UriToMeroOID_ns", timer.elapsed_time_in_nanosec());
+  LOG_PERF("S3UriToMeroOID_ns", request_id.c_str(),
+           timer.elapsed_time_in_nanosec());
   s3_stats_timing("uri_to_mero_oid", timer.elapsed_time_in_millisec());
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

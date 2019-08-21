@@ -36,14 +36,15 @@ S3BucketMetadataV1::S3BucketMetadataV1(
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
     std::shared_ptr<S3GlobalBucketIndexMetadataFactory>
         s3_global_bucket_index_metadata_factory)
-    : S3BucketMetadata(req, clovis_api, clovis_s3_kvs_reader_factory,
-                       clovis_s3_kvs_writer_factory) {
+    : S3BucketMetadata(std::move(req), std::move(clovis_api),
+                       std::move(clovis_s3_kvs_reader_factory),
+                       std::move(clovis_s3_kvs_writer_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor");
   salted_multipart_list_index_name = get_multipart_index_name();
 
   if (s3_global_bucket_index_metadata_factory) {
     global_bucket_index_metadata_factory =
-        s3_global_bucket_index_metadata_factory;
+        std::move(s3_global_bucket_index_metadata_factory);
   } else {
     global_bucket_index_metadata_factory =
         std::make_shared<S3GlobalBucketIndexMetadataFactory>();
@@ -185,7 +186,7 @@ void S3BucketMetadataV1::load_bucket_info_successful() {
   } else {
     s3_timer.stop();
     const auto mss = s3_timer.elapsed_time_in_millisec();
-    LOG_PERF("load_bucket_info_ms", mss);
+    LOG_PERF("load_bucket_info_ms", request_id.c_str(), mss);
     s3_stats_timing("load_bucket_info", mss);
 
     state = S3BucketMetadataState::present;
