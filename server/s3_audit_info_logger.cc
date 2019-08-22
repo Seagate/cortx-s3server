@@ -61,7 +61,8 @@ int S3AuditInfoLogger::init() {
            S3Option::get_instance()->get_s3_audit_config().c_str());
     try {
       audit_info_logger = new S3AuditInfoLoggerLog4cxx(
-          S3Option::get_instance()->get_s3_audit_config());
+          S3Option::get_instance()->get_s3_audit_config(),
+          S3Option::get_instance()->get_log_dir() + "/audit/audit.log");
       audit_info_logger_enabled = true;
     }
     catch (...) {

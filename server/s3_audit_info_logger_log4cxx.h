@@ -28,7 +28,7 @@
 
 class S3AuditInfoLoggerLog4cxx : public S3AuditInfoLoggerBase {
  public:
-  S3AuditInfoLoggerLog4cxx(std::string const &);
+  S3AuditInfoLoggerLog4cxx(std::string const &, std::string const & = "");
   virtual ~S3AuditInfoLoggerLog4cxx();
   virtual int save_msg(std::string const &, std::string const &);
 
