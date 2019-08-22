@@ -167,17 +167,20 @@ then
   bazel build //:s3ut --cxxopt="-std=c++11" --define $MERO_INC_ \
                       --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
                       --define $MERO_EXTRA_LIB_ \
-                      --spawn_strategy=standalone
+                      --spawn_strategy=standalone \
+                      --strip=never
 
   bazel build //:s3utdeathtests --cxxopt="-std=c++11" --define $MERO_INC_ \
                                 --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
                                 --define $MERO_EXTRA_LIB_ \
-                                --spawn_strategy=standalone
+                                --spawn_strategy=standalone \
+                                --strip=never
 fi
 
 if [ $no_s3mempoolut_build -eq 0 ]
 then
-  bazel build //:s3mempoolut --cxxopt="-std=c++11" --spawn_strategy=standalone
+  bazel build //:s3mempoolut --cxxopt="-std=c++11" --spawn_strategy=standalone \
+                             --strip=never
 fi
 
 if [ $no_s3mempoolmgrut_build -eq 0 ]
@@ -185,7 +188,8 @@ then
   bazel build //:s3mempoolmgrut --cxxopt="-std=c++11" --define $MERO_INC_ \
                       --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
                       --define $MERO_EXTRA_LIB_ \
-                      --spawn_strategy=standalone
+                      --spawn_strategy=standalone \
+                      --strip=never
 fi
 
 if [ $no_s3server_build -eq 0 ]
@@ -193,7 +197,8 @@ then
   bazel build //:s3server --cxxopt="-std=c++11" --define $MERO_INC_ \
                           --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
                           --define $MERO_EXTRA_LIB_ \
-                          --spawn_strategy=standalone
+                          --spawn_strategy=standalone \
+                          --strip=never
 fi
 
 if [ $no_cloviskvscli_build -eq 0 ]
@@ -201,7 +206,8 @@ then
   bazel build //:cloviskvscli --cxxopt="-std=c++11" --define $MERO_INC_ \
                               --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
                               --define $MERO_EXTRA_LIB_ \
-                              --spawn_strategy=standalone
+                              --spawn_strategy=standalone \
+                              --strip=never
 fi
 
 # Just to free up resources
