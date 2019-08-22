@@ -264,29 +264,29 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('Jcloud can verify private ACL on object').get_acl("seagatebucket", "test/3kfile")\
         .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
 
-    JCloudTest('Jcloud can grant READ permission on object').set_acl("seagatebucket", "test/3kfile",
-        action="acl-grant", permission="READ:123:tester")\
-        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+#    JCloudTest('Jcloud can grant READ permission on object').set_acl("seagatebucket", "test/3kfile",
+#        action="acl-grant", permission="READ:123:tester")\
+#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-    JCloudTest('Jcloud can verify READ ACL on object').get_acl("seagatebucket", "test/3kfile")\
-        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-        .command_response_should_not_have("WRITE")
+#    JCloudTest('Jcloud can verify READ ACL on object').get_acl("seagatebucket", "test/3kfile")\
+#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+#        .command_response_should_not_have("WRITE")
 
-    JCloudTest('Jcloud can grant WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
-        action="acl-grant", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+#    JCloudTest('Jcloud can grant WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
+#        action="acl-grant", permission="WRITE:123")\
+#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-    JCloudTest('Jcloud can verify WRITE ACL on object').get_acl("seagatebucket", "test/3kfile")\
-        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-        .command_response_should_have("tester: WRITE")
+#    JCloudTest('Jcloud can verify WRITE ACL on object').get_acl("seagatebucket", "test/3kfile")\
+#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+#        .command_response_should_have("tester: WRITE")
 
-    JCloudTest('Jcloud can revoke WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
-        action="acl-revoke", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+#    JCloudTest('Jcloud can revoke WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
+#        action="acl-revoke", permission="WRITE:123")\
+#        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
 
-    JCloudTest('Jcloud can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "test/3kfile")\
-        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-        .command_response_should_not_have("WRITE")
+#    JCloudTest('Jcloud can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "test/3kfile")\
+#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+#        .command_response_should_not_have("WRITE")
 
     # Current version of Jcloud does not report error in deleteContainer
     # JCloudTest('Jcloud cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotEmpty")

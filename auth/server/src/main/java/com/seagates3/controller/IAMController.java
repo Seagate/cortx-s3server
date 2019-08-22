@@ -80,7 +80,7 @@ class IAMController {
     String requestAction = requestBody.get("Action");
     LOGGER.info("Requested action is  - " + requestAction);
     ClientRequestToken clientRequestToken;
-    Requestor requestor;
+    Requestor requestor = null;
     ServerResponse serverResponse;
     // CreateAccount needs to be authenticated with Ldap credentials
     if (requestAction.equals("CreateAccount") ||
@@ -150,7 +150,9 @@ class IAMController {
         return responseGenerator.invalidToken();
       }
       try {
+        if (!requestAction.equals("ValidateACL")) {
         requestor = RequestorService.getRequestor(clientRequestToken);
+      }
       }
       catch (InvalidAccessKeyException ex) {
         LOGGER.debug(ex.getServerResponse().getResponseBody());
@@ -166,15 +168,13 @@ class IAMController {
       }
 
       LOGGER.debug("Requestor is valid.");
-
       if (requestAction.equals("AuthorizeUser")) {
         LOGGER.info("Authorizing user: " + requestor.getName() + " account: " +
                     requestor.getAccount().getName());
         serverResponse = new Authorizer().authorize(requestor, requestBody);
         return serverResponse;
       } else if (requestAction.equals("ValidateACL")) {
-        LOGGER.info("Validating ACL: " + requestor.getName() + " account: " +
-                    requestor.getAccount().getName());
+        LOGGER.debug("Validating Acl:");
         serverResponse = new Authorizer().validateACL(requestor, requestBody);
         return serverResponse;
       }

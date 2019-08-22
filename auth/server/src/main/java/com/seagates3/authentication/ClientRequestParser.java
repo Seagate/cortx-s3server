@@ -63,14 +63,29 @@ public class ClientRequestParser {
         if (requestAction.equals("AuthenticateUser")
                 || requestAction.equals("AuthorizeUser")) {
             authorizationHeader = requestBody.get("authorization");
+
+        } else if (requestAction.equals("ValidateACL")) {
+
+          if (requestBody.get("ACL") != null) {
+
+            ClientRequestToken clientRequestToken = new ClientRequestToken();
+
+            return clientRequestToken;
+          } else {
+
+            return null;
+          }
+
         } else {
             authorizationHeader = httpRequest.headers().get("authorization");
+            LOGGER.debug("authheader is" + authorizationHeader);
         }
 
         if (authorizationHeader == null) {
             return null;
         }
         ClientRequestParser clientRequestParser = new ClientRequestParser();
+
         clientRequestParser.validateAccessKey(authorizationHeader);
         clientRequestParser = null;
         if (authorizationHeader.matches(AWS_V2_AUTHRORIAZATION_PATTERN)) {

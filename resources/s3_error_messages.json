@@ -131,6 +131,10 @@
     "Description": "Part size must be multiple of unit_size. Please check S3/Mero documentation.",
     "httpcode": 400
   },
+  "MalformedACLError": {
+    "Description": "The XML you provided was not well-formed or did not validate against our published schema.",
+    "httpcode": 400
+  },
   "InvalidRange": {
     "Description": "The requested range cannot be satisfied.",
     "httpcode": 416

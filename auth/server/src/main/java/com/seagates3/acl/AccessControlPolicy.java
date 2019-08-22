@@ -30,6 +30,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -39,6 +41,7 @@ import org.xml.sax.InputSource;
 
 import com.seagates3.acl.AccessControlList;
 import com.seagates3.exception.GrantListFullException;
+import com.seagates3.util.XMLValidatorUtil;
 
 public
 class AccessControlPolicy {
@@ -47,6 +50,10 @@ class AccessControlPolicy {
   Document doc;
   Owner owner;
   AccessControlList accessControlList;
+
+ private
+  final static Logger LOGGER =
+      LoggerFactory.getLogger(XMLValidatorUtil.class.getName());
 
  public
   AccessControlPolicy(File xmlFile) throws ParserConfigurationException,
@@ -57,13 +64,13 @@ class AccessControlPolicy {
     dBuilder = dbFactory.newDocumentBuilder();
     doc = dBuilder.parse(xmlFile);
     doc.getDocumentElement().normalize();
-
     loadXml(doc);
   }
 
  public
   AccessControlPolicy(String xmlString) throws ParserConfigurationException,
       SAXException, IOException, GrantListFullException {
+
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     DocumentBuilder builder = null;
     builder = factory.newDocumentBuilder();
@@ -83,9 +90,13 @@ class AccessControlPolicy {
     owner.setCanonicalId(ownerId.getTextContent());
     Node ownerDisplayName =
         firstOwnerElement.getElementsByTagName("DisplayName").item(0);
+    if (ownerDisplayName != null) {
     owner.setDisplayName(ownerDisplayName.getTextContent());
-    this.owner = owner;
+    } else {
 
+      owner.setDisplayName(null);
+    }
+    this.owner = owner;
     AccessControlList accessControlList = new AccessControlList();
     NodeList accessContolListNodes =
         doc.getElementsByTagName("AccessControlList");
@@ -98,25 +109,31 @@ class AccessControlPolicy {
     for (int counter = 0; counter < Grant.getLength(); counter++) {
 
       Node grantitem = Grant.item(counter);
+
       Element grantitemelement = (Element)grantitem;
+
       Grantee grantee = new Grantee("", "");
 
       Node granteeId = grantitemelement.getElementsByTagName("ID").item(0);
+
       grantee.setCanonicalId(granteeId.getTextContent());
 
       Node granteeDisplayname =
           grantitemelement.getElementsByTagName("DisplayName").item(0);
-      grantee.setDisplayName(granteeDisplayname.getTextContent());
 
+      if (granteeDisplayname != null) {
+      grantee.setDisplayName(granteeDisplayname.getTextContent());
+      } else {
+
+        grantee.setDisplayName(null);
+      }
       Grant grant = new Grant(grantee, "");
       grant.grantee = grantee;
-
       Node permission =
           grantitemelement.getElementsByTagName("Permission").item(0);
       grant.setPermission(permission.getTextContent());
       accessControlList.addGrant(grant);
     }
-
     this.accessControlList = accessControlList;
   }
 

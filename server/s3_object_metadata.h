@@ -31,7 +31,6 @@
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
-#include "s3_object_acl.h"
 #include "s3_request_object.h"
 #include "s3_timer.h"
 
@@ -70,6 +69,7 @@ class S3ObjectMetadata {
   // Maximum retry count for collision resolution.
   unsigned short tried_count;
   std::string salt;
+  std::string user_acl;
 
   // The name for a key is a sequence of Unicode characters whose UTF-8 encoding
   // is at most 1024 bytes long.
@@ -88,13 +88,14 @@ class S3ObjectMetadata {
   std::string mero_old_oid_str;
 
   std::string mero_part_oid_str;
+  std::string acl_xml;
+  std::string encoded_acl;
 
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
 
   std::map<std::string, std::string> object_tags;
 
-  S3ObjectACL object_ACL;
   bool is_multipart;
 
   std::shared_ptr<S3RequestObject> request;
@@ -161,6 +162,7 @@ class S3ObjectMetadata {
 
   virtual void set_oid(struct m0_uint128 id);
   void set_old_oid(struct m0_uint128 id);
+  void acl_from_json(std::string acl_json_str);
   void set_part_index_oid(struct m0_uint128 id);
   virtual struct m0_uint128 get_oid() { return oid; }
   virtual int get_layout_id() { return layout_id; }
@@ -230,7 +232,7 @@ class S3ObjectMetadata {
 
   // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
-  virtual void setacl(std::string& input_acl_str);
+  virtual void setacl(std::string& input_acl);
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
   virtual const std::map<std::string, std::string>& get_tags();
   virtual void delete_object_tags();

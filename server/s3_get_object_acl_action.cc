@@ -22,7 +22,6 @@
 #include "s3_get_object_acl_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
-#include "s3_object_acl.h"
 
 S3GetObjectACLAction::S3GetObjectACLAction(
     std::shared_ptr<S3RequestObject> req,

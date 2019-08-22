@@ -172,7 +172,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   }
 
   // Call this when you want to do auth op.
-  virtual bool init_auth_op_ctx() {
+  virtual bool init_auth_op_ctx(const S3AuthClientOpType& type) {
     struct event_base* eventbase = S3Option::get_instance()->get_eventbase();
     if (eventbase == NULL) {
       return false;
@@ -182,7 +182,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
       auth_op_context = NULL;
       has_auth_op_context = false;
     }
-    auth_op_context = create_basic_auth_op_ctx(eventbase);
+    auth_op_context = create_basic_auth_op_ctx(eventbase, type);
     if (auth_op_context == NULL) {
       return false;
     }
@@ -240,8 +240,6 @@ enum class S3AuthClientOpState {
   unauthorized,
   connection_error
 };
-
-enum class S3AuthClientOpType { authentication, authorization };
 
 class S3AuthClient {
  private:
@@ -313,7 +311,13 @@ class S3AuthClient {
   void check_authentication_successful();
   void check_authentication_failed();
 
+  void check_aclvalidation_successful();
+  void check_aclvalidation_failed();
+
   void check_authorization();
+  void validate_acl(std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed);
+  void set_validate_acl(const std::string& validateacl);
   void check_authorization(std::function<void(void)> on_success,
                            std::function<void(void)> on_failed);
   void check_authorization_successful();

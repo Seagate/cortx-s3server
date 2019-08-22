@@ -558,13 +558,13 @@ std::string S3ObjectMetadata::to_json() {
   for (const auto& tag : object_tags) {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
-  std::string xml_acl = object_ACL.get_xml_str();
-  if (xml_acl == "") {
+  // std::string xml_acl = object_ACL.get_xml_str();
+  if (user_acl == "") {
     root["ACL"] = default_object_acl;
 
   } else {
-  root["ACL"] =
-      base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
+    root["ACL"] =
+        base64_encode((const unsigned char*)user_acl.c_str(), user_acl.size());
   }
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
@@ -649,26 +649,25 @@ int S3ObjectMetadata::from_json(std::string content) {
   for (const auto& tag : members) {
     object_tags[tag] = newroot["User-Defined-Tags"][tag].asString();
   }
-  object_ACL.from_json(newroot["ACL"].asString());
+  acl_from_json(newroot["ACL"].asString());
 
   return 0;
 }
 
+void S3ObjectMetadata::acl_from_json(std::string acl_json_str) {
+  s3_log(S3_LOG_DEBUG, "", "Called\n");
+  encoded_acl = acl_json_str;
+  acl_xml = base64_decode(encoded_acl);
+}
+
 std::string& S3ObjectMetadata::get_encoded_object_acl() {
   // base64 encoded acl
-  return object_ACL.get_acl_metadata();
+  return encoded_acl;
 }
 
-void S3ObjectMetadata::setacl(std::string& input_acl_str) {
-  std::string input_acl = input_acl_str;
-  object_ACL.set_display_name(get_owner_name());
-  input_acl = object_ACL.insert_display_name(input_acl);
-  object_ACL.set_acl_xml_metadata(input_acl);
-}
+void S3ObjectMetadata::setacl(std::string& input_acl) { user_acl = input_acl; }
 
-std::string& S3ObjectMetadata::get_acl_as_xml() {
-  return object_ACL.get_xml_str();
-}
+std::string& S3ObjectMetadata::get_acl_as_xml() { return acl_xml; }
 
 void S3ObjectMetadata::set_tags(
     const std::map<std::string, std::string>& tags_as_map) {

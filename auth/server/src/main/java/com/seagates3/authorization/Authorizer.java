@@ -149,23 +149,24 @@ public class Authorizer {
   public
    ServerResponse validateACL(Requestor requestor,
                               Map<String, String> requestBody) {
+
      AuthorizationResponseGenerator responseGenerator =
          new AuthorizationResponseGenerator();
      ACLValidation aclValidation = null;
-
      try {
-       aclValidation = new ACLValidation(
-           BinaryUtil.base64DecodeString(requestBody.get("ACL")));
+
+       aclValidation = new ACLValidation(requestBody.get("ACL"));
      }
      catch (ParserConfigurationException | SAXException | IOException e) {
-       LOGGER.error("Error while Parsing ACLXML");
+       LOGGER.debug("Error while Parsing ACL XML");
        return responseGenerator.invalidACL();
      }
      catch (GrantListFullException e) {
-       LOGGER.error("Error while Parsing ACLXML. Number of grants exceeds " +
+       LOGGER.debug("Error while Parsing ACL XML. Number of grants exceeds " +
                     AuthServerConfig.MAX_GRANT_SIZE);
        return responseGenerator.invalidACL();
      }
+
      return aclValidation.validate();
    }
  }

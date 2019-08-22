@@ -110,6 +110,12 @@ enum class S3OperationCode {
   restore
 };
 
+enum class S3AuthClientOpType {
+  authentication,
+  authorization,
+  aclvalidation
+};
+
 struct compare {
   bool operator()(const std::string& lhs, const std::string& rhs) const {
     return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;

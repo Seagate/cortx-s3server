@@ -249,7 +249,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("ACL", acl);
 
     PowerMockito
         .when(
@@ -280,7 +280,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("ACL", acl);
 
     PowerMockito
         .when(

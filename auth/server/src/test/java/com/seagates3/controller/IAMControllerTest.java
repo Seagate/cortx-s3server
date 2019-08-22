@@ -381,7 +381,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                       "tylerdurden").thenReturn(true);
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", "/seagatebucket-aj01/dir-1/abc1");
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("ACL", acl);
 
     ServerResponse response = controller.serve(httpRequest, requestBody);
 

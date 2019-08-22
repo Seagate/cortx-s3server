@@ -272,28 +272,28 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can verify private ACL on object').get_acl("seagatebucket", "3kfile")\
         .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
 
-    JClientTest('Jclient can grant READ permission on object').set_acl("seagatebucket", "3kfile",
-        action="acl-grant", permission="READ:123:tester")\
-        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+#    JClientTest('Jclient can grant READ permission on object').set_acl("seagatebucket", "3kfile",
+#        action="acl-grant", permission="READ:123:tester")\
+#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-    JClientTest('Jclient can verify READ ACL on object').get_acl("seagatebucket", "3kfile")\
-        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-        .command_response_should_not_have("WRITE")
+#    JClientTest('Jclient can verify READ ACL on object').get_acl("seagatebucket", "3kfile")\
+#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+#        .command_response_should_not_have("WRITE")
 
-    JClientTest('Jclient can grant WRITE permission on object').set_acl("seagatebucket", "3kfile",
-        action="acl-grant", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+#    JClientTest('Jclient can grant WRITE permission on object').set_acl("seagatebucket", "3kfile",
+#        action="acl-grant", permission="WRITE:123")\
+#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-    JClientTest('Jclient can verify WRITE ACL on object').get_acl("seagatebucket", "3kfile")\
-        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-        .command_response_should_have("tester: WRITE")
+#    JClientTest('Jclient can verify WRITE ACL on object').get_acl("seagatebucket", "3kfile")\
+#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
+#        .command_response_should_have("tester: WRITE")
 
-    JClientTest('Jclient can revoke WRITE permission on object').set_acl("seagatebucket", "3kfile",
-        action="acl-revoke", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+#    JClientTest('Jclient can revoke WRITE permission on object').set_acl("seagatebucket", "3kfile",
+#        action="acl-revoke", permission="WRITE:123")\
+#        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
 
-    JClientTest('Jclient can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "3kfile")\
-        .execute_test().command_is_successful().command_response_should_not_have("WRITE")
+#    JClientTest('Jclient can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "3kfile")\
+#        .execute_test().command_is_successful().command_response_should_not_have("WRITE")
 
     JClientTest('Jclient can download 3k file').get_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 

@@ -34,12 +34,14 @@ struct s3_auth_op_context {
   evhtp_connection_t* conn;
   evhtp_request_t* authrequest;            // for Authentication
   evhtp_request_t* authorization_request;  // For Authorization
+  evhtp_request_t* aclvalidation_request;  // For AclValidation
   // evhtp_hook                auth_callback;
   // bool                      isfirstpass;
 };
 
 struct s3_auth_op_context* create_basic_auth_op_ctx(
-    struct event_base* eventbase);
+    struct event_base* eventbase, S3AuthClientOpType type);
+
 int free_basic_auth_client_op_ctx(struct s3_auth_op_context* ctx);
 
 EXTERN_C_BLOCK_END

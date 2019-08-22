@@ -62,10 +62,13 @@ class ACLValidation {
   ACLValidation(String xmlString) throws ParserConfigurationException,
       SAXException, IOException, GrantListFullException {
     responseGenerator = new AuthenticationResponseGenerator();
+
     this.ACLXML = xmlString;
     xsdPath = AuthServerConfig.authResourceDir + AuthServerConfig.XSD_PATH;
     xmlValidator = new XMLValidatorUtil(xsdPath);
+
     validation = validateAclxsd();
+
     if (validation) {
 
       acp = new AccessControlPolicy(xmlString);
@@ -89,6 +92,7 @@ class ACLValidation {
   boolean validateAclxsd() {
 
     boolean validation = xmlValidator.validateXMLSchema(ACLXML);
+
     return validation;
   }
 
@@ -165,6 +169,7 @@ class ACLValidation {
                                      LDAPConnection.SCOPE_SUB, filter, attrs);
     }
     catch (LDAPException ex) {
+
       LOGGER.error("Failed to search account " + "of canonical Id " +
                    canonicalID);
       return false;
@@ -185,8 +190,15 @@ class ACLValidation {
       }
     }
 
-    if (account.getName() != displayname) {
+    if (!(account.exists())) {
       return false;
+    }
+
+    if (displayname != null) {
+      if (!(account.getName().equals(displayname))) {
+
+        return false;
+      }
     }
     return true;
   }

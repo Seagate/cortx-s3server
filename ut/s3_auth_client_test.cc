@@ -65,6 +65,7 @@ class S3AuthResponse : public S3AuthBaseResponse {
 class S3AuthClientOpContextTest : public testing::Test {
  protected:
   S3AuthClientOpContextTest() {
+
     evbase_t *evbase = event_base_new();
     evhtp_request_t *req = evhtp_request_new(NULL, evbase);
     ptr_mock_request =
@@ -124,17 +125,21 @@ TEST_F(S3AuthClientOpContextTest, Constructor) {
 TEST_F(S3AuthClientOpContextTest, InitAuthCtxNull) {
   evbase_t *evbase = NULL;
   S3Option::get_instance()->set_eventbase(evbase);
-  bool ret = p_authopctx->init_auth_op_ctx();
+  S3AuthClientOpType auth_request_type = S3AuthClientOpType::authentication;
+  bool ret = p_authopctx->init_auth_op_ctx(auth_request_type);
   EXPECT_FALSE(ret);
 }
 
 TEST_F(S3AuthClientOpContextTest, InitAuthCtxValid) {
-  bool ret = p_authopctx->init_auth_op_ctx();
+  S3AuthClientOpType auth_request_type = S3AuthClientOpType::authentication;
+  bool ret = p_authopctx->init_auth_op_ctx(auth_request_type);
   EXPECT_TRUE(ret == true);
 }
 
 TEST_F(S3AuthClientOpContextTest, GetAuthCtx) {
-  p_authopctx->init_auth_op_ctx();
+
+  S3AuthClientOpType auth_request_type = S3AuthClientOpType::authentication;
+  p_authopctx->init_auth_op_ctx(auth_request_type);
   struct s3_auth_op_context *p_ctx = p_authopctx->get_auth_op_ctx();
   EXPECT_TRUE(p_ctx != NULL);
 }

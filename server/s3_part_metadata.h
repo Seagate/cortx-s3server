@@ -32,7 +32,6 @@
 
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
-#include "s3_object_acl.h"
 #include "s3_request_object.h"
 
 enum class S3PartMetadataState {
@@ -74,7 +73,6 @@ class S3PartMetadata {
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
 
-  S3ObjectACL object_ACL;
   std::shared_ptr<S3RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;

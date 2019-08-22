@@ -21,7 +21,6 @@
 #include "s3_put_object_acl_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
-#include "s3_object_acl.h"
 
 S3PutObjectACLAction::S3PutObjectACLAction(
     std::shared_ptr<S3RequestObject> req,
@@ -54,6 +53,8 @@ void S3PutObjectACLAction::setup_steps() {
   add_task(std::bind(&S3PutObjectACLAction::validate_request, this));
   add_task(std::bind(&S3PutObjectACLAction::fetch_bucket_info, this));
   add_task(std::bind(&S3PutObjectACLAction::get_object_metadata, this));
+  add_task(std::bind(&S3PutObjectACLAction::setvalidateacl, this));
+  add_task(std::bind(&S3PutObjectACLAction::validate_acl_with_auth, this));
   add_task(std::bind(&S3PutObjectACLAction::setacl, this));
   add_task(std::bind(&S3PutObjectACLAction::send_response_to_s3_client, this));
 }
@@ -63,7 +64,7 @@ void S3PutObjectACLAction::validate_request() {
 
   if (request->has_all_body_content()) {
     new_object_acl = request->get_full_body_content_as_string();
-    validate_request_body(new_object_acl);
+    next();
   } else {
     // Start streaming, logically pausing action till we get data.
     request->listen_for_incoming_data(
@@ -75,31 +76,44 @@ void S3PutObjectACLAction::validate_request() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PutObjectACLAction::validate_acl_with_auth() {
+
+  auth_client->validate_acl(
+      std::bind(&S3PutObjectACLAction::on_aclvalidation_success, this),
+      std::bind(&S3PutObjectACLAction::on_aclvalidation_failure, this));
+}
+
+void S3PutObjectACLAction::on_aclvalidation_success() {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectACLAction::on_aclvalidation_failure() {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  set_s3_error("MalformedACLError");
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectACLAction::setvalidateacl() {
+
+  new_object_acl =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + new_object_acl;
+  auth_client->set_validate_acl(new_object_acl);
+  next();
+}
+
 void S3PutObjectACLAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
   if (request->has_all_body_content()) {
     new_object_acl = request->get_full_body_content_as_string();
-    validate_request_body(new_object_acl);
+    next();
   } else {
     // else just wait till entire body arrives. rare.
     request->resume();
   }
-}
 
-void S3PutObjectACLAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  // TODO: ACL implementation is partial, fix this when adding full support.
-  // S3PutObjectAclBody object_acl(content);
-  // if (object_acl.isOK()) {
-  //   next();
-  // } else {
-  //   invalid_request = true;
-  //   set_s3_error("MalformedXML");
-  //   send_response_to_s3_client();
-  // }
-  next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutObjectACLAction::fetch_bucket_info() {
