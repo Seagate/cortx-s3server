@@ -59,6 +59,5 @@ void MeroAction::check_authorization() {
     }
     done();
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-    i_am_done();
   }
 }

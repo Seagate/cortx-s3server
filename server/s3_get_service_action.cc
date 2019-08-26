@@ -201,5 +201,4 @@ void S3GetServiceAction::send_response_to_s3_client() {
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  i_am_done();  // self delete
 }

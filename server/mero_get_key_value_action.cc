@@ -110,5 +110,4 @@ void MeroGetKeyValueAction::send_response_to_s3_client() {
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  i_am_done();  // self delete
 }

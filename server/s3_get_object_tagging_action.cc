@@ -149,5 +149,4 @@ void S3GetObjectTaggingAction::send_response_to_s3_client() {
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   done();
-  i_am_done();  // self delete
 }

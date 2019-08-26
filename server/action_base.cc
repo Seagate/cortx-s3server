@@ -212,7 +212,6 @@ void Action::check_authentication_failed() {
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  i_am_done();
 }
 
 bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
@@ -250,5 +249,4 @@ void Action::send_retry_error_to_s3_client(int retry_after_in_secs) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   base_request->respond_retry_after(1);
   done();
-  i_am_done();
 }

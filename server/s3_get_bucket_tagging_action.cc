@@ -110,5 +110,4 @@ void S3GetBucketTaggingAction::send_response_to_s3_client() {
 
   s3_log(S3_LOG_INFO, "", "Exiting\n");
   done();
-  i_am_done();  // self delete
 }

@@ -167,5 +167,4 @@ void S3DeleteObjectTaggingAction::send_response_to_s3_client() {
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   done();
-  i_am_done();  // self delete
 }

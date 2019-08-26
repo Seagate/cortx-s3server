@@ -79,5 +79,4 @@ void S3Action::check_authorization_failed() {
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  i_am_done();
 }

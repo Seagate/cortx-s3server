@@ -150,6 +150,5 @@ void S3PutFiAction::send_response_to_s3_client() {
   request->resume();
 
   done();
-  i_am_done();  // self delete
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
