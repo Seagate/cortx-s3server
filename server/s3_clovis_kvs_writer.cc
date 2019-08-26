@@ -26,6 +26,7 @@
 #include "s3_clovis_rw_common.h"
 #include "s3_option.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_stats.h"
 
 extern struct m0_clovis_realm clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
@@ -134,6 +135,7 @@ void S3ClovisKVSWriter::create_index_with_oid(
 
 void S3ClovisKVSWriter::create_index_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_stats_inc("create_index_op_success_count");
   sync_index(this->handler_on_success, this->handler_on_failed, 1);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -204,6 +206,7 @@ void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
 
 void S3ClovisKVSWriter::sync_index_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_stats_inc("sync_index_op_success_count");
   if (state == S3ClovisKVSWriterOpState::deleting) {
     state = S3ClovisKVSWriterOpState::deleted;
   } else {
@@ -543,6 +546,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 
 void S3ClovisKVSWriter::put_keyval_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_stats_inc("put_keyval_success_count");
   // todo: Add check, verify if (kvs_ctx->rcs == 0)
   // do this when cassandra + mero-kvs rcs implementation completed
   // in clovis
@@ -618,6 +622,7 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
 
 void S3ClovisKVSWriter::sync_keyval_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_stats_inc("sync_keyval_op_success_count");
   if (state == S3ClovisKVSWriterOpState::deleting) {
     state = S3ClovisKVSWriterOpState::deleted;
   } else {

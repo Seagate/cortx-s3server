@@ -103,3 +103,10 @@
 - get_object_tagging_count
 - put_object_tagging_count
 - delete_object_tagging_count
+- create_index_op_success_count
+- get_keyval_success_count
+- put_keyval_success_count
+- sync_index_op_success_count
+- sync_keyval_op_success_count
+- read_object_data_success_count
+- write_to_clovis_op_success_count

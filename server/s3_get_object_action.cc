@@ -373,6 +373,7 @@ void S3GetObjectAction::read_object_data() {
 
 void S3GetObjectAction::send_data_to_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_stats_inc("read_object_data_success_count");
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;

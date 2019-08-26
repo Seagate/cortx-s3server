@@ -27,6 +27,7 @@
 #include "s3_clovis_rw_common.h"
 #include "s3_option.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_stats.h"
 
 extern struct m0_clovis_realm clovis_uber_realm;
 extern struct m0_clovis_container clovis_container;
@@ -154,6 +155,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
 void S3ClovisKVSReader::get_keyval_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_stats_inc("get_keyval_success_count");
   state = S3ClovisKVSReaderOpState::present;
   // remember the response
   struct s3_clovis_kvs_op_context *kvs_ctx =

@@ -430,6 +430,7 @@ void S3ClovisWriter::write_content_successful() {
   total_written += size_in_current_write;
   s3_log(S3_LOG_INFO, request_id,
          "Clovis API sucessful: write(total_written = %zu)\n", total_written);
+  s3_stats_inc("write_to_clovis_op_success_count");
 
   // We have copied data to clovis buffers.
   write_async_buffer->flush_used_buffers();
