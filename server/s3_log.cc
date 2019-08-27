@@ -46,13 +46,25 @@ int init_log(char *process_name) {
   } else {
     FLAGS_logtostderr = true;
   }
-
-  FLAGS_minloglevel = (s3log_level == S3_LOG_DEBUG) ? S3_LOG_INFO : s3log_level;
+  switch (s3log_level) {
+    case S3_LOG_WARN:
+      FLAGS_minloglevel = google::GLOG_WARNING;
+      break;
+    case S3_LOG_ERROR:
+      FLAGS_minloglevel = google::GLOG_ERROR;
+      break;
+    case S3_LOG_FATAL:
+      FLAGS_minloglevel = google::GLOG_FATAL;
+      break;
+    default:
+      FLAGS_minloglevel = google::GLOG_INFO;
+  }
   FLAGS_max_log_size = option_instance->get_log_file_max_size_in_mb();
+
   if (option_instance->is_log_buffering_enabled()) {
     // DEBUG, INFO & WARN logs are buffered.
     // ERROR & FATAL logs are always flushed immediately.
-    FLAGS_logbuflevel = S3_LOG_WARN;
+    FLAGS_logbuflevel = google::GLOG_WARNING;
     FLAGS_logbufsecs = option_instance->get_log_flush_frequency_in_sec();
   } else {
     // All logs are flushed immediately.

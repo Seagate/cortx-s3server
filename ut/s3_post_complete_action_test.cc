@@ -27,6 +27,8 @@
 #include "s3_post_complete_action.h"
 #include "s3_ut_common.h"
 
+extern int s3log_level;
+
 using ::testing::Invoke;
 using ::testing::AtLeast;
 using ::testing::ReturnRef;
@@ -611,9 +613,11 @@ TEST_F(S3PostCompleteActionTest, DeletePartsNext) {
 
 TEST_F(S3PostCompleteActionTest, DeletePartsFailed) {
   CREATE_METADATA_OBJ;
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .Times(AtLeast(2))
-      .WillRepeatedly(Return(oid));
+  if (s3log_level <= S3_LOG_ERROR) {
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+        .Times(AtLeast(2))
+        .WillRepeatedly(Return(oid));
+  }
   EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));

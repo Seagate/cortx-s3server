@@ -31,15 +31,29 @@
 #include <memory>
 #include <inttypes.h>
 
-#define S3_LOG_FATAL google::GLOG_FATAL
-#define S3_LOG_ERROR google::GLOG_ERROR
-#define S3_LOG_WARN google::GLOG_WARNING
-#define S3_LOG_INFO google::GLOG_INFO
-#define S3_LOG_DEBUG (S3_LOG_FATAL + 1)
+#define S3_LOG_FATAL 4
+#define S3_LOG_ERROR 3
+#define S3_LOG_WARN 2
+#define S3_LOG_INFO 1
+#define S3_LOG_DEBUG 0
 
-#define S3_DEFAULT_REQID "-"
+const char S3_DEFAULT_REQID[] = "-";
 
 extern int s3log_level;
+
+inline const char* s3_log_get_req_id(const char* requestid) {
+  return (requestid && requestid[0]) ? requestid : S3_DEFAULT_REQID;
+}
+
+inline const char* s3_log_get_req_id(const std::string& requestid) {
+  return requestid.empty() ? S3_DEFAULT_REQID : requestid.c_str();
+}
+
+#define s3_log_msg_S3_LOG_DEBUG(p) (LOG(INFO) << (p))
+#define s3_log_msg_S3_LOG_INFO(p) (LOG(INFO) << (p))
+#define s3_log_msg_S3_LOG_WARN(p) (LOG(WARNING) << (p))
+#define s3_log_msg_S3_LOG_ERROR(p) (LOG(ERROR) << (p))
+#define s3_log_msg_S3_LOG_FATAL(p) (LOG(FATAL) << (p))
 
 // Note:
 // 1. Google glog doesn't have a separate severity level for DEBUG logs.
@@ -48,36 +62,14 @@ extern int s3log_level;
 // 2. Logging a FATAL message terminates the program (after the message is
 //    logged).
 #define s3_log(loglevel, requestid, fmt, ...)                           \
-  do {                                                                  \
-    int s3_log__glog_level__ = (loglevel);                              \
-    if ((s3_log__glog_level__ == S3_LOG_DEBUG) &&                       \
-        (s3log_level == S3_LOG_DEBUG)) {                                \
-      s3_log__glog_level__ = S3_LOG_INFO;                               \
+  if (loglevel >= s3log_level) {                                        \
+    char* s3_log_msg__ = nullptr;                                       \
+    if (asprintf(&s3_log_msg__, "[%s] [ReqID: %s] " fmt "\n", __func__, \
+                 s3_log_get_req_id(requestid), ##__VA_ARGS__) > 0) {    \
+      s3_log_msg_##loglevel(s3_log_msg__);                              \
+      free(s3_log_msg__);                                               \
     }                                                                   \
-    std::string s3_log__req_id__ = (requestid);                         \
-    s3_log__req_id__ =                                                  \
-        s3_log__req_id__.empty() ? S3_DEFAULT_REQID : s3_log__req_id__; \
-    if (s3_log__glog_level__ != S3_LOG_DEBUG) {                         \
-      int s3_log__log_buf_len__ =                                       \
-          snprintf(NULL, 0, "[%s] [ReqID: %s] " fmt "\n", __func__,     \
-                   s3_log__req_id__.c_str(), ##__VA_ARGS__);            \
-      s3_log__log_buf_len__++;                                          \
-      std::unique_ptr<char[]> s3_log__log_buf__(                        \
-          new char[s3_log__log_buf_len__]);                             \
-      snprintf(s3_log__log_buf__.get(), s3_log__log_buf_len__,          \
-               "[%s] [ReqID: %s] " fmt "\n", __func__,                  \
-               s3_log__req_id__.c_str(), ##__VA_ARGS__);                \
-      if (s3_log__glog_level__ == S3_LOG_INFO) {                        \
-        LOG(INFO) << s3_log__log_buf__.get();                           \
-      } else if (s3_log__glog_level__ == S3_LOG_WARN) {                 \
-        LOG(WARNING) << s3_log__log_buf__.get();                        \
-      } else if (s3_log__glog_level__ == S3_LOG_ERROR) {                \
-        LOG(ERROR) << s3_log__log_buf__.get();                          \
-      } else if (s3_log__glog_level__ == S3_LOG_FATAL) {                \
-        LOG(FATAL) << s3_log__log_buf__.get();                          \
-      }                                                                 \
-    }                                                                   \
-  } while (0)
+  }
 
 // Note:
 // 1. Use syslog defined severity levels as loglevel.

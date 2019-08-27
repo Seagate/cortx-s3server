@@ -17,6 +17,8 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include <glog/logging.h>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -53,7 +55,20 @@ struct m0 instance;
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;
   FLAGS_log_dir = "./";
-  FLAGS_minloglevel = (s3log_level == S3_LOG_DEBUG) ? S3_LOG_INFO : s3log_level;
+
+  switch (s3log_level) {
+    case S3_LOG_WARN:
+      FLAGS_minloglevel = google::GLOG_WARNING;
+      break;
+    case S3_LOG_ERROR:
+      FLAGS_minloglevel = google::GLOG_ERROR;
+      break;
+    case S3_LOG_FATAL:
+      FLAGS_minloglevel = google::GLOG_FATAL;
+      break;
+    default:
+      FLAGS_minloglevel = google::GLOG_INFO;
+  }
   google::InitGoogleLogging("s3ut");
 }
 
