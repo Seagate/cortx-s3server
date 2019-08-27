@@ -110,3 +110,10 @@ void S3CommonUtilities::find_and_replaceall(std::string &data,
     pos = data.find(to_search, pos + replace_str.size());
   }
 }
+
+bool S3CommonUtilities::is_yaml_value_null(const std::string &value) {
+  // 'null | Null | NULL | ~ ' represents empty string in value
+  // https://yaml.org/spec/1.2/spec.html#id2805071
+  return ((value == "null") || (value == "Null") || (value == "NULL") ||
+          (value == "~"));
+}

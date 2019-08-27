@@ -71,5 +71,6 @@ class S3CommonUtilities {
   static void find_and_replaceall(std::string &data,
                                   const std::string &to_search,
                                   const std::string &replace_str);
+  static bool is_yaml_value_null(const std::string &value);
 };
 #endif

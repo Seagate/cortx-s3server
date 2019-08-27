@@ -245,3 +245,33 @@ TEST_F(S3CommonUtilitiesTest, FindAndReplaceallReplaceString4) {
                                          replace_string);
   EXPECT_STREQ("", input_string.c_str());
 }
+
+TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest1) {
+  std::string input_string = "~";
+  EXPECT_TRUE(S3CommonUtilities::is_yaml_value_null(input_string));
+}
+
+TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest2) {
+  std::string input_string = "Null";
+  EXPECT_TRUE(S3CommonUtilities::is_yaml_value_null(input_string));
+}
+
+TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest3) {
+  std::string input_string = "null";
+  EXPECT_TRUE(S3CommonUtilities::is_yaml_value_null(input_string));
+}
+
+TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest4) {
+  std::string input_string = "NULL";
+  EXPECT_TRUE(S3CommonUtilities::is_yaml_value_null(input_string));
+}
+
+TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest5) {
+  std::string input_string = "abcd";
+  EXPECT_FALSE(S3CommonUtilities::is_yaml_value_null(input_string));
+}
+
+TEST_F(S3CommonUtilitiesTest, IsYamlValueNullTest6) {
+  std::string input_string = "";
+  EXPECT_FALSE(S3CommonUtilities::is_yaml_value_null(input_string));
+}

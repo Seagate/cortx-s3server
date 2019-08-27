@@ -23,6 +23,7 @@
 #include <vector>
 #include "s3_clovis_layout.h"
 #include "s3_log.h"
+#include "s3_common_utilities.h"
 
 S3Option* S3Option::option_instance = NULL;
 
@@ -108,12 +109,16 @@ bool S3Option::load_section(std::string section_name,
       s3_ipv4_bind_addr =
           s3_option_node["S3_SERVER_IPV4_BIND_ADDR"].as<std::string>();
       // '~' means empty or null
-      s3_ipv4_bind_addr = (s3_ipv4_bind_addr == "~") ? "" : s3_ipv4_bind_addr;
+      if (S3CommonUtilities::is_yaml_value_null(s3_ipv4_bind_addr)) {
+        s3_ipv4_bind_addr = "";
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_IPV6_BIND_ADDR");
       s3_ipv6_bind_addr =
           s3_option_node["S3_SERVER_IPV6_BIND_ADDR"].as<std::string>();
       // '~' means empty or null
-      s3_ipv6_bind_addr = (s3_ipv6_bind_addr == "~") ? "" : s3_ipv6_bind_addr;
+      if (S3CommonUtilities::is_yaml_value_null(s3_ipv6_bind_addr)) {
+        s3_ipv6_bind_addr = "";
+      }
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_SERVER_MERO_HTTP_BIND_ADDR");
       mero_http_bind_addr =
           s3_option_node["S3_SERVER_MERO_HTTP_BIND_ADDR"].as<std::string>();
