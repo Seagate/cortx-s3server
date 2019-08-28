@@ -862,7 +862,7 @@ Note: if **jenkins-build.sh** were run with **--skip_tests** option s3server wil
 not be stopped and **dev-stops3.sh** should be called with the same **--callgraph**
 option value.
 
-Note: **--calgraph** option could be used together with **--basic_test_only**, e.g.
+Note: **--callgraph** option could be used together with **--basic_test_only**, e.g.
 ```
 jenkins-build.sh --skip_build --basic_test_only --callgraph /tmp/callgraph.out
 ```
@@ -875,3 +875,71 @@ file put/get are executed, s3server will be stopped.
 There will be two output files created
 /tmp/callgraph.out - raw valgrind generated file and
 /tmp/callgraph.out.annotated - text form
+
+# Deployment from rpm
+
+The **rpm-deploy.sh** is used to deploy s3server, mero and halon on test node.
+
+Note: **dev/init.sh** script should be run before rpm deployment
+
+Note: **rpm-deploy.sh** should not be used outside source tree
+
+Deployment on a clean node:
+
+1 - Run **dev/init.sh** or make sure it was already run
+
+2 - Update yum repos to install mero and halon from; By default hermi repos are
+used - **http://ci-storage.mero.colo.seagate.com/releases/hermi/last_successful/mero/repo**;
+if one needs to use binaries from specific sprint following command should be run
+```
+./rpm-deploy.sh -y ees1.0.0-PI.1-sprint4
+```
+where **ees1.0.0-PI.1-sprint4** is a sprint name, after that repos named
+**http://ci-storage.mero.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/mero/repo**,
+**http://ci-storage.mero.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/halon/repo**,
+**http://ci-storage.mero.colo.seagate.com/releases/eos/ees1.0.0-PI.1-sprint4/s3server/repo**
+will be added and prioritized against hermi repos;
+To be able to restore default repos one should run
+```
+./rpm-deploy.sh -y hermi
+```
+
+3 - Remove all existing packages if any
+```
+./rpm-deploy.sh -R
+```
+this cmd will try to uninstall following pkgs: s3server, s3server-debuginfo,
+mero, mero-devel, halon, s3iamcli
+
+4 - Install packages
+```
+./rpm-deploy.sh -I
+```
+mero, mero-devel, halon and s3iamcli packages will be installed from the yum repo;
+s3server package will be built from the current source tree
+
+5 - Run status command and make sure all packages installed and configured
+
+6 - If s3server config is not a production config run
+```
+./rpm-deploy.sh -p <@ or path-to-desired-config-file>
+```
+if one needs to use **s3config.release.yaml** config from source tree the "@"
+should be used
+
+7 - Start cluster
+```
+./rpm-deploy.sh -U
+```
+
+8 - Stop cluster
+```
+./rpm-deploy.sh -D
+```
+
+Commands 2-7 could be combined
+```
+./rpm-deploy.sh -y ees1.0.0-PI.1-sprint4 -RI -p @ -US
+```
+this command will update repos, remove pkgs, install pkgs, update s3server config,
+run cluster and print statuses of all installed pkgs
