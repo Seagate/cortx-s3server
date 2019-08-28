@@ -21,6 +21,7 @@ package com.seagates3.authorization;
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.GrantListFullException;
+import com.seagates3.exception.InternalServerException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
 import com.seagates3.acl.ACLRequestValidator;
@@ -94,17 +95,19 @@ public class Authorizer {
 
           try {
             String acl = null;
+            ACLCreator aclCreator = new ACLCreator();
+
             if (!accountPermissionMap.isEmpty()) {  // permission headers
                                                     // present
-              acl = new ACLCreator().createAclFromPermissionHeaders(
+              acl = aclCreator.createAclFromPermissionHeaders(
                   requestor, accountPermissionMap, requestBody);
-            }
-            /*
-                 * else if (cannedAclSpecified) { serverResponse = }
-                 */      // TODO
-            else {  // neither permission headers nor canned acl requested so
-                    // create default acl
-              acl = new ACLCreator().createDefaultAcl(requestor);
+
+            } else if (requestBody.get("x-amz-acl") != null) {
+              acl = aclCreator.createACLFromCannedInput(requestor, requestBody);
+
+            } else {  // neither permission headers nor canned acl requested so
+                      // create default acl
+              acl = aclCreator.createDefaultAcl(requestor);
             }
             LOGGER.info("Updated xml is - " + acl);
             return responseGenerator.generateAuthorizationResponse(requestor,
@@ -124,8 +127,11 @@ public class Authorizer {
             LOGGER.error("Error while generating the Authorization Response");
             return responseGenerator.internalServerError();
           }
+          catch (InternalServerException e) {
+            LOGGER.error(e.getMessage());
+            return e.getServerResponse();
+          }
         }
-
         return responseGenerator.generateAuthorizationResponse(requestor, null);
    }
    /**

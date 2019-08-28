@@ -95,12 +95,12 @@ class ACLAuthorizer {
       String permissionGrant = grant.getPermission();
       if ("FULL_CONTROL".equals(permissionGrant) ||
           requiredPermission.equals(permissionGrant)) {
-        LOGGER.debug("The resource ACL grants permission for the requestor.");
+        LOGGER.info("The resource ACL grants permission for the requestor.");
         return true;
       } else if (canonicalId.equals(acl.getOwner().getCanonicalId()) &&
                  ("READ_ACP".equals(requiredPermission) ||
                   "WRITE_ACP".equals(requiredPermission))) {
-        LOGGER.debug("The resource ACL grants permission for the requestor.");
+        LOGGER.info("The resource ACL grants permission for the requestor.");
         return true;
       } else {
         LOGGER.info(

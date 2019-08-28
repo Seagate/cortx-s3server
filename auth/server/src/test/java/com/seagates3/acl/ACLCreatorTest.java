@@ -33,7 +33,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -42,8 +42,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.xml.sax.SAXException;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.GrantListFullException;
+import com.seagates3.exception.InternalServerException;
 import com.seagates3.model.Account;
+import com.seagates3.model.Group;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.BinaryUtil;
 
@@ -51,17 +54,17 @@ import com.seagates3.util.BinaryUtil;
     @PrepareForTest({Files.class}) public class ACLCreatorTest {
 
  private
-  ACLCreator spyAclCreator;
+  static ACLCreator spyAclCreator;
  private
-  Requestor requestor;
+  static Requestor requestor;
  private
-  Account account1, account2;
+  static Account account1, account2;
  private
   Map<String, String> requestBody = null;
-  String aclXmlPath = null;
-  File xmlFile = null;
+  static String aclXmlPath = null;
+  static File xmlFile = null;
 
-  @Before public void setup() {
+  @BeforeClass public static void setup() {
     account1 = new Account();
     account1.setId("1");
     account1.setName("Acc1");
@@ -75,6 +78,7 @@ import com.seagates3.util.BinaryUtil;
     spyAclCreator = Mockito.spy(new ACLCreator());
     aclXmlPath = "../resources/defaultAclTemplate.xml";
     xmlFile = new File(aclXmlPath);
+    AuthServerConfig.authResourceDir = "../resources";
   }
 
   /**
@@ -136,7 +140,7 @@ import com.seagates3.util.BinaryUtil;
                             .get(0)
                             .getGrantee()
                             .getCanonicalId(),
-                        "1");
+                        "fsdfsfsfdsfd12DD");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(0).getPermission(),
         "FULL_CONTROL");
@@ -145,7 +149,7 @@ import com.seagates3.util.BinaryUtil;
                             .get(1)
                             .getGrantee()
                             .getCanonicalId(),
-                        "2");
+                        "wwQQadgfhdfsfsfdsfd12DD");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(1).getPermission(),
         "FULL_CONTROL");
@@ -198,7 +202,7 @@ import com.seagates3.util.BinaryUtil;
                             .get(0)
                             .getGrantee()
                             .getCanonicalId(),
-                        "1");
+                        "fsdfsfsfdsfd12DD");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(0).getPermission(),
         "FULL_CONTROL");
@@ -207,12 +211,222 @@ import com.seagates3.util.BinaryUtil;
                             .get(1)
                             .getGrantee()
                             .getCanonicalId(),
-                        "2");
+                        "wwQQadgfhdfsfsfdsfd12DD");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(1).getPermission(),
         "WRITE_ACP");
     Assert.assertNotNull(aclXml);
     Assert.assertEquals(acp.getOwner().getDisplayName(), "kirungeb");
+  }
+
+  @Test public void testCreateACLFromCannedInput_Success_private()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    String existingACL =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "  <DisplayName>Acc1</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "    <DisplayName>Acc1</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>FULL_CONTROL</Permission>\n" + "  </Grant>\n" +
+        "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("x-amz-acl", "private");
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc1", acp.getOwner().getDisplayName());
+    Assert.assertEquals(1, acp.getAccessControlList().getGrantList().size());
+    Assert.assertEquals(
+        "fsdfsfsfdsfd12DD",
+        acp.getAccessControlList().getGrantList().get(0).grantee.canonicalId);
+    Assert.assertEquals(
+        "FULL_CONTROL",
+        acp.getAccessControlList().getGrantList().get(0).permission);
+  }
+
+  @Test public void testCreateACLFromCannedInput_Success_public_read()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    String existingACL =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "  <DisplayName>Acc1</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "    <DisplayName>Acc1</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>FULL_CONTROL</Permission>\n" + "  </Grant>\n" +
+        "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("x-amz-acl", "public-read");
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc1", acp.getOwner().getDisplayName());
+    Assert.assertEquals(2, acp.getAccessControlList().getGrantList().size());
+    for (Grant grant : acp.getAccessControlList().getGrantList()) {
+      if (grant.grantee.type.equals(Grantee.Types.Group)) {
+        Assert.assertEquals(Group.AllUsersURI, grant.grantee.uri);
+        Assert.assertEquals("READ", grant.permission);
+      } else if (Grantee.Types.CanonicalUser.equals(grant.grantee.type)) {
+        Assert.assertEquals("fsdfsfsfdsfd12DD", grant.grantee.canonicalId);
+        Assert.assertEquals("FULL_CONTROL", grant.permission);
+      } else {
+        Assert.fail();
+      }
+    }
+  }
+
+  @Test public void testCreateACLFromCannedInput_Success_public_read_write()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    String existingACL =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "  <DisplayName>Acc1</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "    <DisplayName>Acc1</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>FULL_CONTROL</Permission>\n" + "  </Grant>\n" +
+        "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("x-amz-acl", "public-read-write");
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc1", acp.getOwner().getDisplayName());
+    Assert.assertEquals(3, acp.getAccessControlList().getGrantList().size());
+    for (Grant grant : acp.getAccessControlList().getGrantList()) {
+      if (grant.grantee.type.equals(Grantee.Types.Group)) {
+        Assert.assertEquals(Group.AllUsersURI, grant.grantee.uri);
+        Assert.assertTrue("READ".equals(grant.permission) ||
+                          "WRITE".equals(grant.permission));
+      } else if (Grantee.Types.CanonicalUser.equals(grant.grantee.type)) {
+        Assert.assertEquals("fsdfsfsfdsfd12DD", grant.grantee.canonicalId);
+        Assert.assertEquals("FULL_CONTROL", grant.permission);
+      } else {
+        Assert.fail();
+      }
+    }
+  }
+
+  @Test public void testCreateACLFromCannedInput_Success_authenticated_read()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    String existingACL =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "  <DisplayName>Acc1</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "    <DisplayName>Acc1</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>FULL_CONTROL</Permission>\n" + "  </Grant>\n" +
+        "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("x-amz-acl", "authenticated-read");
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc1", acp.getOwner().getDisplayName());
+    Assert.assertEquals(2, acp.getAccessControlList().getGrantList().size());
+    for (Grant grant : acp.getAccessControlList().getGrantList()) {
+      if (grant.grantee.type.equals(Grantee.Types.Group)) {
+        Assert.assertEquals(Group.AuthenticatedUsersURI, grant.grantee.uri);
+        Assert.assertEquals("READ", grant.permission);
+      } else if (Grantee.Types.CanonicalUser.equals(grant.grantee.type)) {
+        Assert.assertEquals("fsdfsfsfdsfd12DD", grant.grantee.canonicalId);
+        Assert.assertEquals("FULL_CONTROL", grant.permission);
+      } else {
+        Assert.fail();
+      }
+    }
+  }
+
+  @Test public void testCreateACLFromCannedInput_Success_private_NullACL()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    requestBody = new TreeMap<>();
+    requestBody.put("x-amz-acl", "private");
+    Requestor acc2Requestor = new Requestor();
+    acc2Requestor.setAccount(account2);
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(acc2Requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("wwQQadgfhdfsfsfdsfd12DD",
+                        acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc2", acp.getOwner().getDisplayName());
+    Assert.assertEquals(1, acp.getAccessControlList().getGrantList().size());
+    Assert.assertEquals(
+        "wwQQadgfhdfsfsfdsfd12DD",
+        acp.getAccessControlList().getGrantList().get(0).grantee.canonicalId);
+    Assert.assertEquals(
+        "FULL_CONTROL",
+        acp.getAccessControlList().getGrantList().get(0).permission);
+  }
+
+  @Test(
+      expected =
+          InternalServerException
+              .class) public void testCreateACLFromCannedInput_Fail_Invalid_CannedACL()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    requestBody = new TreeMap<>();
+    requestBody.put("x-amz-acl", "invalid_input");
+    Requestor acc2Requestor = new Requestor();
+    acc2Requestor.setAccount(account2);
+    new ACLCreator().createACLFromCannedInput(acc2Requestor, requestBody);
   }
 }
 

@@ -152,8 +152,8 @@ class ACLValidation {
           /**
            * Validate Email Address
            */
-        } else if (grantList.get(counter)
-                       .grantee.type.equals(Grantee.Types.Email)) {
+        } else if (grantList.get(counter).grantee.type.equals(
+                       Grantee.Types.AmazonCustomerByEmail)) {
           String email = grantList.get(counter).grantee.emailAddress;
           try {
             if (new AccountImpl().findByEmailAddress(email) == null) {

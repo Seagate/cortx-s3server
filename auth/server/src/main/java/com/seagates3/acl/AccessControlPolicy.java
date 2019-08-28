@@ -33,6 +33,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -132,11 +133,11 @@ class AccessControlPolicy {
         Node granteeUri = grantitemelement.getElementsByTagName("URI").item(0);
         grantee = new Grantee(null, null, granteeUri.getTextContent(), null,
                               Grantee.Types.Group);
-      } else if (Grantee.Types.Email.toString().equals(type)) {
+      } else if (Grantee.Types.AmazonCustomerByEmail.toString().equals(type)) {
         Node granteeEmail =
             grantitemelement.getElementsByTagName("EmailAddress").item(0);
         grantee = new Grantee(null, null, null, granteeEmail.getTextContent(),
-                              Grantee.Types.Email);
+                              Grantee.Types.AmazonCustomerByEmail);
       }
       Node permission =
           grantitemelement.getElementsByTagName("Permission").item(0);
@@ -227,6 +228,8 @@ class AccessControlPolicy {
 
       Node grantNode = GrantNodeList.item(counter);
       Element grantElement = (Element)grantNode;
+      Node granteeNode = grantElement.getElementsByTagName("Grantee").item(0);
+      Element granteeElement = (Element)granteeNode;
       Grant grant = grantList.get(counter);
 
       if (Grantee.Types.CanonicalUser.equals(grant.grantee.type)) {
@@ -236,13 +239,44 @@ class AccessControlPolicy {
         Node granteeDisplayNameNode =
             grantElement.getElementsByTagName("DisplayName").item(0);
         granteeDisplayNameNode.setTextContent(grant.grantee.getDisplayName());
+
       } else if (Grantee.Types.Group.equals(grant.grantee.type)) {
-        Node granteeIdNode = grantElement.getElementsByTagName("URI").item(0);
-        granteeIdNode.setTextContent(grant.grantee.getUri());
-      } else if (Grantee.Types.Email.equals(grant.grantee.type)) {
-        Node granteeIdNode =
-            grantElement.getElementsByTagName("EmailAddress").item(0);
-        granteeIdNode.setTextContent(grant.grantee.getEmailAddress());
+        // Update the Grantee node with Group details
+        NamedNodeMap attributes = granteeNode.getAttributes();
+        Node nodeAttr = attributes.getNamedItem("xsi:type");
+        nodeAttr.setTextContent("Group");
+        Element uriElement = doc.createElement("URI");
+        uriElement.appendChild(doc.createTextNode(grant.grantee.uri));
+        granteeNode.appendChild(uriElement);
+
+        // Remove ID and DisplayName tag elements from Grantee node
+        NodeList granteeIdNodeList = granteeElement.getElementsByTagName("ID");
+        NodeList granteeNameNodeList =
+            granteeElement.getElementsByTagName("DisplayName");
+        if (granteeIdNodeList != null && granteeIdNodeList.getLength() > 0)
+          granteeNode.removeChild(granteeIdNodeList.item(0));
+        if (granteeNameNodeList != null && granteeNameNodeList.getLength() > 0)
+          granteeNode.removeChild(granteeNameNodeList.item(0));
+
+      } else if (Grantee.Types.AmazonCustomerByEmail.equals(
+                     grant.grantee.type)) {
+        // Update Grantee node with Email details
+        NamedNodeMap attributes = granteeNode.getAttributes();
+        Node nodeAttr = attributes.getNamedItem("xsi:type");
+        nodeAttr.setTextContent("AmazonCustomerByEmail");
+        Element emailElement = doc.createElement("EmailAddress");
+        emailElement.appendChild(
+            doc.createTextNode(grant.grantee.emailAddress));
+        granteeNode.appendChild(emailElement);
+
+        // Remove ID and DisplayName tag elements from Grantee node
+        NodeList granteeIdNodeList = granteeElement.getElementsByTagName("ID");
+        NodeList granteeNameNodeList =
+            granteeElement.getElementsByTagName("DisplayName");
+        if (granteeIdNodeList != null && granteeIdNodeList.getLength() > 0)
+          granteeNode.removeChild(granteeIdNodeList.item(0));
+        if (granteeNameNodeList != null && granteeNameNodeList.getLength() > 0)
+          granteeNode.removeChild(granteeNameNodeList.item(0));
       }
 
       Node permissionNode =

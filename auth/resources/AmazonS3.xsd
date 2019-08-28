@@ -157,7 +157,7 @@
     </xsd:complexContent>
   </xsd:complexType>
 
-  <xsd:complexType name="Email">
+  <xsd:complexType name="AmazonCustomerByEmail">
     <xsd:complexContent>
       <xsd:extension base="tns:User">
         <xsd:sequence>

@@ -128,7 +128,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       "         </Grantee>\r\n" + "         <Permission>READ</Permission>\r\n" +
       "      </Grant>\r\n" + "      <Grant>\r\n" + "      <Grantee " +
       "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
-      "xsi:type=\"Email\">\r\n" +
+      "xsi:type=\"AmazonCustomerByEmail\">\r\n" +
       "        <EmailAddress>xyz@seagate.com</EmailAddress>\r\n" +
       "      </Grantee>\r\n" + "      <Permission>WRITE_ACP</Permission>\r\n" +
       "      </Grant>" + "   </AccessControlList>\r\n" +

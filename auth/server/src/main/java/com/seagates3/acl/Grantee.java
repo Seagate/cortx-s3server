@@ -39,7 +39,7 @@ class Grantee {
   enum Types {
     CanonicalUser,
     Group,
-    Email
+    AmazonCustomerByEmail
   };
 
  public

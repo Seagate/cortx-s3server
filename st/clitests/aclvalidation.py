@@ -6,11 +6,43 @@ class AclTest(S3PyCliTest):
  def __init__(self, description):
      super(AclTest, self).__init__(description)
 
-  # Validate complete acl with dummy acl object
+  # Validate complete default acl with dummy acl object
  def validate_acl(self, response, id, display_name, grant_permission):
 
     expected_acl_string = """{"Owner": {"DisplayName": "%s","ID": "%s"},"Grants": [{"Grantee": {"Type": "CanonicalUser","DisplayName": "%s","ID": "%s"},"Permission": "%s"}]}"""\
     %(display_name, id, display_name, id, grant_permission)
+
+    expected_acl_json = json.loads(expected_acl_string)
+    actual_acl_json = json.loads(response.status.stdout)
+    expected_acl = json.dumps(expected_acl_json, sort_keys=True)
+    actual_acl = json.dumps(actual_acl_json, sort_keys=True)
+
+    print("Expected acl  : [%s]" %(expected_acl))
+    print("Response acl  : [%s]" %(actual_acl))
+    assert expected_acl == actual_acl
+    return self
+
+  # Validate acl which includes grants- one each for canonical user and group
+ def validate_acl_single_group_grant(self, response, id, display_name, grant_permission, uri, group_permission):
+
+    expected_acl_string = """{"Owner": {"DisplayName": "%s","ID": "%s"},"Grants": [{"Grantee": {"Type": "CanonicalUser","DisplayName": "%s","ID": "%s"},"Permission": "%s"}, {"Grantee": {"Type": "Group","URI": "%s"},"Permission": "%s"}]}"""\
+    %(display_name, id, display_name, id, grant_permission, uri, group_permission)
+
+    expected_acl_json = json.loads(expected_acl_string)
+    actual_acl_json = json.loads(response.status.stdout)
+    expected_acl = json.dumps(expected_acl_json, sort_keys=True)
+    actual_acl = json.dumps(actual_acl_json, sort_keys=True)
+
+    print("Expected acl  : [%s]" %(expected_acl))
+    print("Response acl  : [%s]" %(actual_acl))
+    assert expected_acl == actual_acl
+    return self
+
+  # Validate acl which includes grants- one each for canonical user and group
+ def validate_acl_dual_group_grant(self, response, id, display_name, grant_permission, uri1, group_permission1, uri2, group_permission2):
+
+    expected_acl_string = """{"Owner": {"DisplayName": "%s","ID": "%s"},"Grants": [{"Grantee": {"Type": "CanonicalUser","DisplayName": "%s","ID": "%s"},"Permission": "%s"}, {"Grantee": {"Type": "Group","URI": "%s"},"Permission": "%s"}, {"Grantee": {"Type": "Group","URI": "%s"},"Permission": "%s"}]}"""\
+    %(display_name, id, display_name, id, grant_permission, uri1, group_permission1, uri2, group_permission2)
 
     expected_acl_json = json.loads(expected_acl_string)
     actual_acl_json = json.loads(response.status.stdout)

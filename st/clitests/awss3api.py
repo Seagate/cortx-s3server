@@ -136,10 +136,15 @@ class AwsTest(S3PyCliTest):
                       + " --upload-id " + upload_id )
         return self
 
-    def put_object(self, bucket_name, object_name):
+    def put_object(self, bucket_name, object_name, canned_acl=None):
         self.bucket_name = bucket_name
         self.object_name = object_name
-        self.with_cli("aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + object_name)
+
+        if canned_acl:
+            self.canned_acl = canned_acl
+            self.with_cli("aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + object_name + " --acl " + canned_acl)
+        else:
+            self.with_cli("aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + object_name)
         return self
 
     def get_object_acl(self, bucket_name, object_name):

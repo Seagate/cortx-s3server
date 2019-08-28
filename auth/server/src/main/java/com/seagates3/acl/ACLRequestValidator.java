@@ -129,8 +129,9 @@ class ACLRequestValidator {
         response.getResponseStatus() == null) {
       if (isPermissionHeaderPresent == 1) {
         isValidPermissionHeader(requestBody, response, accountPermissionMap);
-      } else if (isCannedAclPresent == 1) {
-        isValidCannedAcl(requestBody, response);
+      } else if (isCannedAclPresent == 1 &&
+                 !isValidCannedAcl(requestBody.get("x-amz-acl"))) {
+        response = responseGenerator.badRequest();
       }
     }
 
@@ -138,10 +139,12 @@ class ACLRequestValidator {
   }
 
  protected
-  boolean isValidCannedAcl(Map<String, String> requestBody,
-                           ServerResponse response) {
+  boolean isValidCannedAcl(String input) {
     boolean isValid = true;
-    if (!cannedAclSet.contains(requestBody.get("x-amz-acl"))) {
+    if (!cannedAclSet.contains(input)) {
+      String errorMessage =
+          "argument of type ' " + input + " ' is not iterable";
+      LOGGER.error(errorMessage);
       isValid = false;
     }
     return isValid;
