@@ -138,6 +138,8 @@ rm -rf %{buildroot}
 /opt/seagate/s3/libevent/pkgconfig/libevent.pc
 /opt/seagate/s3/libevent/pkgconfig/libevent_openssl.pc
 /opt/seagate/s3/libevent/pkgconfig/libevent_pthreads.pc
+/opt/seagate/s3/libevent/pkgconfig/libevent_core.pc
+/opt/seagate/s3/libevent/pkgconfig/libevent_extra.pc
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
