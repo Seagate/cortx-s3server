@@ -108,11 +108,6 @@ class S3AbortMultipartAction : public S3Action {
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedTest);
   FRIEND_TEST(S3AbortMultipartActionTest,
               DeleteMultipartMetadataFailedToLaunchTest);
-  FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectTest1);
-  FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectTest2);
-  FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectTest3);
-  FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectFailedTest1);
-  FRIEND_TEST(S3AbortMultipartActionTest, DeleteObjectFailedToLaunchTest);
   FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailed);
@@ -120,6 +115,10 @@ class S3AbortMultipartAction : public S3Action {
               DeletePartIndexWithPartsFailedToLaunch);
   FRIEND_TEST(S3AbortMultipartActionTest, Send200SuccessToS3Client);
   FRIEND_TEST(S3AbortMultipartActionTest, Send503InternalErrorToS3Client);
+  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataFailedToRemoveTest1);
+  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataFailedToRemoveTest2);
+  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataRemoveTest1);
+  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataRemoveTest2);
 };
 
 #endif

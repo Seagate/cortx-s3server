@@ -167,12 +167,10 @@ class S3ObjectMetadata {
   virtual struct m0_uint128 get_oid() { return oid; }
   virtual int get_layout_id() { return layout_id; }
   void set_layout_id(int id) { layout_id = id; }
-  int get_old_layout_id() { return old_layout_id; }
+  virtual int get_old_layout_id() { return old_layout_id; }
   void set_old_layout_id(int id) { old_layout_id = id; }
 
-  struct m0_uint128 get_old_oid() {
-    return old_oid;
-  }
+  virtual struct m0_uint128 get_old_oid() { return old_oid; }
 
   struct m0_uint128 get_part_index_oid() {
     return part_index_oid;

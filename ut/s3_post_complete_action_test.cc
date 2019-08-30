@@ -26,6 +26,7 @@
 #include "mock_s3_factory.h"
 #include "s3_post_complete_action.h"
 #include "s3_ut_common.h"
+#include "s3_m0_uint128_helper.h"
 
 extern int s3log_level;
 
@@ -79,14 +80,15 @@ using ::testing::_;
             request_mock, oid);                                             \
   } while (0)
 
-#define CREATE_ACTION_UNDER_TEST_OBJ                                       \
-  do {                                                                     \
-    EXPECT_CALL(*request_mock, get_query_string_value("uploadId"))         \
-        .Times(AtLeast(1))                                                 \
-        .WillRepeatedly(Return("uploadId"));                               \
-    action_under_test_ptr = std::make_shared<S3PostCompleteAction>(        \
-        request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,       \
-        object_mp_meta_factory, part_meta_factory, clovis_writer_factory); \
+#define CREATE_ACTION_UNDER_TEST_OBJ                                      \
+  do {                                                                    \
+    EXPECT_CALL(*request_mock, get_query_string_value("uploadId"))        \
+        .Times(AtLeast(1))                                                \
+        .WillRepeatedly(Return("uploadId"));                              \
+    action_under_test_ptr = std::make_shared<S3PostCompleteAction>(       \
+        request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,      \
+        object_mp_meta_factory, part_meta_factory, clovis_writer_factory, \
+        clovis_kvs_writer_factory);                                       \
   } while (0)
 
 class S3PostCompleteActionTest : public testing::Test {
@@ -122,6 +124,8 @@ class S3PostCompleteActionTest : public testing::Test {
             request_mock, s3_clovis_api_mock, mp_indx_oid, true, upload_id);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         request_mock, oid, upload_id, 0);
+    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+        request_mock, s3_clovis_api_mock);
 
     CREATE_ACTION_UNDER_TEST_OBJ;
   }
@@ -134,6 +138,7 @@ class S3PostCompleteActionTest : public testing::Test {
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<S3PostCompleteAction> action_under_test_ptr;
 
   std::string upload_id;
@@ -524,13 +529,16 @@ TEST_F(S3PostCompleteActionTest, SaveMetadataAbortMultipart) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_METADATA_OBJ;
   CREATE_MP_METADATA_OBJ;
-
+  m0_uint128 oid = {0x1ffff, 0x1ffff};
   action_under_test_ptr->set_abort_multipart(true);
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->add_task(
       std::bind(&S3PostCompleteActionTest::func_callback_one, this));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_oid(_))
       .Times(AtLeast(1));
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(oid));
 
   action_under_test_ptr->save_metadata();
   EXPECT_EQ(1, call_count_one);
@@ -544,6 +552,7 @@ TEST_F(S3PostCompleteActionTest, SaveMetadata) {
   std::map<std::string, std::string> user_attributes;
   user_attributes["user-attr-1"] = "name";
   user_attributes["user-attr-2"] = "email";
+  m0_uint128 oid = {0x1ffff, 0x1ffff};
 
   action_under_test_ptr->set_abort_multipart(false);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
@@ -562,7 +571,9 @@ TEST_F(S3PostCompleteActionTest, SaveMetadata) {
       .Times(AtLeast(1));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), save(_, _))
       .Times(AtLeast(1));
-
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_oid())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               reset_date_time_to_current()).Times(AtLeast(1));
 
@@ -658,4 +669,80 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
   EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
+}
+
+TEST_F(S3PostCompleteActionTest, CleanupOnMetadataFailedToSaveTest1) {
+  CREATE_MP_METADATA_OBJ;
+  action_under_test_ptr->probable_oid_list["oid_lo-oid_hi"] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+  action_under_test_ptr->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
+  action_under_test_ptr->cleanup();
+}
+
+TEST_F(S3PostCompleteActionTest, CleanupOnMetadataFailedToSaveTest2) {
+  CREATE_MP_METADATA_OBJ;
+  action_under_test_ptr->probable_oid_list.clear();
+  action_under_test_ptr->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test_ptr->cleanup();
+}
+
+TEST_F(S3PostCompleteActionTest, CleanupOnMetadataSavedTest1) {
+  CREATE_MP_METADATA_OBJ;
+
+  m0_uint128 old_object_oid = {0x1ffff, 0x1ffff};
+  std::string oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+  action_under_test_ptr->probable_oid_list[oid_str] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+
+  action_under_test_ptr->obj_metadata_updated = true;
+  action_under_test_ptr->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test_ptr->clovis_writer =
+      clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_old_oid())
+      .Times(1)
+      .WillRepeatedly(Return(old_object_oid));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(AtLeast(1));
+
+  action_under_test_ptr->cleanup();
+}
+
+TEST_F(S3PostCompleteActionTest, CleanupOnMetadataSavedTest2) {
+  CREATE_MP_METADATA_OBJ;
+
+  m0_uint128 old_object_oid = {0ULL, 0ULL};
+  std::string oid_str = S3M0Uint128Helper::to_string(old_object_oid);
+  action_under_test_ptr->probable_oid_list[oid_str] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+
+  action_under_test_ptr->obj_metadata_updated = true;
+  action_under_test_ptr->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test_ptr->clovis_writer =
+      clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_old_oid())
+      .Times(1)
+      .WillRepeatedly(Return(old_object_oid));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(0);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(0);
+
+  action_under_test_ptr->cleanup();
 }

@@ -174,14 +174,14 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest,
               WriteObjectSuccessfulShouldRestartReadingData);
   FRIEND_TEST(S3PutObjectActionTest, SaveMetadata);
-  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectNotRequired);
-  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectSinceItsPresent);
-  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectFailed);
-  FRIEND_TEST(S3PutObjectActionTest, DeleteObjectFailedToLaunch);
   FRIEND_TEST(S3PutObjectActionTest, SendResponseWhenShuttingDown);
   FRIEND_TEST(S3PutObjectActionTest, SendErrorResponse);
   FRIEND_TEST(S3PutObjectActionTest, SendSuccessResponse);
   FRIEND_TEST(S3PutObjectActionTest, SendFailedResponse);
+  FRIEND_TEST(S3PutObjectActionTest, CleanupOnMetadataFailedToSaveTest1);
+  FRIEND_TEST(S3PutObjectActionTest, CleanupOnMetadataFailedToSaveTest2);
+  FRIEND_TEST(S3PutObjectActionTest, CleanupOnMetadataSavedTest1);
+  FRIEND_TEST(S3PutObjectActionTest, CleanupOnMetadataSavedTest2);
 };
 
 #endif

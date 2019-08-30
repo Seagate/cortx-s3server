@@ -61,6 +61,8 @@ class S3DeleteMultipleObjectsAction : public S3Action {
 
   S3DeleteMultipleObjectsResponseBody delete_objects_response;
 
+  std::map<std::string, std::string> probable_oid_list;
+
   std::string get_bucket_index_name() {
     return "BUCKET/" + request->get_bucket_name();
   }
@@ -88,13 +90,17 @@ class S3DeleteMultipleObjectsAction : public S3Action {
   void fetch_objects_info_successful();
   void fetch_objects_info_failed();
 
-  void delete_objects();
-  void delete_objects_successful();
-  void delete_objects_failed();
-
   void delete_objects_metadata();
   void delete_objects_metadata_successful();
   void delete_objects_metadata_failed();
+
+  void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_failed();
+
+  void cleanup();
+  void cleanup_oid_from_probable_dead_oid_list();
+  void cleanup_successful();
+  void cleanup_failed();
 
   void send_response_to_s3_client();
 
@@ -156,6 +162,12 @@ class S3DeleteMultipleObjectsAction : public S3Action {
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, SendErrorResponse);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, SendAnyFailedResponse);
   FRIEND_TEST(S3DeleteMultipleObjectsActionTest, SendSuccessResponse);
+  FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
+              CleanupOnMetadataFailedToSaveTest1);
+  FRIEND_TEST(S3DeleteMultipleObjectsActionTest,
+              CleanupOnMetadataFailedToSaveTest2);
+  FRIEND_TEST(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest1);
+  FRIEND_TEST(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest2);
 };
 
 #endif

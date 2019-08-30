@@ -69,12 +69,14 @@ class S3PostMultipartObjectTest : public testing::Test {
         ptr_mock_request, oid, ptr_mock_s3_clovis_api);
     bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
         MockObjectTagsStr, MockRequestId);
+    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+        ptr_mock_request, ptr_mock_s3_clovis_api);
 
     EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PostMultipartObjectAction(
         ptr_mock_request, object_mp_meta_factory, part_meta_factory,
         clovis_writer_factory, bucket_tag_body_factory_mock,
-        ptr_mock_s3_clovis_api));
+        ptr_mock_s3_clovis_api, clovis_kvs_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -84,6 +86,7 @@ class S3PostMultipartObjectTest : public testing::Test {
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3PutTagBodyFactory> bucket_tag_body_factory_mock;
   std::shared_ptr<S3PostMultipartObjectAction> action_under_test;
   std::map<std::string, std::string> request_header_map;
@@ -574,4 +577,26 @@ TEST_F(S3PostMultipartObjectTest, Send200ResponseToClient) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
   action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3PostMultipartObjectTest, CleanupOnMetadataFailedToSaveTest1) {
+  action_under_test->probable_oid_list["oid_lo-oid_hi"] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
+  action_under_test->cleanup_oid_from_probable_dead_oid_list();
+}
+
+TEST_F(S3PostMultipartObjectTest, CleanupOnMetadataFailedToSaveTest2) {
+  action_under_test->probable_oid_list.clear();
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test->cleanup_oid_from_probable_dead_oid_list();
 }

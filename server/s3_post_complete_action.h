@@ -155,14 +155,14 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, DeletePartsNext);
   FRIEND_TEST(S3PostCompleteActionTest, DeletePartsFailed);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadata);
-  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresent);
-  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresentClovisWriter);
-  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectIfPresentNULL);
-  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObjectFailed);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientInternalError);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientErrorSet);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientAbortMultipart);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientSuccess);
+  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataFailedToSaveTest1);
+  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataFailedToSaveTest2);
+  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataSavedTest1);
+  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataSavedTest2);
 };
 
 #endif

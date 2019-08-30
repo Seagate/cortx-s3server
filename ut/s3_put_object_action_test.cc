@@ -25,6 +25,7 @@
 #include "s3_put_object_action.h"
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
+#include "s3_m0_uint128_helper.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -94,11 +95,14 @@ class S3PutObjectActionTest : public testing::Test {
     bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
         MockObjectTagsStr, MockRequestId);
 
+    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+        ptr_mock_request, ptr_mock_s3_clovis_api);
+
     EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PutObjectAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
         object_meta_factory, clovis_writer_factory,
-        bucket_tag_body_factory_mock));
+        bucket_tag_body_factory_mock, clovis_kvs_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -106,6 +110,7 @@ class S3PutObjectActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
+  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
   std::shared_ptr<MockS3PutTagBodyFactory> bucket_tag_body_factory_mock;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
 
@@ -1103,4 +1108,82 @@ TEST_F(S3PutObjectActionTest, SendFailedResponse) {
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
 
   action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3PutObjectActionTest, CleanupOnMetadataFailedToSaveTest1) {
+  CREATE_OBJECT_METADATA;
+  action_under_test->probable_oid_list["oid_lo-oid_hi"] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3PutObjectActionTest, CleanupOnMetadataFailedToSaveTest2) {
+  CREATE_OBJECT_METADATA;
+  action_under_test->probable_oid_list.clear();
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3PutObjectActionTest, CleanupOnMetadataSavedTest1) {
+  CREATE_OBJECT_METADATA;
+
+  action_under_test->old_object_oid = {0x1ffff, 0x1ffff};
+  std::string oid_str =
+      S3M0Uint128Helper::to_string(action_under_test->old_object_oid);
+  action_under_test->probable_oid_list[oid_str] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(AtLeast(1));
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3PutObjectActionTest, CleanupOnMetadataSavedTest2) {
+  CREATE_OBJECT_METADATA;
+
+  action_under_test->old_object_oid = {0ULL, 0ULL};
+  std::string oid_str =
+      S3M0Uint128Helper::to_string(action_under_test->old_object_oid);
+  action_under_test->probable_oid_list[oid_str] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(0);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(0);
+
+  action_under_test->cleanup();
 }

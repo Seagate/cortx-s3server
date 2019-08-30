@@ -25,6 +25,7 @@
 #include "s3_error_codes.h"
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
+#include "s3_m0_uint128_helper.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -365,6 +366,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   result_keys_values.insert(std::make_pair(
       "testkey2", std::make_pair(-ENOENT, "dummyobjinfoplaceholder")));
 
+  bool is_s3server_objectleak_tracking_enabled =
+      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
   // mock kv reader/writer
   action_under_test->clovis_kv_reader =
       action_under_test->clovis_kvs_reader_factory->create_clovis_kvs_reader(
@@ -379,11 +383,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), from_json(_))
       .Times(1)
       .WillRepeatedly(Return(0));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .Times(1)
-      .WillRepeatedly(Return(oid));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
-      .WillOnce(Return(layout_id));
 
   // Few expectations for delete_objects_metadata
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
@@ -395,8 +394,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .Times(1);
 
   action_under_test->fetch_objects_info_successful();
-
-  EXPECT_EQ(1, action_under_test->oids_to_delete.size());
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
+      is_s3server_objectleak_tracking_enabled);
   EXPECT_EQ(1, action_under_test->objects_metadata.size());
   EXPECT_EQ(2, action_under_test->delete_objects_response.get_success_count());
   EXPECT_EQ(0, action_under_test->delete_objects_response.get_failure_count());
@@ -411,6 +410,9 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(0, "dummyobjinfoplaceholder")));
 
+  bool is_s3server_objectleak_tracking_enabled =
+      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
   // mock kv reader/writer
   action_under_test->clovis_kv_reader =
       action_under_test->clovis_kvs_reader_factory->create_clovis_kvs_reader(
@@ -425,11 +427,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), from_json(_))
       .Times(3)
       .WillRepeatedly(Return(0));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .Times(3)
-      .WillRepeatedly(Return(oid));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
-      .WillRepeatedly(Return(layout_id));
 
   // Few expectations for delete_objects_metadata
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
@@ -441,8 +438,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
       .Times(1);
 
   action_under_test->fetch_objects_info_successful();
-
-  EXPECT_EQ(3, action_under_test->oids_to_delete.size());
+  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
+      is_s3server_objectleak_tracking_enabled);
   EXPECT_EQ(3, action_under_test->objects_metadata.size());
 }
 
@@ -499,10 +496,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectMetadataSucceeded) {
       object_meta_factory->create_object_metadata_obj(mock_request));
 
   action_under_test->oids_to_delete.push_back(oid);
-
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_objects(_, _, _, _))
-      .Times(1);
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillOnce(Return("objname"));
 
@@ -628,130 +623,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_EQ(0, action_under_test->delete_objects_response.get_failure_count());
 }
 
-TEST_F(S3DeleteMultipleObjectsActionTest,
-       DeleteObjectsWithNoObjsToDeleteAndMoreToProcess) {
-  // simulate we have more and populate "action_under_test->delete_request"
-  CREATE_BUCKET_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  EXPECT_CALL(*mock_request, get_header_value(_))
-      .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
-  // Clear tasks so validate_request_body calls mocked next
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteMultipleObjectsActionTest::func_callback_one, this));
-  action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
-
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, keys, _, _))
-      .Times(AtLeast(1));
-
-  action_under_test->delete_objects();
-}
-
-TEST_F(S3DeleteMultipleObjectsActionTest,
-       DeleteObjectsWithNoObjsToDeleteAndNoMoreToProcess) {
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
-      .WillRepeatedly(Return("objname"));
-
-  action_under_test->delete_objects();
-}
-
-TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectsWithObjsToDelete) {
-  action_under_test->oids_to_delete.push_back(oid);
-
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_objects(_, _, _, _))
-      .Times(1);
-
-  action_under_test->delete_objects();
-}
-
-TEST_F(S3DeleteMultipleObjectsActionTest,
-       DeleteObjectsSuccessfulNoMoreToProcess) {
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
-      .WillRepeatedly(Return("objname"));
-
-  action_under_test->delete_objects_successful();
-}
-
-TEST_F(S3DeleteMultipleObjectsActionTest,
-       DeleteObjectsSuccessfulMoreToProcess) {
-  // simulate we have more and populate "action_under_test->delete_request"
-  CREATE_BUCKET_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  EXPECT_CALL(*mock_request, get_header_value(_))
-      .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
-  // Clear tasks so validate_request_body calls mocked next
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteMultipleObjectsActionTest::func_callback_one, this));
-  action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
-
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, keys, _, _))
-      .Times(AtLeast(1));
-
-  action_under_test->delete_objects_successful();
-}
-
-TEST_F(S3DeleteMultipleObjectsActionTest,
-       DeleteObjectsInitFailedNoMoreToProcess) {
-  action_under_test->oids_to_delete.push_back(oid);
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(503, _)).Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
-  action_under_test->delete_objects_failed();
-}
-
-TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectsFailedNoMoreToProcess) {
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
-      .WillRepeatedly(Return("objname"));
-
-  action_under_test->delete_objects_failed();
-}
-
-TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectsFailedMoreToProcess) {
-  // simulate we have more and populate "action_under_test->delete_request"
-  CREATE_BUCKET_METADATA;
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  EXPECT_CALL(*mock_request, get_header_value(_))
-      .WillOnce(Return("vxQpICn70jvA6+9R0/d5iA=="));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::failed));
-  // Clear tasks so validate_request_body calls mocked next
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteMultipleObjectsActionTest::func_callback_one, this));
-  action_under_test->validate_request_body(SAMPLE_DELETE_REQUEST);
-
-  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, keys, _, _))
-      .Times(AtLeast(1));
-
-  action_under_test->delete_objects_failed();
-}
-
 TEST_F(S3DeleteMultipleObjectsActionTest, SendErrorResponse) {
   action_under_test->set_s3_error("InternalError");
 
@@ -781,4 +652,54 @@ TEST_F(S3DeleteMultipleObjectsActionTest, SendSuccessResponse) {
   EXPECT_CALL(*mock_request, resume()).Times(1);
 
   action_under_test->send_response_to_s3_client();
+}
+
+TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataFailedToSaveTest1) {
+  action_under_test->probable_oid_list["oid_lo-oid_hi"] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataFailedToSaveTest2) {
+  action_under_test->probable_oid_list.clear();
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest1) {
+  m0_uint128 object_oid = {0x1ffff, 0x1ffff};
+  action_under_test->oids_to_delete.push_back(object_oid);
+
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_objects(_, _, _, _)).Times(AtLeast(1));
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest2) {
+
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(0);
+
+  action_under_test->cleanup();
 }

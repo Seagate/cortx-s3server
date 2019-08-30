@@ -40,6 +40,9 @@ class MockS3ObjectMultipartMetadata : public S3ObjectMetadata {
       : S3ObjectMetadata(req, oid, is_mp, upload_id, nullptr, nullptr, nullptr,
                          clovis_api) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
+  MOCK_METHOD0(get_old_oid, struct m0_uint128());
+  MOCK_METHOD0(get_oid, struct m0_uint128());
+  MOCK_METHOD0(get_old_layout_id, int());
   MOCK_METHOD0(get_upload_id, std::string());
   MOCK_METHOD0(get_part_one_size, size_t());
   MOCK_METHOD1(set_part_one_size, void(size_t part_size));

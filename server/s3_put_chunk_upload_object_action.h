@@ -193,12 +193,6 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               WriteObjectSuccessfulShouldRestartReadingData);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, SaveMetadata);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectNotRequired);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
-              DeleteObjectSinceItsPresent);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, DeleteObjectFailed);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
-              DeleteObjectFailedToLaunch);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               SendResponseWhenShuttingDown);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, SendErrorResponse);
@@ -236,6 +230,14 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase1);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase2);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              CleanupOnMetadataFailedToSaveTest1);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              CleanupOnMetadataFailedToSaveTest2);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              CleanupOnMetadataSavedTest1);
+  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
+              CleanupOnMetadataSavedTest2);
 };
 
 #endif

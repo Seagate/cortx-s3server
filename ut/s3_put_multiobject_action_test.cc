@@ -455,12 +455,15 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1) {
       object_mp_meta_factory->mock_object_mp_metadata;
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
 
+  m0_uint128 oid = {0x1ffff, 0x1ffff};
   size_t unit_size =
       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
       .WillRepeatedly(Return(unit_size - 2));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
+      .WillRepeatedly(Return(oid));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
       .WillRepeatedly(Return(unit_size - 2));
   EXPECT_CALL(*ptr_mock_request, get_data_length())
@@ -475,6 +478,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1) {
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
+  m0_uint128 oid = {0x1ffff, 0x1ffff};
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
@@ -485,6 +489,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
   EXPECT_CALL(*part_meta_factory->mock_part_metadata, get_content_length())
       .WillRepeatedly(Return(unit_size));
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
+      .WillRepeatedly(Return(oid));
   EXPECT_CALL(*ptr_mock_request, get_content_length())
       .WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
@@ -499,6 +505,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
+  m0_uint128 oid = {0x1ffff, 0x1ffff};
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
@@ -513,6 +520,8 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
       .WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_layout_id())
       .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_oid())
+      .WillRepeatedly(Return(oid));
 
   action_under_test->clear_tasks();
   action_under_test->add_task(

@@ -90,8 +90,15 @@ void MeroDeleteObjectAction::delete_object_successful() {
 
 void MeroDeleteObjectAction::delete_object_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  set_s3_error("InternalError");
-  send_response_to_s3_client();
+  // Object missing is treated as object deleted similar to S3 object delete.
+  if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Object with oid %" SCNx64 " : %" SCNx64 " is missing\n", oid.u_hi,
+           oid.u_lo);
+  } else {
+    set_s3_error("InternalError");
+    send_response_to_s3_client();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

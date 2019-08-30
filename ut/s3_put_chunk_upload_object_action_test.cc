@@ -23,6 +23,7 @@
 #include "s3_put_chunk_upload_object_action.h"
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
+#include "s3_m0_uint128_helper.h"
 
 using ::testing::Eq;
 using ::testing::Return;
@@ -87,6 +88,9 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
 
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         mock_request, oid, ptr_mock_s3_clovis_api);
+
+    clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
+        mock_request, ptr_mock_s3_clovis_api);
   }
 
   std::shared_ptr<MockS3RequestObject> mock_request;
@@ -95,6 +99,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
+  std::shared_ptr<MockS3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
 
   std::shared_ptr<S3PutChunkUploadObjectAction> action_under_test;
 
@@ -117,7 +122,8 @@ class S3PutChunkUploadObjectActionTestNoAuth
       : S3PutChunkUploadObjectActionTestBase() {
     S3Option::get_instance()->disable_auth();
     action_under_test.reset(new S3PutChunkUploadObjectAction(
-        mock_request, clovis_writer_factory, ptr_mock_s3_clovis_api));
+        mock_request, clovis_writer_factory, ptr_mock_s3_clovis_api, nullptr,
+        clovis_kvs_writer_factory));
   }
 };
 
@@ -129,7 +135,8 @@ class S3PutChunkUploadObjectActionTestWithAuth
     S3Option::get_instance()->enable_auth();
     mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(mock_request);
     action_under_test.reset(new S3PutChunkUploadObjectAction(
-        mock_request, clovis_writer_factory, ptr_mock_s3_clovis_api));
+        mock_request, clovis_writer_factory, ptr_mock_s3_clovis_api, nullptr,
+        clovis_kvs_writer_factory));
   }
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
 };
@@ -1356,4 +1363,86 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
   EXPECT_STREQ("SignatureDoesNotMatch",
                action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->auth_completed);
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
+       CleanupOnMetadataFailedToSaveTest1) {
+  action_under_test->object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->probable_oid_list["oid_lo-oid_hi"] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
+       CleanupOnMetadataFailedToSaveTest2) {
+  action_under_test->object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->probable_oid_list.clear();
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestWithAuth, CleanupOnMetadataSavedTest1) {
+  action_under_test->object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->old_object_oid = {0x1ffff, 0x1ffff};
+  std::string oid_str =
+      S3M0Uint128Helper::to_string(action_under_test->old_object_oid);
+  action_under_test->probable_oid_list[oid_str] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(AtLeast(1));
+
+  action_under_test->cleanup();
+}
+
+TEST_F(S3PutChunkUploadObjectActionTestWithAuth, CleanupOnMetadataSavedTest2) {
+  action_under_test->object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->old_object_oid = {0ULL, 0ULL};
+  std::string oid_str =
+      S3M0Uint128Helper::to_string(action_under_test->old_object_oid);
+  action_under_test->probable_oid_list[oid_str] =
+      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
+      "layout_id\":9}";
+
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(0);
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(0);
+
+  action_under_test->cleanup();
 }

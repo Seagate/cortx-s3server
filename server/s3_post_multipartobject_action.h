@@ -153,6 +153,8 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PostMultipartObjectTest, Send500ResponseToClient);
   FRIEND_TEST(S3PostMultipartObjectTest, Send404ResponseToClient);
   FRIEND_TEST(S3PostMultipartObjectTest, Send200ResponseToClient);
+  FRIEND_TEST(S3PostMultipartObjectTest, CleanupOnMetadataFailedToSaveTest1);
+  FRIEND_TEST(S3PostMultipartObjectTest, CleanupOnMetadataFailedToSaveTest2);
 };
 
 #endif
