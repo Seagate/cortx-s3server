@@ -17,6 +17,8 @@
  * Original creation date: 07-January-2019
  */
 
+#include <cctype>
+#include <algorithm>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 
@@ -170,6 +172,11 @@ bool S3PutTagBody::read_key_value_node(xmlNodePtr &tag_node) {
   return true;
 }
 
+static size_t utf8_len(const std::string &s) {
+  return count_if(s.begin(), s.end(),
+                  [](char c) { return (c & 0xC0) != 0x80; });
+}
+
 bool S3PutTagBody::validate_bucket_xml_tags(
     std::map<std::string, std::string> &bucket_tags_as_map) {
   // Apply all validation here
@@ -196,8 +203,8 @@ bool S3PutTagBody::validate_bucket_xml_tags(
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
-    if (tagkv.first.length() > TAG_KEY_MAX_LENGTH ||
-        tagkv.second.length() > (2 * TAG_VALUE_MAX_LENGTH)) {
+    if (utf8_len(tagkv.first) > TAG_KEY_MAX_LENGTH ||
+        utf8_len(tagkv.second) > TAG_VALUE_MAX_LENGTH) {
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
@@ -230,6 +237,55 @@ bool S3PutTagBody::validate_bucket_xml_tags(
   return true;
 }
 
+static bool tag_is_allowed_char(char ch) {
+  /*
+    AWS defined the following restrictions for characters allowed in tags:
+    "The allowed characters across services are: letters, numbers, and spaces
+    representable in UTF-8, and the following characters: + - = . _ : / @."
+    This can be read two ways:
+    1) simple: allow all UTF-8 char, but limit ASCII chars,
+    2) complex: limit ASCII chars, and do not allow UTF-8 sequences which are
+    not letter/number/space. Code below implements "simple" approach, we
+    do not analyze UTF-8 sequences for begin letter/number/space, and simply
+    allow all UTF-8 chars.
+  */
+  if (!(ch & 0x80)) {
+    // A character is ASCII [0..127]
+    if (isalnum(ch) || isspace(ch)) {
+      return true;
+    }
+    switch (ch) {
+      case '+':
+      case '-':
+      case '=':
+      case '.':
+      case '_':
+      case ':':
+      case '/':
+      case '@':
+        return true;
+    }
+    return false;
+  }
+  /* According to UTF-8 definition
+    (e.g. https://en.wikipedia.org/wiki/UTF-8#Description), valid UTF-8 bytes
+     would are the following: 10xxxxxx, 110xxxxx, 1110xxxx, 11110xxx.
+     The check below returns true for every valid UTF-8 sequence.
+     Some invalid sequences will also return true, but checking for those
+     will complicate the code, and seems to not be required at the moment.
+     So we'll go with the simple check.
+  */
+  if ((ch & 0xC0) == 0x80 || (ch & 0xE0) == 0xC0 || (ch & 0xF0) == 0xE0 ||
+      (ch & 0xF8) == 0xF0) {
+    return true;
+  }
+  return false;
+}
+
+static bool is_valid_object_tag(const std::string &tag) {
+  return std::all_of(tag.cbegin(), tag.cend(), &tag_is_allowed_char);
+}
+
 bool S3PutTagBody::validate_object_xml_tags(
     std::map<std::string, std::string> &object_tags_as_map) {
   // Apply all validation here
@@ -257,8 +313,8 @@ bool S3PutTagBody::validate_object_xml_tags(
      */
     // Maximum key length: 128 Unicode characters &
     // Maximum value length: 256 Unicode characters
-    if (key.length() > TAG_KEY_MAX_LENGTH ||
-        value.length() > (2 * TAG_VALUE_MAX_LENGTH)) {
+    if (utf8_len(key) > TAG_KEY_MAX_LENGTH ||
+        utf8_len(value) > TAG_VALUE_MAX_LENGTH) {
       s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
       return false;
     }
@@ -272,6 +328,10 @@ bool S3PutTagBody::validate_object_xml_tags(
       return false;
     }
     */
+    if (!is_valid_object_tag(key) || !is_valid_object_tag(value)) {
+      s3_log(S3_LOG_WARN, request_id, "XML key-value tag Invalid.\n");
+      return false;
+    }
   }
   return true;
 }

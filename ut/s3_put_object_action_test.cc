@@ -18,6 +18,7 @@
  */
 
 #include <memory>
+#include <string>
 #include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
 #include "s3_clovis_layout.h"
@@ -213,13 +214,30 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase3) {
                action_under_test->get_s3_error_code().c_str());
 }
 
+TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase4) {
+  request_header_map.clear();
+  request_header_map["x-amz-tagging"] = "Key=seag`ate&Value=marketing";
+  EXPECT_CALL(*ptr_mock_request, get_header_value(_))
+      .WillOnce(Return("Key=seag`ate&Value=marketing"));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+
+  action_under_test->clear_tasks();
+  action_under_test->validate_x_amz_tagging_if_present();
+
+  EXPECT_STREQ("InvalidTagError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
 // Case 1 : URL encoded
 TEST_F(S3PutObjectActionTest, VaidateSpecialCharTagsCase1) {
   call_count_one = 0;
   request_header_map.clear();
-  request_header_map["x-amz-tagging"] = "ke%26y=valu%26e&ke%25y=valu%25e";
+  const char *x_amz_tagging = "ke%2by=valu%2be&ke%2dy=valu%2de";  // '+' & '-'
+  request_header_map["x-amz-tagging"] = x_amz_tagging;
   EXPECT_CALL(*ptr_mock_request, get_header_value(_))
-      .WillOnce(Return("ke%26y=valu%26e&ke%25y=valu%25e"));
+      .WillOnce(Return(x_amz_tagging));
   action_under_test->clear_tasks();
   action_under_test->add_task(
       std::bind(&S3PutObjectActionTest::func_callback_one, this));

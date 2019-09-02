@@ -76,7 +76,7 @@ for char in invalid_chars:
     .command_should_fail().command_error_should_have("InvalidTagError")
 
 #*********** Negative case to check invalid char(s) for value in bucket-tagging *********
-invalid_chars = ["!", "^", "%", "<", ">", "[", "]", "~", "|", "#", "?", "@", "*"]
+#invalid_chars = ["!", "^", "%", "<", ">", "[", "]", "~", "|", "#", "?", "@", "*"]
 for char in invalid_chars:
     invalid_value = "stor"+ char + "age"
     AwsTest('Aws can not create bucket tag with invalid char(' + char +') in Value').put_bucket_tagging("seagatebucket",  [{'Key': 'seagate', 'Value': invalid_value}]).execute_test(negative_case=True)\
@@ -128,6 +128,35 @@ AwsTest('Aws can delete object tag').delete_object_tagging("seagatebuckettag","3
 
 AwsTest('Aws can list object tag').list_object_tagging("seagatebuckettag","3kfile").execute_test()\
     .command_is_successful().command_response_should_not_have("NoSuchTagSetError")
+
+#******** Object tags with UTF-8 ********
+AwsTest('Aws can create object tag with 2-bytes UTF-8 characters').put_object_tagging("seagatebuckettag", "3kfile",  [{'Key': 'utf-8_1', 'Value': '\u0410\u0411\u0412\u0413' }])\
+    .execute_test().command_is_successful()
+
+AwsTest('Aws can create object tag with 3-bytes UTF-8 characters').put_object_tagging("seagatebuckettag", "3kfile",  [{'Key': 'utf-8_2', 'Value': '\u20AC\u20AD'}])\
+    .execute_test().command_is_successful()
+
+# In the next line we will create 256-length string of 4-byte UTF-8 symbols
+long_utf8_4bytes_string = b'\xF0\x90\x8D\x88'.decode('utf-8') * 256
+AwsTest('Aws can create object tag with long value of 4-bytes UTF-8 characters').put_object_tagging("seagatebuckettag", "3kfile",  [{'Key': 'utf-8_3', 'Value': long_utf8_4bytes_string}])\
+    .execute_test().command_is_successful()
+
+long_utf8_4bytes_string = b'\xF0\x90\x8D\x88'.decode('utf-8') * 128
+AwsTest('Aws can create object tag with long name of 4-bytes UTF-8 characters').put_object_tagging("seagatebuckettag", "3kfile",  [{'Key': long_utf8_4bytes_string, 'Value': 'utf-8_3'}])\
+    .execute_test().command_is_successful()
+
+#*********** Negative case to check invalid char(s) for key in object-tagging *********
+invalid_chars = ["!", "^", "%", "<", ">", "[", "]", "~", "|", "#", "?", "*"]
+for char in invalid_chars:
+    invalid_key = "sea"+ char + "gate"
+    AwsTest('Aws can not create object tag with invalid char(' + char +') in Key').put_object_tagging("seagatebuckettag", "3kfile",  [{'Key': invalid_key, 'Value': 'storage'}])\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidTagError")
+
+#*********** Negative case to check invalid char(s) for value in object-tagging *********
+for char in invalid_chars:
+    invalid_value = "stor"+ char + "age"
+    AwsTest('Aws can not create object tag with invalid char(' + char +') in Value').put_object_tagging("seagatebuckettag", "3kfile",  [{'Key': 'seagate', 'Value': invalid_value}])\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidTagError")
 
 #************** Delete Object  ********
 AwsTest('Aws can delete object').delete_object("seagatebuckettag","3kfile").execute_test().command_is_successful()

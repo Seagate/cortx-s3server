@@ -26,7 +26,7 @@ S3PutObjectTaggingAction::S3PutObjectTaggingAction(
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PutTagsBodyFactory> object_body_factory)
-    : S3Action(req) {
+    : S3Action(std::move(req)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
@@ -35,17 +35,17 @@ S3PutObjectTaggingAction::S3PutObjectTaggingAction(
          request->get_object_name().c_str());
 
   if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
+    bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
   if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
+    object_metadata_factory = std::move(object_meta_factory);
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
   if (object_body_factory) {
-    put_object_tag_body_factory = object_body_factory;
+    put_object_tag_body_factory = std::move(object_body_factory);
   } else {
     put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }

@@ -115,6 +115,7 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase1);
   FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase2);
   FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase3);
+  FRIEND_TEST(S3PutObjectActionTest, VaidateInvalidTagsCase4);
   FRIEND_TEST(S3PutObjectActionTest, VaidateSpecialCharTagsCase1);
   FRIEND_TEST(S3PutObjectActionTest, VaidateSpecialCharTagsCase2);
   FRIEND_TEST(S3PutObjectActionTest, FetchBucketInfo);
