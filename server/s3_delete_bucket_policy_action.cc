@@ -70,8 +70,6 @@ void S3DeleteBucketPolicyAction::fetch_bucket_metadata_failed() {
     set_s3_error("ServiceUnavailable");
   } else if (bucket_metadata_state == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
-  } else if (bucket_metadata_state == S3BucketMetadataState::present) {
-    set_s3_error("AccessDenied");
   } else {
     set_s3_error("InternalError");
   }

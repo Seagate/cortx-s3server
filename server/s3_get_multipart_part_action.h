@@ -96,8 +96,6 @@ class S3GetMultipartPartAction : public S3Action {
   FRIEND_TEST(S3GetMultipartPartActionTest,
               GetMultiPartMetadataFailedToLaunchTest);
   FRIEND_TEST(S3GetMultipartPartActionTest,
-              GetMultiPartMetadataAccessDeniedTest);
-  FRIEND_TEST(S3GetMultipartPartActionTest,
               GetkeyObjectMetadataPresentUploadMisMatchTest);
   FRIEND_TEST(S3GetMultipartPartActionTest,
               GetkeyObjectMetadataPresentUploadIDMatchTest);

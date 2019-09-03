@@ -252,21 +252,6 @@ TEST_F(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailedToLaunch) {
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PutBucketTaggingActionTest, SetTagsWhenBucketAccessDenied) {
-  action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_metadata_failed();
-  EXPECT_STREQ("AccessDenied",
-               action_under_test_ptr->get_s3_error_code().c_str());
-}
-
 TEST_F(S3PutBucketTaggingActionTest, SendResponseToClientServiceUnavailable) {
   action_under_test_ptr->bucket_metadata =
       action_under_test_ptr->bucket_metadata_factory

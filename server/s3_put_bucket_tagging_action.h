@@ -67,7 +67,6 @@ class S3PutBucketTaggingAction : public S3Action {
   FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketMissing);
   FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailed);
   FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailedToLaunch);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, SetTagsWhenBucketAccessDenied);
   FRIEND_TEST(S3PutBucketTaggingActionTest,
               SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3PutBucketTaggingActionTest, SendResponseToClientMalformedXML);

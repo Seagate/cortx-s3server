@@ -119,6 +119,14 @@ public abstract class AbstractResponseGenerator {
                 "InternalFailure", errorMessage);
     }
 
+   public
+    ServerResponse AccessDenied() {
+      String errorMessage = "Access Denied.";
+
+      return formatResponse(HttpResponseStatus.FORBIDDEN, "AccessDenied",
+                            errorMessage);
+    }
+
     public ServerResponse invalidAction() {
         String errorMessage = "The action or operation requested is "
                 + "invalid. Verify that the action is typed correctly.";
@@ -192,6 +200,13 @@ public abstract class AbstractResponseGenerator {
    public
     ServerResponse invalidID() {
       String errorMessage = "InvalidID";
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidID",
+                            errorMessage);
+    }
+
+   public
+    ServerResponse invalidID(String errorMessage) {
+
       return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidID",
                             errorMessage);
     }

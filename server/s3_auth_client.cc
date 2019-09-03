@@ -201,9 +201,15 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
     context->set_authorization_response(auth_response_body, false);
   } else if (auth_resp_status == S3HttpFailed405) {
     s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
-           "Authorization failed:Method Not Allowed \n");
+           "Authorization failed: Method Not Allowed \n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authorization failed:Method Not Allowed");
+                               "Authorization failed: Method Not Allowed");
+    context->set_authorization_response(auth_response_body, false);
+  } else if (auth_resp_status == S3HttpFailed403) {
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Authorization failed: Access Denied \n");
+    context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                               "Authorization failed: AccessDenied");
     context->set_authorization_response(auth_response_body, false);
   } else {
     s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
@@ -270,18 +276,21 @@ extern "C" evhtp_res on_aclvalidation_response(evhtp_request_t *req,
            "Aclvalidation failed\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Aclvalidation failed");
+    context->set_aclvalidation_response_xml(auth_response_body, false);
 
   } else if (auth_resp_status == S3HttpFailed405) {
     s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
-           "Aclvalidation failed:Method Not Allowed \n");
+           "Aclvalidation failed: Method Not Allowed \n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "AclValidation failed:Method Not Allowed");
+                               "AclValidation failed: Method Not Allowed");
+    context->set_aclvalidation_response_xml(auth_response_body, false);
 
   } else {
     s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
            "Something is wrong with Auth server\n");
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Something is wrong with Auth server");
+    context->set_aclvalidation_response_xml(auth_response_body, false);
   }
   free(auth_response_body);
 
@@ -441,8 +450,15 @@ void S3AuthClient::remember_auth_details_in_request() {
 // Returns AccessDenied | InvalidAccessKeyId | SignatureDoesNotMatch
 // auth InactiveAccessKey maps to InvalidAccessKeyId in S3
 std::string S3AuthClient::get_error_code() {
-  if (!auth_context->auth_successful()) {
+
+  if ((((!auth_context->auth_successful()) &&
+        get_op_type() == S3AuthClientOpType::authentication)) ||
+      ((!auth_context->authorization_successful()) &&
+       get_op_type() == S3AuthClientOpType::authorization) ||
+      ((!auth_context->aclvalidation_successful() &&
+        get_op_type() == S3AuthClientOpType::aclvalidation))) {
     std::string code = auth_context->get_error_code();
+
     if (code == "InactiveAccessKey") {
       return "InvalidAccessKeyId";
     } else if (code == "ExpiredCredential") {
@@ -450,6 +466,8 @@ std::string S3AuthClient::get_error_code() {
     } else if (code == "InvalidClientTokenId") {
       return "InvalidToken";
     } else if (code == "TokenRefreshRequired") {
+      return "AccessDenied";
+    } else if (code == "AccessDenied") {
       return "AccessDenied";
     } else if (!code.empty()) {
       return code;  // InvalidAccessKeyId | SignatureDoesNotMatch

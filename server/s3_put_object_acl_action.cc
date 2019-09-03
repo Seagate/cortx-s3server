@@ -91,7 +91,12 @@ void S3PutObjectACLAction::on_aclvalidation_success() {
 
 void S3PutObjectACLAction::on_aclvalidation_failure() {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
-  set_s3_error("MalformedACLError");
+  std::string error_code = auth_client->get_error_code();
+  if (error_code == "InvalidID") {
+    set_s3_error("InvalidArgument");
+  } else {
+    set_s3_error("MalformedACLError");
+  }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -134,8 +139,6 @@ void S3PutObjectACLAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
-  } else if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    set_s3_error("AccessDenied");
   } else if (bucket_metadata->get_state() ==
              S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,

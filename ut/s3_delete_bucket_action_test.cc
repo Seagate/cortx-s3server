@@ -165,21 +165,6 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketMissing) {
   EXPECT_TRUE(action_under_test->clovis_kv_reader == nullptr);
 }
 
-TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketAccessDenied) {
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillOnce(Return(S3BucketMetadataState::present));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-
-  action_under_test->fetch_bucket_metadata_failed();
-
-  EXPECT_STREQ("AccessDenied", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->clovis_kv_reader == nullptr);
-}
-
 TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketFailedToLaunch) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;

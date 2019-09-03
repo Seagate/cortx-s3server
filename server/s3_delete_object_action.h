@@ -80,8 +80,6 @@ class S3DeleteObjectAction : public S3Action {
   FRIEND_TEST(S3DeleteObjectActionTest,
               FetchObjectInfoWhenBucketFetchFailedToLaunch);
   FRIEND_TEST(S3DeleteObjectActionTest,
-              FetchObjectInfoWhenBucketFetchAccessDenied);
-  FRIEND_TEST(S3DeleteObjectActionTest,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3DeleteObjectActionTest,
               FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);

@@ -213,23 +213,23 @@ AuthTest(test_msg).delete_account(**account_args).execute_test()\
 
 #*************** Test Case 1 ***************
 # TODO Enable below tests once permission header feature available
-#test_msg = "Create account testAccount"
-#account_args = {'AccountName': 'testAccount', 'Email': 'testAccount@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': "ldapadmin"}
-#account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
-#result = AuthTest(test_msg).create_account(**account_args).execute_test()
-#result.command_should_match_pattern(account_response_pattern)
-#account_response_elements = AuthTest.get_response_elements(result.status.stdout)
-#testAccount_access_key = account_response_elements['AccessKeyId']
-#testAccount_secret_key = account_response_elements['SecretKey']
-#testAccount_cannonicalid = account_response_elements['CanonicalId']
-#testAccount_email = "testAccount@seagate.com"
+test_msg = "Create account testAccount"
+account_args = {'AccountName': 'testAccount', 'Email': 'testAccount@seagate.com', 'ldapuser': "sgiamadmin", 'ldappasswd': "ldapadmin"}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result = AuthTest(test_msg).create_account(**account_args).execute_test()
+result.command_should_match_pattern(account_response_pattern)
+account_response_elements = AuthTest.get_response_elements(result.status.stdout)
+testAccount_access_key = account_response_elements['AccessKeyId']
+testAccount_secret_key = account_response_elements['SecretKey']
+testAccount_cannonicalid = account_response_elements['CanonicalId']
+testAccount_email = "testAccount@seagate.com"
 #
-#AwsTest('Aws can create bucket').create_bucket("putobjacltestbucket").execute_test().command_is_successful()
-#cannonical_id = "id=" + testAccount_cannonicalid
-#AwsTest('Aws can upload 3k file with tags').put_object_with_permission_headers("putobjacltestbucket", "3kfile", "grant-read" , cannonical_id ).execute_test().command_is_successful()
-#result=AwsTest('Aws can get object acl').get_object_acl("putobjacltestbucket", "3kfile").execute_test().command_is_successful().command_response_should_have("testAccount")
-#AwsTest('Aws can delete object').delete_object("putobjacltestbucket","3kfile").execute_test().command_is_successful()
-#AwsTest('Aws can delete bucket').delete_bucket("putobjacltestbucket").execute_test().command_is_successful()
+AwsTest('Aws can create bucket').create_bucket("putobjacltestbucket").execute_test().command_is_successful()
+cannonical_id = "id=" + testAccount_cannonicalid
+AwsTest('Aws can upload 3k file with tags').put_object_with_permission_headers("putobjacltestbucket", "3kfile", "grant-read" , cannonical_id ).execute_test().command_is_successful()
+result=AwsTest('Aws can get object acl').get_object_acl("putobjacltestbucket", "3kfile").execute_test().command_is_successful().command_response_should_have("testAccount")
+AwsTest('Aws can delete object').delete_object("putobjacltestbucket","3kfile").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("putobjacltestbucket").execute_test().command_is_successful()
 #
 #
 ##***************Test Case 2 ******************
@@ -278,14 +278,33 @@ AuthTest(test_msg).delete_account(**account_args).execute_test()\
 
 ##**************** Test Case 6 ************
 #
-#AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
-#cannonical_id_assignment = "id="
-#AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , cannonical_id_assignment ).execute_test().command_should_fail().command_error_should_have("Invalid id")
-#AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
+cannonical_id_assignment = "id="
+AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , cannonical_id_assignment ).execute_test(negative_case=True).command_should_fail()
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
 
 ##**************** Test Case 7 ************
+AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
+cannonical_id_assignment = "id=invalid"
+AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , cannonical_id_assignment ).execute_test(negative_case=True).command_should_fail()
+AwsTest('Aws can upload 3k file with tags').put_object_with_permission_headers("testbucket", "3kfile", "grant-read" , cannonical_id_assignment).execute_test(negative_case=True).command_should_fail()
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+##**************** Test Case 8 ************
 #
-#AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
-#cannonical_id_assignment = "id=invalid"
-#AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , cannonical_id_assignment ).execute_test().command_should_fail().command_error_should_have("Invalid id")
-#AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
+email_id_assignment = "emailaddress=invalidAddress@seagate.com"
+AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , email_id_assignment ).execute_test(negative_case=True).command_should_fail()
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+##**************** Test Case 9 ************
+email_id = "emailaddress=" + testAccount_email
+AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
+AwsTest('Aws can upload 3k file with tags').put_object_with_permission_headers("testbucket", "3kfile", "grant-read" , email_id ).execute_test().command_is_successful()
+result=AwsTest('Aws can get object acl').get_object_acl("testbucket", "3kfile").execute_test().command_is_successful().command_response_should_have("testAccount")
+AwsTest('Aws can delete object').delete_object("testbucket","3kfile").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+##***************Test Case 10 ******************
+cannonical_id = "id=" + testAccount_cannonicalid
+AwsTest('Aws can create bucket').create_bucket_with_permission_headers("testbucket" , "grant-write", cannonical_id).execute_test().command_is_successful()
+result=AwsTest('Aws can get bucket acl').get_bucket_acl("testbucket").execute_test().command_is_successful().command_response_should_have("testAccount")
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+

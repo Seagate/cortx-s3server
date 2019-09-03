@@ -128,8 +128,6 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               FetchObjectInfoWhenBucketFailedToLaunch);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
-              FetchObjectInfoWhenBucketAccessDenied);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);

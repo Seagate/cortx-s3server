@@ -43,6 +43,10 @@
     "Description": "The provided token is malformed or otherwise invalid.",
     "httpcode":	400
   },
+  "InvalidID": {
+    "Description": "The provided ID is Invalid.",
+    "httpcode": 400
+  },
   "ExpiredToken": {
     "Description": "The provided token has expired.",
     "httpcode":	400

@@ -100,9 +100,7 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info() {
 void S3BucketMetadataV1::fetch_global_bucket_account_id_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
-  // load/remove/save bucket metadata only when requested account id matches
-  // with account id present in account id bucket_metadata_list_index_oid
-  if (bucket_owner_account_id == request->get_account_id()) {
+
     if (current_op == S3BucketMetadataCurrentOp::saving) {
       save_bucket_info();
     } else if (current_op == S3BucketMetadataCurrentOp::fetching) {
@@ -110,17 +108,7 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info_success() {
     } else if (current_op == S3BucketMetadataCurrentOp::deleting) {
       remove_bucket_info();
     }
-  } else {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Bucket: %s is not owned by requested account(%s)\n",
-           request->get_bucket_name().c_str(), account_name.c_str());
-    // in case of across account bucket access, set the bucket metadata state as
-    // present and also call failure handler. so the action classes will return
-    // access denied as a response to clients, until we have real authorisation
-    // in place.
-    state = S3BucketMetadataState::present;
-    this->handler_on_failed();
-  }
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

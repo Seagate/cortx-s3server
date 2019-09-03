@@ -47,8 +47,6 @@ class S3HeadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3HeadObjectActionTest,
               FetchObjectInfoWhenBucketFetchFailedToLaunch);
   FRIEND_TEST(S3HeadObjectActionTest,
-              FetchObjectInfoWhenBucketFetchAccessDenied);
-  FRIEND_TEST(S3HeadObjectActionTest,
               FetchObjectInfoWhenBucketAndObjIndexPresent);
   FRIEND_TEST(S3HeadObjectActionTest,
               FetchObjectInfoWhenBucketPresentAndObjIndexAbsent);

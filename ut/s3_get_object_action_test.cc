@@ -179,22 +179,6 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketFetchFailedToLaunch) {
   EXPECT_TRUE(action_under_test->object_metadata == NULL);
 }
 
-TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketFetchAccessDenied) {
-  CREATE_BUCKET_METADATA;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-
-  action_under_test->fetch_bucket_info_failed();
-
-  EXPECT_STREQ("AccessDenied", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata == NULL);
-}
-
 TEST_F(S3GetObjectActionTest,
        FetchObjectInfoWhenBucketPresentAndObjIndexAbsent) {
   CREATE_BUCKET_METADATA;

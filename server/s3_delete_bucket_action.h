@@ -113,8 +113,6 @@ class S3DeleteBucketAction : public S3Action {
   FRIEND_TEST(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket);
   FRIEND_TEST(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketMissing);
   FRIEND_TEST(S3DeleteBucketActionTest,
-              FetchFirstObjectMetadataBucketAccessDenied);
-  FRIEND_TEST(S3DeleteBucketActionTest,
               FetchFirstObjectMetadataBucketFailedToLaunch);
   FRIEND_TEST(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketfailure);
   FRIEND_TEST(S3DeleteBucketActionTest, FetchFirstObjectMetadataSuccess);

@@ -129,43 +129,45 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('JCloudTest can not create bucket with name exsting in other account').create_bucket("seagate-bucket")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("ResourceAlreadyExists")
 
-    # ************ info_bucket owned by another account************
-    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-    JCloudTest('JCloudTest can not access bucket owned by another account')\
-        .check_bucket_exists("seagatebucket").execute_test(negative_case=True).command_should_fail()\
-        .command_error_should_have('AuthorizationException')
+#TODO  Enable this tests when authorization is enabled for this api calls.
 
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
-    JCloudTest('JCloudTest can not access bucket owned by another account')\
-        .check_bucket_exists("seagate-bucket").execute_test(negative_case=True).command_should_fail()\
-        .command_error_should_have('AuthorizationException')
+    # ************ info_bucket owned by another account************
+#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+#    JCloudTest('JCloudTest can not access bucket owned by another account')\
+#        .check_bucket_exists("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+#        .command_error_should_have('AuthorizationException')
+
+#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+#    S3ClientConfig.secret_key = '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'
+#    JCloudTest('JCloudTest can not access bucket owned by another account')\
+#        .check_bucket_exists("seagate-bucket").execute_test(negative_case=True).command_should_fail()\
+#        .command_error_should_have('AuthorizationException')
 
     # ************ delete bucket owned by another account************
-    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-    JCloudTest('JCloudTest can not delete bucket owned by another account')\
-        .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
-        .command_error_should_have("AuthorizationException")
+#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+#    JCloudTest('JCloudTest can not delete bucket owned by another account')\
+#        .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+#        .command_error_should_have("AuthorizationException")
 
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
-    JCloudTest('JCloudTest can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
-        .execute_test(negative_case=True).command_should_fail().command_error_should_have("AuthorizationException")
+#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+#    S3ClientConfig.secret_key = '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'
+#    JCloudTest('JCloudTest can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
+#        .execute_test(negative_case=True).command_should_fail().command_error_should_have("AuthorizationException")
 
     # ************ upload object to a bucket owned by another account************
-    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
-        .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
-        .command_error_should_have("AuthorizationException")
+#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+#    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
+#        .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
+#        .command_error_should_have("AuthorizationException")
 
-    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-    S3ClientConfig.secret_key = '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'
-    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
-        .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
-        .command_should_fail().command_error_should_have("AuthorizationException")
+#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+#    S3ClientConfig.secret_key = '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'
+#    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
+#        .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
+#        .command_should_fail().command_error_should_have("AuthorizationException")
 
     # ************ try to delete account which is having bucket ************
     S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']

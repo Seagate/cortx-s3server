@@ -111,33 +111,35 @@ S3cmdTest('s3cmd can not create bucket with name exsting in other account')\
 S3cmdTest('s3cmd can not create bucket with name exsting in other account').create_bucket("s3secondaccount")\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyExists")
 
-# ************ info_bucket owned by another account************
-S3cmdTest('s3cmd can not access bucket owned by another account')\
-    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
-    .info_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
-    .command_error_should_have("AccessDenied")
+#TODO  Enable this tests when authorization is enabled for this api calls.
 
-S3cmdTest('s3cmd can not access bucket owned by another account').info_bucket("s3secondaccount")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+# ************ info_bucket owned by another account************
+#S3cmdTest('s3cmd can not access bucket owned by another account')\
+#    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+#    .info_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+#    .command_error_should_have("AccessDenied")
+
+#S3cmdTest('s3cmd can not access bucket owned by another account').info_bucket("s3secondaccount")\
+#    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 
 # ************ delete bucket owned by another account************
-S3cmdTest('s3cmd can not delete bucket owned by another account')\
-    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
-    .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
-    .command_error_should_have("AccessDenied")
+#S3cmdTest('s3cmd can not delete bucket owned by another account')\
+#    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+#    .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+#    .command_error_should_have("AccessDenied")
 
-S3cmdTest('s3cmd can not deelte bucket owned by another account').delete_bucket("s3secondaccount")\
-    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+#S3cmdTest('s3cmd can not deelte bucket owned by another account').delete_bucket("s3secondaccount")\
+#    .execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 
 # ************ upload object to a bucket owned by another account************
-S3cmdTest('s3cmd can not upload 3k file to bucket owned by another account')\
-    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
-    .upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
-    .command_error_should_have("AccessDenied")
+#S3cmdTest('s3cmd can not upload 3k file to bucket owned by another account')\
+#    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+#    .upload_test("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
+#    .command_error_should_have("AccessDenied")
 
-S3cmdTest('s3cmd can not upload 3k file to bucket owned by another account')\
-    .upload_test("s3secondaccount", "3kfile", 3000).execute_test(negative_case=True)\
-    .command_should_fail().command_error_should_have("AccessDenied")
+#S3cmdTest('s3cmd can not upload 3k file to bucket owned by another account')\
+#    .upload_test("s3secondaccount", "3kfile", 3000).execute_test(negative_case=True)\
+#    .command_should_fail().command_error_should_have("AccessDenied")
 
 # Overwriting values of access key and secret key given by
 S3ClientConfig.access_key_id = account_response_elements['AccessKeyId']

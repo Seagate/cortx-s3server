@@ -74,7 +74,7 @@ public class Authorizer {
             LOGGER.debug(
                 "Resource ACL denies access to the requestor for this " +
                 "operation.");
-            return responseGenerator.unauthorizedOperation();
+            return responseGenerator.AccessDenied();
           }
         }
         catch (ParserConfigurationException | SAXException | IOException |

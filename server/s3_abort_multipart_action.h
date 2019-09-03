@@ -98,7 +98,6 @@ class S3AbortMultipartAction : public S3Action {
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest3);
-  FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest4);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest5);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest6);
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataTest1);

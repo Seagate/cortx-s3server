@@ -46,6 +46,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
 
   bool is_auth_successful;
   bool is_authorization_successful;
+  bool is_aclvalidation_successful;
 
   std::unique_ptr<S3AuthResponseSuccess> success_obj;
   std::unique_ptr<S3AuthResponseError> error_obj;
@@ -62,6 +63,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
         has_auth_op_context(false),
         is_auth_successful(false),
         is_authorization_successful(false),
+        is_aclvalidation_successful(false),
         auth_response_xml("") {
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   }
@@ -94,6 +96,16 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   }
 
+  void set_aclvalidation_response_xml(const char* xml, bool success = true) {
+    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+    is_aclvalidation_successful = success;
+    auth_response_xml = xml;
+    if (!success) {
+      error_obj.reset(new S3AuthResponseError(auth_response_xml));
+    }
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  }
+
   void set_authorization_response(const char* xml, bool success = true) {
     s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
     authorization_response_xml = xml;
@@ -121,6 +133,10 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   }
 
   bool auth_successful() { return is_auth_successful; }
+
+  bool authorization_successful() { return is_authorization_successful; }
+
+  bool aclvalidation_successful() { return is_aclvalidation_successful; }
 
   std::string get_user_id() {
     if (is_auth_successful) {
@@ -157,12 +173,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     return "";
   }
 
-  std::string get_error_code() {
-    if (!is_auth_successful) {
-      return error_obj->get_code();
-    }
-    return "";
-  }
+  std::string get_error_code() { return error_obj->get_code(); }
 
   std::string get_error_message() {
     if (!is_auth_successful) {
