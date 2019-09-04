@@ -8,6 +8,18 @@ from s3client_config import S3ClientConfig
 from aclvalidation import AclTest
 from auth import AuthTest
 
+defaultAcp_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'default_acp.json')
+defaultAcp = "file://" + os.path.abspath(defaultAcp_relative)
+
+allGroupACP_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'group_acp.json')
+allGroupACP = "file://" + os.path.abspath(allGroupACP_relative)
+
+fullACP_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'full_acp.json')
+fullACP = "file://" + os.path.abspath(fullACP_relative)
+
+valid_acl_wihtout_displayname_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'valid_acl_wihtout_displayname.json')
+valid_acl_wihtout_displayname = "file://" + os.path.abspath(valid_acl_wihtout_displayname_relative)
+
 # Load test config file
 def load_test_config():
     conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
@@ -61,6 +73,55 @@ AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
+
+print("Validate put object acl with default ACP XML")
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", defaultAcp)\
+    .execute_test().command_is_successful()
+
+result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").execute_test().command_is_successful()
+
+print("Object ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+print("Validate put object acl with all groups ACP XML")
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", allGroupACP)\
+    .execute_test().command_is_successful()
+
+result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").execute_test().command_is_successful()
+
+print("Object ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 4, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+print("Validate put object acl with complete ACP XML that includes Grants of type - CanonicalUser/Group/Email")
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", fullACP)\
+    .execute_test().command_is_successful()
+
+result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").execute_test().command_is_successful()
+
+print("Object ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 4, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+'''print("Validate put object acl with ACP XML without DisplayName for owner/grants")
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", valid_acl_wihtout_displayname)\
+    .execute_test().command_is_successful()
+
+result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").execute_test().command_is_successful()
+
+print("Object ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", None, "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", None)
+AclTest('acl has valid Grants').validate_grant(result, "C12345", None, 1, "FULL_CONTROL")'''
 
 #*********** Negative case to fetch bucket acl for non-existing bucket ****************************
 AwsTest('Aws can not fetch bucket acl of non-existing bucket').get_bucket_acl("seagateinvalidbucket").execute_test(negative_case=True)\

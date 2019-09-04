@@ -157,7 +157,7 @@
     </xsd:complexContent>
   </xsd:complexType>
 
-  <xsd:complexType name="AmazonCustomerByEmail">
+  <xsd:complexType name="Email">
     <xsd:complexContent>
       <xsd:extension base="tns:User">
         <xsd:sequence>
@@ -170,10 +170,13 @@
   <xsd:complexType name="CanonicalUser">
     <xsd:complexContent>
       <xsd:extension base="tns:User">
-        <xsd:sequence>
-          <xsd:element name="ID" type="xsd:string"/>
-          <xsd:element name="DisplayName" type="xsd:string" minOccurs="0"/>
-        </xsd:sequence>
+          <!-- Replacing xsd:sequence with xsd:all
+          since ID and DisplaName elements are not expected to be in order
+          Amazon S3 XSD mandates the sequence which is not followed by AWS CLI -->
+          <xsd:all>
+              <xsd:element name="ID" type="xsd:string" minOccurs="1"/>
+              <xsd:element name="DisplayName" type="xsd:string" minOccurs="0"/>
+          </xsd:all>
       </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>

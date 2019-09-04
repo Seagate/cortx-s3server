@@ -20,6 +20,7 @@
 package com.seagates3.acl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -31,9 +32,12 @@ import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.dao.ldap.AccountImpl;
 import com.seagates3.dao.ldap.LDAPUtils;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Account;
+import com.seagates3.model.Group;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.util.XMLValidatorUtil;
@@ -100,12 +104,11 @@ class ACLValidation {
    * Validate semanticity of ACL.
    *
    */
-
  private
   ServerResponse validateACL() {
 
-    if (acp.accessControlList.getGrantList().size() >
-        AuthServerConfig.MAX_GRANT_SIZE)
+    ArrayList<Grant> grantList = acp.accessControlList.getGrantList();
+    if (grantList.size() > AuthServerConfig.MAX_GRANT_SIZE)
       return responseGenerator.grantListSizeViolation();
 
     int counter = 0;
@@ -113,33 +116,62 @@ class ACLValidation {
     /**
      * validate owner id and owner displayName.
      */
-
     aclFlag =
         checkIdExists(acp.owner.getCanonicalId(), acp.owner.getDisplayName());
 
     if (aclFlag) {
-      for (counter = 0; counter < acp.accessControlList.getGrantList().size();
-           counter++) {
+      for (counter = 0; counter < grantList.size(); counter++) {
         /**
          * validate grantee id and grantee name
          */
+        if (grantList.get(counter)
+                .grantee.type.equals(Grantee.Types.CanonicalUser)) {
+          aclFlag =
+              checkIdExists(grantList.get(counter).grantee.getCanonicalId(),
+                            grantList.get(counter).grantee.getDisplayName());
 
-        aclFlag = checkIdExists(acp.accessControlList.getGrantList()
-                                    .get(counter)
-                                    .grantee.getCanonicalId(),
-                                acp.accessControlList.getGrantList()
-                                    .get(counter)
-                                    .grantee.getDisplayName());
+          if (!aclFlag) {
+            return responseGenerator.invalidID();
+          }
 
-        if (!aclFlag) {
-          return responseGenerator.invalidID();
+          /**
+           * Validate Group
+           */
+        } else if (grantList.get(counter)
+                       .grantee.type.equals(Grantee.Types.Group)) {
+          String URI = grantList.get(counter).grantee.uri;
+          aclFlag = (URI.equals(Group.AllUsersURI) ||
+                     URI.equals(Group.AuthenticatedUsersURI) ||
+                     URI.equals(Group.LogDeliveryURI));
+
+          if (!aclFlag) {
+            LOGGER.error("ACL validation failed. Invalid Group URI - " + URI);
+            return responseGenerator.invalidArgument("Invalid group uri");
+          }
+
+          /**
+           * Validate Email Address
+           */
+        } else if (grantList.get(counter)
+                       .grantee.type.equals(Grantee.Types.Email)) {
+          String email = grantList.get(counter).grantee.emailAddress;
+          try {
+            if (new AccountImpl().findByEmailAddress(email) == null) {
+              LOGGER.error("ACL validation failed. Email Address " + email +
+                           " is not linked to any of the existing accounts.");
+              return responseGenerator.invalidArgument("Invalid email address");
+            }
+          }
+          catch (DataAccessException e) {
+            LOGGER.error("ACL validation failed. Invalid email address.");
+            return responseGenerator.invalidArgument("Invalid email address");
+          }
         }
       }
 
     } else {
       return responseGenerator.invalidACL();
     }
-
     return responseGenerator.ok();
   }
 

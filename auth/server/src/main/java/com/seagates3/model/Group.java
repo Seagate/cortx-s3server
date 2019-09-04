@@ -22,6 +22,15 @@ public class Group {
 
     private String path, name, arn, createDate, groupId;
     private Account account;
+    public
+     static final String AllUsersURI =
+         "http://acs.amazonaws.com/groups/global/AllUsers";
+    public
+     static final String AuthenticatedUsersURI =
+         "http://acs.amazonaws.com/groups/global/AuthenticatedUsers";
+    public
+     static final String LogDeliveryURI =
+         "http://acs.amazonaws.com/groups/s3/LogDelivery";
 
     /**
      * Return the account to which the group belongs.

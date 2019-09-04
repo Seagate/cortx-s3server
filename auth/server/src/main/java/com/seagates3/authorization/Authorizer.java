@@ -26,12 +26,14 @@ import com.seagates3.model.User;
 import com.seagates3.acl.ACLRequestValidator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
-import com.seagates3.util.BinaryUtil;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.IOException;
 import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -57,7 +59,8 @@ public class Authorizer {
         ServerResponse serverResponse =
             new ACLRequestValidator().validateAclRequest(requestBody,
                                                          accountPermissionMap);
-        if (serverResponse.getResponseStatus() != null) {
+        if (serverResponse.getResponseStatus() != null &&
+            !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
           LOGGER.error("ACL authorization request validation failed");
           return serverResponse;
         }
@@ -147,8 +150,7 @@ public class Authorizer {
     * @return true if ACL is valid
     */
   public
-   ServerResponse validateACL(Requestor requestor,
-                              Map<String, String> requestBody) {
+   ServerResponse validateACL(Map<String, String> requestBody) {
 
      AuthorizationResponseGenerator responseGenerator =
          new AuthorizationResponseGenerator();

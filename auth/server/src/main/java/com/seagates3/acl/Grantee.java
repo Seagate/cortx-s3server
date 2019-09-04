@@ -32,11 +32,31 @@ class Grantee {
 
   String canonicalId;
   String displayName;
+  String uri;
+  String emailAddress;
+  Types type;
+
+  enum Types {
+    CanonicalUser,
+    Group,
+    Email
+  };
+
+ public
+  Grantee(String canonicalId, String displayName, String uri,
+          String emailAddress, Types type) {
+    this.canonicalId = canonicalId;
+    this.displayName = displayName;
+    this.uri = uri;
+    this.emailAddress = emailAddress;
+    this.type = type;
+  }
 
  public
   Grantee(String canonicalId, String displayName) {
     this.canonicalId = canonicalId;
     this.displayName = displayName;
+    this.type = Types.CanonicalUser;
   }
 
   void setCanonicalId(String Id) { canonicalId = Id; }
@@ -46,4 +66,18 @@ class Grantee {
   void setDisplayName(String Name) { displayName = Name; }
 
   String getDisplayName() { return displayName; }
+
+  Types getType() { return type; }
+
+  void setType(Types type) { this.type = type; }
+
+  String getUri() { return uri; }
+
+  void setUri(String uri) { this.uri = uri; }
+
+  String getEmailAddress() { return emailAddress; }
+
+  void setEmailAddress(String emailAddress) {
+    this.emailAddress = emailAddress;
+  }
 }

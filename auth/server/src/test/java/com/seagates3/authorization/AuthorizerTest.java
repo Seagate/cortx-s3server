@@ -114,7 +114,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     String acl = "";
     requestBody = new TreeMap<>();
     requestBody.put("ACL", acl);
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }
@@ -138,7 +138,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody = new TreeMap<>();
     requestBody.put("ACL",
                     BinaryUtil.encodeToBase64String(acl_invalid_permission));
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }
@@ -166,7 +166,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl_malformed));
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }
@@ -186,7 +186,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl_missing_owner));
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }
@@ -206,7 +206,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody = new TreeMap<>();
     requestBody.put("ACL",
                     BinaryUtil.encodeToBase64String(acl_invalid_nograntee));
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }
@@ -228,7 +228,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "</Grant></AccessControlList>" + "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
     requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl_no_permission));
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }
@@ -258,7 +258,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
              "kirungeb")
         .thenReturn(true);
 
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.OK,
                  actualServerResponse.getResponseStatus());
   }
@@ -289,7 +289,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
              "kirungeb")
         .thenReturn(false);
 
-    actualServerResponse = authorizer.validateACL(requestor, requestBody);
+    actualServerResponse = authorizer.validateACL(requestBody);
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }

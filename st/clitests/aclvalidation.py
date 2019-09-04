@@ -80,6 +80,9 @@ class AclTest(S3PyCliTest):
          elif user_type == "Group":
             assert "URI" in grantee
             assert isinstance(grantee["URI"], str)
+         elif user_type == "Group":
+            assert "Email" in grantee
+            assert isinstance(grantee["Email"], str)
 
          # Validate Permission
          permission = grant["Permission"]

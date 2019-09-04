@@ -175,7 +175,7 @@ class IAMController {
         return serverResponse;
       } else if (requestAction.equals("ValidateACL")) {
         LOGGER.debug("Validating Acl:");
-        serverResponse = new Authorizer().validateACL(requestor, requestBody);
+        serverResponse = new Authorizer().validateACL(requestBody);
         return serverResponse;
       }
 

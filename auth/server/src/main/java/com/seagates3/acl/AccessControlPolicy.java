@@ -20,6 +20,7 @@
 package com.seagates3.acl;
 import java.io.*;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -30,8 +31,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -41,7 +40,6 @@ import org.xml.sax.InputSource;
 
 import com.seagates3.acl.AccessControlList;
 import com.seagates3.exception.GrantListFullException;
-import com.seagates3.util.XMLValidatorUtil;
 
 public
 class AccessControlPolicy {
@@ -50,10 +48,6 @@ class AccessControlPolicy {
   Document doc;
   Owner owner;
   AccessControlList accessControlList;
-
- private
-  final static Logger LOGGER =
-      LoggerFactory.getLogger(XMLValidatorUtil.class.getName());
 
  public
   AccessControlPolicy(File xmlFile) throws ParserConfigurationException,
@@ -112,26 +106,41 @@ class AccessControlPolicy {
 
       Element grantitemelement = (Element)grantitem;
 
-      Grantee grantee = new Grantee("", "");
+      Grantee grantee = null;
 
-      Node granteeId = grantitemelement.getElementsByTagName("ID").item(0);
+      Node granteeNode =
+          grantitemelement.getElementsByTagName("Grantee").item(0);
+      Element granteeElement = (Element)granteeNode;
+      String type = granteeElement.getAttribute("xsi:type");
+      grantee = new Grantee("", "");
 
-      grantee.setCanonicalId(granteeId.getTextContent());
+      if (Grantee.Types.CanonicalUser.toString().equals(type)) {
+        Node granteeId = grantitemelement.getElementsByTagName("ID").item(0);
 
-      Node granteeDisplayname =
-          grantitemelement.getElementsByTagName("DisplayName").item(0);
+        grantee.setCanonicalId(granteeId.getTextContent());
 
-      if (granteeDisplayname != null) {
-      grantee.setDisplayName(granteeDisplayname.getTextContent());
-      } else {
+        Node granteeDisplayname =
+            grantitemelement.getElementsByTagName("DisplayName").item(0);
 
-        grantee.setDisplayName(null);
+        if (granteeDisplayname != null) {
+          grantee.setDisplayName(granteeDisplayname.getTextContent());
+        } else {
+
+          grantee.setDisplayName(null);
+        }
+      } else if (Grantee.Types.Group.toString().equals(type)) {
+        Node granteeUri = grantitemelement.getElementsByTagName("URI").item(0);
+        grantee = new Grantee(null, null, granteeUri.getTextContent(), null,
+                              Grantee.Types.Group);
+      } else if (Grantee.Types.Email.toString().equals(type)) {
+        Node granteeEmail =
+            grantitemelement.getElementsByTagName("EmailAddress").item(0);
+        grantee = new Grantee(null, null, null, granteeEmail.getTextContent(),
+                              Grantee.Types.Email);
       }
-      Grant grant = new Grant(grantee, "");
-      grant.grantee = grantee;
       Node permission =
           grantitemelement.getElementsByTagName("Permission").item(0);
-      grant.setPermission(permission.getTextContent());
+      Grant grant = new Grant(grantee, permission.getTextContent());
       accessControlList.addGrant(grant);
     }
     this.accessControlList = accessControlList;
@@ -204,9 +213,9 @@ class AccessControlPolicy {
 
     int grantNodesLength = GrantNodeList.getLength();
     int counter = 0;
+    ArrayList<Grant> grantList = this.accessControlList.getGrantList();
 
-    for (counter = 0; counter < this.accessControlList.getGrantList().size();
-         counter++) {
+    for (counter = 0; counter < grantList.size(); counter++) {
 
       // When grantNodeList length is less than grantlength to be set,adding
       // extra nodes of type grant Node.
@@ -218,23 +227,27 @@ class AccessControlPolicy {
 
       Node grantNode = GrantNodeList.item(counter);
       Element grantElement = (Element)grantNode;
+      Grant grant = grantList.get(counter);
 
-      Node granteeIdNode = grantElement.getElementsByTagName("ID").item(0);
-      granteeIdNode.setTextContent(this.accessControlList.getGrantList()
-                                       .get(counter)
-                                       .grantee.getCanonicalId());
+      if (Grantee.Types.CanonicalUser.equals(grant.grantee.type)) {
+        Node granteeIdNode = grantElement.getElementsByTagName("ID").item(0);
+        granteeIdNode.setTextContent(grant.grantee.getCanonicalId());
 
-      Node granteeDisplayNameNode =
-          grantElement.getElementsByTagName("DisplayName").item(0);
-      granteeDisplayNameNode.setTextContent(
-          this.accessControlList.getGrantList()
-              .get(counter)
-              .grantee.getDisplayName());
+        Node granteeDisplayNameNode =
+            grantElement.getElementsByTagName("DisplayName").item(0);
+        granteeDisplayNameNode.setTextContent(grant.grantee.getDisplayName());
+      } else if (Grantee.Types.Group.equals(grant.grantee.type)) {
+        Node granteeIdNode = grantElement.getElementsByTagName("URI").item(0);
+        granteeIdNode.setTextContent(grant.grantee.getUri());
+      } else if (Grantee.Types.Email.equals(grant.grantee.type)) {
+        Node granteeIdNode =
+            grantElement.getElementsByTagName("EmailAddress").item(0);
+        granteeIdNode.setTextContent(grant.grantee.getEmailAddress());
+      }
 
       Node permissionNode =
           grantElement.getElementsByTagName("Permission").item(0);
-      permissionNode.setTextContent(
-          this.accessControlList.getGrantList().get(counter).getPermission());
+      permissionNode.setTextContent(grant.getPermission());
     }
 
     int indexAtNodeToBeDeleted = counter;
