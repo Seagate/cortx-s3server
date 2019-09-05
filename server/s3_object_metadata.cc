@@ -712,11 +712,16 @@ bool S3ObjectMetadata::check_object_tags_exists() {
 int S3ObjectMetadata::object_tags_count() { return object_tags.size(); }
 
 std::string S3ObjectMetadata::create_probable_delete_record(
-    int override_layout_id) {
+    int override_layout_id, struct m0_uint128 index_id) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   Json::Value root;
 
-  std::string index_oid_str = S3M0Uint128Helper::to_string(get_index_oid());
+  std::string index_oid_str;
+  if (index_id.u_lo == 0ULL && index_id.u_hi == 0ULL) {
+    index_oid_str = S3M0Uint128Helper::to_string(get_index_oid());
+  } else {
+    index_oid_str = S3M0Uint128Helper::to_string(index_id);
+  }
 
   root["index_id"] = index_oid_str;
   root["object_metadata_path"] = get_object_name();

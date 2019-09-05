@@ -106,3 +106,30 @@ def test_delete_success():
     response = EOSCoreClient(config, connection=httpconnection).delete(
         '/indexes/test_index1')
     assert response['status'] == 204
+
+def test_head_failure():
+    """
+    Test if connection object is "None" then HEAD should throw TypeError.
+    """
+    with pytest.raises(TypeError):
+        config = Mock(spec=EOSCoreConfig)
+        config.get_eos_core_endpoint = Mock(side_effect=KeyError())
+        assert EOSCoreClient(config).head('/indexes/test_index1')
+
+
+def test_head_success():
+    """Test HEAD request should return success response."""
+    httpconnection = Mock(spec=HTTPConnection)
+    httpresponse = Mock(spec=HTTPResponse)
+    httpresponse.status = 200
+    httpresponse.getheaders.return_value = \
+        'Content-Type:text/html;Content-Length:14'
+    httpresponse.read.return_value = b'test body'
+    httpresponse.reason = 'OK'
+    httpconnection.getresponse.return_value = httpresponse
+
+    config = EOSCoreConfig()
+    response = EOSCoreClient(config, connection=httpconnection).head(
+        '/indexes/test_index1')
+    assert response['status'] == 200
+

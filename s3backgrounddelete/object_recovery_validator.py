@@ -90,7 +90,7 @@ class ObjectRecoveryValidator:
         elif (ret is False):
               if(response_data.get_error_status() == 404):
                  self._logger.info("Response for object metadata corresponding to object id" + str(
-                      response_data.get_error_status()) + " " + response_data.get_error_message())
+                      response_data.get_error_status()) + " " + str(response_data.get_error_message()))
 
                  self._logger.info(
                     "Deleting following object Id : " +
@@ -105,7 +105,7 @@ class ObjectRecoveryValidator:
                   "Failed to fetch Object metadata for following object Id " +
                   str(probable_delete_oid) +
                   "Ignoring oid delete from probable delete index id")
-                  self._logger.error("Fetch object metadata failed due to : " + response_data.get_error_message())
+                  self._logger.error("Fetch object metadata failed due to : " + str(response_data.get_error_message()))
                   return
 
         if (delete_probable_oid):
@@ -119,5 +119,5 @@ class ObjectRecoveryValidator:
                 "Failed to delete following object Id " +
                 str(probable_delete_oid) +
                 "Ignoring oid delete from probable delete index id")
-            self._logger.error("Object deletion failed due to : " + delete_response.get_error_message())
+            self._logger.error("Object deletion failed due to : " + str(delete_response.get_error_message()))
 

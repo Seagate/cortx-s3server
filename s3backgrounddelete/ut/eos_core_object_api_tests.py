@@ -123,3 +123,46 @@ def test_delete_no_layout_id():
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config).delete("test_oid1", None)
     assert response is None
+
+def test_head_success():
+    """Test HEAD api, it should send success response."""
+    httpconnection = Mock(spec=HTTPConnection)
+    httpresponse = Mock(spec=HTTPResponse)
+    httpresponse.status = 200
+    httpresponse.getheaders.return_value = \
+        'Content-Type:text/html;Content-Length:14'
+    httpresponse.read.return_value = b'{}'
+    httpresponse.reason = ''
+    httpconnection.getresponse.return_value = httpresponse
+
+    config = EOSCoreConfig()
+    response = EOSCoreObjectApi(config, connection=httpconnection).head("test_oid1", "test_layout_id1")
+    assert response[0] is True
+
+def test_head_failure():
+    """Test if HEAD api fails, it should return error response."""
+    httpconnection = Mock(spec=HTTPConnection)
+    httpresponse = Mock(spec=HTTPResponse)
+    httpresponse.status = 404
+    httpresponse.getheaders.return_value = \
+        'Content-Type:text/html;Content-Length:14'
+    httpresponse.read.return_value = b'{}'
+    httpresponse.reason = 'NOT FOUND'
+    httpconnection.getresponse.return_value = httpresponse
+
+    config = EOSCoreConfig()
+    response = EOSCoreObjectApi(config, connection=httpconnection).head("test_oid2", "test_layout_id2")
+    assert response[0] is False
+
+def test_head_no_oid():
+    """Test HEAD api without index, it should return response as "None"."""
+    config = EOSCoreConfig()
+    response = EOSCoreObjectApi(config).head(None, "test_layot_id2")
+    assert response is None
+
+def test_head_no_layout_id():
+    """Test HEAD api without layout id, it should return response as "None"."""
+    config = EOSCoreConfig()
+    response = EOSCoreObjectApi(config).head("test_oid1", None)
+    assert response is None
+

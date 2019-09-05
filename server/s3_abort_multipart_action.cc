@@ -329,11 +329,11 @@ void S3AbortMultipartAction::cleanup_successful() {
 
 void S3AbortMultipartAction::cleanup_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  // new object oid and related metadata saved in object_list_index_id, but old
-  // object oid failed to delete. so erase the old object oid from
-  // probable_oid_list map and this old object oid will be retained in
+  // on multipart operation: multi_part metadata deletion succesful, but failed
+  // to delete object oid. so erase the old object oid from probable_oid_list
+  // map and this old object oid will be retained in
   // global_probable_dead_object_list_index_oid
-  m0_uint128 object_oid = object_multipart_metadata->get_old_oid();
+  m0_uint128 object_oid = object_multipart_metadata->get_oid();
   probable_oid_list.erase(S3M0Uint128Helper::to_string(object_oid));
   cleanup_oid_from_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

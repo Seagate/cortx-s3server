@@ -7,11 +7,11 @@ class EOSCoreErrorResponse(object):
     _error_message = ""
     _error_reason = ""
 
-    def __init__(self, error_status, error_msg, error_reason):
+    def __init__(self, http_status_code, error_reason, error_message):
         """Initialise and parse error response."""
-        self._http_status = error_status
-        self._error_message = error_msg
+        self._http_status = http_status_code
         self._error_reason = error_reason
+        self._error_message = error_message
 
     def get_error_status(self):
         """Return error status."""

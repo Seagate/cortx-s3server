@@ -104,11 +104,6 @@ void S3PutChunkUploadObjectAction::setup_steps() {
         this));
   }
   add_task(std::bind(&S3PutChunkUploadObjectAction::create_object, this));
-  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-    add_task(std::bind(
-        &S3PutChunkUploadObjectAction::add_object_oid_to_probable_dead_oid_list,
-        this));
-  }
   add_task(
       std::bind(&S3PutChunkUploadObjectAction::initiate_data_streaming, this));
   add_task(std::bind(&S3PutChunkUploadObjectAction::save_metadata, this));
@@ -296,7 +291,11 @@ void S3PutChunkUploadObjectAction::create_object_successful() {
   // mark rollback point
   add_task_rollback(
       std::bind(&S3PutChunkUploadObjectAction::rollback_create, this));
-  next();
+  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
+    add_object_oid_to_probable_dead_oid_list();
+  } else {
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

@@ -1,4 +1,4 @@
-"""This is an core client which will do GET,PUT,DELETE requests."""
+"""This is an core client which will do GET,PUT,DELETE and HEAD requests."""
 
 import sys
 import logging
@@ -81,3 +81,20 @@ class EOSCoreClient(object):
                   'body': response.read(), 'reason': response.reason}
         self._conn.close()
         return result
+
+    def head(self, request_uri, body=None, headers=None):
+        """Perform HEAD request and generate response."""
+        if (self._conn is None):
+            raise TypeError("Failed to create connection instance")
+        if (headers is None):
+            headers = {
+                "Content-type": "application/x-www-form-urlencoded",
+                "Accept": "text/plain"}
+
+        self._conn.request('HEAD', request_uri, body, headers)
+        response = self._conn.getresponse()
+        result = {'status': response.status, 'headers': response.getheaders(),
+                  'body': response.read(), 'reason': response.reason}
+        self._conn.close()
+        return result
+

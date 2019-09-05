@@ -155,6 +155,15 @@ class EOSCoreConfig(object):
                 "Could not find eos_core secret_key from config file " +
                 self._conf_file)
 
+    def get_daemon_mode(self):
+        """Return daemon_mode flag value for scheduler from config file\
+           else it should return default as "True"."""
+        if 'eos_core' in self._config and self._config['eos_core']['daemon_mode']:
+            return self._config['eos_core']['daemon_mode']
+        else:
+            #Return default mode as daemon mode i.e. "True"
+            return "True"
+
     def get_rabbitmq_username(self):
         """Return username of rabbitmq from config file or KeyError."""
         if 'rabbitmq' in self._config and self._config['rabbitmq']['username']:

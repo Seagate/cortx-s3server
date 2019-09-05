@@ -94,10 +94,6 @@ void S3PutObjectAction::setup_steps() {
         std::bind(&S3PutObjectAction::validate_x_amz_tagging_if_present, this));
   }
   add_task(std::bind(&S3PutObjectAction::create_object, this));
-  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-    add_task(std::bind(
-        &S3PutObjectAction::add_object_oid_to_probable_dead_oid_list, this));
-  }
   add_task(std::bind(&S3PutObjectAction::initiate_data_streaming, this));
   add_task(std::bind(&S3PutObjectAction::save_metadata, this));
   add_task(std::bind(&S3PutObjectAction::send_response_to_s3_client, this));
@@ -245,7 +241,11 @@ void S3PutObjectAction::create_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // mark rollback point
   add_task_rollback(std::bind(&S3PutObjectAction::rollback_create, this));
-  next();
+  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
+    add_object_oid_to_probable_dead_oid_list();
+  } else {
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

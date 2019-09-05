@@ -277,4 +277,5 @@ quote(s3target))
     def multi_delete_test(self, bucket_name):
         self.bucket_name = bucket_name
         self.with_cli("s3cmd -c " + self.s3cfg + self._send_retries + " del " + "s3://" + self.bucket_name + "/ --recursive --force")
+        self.command = self.command + self.credentials
         return self

@@ -2,6 +2,7 @@
 import sys
 import json
 import base64
+import re
 from s3kvstool import S3kvTest, S3OID
 
 # Find record in record list, return empty string otherwise
@@ -191,6 +192,30 @@ def delete_bucket_info(bucket_name):
     assert not bucket_record,"bucket:%s entry not deleted!" % bucket_name
     return
 
+# Extract OID,layout-id from api response with --debug flag enabled
+# Multiple response might be generated so store them in dictionary as 'x-stx-oid':'x-stx-layout-id'
+# Sample response needs to be fetched from debug log is,
+"""
+DEBUG - Response headers: {'x-amzn-RequestId': '18d79101-45d1-47a3-ac5f-87e7\
+4eca2f8f','Content-Length': '232', 'x-stx-oid': 'egZPBQAAAAA=-EwAAAAAAJKc=',\
+'Server': 'SeagateS3', 'Retry-After': '1', 'Connection': 'close',\
+'x-stx-layout-id': '1', 'Content-Type': 'application/xml'}
+"""
+def extract_headers_from_response(api_response):
+    print("Extracting object oid and layout-id as \"x-stx-oid\" : \"x-stx-layout-id\" from response..")
+    expected_line = "DEBUG - Response headers:.*'x-stx-layout-id'.*.'x-stx-oid'.*"
+    response = re.findall(expected_line, api_response, re.MULTILINE)
+    oid_dict = {}
+    for response_line in response:
+        response_line =  response_line.lstrip("DEBUG - Response headers: ").replace("\'", "\"")
+        json_response = json.loads(response_line)
+        oid = json_response["x-stx-oid"]
+        layout_id = json_response["x-stx-layout-id"]
+        print(oid + ":" + layout_id)
+        oid_dict[oid] = layout_id
+    print("Extracted \"x-stx-oid\" and \"x-stx-layout-id\"")
+    return oid_dict
+
 # Delete User record
 # def delete_user_info(user_record="12345"):
 #     root_oid = S3kvTest('Kvtest fetch root index').root_bucket_account_index()
@@ -201,10 +226,11 @@ def delete_bucket_info(bucket_name):
 def clean_all_data():
     result = S3kvTest('Kvtest remove global bucket account list index').delete_root_bucket_account_index().execute_test(ignore_err=True)
     result = S3kvTest('Kvtest remove global bucket metadata list index').delete_root_bucket_metadata_index().execute_test(ignore_err=True)
+    result = S3kvTest('Kvtest remove global probable delete list index').delete_root_probable_dead_object_list_index().execute_test(ignore_err=True)
     return
 
 def create_s3root_index():
     result = S3kvTest('Kvtest create global bucket account list index').create_root_bucket_account_index().execute_test(ignore_err=True)
     result = S3kvTest('Kvtest create global bucket metadata list index').create_root_bucket_metadata_index().execute_test(ignore_err=True)
+    result = S3kvTest('Kvtest create global probable delete list index').create_root_probable_dead_object_list_index().execute_test(ignore_err=True)
     return
-

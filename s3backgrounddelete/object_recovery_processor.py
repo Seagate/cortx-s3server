@@ -20,6 +20,7 @@ class ObjectRecoveryProcessor(object):
         self.server = None
         self.config = EOSCoreConfig()
         self.create_logger()
+        self.logger.info("Initialising the Object Recovery Processor")
 
     def consume(self):
         """Consume the objects from object recovery queue."""
@@ -35,13 +36,13 @@ class ObjectRecoveryProcessor(object):
                 self.config.get_rabbitmq_mode(),
                 self.config.get_rabbitmq_durable(),
                 self.logger)
-            self.logger.info(" Consumer started at" +
+            self.logger.info("Consumer started at " +
                              str(datetime.datetime.now()))
             self.server.receive_data()
         except BaseException:
             if self.server:
                 self.server.close()
-            self.logger.error(" main except:" + str(traceback.format_exc()))
+            self.logger.error("main except:" + str(traceback.format_exc()))
 
     def create_logger(self):
         """Create logger, file handler, formatter."""
@@ -62,6 +63,13 @@ class ObjectRecoveryProcessor(object):
         # add the handlers to the logger
         self.logger.addHandler(fhandler)
         self.logger.addHandler(chandler)
+
+    def close(self):
+        """Stop processor and close rabbitmq connection."""
+        self.logger.info("Stopping the processor and rabbitmq connection")
+        self.server.close()
+        # perform an orderly shutdown by flushing and closing all handlers
+        logging.shutdown()
 
 
 if __name__ == "__main__":

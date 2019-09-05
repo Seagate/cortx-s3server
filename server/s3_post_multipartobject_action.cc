@@ -114,11 +114,6 @@ void S3PostMultipartObjectAction::setup_steps() {
   add_task(std::bind(&S3PostMultipartObjectAction::check_upload_is_inprogress,
                      this));
   add_task(std::bind(&S3PostMultipartObjectAction::create_object, this));
-  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-    add_task(std::bind(
-        &S3PostMultipartObjectAction::add_object_oid_to_probable_dead_oid_list,
-        this));
-  }
   add_task(
       std::bind(&S3PostMultipartObjectAction::create_part_meta_index, this));
   add_task(std::bind(&S3PostMultipartObjectAction::save_upload_metadata, this));
@@ -337,7 +332,11 @@ void S3PostMultipartObjectAction::create_object_successful() {
   // mark rollback point
   add_task_rollback(
       std::bind(&S3PostMultipartObjectAction::rollback_create, this));
-  next();
+  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
+    add_object_oid_to_probable_dead_oid_list();
+  } else {
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

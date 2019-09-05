@@ -1,4 +1,4 @@
-"""This class provides Object  REST API i.e. GET,PUT and DELETE."""
+"""This class provides Object  REST API i.e. GET,PUT,DELETE and HEAD."""
 import logging
 import urllib
 
@@ -31,7 +31,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         """Perform PUT request and generate response."""
         if oid is None:
             self._logger.error("Object Id is required.")
-            return
+            return None
 
         query_params = ""
         request_body = value
@@ -45,7 +45,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
-        if(headers['Authorization'] is None):
+        if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
             return None
 
@@ -85,7 +85,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
 
-        if(headers['Authorization'] is None):
+        if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
             return None
 
@@ -111,10 +111,10 @@ class EOSCoreObjectApi(EOSCoreClient):
         """Perform DELETE request and generate response."""
         if oid is None:
             self._logger.error("Object Id is required.")
-            return
+            return None
         if layout_id is None:
             self._logger.error("Layout Id is required.")
-            return
+            return None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # urllib.parse.urlencode converts a mapping object or a sequence of two-element tuples, which may contain str or bytes objects, to a percent-encoded ASCII text string.
@@ -131,7 +131,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         body = ''
         headers = EOSCoreUtil.prepare_signed_header('DELETE', request_uri, query_params, body)
 
-        if(headers['Authorization'] is None):
+        if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
             return None
 
@@ -153,3 +153,54 @@ class EOSCoreObjectApi(EOSCoreClient):
             self._logger.info('Failed to delete Object.')
             return False, EOSCoreErrorResponse(
                 response['status'], response['reason'], response['body'])
+
+
+    def head(self, oid, layout_id):
+        """Perform HEAD request and generate response."""
+        if oid is None:
+            self._logger.error("Object Id is required.")
+            return None
+        if layout_id is None:
+            self._logger.error("Layout Id is required.")
+            return None
+
+        # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
+        # urllib.parse.urlencode converts a mapping object or a sequence of two-element tuples, which may contain str or bytes objects, to a percent-encoded ASCII text string.
+        # https://docs.python.org/3/library/urllib.parse.html
+        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid) yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' and layout_id is 1
+        # urllib.parse.urlencode({'layout-id': layout_id}) yields layout-id=1
+        # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' ,
+        # absolute_request_uri is layout-id is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D?layout-id=1'
+
+        query_params = urllib.parse.urlencode({'layout-id': layout_id})
+        request_uri = '/objects/' + urllib.parse.quote(oid)
+        absolute_request_uri = request_uri + '?' + query_params
+
+        body = ''
+        headers = EOSCoreUtil.prepare_signed_header('HEAD', request_uri, query_params, body)
+
+        if headers['Authorization'] is None:
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
+        try:
+            response = super(
+                EOSCoreObjectApi,
+                self).head(
+                absolute_request_uri,
+                body,
+                headers=headers)
+        except Exception as ex:
+            self._logger.error(str(ex))
+            return None
+
+        if response['status'] == 200:
+            self._logger.info("HEAD Object called successfully with status code: "\
+                 + str(response['status']) + " response body: " + str(response['body']))
+            return True, EOSCoreSuccessResponse(response['body'])
+        else:
+            self._logger.info("Failed to do HEAD Object with status code: "\
+                 + str(response['status']) + " response body: " + str(response['body']))
+            return False, EOSCoreErrorResponse(
+                response['status'], response['reason'], response['body'])
+

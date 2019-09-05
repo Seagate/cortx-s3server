@@ -23,9 +23,11 @@ class ObjectRecoveryScheduler(object):
         self.data = None
         self.config = EOSCoreConfig()
         self.create_logger()
+        self.logger.info("Initialising the Object Recovery Scheduler")
 
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
+        self.logger.info("Adding kv list to queue")
         try:
             mq_client = object_recovery_queue.ObjectRecoveryRabbitMq(
                 self.config,
@@ -41,7 +43,7 @@ class ObjectRecoveryScheduler(object):
                 self.config, logger=self.logger).list(
                     self.config.get_probable_delete_index_id(), self.config.get_probable_delete_max_keys(), marker)
             if result:
-                self.logger.info(" Index listing result :" +
+                self.logger.info("Index listing result :" +
                                  str(index_response.get_index_content()))
                 probable_delete_json = index_response.get_index_content()
                 probable_delete_oid_list = probable_delete_json["Keys"]
@@ -49,35 +51,36 @@ class ObjectRecoveryScheduler(object):
                 if (probable_delete_oid_list is not None):
                     for record in probable_delete_oid_list:
                         self.logger.info(
-                            " Object recovery queue sending data :" +
+                            "Object recovery queue sending data :" +
                             str(record))
                         ret, msg = mq_client.send_data(
                             record, self.config.get_rabbitmq_queue_name())
                         if not ret:
                             self.logger.error(
-                                " Object recovery queue send data "+ str(record) +
+                                "Object recovery queue send data "+ str(record) +
                                 " failed :" + msg)
                         else:
                             self.logger.info(
-                                " Object recovery queue send data successfully :" +
+                                "Object recovery queue send data successfully :" +
                                 str(record))
                     if (is_truncated == "true"):
                         self.add_kv_to_queue(probable_delete_json["NextMarker"])
                 else:
                     self.logger.info(
-                        " Index listing result empty. Ignoring adding entry to object recovery queue")
+                        "Index listing result empty. Ignoring adding entry to object recovery queue")
                     pass
         except BaseException:
             self.logger.error(
-                " Object recovery queue send data exception:" + traceback.format_exc())
+                "Object recovery queue send data exception:" + traceback.format_exc())
         finally:
             if mq_client:
-                mq_client.close()
+               self.logger.info("Closing the mqclient")
+               mq_client.close()
 
     def schedule_periodically(self):
         """Schedule RabbitMQ producer to add key value to queue on hourly basis."""
         # Run RabbitMQ producer periodically on hourly basis
-        self.logger.info(" Producer started at" + str(datetime.datetime.now()))
+        self.logger.info("Producer started at " + str(datetime.datetime.now()))
         scheduled_run = sched.scheduler(time.time, time.sleep)
 
         def periodic_run(scheduler):
@@ -111,7 +114,6 @@ class ObjectRecoveryScheduler(object):
         # add the handlers to the logger
         self.logger.addHandler(fhandler)
         self.logger.addHandler(chandler)
-
 
 if __name__ == "__main__":
     SCHEDULER = ObjectRecoveryScheduler()

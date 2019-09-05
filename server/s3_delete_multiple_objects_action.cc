@@ -282,7 +282,9 @@ void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
   for (const auto& obj : objects_metadata) {
     if (obj->get_state() != S3ObjectMetadataState::invalid) {
       probable_oid_list[S3M0Uint128Helper::to_string(obj->get_oid())] =
-          obj->create_probable_delete_record(obj->get_layout_id());
+          obj->create_probable_delete_record(
+              obj->get_layout_id(),
+              bucket_metadata->get_object_list_index_oid());
     }
   }
 

@@ -107,13 +107,15 @@ class AwsTest(S3PyCliTest):
         self.command = self.command + self.credentials
         return self
 
-    def create_multipart_upload(self, bucket_name, filename, filesize, tags=None):
+    def create_multipart_upload(self, bucket_name, filename, filesize, tags=None, debug_flag=None):
         self.filename = filename
         self.filesize = filesize
         self.bucket_name = bucket_name
         self.tagset = tags
         self.with_cli("aws s3api " + " create-multipart-upload " + " --bucket " + bucket_name + " --key " + filename
                       + " --tagging " + quote(self.tagset) )
+        if(debug_flag is not None):
+           self.command = self.command + " --debug"
         return self
 
     def upload_part(self, bucket_name, filename, filesize, key_name ,part_number, upload_id):
@@ -136,15 +138,27 @@ class AwsTest(S3PyCliTest):
                       + " --upload-id " + upload_id )
         return self
 
-    def put_object(self, bucket_name, object_name, canned_acl=None):
+    def abort_multipart_upload(self, bucket_name, key_name, upload_id):
+        self.key_name = key_name
         self.bucket_name = bucket_name
-        self.object_name = object_name
+        self.upload_id = upload_id
+        self.with_cli("aws s3api " + " abort-multipart-upload " + " --bucket " + bucket_name + " --key " + key_name
+                      + " --upload-id " + upload_id )
+        return self
 
-        if canned_acl:
-            self.canned_acl = canned_acl
-            self.with_cli("aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + object_name + " --acl " + canned_acl)
-        else:
-            self.with_cli("aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + object_name)
+    def put_object(self, bucket_name, filename, filesize=None, canned_acl=None, debug_flag=None):
+        self.bucket_name = bucket_name
+        self.filename = filename
+        cmd = "aws s3api " + "put-object " + "--bucket " + bucket_name + " --key " + filename
+        if(filesize is not None):
+           self.filesize = filesize
+           cmd = cmd + " --body "+ self.filename
+        if(canned_acl is not None):
+           self.canned_acl = canned_acl
+           cmd = cmd + " --acl " + canned_acl
+        if(debug_flag is not None):
+           cmd = cmd + " --debug"
+        self.with_cli(cmd)
         return self
 
     def get_object_acl(self, bucket_name, object_name):
