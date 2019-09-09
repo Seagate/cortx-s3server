@@ -63,6 +63,7 @@ elif ! [ -z "${PATH_SRC}" ]; then
     GIT_VER=$(git --git-dir "${PATH_SRC}"/.git rev-parse --short HEAD)
     mkdir -p s3server-${S3_VERSION}-git${GIT_VER}
     cp -ar "${PATH_SRC}"/. ./s3server-${S3_VERSION}-git${GIT_VER}
+    find ./s3server-${S3_VERSION}-git${GIT_VER} -type f -name CMakeCache.txt -delete;
 fi
 
 cd ~/rpmbuild/SOURCES/

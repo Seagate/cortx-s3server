@@ -919,6 +919,9 @@ mero, mero-devel, halon and s3iamcli packages will be installed from the yum rep
 s3server package will be built from the current source tree
 
 5 - Run status command and make sure all packages installed and configured
+```
+./rpm-deploy.sh -S
+```
 
 6 - If s3server config is not a production config run
 ```

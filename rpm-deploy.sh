@@ -24,12 +24,11 @@ run cluster and print statuses of all installed pkgs
 "
 
 usage() {
-    set +x
     echo "$USAGE" 1>&2;
     exit 1
 }
 
-set -xe
+set -e
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
@@ -93,7 +92,6 @@ status_srv() {
 }
 
 status_pkgs() {
-    set +x
     for test_pkg in s3server-debuginfo s3server halon mero-devel haproxy openldap mero
     do
         set +e
@@ -104,7 +102,6 @@ status_pkgs() {
         [ $inst_stat == 0 ] && status_srv $test_pkg
         set -e
     done
-    set -x
 }
 
 yum_repo_conf() {
