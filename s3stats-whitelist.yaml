@@ -118,3 +118,6 @@
 - sync_keyval_op_success_count
 - read_object_data_success_count
 - write_to_clovis_op_success_count
+# PUT/GET callbacks from libevhtp
+- incoming_object_data_blocks_count
+- outgoing_object_data_blocks_count

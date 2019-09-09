@@ -69,6 +69,7 @@ DEFINE_bool(fake_clovis_getkv, false, "Fake out clovis get key-val");
 DEFINE_bool(fake_clovis_putkv, false, "Fake out clovis put key-val");
 DEFINE_bool(fake_clovis_deletekv, false, "Fake out clovis delete key-val");
 DEFINE_bool(fault_injection, false, "Enable fault Injection flag for testing");
+DEFINE_bool(loading_indicators, false, "Enable logging load indicators");
 
 DEFINE_string(statsd_host, "127.0.0.1", "StatsD daemon host");
 DEFINE_int32(statsd_port, 8125, "StatsD daemon port");

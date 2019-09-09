@@ -377,6 +377,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_consume_incoming_content_shutdown_fail");
+  log_timed_counter(put_timed_counter, "incoming_object_data_blocks");
   if (!clovis_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
