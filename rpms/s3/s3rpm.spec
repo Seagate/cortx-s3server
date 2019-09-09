@@ -19,7 +19,7 @@ BuildRequires: bazel
 BuildRequires: cmake >= 2.8.12
 BuildRequires: libtool
 BuildRequires: mero mero-devel
-BuildRequires: openssl-devel
+BuildRequires: openssl openssl-devel
 BuildRequires: java-1.8.0-openjdk
 BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: maven
@@ -37,6 +37,8 @@ BuildRequires: log4cxx_eos log4cxx_eos-devel
 Requires: mero = %{h_mero_version}
 Requires: libxml2
 Requires: libyaml
+#Supported openssl versions -- CentOS 7 its 1.0.2k, RHEL8 its 1.1.1
+Requires: openssl
 Requires: yaml-cpp
 Requires: gflags
 Requires: glog
@@ -149,3 +151,8 @@ rm -rf %{buildroot}
 systemctl daemon-reload
 systemctl enable s3authserver
 systemctl restart rsyslog
+openssl_version=`rpm -q --queryformat '%{VERSION}' openssl`
+if [ "$openssl_version" != "1.0.2k" ] && [ "$openssl_version" != "1.1.1" ]; then
+  echo "Warning: Unsupported (untested) openssl version [$openssl_version] is installed which may work."
+  echo "Supported openssl versions are [1.0.2k, 1.1.1]"
+fi
