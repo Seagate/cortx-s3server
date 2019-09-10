@@ -24,7 +24,7 @@ class ObjectRecoveryScheduler(object):
         self.config = EOSCoreConfig()
         self.create_logger()
 
-    def add_kv_to_queue(self):
+    def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
         try:
             mq_client = object_recovery_queue.ObjectRecoveryRabbitMq(
@@ -39,12 +39,13 @@ class ObjectRecoveryScheduler(object):
                 self.logger)
             result, index_response = EOSCoreIndexApi(
                 self.config, logger=self.logger).list(
-                    self.config.get_probable_delete_index_id())
+                    self.config.get_probable_delete_index_id(), self.config.get_probable_delete_max_keys(), marker)
             if result:
                 self.logger.info(" Index listing result :" +
                                  str(index_response.get_index_content()))
                 probable_delete_json = index_response.get_index_content()
                 probable_delete_oid_list = probable_delete_json["Keys"]
+                is_truncated = probable_delete_json["IsTruncated"]
                 if (probable_delete_oid_list is not None):
                     for record in probable_delete_oid_list:
                         self.logger.info(
@@ -60,6 +61,8 @@ class ObjectRecoveryScheduler(object):
                             self.logger.info(
                                 " Object recovery queue send data successfully :" +
                                 str(record))
+                    if (is_truncated == "true"):
+                        self.add_kv_to_queue(probable_delete_json["NextMarker"])
                 else:
                     self.logger.info(
                         " Index listing result empty. Ignoring adding entry to object recovery queue")

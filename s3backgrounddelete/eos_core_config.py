@@ -244,3 +244,10 @@ class EOSCoreConfig(object):
             raise KeyError(
                 "Could not parse probable delete index-id from config file " +
                 self._conf_file)
+
+    def get_probable_delete_max_keys(self):
+        """Return maximum number of keys from config file or KeyError."""
+        if 'indexid' in self._config and self._config['indexid']['max_keys']:
+            return self._config['indexid']['max_keys']
+        else:
+            return 1000

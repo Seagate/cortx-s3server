@@ -30,7 +30,7 @@ class EOSCoreIndexApi(EOSCoreClient):
             super(EOSCoreIndexApi, self).__init__(self.config, logger = self._logger, connection=connection)
 
 
-    def list(self, index_id):
+    def list(self, index_id, max_keys=1000, next_marker=None):
         """Perform LIST request and generate response."""
         if index_id is None:
             self._logger.error("Index Id is required.")
@@ -44,8 +44,15 @@ class EOSCoreIndexApi(EOSCoreClient):
         # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
 
         request_uri = '/indexes/' + urllib.parse.quote(index_id)
-
         query_params = ""
+
+        if (next_marker is not None):
+            query_params = urllib.parse.urlencode({'max-keys': max_keys,'marker': next_marker})
+            absolute_request_uri = request_uri + '?' + query_params
+        else:
+            query_params = urllib.parse.urlencode({'max-keys': max_keys})
+            absolute_request_uri = request_uri + '?' + query_params
+
         body = ""
         headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
 
@@ -56,7 +63,7 @@ class EOSCoreIndexApi(EOSCoreClient):
             response = super(
                 EOSCoreIndexApi,
                 self).get(
-                request_uri,
+                absolute_request_uri,
                 headers=headers)
         except Exception as ex:
             self._logger.error(str(ex))
