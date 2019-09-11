@@ -11,6 +11,7 @@ from s3iamcli.get_accountloginprofile_response import GetAccountLoginProfileResp
 from s3iamcli.list_account_response import ListAccountResponse
 from s3iamcli.reset_key_response import ResetAccountAccessKey
 from s3iamcli.config import Config
+from s3iamcli.cli_response import CLIResponse
 
 class AccountLoginProfile:
     def __init__(self, iam_client, cli_args):
@@ -21,8 +22,8 @@ class AccountLoginProfile:
     def list(self):
         # Get host value from url https://iam.seagate.com:9443
         if(self.cli_args.name is None):
-            print("Account name is required.")
-            return
+            message = "Account name is required."
+            CLIResponse.send_error_out(message)
 
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)
 
@@ -36,8 +37,8 @@ class AccountLoginProfile:
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
 
         if(headers['Authorization'] is None):
-            print("Failed to generate v4 signature")
-            sys.exit(1)
+            message = "Failed to generate v4 signature"
+            CLIResponse.send_error_out(message)
         response = ConnMan.send_post_request(body, headers)
         if response['status'] == 200:
             accounts = GetAccountLoginProfileResponse(response)
@@ -46,25 +47,26 @@ class AccountLoginProfile:
                 accounts.print_account_login_profile_info()
             else:
                 # unlikely message corruption case in network
-                print("Failed to list login profile")
-                sys.exit(0)
+                message = "Failed to list login profile"
+                CLIResponse.send_success_out(message)
         elif(response['status'] == 503):
-            print("Failed to get login profile")
-            print("An error occurred (503) when calling the GetAccountLoginProfile operation : " + response['reason'])
+            message = "Failed to get login profile\n" \
+                      "An error occurred (503) when calling the GetAccountLoginProfile operation : " + response['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print("Failed to get login profile")
+            message = "Failed to get login profile\n"
             error = ErrorResponse(response)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)
 
     def create(self):
         if(self.cli_args.name is None or self.cli_args.name is ''):
-            print("Account name is required")
-            return
+            message = "Account name is required"
+            CLIResponse.send_error_out(message)
 
         if(self.cli_args.password is None):
-            print("Account login password is required")
-            return
+            message = "Account login password is required"
+            CLIResponse.send_error_out(message)
 
         passwordResetRequired = False;
         if(self.cli_args.password_reset_required):
@@ -82,8 +84,8 @@ class AccountLoginProfile:
             Config.service, Config.default_region);
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
         if(headers['Authorization'] is None):
-            print("Failed to generate v4 signature")
-            sys.exit(1)
+            message = "Failed to generate v4 signature"
+            CLIResponse.send_error_out(message)
         result = ConnMan.send_post_request(body, headers)
         # Validate response
         if(result['status'] == 201):
@@ -93,28 +95,29 @@ class AccountLoginProfile:
                 profile.print_profile_info()
             else:
                 # unlikely message corruption case in network
-                print("Account login profile was created. For details try get account login profile.")
-                sys.exit(0)
+                message = "Account login profile was created. For details try get account login profile."
+                CLIResponse.send_success_out(message)
         elif(result['status'] == 503):
-            print("Account login profile wasn't created.")
-            print("An error occurred (503) when calling the CreateAccountLoginProfile operation : " + result['reason'])
+            message = "Failed to create Account login profile.\n" \
+                      "An error occurred (503) when calling the CreateAccountLoginProfile operation : " + result['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print("Account login profile wasn't created.")
+            message = "Failed to create Account login profile.\n"
             error = ErrorResponse(result)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)
 
     def update(self):
         if(self.cli_args.name is None):
-            print("Account name is required for UpdateAccountLoginProfile")
-            return
+            message = "Account name is required for UpdateAccountLoginProfile"
+            CLIResponse.send_error_out(message)
 
         passwordResetRequired = False
         if(self.cli_args.password_reset_required):
             passwordResetRequired = True
         if(self.cli_args.password is None) and (self.cli_args.password_reset_required is False) and (self.cli_args.no_password_reset_required is False):
-            print("Please provide password or password-reset flag")
-            return
+            message = "Please provide password or password-reset flag"
+            CLIResponse.send_error_out(message)
 
         # Get host value from url https://iam.seagate.com:9443
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)
@@ -132,19 +135,20 @@ class AccountLoginProfile:
             Config.service, Config.default_region);
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
         if(headers['Authorization'] is None):
-            print("Failed to generate v4 signature")
-            sys.exit(1)
+            message = "Failed to generate v4 signature"
+            CLIResponse.send_error_out(message)
         result = ConnMan.send_post_request(body, headers)
         # Validate response
         if(result['status'] == 200):
-            print("Account login profile updated.")
-            sys.exit(0)
+            message = "Account login profile updated."
+            CLIResponse.send_success_out(message)
         elif(result['status'] == 503):
-            print("Account login profile wasn't Updated.")
-            print("An error occurred (503) when calling the UpdateAccountLoginProfile operation : " + result['reason'])
+            message = "Failed to update Account login profile.\n" \
+                      "An error occurred (503) when calling the UpdateAccountLoginProfile operation : " + result['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print("Account login profile wasn't Updated.")
+            message = "Account login profile wasn't Updated."
             error = ErrorResponse(result)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)
 

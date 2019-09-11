@@ -94,7 +94,7 @@ def account_tests():
     test_msg = "Create account s3test1"
     account_args = {'AccountName': 's3test1', 'Email': 's3test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "Account wasn't created."
-    result = AuthTest(test_msg).create_account(**account_args).execute_test()
+    result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
     result.command_should_match_pattern(account_response_pattern)
 
     test_msg = "List accounts"
@@ -136,7 +136,7 @@ def account_tests():
     new_config_entries = {'SG_LDAP_PASSWD': 'sgiamadmin#', 'SG_LDAP_USER': 'ldapadmin#'}
     update_config_yaml(new_config_entries)
 
-    result = AuthTest(test_msg).list_account().execute_test()
+    result = AuthTest(test_msg).list_account().execute_test(negative_case=True)
 
     result.command_should_match_pattern("Failed to list accounts")
 
@@ -172,7 +172,7 @@ def user_tests():
     account_args = {}
     test_msg = "Delete account aws_iam_test_account"
     account_args = {'AccountName': 'aws_iam_test_account'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test()
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)
 
     test_msg = "Create account aws_iam_test_account"
     account_args = {'AccountName': 'aws_iam_test_account', 'Email': 'iam@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
@@ -267,7 +267,7 @@ def user_tests():
     account_name_flag = "-a"
     password_flag = "--password"
     access_key_args['Duration'] = "500000"
-    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("MaxDurationIntervalExceeded")
 
     #Get Temp Auth Credentials for account with duration less than minimum required
@@ -275,7 +275,7 @@ def user_tests():
     account_name_flag = "-a"
     password_flag = "--password"
     access_key_args['Duration'] = "50"
-    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("MinDurationIntervalNotMaintained")
 
     #Update password Reset Flag and check
@@ -289,7 +289,7 @@ def user_tests():
     test_msg = 'GetTempAuthCredentials failure'
     account_name_flag = "-a"
     password_flag = "--password"
-    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test()
+    result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("PasswordResetRequired")
 
     #Delete account
@@ -325,7 +325,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] = "s3user1New"
     user_args['Password'] = maxPasswordLength;
     result = AuthTest(test_msg).create_login_profile(user_name_flag, password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Failed to create userloginprofile.")
 
     test_msg = 'create user login profile should fail for invalid username.'
@@ -336,7 +336,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] = "s3userinvalidname"
     user_args['Password'] = "abcdef"
     result = AuthTest(test_msg).create_login_profile(user_name_flag, password_flag,\
-              **user_args).execute_test()
+              **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Failed to create userloginprofile.")
 
     test_msg = 'create user login profile should fail for empty username.'
@@ -346,7 +346,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] ="\"\""
     user_args['Password'] = "abcdre"
     result = AuthTest(test_msg).create_login_profile(user_name_flag, password_flag,\
-                **user_args).execute_test()
+                **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Failed to create userloginprofile.")
 
     test_msg = 'create user login profile should fail for username missing.'
@@ -356,7 +356,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] =""
     user_args['Password'] = "abcdref"
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("User name is required for user login-profile creation")
 
     test_msg = 'create user login profile should fail for password missing.'
@@ -366,7 +366,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] ="abcd"
     user_args['Password'] = ""
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("User password is required for user login-profile creation")
 
     test_msg = 'create user login profile should fail for password length less than 6 with PasswordPolicyVoilation.'
@@ -376,7 +376,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] ="s3user1New"
     user_args['Password'] = "abcd"
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("PasswordPolicyVoilation")
 
     test_msg = 'create user login profile should fail with username as root.'
@@ -386,7 +386,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['UserName'] ="root"
     user_args['Password'] = "pqrsef"
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Cannot create account login profile with CreateUserLoginProfile")
 
     test_msg = 'create user login profile should succeed.'
@@ -402,7 +402,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
 
     test_msg = 'create user login profile failed for user with existing login profile'
     result = AuthTest(test_msg).create_login_profile(user_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("EntityAlreadyExists")
 
     #********* Test create user login profile with --password-reset-required *********************
@@ -466,14 +466,14 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args = {}
     user_name_flag = "-n"
     user_args['UserName'] ="abcd"
-    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Failed to get Login Profile")
 
     test_msg = 'GetUserLoginProfile should fail with username as root'
     user_args = {}
     user_name_flag = "-n"
     user_args['UserName'] ="root"
-    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Cannot get account login profile with GetUserLoginProfile")
 
 
@@ -486,7 +486,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args = {}
     user_name_flag = "-n"
     user_args['UserName'] ="loginProfileTestUser"
-    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).get_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("NoSuchEntity")
     test_msg = 'Delete User loginProfileTestUser'
     user_args = {}
@@ -514,7 +514,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = "-n"
     access_key_args['UserName'] ="updateLoginProfileTestUser"
     access_key_args['Password'] = "newPassword"
-    result = AuthTest(test_msg).update_login_profile_with_user_key(user_name_flag , **access_key_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile_with_user_key(user_name_flag , **access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("InvalidUser")
     test_msg = 'Delete access key'
     result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
@@ -539,7 +539,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args = {}
     user_name_flag = "-n"
     user_args['UserName'] ="s3user1New"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Please provide password or password-reset flag")
 
     test_msg = 'UpdateLoginProfile should fail with username as root'
@@ -547,7 +547,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = "-n"
     user_args['UserName'] ="root"
     user_args['Password'] = "newPassword"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Cannot update account login profile with UpdateUserLoginProfile")
 
     test_msg = 'UpdateLoginProfile should fail for password length less than 6 with PasswordPolicyVoilation.'
@@ -555,7 +555,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = "-n"
     user_args['UserName'] ="s3user1New"
     user_args['Password'] = "abcd"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("PasswordPolicyVoilation")
 
     test_msg = 'UpdateLoginProfile is successful with only password-reset flag entered'
@@ -582,7 +582,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = "-n"
     user_args['UserName'] ="updateLoginProfileTestUser"
     user_args['Password'] = "newPassword"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("NoSuchEntity")
     test_msg = 'Delete User updateLoginProfileTestUser'
     user_args = {}
@@ -595,7 +595,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = ""
     user_args['UserName'] =""
     user_args['Password'] = "abcdefd"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile(user_name_flag , **user_args).execute_test(negative_case=True)
     result.command_response_should_have("UserName is required for UpdateUserLoginProfile")
 
     test_msg = 'UpdateLoginProfile failed as user doesnt exist in ldap'
@@ -603,7 +603,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = "-n"
     user_args['UserName'] ="dummyUser"
     user_args['Password'] = "password"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test(negative_case=True)
     result.command_response_should_have("UpdateUserLoginProfile failed")
 
     test_msg = 'UpdateLoginProfile failed for invalid username'
@@ -611,7 +611,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_name_flag = "-n"
     user_args['UserName'] ="dummyUser$"
     user_args['Password'] = "password"
-    result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test()
+    result = AuthTest(test_msg).update_login_profile(user_name_flag ,  **user_args).execute_test(negative_case=True)
     result.command_response_should_have("InvalidParameterValue")
 
 
@@ -650,7 +650,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     account_user_access_key_args['SecretAccessKey'] = S3ClientConfig.secret_key
     account_user_access_key_args['OldPassword'] ="abcdfs"
     account_user_access_key_args['NewPassword'] = "pqrswq"
-    result = AuthTest(test_msg).change_user_password(**account_user_access_key_args).execute_test()
+    result = AuthTest(test_msg).change_user_password(**account_user_access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("ChangePassword failed")
     result.command_response_should_have("InvalidUserType")
 
@@ -660,7 +660,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     test_access_key_args['SecretAccessKey'] = user_access_key_args['SecretAccessKey']
     test_access_key_args['NewPassword'] = "pqrswq"
     test_access_key_args['OldPassword'] = "pqrsqq"
-    result = AuthTest(test_msg).change_user_password(**test_access_key_args).execute_test()
+    result = AuthTest(test_msg).change_user_password(**test_access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("ChangePassword failed")
     result.command_response_should_have("InvalidPassword")
 
@@ -670,7 +670,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     test_access_key_args['SecretAccessKey'] = user_access_key_args['SecretAccessKey']
     test_access_key_args['NewPassword'] = "pqrs"
     test_access_key_args['OldPassword'] = "abcdfs"
-    result = AuthTest(test_msg).change_user_password(**test_access_key_args).execute_test()
+    result = AuthTest(test_msg).change_user_password(**test_access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("ChangePassword failed")
     result.command_response_should_have("PasswordPolicyVoilation")
 
@@ -694,14 +694,14 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     test_msg = 'ChangePassword with same value for oldPassword and newPassword should fail.'
     user_access_key_args['OldPassword'] ="xyzdet"
     user_access_key_args['NewPassword'] = "xyzdet"
-    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("ChangePassword failed")
     result.command_response_should_have("InvalidPassword")
 
     test_msg = 'ChangePassword with empty value i.e\"\" for newPassword should fail.'
     user_access_key_args['OldPassword'] ="xyzdet"
     user_access_key_args['NewPassword'] = "\"\""
-    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test()
+    result = AuthTest(test_msg).change_user_password(**user_access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("ChangePassword failed")
     result.command_response_should_have("Invalid length for parameter NewPassword")
 
@@ -743,7 +743,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     test_msg = 'ChangePassword should fail with another IAM user(i.e.TestUser) accessKey-secretKey, OldPassword and NewPassword.'
     test_user_access_key_args['OldPassword'] ="pqrsdd"
     test_user_access_key_args['NewPassword'] = "xyzadd"
-    result = AuthTest(test_msg).change_user_password(**account_user_access_key_args).execute_test()
+    result = AuthTest(test_msg).change_user_password(**account_user_access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("ChangePassword failed")
     result.command_response_should_have("InvalidUserType")
 
@@ -787,7 +787,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['AccountName'] ="s3test"
     user_args['Password'] = "abcdiu"
     result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("The request was rejected because it attempted to create or update a resource that already exists")
 
     test_msg = 'create account login profile should fail for exceeding max allowed password length.'
@@ -799,8 +799,8 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['AccountName'] ="s3test"
     user_args['Password'] = maxPasswordLength;
     result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
-               **user_args).execute_test()
-    result.command_response_should_have("Account login profile wasn't created")
+               **user_args).execute_test(negative_case=True)
+    result.command_response_should_have("Failed to create Account login profile")
 
     test_msg = 'create account login profile should fail for empty account name.'
     user_args = {}
@@ -809,7 +809,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['AccountName'] ="\"\""
     user_args['Password'] = "abcdriu"
     result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Account name is required")
 
     test_msg = 'create account login profile should fail for account missing name.'
@@ -819,7 +819,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['AccountName'] =""
     user_args['Password'] = "abcdriu"
     result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Account name is required")
 
     test_msg = 'create account login profile should fail for password missing.'
@@ -829,7 +829,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args['AccountName'] ="abcd"
     user_args['Password'] = ""
     result = AuthTest(test_msg).create_account_login_profile(account_name_flag , password_flag,\
-               **user_args).execute_test()
+               **user_args).execute_test(negative_case=True)
     result.command_response_should_have("Account login password is required")
 
     test_msg = "Create account s3test_loginprofile0"
@@ -860,7 +860,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     access_key_args['AccountName'] ="s3test_loginprofile0"
     access_key_args['Password'] = "newPassword"
     result = AuthTest(test_msg).create_account_login_profile(user_name_flag , password_flag,\
-               **access_key_args).execute_test()
+               **access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action.")
     test_msg = 'Delete access key'
     result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
@@ -898,7 +898,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     access_key_args2['SecretAccessKey'] = account_response_elements2['SecretKey']
     access_key_args2['Password'] = "newPassword"
     result = AuthTest(test_msg).create_account_login_profile(user_name_flag , password_flag,\
-                           **access_key_args2).execute_test()
+                           **access_key_args2).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action")
     account_args = {}
     test_msg = "Delete account s3test_loginprofile1"
@@ -989,7 +989,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     access_key_args['Password'] = "abcd"
     account_name_flag = "-n"
     password_flag = "--password"
-    result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **access_key_args).execute_test()
+    result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action.")
     test_msg = 'Delete access key'
     result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
@@ -1017,7 +1017,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     test_msg = 'GetAccountLoginProfile should fail when tried with IAM User accessKey-secretKey'
     account_name_flag = "-n"
     account_args['AccountName'] ="s3test"
-    result = AuthTest(test_msg).get_account_login_profile(account_name_flag , **account_args).execute_test()
+    result = AuthTest(test_msg).get_account_login_profile(account_name_flag , **account_args).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action.")
     test_msg = 'Delete access key'
     result = AuthTest(test_msg).delete_access_key(**account_args).execute_test()
@@ -1108,7 +1108,7 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
     user_args = {}
     user_args['UserName'] = "root"
     user_args['NewUserName'] = "s3root"
-    result = AuthTest(test_msg).update_user(**user_args).execute_test()
+    result = AuthTest(test_msg).update_user(**user_args).execute_test(negative_case=True)
     result.command_response_should_have("Cannot change user name of root user")
 
     test_msg = 'Update User root (new path - /test/success)'
@@ -1170,18 +1170,18 @@ def accesskey_tests():
 
     test_msg = 'Create access key (Allow only 2 credentials per user.)'
     access_key_args['UserName'] = 'root'
-    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("Failed to create access key.")
 
     test_msg = 'Delete access key (user name and access key id combination is incorrect)'
     access_key_args['UserName'] = 'root3'
-    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("Failed to delete access key.")
 
     test_msg = 'Update access key for root user should fail(Change status from Active to Inactive)'
     access_key_args['Status'] = "Inactive"
     access_key_args['UserName'] = 'root'
-    result = AuthTest(test_msg).update_access_key(**access_key_args).execute_test()
+    result = AuthTest(test_msg).update_access_key(**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("Access key status for root user can not be changed")
 
     test_msg = 'Delete access key'
@@ -1277,7 +1277,7 @@ def accesskey_tests():
     user_args['UserName'] = "s3user_2"
     user_args['Path'] = "/test/"
     user2_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /test/$"
-    result = AuthTest(test_msg).create_user(**user_args).execute_test()
+    result = AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action")
 
     '''
@@ -1301,7 +1301,7 @@ def accesskey_tests():
     S3ClientConfig.access_key_id = access_key_id_of_s3user1
     S3ClientConfig.secret_key = secret_key_of_s3user1
     access_key_args['UserName'] = 's3user_2'
-    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action")
 
 
@@ -1331,7 +1331,7 @@ def accesskey_tests():
     test_msg = 'Delete access key of s3user_1 using s3user_2\'s access key' \
                + ' and secret key'
     access_key_args['UserName'] = 's3user_1'
-    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test()
+    result = AuthTest(test_msg).delete_access_key(**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action")
 
     '''
@@ -1353,7 +1353,7 @@ def accesskey_tests():
     '''
     test_msg = "Delete User s3user_1 using s3user_2's access key and secret key"
     user_args['UserName'] = "s3user_1"
-    result = AuthTest(test_msg).delete_user(**user_args).execute_test()
+    result = AuthTest(test_msg).delete_user(**user_args).execute_test(negative_case=True)
     result.command_response_should_have("User is not authorized to perform invoked action")
 
     '''
@@ -1405,7 +1405,7 @@ def accesskey_tests():
                +  "(user name is s3user_2)"
     access_key_args = {}
     access_key_args['UserName'] = 's3user_2'
-    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test()
+    result = AuthTest(test_msg).create_access_key(**access_key_args).execute_test(negative_case=True)
     #import pdb; pdb.set_trace()
     result.command_response_should_have("The request was rejected because it " \
         + "referenced a user that does not exist.")
@@ -1540,7 +1540,7 @@ def delete_account_tests():
 
     account_args = {'AccountName': 's3test'}
     test_msg = "Delete account s3test should fail"
-    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("attempted to delete a resource that has attached subordinate entities")
 
     # Test: create a account s3test1 and try to delete account s3test1 using access
@@ -1557,7 +1557,7 @@ def delete_account_tests():
 
     test_msg = "Delete account s3test1 using credentials of account s3test should fail."
     account_args = {'AccountName': 's3test1'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("You are not authorized to perform this operation.")
 
     # Test: delete account s3test with force option [recursively/forcefully]
@@ -1575,7 +1575,7 @@ def delete_account_tests():
     # Test: delete account with invalid access key and secret key format
     test_msg = "Delete account s3test1 with invalid access key format"
     account_args = {'AccountName': 's3test1'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test() \
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True) \
        .command_response_should_have("The AWS access key Id you provided does not exist in our records.")
 
     # Use access key and secret key of account s3test1
@@ -1609,7 +1609,7 @@ def delete_account_tests():
 
     test_msg = "Delete account s3test1 containing buckets"
     account_args = {'AccountName': 's3test1'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("Account cannot be deleted as it owns some resources.")
 
     S3cmdTest('s3cmd can delete bucket').with_credentials(GlobalTestState.root_access_key, GlobalTestState.root_secret_key)\
@@ -1621,7 +1621,7 @@ def delete_account_tests():
         enable_fi("enable", "always", "clovis_idx_op_fail").\
         execute_test().command_is_successful()
     account_args = {'AccountName': 's3test1'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("Account cannot be deleted")
     S3fiTest('s3cmd disable Fault injection').\
         disable_fi("clovis_idx_op_fail").\
@@ -1668,7 +1668,7 @@ def reset_account_accesskey_tests():
 
     account_args = {'AccountName': 's3test1', 'ldapuser': 'sgiamadmin*',
                     'ldappasswd': 'ldapadmin@'}
-    result = AuthTest(test_msg).reset_account_accesskey(**account_args).execute_test()
+    result = AuthTest(test_msg).reset_account_accesskey(**account_args).execute_test(negative_case=True)
     result.command_should_match_pattern("Account access key wasn't reset.")
 
     #Using old access key should fail now

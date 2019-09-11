@@ -1,3 +1,5 @@
+from s3iamcli.cli_response import CLIResponse
+
 class Group:
     def __init__(self, iam_client, cli_args):
         self.iam_client = iam_client
@@ -6,8 +8,8 @@ class Group:
     def create(self):
         policy_args = {}
         if(self.cli_args.name is None):
-            print("Group name is required.")
-            return
+            message = "Group name is required."
+            CLIResponse.send_error_out(message)
 
         policy_args['GroupName'] = self.cli_args.name
 
@@ -17,9 +19,9 @@ class Group:
         try:
             result = self.iam_client.create_group(**policy_args)
         except Exception as ex:
-            print("Exception occured while creating group.")
-            print(str(ex))
-            return
+            message = "Exception occured while creating group.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         print("GroupId = %s, GroupName = %s, Arn = %s" % (
                 result['Group']['GroupId'],

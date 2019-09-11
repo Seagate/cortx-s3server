@@ -1,4 +1,6 @@
 import os
+from s3iamcli.cli_response import CLIResponse
+
 class AssumeRoleWithSAML:
     def __init__(self, sts_client, cli_args):
         self.sts_client = sts_client
@@ -6,21 +8,21 @@ class AssumeRoleWithSAML:
 
     def create(self):
         if(self.cli_args.saml_principal_arn is None):
-            print("SAML principal ARN is required.")
-            return
+            message = "SAML principal ARN is required."
+            CLIResponse.send_error_out(message)
 
         if(self.cli_args.saml_role_arn is None):
-            print("SAML role ARN is required.")
-            return
+            message = "SAML role ARN is required."
+            CLIResponse.send_error_out(message)
 
         if(self.cli_args.saml_assertion is None):
-            print("SAML assertion is required.")
-            return
+            message = "SAML assertion is required."
+            CLIResponse.send_error_out(message)
 
         assertion_file_path = os.path.abspath(self.cli_args.saml_assertion)
         if(not os.path.isfile(assertion_file_path)):
-            print("Saml assertion file not found.")
-            return
+            message = "Saml assertion file not found."
+            CLIResponse.send_error_out(message)
 
         with open (assertion_file_path, "r") as saml_assertion_file:
             assertion = saml_assertion_file.read()
@@ -36,8 +38,8 @@ class AssumeRoleWithSAML:
         if(not self.cli_args.file is None):
             file_path = os.path.abspath(self.cli_args.file)
             if(not os.path.isfile(file_path)):
-                print("Policy file not found.")
-                return
+                message = "Policy file not found. " + file_path
+                CLIResponse.send_error_out(message)
 
             with open (file_path, "r") as federation_token_file:
                 policy = federation_token_file.read()
@@ -47,9 +49,9 @@ class AssumeRoleWithSAML:
         try:
             result = self.sts_client.assume_role_with_saml(**assume_role_with_saml_args)
         except Exception as ex:
-            print("Exception occured while creating credentials with saml.")
-            print(str(ex))
-            return
+            message = "Exception occured while creating credentials with saml.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         print("AssumedRoleId- %s, AccessKeyId- %s, SecretAccessKey- %s, SessionToken- %s" % (
                 result['AssumedRoleUser']['AssumedRoleId'],

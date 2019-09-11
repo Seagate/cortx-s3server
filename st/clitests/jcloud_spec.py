@@ -174,7 +174,7 @@ for i, val in enumerate(pathstyle_values):
     S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
     test_msg = "JCloudTest Cannot delete account s3secondaccount with buckets"
     account_args = {'AccountName': 's3secondaccount'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
         .command_response_should_have("Account cannot be deleted")
 
     # ************ delete bucket using owner account************

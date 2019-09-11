@@ -43,7 +43,7 @@ def parameter_validation_tests():
     S3ClientConfig.secret_key = "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt"
     user_args = {}
     user_args['UserName'] = "s3user1"
-    AuthTest(test_msg).create_user(**user_args).execute_test()\
+    AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("An error occurred (InvalidAccessKeyId) when"
                                           " calling the CreateUser operation: The AWS "
                                           "access key Id you provided does not exist "
@@ -55,7 +55,7 @@ def parameter_validation_tests():
     S3ClientConfig.secret_key = "INVALID-SECRET-KEY-2oWwM/tha7Wrd4Hc/8yRt"
     user_args = {}
     user_args['UserName'] = "s3user1"
-    AuthTest(test_msg).create_user(**user_args).execute_test()\
+    AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("An error occurred (SignatureDoesNotMatch) when "
                                           "calling the CreateUser operation: The request "
                                           "signature we calculated does not match the "
@@ -69,14 +69,14 @@ def parameter_validation_tests():
     test_msg = "Create user should fail if username is invalid"
     user_args = {}
     user_args['UserName'] = '#invalidusername'
-    AuthTest(test_msg).create_user(**user_args).execute_test()\
+    AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to create user.")
 
     test_msg = "Create user should fail if pathname is invalid"
     user_args = {}
     user_args['UserName'] = 'test_user'
     user_args['Path'] = '#_-=INVALID%PATH/'
-    AuthTest(test_msg).create_user(**user_args).execute_test()\
+    AuthTest(test_msg).create_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to create user.")
 
 before_all()

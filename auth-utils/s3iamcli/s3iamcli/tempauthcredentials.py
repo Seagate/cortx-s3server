@@ -8,6 +8,7 @@ from s3iamcli.conn_manager import ConnMan
 from s3iamcli.error_response import ErrorResponse
 from s3iamcli.get_temp_auth_credentials_response import GetTempAuthCredentialsResponse
 from s3iamcli.config import Config
+from s3iamcli.cli_response import CLIResponse
 
 class TempAuthCredentials:
     def __init__(self, iam_client, cli_args):
@@ -16,12 +17,12 @@ class TempAuthCredentials:
 
     def create(self):
         if(self.cli_args.account_name is None):
-            print("Account Name is required for getting auth credentials")
-            return
+            message = "Account Name is required for getting auth credentials"
+            CLIResponse.send_error_out(message)
 
         if(self.cli_args.password is None):
-            print("Account password is required for getting auth credentials")
-            return
+            message = "Account password is required for getting auth credentials"
+            CLIResponse.send_error_out(message)
 
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)
         epoch_t = datetime.datetime.utcnow();
@@ -46,17 +47,18 @@ class TempAuthCredentials:
             Config.service, Config.default_region);
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
         if(headers['Authorization'] is None):
-            print("Failed to generate v4 signature")
-            sys.exit(1)
+            message = "Failed to generate v4 signature"
+            CLIResponse.send_error_out(message)
         response = ConnMan.send_post_request(body, headers)
         if(response['status'] == 201):
             credentials = GetTempAuthCredentialsResponse(response)
             credentials.print_credentials()
         elif(response['status'] == 503):
-            print("GetTempAuthCredentials not successful")
-            print("An error occurred (503) when calling the GetTempAuthCredentials operation : " + response['reason'])
+            message = "GetTempAuthCredentials not successful\n" \
+            + "An error occurred (503) when calling the GetTempAuthCredentials operation : " + response['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print("GetTempAuthCredentials not successful")
+            message = "GetTempAuthCredentials not successful\n"
             error = ErrorResponse(response)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)

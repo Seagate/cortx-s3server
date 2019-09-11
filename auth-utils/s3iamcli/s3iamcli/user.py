@@ -1,3 +1,5 @@
+from s3iamcli.cli_response import CLIResponse
+
 class User:
     def __init__(self, iam_client, cli_args):
         self.iam_client = iam_client
@@ -5,8 +7,8 @@ class User:
 
     def create(self):
         if(self.cli_args.name is None):
-            print("User name is required for user creation")
-            return
+            message = "User name is required for user creation"
+            CLIResponse.send_error_out(message)
 
         user_args = {}
         user_args['UserName'] = self.cli_args.name
@@ -17,17 +19,17 @@ class User:
         try:
             result = self.iam_client.create_user(**user_args)
         except Exception as ex:
-            print("Failed to create user.")
-            print(str(ex))
-            return
+            message = "Failed to create user.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         print("UserId = %s, ARN = %s, Path = %s" % (result['User']['UserId'],
                     result['User']['Arn'], result['User']['Path']))
 
     def delete(self):
         if(self.cli_args.name is None):
-            print("User name is required to delete user.")
-            return
+            message = "User name is required to delete user."
+            CLIResponse.send_error_out(message)
 
         user_args = {}
         user_args['UserName'] = self.cli_args.name
@@ -35,16 +37,17 @@ class User:
         try:
             self.iam_client.delete_user(**user_args)
         except Exception as ex:
-            print("Failed to delete user.")
-            print(str(ex))
-            return
+            message = "Failed to delete user.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
-        print("User deleted.")
+        message = "User deleted."
+        CLIResponse.send_success_out(message)
 
     def update(self):
         if(self.cli_args.name is None):
-            print("User name is required to update user.")
-            return
+            message = "User name is required to update user."
+            CLIResponse.send_error_out(message)
 
         user_args = {}
         user_args['UserName'] = self.cli_args.name
@@ -58,11 +61,12 @@ class User:
         try:
             self.iam_client.update_user(**user_args)
         except Exception as ex:
-            print("Failed to update user info.")
-            print(str(ex))
-            return
+            message = "Failed to update user info.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
-        print("User Updated.")
+        message = "User Updated."
+        CLIResponse.send_success_out(message)
 
     def list(self):
         user_args = {}
@@ -72,9 +76,9 @@ class User:
         try:
             result = self.iam_client.list_users(**user_args)
         except Exception as ex:
-            print("Failed to list users.")
-            print(str(ex))
-            return
+            message = "Failed to list users.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         for user in result['Users']:
             print("UserId = %s, UserName = %s, ARN = %s, Path = %s" % (user['UserId'],

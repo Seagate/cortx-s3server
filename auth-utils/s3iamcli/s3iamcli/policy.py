@@ -1,4 +1,5 @@
 import os
+from s3iamcli.cli_response import CLIResponse
 
 class Policy:
     def __init__(self, iam_client, cli_args):
@@ -8,17 +9,17 @@ class Policy:
     def create(self):
         policy_args = {}
         if(self.cli_args.name is None):
-            print("Policy name is required.")
-            return
+            message = "Policy name is required."
+            CLIResponse.send_error_out(message)
 
         if(self.cli_args.file is None):
-            print("Policy document is required.")
-            return
+            message = "Policy document is required."
+            CLIResponse.send_error_out(message)
 
         file_path = os.path.abspath(self.cli_args.file)
         if(not os.path.isfile(file_path)):
-            print("Policy file not found.")
-            return
+            message = "Policy file " file_path + " not found. "
+            CLIResponse.send_error_out(message)
 
         policy_args['PolicyName'] = self.cli_args.name
 
@@ -35,9 +36,9 @@ class Policy:
         try:
             result = self.iam_client.create_policy(**policy_args)
         except Exception as ex:
-            print("Exception occured while creating policy.")
-            print(str(ex))
-            return
+            message = "Exception occured while creating policy.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         print("PolicyId = %s, PolicyName = %s, Arn = %s, DefaultVersionId = %s" % (
                 result['Policy']['PolicyId'],

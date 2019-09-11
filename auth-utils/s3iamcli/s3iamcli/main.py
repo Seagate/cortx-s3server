@@ -13,6 +13,7 @@ from boto3.session import Session
 from s3iamcli.config import Credentials
 from s3iamcli.config import Config
 from s3iamcli.account import Account
+from s3iamcli.cli_response import CLIResponse
 
 class S3IamCli:
     def iam_usage(self):
@@ -98,8 +99,8 @@ class S3IamCli:
             shutil.copy(os.path.join(self.get_conf_dir(),'s3iamclicfg.yaml'), conf_file)
 
         if not os.access(conf_file, os.R_OK):
-            print("Failed to read " + conf_file + " it doesn't have read access")
-            sys.exit()
+            message = "Failed to read " + conf_file + " it doesn't have read access"
+            CLIResponse.send_error_out(message)
         with open(conf_file, 'r') as f:
             config = yaml.safe_load(f)
 
@@ -231,9 +232,9 @@ class S3IamCli:
         try:
             class_name = controller_action[cli_args.action.lower()]['controller']
         except Exception as ex:
-            print("Action not found.")
-            print(str(ex))
-            sys.exit(1)
+            message = "Action not found.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
          # Get service for the action
         if(not 'service' in controller_action[cli_args.action.lower()].keys()):
@@ -256,13 +257,13 @@ class S3IamCli:
 
                 cli_args.ldapuser = input("Enter Ldap User Id: ")
                 if not cli_args.ldapuser:
-                    print("Provide Ldap User Id.")
-                    sys.exit(1)
+                    message = "Provide Ldap User Id."
+                    CLIResponse.send_error_out(message)
 
                 cli_args.ldappasswd = getpass.getpass("Enter Ldap password: ")
                 if not cli_args.ldappasswd:
-                    print("Provide Ldap password.")
-                    sys.exit(1)
+                    message = "Provide Ldap password."
+                    CLIResponse.send_error_out(message)
 
             cli_args.access_key = cli_args.ldapuser
             cli_args.secret_key = cli_args.ldappasswd
@@ -282,13 +283,13 @@ class S3IamCli:
 
                 cli_args.access_key = input("Enter Access Key: ")
                 if not cli_args.access_key:
-                    print("Provide access key.")
-                    sys.exit(1)
+                    message = "Provide access key."
+                    CLIResponse.send_error_out(message)
 
                 cli_args.secret_key = getpass.getpass("Enter Secret Key: ")
                 if not cli_args.secret_key:
-                    print("Provide secret key.")
-                    sys.exit(1)
+                    message = "Provide secret key."
+                    CLIResponse.send_error_out(message)
 
         Credentials.access_key = cli_args.access_key
         Credentials.secret_key = cli_args.secret_key
@@ -310,17 +311,17 @@ class S3IamCli:
         try:
             module = self.import_module(module_name)
         except Exception as ex:
-            print("Internal error. Module %s not found" % class_name)
-            print(str(ex))
-            sys.exit(1)
+            message = "Internal error. Module %s not found\n" % class_name
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         # Create an object of the controller (user, role etc)
         try:
             controller_obj = self.str_to_class(module, class_name)(client, cli_args)
         except Exception as ex:
-            print("Internal error. Class %s not found" % class_name)
-            print(str(ex))
-            sys.exit(1)
+            message = "Internal error. Class %s not found\n" % class_name
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         action = controller_action[cli_args.action.lower()]['action']
 
@@ -328,6 +329,6 @@ class S3IamCli:
         try:
             getattr(controller_obj, action)()
         except Exception as ex:
-            print(str(ex))
-            sys.exit(1)
+            message = str(ex)
+            CLIResponse.send_error_out(message)
 

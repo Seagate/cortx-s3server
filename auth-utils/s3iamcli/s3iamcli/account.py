@@ -10,6 +10,7 @@ from s3iamcli.create_account_response import CreateAccountResponse
 from s3iamcli.list_account_response import ListAccountResponse
 from s3iamcli.reset_key_response import ResetAccountAccessKey
 from s3iamcli.config import Config
+from s3iamcli.cli_response import CLIResponse
 
 class Account:
     def __init__(self, iam_client, cli_args):
@@ -18,12 +19,12 @@ class Account:
 
     def create(self):
         if self.cli_args.name is None:
-            print("Account name is required.")
-            return
+            message = "Account name is required."
+            CLIResponse.send_error_out(message)
 
         if self.cli_args.email is None:
-            print("Email Id of the user is required to create an Account")
-            return
+            message = "Email Id of the user is required to create an Account"
+            CLIResponse.send_error_out(message)
         # Get host value from url https://iam.seagate.com:9443
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)
         epoch_t = datetime.datetime.utcnow();
@@ -45,16 +46,17 @@ class Account:
                 account.print_account_info()
             else:
                 # unlikely message corruption case in network
-                print("Account was created. For account details try account listing.")
-                sys.exit(0)
+                message = "Account was created. For account details try account listing."
+                CLIResponse.send_success_out(message)
         elif(response['status'] == 503):
-            print("Account wasn't created.")
-            print("An error occurred (503) when calling the CreateAccount operation : " + response['reason'])
+            message = "Account wasn't created.\n" \
+                      "An error occurred (503) when calling the CreateAccount operation : " + response['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print("Account wasn't created.")
+            message = "Account wasn't created.\n"
             error = ErrorResponse(response)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)
 
     # list all accounts
     def list(self):
@@ -72,7 +74,7 @@ class Account:
 
         if(headers['Authorization'] is None):
             print("Failed to generate v4 signature")
-            sys.exit(1)
+            CLIResponse.send_error_out(message)
         response = ConnMan.send_post_request(body, headers)
 
         if response['status'] == 200:
@@ -85,19 +87,20 @@ class Account:
                 print("Failed to list accounts.")
                 sys.exit(0)
         elif(response['status'] == 503):
-            print("Failed to list accounts!")
-            print("An error occurred (503) when calling the ListAccounts operation : " + response['reason'])
+            message = "Failed to list accounts!\n" \
+                      "An error occurred (503) when calling the ListAccounts operation : " + response['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print("Failed to list accounts!")
+            message = "Failed to list accounts!\n"
             error = ErrorResponse(response)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)
 
     # delete account
     def delete(self):
         if self.cli_args.name is None:
             print('Account name is required.')
-            return
+            CLIResponse.send_error_out(message)
         # Get host value from url https://iam.seagate.com:9443
         url_parse_result  = urllib.parse.urlparse(Config.endpoint)
 
@@ -118,20 +121,21 @@ class Account:
 
         if(headers['Authorization'] is None):
             print("Failed to generate v4 signature")
-            sys.exit(1)
+            CLIResponse.send_error_out(message)
 
         response = ConnMan.send_post_request(body, headers)
 
         if response['status'] == 200:
             print('Account deleted successfully.')
         elif(response['status'] == 503):
-            print("Account cannot be deleted.")
-            print("An error occurred (503) when calling the DeleteAccount operation : " + response['reason'])
+            message = "Account cannot be deleted.\n" \
+                      "An error occurred (503) when calling the DeleteAccount operation : " + response['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print('Account cannot be deleted.')
+            message = 'Account cannot be deleted.\n'
             error = ErrorResponse(response)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)
 
     # Reset Account Access Key
     def reset_access_key(self):
@@ -150,8 +154,8 @@ class Account:
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
 
         if(headers['Authorization'] is None):
-            print("Failed to generate v4 signature")
-            sys.exit(1)
+            message = "Failed to generate v4 signature"
+            CLIResponse.send_error_out(message)
 
         response = ConnMan.send_post_request(body, headers)
         if response['status'] == 201:
@@ -161,13 +165,14 @@ class Account:
                 account.print_account_info()
             else:
                 # unlikely message corruption case in network
-                print("Account access key was reset successfully.")
-                sys.exit(0)
+                message = "Account access key was reset successfully."
+                CLIResponse.send_success_out(message)
         elif(response['status'] == 503):
-            print("Account access key wasn't reset.")
-            print("An error occurred (503) when calling the ResetAccountAccessKey operation : " + response['reason'])
+            message = "Account access key wasn't reset.\n" \
+                      "An error occurred (503) when calling the ResetAccountAccessKey operation : " + response['reason']
+            CLIResponse.send_error_out(message)
         else:
-            print("Account access key wasn't reset.")
+            message = "Account access key wasn't reset.\n"
             error = ErrorResponse(response)
-            error_message = error.get_error_message()
-            print(error_message)
+            message += error.get_error_message()
+            CLIResponse.send_error_out(message)

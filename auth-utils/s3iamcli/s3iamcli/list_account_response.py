@@ -1,6 +1,7 @@
 import logging
 from collections import OrderedDict
 from s3iamcli.authserver_response import AuthServerResponse
+from s3iamcli.cli_response import CLIResponse
 
 class ListAccountResponse(AuthServerResponse):
 
@@ -28,10 +29,10 @@ class ListAccountResponse(AuthServerResponse):
 
     def print_listing_info(self, account):
 
-        print("AccountName = %s, AccountId = %s, CanonicalId = %s, Email = %s" %
+        message = ("AccountName = %s, AccountId = %s, CanonicalId = %s, Email = %s" %
               (self.get_value(account, 'AccountName'), self.get_value(account, 'AccountId'),
                self.get_value(account, 'CanonicalId'), self.get_value(account, 'Email')))
-
+        CLIResponse.send_success_out(message)
     # Validator for list account operation
     def validate_response(self):
 

@@ -1,4 +1,5 @@
 import os
+from s3iamcli.cli_response import CLIResponse
 
 class Role:
     def __init__(self, iam_client, cli_args):
@@ -7,17 +8,17 @@ class Role:
 
     def create(self):
         if(self.cli_args.file is None):
-            print("Assume role policy document is required to create role.")
-            return
+            message = "Assume role policy document is required to create role."
+            CLIResponse.send_error_out(message)
 
         if(self.cli_args.name is None):
             print("RoleName is required to create role.")
-            return
+            CLIResponse.send_error_out(message)
 
         file_path = os.path.abspath(self.cli_args.file)
         if(not os.path.isfile(file_path)):
-            print("File not found.")
-            return
+            message = "File " + file_path + " not found."
+            CLIResponse.send_error_out(message)
 
         with open (file_path, "r") as assume_role_file:
             assume_role_policy = assume_role_file.read()
@@ -32,9 +33,9 @@ class Role:
         try:
             result = self.iam_client.create_role(**role_args)
         except Exception as ex:
-            print("Exception occured while creating role.")
-            print(str(ex))
-            return
+            message = "Exception occured while creating role."
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         print("RoleId = %s, RoleName = %s, ARN = %s, Path = %s" % (result['Role']['RoleId'],
                     result['Role']['RoleName'], result['Role']['Arn'], result['Role']['Path']))
@@ -42,7 +43,7 @@ class Role:
     def delete(self):
         if(self.cli_args.name is None):
             print("Role name is required to delete role.")
-            return
+            CLIResponse.send_error_out(message)
 
         role_args = {}
         role_args['RoleName'] = self.cli_args.name
@@ -50,11 +51,12 @@ class Role:
         try:
             self.iam_client.delete_role(**role_args)
         except Exception as ex:
-            print("Exception occured while deleting role.")
-            print(str(ex))
-            return
+            message = "Exception occured while deleting role."
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
-        print("Role deleted.")
+        message = "Role deleted."
+        CLIResponse.send_success_out(message)
 
     def list(self):
         role_args = {}
@@ -64,9 +66,9 @@ class Role:
         try:
             result = self.iam_client.list_roles(**role_args)
         except Exception as ex:
-            print("Exception occured while listing roles.")
-            print(str(ex))
-            return
+            message = "Exception occured while listing roles.\n"
+            message += str(ex)
+            CLIResponse.send_error_out(message)
 
         for role in result['Roles']:
             print("RoleId = %s, RoleName = %s, ARN = %s, Path = %s" % (role['RoleId'],

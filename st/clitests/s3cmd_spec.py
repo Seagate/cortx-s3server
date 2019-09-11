@@ -148,7 +148,7 @@ S3ClientConfig.secret_key = account_response_elements['SecretKey']
 # ************ try to delete account which is having bucket ************
 test_msg = "Cannot delete account s3secondaccount with buckets"
 account_args = {'AccountName': 's3secondaccount'}
-AuthTest(test_msg).delete_account(**account_args).execute_test()\
+AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
     .command_response_should_have("Account cannot be deleted")
 
 # ************ delete bucket using owner account************

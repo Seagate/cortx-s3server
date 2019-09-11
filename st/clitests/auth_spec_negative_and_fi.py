@@ -46,7 +46,7 @@ def account_tests():
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "FAIL_ONCE", 0).execute_test()
     test_msg = "Create account s3test should fail if save account details fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()
+    auth_test.create_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Account wasn't created.")
     LdapOps().delete_account("s3test")
@@ -54,7 +54,7 @@ def account_tests():
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "SKIP_FIRST_N_TIMES", 1).execute_test()
     test_msg = "Create account s3test should fail when create user ou fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()
+    auth_test.create_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Account wasn't created.")
     LdapOps().delete_account("s3test")
@@ -62,7 +62,7 @@ def account_tests():
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "SKIP_FIRST_N_TIMES", 2).execute_test()
     test_msg = "Create account s3test should fail when create role ou fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()
+    auth_test.create_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Account wasn't created.")
     LdapOps().delete_account("s3test")
@@ -70,7 +70,7 @@ def account_tests():
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "SKIP_FIRST_N_TIMES", 3).execute_test()
     test_msg = "Create account s3test should fail when create groups ou fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()
+    auth_test.create_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Account wasn't created.")
     LdapOps().delete_account("s3test")
@@ -79,7 +79,7 @@ def account_tests():
     test_msg = "Create account s3test should fail when create policy ou fails"
 
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()
+    auth_test.create_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Account wasn't created.")
     LdapOps().delete_account("s3test")
@@ -87,7 +87,7 @@ def account_tests():
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "SKIP_FIRST_N_TIMES", 5).execute_test()
     test_msg = "Create account s3test should fail when create root user account fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()
+    auth_test.create_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Account wasn't created.")
     LdapOps().delete_account("s3test")
@@ -95,7 +95,7 @@ def account_tests():
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "SKIP_FIRST_N_TIMES", 6).execute_test()
     test_msg = "Create account s3test should fail when create access key for root user account fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()
+    auth_test.create_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Account wasn't created.")
     LdapOps().delete_account("s3test")
@@ -115,7 +115,7 @@ def account_tests():
 
     test_msg = "Create account s3test should fail if the account already exist"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()\
+    auth_test.create_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("The request was rejected because it attempted to create an account that already exists.")
 
     # LIST
@@ -129,11 +129,11 @@ def account_tests():
     AuthTest("Set LDAP_SEARCH_FAIL fault point").inject_fault("LDAP_SEARCH_FAIL", "FAIL_ALWAYS", 0).execute_test()
     test_msg = "Create account s3test should fail if search account fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()\
+    auth_test.create_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("Account wasn't created.")
     test_msg = "List accounts should fail if search accounts fails"
     auth_list_test = AuthTest(test_msg)
-    auth_list_test.list_account(**account_args).execute_test()
+    auth_list_test.list_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_list_test.command_response_should_have("Failed to list accounts!")
 
@@ -141,11 +141,11 @@ def account_tests():
     AuthTest("Set LDAP_GET_ATTR_FAIL fault point").inject_fault("LDAP_GET_ATTR_FAIL", "FAIL_ALWAYS", 0).execute_test()
     test_msg = "Create account s3test should fail if find attributes of searched account fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_account(**account_args).execute_test()\
+    auth_test.create_account(**account_args).execute_test(negative_case=True)\
             .command_response_should_have("Account wasn't created.")
     test_msg = "List accounts should fail if find attributes of searched account fails"
     auth_list_test = AuthTest(test_msg)
-    auth_list_test.list_account(**account_args).execute_test()
+    auth_list_test.list_account(**account_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_GET_ATTR_FAIL fault point").reset_fault("LDAP_GET_ATTR_FAIL").execute_test()
     auth_list_test.command_response_should_have("Failed to list accounts!")
 
@@ -157,14 +157,14 @@ def user_tests():
     AuthTest("Set LDAP_SEARCH_FAIL fault point").inject_fault("LDAP_SEARCH_FAIL", "SKIP_FIRST_N_TIMES", 3).execute_test()
     test_msg = "Create user s3user1 should fail if search user fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_user(**user_args).execute_test()
+    auth_test.create_user(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to create user.")
 
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "FAIL_ALWAYS", 0).execute_test()
     test_msg = "Create user should fail if save user fails"
     auth_test = AuthTest(test_msg)
-    auth_test.create_user(**user_args).execute_test()
+    auth_test.create_user(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to create user.")
 
@@ -176,7 +176,7 @@ def user_tests():
 
     test_msg = "Create user should fail if user already exist"
     auth_test = AuthTest(test_msg)
-    auth_test.create_user(**user_args).execute_test()\
+    auth_test.create_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to create user.")
 
     # LIST
@@ -184,7 +184,7 @@ def user_tests():
     test_msg = "List users should fail if find users fails"
     user_args = {}
     auth_test = AuthTest(test_msg)
-    auth_test.list_users(**user_args).execute_test()
+    auth_test.list_users(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to list users.")
 
@@ -195,7 +195,7 @@ def user_tests():
     user_args['UserName'] = "s3user1"
     user_args['NewUserName'] = "s3user11"
     auth_test = AuthTest(test_msg)
-    auth_test.update_user(**user_args).execute_test()
+    auth_test.update_user(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_UPDATE_ENTRY_FAIL fault point").reset_fault("LDAP_UPDATE_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to update user info.")
 
@@ -203,7 +203,7 @@ def user_tests():
     user_args = {}
     user_args['UserName'] = "s3user1"
     auth_test = AuthTest(test_msg)
-    auth_test.update_user(**user_args).execute_test()\
+    auth_test.update_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to update user info.")
 
     test_msg = "Update user fails if new username and old username are same"
@@ -211,7 +211,7 @@ def user_tests():
     user_args['UserName'] = "s3user1"
     user_args['NewUserName'] = "s3user1"
     auth_test = AuthTest(test_msg)
-    auth_test.update_user(**user_args).execute_test()\
+    auth_test.update_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to update user info.")
 
     AuthTest("Set LDAP_SEARCH_FAIL fault point").inject_fault("LDAP_SEARCH_FAIL", "SKIP_FIRST_N_TIMES", 3).execute_test()
@@ -221,7 +221,7 @@ def user_tests():
     user_args['NewUserName'] = "s3userA"
     user_args['NewPath'] = "/test/success/"
     auth_test = AuthTest(test_msg)
-    auth_test.update_user(**user_args).execute_test()
+    auth_test.update_user(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to update user info.")
 
@@ -232,7 +232,7 @@ def user_tests():
     user_args['NewUserName'] = "s3userA"
     user_args['NewPath'] = "/test/success/"
     auth_test = AuthTest(test_msg)
-    auth_test.update_user(**user_args).execute_test()
+    auth_test.update_user(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to update user info.")
 
@@ -242,7 +242,7 @@ def user_tests():
     user_args['NewUserName'] = "s3userA"
     user_args['NewPath'] = "/test/success/"
     auth_test = AuthTest(test_msg)
-    auth_test.update_user(**user_args).execute_test()\
+    auth_test.update_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to update user info.")
 
     # DELETE
@@ -250,7 +250,7 @@ def user_tests():
     test_msg = "Delete user s3user1 should fail if find user fails"
     user_args['UserName'] = "s3user1"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_user(**user_args).execute_test()
+    auth_test.delete_user(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to delete user.")
 
@@ -259,7 +259,7 @@ def user_tests():
     test_msg = "Delete user should fail if delete operation fails"
     user_args['UserName'] = "s3user1"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_user(**user_args).execute_test()
+    auth_test.delete_user(**user_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_DELETE_ENTRY_FAIL fault point").reset_fault("LDAP_DELETE_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to delete user.")
 
@@ -276,7 +276,7 @@ def user_tests():
 
     test_msg = "Delete user s3user1 should fail when it has access key"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_user(**user_args).execute_test()\
+    auth_test.delete_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to delete user.")
 
     test_msg = "Delete access key of s3user1"
@@ -293,7 +293,7 @@ def user_tests():
     test_msg = "Delete user fails when user does not exist"
     user_args['UserName'] = "s3user1"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_user(**user_args).execute_test()\
+    auth_test.delete_user(**user_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to delete user.")
 
 def create_test_user():
@@ -326,7 +326,7 @@ def accesskey_tests():
     test_msg = 'Create access key (user name is root) should fail'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.create_access_key(**access_key_args).execute_test()
+    auth_test.create_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_should_match_pattern("Failed to create access key.")
 
@@ -334,7 +334,7 @@ def accesskey_tests():
     test_msg = 'Create access key (user name is root) should fail'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.create_access_key(**access_key_args).execute_test()
+    auth_test.create_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_should_match_pattern("Failed to create access key.")
 
@@ -342,7 +342,7 @@ def accesskey_tests():
     test_msg = 'Create access key (user name is root) should fail'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.create_access_key(**access_key_args).execute_test()
+    auth_test.create_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_should_match_pattern("Failed to create access key.")
 
@@ -361,28 +361,28 @@ def accesskey_tests():
     access_key_args.pop('UserName', None)
     accesskey_response_pattern = "UserName = root, AccessKeyId = [\w-]*, Status = Active"
     auth_test = AuthTest(test_msg)
-    auth_test.list_access_keys(**access_key_args).execute_test()\
+    auth_test.list_access_keys(**access_key_args).execute_test(negative_case=True)\
             .command_should_match_pattern(accesskey_response_pattern)
 
     AuthTest("Set LDAP_SEARCH_FAIL fault point").inject_fault("LDAP_SEARCH_FAIL", "SKIP_FIRST_N_TIMES", 3).execute_test()
     test_msg = 'List access keys should fail'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.list_access_keys(**access_key_args).execute_test()
+    auth_test.list_access_keys(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to list access keys.")
 
     test_msg = "List access keys should fail if user doesn't exist"
     access_key_args['UserName'] = 'noSuchUser'
     auth_test = AuthTest(test_msg)
-    auth_test.list_access_keys(**access_key_args).execute_test()\
+    auth_test.list_access_keys(**access_key_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to list access keys.")
 
     AuthTest("Set LDAP_SEARCH_FAIL fault point").inject_fault("LDAP_SEARCH_FAIL", "SKIP_FIRST_N_TIMES", 4).execute_test()
     test_msg = 'List access keys should fail'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.list_access_keys(**access_key_args).execute_test()
+    auth_test.list_access_keys(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to list access keys.")
 
@@ -392,7 +392,7 @@ def accesskey_tests():
     access_key_args['Status'] = "Inactive"
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.update_access_key(**access_key_args).execute_test()
+    auth_test.update_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to update access key.")
 
@@ -401,7 +401,7 @@ def accesskey_tests():
     access_key_args['Status'] = "Inactive"
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.update_access_key(**access_key_args).execute_test()
+    auth_test.update_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to update access key.")
 
@@ -410,7 +410,7 @@ def accesskey_tests():
     access_key_args['Status'] = "Inactive"
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.update_access_key(**access_key_args).execute_test()
+    auth_test.update_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_UPDATE_ENTRY_FAIL fault point").reset_fault("LDAP_UPDATE_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to update access key.")
 
@@ -418,14 +418,14 @@ def accesskey_tests():
     access_key_args['Status'] = "Inactive"
     access_key_args['UserName'] = 'NoSuchUser'
     auth_test = AuthTest(test_msg)
-    auth_test.update_access_key(**access_key_args).execute_test()\
+    auth_test.update_access_key(**access_key_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to update access key.")
 
     test_msg = 'Update access key should fail if user is invalid'
     access_key_args['Status'] = "Inactive"
     access_key_args['UserName'] = 's3user2'
     auth_test = AuthTest(test_msg)
-    auth_test.update_access_key(**access_key_args).execute_test()\
+    auth_test.update_access_key(**access_key_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to update access key.")
 
     test_msg = 'Update access key should fail if access key is invalid'
@@ -434,7 +434,7 @@ def accesskey_tests():
     ak_holder = access_key_args['AccessKeyId']
     access_key_args['AccessKeyId'] = "NO-SUCH-ACCESS-KEY"
     auth_test = AuthTest(test_msg)
-    auth_test.update_access_key(**access_key_args).execute_test()\
+    auth_test.update_access_key(**access_key_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to update access key.")
     access_key_args['AccessKeyId'] = ak_holder
 
@@ -443,7 +443,7 @@ def accesskey_tests():
     test_msg = 'Delete access key should fail'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.delete_access_key(**access_key_args).execute_test()
+    auth_test.delete_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to delete access key")
 
@@ -451,35 +451,35 @@ def accesskey_tests():
     test_msg = 'Delete access key should fail'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.delete_access_key(**access_key_args).execute_test()
+    auth_test.delete_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Failed to delete access key")
 
     test_msg = 'Delete access key should fail if username is wrong'
     access_key_args['UserName'] = 's3user2'
     auth_test = AuthTest(test_msg)
-    auth_test.delete_access_key(**access_key_args).execute_test()\
+    auth_test.delete_access_key(**access_key_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to delete access key")
 
     AuthTest("Set LDAP_DELETE_ENTRY_FAIL fault point").inject_fault("LDAP_DELETE_ENTRY_FAIL", "FAIL_ALWAYS", 0).execute_test()
     test_msg = 'Delete access key should fail if delete entry fails'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.delete_access_key(**access_key_args).execute_test()
+    auth_test.delete_access_key(**access_key_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_DELETE_ENTRY_FAIL fault point").reset_fault("LDAP_DELETE_ENTRY_FAIL").execute_test()
     auth_test .command_response_should_have("Failed to delete access key")
 
     test_msg = 'Delete access key'
     access_key_args['UserName'] = 'root'
     auth_test = AuthTest(test_msg)
-    auth_test.delete_access_key(**access_key_args).execute_test()\
+    auth_test.delete_access_key(**access_key_args).execute_test(negative_case=True)\
             .command_response_should_have("Access key deleted.")
 
     test_msg = 'Delete access key should fail if access key is invalid'
     access_key_args['UserName'] = 'root'
     access_key_args['AccessKeyId'] = "INVALID-ACCESS-KEY"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_access_key(**access_key_args).execute_test()\
+    auth_test.delete_access_key(**access_key_args).execute_test(negative_case=True)\
             .command_response_should_have("Failed to delete access key")
 
     delete_test_user()
@@ -495,7 +495,7 @@ def role_tests():
     role_args['RoleName'] = 'S3Test'
     role_args['AssumeRolePolicyDocument'] = policy_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.create_role(**role_args).execute_test()
+    auth_test.create_role(**role_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while creating role")
 
@@ -505,7 +505,7 @@ def role_tests():
     role_args['RoleName'] = 'S3Test'
     role_args['AssumeRolePolicyDocument'] = policy_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.create_role(**role_args).execute_test()
+    auth_test.create_role(**role_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while creating role")
 
@@ -523,7 +523,7 @@ def role_tests():
     role_args['RoleName'] = 'S3Test'
     role_args['AssumeRolePolicyDocument'] = policy_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.create_role(**role_args).execute_test()\
+    auth_test.create_role(**role_args).execute_test(negative_case=True)\
             .command_response_should_have("Exception occured while creating role")
 
     # LIST
@@ -532,14 +532,14 @@ def role_tests():
     role_args = {}
     role_args['RoleName'] = 'S3Test'
     auth_test = AuthTest(test_msg)
-    auth_test.list_roles(**role_args).execute_test()
+    auth_test.list_roles(**role_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while listing roles")
 
     AuthTest("Set LDAP_SEARCH_FAIL fault point").inject_fault("LDAP_SEARCH_FAIL", "SKIP_FIRST_N_TIMES", 3).execute_test()
     test_msg = "Delete role should fail"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_role(**role_args).execute_test()
+    auth_test.delete_role(**role_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while deleting role")
 
@@ -547,18 +547,18 @@ def role_tests():
     AuthTest("Set LDAP_DELETE_ENTRY_FAIL fault point").inject_fault("LDAP_DELETE_ENTRY_FAIL", "FAIL_ALWAYS", 0).execute_test()
     test_msg = "Delete role should fail"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_role(**role_args).execute_test()
+    auth_test.delete_role(**role_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_DELETE_ENTRY_FAIL fault point").reset_fault("LDAP_DELETE_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while deleting role")
 
     test_msg = 'Delete role'
     auth_test = AuthTest(test_msg)
-    auth_test.delete_role(**role_args).execute_test()\
+    auth_test.delete_role(**role_args).execute_test(negative_case=True)\
             .command_response_should_have("Role deleted.")
 
     test_msg = "Delete role should fail if role doesn't exist"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_role(**role_args).execute_test()\
+    auth_test.delete_role(**role_args).execute_test(negative_case=True)\
             .command_response_should_have("Exception occured while deleting role")
 
     # remove following test by making approp. changes in auth_spec
@@ -596,7 +596,7 @@ def saml_provider_tests():
     saml_provider_args['Name'] = 'S3IDP'
     saml_provider_args['SAMLMetadataDocument'] = metadata_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.create_saml_provider(**saml_provider_args).execute_test()
+    auth_test.create_saml_provider(**saml_provider_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while creating saml provider")
 
@@ -606,7 +606,7 @@ def saml_provider_tests():
     saml_provider_args['Name'] = 'S3IDP'
     saml_provider_args['SAMLMetadataDocument'] = metadata_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.create_saml_provider(**saml_provider_args).execute_test()
+    auth_test.create_saml_provider(**saml_provider_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while creating saml provider")
 
@@ -627,7 +627,7 @@ def saml_provider_tests():
     saml_provider_args['Name'] = 'S3IDP'
     saml_provider_args['SAMLMetadataDocument'] = metadata_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.create_saml_provider(**saml_provider_args).execute_test()\
+    auth_test.create_saml_provider(**saml_provider_args).execute_test(negative_case=True)\
             .command_response_should_have("Exception occured while creating saml provider")
 
     # LIST
@@ -635,7 +635,7 @@ def saml_provider_tests():
     test_msg = 'List SAML providers'
     saml_provider_args = {}
     auth_test = AuthTest(test_msg)
-    auth_test.list_saml_providers(**saml_provider_args).execute_test()
+    auth_test.list_saml_providers(**saml_provider_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while listing SAML providers")
 
@@ -646,7 +646,7 @@ def saml_provider_tests():
     saml_provider_args['SAMLProviderArn'] = "arn:seagate:iam:::S3IDP"
     saml_provider_args['SAMLMetadataDocument'] = metadata_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.update_saml_provider(**saml_provider_args).execute_test()
+    auth_test.update_saml_provider(**saml_provider_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while updating SAML provider")
 
@@ -655,7 +655,7 @@ def saml_provider_tests():
     saml_provider_args['SAMLProviderArn'] = "arn:seagate:iam:::S3INVALID"
     saml_provider_args['SAMLMetadataDocument'] = metadata_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.update_saml_provider(**saml_provider_args).execute_test()\
+    auth_test.update_saml_provider(**saml_provider_args).execute_test(negative_case=True)\
             .command_response_should_have("Exception occured while updating SAML provider")
 
     AuthTest("Set LDAP_UPDATE_ENTRY_FAIL fault point").inject_fault("LDAP_UPDATE_ENTRY_FAIL", "FAIL_ALWAYS", 0).execute_test()
@@ -664,7 +664,7 @@ def saml_provider_tests():
     saml_provider_args['SAMLProviderArn'] = "arn:seagate:iam:::S3IDP"
     saml_provider_args['SAMLMetadataDocument'] = metadata_doc_full_path
     auth_test = AuthTest(test_msg)
-    auth_test.update_saml_provider(**saml_provider_args).execute_test()
+    auth_test.update_saml_provider(**saml_provider_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_UPDATE_ENTRY_FAIL fault point").reset_fault("LDAP_UPDATE_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while updating SAML provider")
 
@@ -677,14 +677,14 @@ def saml_provider_tests():
     AuthTest("Set LDAP_SEARCH_FAIL fault point").inject_fault("LDAP_SEARCH_FAIL", "SKIP_FIRST_N_TIMES", 3).execute_test()
     test_msg = "Delete SAML provider should fail"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_saml_provider(**saml_provider_args).execute_test()
+    auth_test.delete_saml_provider(**saml_provider_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_SEARCH_FAIL fault point").reset_fault("LDAP_SEARCH_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while deleting SAML provider")
 
     AuthTest("Set LDAP_DELETE_ENTRY_FAIL fault point").inject_fault("LDAP_DELETE_ENTRY_FAIL", "FAIL_ALWAYS", 0).execute_test()
     test_msg = "Delete SAML provider should fail"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_saml_provider(**saml_provider_args).execute_test()
+    auth_test.delete_saml_provider(**saml_provider_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_DELETE_ENTRY_FAIL fault point").reset_fault("LDAP_DELETE_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while deleting SAML provider")
 
@@ -695,7 +695,7 @@ def saml_provider_tests():
 
     test_msg = "Delete SAML provider should fail if it doesn't exist"
     auth_test = AuthTest(test_msg)
-    auth_test.delete_saml_provider(**saml_provider_args).execute_test()\
+    auth_test.delete_saml_provider(**saml_provider_args).execute_test(negative_case=True)\
             .command_response_should_have("Exception occured while deleting SAML provider")
 
 def get_federation_token_test():
@@ -705,14 +705,14 @@ def get_federation_token_test():
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "SKIP_FIRST_N_TIMES", 1).execute_test()
     test_msg = 'Get Federation Token should fail'
     auth_test = AuthTest(test_msg)
-    auth_test.get_federation_token(**federation_token_args).execute_test()
+    auth_test.get_federation_token(**federation_token_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while creating federation token")
 
     AuthTest("Set LDAP_ADD_ENTRY_FAIL fault point").inject_fault("LDAP_ADD_ENTRY_FAIL", "FAIL_ALWAYS", 0).execute_test()
     test_msg = 'Get Federation Token should fail'
     auth_test = AuthTest(test_msg)
-    auth_test.get_federation_token(**federation_token_args).execute_test()
+    auth_test.get_federation_token(**federation_token_args).execute_test(negative_case=True)
     AuthTest("Reset LDAP_ADD_ENTRY_FAIL fault point").reset_fault("LDAP_ADD_ENTRY_FAIL").execute_test()
     auth_test.command_response_should_have("Exception occured while creating federation token")
 
@@ -721,7 +721,7 @@ def get_federation_token_test():
     federation_token_args['Name'] = 's3root'
     federation_token_args['DurationSeconds'] = '2'
     auth_test = AuthTest(test_msg)
-    auth_test.get_federation_token(**federation_token_args).execute_test()\
+    auth_test.get_federation_token(**federation_token_args).execute_test(negative_case=True)\
             .command_response_should_have("Parameter validation failed")
 
     test_msg = 'Get Federation Token with duration of 905 seconds'
