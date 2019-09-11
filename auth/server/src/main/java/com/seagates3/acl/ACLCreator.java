@@ -115,8 +115,7 @@ class ACLCreator {
       }
       for (String permission : accountPermissionMap.keySet()) {
         for (Account account : accountPermissionMap.get(permission)) {
-          Grantee grantee =
-              new Grantee(account.getCanonicalId(), account.getName());
+          Grantee grantee = new Grantee(account.getId(), account.getName());
           Grant grant =
               new Grant(grantee, actualPermissionsMap.get(permission));
           newAcl.addGrant(grant);

@@ -270,7 +270,7 @@ class ACLRequestValidator {
   boolean isAlreadyExists(List<Account> accountList, Account account) {
     boolean isExists = false;
     for (Account acc : accountList) {
-      if (acc.getCanonicalId().equals(account.getCanonicalId())) {
+      if (acc.getId().equals(account.getId())) {
         isExists = true;
         break;
       }

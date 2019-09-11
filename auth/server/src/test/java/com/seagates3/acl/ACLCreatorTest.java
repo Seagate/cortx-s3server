@@ -136,7 +136,7 @@ import com.seagates3.util.BinaryUtil;
                             .get(0)
                             .getGrantee()
                             .getCanonicalId(),
-                        "fsdfsfsfdsfd12DD");
+                        "1");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(0).getPermission(),
         "FULL_CONTROL");
@@ -145,7 +145,7 @@ import com.seagates3.util.BinaryUtil;
                             .get(1)
                             .getGrantee()
                             .getCanonicalId(),
-                        "wwQQadgfhdfsfsfdsfd12DD");
+                        "2");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(1).getPermission(),
         "FULL_CONTROL");
@@ -198,7 +198,7 @@ import com.seagates3.util.BinaryUtil;
                             .get(0)
                             .getGrantee()
                             .getCanonicalId(),
-                        "fsdfsfsfdsfd12DD");
+                        "1");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(0).getPermission(),
         "FULL_CONTROL");
@@ -207,7 +207,7 @@ import com.seagates3.util.BinaryUtil;
                             .get(1)
                             .getGrantee()
                             .getCanonicalId(),
-                        "wwQQadgfhdfsfsfdsfd12DD");
+                        "2");
     Assert.assertEquals(
         acp.getAccessControlList().getGrantList().get(1).getPermission(),
         "WRITE_ACP");

@@ -141,7 +141,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(mockAccountImpl.findByEmailAddress("xyz@seagate.com"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.exists()).thenReturn(true);
-    Mockito.when(mockAccount.getCanonicalId()).thenReturn("id1");
+    Mockito.when(mockAccount.getId()).thenReturn("id1");
     List<Account> accounts = new ArrayList<>();
     accounts.add(mockAccount);
     accountPermissionMap.put("x-amz-grant-read", accounts);
