@@ -40,13 +40,13 @@ class AccessControlListTest {
   //  getGrant succeeds with matching canonical id
   @Test public void testGetGrant_Success() throws GrantListFullException {
     acl.addGrant(defaultGrant);
-    assertEquals(defaultGrant, acl.getGrant("id1"));
+    assertEquals(defaultGrant, acl.getGrant("id1").get(0));
   }
 
   // getGrant returns null for invalid canonical id
   @Test public void testGetGrant_NotFound() throws GrantListFullException {
     acl.addGrant(defaultGrant);
-    assertEquals(null, acl.getGrant("id2"));
+    assertEquals(0, acl.getGrant("id2").size());
   }
 
   // getGrant returns null for null canonical id

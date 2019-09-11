@@ -20,6 +20,7 @@ package com.seagates3.authorization;
 
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.BadRequestException;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.model.Requestor;
@@ -40,6 +41,8 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import com.seagates3.acl.ACLCreator;
 import com.seagates3.model.Account;
+import com.seagates3.model.Group;
+
 import java.util.HashMap;
 import java.util.List;
 import com.seagates3.acl.ACLAuthorizer;
@@ -56,10 +59,13 @@ public class Authorizer {
         AuthorizationResponseGenerator responseGenerator
                 = new AuthorizationResponseGenerator();
         Map<String, List<Account>> accountPermissionMap = new HashMap<>();
+        Map<String, List<Group>> groupPermissionMap = new HashMap<>();
         LOGGER.debug("request body : " + requestBody.toString());
+        // Here we are assuming that - Authentication is successful hence
+        // proceeding with authorization
         ServerResponse serverResponse =
-            new ACLRequestValidator().validateAclRequest(requestBody,
-                                                         accountPermissionMap);
+            new ACLRequestValidator().validateAclRequest(
+                requestBody, accountPermissionMap, groupPermissionMap);
         if (serverResponse.getResponseStatus() != null &&
             !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
           LOGGER.error("ACL authorization request validation failed");
@@ -88,6 +94,10 @@ public class Authorizer {
                        "ACL, Method or ClientAbsoluteUri");
           return responseGenerator.badRequest();
         }
+        catch (DataAccessException e3) {
+          LOGGER.error("Exception while authorizing ", e3);
+          responseGenerator.internalServerError();
+        }
         // Initialize a  default AccessControlPolicy object and generate
         // authorization response if request header contains param value true
         // for- Request-ACL
@@ -97,10 +107,11 @@ public class Authorizer {
             String acl = null;
             ACLCreator aclCreator = new ACLCreator();
 
-            if (!accountPermissionMap.isEmpty()) {  // permission headers
-                                                    // present
+            if (!accountPermissionMap.isEmpty() ||
+                !groupPermissionMap.isEmpty()) {
               acl = aclCreator.createAclFromPermissionHeaders(
-                  requestor, accountPermissionMap, requestBody);
+                  requestor, accountPermissionMap, groupPermissionMap,
+                  requestBody);
 
             } else if (requestBody.get("x-amz-acl") != null) {
               acl = aclCreator.createACLFromCannedInput(requestor, requestBody);
@@ -178,3 +189,4 @@ public class Authorizer {
      return aclValidation.validate();
    }
  }
+

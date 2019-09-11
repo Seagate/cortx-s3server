@@ -43,4 +43,25 @@ public interface GroupDAO {
      */
     public void save(Group group) throws DataAccessException;
 
+     /**
+      * Find group by path.
+      *
+      * @param path
+      * @return
+      * @throws DataAccessException
+      */
+    public
+     Group findByPath(String path) throws DataAccessException;
+
+     /**
+      * Find group by path and account.
+      *
+      * @param account
+      * @param path
+      * @return
+      * @throws DataAccessException
+      */
+    public
+     Group findByPathAndAccount(Account account,
+                                String path) throws DataAccessException;
 }

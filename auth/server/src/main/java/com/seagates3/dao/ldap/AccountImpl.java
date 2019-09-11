@@ -464,7 +464,8 @@ public class AccountImpl implements AccountDAO {
       Account account = new Account();
       account.setEmail(emailAddress);
 
-      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID};
+      String[] attrs = {LDAPUtils.ORGANIZATIONAL_NAME, LDAPUtils.ACCOUNT_ID,
+                        LDAPUtils.CANONICAL_ID};
       String filter =
           String.format("(&(%s=%s)(%s=%s))", LDAPUtils.EMAIL, emailAddress,
                         LDAPUtils.OBJECT_CLASS, LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -489,6 +490,8 @@ public class AccountImpl implements AccountDAO {
                               .getStringValue());
           account.setId(
               entry.getAttribute(LDAPUtils.ACCOUNT_ID).getStringValue());
+          account.setCanonicalId(
+              entry.getAttribute(LDAPUtils.CANONICAL_ID).getStringValue());
         }
         catch (LDAPException ex) {
           LOGGER.error("Failed to find account details." +

@@ -32,13 +32,18 @@
  */
 
 package com.seagates3.acl;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.dao.ldap.GroupImpl;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
+import com.seagates3.model.Account;
 
 public
 class AccessControlList {
@@ -82,14 +87,78 @@ class AccessControlList {
    * @param CanonicalID
    * @return - {@link Grant}
    */
-  Grant getGrant(String CanonicalID) {
+  List<Grant> getGrant(String CanonicalID) {
+    List<Grant> matchingGrantList = new ArrayList<>();
     if (CanonicalID == null) return null;
     for (int counter = 0; counter < grantList.size(); counter++) {
       if (CanonicalID.equals(grantList.get(counter).grantee.canonicalId)) {
-        return grantList.get(counter);
+        matchingGrantList.add(grantList.get(counter));
       }
     }
+    return matchingGrantList;
+  }
 
-    return null;
+  /**
+   * Below method will check if permission availble for requested account
+   *
+   * @param account
+   * @param requiredPermission
+   * @param acp
+   * @return
+   * @throws DataAccessException
+   */
+ public
+  boolean isPermissionAvailable(Account account, String requiredPermission,
+                                String ownerId, boolean isUserAuthenticated)
+      throws DataAccessException {
+    boolean isPermissionAvailable = false;
+    if (account != null) {
+      for (int counter = 0; counter < this.getGrantList().size(); counter++) {
+        Grant grantRecord = this.getGrantList().get(counter);
+        GroupImpl groupImpl = new GroupImpl();
+        String canonicalId = grantRecord.grantee.canonicalId;
+        String uri = grantRecord.grantee.uri;
+        if ((account.getCanonicalId().equals(canonicalId)) ||
+            (isUserAuthenticated &&
+             groupImpl.isPartOfAuthenticatedUsersGroup(uri)) ||
+            groupImpl.isPartOfAllUsersGroup(uri) ||
+            (uri != null &&
+             groupImpl.findByPathAndAccount(account, uri).exists())) {
+          Grant grant = this.getGrantList().get(counter);
+          if (hasPermission(grant, requiredPermission, account.getCanonicalId(),
+                            ownerId)) {
+            isPermissionAvailable = true;
+            break;
+          }
+        }
+      }
+    }
+    return isPermissionAvailable;
+  }
+
+  /**
+     * Method actually checks expected and required permissions
+     *
+     * @param grant
+     * @param requiredPermission
+     * @param canonicalId
+     * @param acp
+     * @return
+     */
+ private
+  boolean hasPermission(Grant grant, String requiredPermission,
+                        String canonicalId, String ownerId) {
+    if (grant == null) return false;
+    String permissionGrant = grant.getPermission();
+    if ("FULL_CONTROL".equals(permissionGrant) ||
+        requiredPermission.equals(permissionGrant)) {
+      return true;
+    } else if (canonicalId.equals(ownerId) &&
+               ("READ_ACP".equals(requiredPermission) ||
+                "WRITE_ACP".equals(requiredPermission))) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import com.seagates3.exception.BadRequestException;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.ACLPermissionUtil;
@@ -53,11 +54,13 @@ class ACLAuthorizer {
    * @throws IOException
    * @throws BadRequestException
    * @throws GrantListFullException
+   * @throws DataAccessException
    */
  public
   boolean isAuthorized(Requestor requestor, Map<String, String> requestBody)
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     String encodedACL = requestBody.get("ACL");
     if (encodedACL == null || encodedACL.isEmpty()) {
       String ex = "Bad request. Resource ACL absent in the request.";
@@ -65,7 +68,7 @@ class ACLAuthorizer {
       throw new BadRequestException(ex);
     }
 
-    AccessControlPolicy acl =
+    AccessControlPolicy acp =
         new AccessControlPolicy(BinaryUtil.base64DecodeString(encodedACL));
     String method = requestBody.get("Method");
     if (method == null || method.isEmpty()) {
@@ -84,31 +87,14 @@ class ACLAuthorizer {
     }
 
     if (requestor != null) {
-      String canonicalId = requestor.getAccount().getCanonicalId();
-      Grant grant = acl.getAccessControlList().getGrant(canonicalId);
-
-      if (grant == null) {
-        LOGGER.debug("No Grants found in ACL for Canonical id: " + canonicalId);
+      boolean isAuthorized = acp.getAccessControlList().isPermissionAvailable(
+          requestor.getAccount(), requiredPermission,
+          acp.getOwner().getCanonicalId(), true);
+      if (!isAuthorized) {
+        LOGGER.debug("No Grants found in ACL for requested account");
         return false;
       }
-
-      String permissionGrant = grant.getPermission();
-      if ("FULL_CONTROL".equals(permissionGrant) ||
-          requiredPermission.equals(permissionGrant)) {
-        LOGGER.info("The resource ACL grants permission for the requestor.");
-        return true;
-      } else if (canonicalId.equals(acl.getOwner().getCanonicalId()) &&
-                 ("READ_ACP".equals(requiredPermission) ||
-                  "WRITE_ACP".equals(requiredPermission))) {
-        LOGGER.info("The resource ACL grants permission for the requestor.");
-        return true;
-      } else {
-        LOGGER.info(
-            "Required permission for the requestor not present in resource " +
-            "ACL");
-        return false;
-      }
-
+      return true;
     } else {
       // TODO: Code for Groups and Roles
       return false;  // temporary, till this part is implemented

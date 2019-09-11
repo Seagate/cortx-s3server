@@ -28,12 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.exception.InternalServerException;
+import com.seagates3.model.Group;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -42,11 +44,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.xml.sax.SAXException;
 
-import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.exception.GrantListFullException;
-import com.seagates3.exception.InternalServerException;
 import com.seagates3.model.Account;
-import com.seagates3.model.Group;
 import com.seagates3.model.Requestor;
 import com.seagates3.util.BinaryUtil;
 
@@ -54,17 +53,17 @@ import com.seagates3.util.BinaryUtil;
     @PrepareForTest({Files.class}) public class ACLCreatorTest {
 
  private
-  static ACLCreator spyAclCreator;
+  ACLCreator spyAclCreator;
  private
-  static Requestor requestor;
+  Requestor requestor;
  private
-  static Account account1, account2;
+  Account account1, account2;
  private
   Map<String, String> requestBody = null;
-  static String aclXmlPath = null;
-  static File xmlFile = null;
+  String aclXmlPath = null;
+  File xmlFile = null;
 
-  @BeforeClass public static void setup() {
+  @Before public void setup() {
     account1 = new Account();
     account1.setId("1");
     account1.setName("Acc1");
@@ -82,10 +81,9 @@ import com.seagates3.util.BinaryUtil;
   }
 
   /**
-   * Below will test default acl creation
-   *
-   * @throws Exception
-   */
+ *Below will test default acl creation
+ *@throws Exception
+ **/
   @Test public void testCreateDefaultAcl() throws Exception {
     Mockito.doReturn(
                 new String(Files.readAllBytes(Paths.get(xmlFile.getPath()))))
@@ -108,19 +106,21 @@ import com.seagates3.util.BinaryUtil;
   }
 
   /**
-   * Below will test acl creation with permission header
-   *
-   * @throws GrantListFullException
-   * @throws IOException
-   * @throws ParserConfigurationException
-   * @throws SAXException
-   * @throws TransformerException
-   */
+     * Below will test acl creation with permission header
+     *
+     * @throws GrantListFullException
+     * @throws IOException
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws TransformerException
+  */
+
   @Test public void testCreateAclFromPermissionHeaders()
       throws GrantListFullException,
       IOException, ParserConfigurationException, SAXException,
       TransformerException {
     Map<String, List<Account>> accountPermissionMap = new HashMap<>();
+    Map<String, List<Group>> groupPermissionMap = new HashMap<>();
     List<Account> accountList = new ArrayList<>();
     requestBody = new TreeMap<>();
     accountList.add(account1);
@@ -131,7 +131,7 @@ import com.seagates3.util.BinaryUtil;
         .when(spyAclCreator)
         .checkAndCreateDefaultAcp();
     String aclXml = spyAclCreator.createAclFromPermissionHeaders(
-        requestor, accountPermissionMap, requestBody);
+        requestor, accountPermissionMap, groupPermissionMap, requestBody);
     Assert.assertNotNull(aclXml);
     AccessControlPolicy acp = new AccessControlPolicy(aclXml);
     Assert.assertEquals(acp.getAccessControlList().getGrantList().size(), 2);
@@ -157,19 +157,21 @@ import com.seagates3.util.BinaryUtil;
   }
 
   /**
-   * Below test will pass acl through request body and check the response
-   *
-   * @throws GrantListFullException
-   * @throws IOException
-   * @throws ParserConfigurationException
-   * @throws SAXException
-   * @throws TransformerException
-   */
-  @Test public void testCreateAclFromPermissionHeadersAclInRequestBody()
+     * Below test will pass acl through request body and check the response
+     *
+     * @throws GrantListFullException
+     * @throws IOException
+     * @throws ParserConfigurationException
+     * @throws SAXException
+     * @throws TransformerException
+  */
+
+@Test public void testCreateAclFromPermissionHeadersAclInRequestBody()
       throws GrantListFullException,
       IOException, ParserConfigurationException, SAXException,
       TransformerException {
     Map<String, List<Account>> accountPermissionMap = new HashMap<>();
+    Map<String, List<Group>> groupPermissionMap = new HashMap<>();
     List<Account> accountList1 = new ArrayList<>();
     requestBody = new TreeMap<>();
     accountList1.add(account1);
@@ -194,7 +196,7 @@ import com.seagates3.util.BinaryUtil;
 
     requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
     String aclXml = spyAclCreator.createAclFromPermissionHeaders(
-        requestor, accountPermissionMap, requestBody);
+        requestor, accountPermissionMap, groupPermissionMap, requestBody);
     AccessControlPolicy acp = new AccessControlPolicy(aclXml);
     Assert.assertEquals(acp.getAccessControlList().getGrantList().size(), 2);
     Assert.assertEquals(acp.getAccessControlList()
@@ -429,4 +431,5 @@ import com.seagates3.util.BinaryUtil;
     new ACLCreator().createACLFromCannedInput(acc2Requestor, requestBody);
   }
 }
+
 

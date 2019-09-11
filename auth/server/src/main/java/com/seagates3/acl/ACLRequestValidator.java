@@ -30,8 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.dao.ldap.AccountImpl;
-import com.seagates3.exception.DataAccessException;
+import com.seagates3.dao.ldap.GroupImpl;
 import com.seagates3.model.Account;
+import com.seagates3.model.Group;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 
@@ -92,7 +93,8 @@ class ACLRequestValidator {
  public
   ServerResponse validateAclRequest(
       Map<String, String> requestBody,
-      Map<String, List<Account>> accountPermissionMap) {
+      Map<String, List<Account>> accountPermissionMap,
+      Map<String, List<Group>> groupPermissionMap) {
     int isCannedAclPresent = 0, isPermissionHeaderPresent = 0,
         isAclPresentInRequestBody = 0;
     ServerResponse response = new ServerResponse();
@@ -128,7 +130,8 @@ class ACLRequestValidator {
     if (response.getResponseBody() == null ||
         response.getResponseStatus() == null) {
       if (isPermissionHeaderPresent == 1) {
-        isValidPermissionHeader(requestBody, response, accountPermissionMap);
+        isValidPermissionHeader(requestBody, response, accountPermissionMap,
+                                groupPermissionMap);
       } else if (isCannedAclPresent == 1 &&
                  !isValidCannedAcl(requestBody.get("x-amz-acl"))) {
         response = responseGenerator.badRequest();
@@ -159,7 +162,8 @@ class ACLRequestValidator {
  protected
   boolean isValidPermissionHeader(
       Map<String, String> requestBody, ServerResponse response,
-      Map<String, List<Account>> accountPermissionMap) {
+      Map<String, List<Account>> accountPermissionMap,
+      Map<String, List<Group>> groupPermissionMap) {
     boolean isValid = true;
     for (String permissionHeader : permissionHeadersSet) {
       if (requestBody.get(permissionHeader) != null) {
@@ -171,7 +175,7 @@ class ACLRequestValidator {
         }
         for (String value : valueList) {
           if (!isGranteeValid(value, response, accountPermissionMap,
-                              permissionHeader)) {
+                              groupPermissionMap, permissionHeader)) {
             LOGGER.error(response.getResponseStatus() +
                          " : Grantee acocunt not valid");
             isValid = false;
@@ -196,35 +200,64 @@ class ACLRequestValidator {
  protected
   boolean isGranteeValid(String grantee, ServerResponse response,
                          Map<String, List<Account>> accountPermissionMap,
+                         Map<String, List<Group>> groupPermissionMap,
                          String permission) {
     boolean isValid = true;
     AccountImpl accountImpl = new AccountImpl();
+    GroupImpl groupImpl = new GroupImpl();
     String granteeDetails = grantee.substring(grantee.indexOf('=') + 1);
     String actualGrantee = grantee.substring(0, grantee.indexOf('='));
     Account account = null;
+    Group group = null;
     try {
       if (granteeDetails != null && !granteeDetails.trim().isEmpty()) {
-        if (actualGrantee.equals("emailaddress")) {
+        if (actualGrantee.equalsIgnoreCase("emailaddress")) {
           account = accountImpl.findByEmailAddress(granteeDetails);
-        } else if (actualGrantee.equals("id")) {
+        } else if (actualGrantee.equalsIgnoreCase("id")) {
           account = accountImpl.findByCanonicalID(granteeDetails);
+        } else if (actualGrantee.equalsIgnoreCase("URI")) {
+          group = groupImpl.getGroup(granteeDetails);
         }
-        // account will be null when neither email nor canonical id specified
-        if (account == null || !account.exists()) {
+        if (account != null && account.exists()) {
+          updateAccountPermissionMap(accountPermissionMap, permission, account);
+        } else if (group != null && group.exists()) {
+          updateGroupPermissionMap(groupPermissionMap, permission, group);
+        } else {
           setInvalidResponse(actualGrantee, response);
           isValid = false;
-        } else {  // update accountPermissionMap
-          updateAccountPermissionMap(accountPermissionMap, permission, account);
         }
+
       } else {
         setInvalidResponse(actualGrantee, response);
         isValid = false;
       }
     }
-    catch (DataAccessException e) {
+    catch (Exception e) {
       isValid = false;
+      LOGGER.error("Exception occurred while validating grantee - ", e);
     }
     return isValid;
+  }
+
+  /**
+   * Updates the map if group exists
+   *
+   * @param groupPermissionMap
+   * @param permission
+   * @param account
+   */
+ private
+  void updateGroupPermissionMap(Map<String, List<Group>> groupPermissionMap,
+                                String permission, Group group) {
+    if (groupPermissionMap.get(permission) == null) {
+      List<Group> groupList = new ArrayList<>();
+      groupList.add(group);
+      groupPermissionMap.put(permission, groupList);
+    } else {
+      if (!isGroupAlreadyExists(groupPermissionMap.get(permission), group)) {
+        groupPermissionMap.get(permission).add(group);
+      }
+    }
   }
 
  private
@@ -257,7 +290,8 @@ class ACLRequestValidator {
       accountList.add(account);
       accountPermissionMap.put(permission, accountList);
     } else {
-      if (!isAlreadyExists(accountPermissionMap.get(permission), account)) {
+      if (!isAccountAlreadyExists(accountPermissionMap.get(permission),
+                                  account)) {
         accountPermissionMap.get(permission).add(account);
       }
     }
@@ -265,15 +299,35 @@ class ACLRequestValidator {
 
   /**
    * Below method will check if account is already present inside list or not
+   *
    * @param accountList
    * @param account
    * @return true/false
    */
  private
-  boolean isAlreadyExists(List<Account> accountList, Account account) {
+  boolean isAccountAlreadyExists(List<Account> accountList, Account account) {
     boolean isExists = false;
     for (Account acc : accountList) {
-      if (acc.getId().equals(account.getId())) {
+      if (acc.getCanonicalId().equals(account.getCanonicalId())) {
+        isExists = true;
+        break;
+      }
+    }
+    return isExists;
+  }
+
+  /**
+   * Below method will check if group is already present inside list or not
+   *
+   * @param groupList
+   * @param group
+   * @return true/false
+   */
+ private
+  boolean isGroupAlreadyExists(List<Group> groupList, Group group) {
+    boolean isExists = false;
+    for (Group grp : groupList) {
+      if (grp.getPath().equals(group.getPath())) {
         isExists = true;
         break;
       }

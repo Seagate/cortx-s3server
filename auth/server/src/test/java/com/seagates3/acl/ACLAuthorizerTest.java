@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import com.seagates3.exception.BadRequestException;
+import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
@@ -105,7 +106,8 @@ class ACLAuthorizerTest {
   // READ permission should grant GET access.
   @Test public void testIsAuthorized_success_READ_For_READ_Grant()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -119,7 +121,8 @@ class ACLAuthorizerTest {
   // Write operation should be disallowed for READ grant
   @Test public void testIsAuthorized_Restrict_WRITE_For_READ_Grant()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -133,7 +136,8 @@ class ACLAuthorizerTest {
   // READ_ACP operation should be disallowed for READ grant
   @Test public void testIsAuthorized_Restrict_READ_ACP_For_READ_Grant()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -147,7 +151,8 @@ class ACLAuthorizerTest {
   // WRITE_ACP operation should be disallowed for READ grant
   @Test public void testIsAuthorized_Restrict_WRITE_ACP_For_READ_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -161,7 +166,8 @@ class ACLAuthorizerTest {
   // READ_ACP operation should be allowed for READ_ACP grant
   @Test public void testIsAuthorized_SUCCESS_READ_ACP_For_READ_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -175,7 +181,8 @@ class ACLAuthorizerTest {
   // READ operation should be disallowed for READ_ACP grant
   @Test public void testIsAuthorized_Restrict_READ_For_READ_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -189,7 +196,8 @@ class ACLAuthorizerTest {
   // WRITE operation should be disallowed for READ_ACP grant
   @Test public void testIsAuthorized_Restrict_WRITE_For_READ_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -203,7 +211,8 @@ class ACLAuthorizerTest {
   // WRITE_ACP operation should be disallowed for READ_ACP grant
   @Test public void testIsAuthorized_Restrict_WRITE_ACP_For_READ_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -217,7 +226,8 @@ class ACLAuthorizerTest {
   // WRITE operation should be allowed for WRITE grant
   @Test public void testIsAuthorized_Success_WRITE_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -231,7 +241,8 @@ class ACLAuthorizerTest {
   // READ operation should be disallowed for WRITE grant
   @Test public void testIsAuthorized_Restrict_READ_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -245,7 +256,8 @@ class ACLAuthorizerTest {
   // READ_ACP operation should be disallowed for WRITE grant
   @Test public void testIsAuthorized_Restrict_READ_ACP_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -259,7 +271,8 @@ class ACLAuthorizerTest {
   // WRITE_ACP operation should be disallowed for WRITE grant
   @Test public void testIsAuthorized_Restrict_WRITE_ACP_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -273,7 +286,8 @@ class ACLAuthorizerTest {
   // WRITE_ACP operation should be allowed for WRITE_ACP grant
   @Test public void testIsAuthorized_Success_WRITE_ACP_For_WRITE_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -287,7 +301,8 @@ class ACLAuthorizerTest {
   // READ operation should be disallowed for WRITE_ACP grant
   @Test public void testIsAuthorized_Restrict_READ_For_WRITE_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -301,7 +316,8 @@ class ACLAuthorizerTest {
   // READ_ACP operation should be disallowed for WRITE_ACP grant
   @Test public void testIsAuthorized_Restrict_READ_ACP_For_WRITE_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -315,7 +331,8 @@ class ACLAuthorizerTest {
   // WRITE operation should be disallowed for WRITE_ACP grant
   @Test public void testIsAuthorized_Restrict_WRITE_For_WRITE_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -329,7 +346,8 @@ class ACLAuthorizerTest {
   // READ operation should be allowed for FULL_CONTROL grant
   @Test public void testIsAuthorized_SUCCESS_READ_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -343,7 +361,8 @@ class ACLAuthorizerTest {
   // READ_ACP operation should be allowed for FULL_CONTROL grant
   @Test public void testIsAuthorized_SUCCESS_READ_ACP_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -357,7 +376,8 @@ class ACLAuthorizerTest {
   // WRITE operation should be allowed for FULL_CONTROL grant
   @Test public void testIsAuthorized_SUCCESS_WRITE_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -371,7 +391,8 @@ class ACLAuthorizerTest {
   // WRITE_ACP operation should be allowed for FULL_CONTROL grant
   @Test public void testIsAuthorized_SUCCESS_WRITE_ACP_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -386,7 +407,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_SUCCESS_READ_HEAD_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "HEAD");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -402,7 +424,8 @@ class ACLAuthorizerTest {
   @Test public void
   testIsAuthorized_SUCCESS_READ_ACP_HEAD_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "HEAD");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -418,7 +441,8 @@ class ACLAuthorizerTest {
   @Test public void
   testIsAuthorized_SUCCESS_WRITE_DELETE_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -434,7 +458,8 @@ class ACLAuthorizerTest {
   @Test public void
   testIsAuthorized_SUCCESS_WRITE_ACP_DELETE_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -449,7 +474,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_SUCCESS_WRITE_POST_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -465,7 +491,8 @@ class ACLAuthorizerTest {
   @Test public void
   testIsAuthorized_SUCCESS_WRITE_ACP_POST_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -479,7 +506,8 @@ class ACLAuthorizerTest {
   // READ operation with HEAD HTTP method should be allowed for READ grant
   @Test public void testIsAuthorized_SUCCESS_READ_HEAD_For_READ_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "HEAD");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -494,7 +522,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_SUCCESS_READ_ACP_HEAD_For_READ_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "HEAD");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -508,7 +537,8 @@ class ACLAuthorizerTest {
   // WRITE operation with DELETE HTTP method should be allowed for WRITE grant
   @Test public void testIsAuthorized_SUCCESS_WRITE_DELETE_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -524,7 +554,8 @@ class ACLAuthorizerTest {
   @Test public void
   testIsAuthorized_SUCCESS_WRITE_ACP_DELETE_For_WRITE_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -538,7 +569,8 @@ class ACLAuthorizerTest {
   // WRITE operation with POST HTTP method should be allowed for WRITE grant
   @Test public void testIsAuthorized_SUCCESS_WRITE_POST_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -554,7 +586,8 @@ class ACLAuthorizerTest {
   @Test public void
   testIsAuthorized_SUCCESS_WRITE_ACP_POST_For_WRITE_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -569,7 +602,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_SUCCESS_WRITE_PUT_For_FULL_CONTROL_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -584,7 +618,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_Restrict_READ_HEAD_For_READ_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "HEAD");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -599,7 +634,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_Restrict_READ_ACP_HEAD_For_READ_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "HEAD");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -613,7 +649,8 @@ class ACLAuthorizerTest {
   // WRITE operation with DELETE HTTP method should be disallowed for READ grant
   @Test public void testIsAuthorized_Restrict_WRITE_DELETE_For_READ_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -628,7 +665,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_Restrict_WRITE_ACP_DELETE_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -643,7 +681,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_Restrict_WRITE_POST_For_WRITE_ACP_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -658,7 +697,8 @@ class ACLAuthorizerTest {
   // grant
   @Test public void testIsAuthorized_Restrict_WRITE_ACP_POST_For_WRITE_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -672,7 +712,8 @@ class ACLAuthorizerTest {
   // WRITE operation with PUT HTTP method should be disallowed for READ grant
   @Test public void testIsAuthorized_Restrict_WRITE_POST_For_READ_GRANT()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -689,7 +730,8 @@ class ACLAuthorizerTest {
           BadRequestException
               .class) public void testIsAuthorized_BadRequestException_Null_Method()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", null);
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -705,7 +747,8 @@ class ACLAuthorizerTest {
           BadRequestException
               .class) public void testIsAuthorized_BadRequestException_Empty_Method()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -721,7 +764,8 @@ class ACLAuthorizerTest {
           BadRequestException
               .class) public void testIsAuthorized_BadRequestException_Invalid_Method()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "INVALID");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -737,7 +781,8 @@ class ACLAuthorizerTest {
           BadRequestException
               .class) public void testIsAuthorized_BadRequestException_NULL_URI()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", "");
@@ -750,7 +795,8 @@ class ACLAuthorizerTest {
   // Unauthorize if user not present in ACL
   @Test public void testIsAuthorized_Restrict_Null_Grant()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "POST");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -771,7 +817,8 @@ class ACLAuthorizerTest {
    */
   @Test public void testIsAuthorized_Success_GET_ACL_For_READ_GRANT_ToOwner()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -792,7 +839,8 @@ class ACLAuthorizerTest {
    */
   @Test public void testIsAuthorized_Success_PUT_ACL_For_READ_GRANT_ToOwner()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
@@ -813,7 +861,8 @@ class ACLAuthorizerTest {
    */
   @Test public void testIsAuthorized_Success_GET_For_READ_GRANT_ToOwner()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -834,7 +883,8 @@ class ACLAuthorizerTest {
    */
   @Test public void testIsAuthorized_Restrict_PUT_For_READ_GRANT_ToOwner()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -855,7 +905,8 @@ class ACLAuthorizerTest {
    */
   @Test public void testIsAuthorized_Restrict_DELETE_For_READ_GRANT_ToOwner()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", requestUri);
@@ -872,7 +923,8 @@ class ACLAuthorizerTest {
           BadRequestException
               .class) public void testIsAuthorized_BadRequestException_NULL_ACP()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ACL", null);
@@ -888,7 +940,8 @@ class ACLAuthorizerTest {
           BadRequestException
               .class) public void testIsAuthorized_BadRequestException_Empty_ACP()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ACL", "");
@@ -904,7 +957,8 @@ class ACLAuthorizerTest {
           SAXException
               .class) public void testIsAuthorized_SAXException_InvalidSpace_ACP()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ACL", " ");
@@ -919,7 +973,8 @@ class ACLAuthorizerTest {
             SAXException
                 .class) public void testIsAuthorized_SAXException_Invalid_ACP()
       throws ParserConfigurationException,
-      SAXException, IOException, BadRequestException, GrantListFullException {
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ACL",

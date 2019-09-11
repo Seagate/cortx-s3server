@@ -53,6 +53,7 @@ class ACLCreator {
       new AuthorizationResponseGenerator();
  private
   static String defaultACP = null;
+
  public
   ACLCreator() { initPermissionsMap(); }
 
@@ -121,37 +122,56 @@ class ACLCreator {
  public
   String createAclFromPermissionHeaders(
       Requestor requestor, Map<String, List<Account>> accountPermissionMap,
+      Map<String, List<Group>> groupPermissionMap,
       Map<String, String> requestBody) throws GrantListFullException,
       IOException, ParserConfigurationException, SAXException,
       TransformerException {
     AccessControlPolicy acp = null;
     AccessControlList newAcl = new AccessControlList();
+    acp = new AccessControlPolicy(checkAndCreateDefaultAcp());
+    updateAclFromAccountMap(accountPermissionMap, newAcl);
+    updateAclFromGroupMap(groupPermissionMap, newAcl);
     if (requestBody.get("ACL") != null) {
-      acp = new AccessControlPolicy(
-          BinaryUtil.base64DecodeString(requestBody.get("ACL")));
+      acp.setOwner(new AccessControlPolicy(
+          BinaryUtil.base64DecodeString(requestBody.get("ACL"))).getOwner());
     } else {
-      acp = new AccessControlPolicy(checkAndCreateDefaultAcp());
+      acp.setOwner(new Owner(requestor.getAccount().getCanonicalId(),
+                             requestor.getAccount().getName()));
+    }
+    acp.setAccessControlList(newAcl);
+    return acp.getXml();
+  }
+
+ private
+  void updateAclFromAccountMap(Map<String, List<Account>> accountPermissionMap,
+                               AccessControlList acl)
+      throws GrantListFullException {
+    for (String permission : accountPermissionMap.keySet()) {
+      for (Account account : accountPermissionMap.get(permission)) {
+        Grantee grantee =
+            new Grantee(account.getCanonicalId(), account.getName());
+        Grant grant = new Grant(grantee, actualPermissionsMap.get(permission));
+        acl.addGrant(grant);
+        LOGGER.info("Updated the acl for " + account.getName() +
+                    " with permission - " + permission);
       }
-      for (String permission : accountPermissionMap.keySet()) {
-        for (Account account : accountPermissionMap.get(permission)) {
-          Grantee grantee =
-              new Grantee(account.getCanonicalId(), account.getName());
-          Grant grant =
-              new Grant(grantee, actualPermissionsMap.get(permission));
-          newAcl.addGrant(grant);
-          LOGGER.info("Updated the acl for " + account.getName() +
-                      " with permission - " + permission);
-        }
+    }
+  }
+
+ private
+  void updateAclFromGroupMap(Map<String, List<Group>> groupPermissionMap,
+                             AccessControlList acl)
+      throws GrantListFullException {
+    for (String permission : groupPermissionMap.keySet()) {
+      for (Group group : groupPermissionMap.get(permission)) {
+        Grantee grantee =
+            new Grantee(null, null, group.getPath(), null, Grantee.Types.Group);
+        Grant grant = new Grant(grantee, actualPermissionsMap.get(permission));
+        acl.addGrant(grant);
+        LOGGER.info("Updated the acl for " + group.getPath() +
+                    " with permission - " + permission);
       }
-      if ("Owner_ID".equals(
-              acp.getOwner().getCanonicalId())) {  // means acl getting created
-                                                   // first time so set
-                                                   // requestor as owner
-        acp.setOwner(new Owner(requestor.getAccount().getCanonicalId(),
-                               requestor.getAccount().getName()));
-      }
-      acp.setAccessControlList(newAcl);
-      return acp.getXml();
+    }
     }
 
    protected
@@ -315,4 +335,5 @@ class ACLCreator {
       return grant;
     }
 }
+
 
