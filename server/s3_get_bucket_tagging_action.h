@@ -25,13 +25,11 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_factory.h"
 
-class S3GetBucketTaggingAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+class S3GetBucketTaggingAction : public S3BucketAction {
 
  public:
   S3GetBucketTaggingAction(
@@ -39,15 +37,13 @@ class S3GetBucketTaggingAction : public S3Action {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
-  void get_metadata();
-  void get_metadata_successful();
-  void get_metadata_failed();
+  void check_metadata_missing_status();
+  void fetch_bucket_info_failed();
   void send_response_to_s3_client();
 
   // google unit tests
   FRIEND_TEST(S3GetBucketTaggingActionTest,
               SendResponseToClientServiceUnavailable);
-  FRIEND_TEST(S3GetBucketTaggingActionTest, GetMetadata);
   FRIEND_TEST(S3GetBucketTaggingActionTest, SendResponseToClientNoSuchBucket);
   FRIEND_TEST(S3GetBucketTaggingActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3GetBucketTaggingActionTest, SendResponseToClientInternalError);

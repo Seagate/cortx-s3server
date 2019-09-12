@@ -25,17 +25,10 @@
 
 #include <memory>
 
-#include "s3_action_base.h"
-#include "s3_bucket_metadata.h"
+#include "s3_bucket_action_base.h"
 #include "s3_clovis_writer.h"
-#include "s3_factory.h"
-#include "s3_log.h"
-#include "s3_object_metadata.h"
-#include "s3_part_metadata.h"
 
-class S3AbortMultipartAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
+class S3AbortMultipartAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3PartMetadata> part_metadata;
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
@@ -50,8 +43,6 @@ class S3AbortMultipartAction : public S3Action {
 
   std::map<std::string, std::string> probable_oid_list;
 
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
@@ -65,7 +56,6 @@ class S3AbortMultipartAction : public S3Action {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
-      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory =
@@ -73,9 +63,7 @@ class S3AbortMultipartAction : public S3Action {
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 
   void setup_steps();
-
-  void fetch_bucket_info();
-  void fetch_bucket_metadata_failed();
+  void fetch_bucket_info_failed();
   void get_multipart_metadata();
   void get_multipart_metadata_status();
   void delete_part_index_with_parts();
@@ -94,7 +82,6 @@ class S3AbortMultipartAction : public S3Action {
 
   // Google tests
   FRIEND_TEST(S3AbortMultipartActionTest, ConstructorTest);
-  FRIEND_TEST(S3AbortMultipartActionTest, FetchBucketInfoTest);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest1);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest2);
   FRIEND_TEST(S3AbortMultipartActionTest, GetMultiPartMetadataTest3);

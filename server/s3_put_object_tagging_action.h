@@ -27,18 +27,13 @@
 #include <string>
 
 #include "s3_factory.h"
-#include "s3_action_base.h"
+#include "s3_object_action_base.h"
 #include "s3_object_metadata.h"
 
-class S3PutObjectTaggingAction : public S3Action {
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
+class S3PutObjectTaggingAction : public S3ObjectAction {
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::shared_ptr<S3PutTagBody> put_object_tag_body;
 
-  m0_uint128 object_list_index_oid;
   std::string new_object_tags;
   std::map<std::string, std::string> object_tags_map;
 
@@ -54,10 +49,8 @@ class S3PutObjectTaggingAction : public S3Action {
   void validate_request_xml_tags();
   void consume_incoming_content();
   void validate_request_body(std::string content);
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
-  void get_object_metadata();
-  void get_object_metadata_failed();
+  void fetch_object_info_failed();
   void save_tags_to_object_metadata();
   void save_tags_to_object_metadata_failed();
   void send_response_to_s3_client();
@@ -70,8 +63,6 @@ class S3PutObjectTaggingAction : public S3Action {
   FRIEND_TEST(S3PutObjectTaggingActionTest, FetchBucketInfo);
   FRIEND_TEST(S3PutObjectTaggingActionTest, FetchBucketInfoFailedNoSuchBucket);
   FRIEND_TEST(S3PutObjectTaggingActionTest, FetchBucketInfoFailedInternalError);
-  FRIEND_TEST(S3PutObjectTaggingActionTest, GetObjectMetadataEmpty);
-  FRIEND_TEST(S3PutObjectTaggingActionTest, GetObjectMetadata);
   FRIEND_TEST(S3PutObjectTaggingActionTest, GetObjectMetadataFailedMissing);
   FRIEND_TEST(S3PutObjectTaggingActionTest,
               GetObjectMetadataFailedInternalError);

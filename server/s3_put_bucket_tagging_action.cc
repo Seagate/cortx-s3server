@@ -25,17 +25,11 @@ S3PutBucketTaggingAction::S3PutBucketTaggingAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3PutTagsBodyFactory> bucket_body_factory)
-    : S3Action(req) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket Tagging. Bucket[%s]\n",
          request->get_bucket_name().c_str());
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
 
   if (bucket_body_factory) {
     put_bucket_tag_body_factory = bucket_body_factory;
@@ -50,7 +44,6 @@ void S3PutBucketTaggingAction::setup_steps() {
   add_task(std::bind(&S3PutBucketTaggingAction::validate_request, this));
   add_task(
       std::bind(&S3PutBucketTaggingAction::validate_request_xml_tags, this));
-  add_task(std::bind(&S3PutBucketTaggingAction::get_metadata, this));
   add_task(
       std::bind(&S3PutBucketTaggingAction::save_tags_to_bucket_metadata, this));
   add_task(
@@ -112,21 +105,7 @@ void S3PutBucketTaggingAction::validate_request_xml_tags() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutBucketTaggingAction::get_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-
-  bucket_metadata->load(
-      std::bind(&S3PutBucketTaggingAction::next, this),
-      std::bind(&S3PutBucketTaggingAction::get_metadata_failed, this));
-
-  // for shutdown testcases, check FI and set shutdown signal
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_bucket_tagging_action_get_metadata_shutdown_fail");
-}
-
-void S3PutBucketTaggingAction::get_metadata_failed() {
+void S3PutBucketTaggingAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");

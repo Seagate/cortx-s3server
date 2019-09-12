@@ -22,13 +22,11 @@
 #ifndef __S3_SERVER_S3_HEAD_BUCKET_ACTION_H__
 #define __S3_SERVER_S3_HEAD_BUCKET_ACTION_H__
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_factory.h"
 
-class S3HeadBucketAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+class S3HeadBucketAction : public S3BucketAction {
 
  public:
   S3HeadBucketAction(
@@ -36,13 +34,11 @@ class S3HeadBucketAction : public S3Action {
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
-  void read_metadata();
-  void read_metadata_failed();
+  void fetch_bucket_info_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
   FRIEND_TEST(S3HeadBucketActionTest, Constructor);
-  FRIEND_TEST(S3HeadBucketActionTest, ReadMetaData);
   FRIEND_TEST(S3HeadBucketActionTest, ReadMetaDataFailedTest1);
   FRIEND_TEST(S3HeadBucketActionTest, ReadMetaDataFailedTest2);
   FRIEND_TEST(S3HeadBucketActionTest, ReadMetaDataFailedTest3);

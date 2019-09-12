@@ -61,14 +61,7 @@ class S3PutBucketTaggingActionTest : public testing::Test {
 
 TEST_F(S3PutBucketTaggingActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
-  EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
   EXPECT_TRUE(action_under_test_ptr->put_bucket_tag_body_factory != nullptr);
-}
-
-TEST_F(S3PutBucketTaggingActionTest, GetMetadata) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test_ptr->get_metadata();
 }
 
 TEST_F(S3PutBucketTaggingActionTest, ValidateRequest) {
@@ -195,9 +188,7 @@ TEST_F(S3PutBucketTaggingActionTest, ValidateInvalidRequestXmlTags) {
 
 TEST_F(S3PutBucketTaggingActionTest, SetTags) {
   action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
-
+      bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), set_tags(_))
@@ -209,53 +200,48 @@ TEST_F(S3PutBucketTaggingActionTest, SetTags) {
 
 TEST_F(S3PutBucketTaggingActionTest, SetTagsWhenBucketMissing) {
   action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
-
+      bucket_meta_factory->mock_bucket_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("NoSuchBucket",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailed) {
   action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
+      bucket_meta_factory->mock_bucket_metadata;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("InternalError",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutBucketTaggingActionTest, SetTagsWhenBucketFailedToLaunch) {
   action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
+      bucket_meta_factory->mock_bucket_metadata;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutBucketTaggingActionTest, SendResponseToClientServiceUnavailable) {
   action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
+      bucket_meta_factory->mock_bucket_metadata;
 
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*request_mock, pause()).Times(1);
@@ -267,8 +253,7 @@ TEST_F(S3PutBucketTaggingActionTest, SendResponseToClientServiceUnavailable) {
 
 TEST_F(S3PutBucketTaggingActionTest, SendResponseToClientMalformedXML) {
   action_under_test_ptr->bucket_metadata =
-      action_under_test_ptr->bucket_metadata_factory
-          ->create_bucket_metadata_obj(request_mock);
+      bucket_meta_factory->mock_bucket_metadata;
 
   action_under_test_ptr->set_s3_error("MalformedXML");
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));

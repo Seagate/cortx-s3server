@@ -25,12 +25,11 @@
 #include <memory>
 #include <string>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_factory.h"
 
-class S3PutBucketTaggingAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
+class S3PutBucketTaggingAction : public S3BucketAction {
   std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3PutTagsBodyFactory> put_bucket_tag_body_factory;
   std::shared_ptr<S3PutTagBody> put_bucket_tag_body;
@@ -51,13 +50,11 @@ class S3PutBucketTaggingAction : public S3Action {
   void validate_request_xml_tags();
   void save_tags_to_bucket_metadata();
   void save_tags_to_bucket_metadata_failed();
-  void get_metadata();
-  void get_metadata_failed();
+  void fetch_bucket_info_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
   FRIEND_TEST(S3PutBucketTaggingActionTest, Constructor);
-  FRIEND_TEST(S3PutBucketTaggingActionTest, GetMetadata);
   FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateRequest);
   FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateInvalidRequest);
   FRIEND_TEST(S3PutBucketTaggingActionTest, ValidateRequestXmlTags);

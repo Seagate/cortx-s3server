@@ -53,12 +53,6 @@ TEST_F(S3DeleteBucketPolicyActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
 }
 
-TEST_F(S3DeleteBucketPolicyActionTest, FetchBucketMetadata) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test_ptr->fetch_bucket_metadata();
-}
-
 TEST_F(S3DeleteBucketPolicyActionTest, DeleteBucketPolicy) {
   action_under_test_ptr->bucket_metadata =
       action_under_test_ptr->bucket_metadata_factory

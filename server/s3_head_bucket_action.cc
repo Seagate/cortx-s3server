@@ -24,42 +24,23 @@
 S3HeadBucketAction::S3HeadBucketAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Head Bucket. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
   setup_steps();
 }
 
 void S3HeadBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3HeadBucketAction::read_metadata, this));
   add_task(std::bind(&S3HeadBucketAction::send_response_to_s3_client, this));
   // ...
 }
 
-void S3HeadBucketAction::read_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
-
-  // Trigger metadata read async operation with callback
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  // bypass shutdown signal check for next task
-  check_shutdown_signal_for_next_task(false);
-  bucket_metadata->load(
-      std::bind(&S3HeadBucketAction::next, this),
-      std::bind(&S3HeadBucketAction::read_metadata_failed, this));
-}
-
-void S3HeadBucketAction::read_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering read_metadata_fail\n");
+void S3HeadBucketAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Bucket metadata load operation failed due to pre launch failure\n");

@@ -24,41 +24,25 @@
 S3GetBucketTaggingAction::S3GetBucketTaggingAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket Tagging. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
   setup_steps();
 }
 
 void S3GetBucketTaggingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetBucketTaggingAction::get_metadata, this));
+  add_task(std::bind(&S3GetBucketTaggingAction::check_metadata_missing_status,
+                     this));
   add_task(
       std::bind(&S3GetBucketTaggingAction::send_response_to_s3_client, this));
   // ...
 }
 
-void S3GetBucketTaggingAction::get_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-
-  // bypass shutdown signal check for next task
-  check_shutdown_signal_for_next_task(false);
-  bucket_metadata->load(
-      std::bind(&S3GetBucketTaggingAction::get_metadata_successful, this),
-      std::bind(&S3GetBucketTaggingAction::get_metadata_failed, this));
-}
-
-void S3GetBucketTaggingAction::get_metadata_successful() {
+void S3GetBucketTaggingAction::check_metadata_missing_status() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (!(bucket_metadata->check_bucket_tags_exists())) {
     set_s3_error("NoSuchTagSetError");
@@ -67,7 +51,7 @@ void S3GetBucketTaggingAction::get_metadata_successful() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3GetBucketTaggingAction::get_metadata_failed() {
+void S3GetBucketTaggingAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering get_metadata_failed\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,

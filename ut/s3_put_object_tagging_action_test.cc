@@ -81,10 +81,6 @@ class S3PutObjectTaggingActionTest : public testing::Test {
 
 TEST_F(S3PutObjectTaggingActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
-  EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != NULL);
-  EXPECT_TRUE(action_under_test_ptr->object_metadata_factory != NULL);
-  EXPECT_EQ(0, action_under_test_ptr->object_list_index_oid.u_lo);
-  EXPECT_EQ(0, action_under_test_ptr->object_list_index_oid.u_hi);
 }
 
 TEST_F(S3PutObjectTaggingActionTest, ValidateRequest) {
@@ -184,52 +180,30 @@ TEST_F(S3PutObjectTaggingActionTest, FetchBucketInfoFailedInternalError) {
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3PutObjectTaggingActionTest, GetObjectMetadataEmpty) {
-  CREATE_BUCKET_METADATA;
-  object_list_indx_oid = {0ULL, 0ULL};
-  action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_object_metadata();
-
-  EXPECT_TRUE(action_under_test_ptr->bucket_metadata != NULL);
-  EXPECT_STREQ("NoSuchKey", action_under_test_ptr->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PutObjectTaggingActionTest, GetObjectMetadata) {
-  CREATE_BUCKET_METADATA;
-  CREATE_OBJECT_METADATA;
-  action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test_ptr->get_object_metadata();
-
-  EXPECT_TRUE(action_under_test_ptr->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
-}
-
 TEST_F(S3PutObjectTaggingActionTest, GetObjectMetadataFailedMissing) {
+  CREATE_BUCKET_METADATA;
   CREATE_OBJECT_METADATA;
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_object_metadata_failed();
+  action_under_test_ptr->fetch_object_info_failed();
 
   EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
   EXPECT_STREQ("NoSuchKey", action_under_test_ptr->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectTaggingActionTest, GetObjectMetadataFailedInternalError) {
+  CREATE_BUCKET_METADATA;
   CREATE_OBJECT_METADATA;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
-  action_under_test_ptr->get_object_metadata_failed();
+
+  action_under_test_ptr->object_list_oid = {0xffff, 0xff1f};
+  action_under_test_ptr->fetch_object_info_failed();
 
   EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
   EXPECT_STREQ("InternalError",
@@ -237,6 +211,7 @@ TEST_F(S3PutObjectTaggingActionTest, GetObjectMetadataFailedInternalError) {
 }
 
 TEST_F(S3PutObjectTaggingActionTest, SetTag) {
+  CREATE_BUCKET_METADATA;
   CREATE_OBJECT_METADATA;
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_tags(_))
       .Times(1);

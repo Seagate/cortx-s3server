@@ -30,7 +30,6 @@ S3BucketAction::S3BucketAction(
     bool skip_auth)
     : S3Action(std::move(req), check_shutdown, std::move(auth_factory),
                skip_auth) {
-
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   if (bucket_meta_factory) {
@@ -46,6 +45,9 @@ S3BucketAction::~S3BucketAction() {
 
 void S3BucketAction::fetch_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
+  if (s3_fi_is_enabled("fail_fetch_bucket_info")) {
+    s3_fi_enable_once("clovis_kv_get_fail");
+  }
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
@@ -54,6 +56,10 @@ void S3BucketAction::fetch_bucket_info() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_bucket_acl_action_fetch_bucket_info_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_bucket_policy_action_get_metadata_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_object_tagging_action_fetch_bucket_info_shutdown_fail");
 }
 
 void S3BucketAction::load_metadata() { fetch_bucket_info(); }

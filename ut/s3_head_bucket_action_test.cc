@@ -59,18 +59,10 @@ class S3HeadBucketActionTest : public testing::Test {
 
 TEST_F(S3HeadBucketActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
-  EXPECT_TRUE(action_under_test_ptr->bucket_metadata_factory != nullptr);
-}
-
-TEST_F(S3HeadBucketActionTest, ReadMetaData) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test_ptr->read_metadata();
 }
 
 TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest1) {
-  action_under_test_ptr->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
+  CREATE_BUCKET_METADATA_OBJ;
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .Times(AtLeast(1))
@@ -78,14 +70,13 @@ TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest1) {
   EXPECT_CALL(*request_mock, pause()).Times(1);
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
-  action_under_test_ptr->read_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   S3Option::get_instance()->set_is_s3_shutting_down(false);
   EXPECT_STREQ("InternalError",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
 
 TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest2) {
-  ;
   action_under_test_ptr->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
   S3Option::get_instance()->set_is_s3_shutting_down(true);
@@ -95,7 +86,7 @@ TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest2) {
   EXPECT_CALL(*request_mock, pause()).Times(1);
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
-  action_under_test_ptr->read_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   S3Option::get_instance()->set_is_s3_shutting_down(false);
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test_ptr->get_s3_error_code().c_str());
@@ -111,7 +102,7 @@ TEST_F(S3HeadBucketActionTest, ReadMetaDataFailedTest3) {
   EXPECT_CALL(*request_mock, pause()).Times(1);
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
-  action_under_test_ptr->read_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   S3Option::get_instance()->set_is_s3_shutting_down(false);
   EXPECT_STREQ("NoSuchBucket",
                action_under_test_ptr->get_s3_error_code().c_str());

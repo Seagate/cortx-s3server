@@ -51,12 +51,6 @@ TEST_F(S3GetBucketPolicyActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
 }
 
-TEST_F(S3GetBucketPolicyActionTest, GetMetadata) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test_ptr->get_metadata();
-}
-
 TEST_F(S3GetBucketPolicyActionTest, SendResponseToClientServiceUnavailable) {
   action_under_test_ptr->bucket_metadata =
       action_under_test_ptr->bucket_metadata_factory

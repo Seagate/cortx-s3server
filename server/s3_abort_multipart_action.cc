@@ -33,12 +33,11 @@ S3AbortMultipartAction::S3AbortMultipartAction(
     std::shared_ptr<ClovisAPI> s3_clovis_apis,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
-    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3Action(std::move(req), false) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   upload_id = request->get_query_string_value("uploadId");
@@ -52,18 +51,6 @@ S3AbortMultipartAction::S3AbortMultipartAction(
 
   multipart_oid = {0ULL, 0ULL};
   part_index_oid = {0ULL, 0ULL};
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = std::move(bucket_meta_factory);
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
-  if (object_meta_factory) {
-    object_metadata_factory = std::move(object_meta_factory);
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
-  }
 
   if (object_mp_meta_factory) {
     object_mp_metadata_factory = std::move(object_mp_meta_factory);
@@ -106,7 +93,6 @@ S3AbortMultipartAction::S3AbortMultipartAction(
 
 void S3AbortMultipartAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
-  add_task(std::bind(&S3AbortMultipartAction::fetch_bucket_info, this));
   add_task(std::bind(&S3AbortMultipartAction::get_multipart_metadata, this));
   if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
     add_task(std::bind(
@@ -121,17 +107,7 @@ void S3AbortMultipartAction::setup_steps() {
   // ...
 }
 
-void S3AbortMultipartAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3AbortMultipartAction::next, this),
-      std::bind(&S3AbortMultipartAction::fetch_bucket_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3AbortMultipartAction::fetch_bucket_metadata_failed() {
+void S3AbortMultipartAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {

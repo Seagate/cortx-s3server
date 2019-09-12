@@ -24,24 +24,18 @@
 S3PutBucketPolicyAction::S3PutBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket Policy. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
   setup_steps();
 }
 
 void S3PutBucketPolicyAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3PutBucketPolicyAction::validate_request, this));
-  add_task(std::bind(&S3PutBucketPolicyAction::get_metadata, this));
   add_task(std::bind(&S3PutBucketPolicyAction::set_policy, this));
   add_task(
       std::bind(&S3PutBucketPolicyAction::send_response_to_s3_client, this));
@@ -91,21 +85,7 @@ void S3PutBucketPolicyAction::validate_request_body(std::string content) {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutBucketPolicyAction::get_metadata() {
-  s3_log(S3_LOG_DEBUG, request_id, "Fetching bucket metadata\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-
-  bucket_metadata->load(
-      std::bind(&S3PutBucketPolicyAction::next, this),
-      std::bind(&S3PutBucketPolicyAction::get_metadata_failed, this));
-
-  // for shutdown testcases, check FI and set shutdown signal
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_bucket_policy_action_get_metadata_shutdown_fail");
-}
-
-void S3PutBucketPolicyAction::get_metadata_failed() {
+void S3PutBucketPolicyAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {

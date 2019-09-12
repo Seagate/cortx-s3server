@@ -24,44 +24,25 @@
 S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req, false) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
          "S3 API: Delete Bucket Policy API. Bucket[%s]\n",
          request->get_bucket_name().c_str());
 
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
   setup_steps();
 }
 
 void S3DeleteBucketPolicyAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3DeleteBucketPolicyAction::fetch_bucket_metadata, this));
   add_task(std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy, this));
   add_task(
       std::bind(&S3DeleteBucketPolicyAction::send_response_to_s3_client, this));
   // ...
 }
 
-void S3DeleteBucketPolicyAction::fetch_bucket_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  // Trigger metadata read async operation with callback
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3DeleteBucketPolicyAction::next, this),
-      std::bind(&S3DeleteBucketPolicyAction::fetch_bucket_metadata_failed,
-                this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3DeleteBucketPolicyAction::fetch_bucket_metadata_failed() {
+void S3DeleteBucketPolicyAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {

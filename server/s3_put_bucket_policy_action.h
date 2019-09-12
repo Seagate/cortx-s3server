@@ -25,14 +25,11 @@
 #include <memory>
 #include <string>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_factory.h"
 
-class S3PutBucketPolicyAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-
+class S3PutBucketPolicyAction : public S3BucketAction {
   std::string new_bucket_policy;
 
  public:
@@ -46,12 +43,10 @@ class S3PutBucketPolicyAction : public S3Action {
   void validate_request_body(std::string content);
   void set_policy();
   void set_policy_failed();
-  void get_metadata();
-  void get_metadata_failed();
+  void fetch_bucket_info_failed();
   void send_response_to_s3_client();
 
   // For Testing purpose
-  FRIEND_TEST(S3PutBucketPolicyActionTest, GetMetadata);
   FRIEND_TEST(S3PutBucketPolicyActionTest, ValidateRequest);
   FRIEND_TEST(S3PutBucketPolicyActionTest, ValidateRequestMoreContent);
   FRIEND_TEST(S3PutBucketPolicyActionTest, SetPolicy);

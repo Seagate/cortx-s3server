@@ -53,12 +53,6 @@ TEST_F(S3PutBucketPolicyActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
 }
 
-TEST_F(S3PutBucketPolicyActionTest, GetMetadata) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test_ptr->get_metadata();
-}
-
 TEST_F(S3PutBucketPolicyActionTest, ValidateRequest) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
       .Times(AtLeast(1));
@@ -108,7 +102,7 @@ TEST_F(S3PutBucketPolicyActionTest, SetPolicyWhenBucketMissing) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
 
-  action_under_test_ptr->get_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("NoSuchBucket",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
@@ -124,7 +118,7 @@ TEST_F(S3PutBucketPolicyActionTest, SetPolicyWhenBucketFailed) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
 
-  action_under_test_ptr->get_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("InternalError",
                action_under_test_ptr->get_s3_error_code().c_str());
 }
@@ -140,7 +134,7 @@ TEST_F(S3PutBucketPolicyActionTest, SetPolicyWhenBucketFailedToLaunch) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
 
-  action_under_test_ptr->get_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test_ptr->get_s3_error_code().c_str());
 }

@@ -24,12 +24,10 @@
 
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 
-class S3GetBucketlocationAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+class S3GetBucketlocationAction : public S3BucketAction {
 
  public:
   S3GetBucketlocationAction(
@@ -38,7 +36,6 @@ class S3GetBucketlocationAction : public S3Action {
 
   void setup_steps();
 
-  virtual void fetch_bucket_info();
   virtual void fetch_bucket_info_failed();
   virtual void send_response_to_s3_client();
 

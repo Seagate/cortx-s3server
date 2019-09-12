@@ -139,11 +139,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest, ConstructorTest) {
   EXPECT_NE(0, action_under_test->number_of_tasks());
 }
 
-TEST_F(S3DeleteMultipleObjectsActionTest, FetchBucketInfo) {
-  CREATE_BUCKET_METADATA;
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-}
-
 TEST_F(S3DeleteMultipleObjectsActionTest,
        ValidateOnAllDataShouldCallNext4ValidData) {
   std::string request_data = SAMPLE_DELETE_REQUEST;
@@ -225,10 +220,8 @@ TEST_F(S3DeleteMultipleObjectsActionTest, ConsumeOnPartialDataShouldDoNothing) {
 TEST_F(S3DeleteMultipleObjectsActionTest,
        FetchBucketInfoFailedBucketNotPresent) {
   CREATE_BUCKET_METADATA;
-
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
-
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed404, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
@@ -243,7 +236,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchBucketInfoFailedWithError) {
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
-
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
@@ -260,7 +252,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
-
   action_under_test->fetch_objects_info();
 }
 
@@ -280,7 +271,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_keyval(_, keys, _, _))
       .Times(AtLeast(1));
-
   action_under_test->fetch_objects_info();
   EXPECT_EQ(2, action_under_test->delete_index_in_req);
 }
@@ -295,7 +285,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectInfoFailed) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
-
   action_under_test->fetch_objects_info_failed();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
@@ -324,7 +313,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_keyval(_, missing_key, _, _))
       .Times(AtLeast(1));
-
   action_under_test->fetch_objects_info_failed();
 }
 
@@ -352,7 +340,6 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
-
   action_under_test->fetch_objects_info_failed();
 }
 

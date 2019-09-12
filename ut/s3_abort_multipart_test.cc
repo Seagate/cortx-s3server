@@ -60,8 +60,6 @@ class S3AbortMultipartActionTest : public testing::Test {
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
             ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
             upload_id);
-    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
@@ -73,15 +71,13 @@ class S3AbortMultipartActionTest : public testing::Test {
 
     action_under_test.reset(new S3AbortMultipartAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
-        object_mp_meta_factory, object_meta_factory, part_meta_factory,
-        clovis_writer_factory, clovis_kvs_reader_factory,
-        clovis_kvs_writer_factory));
+        object_mp_meta_factory, part_meta_factory, clovis_writer_factory,
+        clovis_kvs_reader_factory, clovis_kvs_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
-  std::shared_ptr<MockS3ObjectMetadataFactory> object_meta_factory;
   std::shared_ptr<MockS3PartMetadataFactory> part_meta_factory;
   std::shared_ptr<MockS3ObjectMultipartMetadataFactory> object_mp_meta_factory;
   std::shared_ptr<MockS3ClovisWriterFactory> clovis_writer_factory;
@@ -103,13 +99,6 @@ class S3AbortMultipartActionTest : public testing::Test {
 TEST_F(S3AbortMultipartActionTest, ConstructorTest) {
   EXPECT_NE(0, action_under_test->number_of_tasks());
   EXPECT_TRUE(action_under_test->s3_clovis_api != NULL);
-}
-
-TEST_F(S3AbortMultipartActionTest, FetchBucketInfoTest) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test->fetch_bucket_info();
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
 }
 
 TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest1) {
@@ -154,7 +143,7 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest3) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 }
 
 TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest5) {
@@ -167,7 +156,7 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest5) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 }
 
 TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest6) {
@@ -180,7 +169,7 @@ TEST_F(S3AbortMultipartActionTest, GetMultiPartMetadataTest6) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 }
 
 TEST_F(S3AbortMultipartActionTest, DeleteMultipartMetadataTest1) {

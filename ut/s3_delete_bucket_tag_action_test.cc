@@ -57,12 +57,6 @@ TEST_F(S3DeleteBucketTaggingActionTest, Constructor) {
   EXPECT_NE(0, action_under_test_ptr->number_of_tasks());
 }
 
-TEST_F(S3DeleteBucketTaggingActionTest, FetchBucketMetadata) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(1);
-  action_under_test_ptr->fetch_bucket_metadata();
-}
-
 TEST_F(S3DeleteBucketTaggingActionTest, DeleteBucketTaggingSuccessful) {
 
   action_under_test_ptr->bucket_metadata =
@@ -89,7 +83,7 @@ TEST_F(S3DeleteBucketTaggingActionTest,
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(1);
-  action_under_test_ptr->fetch_bucket_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
 }
 
 TEST_F(S3DeleteBucketTaggingActionTest,
@@ -102,7 +96,7 @@ TEST_F(S3DeleteBucketTaggingActionTest,
       .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(1);
-  action_under_test_ptr->fetch_bucket_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
 }
 
 TEST_F(S3DeleteBucketTaggingActionTest,
@@ -115,7 +109,7 @@ TEST_F(S3DeleteBucketTaggingActionTest,
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(1);
-  action_under_test_ptr->fetch_bucket_metadata_failed();
+  action_under_test_ptr->fetch_bucket_info_failed();
 }
 
 TEST_F(S3DeleteBucketTaggingActionTest,

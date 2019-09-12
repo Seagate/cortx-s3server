@@ -36,7 +36,7 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
     std::shared_ptr<S3ClovisWriterFactory> writer_factory,
     std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kvs_writer_factory)
-    : S3Action(std::move(req), false),
+    : S3BucketAction(std::move(req), std::move(bucket_md_factory), false),
       delete_index_in_req(0),
       at_least_one_delete_successful(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
@@ -46,12 +46,6 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
          request->get_bucket_name().c_str());
 
   object_list_index_oid = {0ULL, 0ULL};
-
-  if (bucket_md_factory) {
-    bucket_metadata_factory = std::move(bucket_md_factory);
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
 
   if (object_md_factory) {
     object_metadata_factory = std::move(object_md_factory);
@@ -95,7 +89,6 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
 void S3DeleteMultipleObjectsAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3DeleteMultipleObjectsAction::validate_request, this));
-  add_task(std::bind(&S3DeleteMultipleObjectsAction::fetch_bucket_info, this));
   add_task(std::bind(&S3DeleteMultipleObjectsAction::fetch_objects_info, this));
   // Delete will be cycling between delete_objects_metadata and delete_objects
   add_task(std::bind(&S3DeleteMultipleObjectsAction::send_response_to_s3_client,
@@ -155,22 +148,6 @@ void S3DeleteMultipleObjectsAction::validate_request_body(std::string content) {
       send_response_to_s3_client();
     }
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3DeleteMultipleObjectsAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (s3_fi_is_enabled("fail_fetch_bucket_info")) {
-    s3_fi_enable_once("clovis_kv_get_fail");
-  }
-
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3DeleteMultipleObjectsAction::next, this),
-      std::bind(&S3DeleteMultipleObjectsAction::fetch_bucket_info_failed,
-                this));
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

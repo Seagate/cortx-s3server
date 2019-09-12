@@ -25,29 +25,24 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_factory.h"
 
-class S3DeleteBucketTaggingAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-
+class S3DeleteBucketTaggingAction : public S3BucketAction {
  public:
   S3DeleteBucketTaggingAction(
       std::shared_ptr<S3RequestObject> req,
       std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr);
 
   void setup_steps();
-  void fetch_bucket_metadata();
   void delete_bucket_tags();
   void delete_bucket_tags_failed();
-  void fetch_bucket_metadata_failed();
+  void fetch_bucket_info_failed();
 
   void send_response_to_s3_client();
 
   // For Testing purpose
-  FRIEND_TEST(S3DeleteBucketTaggingActionTest, FetchBucketMetadata);
   FRIEND_TEST(S3DeleteBucketTaggingActionTest, DeleteBucketTagging);
   FRIEND_TEST(S3DeleteBucketTaggingActionTest, DeleteBucketTaggingSuccessful);
   FRIEND_TEST(S3DeleteBucketTaggingActionTest,

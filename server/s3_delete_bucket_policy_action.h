@@ -25,14 +25,12 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_factory.h"
 
-class S3DeleteBucketPolicyAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+class S3DeleteBucketPolicyAction : public S3BucketAction {
 
   // Helpers
   std::string get_bucket_index_name() {
@@ -46,8 +44,7 @@ class S3DeleteBucketPolicyAction : public S3Action {
 
   void setup_steps();
 
-  void fetch_bucket_metadata();
-  void fetch_bucket_metadata_failed();
+  void fetch_bucket_info_failed();
 
   void delete_bucket_policy();
   void delete_bucket_policy_successful();
@@ -56,7 +53,6 @@ class S3DeleteBucketPolicyAction : public S3Action {
   void send_response_to_s3_client();
 
   // For Testing purpose
-  FRIEND_TEST(S3DeleteBucketPolicyActionTest, FetchBucketMetadata);
   FRIEND_TEST(S3DeleteBucketPolicyActionTest, DeleteBucketPolicy);
   FRIEND_TEST(S3DeleteBucketPolicyActionTest, DeleteBucketPolicySuccessful);
   FRIEND_TEST(S3DeleteBucketPolicyActionTest, DeleteBucketPolicyFailed);
