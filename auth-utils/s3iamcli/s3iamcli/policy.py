@@ -18,7 +18,7 @@ class Policy:
 
         file_path = os.path.abspath(self.cli_args.file)
         if(not os.path.isfile(file_path)):
-            message = "Policy file " file_path + " not found. "
+            message = "Policy file " + file_path + " not found."
             CLIResponse.send_error_out(message)
 
         policy_args['PolicyName'] = self.cli_args.name
