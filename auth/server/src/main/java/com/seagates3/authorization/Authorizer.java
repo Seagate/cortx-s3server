@@ -63,10 +63,13 @@ public class Authorizer {
         LOGGER.debug("request body : " + requestBody.toString());
         // Here we are assuming that - Authentication is successful hence
         // proceeding with authorization
-        ServerResponse serverResponse =
-            new ACLRequestValidator().validateAclRequest(
-                requestBody, accountPermissionMap, groupPermissionMap);
-        if (serverResponse.getResponseStatus() != null &&
+        ServerResponse serverResponse = null;
+        if (("PUT".equals(requestBody.get("Method")))) {
+          serverResponse = new ACLRequestValidator().validateAclRequest(
+              requestBody, accountPermissionMap, groupPermissionMap);
+        }
+        if (serverResponse != null &&
+            serverResponse.getResponseStatus() != null &&
             !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
           LOGGER.error("ACL authorization request validation failed");
           return serverResponse;
@@ -102,7 +105,6 @@ public class Authorizer {
         // authorization response if request header contains param value true
         // for- Request-ACL
         if ("true".equals(requestBody.get("Request-ACL"))) {
-
           try {
             String acl = null;
             ACLCreator aclCreator = new ACLCreator();
@@ -189,4 +191,5 @@ public class Authorizer {
      return aclValidation.validate();
    }
  }
+
 
