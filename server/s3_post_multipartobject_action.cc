@@ -643,6 +643,14 @@ void S3PostMultipartObjectAction::save_multipart_metadata_failed() {
 
 void S3PostMultipartObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  if (S3Option::get_instance()->is_getoid_enabled()) {
+
+    request->set_out_header_value("x-stx-oid",
+                                  S3M0Uint128Helper::to_string(oid));
+    request->set_out_header_value("x-stx-layout-id", std::to_string(layout_id));
+  }
+
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
@@ -671,13 +679,6 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
     response += "<UploadId>" + upload_id + "</UploadId>";
     response += "</InitiateMultipartUploadResult>";
     request->set_out_header_value("UploadId", upload_id);
-
-    if (S3Option::get_instance()->is_getoid_enabled()) {
-      request->set_out_header_value(
-          "OID", S3M0Uint128Helper::to_string(object_metadata->get_oid()));
-      request->set_out_header_value(
-          "layout-id", std::to_string(object_metadata->get_layout_id()));
-    }
 
     request->send_response(S3HttpSuccess200, response);
   } else {
