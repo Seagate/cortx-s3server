@@ -171,14 +171,10 @@ TEST_F(S3BucketMetadataV1Test, DeletePolicy) {
 }
 
 TEST_F(S3BucketMetadataV1Test, SetAcl) {
-  char expected_str[] =
-      "<?xml version=\"1.0\" "
-      "encoding=\"UTF-8\"?>\n<Owner>\n<ID></ID>\n\n<DisplayName></"
-      "DisplayName>\n</Owner>";
+  char expected_str[] = "<Owner>\n<ID></ID>\n</Owner>";
   std::string acl = DUMMY_ACL_STR;
   action_under_test->setacl(acl);
-  EXPECT_STREQ(expected_str,
-               action_under_test->bucket_ACL.get_xml_str().c_str());
+  EXPECT_STREQ(expected_str, action_under_test->encoded_acl.c_str());
 }
 
 TEST_F(S3BucketMetadataV1Test, GetTagsAsXml) {

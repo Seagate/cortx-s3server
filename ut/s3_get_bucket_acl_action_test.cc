@@ -137,7 +137,7 @@ TEST_F(S3GetBucketAclActionTest, SendSuccessResponse) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillOnce(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_acl_as_xml())
-      .WillOnce(ReturnRef(acl));
+      .WillOnce(Return(acl));
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))

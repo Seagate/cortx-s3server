@@ -26,15 +26,12 @@
 #include <memory>
 #include <string>
 
-#include "s3_action_base.h"
-#include "s3_bucket_metadata.h"
+#include "s3_bucket_action_base.h"
 #include "s3_factory.h"
 
-class S3PutBucketACLAction : public S3Action {
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
+class S3PutBucketACLAction : public S3BucketAction {
 
-  std::string new_bucket_acl;
+  std::string user_input_acl;
 
  public:
   S3PutBucketACLAction(
@@ -44,9 +41,11 @@ class S3PutBucketACLAction : public S3Action {
   void setup_steps();
   void validate_request();
   void consume_incoming_content();
-  void validate_request_body(std::string content);
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
+  void on_aclvalidation_success();
+  void on_aclvalidation_failure();
+  void validate_acl_with_auth();
+  void setvalidateacl();
   void setacl();
   void setacl_failed();
   void send_response_to_s3_client();

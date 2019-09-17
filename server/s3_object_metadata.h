@@ -61,7 +61,6 @@ class S3ObjectMetadata {
   std::string user_id;
   std::string bucket_name;
   std::string object_name;
-  std::string default_object_acl;
 
   std::string request_id;
 
@@ -69,7 +68,6 @@ class S3ObjectMetadata {
   // Maximum retry count for collision resolution.
   unsigned short tried_count;
   std::string salt;
-  std::string user_acl;
 
   // The name for a key is a sequence of Unicode characters whose UTF-8 encoding
   // is at most 1024 bytes long.
@@ -88,7 +86,6 @@ class S3ObjectMetadata {
   std::string mero_old_oid_str;
 
   std::string mero_part_oid_str;
-  std::string acl_xml;
   std::string encoded_acl;
 
   std::map<std::string, std::string> system_defined_attribute;
@@ -189,7 +186,7 @@ class S3ObjectMetadata {
   virtual std::string get_storage_class();
   virtual std::string get_upload_id();
   std::string& get_encoded_object_acl();
-  std::string& get_acl_as_xml();
+  std::string get_acl_as_xml();
 
   // Load attributes.
   std::string get_system_attribute(std::string key);

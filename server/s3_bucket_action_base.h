@@ -55,7 +55,7 @@ class S3BucketAction : public S3Action {
   S3BucketAction(std::shared_ptr<S3RequestObject> req,
                  std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory =
                      nullptr,
-                 bool check_shutdown = false,
+                 bool check_shutdown = true,
                  std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
                  bool skip_auth = false);
   virtual ~S3BucketAction();

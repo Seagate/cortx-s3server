@@ -227,30 +227,22 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can verify private ACL on bucket').get_acl("seagatebucket")\
         .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
 
-    JClientTest('Jclient can grant READ permission on bucket').set_acl("seagatebucket",
+    JClientTest('Jclient can not grant READ permission on bucket with InvalidId').set_acl("seagatebucket",
         action="acl-grant", permission="READ:123:tester")\
-        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
-    JClientTest('Jclient can verify READ ACL on bucket').get_acl("seagatebucket")\
-        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-        .command_response_should_not_have("WRITE")
 
-    JClientTest('Jclient can grant WRITE permission on bucket').set_acl("seagatebucket",
+    JClientTest('Jclient can not grant WRITE permission on bucket with InvalidId').set_acl("seagatebucket",
         action="acl-grant", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
-    JClientTest('Jclient can verify WRITE ACL on bucket').get_acl("seagatebucket")\
-        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-        .command_response_should_have("tester: WRITE")
 
-    JClientTest('Jclient can revoke WRITE permission on bucket').set_acl("seagatebucket",
+    '''JClientTest('Jclient can revoke WRITE permission on bucket').set_acl("seagatebucket",
         action="acl-revoke", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
-
-    JClientTest('Jclient can verify WRITE ACL is revoked on bucket').get_acl("seagatebucket")\
-        .execute_test().command_is_successful().command_response_should_not_have("WRITE")
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")'''
 
     # Object ACL Tests.
+
     JClientTest('Jclient can set public ACL on object').set_acl("seagatebucket", "3kfile",
         action="acl-public")\
         .execute_test().command_is_successful().command_response_should_have("ACL set to Public")

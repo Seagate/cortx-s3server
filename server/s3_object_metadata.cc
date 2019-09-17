@@ -39,7 +39,6 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
-  default_object_acl = request->get_default_acl();
   state = S3ObjectMetadataState::empty;
   is_multipart = ismultipart;
   upload_id = uploadid;
@@ -558,12 +557,12 @@ std::string S3ObjectMetadata::to_json() {
   for (const auto& tag : object_tags) {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
+  if (encoded_acl == "") {
 
-  if (user_acl == "") {
-    root["ACL"] = default_object_acl;
+    root["ACL"] = request->get_default_acl();
 
   } else {
-    root["ACL"] = user_acl;
+    root["ACL"] = encoded_acl;
   }
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
@@ -656,7 +655,6 @@ int S3ObjectMetadata::from_json(std::string content) {
 void S3ObjectMetadata::acl_from_json(std::string acl_json_str) {
   s3_log(S3_LOG_DEBUG, "", "Called\n");
   encoded_acl = acl_json_str;
-  acl_xml = base64_decode(encoded_acl);
 }
 
 std::string& S3ObjectMetadata::get_encoded_object_acl() {
@@ -665,10 +663,12 @@ std::string& S3ObjectMetadata::get_encoded_object_acl() {
 }
 
 void S3ObjectMetadata::setacl(const std::string& input_acl) {
-  user_acl = input_acl;
+  encoded_acl = input_acl;
 }
 
-std::string& S3ObjectMetadata::get_acl_as_xml() { return acl_xml; }
+std::string S3ObjectMetadata::get_acl_as_xml() {
+  return base64_decode(encoded_acl);
+}
 
 void S3ObjectMetadata::set_tags(
     const std::map<std::string, std::string>& tags_as_map) {

@@ -193,6 +193,12 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
     context->set_op_status_for(0, S3AsyncOpStatus::success,
                                "Authorization successful");
     context->set_authorization_response(auth_response_body, true);
+  } else if (auth_resp_status == S3HttpFailed400) {
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Authorization failed\n");
+    context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                               "Authorization failed: BadRequest");
+    context->set_authorization_response(auth_response_body, false);
   } else if (auth_resp_status == S3HttpFailed401) {
     s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
            "Authorization failed\n");
@@ -554,6 +560,11 @@ void S3AuthClient::setup_auth_request_body() {
                  s3_request->get_operation_code() ==
                      S3OperationCode::multipart)) &&
                s3_request->get_api_type() == S3ApiType::object) {
+        add_key_val_to_body("Request-ACL", "true");
+      } else if ((s3_request->http_verb() == S3HttpVerb::PUT &&
+                  s3_request->get_operation_code() == S3OperationCode::acl) &&
+                 ((s3_request->get_api_type() == S3ApiType::object) ||
+                  (s3_request->get_api_type() == S3ApiType::bucket))) {
         add_key_val_to_body("Request-ACL", "true");
       }
       // PUT Object ACL case

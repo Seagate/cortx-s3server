@@ -25,7 +25,6 @@
 #include <string>
 
 #include "gtest/gtest_prod.h"
-#include "s3_bucket_acl.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_log.h"

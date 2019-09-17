@@ -40,7 +40,6 @@ S3BucketMetadata::S3BucketMetadata(
   user_name = request->get_user_name();
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
-  default_bucket_acl = request->get_default_acl();
   salted_multipart_list_index_name = get_multipart_index_name();
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
@@ -133,12 +132,8 @@ void S3BucketMetadata::deletepolicy() { bucket_policy = ""; }
 
 void S3BucketMetadata::delete_bucket_tags() { bucket_tags.clear(); }
 
-void S3BucketMetadata::setacl(std::string& acl_str) {
-  std::string input_acl = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-  input_acl += acl_str;
-  bucket_ACL.set_display_name(get_owner_name());
-  input_acl = bucket_ACL.insert_display_name(input_acl);
-  bucket_ACL.set_acl_xml_metadata(input_acl);
+void S3BucketMetadata::setacl(const std::string& acl_str) {
+  encoded_acl = acl_str;
 }
 
 void S3BucketMetadata::add_system_attribute(std::string key, std::string val) {
@@ -199,12 +194,10 @@ std::string S3BucketMetadata::to_json() {
   for (auto uit : user_defined_attribute) {
     root["User-Defined"][uit.first] = uit.second;
   }
-  std::string xml_acl = bucket_ACL.get_xml_str();
-  if (xml_acl == "") {
-    root["ACL"] = default_bucket_acl;
+  if (encoded_acl == "") {
+    root["ACL"] = request->get_default_acl();
   } else {
-  root["ACL"] =
-      base64_encode((const unsigned char*)xml_acl.c_str(), xml_acl.size());
+    root["ACL"] = encoded_acl;
   }
   root["Policy"] = bucket_policy;
   for (const auto& tag : bucket_tags) {
@@ -254,7 +247,7 @@ int S3BucketMetadata::from_json(std::string content) {
   multipart_index_oid = S3M0Uint128Helper::to_m0_uint128(
       newroot["mero_multipart_index_oid"].asString());
 
-  bucket_ACL.from_json((newroot["ACL"]).asString());
+  acl_from_json((newroot["ACL"]).asString());
   bucket_policy = newroot["Policy"].asString();
 
   members = newroot["User-Defined-Tags"].getMemberNames();
@@ -265,13 +258,18 @@ int S3BucketMetadata::from_json(std::string content) {
   return 0;
 }
 
-std::string& S3BucketMetadata::get_encoded_bucket_acl() {
-  // base64 acl encoded
-  return bucket_ACL.get_acl_metadata();
+void S3BucketMetadata::acl_from_json(std::string acl_json_str) {
+  s3_log(S3_LOG_DEBUG, "", "Called\n");
+  encoded_acl = acl_json_str;
 }
 
-std::string& S3BucketMetadata::get_acl_as_xml() {
-  return bucket_ACL.get_xml_str();
+std::string& S3BucketMetadata::get_encoded_bucket_acl() {
+  // base64 acl encoded
+  return encoded_acl;
+}
+
+std::string S3BucketMetadata::get_acl_as_xml() {
+  return base64_decode(encoded_acl);
 }
 
 std::string& S3BucketMetadata::get_policy_as_json() { return bucket_policy; }

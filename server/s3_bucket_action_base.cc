@@ -51,6 +51,9 @@ void S3BucketAction::fetch_bucket_info() {
   bucket_metadata->load(
       std::bind(&S3BucketAction::next, this),
       std::bind(&S3BucketAction::fetch_bucket_info_failed, this));
+  // for shutdown testcases, check FI and set shutdown signal
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_bucket_acl_action_fetch_bucket_info_shutdown_fail");
 }
 
 void S3BucketAction::load_metadata() { fetch_bucket_info(); }

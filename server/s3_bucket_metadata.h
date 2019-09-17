@@ -28,7 +28,6 @@
 #include <memory>
 #include <string>
 
-#include "s3_bucket_acl.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_log.h"
@@ -56,7 +55,7 @@ class S3BucketMetadata {
   std::string user_id;
   std::string salted_object_list_index_name;
   std::string salted_multipart_list_index_name;
-  std::string default_bucket_acl;
+  std::string encoded_acl;
 
   enum class S3BucketMetadataCurrentOp {
     none,
@@ -76,8 +75,6 @@ class S3BucketMetadata {
   std::map<std::string, std::string> bucket_tags;
   std::map<std::string, std::string> system_defined_attribute;
   std::map<std::string, std::string> user_defined_attribute;
-
-  S3BucketACL bucket_ACL;
 
   struct m0_uint128 multipart_index_oid;
   struct m0_uint128 object_list_index_oid;
@@ -129,7 +126,8 @@ class S3BucketMetadata {
   virtual std::string get_tags_as_xml();
   virtual bool check_bucket_tags_exists();
   virtual std::string& get_policy_as_json();
-  virtual std::string& get_acl_as_xml();
+  virtual std::string get_acl_as_xml();
+  void acl_from_json(std::string acl_json_str);
 
   virtual struct m0_uint128 get_multipart_index_oid();
   virtual struct m0_uint128 get_object_list_index_oid();
@@ -157,7 +155,7 @@ class S3BucketMetadata {
   virtual void deletepolicy();
   virtual void delete_bucket_tags();
 
-  virtual void setacl(std::string& acl_str);
+  virtual void setacl(const std::string& acl_str);
 
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed) = 0;

@@ -18,32 +18,25 @@
  */
 
 #include "s3_put_bucket_acl_action.h"
-#include "s3_bucket_acl.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
+#include "base64.h"
 
 S3PutBucketACLAction::S3PutBucketACLAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Put Bucket Acl. Bucket[%s]\n",
          request->get_bucket_name().c_str());
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
   setup_steps();
 }
 
 void S3PutBucketACLAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3PutBucketACLAction::validate_request, this));
-  add_task(std::bind(&S3PutBucketACLAction::fetch_bucket_info, this));
+  add_task(std::bind(&S3PutBucketACLAction::validate_acl_with_auth, this));
   add_task(std::bind(&S3PutBucketACLAction::setacl, this));
   add_task(std::bind(&S3PutBucketACLAction::send_response_to_s3_client, this));
 }
@@ -52,8 +45,8 @@ void S3PutBucketACLAction::validate_request() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
   if (request->has_all_body_content()) {
-    new_bucket_acl = request->get_full_body_content_as_string();
-    validate_request_body(new_bucket_acl);
+    user_input_acl = request->get_full_body_content_as_string();
+    next();
   } else {
     // Start streaming, logically pausing action till we get data.
     request->listen_for_incoming_data(
@@ -68,42 +61,47 @@ void S3PutBucketACLAction::validate_request() {
 void S3PutBucketACLAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
   if (request->has_all_body_content()) {
-    new_bucket_acl = request->get_full_body_content_as_string();
-    validate_request_body(new_bucket_acl);
+    user_input_acl = request->get_full_body_content_as_string();
+    next();
   } else {
     // else just wait till entire body arrives. rare.
     request->resume();
   }
 }
 
-void S3PutBucketACLAction::validate_request_body(std::string content) {
+void S3PutBucketACLAction::validate_acl_with_auth() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (user_input_acl.empty()) {
+    next();
+  } else {
 
-  // TODO: ACL implementation is partial, fix this when adding full support.
-  // S3PutBucketAclBody bucket_acl(content);
-  // if (bucket_acl.isOK()) {
-  //   next();
-  // } else {
-  //   invalid_request = true;
-  //   set_s3_error("MalformedXML");
-  //   send_response_to_s3_client();
-  // }
+    user_input_acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + user_input_acl;
+
+    auth_client->set_validate_acl(user_input_acl);
+
+    auth_client->validate_acl(
+        std::bind(&S3PutBucketACLAction::on_aclvalidation_success, this),
+        std::bind(&S3PutBucketACLAction::on_aclvalidation_failure, this));
+  }
+}
+
+void S3PutBucketACLAction::on_aclvalidation_success() {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutBucketACLAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
-
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3PutBucketACLAction::next, this),
-      std::bind(&S3PutBucketACLAction::fetch_bucket_info_failed, this));
-
-  // for shutdown testcases, check FI and set shutdown signal
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_bucket_acl_action_fetch_bucket_info_shutdown_fail");
+void S3PutBucketACLAction::on_aclvalidation_failure() {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  std::string error_code = auth_client->get_error_code();
+  if (error_code == "InvalidID") {
+    set_s3_error("InvalidArgument");
+  } else {
+    set_s3_error("MalformedACLError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutBucketACLAction::fetch_bucket_info_failed() {
@@ -126,10 +124,18 @@ void S3PutBucketACLAction::fetch_bucket_info_failed() {
 
 void S3PutBucketACLAction::setacl() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  bucket_metadata->setacl(new_bucket_acl);
-  // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
+
+  if (!user_input_acl.empty()) {
+    s3_log(S3_LOG_DEBUG, "", "Saving client uploaded ACL\n");
+    bucket_metadata->setacl(base64_encode(
+        (const unsigned char*)user_input_acl.c_str(), user_input_acl.size()));
+
+  } else {
+    std::string auth_generated_acl = request->get_default_acl();
+    bucket_metadata->setacl(auth_generated_acl);
+  }
+
   bucket_metadata->save(std::bind(&S3PutBucketACLAction::next, this),
                         std::bind(&S3PutBucketACLAction::setacl_failed, this));
 

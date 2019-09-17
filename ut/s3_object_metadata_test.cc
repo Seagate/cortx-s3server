@@ -240,16 +240,13 @@ TEST_F(S3MultipartObjectMetadataTest, GetUserIdUplodIdName) {
   EXPECT_STREQ("s3user", action_under_test->user_name.c_str());
 }
 
-// TEST_F(S3ObjectMetadataTest, SetAcl) {
-//  action_under_test->system_defined_attribute["Owner-User"] = "s3user";
-//  char expected_str[] =
-//      "<Owner>\n<ID>1</ID>\n\n<DisplayName>s3user</"
-//      "DisplayName>\n</Owner>";
-//  std::string acl = DUMMY_ACL_STR;
-//  action_under_test->setacl(acl);
-//  EXPECT_STREQ(expected_str,
-// action_under_test->get_acl_as_xml());
-//}
+TEST_F(S3ObjectMetadataTest, SetAcl) {
+  action_under_test->system_defined_attribute["Owner-User"] = "s3user";
+  char expected_str[] = "<Owner>\n<ID>1</ID>\n</Owner>";
+  std::string acl = DUMMY_ACL_STR;
+  action_under_test->setacl(acl);
+  EXPECT_STREQ(expected_str, action_under_test->encoded_acl.c_str());
+}
 
 TEST_F(S3ObjectMetadataTest, AddSystemAttribute) {
   action_under_test->add_system_attribute("LocationConstraint", "us-east");

@@ -40,11 +40,11 @@ class MockS3BucketMetadata : public S3BucketMetadataV1 {
                           std::function<void(void)> on_failed));
   MOCK_METHOD0(get_state, S3BucketMetadataState());
   MOCK_METHOD0(get_policy_as_json, std::string &());
-  MOCK_METHOD0(get_acl_as_xml, std::string&());
+  MOCK_METHOD0(get_acl_as_xml, std::string());
   MOCK_METHOD1(setpolicy, void(std::string& policy_str));
   MOCK_METHOD1(set_tags,
                void(const std::map<std::string, std::string>& tags_str));
-  MOCK_METHOD1(setacl, void(std::string& acl_str));
+  MOCK_METHOD1(setacl, void(const std::string& acl_str));
   MOCK_METHOD2(save, void(std::function<void(void)> on_success,
                           std::function<void(void)> on_failed));
   MOCK_METHOD2(remove, void(std::function<void(void)> on_success,
