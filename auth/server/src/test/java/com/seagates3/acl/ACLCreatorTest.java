@@ -194,7 +194,7 @@ import com.seagates3.util.BinaryUtil;
         "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
         "</AccessControlPolicy>";
 
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
     String aclXml = spyAclCreator.createAclFromPermissionHeaders(
         requestor, accountPermissionMap, groupPermissionMap, requestBody);
     AccessControlPolicy acp = new AccessControlPolicy(aclXml);
@@ -243,7 +243,7 @@ import com.seagates3.util.BinaryUtil;
         "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
         " </AccessControlList>\n" + "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(existingACL));
     requestBody.put("x-amz-acl", "private");
     String resultACL =
         new ACLCreator().createACLFromCannedInput(requestor, requestBody);
@@ -282,7 +282,7 @@ import com.seagates3.util.BinaryUtil;
         "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
         " </AccessControlList>\n" + "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(existingACL));
     requestBody.put("x-amz-acl", "public-read");
     String resultACL =
         new ACLCreator().createACLFromCannedInput(requestor, requestBody);
@@ -326,7 +326,7 @@ import com.seagates3.util.BinaryUtil;
         "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
         " </AccessControlList>\n" + "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(existingACL));
     requestBody.put("x-amz-acl", "public-read-write");
     String resultACL =
         new ACLCreator().createACLFromCannedInput(requestor, requestBody);
@@ -371,7 +371,7 @@ import com.seagates3.util.BinaryUtil;
         "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
         " </AccessControlList>\n" + "</AccessControlPolicy>";
     requestBody = new TreeMap<>();
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(existingACL));
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(existingACL));
     requestBody.put("x-amz-acl", "authenticated-read");
     String resultACL =
         new ACLCreator().createACLFromCannedInput(requestor, requestBody);

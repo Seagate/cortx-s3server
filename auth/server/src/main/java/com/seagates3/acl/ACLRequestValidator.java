@@ -111,14 +111,9 @@ class ACLRequestValidator {
       isPermissionHeaderPresent = 1;
     }
 
-    // TODO - for ACLValidation Request there should be only one of
-    // acl,permission headear or canned acl,but    // in case of permission
-    // headears in authorization request acl and permission headear both are
-    // present.     // this needs to be handled.
-    /*
     if (requestBody.get("ACL") != null) {
       isAclPresentInRequestBody = 1;
-    }*/
+    }
 
     if ((isCannedAclPresent + isPermissionHeaderPresent +
          isAclPresentInRequestBody) > 1) {

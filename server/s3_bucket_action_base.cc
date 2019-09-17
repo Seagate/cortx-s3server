@@ -33,7 +33,7 @@ S3BucketAction::S3BucketAction(
 
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
-  if (bucket_metadata_factory) {
+  if (bucket_meta_factory) {
     bucket_metadata_factory = std::move(bucket_meta_factory);
   } else {
     bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();

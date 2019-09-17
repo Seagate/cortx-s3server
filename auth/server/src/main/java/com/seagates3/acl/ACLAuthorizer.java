@@ -61,7 +61,7 @@ class ACLAuthorizer {
       throws ParserConfigurationException,
       SAXException, IOException, BadRequestException, GrantListFullException,
       DataAccessException {
-    String encodedACL = requestBody.get("ACL");
+    String encodedACL = requestBody.get("Auth-ACL");
     if (encodedACL == null || encodedACL.isEmpty()) {
       String ex = "Bad request. Resource ACL absent in the request.";
       LOGGER.error(ex);

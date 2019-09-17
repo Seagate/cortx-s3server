@@ -100,7 +100,7 @@ class ACLAuthorizerTest {
   }
 
   @Before public void setUp() throws Exception {
-    requestBody.put("ACL", BinaryUtil.encodeToBase64String(acpXmlString));
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acpXmlString));
   }
 
   // READ permission should grant GET access.
@@ -927,7 +927,7 @@ class ACLAuthorizerTest {
       DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
-    requestBody.put("ACL", null);
+    requestBody.put("Auth-ACL", null);
     Account acc = new Account();
     acc.setCanonicalId("id1");
     requestor.setAccount(acc);
@@ -944,7 +944,7 @@ class ACLAuthorizerTest {
       DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
-    requestBody.put("ACL", "");
+    requestBody.put("Auth-ACL", "");
     Account acc = new Account();
     acc.setCanonicalId("id1");
     requestor.setAccount(acc);
@@ -961,7 +961,7 @@ class ACLAuthorizerTest {
       DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
-    requestBody.put("ACL", " ");
+    requestBody.put("Auth-ACL", " ");
     Account acc = new Account();
     acc.setCanonicalId("id1");
     requestor.setAccount(acc);
@@ -977,7 +977,7 @@ class ACLAuthorizerTest {
       DataAccessException {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
-    requestBody.put("ACL",
+    requestBody.put("Auth-ACL",
                     BinaryUtil.encodeToBase64String(invalidAcpXmlString));
     Account acc = new Account();
     acc.setCanonicalId("id1");

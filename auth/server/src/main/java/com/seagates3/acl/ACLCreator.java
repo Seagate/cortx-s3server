@@ -131,9 +131,10 @@ class ACLCreator {
     acp = new AccessControlPolicy(checkAndCreateDefaultAcp());
     updateAclFromAccountMap(accountPermissionMap, newAcl);
     updateAclFromGroupMap(groupPermissionMap, newAcl);
-    if (requestBody.get("ACL") != null) {
+    if (requestBody.get("Auth-ACL") != null) {
       acp.setOwner(new AccessControlPolicy(
-          BinaryUtil.base64DecodeString(requestBody.get("ACL"))).getOwner());
+          BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")))
+                       .getOwner());
     } else {
       acp.setOwner(new Owner(requestor.getAccount().getCanonicalId(),
                              requestor.getAccount().getName()));
@@ -208,9 +209,9 @@ class ACLCreator {
       AccessControlPolicy acp = initDefaultAcp(requestor);
       AccessControlList acl = acp.getAccessControlList();
       AccessControlPolicy existingAcp = null;
-      if (requestBody.get("ACL") != null) {
+      if (requestBody.get("Auth-ACL") != null) {
         existingAcp = new AccessControlPolicy(
-            BinaryUtil.base64DecodeString(requestBody.get("ACL")));
+            BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")));
       }
       Owner owner;
       String errorMessage = null;

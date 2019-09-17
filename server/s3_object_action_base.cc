@@ -65,27 +65,27 @@ void S3ObjectAction::fetch_bucket_info() {
       "put_object_action_fetch_bucket_info_shutdown_fail");
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_fetch_bucket_info_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_object_acl_action_fetch_bucket_info_shutdown_fail");
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3ObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Object create case no object metadata exist
 
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
-    if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-      fetch_object_info_failed();
-    } else {
-      object_metadata = object_metadata_factory->create_object_metadata_obj(
-          request, object_list_oid);
+  s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
+  object_list_oid = bucket_metadata->get_object_list_index_oid();
+  if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
+    fetch_object_info_failed();
+  } else {
+    object_metadata = object_metadata_factory->create_object_metadata_obj(
+        request, object_list_oid);
 
-      object_metadata->load(
-          std::bind(&S3ObjectAction::fetch_object_info_success, this),
-          std::bind(&S3ObjectAction::fetch_object_info_failed, this));
-    }
+    object_metadata->load(
+        std::bind(&S3ObjectAction::fetch_object_info_success, this),
+        std::bind(&S3ObjectAction::fetch_object_info_failed, this));
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -95,7 +95,9 @@ void S3ObjectAction::fetch_bucket_info_success() { fetch_object_info(); }
 void S3ObjectAction::load_metadata() { fetch_bucket_info(); }
 
 void S3ObjectAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(),
                                   "");
   next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

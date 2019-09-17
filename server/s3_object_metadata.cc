@@ -558,13 +558,12 @@ std::string S3ObjectMetadata::to_json() {
   for (const auto& tag : object_tags) {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
-  // std::string xml_acl = object_ACL.get_xml_str();
+
   if (user_acl == "") {
     root["ACL"] = default_object_acl;
 
   } else {
-    root["ACL"] =
-        base64_encode((const unsigned char*)user_acl.c_str(), user_acl.size());
+    root["ACL"] = user_acl;
   }
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
@@ -665,7 +664,9 @@ std::string& S3ObjectMetadata::get_encoded_object_acl() {
   return encoded_acl;
 }
 
-void S3ObjectMetadata::setacl(std::string& input_acl) { user_acl = input_acl; }
+void S3ObjectMetadata::setacl(const std::string& input_acl) {
+  user_acl = input_acl;
+}
 
 std::string& S3ObjectMetadata::get_acl_as_xml() { return acl_xml; }
 

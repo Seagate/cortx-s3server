@@ -39,8 +39,6 @@ using ::testing::AtLeast;
 #define CREATE_OBJECT_METADATA                                             \
   do {                                                                     \
     CREATE_BUCKET_METADATA;                                                \
-    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state()) \
-        .WillOnce(Return(S3BucketMetadataState::present));                 \
     bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(  \
         object_list_indx_oid);                                             \
     EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))  \

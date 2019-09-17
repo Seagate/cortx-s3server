@@ -74,7 +74,7 @@ public class Authorizer {
         LOGGER.info("ACL authorization request is validated successfully");
         // Authorize the request
         try {
-          if (requestBody.get("ACL") == null) {
+          if (requestBody.get("Auth-ACL") == null) {
             LOGGER.debug("ACL not present. Skipping ACL authorization.");
           } else if (!new ACLAuthorizer().isAuthorized(requestor,
                                                        requestBody)) {

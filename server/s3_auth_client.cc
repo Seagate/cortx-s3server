@@ -556,13 +556,17 @@ void S3AuthClient::setup_auth_request_body() {
                s3_request->get_api_type() == S3ApiType::object) {
         add_key_val_to_body("Request-ACL", "true");
       }
+      // PUT Object ACL case
+      else if (s3_request->http_verb() == S3HttpVerb::PUT &&
+               s3_request->get_operation_code() == S3OperationCode::acl) {
+        add_key_val_to_body("Request-ACL", "true");
+      }
     }
-
     if (policy_str != "") {
       add_key_val_to_body("Policy", policy_str);
     } else if (acl_str != "") {
 
-      add_key_val_to_body("ACL", acl_str);
+      add_key_val_to_body("Auth-ACL", acl_str);
     }
 
     auth_request_body = "Action=AuthorizeUser";

@@ -230,7 +230,7 @@ class S3ObjectMetadata {
 
   // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
-  virtual void setacl(std::string& input_acl);
+  virtual void setacl(const std::string& input_acl);
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
   virtual const std::map<std::string, std::string>& get_tags();
   virtual void delete_object_tags();
