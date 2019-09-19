@@ -257,6 +257,7 @@ class S3AuthClient {
   std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3AuthClientOpContext> auth_context;
   std::string request_id;
+  std::string bucket_acl;
 
   // Used to report to caller
   std::function<void()> handler_on_success;
@@ -352,6 +353,7 @@ class S3AuthClient {
   void abort_chunk_auth_op() { chunk_auth_aborted = true; }
   bool is_chunk_auth_op_aborted() { return chunk_auth_aborted; }
   void set_acl_and_policy(std::string acl, std::string policy);
+  void set_bucket_acl(const std::string& bucket_acl);
   void set_event_with_retry_interval();
 
   FRIEND_TEST(S3AuthClientTest, Constructor);

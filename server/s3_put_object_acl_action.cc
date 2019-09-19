@@ -80,6 +80,15 @@ void S3PutObjectACLAction::validate_acl_with_auth() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PutObjectACLAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(),
+                                  "");
+  auth_client->set_bucket_acl(bucket_metadata->get_encoded_bucket_acl());
+  next();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3PutObjectACLAction::setacl() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // bypass shutdown signal check for next task

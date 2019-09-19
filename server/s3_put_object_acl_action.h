@@ -44,8 +44,7 @@ class S3PutObjectACLAction : public S3ObjectAction {
   void on_aclvalidation_failure();
   void validate_acl_with_auth();
   void setvalidateacl();
-
-  void validate_request_body(std::string content);
+  void set_authorization_meta();
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
   void setacl();
