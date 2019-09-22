@@ -74,9 +74,16 @@ void S3ObjectAction::fetch_bucket_info() {
 void S3ObjectAction::fetch_object_info() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Object create case no object metadata exist
-
   s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
   object_list_oid = bucket_metadata->get_object_list_index_oid();
+  if (request->http_verb() == S3HttpVerb::GET) {
+    S3OperationCode operation_code = request->get_operation_code();
+    if ((operation_code == S3OperationCode::tagging) ||
+        (operation_code == S3OperationCode::acl)) {
+      // bypass shutdown signal check for next task
+      check_shutdown_signal_for_next_task(false);
+    }
+  }
   if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
     fetch_object_info_failed();
   } else {

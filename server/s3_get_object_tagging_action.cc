@@ -25,7 +25,8 @@ S3GetObjectTaggingAction::S3GetObjectTaggingAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
-    : S3Action(req) {
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
@@ -33,37 +34,14 @@ S3GetObjectTaggingAction::S3GetObjectTaggingAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-  if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
-  }
-  object_list_index_oid = {0ULL, 0ULL};
   setup_steps();
 }
 
 void S3GetObjectTaggingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetObjectTaggingAction::fetch_bucket_info, this));
-  add_task(std::bind(&S3GetObjectTaggingAction::get_object_metadata, this));
   add_task(
       std::bind(&S3GetObjectTaggingAction::send_response_to_s3_client, this));
   // ...
-}
-
-void S3GetObjectTaggingAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3GetObjectTaggingAction::next, this),
-      std::bind(&S3GetObjectTaggingAction::fetch_bucket_info_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetObjectTaggingAction::fetch_bucket_info_failed() {
@@ -82,36 +60,11 @@ void S3GetObjectTaggingAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3GetObjectTaggingAction::get_object_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching object metadata\n");
-  // bypass shutdown signal check for next task
-  check_shutdown_signal_for_next_task(false);
-  object_list_index_oid = bucket_metadata->get_object_list_index_oid();
-  if (object_list_index_oid.u_lo == 0ULL &&
-      object_list_index_oid.u_hi == 0ULL) {
-    // There is no object list index, hence object doesn't exist
+void S3GetObjectTaggingAction::fetch_object_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if ((object_list_oid.u_lo == 0ULL && object_list_oid.u_hi == 0ULL) ||
+      (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
     s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-    set_s3_error("NoSuchKey");
-    send_response_to_s3_client();
-  } else {
-    object_metadata = object_metadata_factory->create_object_metadata_obj(
-        request, object_list_index_oid);
-    object_metadata->load(
-        std::bind(&S3GetObjectTaggingAction::get_object_metadata_successful,
-                  this),
-        std::bind(&S3GetObjectTaggingAction::get_object_metadata_failed, this));
-  }
-}
-
-void S3GetObjectTaggingAction::get_object_metadata_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  send_response_to_s3_client();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3GetObjectTaggingAction::get_object_metadata_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("NoSuchKey");
   } else if (object_metadata->get_state() ==
              S3ObjectMetadataState::failed_to_launch) {

@@ -143,12 +143,6 @@ TEST_F(S3GetMultipartBucketActionTest, Constructor) {
   EXPECT_FALSE(action_under_test_ptr->fetch_successful);
 }
 
-TEST_F(S3GetMultipartBucketActionTest, FetchBucketInfo) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test_ptr->fetch_bucket_info();
-}
-
 TEST_F(S3GetMultipartBucketActionTest, FetchBucketInfoFailedMissing) {
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())

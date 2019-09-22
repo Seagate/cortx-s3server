@@ -33,7 +33,7 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory)
-    : S3Action(req),
+    : S3BucketAction(req, std::move(bucket_meta_factory)),
       multipart_object_list(req->get_query_string_value("encoding-type")),
       last_key(""),
       return_list_size(0),
@@ -44,16 +44,10 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
   s3_log(S3_LOG_INFO, request_id,
          "S3 API: List Multipart Uploads. Bucket[%s]\n",
          request->get_bucket_name().c_str());
-
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
-  }
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
   if (clovis_kvs_reader_factory) {
     s3_clovis_kvs_reader_factory = clovis_kvs_reader_factory;
@@ -65,7 +59,6 @@ S3GetMultipartBucketAction::S3GetMultipartBucketAction(
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
-
   object_list_setup();
   setup_steps();
   // TODO request param validations
@@ -111,21 +104,10 @@ void S3GetMultipartBucketAction::object_list_setup() {
 
 void S3GetMultipartBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetMultipartBucketAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetMultipartBucketAction::get_next_objects, this));
   add_task(
       std::bind(&S3GetMultipartBucketAction::send_response_to_s3_client, this));
   // ...
-}
-
-void S3GetMultipartBucketAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3GetMultipartBucketAction::next, this),
-      std::bind(&S3GetMultipartBucketAction::fetch_bucket_info_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetMultipartBucketAction::fetch_bucket_info_failed() {

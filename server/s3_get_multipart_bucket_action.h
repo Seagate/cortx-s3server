@@ -26,16 +26,14 @@
 
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_factory.h"
 #include "s3_object_list_response.h"
 
-class S3GetMultipartBucketAction : public S3Action {
+class S3GetMultipartBucketAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   S3ObjectListResponse multipart_object_list;
@@ -67,7 +65,6 @@ class S3GetMultipartBucketAction : public S3Action {
 
   void object_list_setup();
   void setup_steps();
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
   void get_next_objects();
   void get_next_objects_successful();
@@ -80,7 +77,6 @@ class S3GetMultipartBucketAction : public S3Action {
   // For testing purpose
   FRIEND_TEST(S3GetMultipartBucketActionTest, Constructor);
   FRIEND_TEST(S3GetMultipartBucketActionTest, ObjectListSetup);
-  FRIEND_TEST(S3GetMultipartBucketActionTest, FetchBucketInfo);
   FRIEND_TEST(S3GetMultipartBucketActionTest, FetchBucketInfoFailedMissing);
   FRIEND_TEST(S3GetMultipartBucketActionTest,
               FetchBucketInfoFailedInternalError);

@@ -40,14 +40,18 @@ using ::testing::AtLeast;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                             \
-  do {                                                                     \
-    CREATE_BUCKET_METADATA;                                                \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(  \
-        object_list_indx_oid);                                             \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))  \
-        .Times(AtLeast(1));                                                \
-    action_under_test->fetch_object_info();                                \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid( \
+        object_list_indx_oid);                                            \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
+        .WillOnce(Return(S3HttpVerb::GET));                               \
+    EXPECT_CALL(*(ptr_mock_request), get_operation_code())                \
+        .WillOnce(Return(S3OperationCode::tagging));                      \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 static bool test_read_object_data_success(size_t num_of_blocks,
@@ -190,7 +194,10 @@ TEST_F(S3GetObjectActionTest,
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-
+  EXPECT_CALL(*(ptr_mock_request), http_verb())
+      .WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(ptr_mock_request), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
   action_under_test->fetch_object_info();
   EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
@@ -207,6 +214,10 @@ TEST_F(S3GetObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
+  EXPECT_CALL(*(ptr_mock_request), http_verb())
+      .WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(ptr_mock_request), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
 
   action_under_test->fetch_object_info();
 

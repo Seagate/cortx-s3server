@@ -39,6 +39,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(get_data_length, size_t());
   MOCK_METHOD0(get_data_length_str, std::string());
   MOCK_METHOD0(get_full_body_content_as_string, std::string &());
+  MOCK_METHOD0(get_operation_code, S3OperationCode());
   MOCK_METHOD0(http_verb, S3HttpVerb());
   MOCK_METHOD0(c_get_uri_query, const char *());
   MOCK_CONST_METHOD0(get_object_name, const std::string &());

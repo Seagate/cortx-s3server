@@ -26,15 +26,14 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_factory.h"
 #include "s3_object_list_response.h"
 
-class S3GetMultipartPartAction : public S3Action {
+class S3GetMultipartPartAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   S3ObjectListResponse multipart_part_list;
   std::string last_key;  // last key during each iteration
@@ -51,7 +50,6 @@ class S3GetMultipartPartAction : public S3Action {
   std::string request_marker_key;
   size_t max_parts;
 
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
@@ -79,14 +77,12 @@ class S3GetMultipartPartAction : public S3Action {
   void get_key_object();
   void get_key_object_successful();
   void get_key_object_failed();
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
   void get_multipart_metadata();
   void send_response_to_s3_client();
 
   // Google tests
   FRIEND_TEST(S3GetMultipartPartActionTest, ConstructorTest);
-  FRIEND_TEST(S3GetMultipartPartActionTest, FetchBucketInfoTest);
   FRIEND_TEST(S3GetMultipartPartActionTest,
               GetMultiPartMetadataPresentOidPresentTest);
   FRIEND_TEST(S3GetMultipartPartActionTest,

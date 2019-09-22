@@ -33,7 +33,7 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory)
-    : S3Action(req),
+    : S3BucketAction(req, std::move(bucket_meta_factory)),
       multipart_part_list(req->get_query_string_value("encoding-type")),
       last_key(""),
       return_list_size(0),
@@ -56,12 +56,6 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
          from part-number-marker[%s] with max-parts[%s]\n",
          bucket_name.c_str(), object_name.c_str(), upload_id.c_str(),
          last_key.c_str(), maxparts.c_str());
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
 
   if (object_mp_meta_factory) {
     object_mp_metadata_factory = object_mp_meta_factory;
@@ -110,7 +104,6 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
 }
 
 void S3GetMultipartPartAction::setup_steps() {
-  add_task(std::bind(&S3GetMultipartPartAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetMultipartPartAction::get_multipart_metadata, this));
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   if (!request_marker_key.empty()) {
@@ -120,16 +113,6 @@ void S3GetMultipartPartAction::setup_steps() {
   add_task(
       std::bind(&S3GetMultipartPartAction::send_response_to_s3_client, this));
   // ...
-}
-
-void S3GetMultipartPartAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3GetMultipartPartAction::next, this),
-      std::bind(&S3GetMultipartPartAction::fetch_bucket_info_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3GetMultipartPartAction::fetch_bucket_info_failed() {

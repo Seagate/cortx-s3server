@@ -116,13 +116,6 @@ TEST_F(S3GetMultipartPartActionTest, ConstructorTest) {
   EXPECT_NE(0, action_under_test->number_of_tasks());
 }
 
-TEST_F(S3GetMultipartPartActionTest, FetchBucketInfoTest) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test->fetch_bucket_info();
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-}
-
 TEST_F(S3GetMultipartPartActionTest,
        GetMultiPartMetadataPresentOidPresentTest) {
   struct m0_uint128 oid = {0xffff, 0xffff};

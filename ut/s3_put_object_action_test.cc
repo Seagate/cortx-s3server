@@ -42,14 +42,16 @@ using ::testing::DefaultValue;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                             \
-  do {                                                                     \
-    CREATE_BUCKET_METADATA;                                                \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(  \
-        object_list_indx_oid);                                             \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))  \
-        .Times(AtLeast(1));                                                \
-    action_under_test->fetch_object_info();                                \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid( \
+        object_list_indx_oid);                                            \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
+        .WillOnce(Return(S3HttpVerb::PUT));                               \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 class S3PutObjectActionTest : public testing::Test {
@@ -328,7 +330,8 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
-
+  EXPECT_CALL(*(ptr_mock_request), http_verb())
+      .WillOnce(Return(S3HttpVerb::PUT));
   action_under_test->fetch_object_info();
 
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);

@@ -25,16 +25,11 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
+#include "s3_object_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_factory.h"
 
-class S3GetObjectTaggingAction : public S3Action {
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
-  m0_uint128 object_list_index_oid;
+class S3GetObjectTaggingAction : public S3ObjectAction {
 
  public:
   S3GetObjectTaggingAction(
@@ -43,19 +38,14 @@ class S3GetObjectTaggingAction : public S3Action {
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
   void setup_steps();
-  void fetch_bucket_info();
   void fetch_bucket_info_failed();
-  void get_object_metadata();
-  void get_object_metadata_successful();
-  void get_object_metadata_failed();
+  void fetch_object_info_failed();
   void send_response_to_s3_client();
 
   FRIEND_TEST(S3GetObjectTaggingActionTest, Constructor);
-  FRIEND_TEST(S3GetObjectTaggingActionTest, FetchBucketInfo);
   FRIEND_TEST(S3GetObjectTaggingActionTest, FetchBucketInfoFailedNoSuchBucket);
   FRIEND_TEST(S3GetObjectTaggingActionTest, FetchBucketInfoFailedInternalError);
   FRIEND_TEST(S3GetObjectTaggingActionTest, GetObjectMetadataEmpty);
-  FRIEND_TEST(S3GetObjectTaggingActionTest, GetObjectMetadata);
   FRIEND_TEST(S3GetObjectTaggingActionTest, GetObjectMetadataFailedMissing);
   FRIEND_TEST(S3GetObjectTaggingActionTest,
               GetObjectMetadataFailedInternalError);

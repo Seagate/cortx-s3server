@@ -174,7 +174,6 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetMultipartBucketAction) {
   EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), get_query_string_value(_))
       .WillRepeatedly(Return("123"));
-
   handler_under_test->create_action();
 
   EXPECT_FALSE((dynamic_cast<S3GetMultipartBucketAction *>(
