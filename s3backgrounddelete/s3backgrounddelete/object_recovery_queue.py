@@ -4,10 +4,10 @@ import time
 import json
 import pika
 
-from eos_core_kv_api import EOSCoreKVApi
-from eos_core_object_api import EOSCoreObjectApi
-from eos_core_index_api import EOSCoreIndexApi
-from object_recovery_validator import ObjectRecoveryValidator
+from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
+from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
+from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
+from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
 
 
 class ObjectRecoveryRabbitMq(object):

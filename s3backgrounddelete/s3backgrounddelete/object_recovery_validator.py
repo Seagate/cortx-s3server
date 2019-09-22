@@ -4,8 +4,8 @@ ObjectRecoveryValidator acts as object validator which performs necessary action
 import logging
 import json
 
-from eos_core_kv_api import EOSCoreKVApi
-from eos_core_object_api import EOSCoreObjectApi
+from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
+from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
 
 
 class ObjectRecoveryValidator:

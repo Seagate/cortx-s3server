@@ -8,8 +8,8 @@ import traceback
 import logging
 import datetime
 
-import object_recovery_queue
-from eos_core_config import EOSCoreConfig
+from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
 
 
 class ObjectRecoveryProcessor(object):
@@ -26,7 +26,7 @@ class ObjectRecoveryProcessor(object):
         """Consume the objects from object recovery queue."""
         self.server = None
         try:
-            self.server = object_recovery_queue.ObjectRecoveryRabbitMq(
+            self.server = ObjectRecoveryRabbitMq(
                 self.config,
                 self.config.get_rabbitmq_username(),
                 self.config.get_rabbitmq_password(),

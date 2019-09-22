@@ -2,10 +2,10 @@
 import logging
 import urllib
 
-from eos_core_error_respose import EOSCoreErrorResponse
-from eos_core_success_response import EOSCoreSuccessResponse
-from eos_core_client import EOSCoreClient
-from eos_core_util import EOSCoreUtil
+from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
+from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
+from s3backgrounddelete.eos_core_client import EOSCoreClient
+from s3backgrounddelete.eos_core_util import EOSCoreUtil
 
 # EOSCoreObjectApi supports object REST-API's Put, Get & Delete
 

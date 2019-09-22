@@ -5,7 +5,7 @@ import hashlib
 from hashlib import sha1, sha256
 import urllib
 import datetime
-from eos_core_config import EOSCoreConfig
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
 
 class EOSCoreUtil(object):
    """Generate Authorization headers to validate requests."""

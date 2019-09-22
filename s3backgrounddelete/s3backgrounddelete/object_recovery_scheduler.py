@@ -10,9 +10,9 @@ import time
 import logging
 import datetime
 
-import object_recovery_queue
-from eos_core_config import EOSCoreConfig
-from eos_core_index_api import EOSCoreIndexApi
+import s3backgrounddelete.object_recovery_queue
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
+from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 
 
 class ObjectRecoveryScheduler(object):
