@@ -24,15 +24,14 @@
 
 #include <gtest/gtest_prod.h>
 #include <memory>
-#include "s3_action_base.h"
+#include "s3_bucket_action_base.h"
 #include "s3_bucket_metadata.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_writer.h"
 #include "s3_factory.h"
 
-class S3DeleteBucketAction : public S3Action {
+class S3DeleteBucketAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReader> clovis_kv_reader;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
@@ -59,7 +58,6 @@ class S3DeleteBucketAction : public S3Action {
     return "BUCKET/" + request->get_bucket_name() + "/Multipart";
   }
 
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
   std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
@@ -83,8 +81,7 @@ class S3DeleteBucketAction : public S3Action {
 
   void setup_steps();
 
-  void fetch_bucket_metadata();
-  void fetch_bucket_metadata_failed();
+  void fetch_bucket_info_failed();
   void fetch_first_object_metadata();
   void fetch_first_object_metadata_successful();
   void fetch_first_object_metadata_failed();

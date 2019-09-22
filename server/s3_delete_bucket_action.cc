@@ -32,7 +32,7 @@ S3DeleteBucketAction::S3DeleteBucketAction(
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> clovis_s3_kvs_writer_factory,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_s3_kvs_reader_factory)
-    : S3Action(req, false),
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false),
       last_key(""),
       is_bucket_empty(false),
       delete_successful(false) {
@@ -40,12 +40,6 @@ S3DeleteBucketAction::S3DeleteBucketAction(
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Delete Bucket API. Bucket[%s]\n",
          request->get_bucket_name().c_str());
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
 
   if (object_meta_factory) {
     object_metadata_factory = object_meta_factory;
@@ -90,7 +84,6 @@ S3DeleteBucketAction::S3DeleteBucketAction(
 
 void S3DeleteBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3DeleteBucketAction::fetch_bucket_metadata, this));
   add_task(std::bind(&S3DeleteBucketAction::fetch_first_object_metadata, this));
   add_task(std::bind(&S3DeleteBucketAction::fetch_multipart_objects, this));
   add_task(std::bind(&S3DeleteBucketAction::delete_multipart_objects, this));
@@ -102,19 +95,7 @@ void S3DeleteBucketAction::setup_steps() {
   // ...
 }
 
-void S3DeleteBucketAction::fetch_bucket_metadata() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  // Trigger metadata read async operation with callback
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3DeleteBucketAction::next, this),
-      std::bind(&S3DeleteBucketAction::fetch_bucket_metadata_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3DeleteBucketAction::fetch_bucket_metadata_failed() {
+void S3DeleteBucketAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {

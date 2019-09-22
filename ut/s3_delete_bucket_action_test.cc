@@ -105,13 +105,6 @@ TEST_F(S3DeleteBucketActionTest, ConstructorTest) {
   EXPECT_NE(0, action_under_test->number_of_tasks());
 }
 
-TEST_F(S3DeleteBucketActionTest, FetchBucketMetadata) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test->fetch_bucket_metadata();
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-}
-
 TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
@@ -159,7 +152,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketMissing) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->clovis_kv_reader == nullptr);
@@ -174,7 +167,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketFailedToLaunch) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test->get_s3_error_code().c_str());
@@ -190,7 +183,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataBucketfailure) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->clovis_kv_reader == nullptr);

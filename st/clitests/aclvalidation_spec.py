@@ -311,9 +311,9 @@ os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
 AwsTest('Aws can upload 3k file with tags').put_object("authorizationtestingbucket", "3kfile" ).execute_test().command_is_successful()
 AwsTest('Aws can delete object').delete_object("authorizationtestingbucket","3kfile").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("authorizationtestingbucket").execute_test().command_is_successful()
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
-AwsTest('Aws can delete bucket').delete_bucket("authorizationtestingbucket").execute_test().command_is_successful()
 
 ##**************** Test Case 3 ************
 
@@ -332,13 +332,19 @@ AwsTest('Aws can delete bucket').delete_bucket("authbucket").execute_test().comm
 
 AwsTest('Aws can create bucket').create_bucket("authbucket").execute_test().command_is_successful()
 cannonical_id = "id=" + testAccount_cannonicalid
-AwsTest('Aws can put bucket acl').put_bucket_acl("authbucket", "grant-read" , cannonical_id ).execute_test().command_is_successful()
+AwsTest('Aws can put bucket acl').put_bucket_acl("authbucket", "grant-read-acp" , cannonical_id ).execute_test().command_is_successful()
 os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
 AwsTest('Aws can put bucket acl').get_bucket_acl("authbucket").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("authbucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Aws can put bucket acl').put_bucket_acl("authbucket", "grant-full-control", cannonical_id ).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
 AwsTest('Aws can delete bucket').delete_bucket("authbucket").execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 ##************* Test Case 5 ********************
 
@@ -347,7 +353,7 @@ cannonical_id = "id=" + testAccount_cannonicalid
 AwsTest('Aws can upload 3k file with tags').put_object("authbucket", "3kfile").execute_test().command_is_successful()
 os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
-AwsTest('Aws can put acl').put_object_acl("authbucket", "3kfile", "grant-read" , cannonical_id ).execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Aws can put acl').put_object_acl("authbucket", "3kfile", "grant-full-control" , cannonical_id ).execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 AwsTest('Aws can delete object').delete_object("authbucket","3kfile").execute_test().command_is_successful()
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
@@ -387,9 +393,13 @@ AwsTest('Aws can delete object').delete_object("testbucket","3kfile").execute_te
 AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
 ##***************Test Case 11 ******************
 cannonical_id = "id=" + testAccount_cannonicalid
-AwsTest('Aws can create bucket').create_bucket_with_permission_headers("testbucket" , "grant-write", cannonical_id).execute_test().command_is_successful()
+AwsTest('Aws can create bucket').create_bucket_with_permission_headers("testbucket" , "grant-full-control", cannonical_id).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
 result=AwsTest('Aws can get bucket acl').get_bucket_acl("testbucket").execute_test().command_is_successful().command_response_should_have("testAccount")
 AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 ##**************** Test Case 12 ************
 email_id = "emailAddress=" + testAccount_email+",EMAILaddress="+ "test@seagate.com"
 AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
@@ -403,6 +413,7 @@ del os.environ["AWS_SECRET_ACCESS_KEY"]
 os.environ["AWS_ACCESS_KEY_ID"] = testAccount2_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount2_secret_key
 AwsTest('Aws can get object').get_object("testbucket", "3kfile" ).execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Aws cannot delete bucket').delete_bucket("testbucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
 AwsTest('Aws can get object').get_object("testbucket", "3kfile" ).execute_test().command_is_successful()
@@ -410,7 +421,7 @@ AwsTest('Aws can delete object').delete_object("testbucket","3kfile").execute_te
 AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
 ##**************** Test Case 12 ************
 ids = "id=" + testAccount_cannonicalid
-AwsTest('Aws can create bucket').create_bucket_with_permission_headers("testbucket" , "grant-write", ids).execute_test().command_is_successful()
+AwsTest('Aws can create bucket').create_bucket_with_permission_headers("testbucket" , "grant-full-control", ids).execute_test().command_is_successful()
 os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
 AwsTest('Aws can upload 3k file with tags').put_object("testbucket", "3kfile" ).execute_test().command_is_successful()
@@ -420,9 +431,9 @@ result=AwsTest('Aws can get bucket acl').get_bucket_acl("testbucket").execute_te
 AclTest('acl has valid Owner').validate_owner(result,"C12345", "s3_test")
 print("Owner validation success")
 AwsTest('Aws can delete object').delete_object("testbucket","3kfile").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
-AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
 
 ##**************** Test Case 13 ************
 grantees = "id=" + testAccount_cannonicalid +",EMAILaddress="+testAccount2_email
@@ -487,7 +498,7 @@ AwsTest('Aws can delete object').delete_object("grouptestbucket","3kfile").execu
 AwsTest('Aws can delete bucket').delete_bucket("grouptestbucket").execute_test().command_is_successful()
 ##***************Group Test Case 2 ******************
 group_uri = "URI=http://acs.amazonaws.com/groups/global/AllUsers"
-AwsTest('Aws can create bucket').create_bucket_with_permission_headers("grouptestbucket" , "grant-write", group_uri).execute_test().command_is_successful()
+AwsTest('Aws can create bucket').create_bucket_with_permission_headers("grouptestbucket" , "grant-full-control", group_uri).execute_test().command_is_successful()
 AwsTest('Get bucket ACL').get_bucket_acl("grouptestbucket").execute_test().command_is_successful().command_response_should_have("http://acs.amazonaws.com/groups/global/AllUsers")
 AwsTest('Aws can delete bucket').delete_bucket("grouptestbucket").execute_test().command_is_successful()
 ##***************Group Test Case 3 ******************

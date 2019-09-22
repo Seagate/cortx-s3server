@@ -24,38 +24,19 @@
 S3GetBucketACLAction::S3GetBucketACLAction(
     std::shared_ptr<S3RequestObject> req,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory)
-    : S3Action(req) {
+    : S3BucketAction(std::move(req), std::move(bucket_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id, "S3 API: Get Bucket Acl API. Bucket[%s]\n",
          request->get_bucket_name().c_str());
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
 
   setup_steps();
 }
 
 void S3GetBucketACLAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetBucketACLAction::fetch_bucket_info, this));
   add_task(std::bind(&S3GetBucketACLAction::send_response_to_s3_client, this));
   // ...
-}
-
-void S3GetBucketACLAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-
-  // bypass shutdown signal check for next task
-  check_shutdown_signal_for_next_task(false);
-  bucket_metadata->load(
-      std::bind(&S3GetBucketACLAction::next, this),
-      std::bind(&S3GetBucketACLAction::fetch_bucket_info_failed, this));
 }
 
 void S3GetBucketACLAction::fetch_bucket_info_failed() {
@@ -107,7 +88,7 @@ void S3GetBucketACLAction::send_response_to_s3_client() {
                                   std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   }
-
+  S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
