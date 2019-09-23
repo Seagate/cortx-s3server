@@ -69,7 +69,9 @@ public class ACLPermissionUtil {
      * @param uri Request Uri
      * @return ACL permission and null in case of error
      */
-    public static String getACLPermission(HttpMethod method, String uri) {
+   public
+    static String getACLPermission(HttpMethod method, String uri,
+                                   String queryParam) {
 
         if (uri == null || uri.isEmpty()) {
             IEMUtil.log(IEMUtil.Level.ERROR,
@@ -77,7 +79,7 @@ public class ACLPermissionUtil {
                             "URI is empty or null", null);
             return null;
         }
-        if (isACLReadWrite(uri)) {
+        if (isACLReadWrite(uri, queryParam)) {
            return permissionMapACP.get(method);
         }
         else {
@@ -85,11 +87,9 @@ public class ACLPermissionUtil {
         }
     }
 
-    // Uri format example: /bkirunge-test7/test?acl
-
-    private static boolean isACLReadWrite(String uri) {
-
-        if (uri.endsWith(ACL_QUERY)) {
+   private
+    static boolean isACLReadWrite(String uri, String queryParam) {
+      if (uri.endsWith(ACL_QUERY) || "acl".equals(queryParam)) {
             return true;
         }
         else {
@@ -97,3 +97,5 @@ public class ACLPermissionUtil {
         }
     }
 }
+
+

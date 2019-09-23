@@ -113,6 +113,12 @@ class AccessControlList {
       throws DataAccessException {
     boolean isPermissionAvailable = false;
     if (account != null) {
+      if (account.getCanonicalId().equals(ownerId) &&
+          ("READ_ACP".equals(requiredPermission) ||
+           "WRITE_ACP".equals(requiredPermission))) {
+        isPermissionAvailable = true;
+      }
+      if (!isPermissionAvailable) {
       for (int counter = 0; counter < this.getGrantList().size(); counter++) {
         Grant grantRecord = this.getGrantList().get(counter);
         GroupImpl groupImpl = new GroupImpl();
@@ -125,40 +131,34 @@ class AccessControlList {
             (uri != null &&
              groupImpl.findByPathAndAccount(account, uri).exists())) {
           Grant grant = this.getGrantList().get(counter);
-          if (hasPermission(grant, requiredPermission, account.getCanonicalId(),
-                            ownerId)) {
+          if (hasPermission(grant, requiredPermission)) {
             isPermissionAvailable = true;
             break;
           }
         }
       }
     }
+    }
     return isPermissionAvailable;
   }
-
   /**
-     * Method actually checks expected and required permissions
-     *
-     * @param grant
-     * @param requiredPermission
-     * @param canonicalId
-     * @param acp
-     * @return
-     */
- private
-  boolean hasPermission(Grant grant, String requiredPermission,
-                        String canonicalId, String ownerId) {
+       * Method actually checks expected and required permissions
+       *
+       * @param grant
+       * @param requiredPermission
+       * @param canonicalId
+       * @param acp
+       * @return
+       */
+
+  boolean hasPermission(Grant grant, String requiredPermission) {
     if (grant == null) return false;
     String permissionGrant = grant.getPermission();
     if ("FULL_CONTROL".equals(permissionGrant) ||
         requiredPermission.equals(permissionGrant)) {
       return true;
-    } else if (canonicalId.equals(ownerId) &&
-               ("READ_ACP".equals(requiredPermission) ||
-                "WRITE_ACP".equals(requiredPermission))) {
-      return true;
-    } else {
-      return false;
     }
+    return false;
   }
 }
+

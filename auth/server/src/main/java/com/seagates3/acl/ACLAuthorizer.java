@@ -79,7 +79,8 @@ class ACLAuthorizer {
     HttpMethod httpMethod = HttpMethod.valueOf(method);
 
     String requiredPermission = ACLPermissionUtil.getACLPermission(
-        httpMethod, requestBody.get("ClientAbsoluteUri"));
+        httpMethod, requestBody.get("ClientAbsoluteUri"),
+        requestBody.get("ClientQueryParams"));
     if (requiredPermission == null) {
       String ex = "Bad request. HTTP method or Permission unknown.";
       LOGGER.error(ex);
@@ -101,3 +102,4 @@ class ACLAuthorizer {
     }
   }
 }
+
