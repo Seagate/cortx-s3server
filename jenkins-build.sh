@@ -2,6 +2,7 @@
 
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--use_ipv6] [--skip_build] [--skip_tests]
+                                    [--cleanup_only]
                                     [--fake_obj] [--fake_kvs] [--basic_test_only]
                                     [--callgraph /path/to/output/file]
                                     [--help | -h]
@@ -12,6 +13,7 @@ where:
 --use_ipv6	   Use ipv6 for ST's
 --skip_build	   Do not run build step
 --skip_tests	   Do not run tests, exit before test run
+--cleanup_only	   Do cleanup and stop everything; don't run anything.
 --fake_obj	   Run s3server with stubs for clovis object read/write ops
 --fake_kvs	   Run s3server with stubs for clovis kvs put/get/delete
 		   create idx/remove idx
@@ -27,6 +29,7 @@ s3server_enable_ssl=0
 use_ipv6=0
 restart_haproxy=0
 skip_build=0
+cleanup_only=0
 skip_tests=0
 fake_obj=0
 fake_kvs=0
@@ -59,6 +62,10 @@ else
             exit 1
           fi
           echo "System tests with ssl enabled s3server";
+          ;;
+      --cleanup_only ) cleanup_only=1;
+          skip_build=1;
+          echo "Stop all services, cleanup data, and exit";
           ;;
       --skip_build ) skip_build=1;
           echo "Skip build step";
@@ -168,6 +175,10 @@ cd $S3_BUILD_DIR
 $USE_SUDO rm -rf /mnt/store/mero/* /var/log/mero/* /var/mero/* \
                  /var/log/seagate/s3/* /var/log/seagate/auth/server/* \
                  /var/log/seagate/auth/tools/*
+
+if [ $cleanup_only -eq 1 ]; then
+  exit
+fi
 
 # Configuration setting for using HTTP connection
 if [ $use_http_client -eq 1 ]
