@@ -39,16 +39,18 @@ using ::testing::AtLeast;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                             \
-  do {                                                                     \
-    CREATE_BUCKET_METADATA;                                                \
-    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state()) \
-        .WillOnce(Return(S3BucketMetadataState::present));                 \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(  \
-        object_list_indx_oid);                                             \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))  \
-        .Times(AtLeast(1));                                                \
-    action_under_test->fetch_object_info();                                \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid( \
+        object_list_indx_oid);                                            \
+    EXPECT_CALL(*(mock_request), http_verb())                             \
+        .WillOnce(Return(S3HttpVerb::GET));                               \
+    EXPECT_CALL(*(mock_request), get_operation_code())                    \
+        .WillOnce(Return(S3OperationCode::tagging));                      \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 class S3DeleteObjectActionTest : public testing::Test {
@@ -131,7 +133,7 @@ TEST_F(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
@@ -147,7 +149,7 @@ TEST_F(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketFetchFailed) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
@@ -163,7 +165,7 @@ TEST_F(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketFetchFailedToLaunch) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
 
-  action_under_test->fetch_bucket_metadata_failed();
+  action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test->get_s3_error_code().c_str());
@@ -181,6 +183,9 @@ TEST_F(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(mock_request), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
 
   action_under_test->fetch_object_info();
 
@@ -196,6 +201,9 @@ TEST_F(S3DeleteObjectActionTest,
       .WillRepeatedly(Return(S3BucketMetadataState::present));
 
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess204, _)).Times(1);
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
+  EXPECT_CALL(*(mock_request), get_operation_code())
+      .WillOnce(Return(S3OperationCode::tagging));
 
   action_under_test->fetch_object_info();
 

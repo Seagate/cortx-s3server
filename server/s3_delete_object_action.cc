@@ -31,7 +31,8 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     std::shared_ptr<S3ClovisWriterFactory> writer_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
     std::shared_ptr<ClovisAPI> clovis_api)
-    : S3Action(req, false) {
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
@@ -43,18 +44,6 @@ S3DeleteObjectAction::S3DeleteObjectAction(
     s3_clovis_api = clovis_api;
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
-  }
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = bucket_meta_factory;
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
-  if (object_meta_factory) {
-    object_metadata_factory = object_meta_factory;
-  } else {
-    object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
 
   if (writer_factory) {
@@ -75,8 +64,6 @@ S3DeleteObjectAction::S3DeleteObjectAction(
 
 void S3DeleteObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
-  add_task(std::bind(&S3DeleteObjectAction::fetch_bucket_info, this));
-  add_task(std::bind(&S3DeleteObjectAction::fetch_object_info, this));
   // We delete metadata first followed by object, since if we delete
   // the object first and say for some reason metadata clean up fails,
   // If this "oid" gets allocated to some other object, current object
@@ -94,19 +81,7 @@ void S3DeleteObjectAction::setup_steps() {
   // ...
 }
 
-void S3DeleteObjectAction::fetch_bucket_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
-  bucket_metadata->load(
-      std::bind(&S3DeleteObjectAction::next, this),
-      std::bind(&S3DeleteObjectAction::fetch_bucket_metadata_failed, this));
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3DeleteObjectAction::fetch_bucket_metadata_failed() {
+void S3DeleteObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   S3BucketMetadataState bucket_metadata_state = bucket_metadata->get_state();
   if (bucket_metadata_state == S3BucketMetadataState::failed_to_launch) {
@@ -122,31 +97,9 @@ void S3DeleteObjectAction::fetch_bucket_metadata_failed() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3DeleteObjectAction::fetch_object_info() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
-    struct m0_uint128 object_list_indx_oid =
-        bucket_metadata->get_object_list_index_oid();
-    if (object_list_indx_oid.u_hi == 0ULL &&
-        object_list_indx_oid.u_lo == 0ULL) {
-      // There is no object list index, hence object doesn't exist
-      s3_log(S3_LOG_DEBUG, request_id, "Object not found\n");
-      send_response_to_s3_client();
-    } else {
-      object_metadata = object_metadata_factory->create_object_metadata_obj(
-          request, object_list_indx_oid);
-
-      object_metadata->load(
-          std::bind(&S3DeleteObjectAction::next, this),
-          std::bind(&S3DeleteObjectAction::fetch_object_info_failed, this));
-    }
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
 void S3DeleteObjectAction::fetch_object_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (object_metadata->get_state() == S3ObjectMetadataState::missing) {
+  if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
+      (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
       s3_log(S3_LOG_WARN, request_id, "Object not found\n");
     } else if (object_metadata->get_state() ==
                S3ObjectMetadataState::failed_to_launch) {
@@ -279,5 +232,13 @@ void S3DeleteObjectAction::cleanup_oid_from_probable_dead_oid_list() {
     } else {
       done();
   }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+// To delete a object, we need to check ACL of bucket
+void S3DeleteObjectAction::set_authorization_meta() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
+                                  "");
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

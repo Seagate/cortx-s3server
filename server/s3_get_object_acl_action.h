@@ -25,17 +25,10 @@
 #include <gtest/gtest_prod.h>
 #include <memory>
 
-#include "s3_action_base.h"
-#include "s3_bucket_metadata.h"
+#include "s3_object_action_base.h"
 #include "s3_factory.h"
 
-class S3GetObjectACLAction : public S3Action {
-  std::shared_ptr<S3ObjectMetadata> object_metadata;
-  std::shared_ptr<S3BucketMetadata> bucket_metadata;
-  std::shared_ptr<S3BucketMetadataFactory> bucket_metadata_factory;
-  std::shared_ptr<S3ObjectMetadataFactory> object_metadata_factory;
-  m0_uint128 object_list_index_oid;
-
+class S3GetObjectACLAction : public S3ObjectAction {
  public:
   S3GetObjectACLAction(
       std::shared_ptr<S3RequestObject> req,
@@ -43,20 +36,20 @@ class S3GetObjectACLAction : public S3Action {
       std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr);
 
   void setup_steps();
-  void fetch_bucket_info();
+
   void fetch_bucket_info_failed();
-  void get_object_metadata();
-  void get_object_metadata_failed();
+
+  void fetch_object_info_failed();
   void send_response_to_s3_client();
 
   FRIEND_TEST(S3GetObjectAclActionTest, Constructor);
   FRIEND_TEST(S3GetObjectAclActionTest, FetchBucketInfo);
   FRIEND_TEST(S3GetObjectAclActionTest, FetchBucketInfoFailedNoSuchBucket);
   FRIEND_TEST(S3GetObjectAclActionTest, FetchBucketInfoFailedInternalError);
-  FRIEND_TEST(S3GetObjectAclActionTest, GetObjectMetadataEmpty);
-  FRIEND_TEST(S3GetObjectAclActionTest, GetObjectMetadata);
-  FRIEND_TEST(S3GetObjectAclActionTest, GetObjectMetadataFailedMissing);
-  FRIEND_TEST(S3GetObjectAclActionTest, GetObjectMetadataFailedInternalError);
+  FRIEND_TEST(S3GetObjectAclActionTest, FetchObjectInfoEmpty);
+  FRIEND_TEST(S3GetObjectAclActionTest, FetchObjectInfo);
+  FRIEND_TEST(S3GetObjectAclActionTest, FetchObjectInfoFailedMissing);
+  FRIEND_TEST(S3GetObjectAclActionTest, FetchObjectInfoFailedInternalError);
   FRIEND_TEST(S3GetObjectAclActionTest, SendResponseToClientServiceUnavailable);
   FRIEND_TEST(S3GetObjectAclActionTest, SendResponseToClientInternalError);
   FRIEND_TEST(S3GetObjectAclActionTest, SendResponseToClientSuccess);
