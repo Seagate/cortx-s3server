@@ -430,6 +430,191 @@ import com.seagates3.util.BinaryUtil;
     acc2Requestor.setAccount(account2);
     new ACLCreator().createACLFromCannedInput(acc2Requestor, requestBody);
   }
+
+  /**
+       * Below will test bucket-owner-full-read scenario
+       * @throws IOException
+       * @throws ParserConfigurationException
+       * @throws SAXException
+       * @throws GrantListFullException
+       * @throws TransformerException
+       * @throws InternalServerException
+       */
+  @Test public void testCreateACLFromCannedInput_Success_bucket_owner_read()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    String authAcl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "  <DisplayName>Acc1</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "    <DisplayName>Acc1</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>FULL_CONTROL</Permission>\n" + "  </Grant>\n" +
+        "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+
+    String bucketAcl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>bucketownerID</ID>\n" +
+        "  <DisplayName>BucketOwnerAccount</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>bucketownerID</ID>\n" +
+        "    <DisplayName>BucketOwnerAccount</DisplayName>\n" +
+        "   </Grantee>\n" + "   <Permission>FULL_CONTROL</Permission>\n" +
+        "  </Grant>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(authAcl));
+    requestBody.put("Bucket-ACL", BinaryUtil.encodeToBase64String(bucketAcl));
+    requestBody.put("x-amz-acl", "bucket-owner-read");
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc1", acp.getOwner().getDisplayName());
+    Assert.assertEquals(2, acp.getAccessControlList().getGrantList().size());
+    for (Grant grant : acp.getAccessControlList().getGrantList()) {
+      if ("fsdfsfsfdsfd12DD".equals(grant.grantee.canonicalId)) {
+        Assert.assertEquals("FULL_CONTROL", grant.permission);
+      } else {
+        Assert.assertEquals("READ", grant.permission);
+      }
+    }
+  }
+
+  /**
+       * Below will test bucket-owner-full-control scenario
+       * @throws IOException
+       * @throws ParserConfigurationException
+       * @throws SAXException
+       * @throws GrantListFullException
+       * @throws TransformerException
+       * @throws InternalServerException
+       */
+
+  @Test public void
+  testCreateACLFromCannedInput_Success_bucket_owner_full_control()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    String authAcl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "  <DisplayName>Acc1</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "    <DisplayName>Acc1</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>FULL_CONTROL</Permission>\n" + "  </Grant>\n" +
+        "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+    String bucketAcl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>bucketownerID</ID>\n" +
+        "  <DisplayName>BucketOwnerAccount</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>bucketownerID</ID>\n" +
+        "    <DisplayName>BucketOwnerAccount</DisplayName>\n" +
+        "   </Grantee>\n" + "   <Permission>FULL_CONTROL</Permission>\n" +
+        "  </Grant>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(authAcl));
+    requestBody.put("Bucket-ACL", BinaryUtil.encodeToBase64String(bucketAcl));
+    requestBody.put("x-amz-acl", "bucket-owner-full-control");
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc1", acp.getOwner().getDisplayName());
+    Assert.assertEquals(2, acp.getAccessControlList().getGrantList().size());
+    for (Grant grant : acp.getAccessControlList().getGrantList()) {
+      Assert.assertEquals("FULL_CONTROL", grant.permission);
+    }
+  }
+
+  /**
+       * Below test will check acl creation in case BucketACL not present in
+   * request,
+       * and will also validate grant list for no repetition of grants
+       * @throws IOException
+       * @throws ParserConfigurationException
+       * @throws SAXException
+       * @throws GrantListFullException
+       * @throws TransformerException
+       * @throws InternalServerException
+       */
+
+  @Test public void
+  testCreateACLFromCannedInput_bucketACL_not_present_requested_bucket_owner_read()
+      throws IOException,
+      ParserConfigurationException, SAXException, GrantListFullException,
+      TransformerException, InternalServerException {
+    String authAcl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+        "standalone=\"no\"?><AccessControlPolicy " +
+        "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\n" + " <Owner>\n" +
+        "  <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "  <DisplayName>Acc1</DisplayName>\n" + " </Owner>\n" +
+        " <AccessControlList>\n" + "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd12DD</ID>\n" +
+        "    <DisplayName>Acc1</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>FULL_CONTROL</Permission>\n" + "  </Grant>\n" +
+        "  <Grant>\n" +
+        "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\">\n" + "    <ID>fsdfsfsfdsfd</ID>\n" +
+        "    <DisplayName>Acc2</DisplayName>\n" + "   </Grantee>\n" +
+        "   <Permission>READ</Permission>\n" + "  </Grant>\n" +
+        " </AccessControlList>\n" + "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(authAcl));
+    requestBody.put("x-amz-acl", "bucket-owner-read");
+    String resultACL =
+        new ACLCreator().createACLFromCannedInput(requestor, requestBody);
+    Assert.assertNotNull(resultACL);
+    AccessControlPolicy acp = new AccessControlPolicy(resultACL);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", acp.getOwner().getCanonicalId());
+    Assert.assertEquals("Acc1", acp.getOwner().getDisplayName());
+    Assert.assertEquals(1, acp.getAccessControlList().getGrantList().size());
+    Grant grant = acp.getAccessControlList().getGrantList().get(0);
+    Assert.assertEquals("fsdfsfsfdsfd12DD", grant.grantee.canonicalId);
+    Assert.assertEquals("FULL_CONTROL", grant.permission);
+  }
 }
 
 

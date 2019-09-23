@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 from framework import Config
 from framework import S3PyCliTest
 from awss3api import AwsTest
@@ -667,6 +668,63 @@ del os.environ["AWS_SECRET_ACCESS_KEY"]
 AwsTest('Aws can delete object').delete_object("grouptestbucket","3kfile").execute_test().command_is_successful()
 AwsTest('Aws can delete bucket').delete_bucket("grouptestbucket").execute_test().command_is_successful()
 
+
+# Put object with canned acl - bucket-owner-read
+cannonical_id = "id=" + testAccount_cannonicalid
+AwsTest('Aws can create bucket').create_bucket("aclbucket").execute_test().command_is_successful()
+AwsTest('Aws can put bucket acl').put_bucket_acl("aclbucket", "grant-write" , cannonical_id ).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+AwsTest('Aws can create object').put_object("aclbucket", "testObject").execute_test().command_is_successful()
+AwsTest('put-object-acl for canned acl testing').put_object_acl("aclbucket", "testObject", "acl" , "bucket-owner-read" ).execute_test().command_is_successful()
+AwsTest('Validate the object acl').get_object_acl("aclbucket", "testObject").execute_test().command_is_successful().command_response_should_have("READ")
+AwsTest('Validate the object acl').get_object_acl("aclbucket", "testObject").execute_test().command_is_successful().command_response_should_have("C12345")
+AwsTest('Validate the object acl').get_object_acl("aclbucket", "testObject").execute_test().command_is_successful().command_response_should_have("FULL_CONTROL")
+AwsTest('Validate the object acl').get_object_acl("aclbucket", "testObject").execute_test().command_is_successful().command_response_should_have(testAccount_cannonicalid)
+AwsTest('Aws can get object').get_object("aclbucket", "testObject" ).execute_test().command_is_successful()
+AwsTest('Aws can delete object').delete_object("aclbucket","testObject").execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Aws can put bucket acl').put_bucket_acl("aclbucket", "grant-full-control" , "id=C12345" ).execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("aclbucket").execute_test().command_is_successful()
+
+# Put object with canned acl - bucket-owner-full-control
+cannonical_id = "id=" + testAccount_cannonicalid
+AwsTest('Aws can create bucket').create_bucket("aclbucket").execute_test().command_is_successful()
+AwsTest('Aws can put bucket acl').put_bucket_acl("aclbucket", "grant-write" , cannonical_id ).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+AwsTest('Aws can create object').put_object("aclbucket", "testObject").execute_test().command_is_successful()
+AwsTest('put-object-acl for canned acl testing').put_object_acl("aclbucket", "testObject", "acl" , "bucket-owner-full-control" ).execute_test().command_is_successful()
+result=AwsTest('Validate the object acl').get_object_acl("aclbucket", "testObject").execute_test().command_is_successful()
+acl_json = json.loads(result.status.stdout)
+grants = acl_json["Grants"]
+assert len(grants) == 2
+AwsTest('Aws can get object').get_object("aclbucket", "testObject" ).execute_test().command_is_successful()
+AwsTest('Aws can delete object').delete_object("aclbucket","testObject").execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Aws can put bucket acl').put_bucket_acl("aclbucket", "grant-full-control" , "id=C12345" ).execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("aclbucket").execute_test().command_is_successful()
+
+# Put object with canned acl - bucket-owner-full-control when object and bucket owner are same
+AwsTest('Aws can create bucket').create_bucket("aclbucket").execute_test().command_is_successful()
+AwsTest('Aws can create object').put_object("aclbucket", "testObject").execute_test().command_is_successful()
+AwsTest('put-object-acl for canned acl testing').put_object_acl("aclbucket", "testObject", "acl" , "bucket-owner-read" ).execute_test().command_is_successful()
+result=AwsTest('Validate the object acl').get_object_acl("aclbucket", "testObject").execute_test().command_is_successful()
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+AwsTest('Aws can get object').get_object("aclbucket", "testObject" ).execute_test().command_is_successful()
+AwsTest('Aws can delete object').delete_object("aclbucket","testObject").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("aclbucket").execute_test().command_is_successful()
+
+# Put object with canned acl - bucket-owner-full-control when Bucket-ACL not present
+AwsTest('Aws can create bucket').create_bucket("aclbucket").execute_test().command_is_successful()
+AwsTest('put object with canned acl').put_object_with_permission_headers("aclbucket", "testObject", "acl" , "bucket-owner-read" ).execute_test().command_is_successful()
+result=AwsTest('Validate the object acl').get_object_acl("aclbucket", "testObject").execute_test().command_is_successful()
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+AwsTest('Aws can get object').get_object("aclbucket", "testObject" ).execute_test().command_is_successful()
+AwsTest('Aws can delete object').delete_object("aclbucket","testObject").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("aclbucket").execute_test().command_is_successful()
 
 #************Delete Account *********************
 test_msg = "Delete account testAccount"

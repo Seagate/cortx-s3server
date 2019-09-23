@@ -213,7 +213,7 @@ class ACLCreator {
         existingAcp = new AccessControlPolicy(
             BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")));
       }
-      Owner owner;
+      Owner bucketOwner;
       String errorMessage = null;
 
       switch (cannedInput) {
@@ -250,18 +250,38 @@ class ACLCreator {
 
         case "bucket-owner-read":
           acl.setGrant(getOwnerGrant(requestor, existingAcp));
-          owner = getbucketOwner(requestor, requestBody);
-          acl.addGrant(new Grant(
-              new Grantee(owner.getCanonicalId(), owner.getDisplayName()),
-              "READ"));
+          bucketOwner = getbucketOwner(requestBody);
+          // if bucket owner and object owner are different then only add
+          // requested
+          // permission.
+          // This is to avoid permission duplication.
+          if (bucketOwner != null &&
+              !existingAcp.getOwner().getCanonicalId().equals(
+                   bucketOwner.getCanonicalId())) {
+            acl.addGrant(new Grant(new Grantee(bucketOwner.getCanonicalId(),
+                                               bucketOwner.getDisplayName()),
+                                   "READ"));
+            LOGGER.debug(
+                "Bucket owner with READ permission got added successfully");
+          }
           break;
 
         case "bucket-owner-full-control":
           acl.setGrant(getOwnerGrant(requestor, existingAcp));
-          owner = getbucketOwner(requestor, requestBody);
-          acl.addGrant(new Grant(
-              new Grantee(owner.getCanonicalId(), owner.getDisplayName()),
-              "FULL_CONTROL"));
+          bucketOwner = getbucketOwner(requestBody);
+          // if bucket owner and object owner are different then only add
+          // requested
+          // permission.
+          // This is to avoid permission duplication.
+          if (bucketOwner != null &&
+              !existingAcp.getOwner().getCanonicalId().equals(
+                   bucketOwner.getCanonicalId())) {
+            acl.addGrant(new Grant(new Grantee(bucketOwner.getCanonicalId(),
+                                               bucketOwner.getDisplayName()),
+                                   "FULL_CONTROL"));
+            LOGGER.debug(
+                "Bucket owner with FULL_CONTROL got added successfully");
+          }
           break;
 
         case "log-delivery-write":
@@ -297,15 +317,25 @@ class ACLCreator {
     }
 
     /**
-     * Return the bucket owner
-     * @param requestor
-     * @param requestBody
-     * @return
-     */
+         * Return the bucket owner
+         * @param requestBody
+         * @return bucket owner
+         * @throws GrantListFullException
+         * @throws IOException
+         * @throws SAXException
+         * @throws ParserConfigurationException
+         */
    private
-    Owner getbucketOwner(Requestor requestor, Map<String, String> requestBody) {
-      // TODO Fetch bucket owner from requestor/requestBody
-      return null;
+    Owner getbucketOwner(Map<String, String> requestBody)
+        throws ParserConfigurationException,
+        SAXException, IOException, GrantListFullException {
+      Owner owner = null;
+      if (requestBody.get("Bucket-ACL") != null) {
+        owner = new AccessControlPolicy(
+            BinaryUtil.base64DecodeString(requestBody.get("Bucket-ACL")))
+                    .getOwner();
+      }
+      return owner;
     }
 
     /**
