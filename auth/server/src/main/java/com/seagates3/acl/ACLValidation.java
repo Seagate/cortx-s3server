@@ -177,7 +177,7 @@ class ACLValidation {
       }
 
     } else {
-      return responseGenerator.invalidACL();
+      return responseGenerator.invalidID();
     }
     return responseGenerator.ok();
   }

@@ -96,6 +96,11 @@ class AwsTest(S3PyCliTest):
         self.with_cli("aws s3api " + "get-object-tagging " + " --bucket " + bucket_name + " --key " + object_name)
         return self
 
+    def list_objects(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + "list-objects " + "--bucket " + bucket_name)
+        return self
+
     def delete_object_tagging(self, bucket_name, object_name):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + "delete-object-tagging " + "--bucket " + bucket_name + " --key " + object_name)
@@ -197,8 +202,18 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def put_object_acl_with_canned_input(self, bucket_name, object_name, canned_input):
+        cmd = "aws s3api " + "put-object-acl " + "--bucket " + bucket_name + " --key " + object_name +  " --acl " + canned_input
+        self.with_cli(cmd)
+        return self
+
     def put_bucket_acl(self, bucket_name, permission_header, permission_header_value):
         cmd = "aws s3api " + "put-bucket-acl " + "--bucket " + bucket_name +  " --" + permission_header + " " + permission_header_value
+        self.with_cli(cmd)
+        return self
+
+    def put_bucket_acl_with_canned_input(self, bucket_name, canned_input):
+        cmd = "aws s3api " + "put-bucket-acl " + "--bucket " + bucket_name +  " --acl " + canned_input
         self.with_cli(cmd)
         return self
 
@@ -206,4 +221,15 @@ class AwsTest(S3PyCliTest):
         self.bucket_name = bucket_name
         self.object_name = object_name
         self.with_cli("aws s3api " + "get-object " + "--bucket " + bucket_name + " --key " + object_name + " outfile")
+        return self
+
+    def head_object(self, bucket_name, object_name):
+        self.bucket_name = bucket_name
+        self.object_name = object_name
+        self.with_cli("aws s3api " + "head-object " + "--bucket " + bucket_name + " --key " + object_name)
+        return self
+
+    def head_bucket(self, bucket_name):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + "head-bucket " + "--bucket " + bucket_name)
         return self

@@ -29,6 +29,18 @@ fullACP = "file://" + os.path.abspath(fullACP_relative)
 valid_acl_wihtout_displayname_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'valid_acl_wihtout_displayname.json')
 valid_acl_wihtout_displayname = "file://" + os.path.abspath(valid_acl_wihtout_displayname_relative)
 
+invalid_acl_incorrect_granteeid_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_incorrect_granteeid.json')
+invalid_acl_incorrect_granteeid = "file://" + os.path.abspath(invalid_acl_incorrect_granteeid_relative)
+
+invalid_acl_incorrect_granteename_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_incorrect_granteename.json')
+invalid_acl_incorrect_granteename = "file://" + os.path.abspath(invalid_acl_incorrect_granteename_relative)
+
+invalid_acl_incorrect_ownerid_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_incorrect_ownerid.json')
+invalid_acl_incorrect_ownerid = "file://" + os.path.abspath(invalid_acl_incorrect_ownerid_relative)
+
+invalid_acl_incorrect_ownername_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_incorrect_ownername.json')
+invalid_acl_incorrect_ownername = "file://" + os.path.abspath(invalid_acl_incorrect_ownername_relative)
+
 # Load test config file
 def load_test_config():
     conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
@@ -58,6 +70,9 @@ account_response_elements = AuthTest.get_response_elements(result.status.stdout)
 
 secondary_access_key = account_response_elements['AccessKeyId']
 secondary_secret_key = account_response_elements['SecretKey']
+secondary_id = account_response_elements['CanonicalId']
+secondary_name = 'secaccount'
+sec_cannonical_id = "id=" + secondary_id
 
 #********  Get ACL **********
 bucket="seagatebucketobjectacl"
@@ -67,7 +82,7 @@ result=AwsTest('Aws can get bucket acl').get_bucket_acl(bucket).execute_test().c
 
 print("Bucket ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
@@ -78,10 +93,20 @@ result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").ex
 
 print("Object ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
+
+AwsTest('Aws can list objects in bucket').list_objects(bucket).execute_test().command_is_successful()\
+    .command_response_should_have("testObject")
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Cross account can not list objects in bucket')\
+.list_objects(bucket).execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 print("Validate put object acl with default ACP XML")
 AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", defaultAcp)\
@@ -91,7 +116,7 @@ result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").ex
 
 print("Object ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
@@ -128,9 +153,18 @@ result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").ex
 
 print("Object ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-#AclTest('validate complete acl').validate_acl(result, "C12345", None, "FULL_CONTROL")
-#AclTest('acl has valid Owner').validate_owner(result, "C12345", None)
-#AclTest('acl has valid Grants').validate_grant(result, "C12345", None, 1, "FULL_CONTROL")
+
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", invalid_acl_incorrect_granteeid)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
+
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", invalid_acl_incorrect_granteename)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
+
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", invalid_acl_incorrect_ownerid)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
+
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", invalid_acl_incorrect_ownername)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
 #*********** Negative case to fetch bucket acl for non-existing bucket ****************************
 AwsTest('Aws can not fetch bucket acl of non-existing bucket').get_bucket_acl("seagateinvalidbucket").execute_test(negative_case=True)\
@@ -150,6 +184,9 @@ AwsTest('Aws can delete bucket').delete_bucket(bucket).execute_test().command_is
 
 #******** Create Bucket with default account ********
 AwsTest('Aws can create bucket').create_bucket("seagatebucketacl").execute_test().command_is_successful()
+AwsTest('AWS can put bucket acl with private canned input')\
+.put_bucket_acl_with_canned_input("seagatebucketacl", "private").execute_test().command_is_successful()
+AwsTest('AWS can do head-bucket').head_bucket("seagatebucketacl").execute_test().command_is_successful()
 
 #*********** validate default bucket ACL *********
 
@@ -158,15 +195,18 @@ result=AwsTest('Aws can get bucket acl').get_bucket_acl("seagatebucketacl").exec
 
 print("Bucket ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
 
 # secondary account can not get the default bucket acl
-'''AwsTest('Other AWS account can not get default bucket acl').with_credentials(secondary_access_key, secondary_secret_key)\
-.get_bucket_acl("seagatebucketacl", "testObject")\
-.execute_test().(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")'''
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Other AWS account can not get default bucket acl').get_bucket_acl("seagatebucketacl")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 #********** validate get default object acl *********
 
@@ -178,17 +218,36 @@ result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "te
 
 print("Object ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
 
 # secondary account can not get default object acl
-'''AwsTest('Aws can get object acl').with_credentials(secondary_access_key, secondary_secret_key)\
-.get_object_acl("seagatebucketacl", "testObject")\
-.execute_test().(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")'''
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
-#********** Validate put-object along with canned ACL **********
+# secondary account can not get object
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# secondary account can not put object into bucket
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not put object').put_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+#********** Validate put-object along with canned ACL - requester is primary default account **********
 
 # Put object with canned acl - private
 AwsTest('Aws can create object with \'private\' canned acl input')\
@@ -197,10 +256,31 @@ AwsTest('Aws can create object with \'private\' canned acl input')\
 result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
 print("Object Canned ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
-AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'private\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="private").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 # Put object with canned acl - public-read
 AwsTest('Aws can create object with \'public-read\' canned acl input')\
@@ -210,9 +290,30 @@ result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "te
 print("Object Canned ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
-AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test", "FULL_CONTROL",\
+AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL",\
 "http://acs.amazonaws.com/groups/global/AllUsers", "READ")
 print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'public-read\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="public-read").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Public account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 # Put object with canned acl - public-read-write
 AwsTest('Aws can create object with \'public-read-write\' canned acl input')\
@@ -222,9 +323,30 @@ result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "te
 print("Object Canned ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
-AclTest('validate complete acl').validate_acl_dual_group_grant(result, "C12345", "s3_test", "FULL_CONTROL",\
+AclTest('validate complete acl').validate_acl_dual_group_grant(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL",\
 "http://acs.amazonaws.com/groups/global/AllUsers", "READ", "http://acs.amazonaws.com/groups/global/AllUsers", "WRITE")
 print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'public-read-write\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="public-read-write").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Public account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 # Put object with canned acl - authenticated-read
 AwsTest('Aws can create object with \'authenticated-read\' canned acl input')\
@@ -234,33 +356,469 @@ result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "te
 print("Object Canned ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)
 AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
-AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test", "FULL_CONTROL",\
+AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL",\
 "http://acs.amazonaws.com/groups/global/AuthenticatedUsers", "READ")
 print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'authenticated-read\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="authenticated-read").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Public account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# Put object with canned acl - bucket-owner-read - requester is the bucket owner
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# Put object with canned acl - bucket-owner-full-control - requester is the bucket owner
+AwsTest('Aws can create object with \'bucket-owner-full-control\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-full-control").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'bucket-owner-full-control\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-full-control").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+#********** Validate put-object along with canned ACL - requester is secondary account different from bucket owner **********
+
+# Add write permission for secaccount to seagatebucketacl
+AwsTest('AWS can put bucket acl with public-read-write canned input')\
+.put_bucket_acl_with_canned_input("seagatebucketacl", "public-read-write").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+# Put object with canned acl - private
+AwsTest('Aws can create object with \'private\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="private").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, secondary_id, secondary_name, secondary_id, secondary_name, "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, secondary_id, secondary_name)
+AclTest('acl has valid Grants').validate_grant(result, secondary_id, secondary_name, 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'private\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="private").execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+# Put object with canned acl - bucket-owner-read - requester is NOT the bucket owner
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl_dual_grant\
+(result, secondary_id, secondary_name, secondary_id, secondary_name, "FULL_CONTROL", "C12345", "s3_test", "READ")
+AclTest('acl has valid Owner').validate_owner(result, secondary_id, secondary_name)
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Bucket owner can get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Bucket owner can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Bucket owner can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+# Put object with canned acl - bucket-owner-full-control - requester is NOT the bucket owner
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-full-control\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-full-control").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl_dual_grant\
+(result, secondary_id, secondary_name, secondary_id, secondary_name, "FULL_CONTROL", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, secondary_id, secondary_name)
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can create object with \'bucket-owner-full-control\' canned acl input')\
+.put_object("seagatebucketacl", "testObject", canned_acl="bucket-owner-full-control").execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Bucket owner can get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Bucket owner can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Bucket owner can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-full-control" , sec_cannonical_id)\
+.execute_test().command_is_successful()
 
 # Put object with invalid canned acl
 AwsTest('Aws can not create object with invalid \'private123\' canned acl input')\
 .put_object("seagatebucketacl", "testObject", canned_acl="private123").execute_test(negative_case=True)\
     .command_should_fail()
 
+#********** Validate put-object-acl along with canned ACL **********
+
+# Refresh operation - Put object in bucket - seagatebucketacl
+AwsTest('Aws can create object').put_object("seagatebucketacl", "testObject").execute_test().command_is_successful()
+
+# Put object acl with canned acl - private
+AwsTest('Aws can put object acl with \'private\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "private").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can put object acl with \'private\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "private").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# Put object acl with canned acl - public-read
+AwsTest('Aws owner can put object acl with \'public-read\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "public-read").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL",\
+"http://acs.amazonaws.com/groups/global/AllUsers", "READ")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can put object acl with \'public-read\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "public-read").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Public account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# Put object acl with canned acl - public-read-write
+AwsTest('Aws owner can put object acl with \'public-read-write\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "public-read-write").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('validate complete acl').validate_acl_dual_group_grant(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL",\
+"http://acs.amazonaws.com/groups/global/AllUsers", "READ", "http://acs.amazonaws.com/groups/global/AllUsers", "WRITE")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can put object acl with \'public-read-write\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "public-read-write").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Public account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# Put object acl with canned acl - authenticated-read
+AwsTest('Aws can put object acl with \'authenticated-read\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "authenticated-read").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL",\
+"http://acs.amazonaws.com/groups/global/AuthenticatedUsers", "READ")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can put object acl with \'authenticated-read\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "authenticated-read").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Public account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# Put object with canned acl - bucket-owner-read - requester is the bucket owner
+AwsTest('Aws can put object acl with \'bucket-owner-read\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "bucket-owner-read").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can put object acl with \'bucket-owner-read\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "bucket-owner-read").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# Put object acl with canned acl - bucket-owner-full-control - requester, bucket owner and object owner are same
+AwsTest('Aws can put object acl with \'bucket-owner-full-control\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "bucket-owner-full-control").execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test().command_is_successful()
+# Change back the ACL
+AwsTest('Aws can put object acl with \'bucket-owner-full-control\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "bucket-owner-full-control").execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+#********** Put object acl with canned acl - requestor is secaccount - different from bucket owner ************
+
+# Refresh operation - Put object in bucket - seagatebucketacl
+AwsTest('Aws can create object').put_object_with_permission_headers("seagatebucketacl", "testObject", "grant-full-control", sec_cannonical_id)\
+.execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+# Put object acl with canned acl - private
+AwsTest('Secondary account can put object acl with \'private\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "private").execute_test().command_is_successful()
+
+AwsTest('Unauthorized account can not get object').get_object("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Public account can not do put object acl').put_object_acl("seagatebucketacl", "testObject", "grant-read" , sec_cannonical_id)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('Owner account can do get object').get_object("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Owner account can do get object acl').get_object_acl("seagatebucketacl", "testObject")\
+.execute_test().command_is_successful()
+AwsTest('Secondary account can put object acl with \'private\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "private").execute_test().command_is_successful()
+AwsTest('Do head-object for  "testObject" on bucket "seagatebucketacl"')\
+.head_object("seagatebucketacl", "testObject").execute_test().command_is_successful()
+
+# Put object acl with invalid canned acl
+AwsTest('Aws can not put object acl with invalid \'private123\' canned acl input')\
+.put_object_acl_with_canned_input("seagatebucketacl", "testObject", "private123").execute_test(negative_case=True)\
+    .command_should_fail()
+
 #********** Delete object *************
 
 # Secondary account can not delete object from seagatebucketacl
-'''AwsTest('Aws can not delete object owned by another account without permission')\
-.with_credentials(secondary_access_key, secondary_secret_key)\
-.delete_object("seagatebucketacl", "testObject").execute_test()\
-.(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")'''
+'''os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can not delete object owned by another account without permission')\
+.delete_object("seagatebucketacl", "testObject").execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]'''
 
 # Default acount can delete object from its own bucket
 AwsTest('Aws can delete object owned by itself').delete_object("seagatebucketacl","testObject").execute_test().command_is_successful()
-
+AwsTest('Aws can delete object owned by itself').delete_object("seagatebucketacl","testObject1").execute_test().command_is_successful()
 #********** Delete bucket *************
 
 # Secondary account can not delete bucket
-'''AwsTest('AWS can not delete bucket owned by another account without permission')\
-.with_credentials(secondary_access_key, secondary_secret_key)\
-.delete_bucket("seagatebucketacl").execute_test().(negative_case=True)\
-.command_should_fail().command_error_should_have("AccessDenied")'''
+'''os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('AWS can not delete bucket owned by another account without permission')\
+.delete_bucket("seagatebucketacl").execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]'''
 
 # Default account can delete bucket seagatebucketacl
 AwsTest('Account owner can delete bucket').delete_bucket("seagatebucketacl").execute_test().command_is_successful()
@@ -325,7 +883,7 @@ cannonical_id = "id=" + testAccount_cannonicalid
 AwsTest('Aws can upload 3k file with tags').put_object_with_permission_headers("authbucket", "3kfile", "grant-read" , cannonical_id ).execute_test().command_is_successful()
 os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
 os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
-AwsTest('Aws can put acl').get_object("authbucket", "3kfile").execute_test().command_is_successful()
+AwsTest('Aws can get acl').get_object("authbucket", "3kfile").execute_test().command_is_successful()
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
 AwsTest('Aws can delete object').delete_object("authbucket","3kfile").execute_test().command_is_successful()

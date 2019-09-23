@@ -190,7 +190,7 @@ result=AwsTest('Aws can complete multipart upload 10Mb file with tags').complete
 aclresult=AwsTest('Aws can get object acl').get_object_acl("seagatebuckettag", "10Mbfile").execute_test().command_is_successful()
 
 print("ACL validation started..")
-AclTest('validate complete acl').validate_acl(aclresult, "C12345", "s3_test", "FULL_CONTROL")
+AclTest('validate complete acl').validate_acl(aclresult, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
 AclTest('acl has valid Owner').validate_owner(aclresult, "C12345", "s3_test")
 AclTest('acl has valid Grants').validate_grant(aclresult, "C12345", "s3_test", 1, "FULL_CONTROL")
 print("ACL validation Completed..")
