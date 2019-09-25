@@ -23,6 +23,7 @@ usage() {
   echo '          --no-s3mempoolmgrut-build  : Do not build Memory pool Manager UT, Default (false)'
   echo '          --no-s3server-build        : Do not build S3 Server, Default (false)'
   echo '          --no-cloviskvscli-build    : Do not build cloviskvscli tool, Default (false)'
+  echo '          --no-s3background-build    : Do not build s3background process, Default (false)'
   echo '          --no-auth-build            : Do not build Auth Server, Default (false)'
   echo '          --no-jclient-build         : Do not build jclient, Default (false)'
   echo '          --no-jcloudclient-build    : Do not build jcloudclient, Default (false)'
@@ -33,7 +34,7 @@ usage() {
 
 # read the options
 OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
-no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,no-cloviskvscli-build,no-auth-build,\
+no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,no-cloviskvscli-build,no-s3background-build,no-auth-build,\
 no-jclient-build,no-jcloudclient-build,no-s3iamcli-build,no-install,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
@@ -47,6 +48,7 @@ no_s3mempoolut_build=0
 no_s3mempoolmgrut_build=0
 no_s3server_build=0
 no_cloviskvscli_build=0
+no_s3background_build=0
 no_auth_build=0
 no_jclient_build=0
 no_jcloudclient_build=0
@@ -65,6 +67,7 @@ while true; do
     --no-s3mempoolmgrut-build) no_s3mempoolmgrut_build=1; shift ;;
     --no-s3server-build) no_s3server_build=1; shift ;;
     --no-cloviskvscli-build) no_cloviskvscli_build=1; shift ;;
+    --no-s3background-build) no_s3background_build=1; shift ;;
     --no-auth-build) no_auth_build=1; shift ;;
     --no-jclient-build) no_jclient_build=1; shift ;;
     --no-jcloudclient-build) no_jcloudclient_build=1; shift ;;
@@ -264,6 +267,21 @@ then
   else
     ./makeinstall
   fi
+fi
+
+if [ $no_mero_rpm -eq 1 ]
+then
+  if [ $no_s3background_build -eq 0 ]
+  then
+    cd s3backgrounddelete
+    if [ $no_clean_build -eq 0 ]
+    then
+      python36 setup.py install --force
+    else
+      python36 setup.py install
+    fi
+    cd -
+fi
 fi
 
 if [ $no_mero_rpm -eq 1 ]

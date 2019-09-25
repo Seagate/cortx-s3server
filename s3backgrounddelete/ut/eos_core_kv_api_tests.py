@@ -5,8 +5,8 @@ from http.client import HTTPConnection
 from http.client import HTTPResponse
 from unittest.mock import Mock
 
-from eos_core_kv_api import EOSCoreKVApi
-from eos_core_config import EOSCoreConfig
+from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
 
 def test_get_no_index_id():
     """Test GET api without index_id should return response as "None"."""

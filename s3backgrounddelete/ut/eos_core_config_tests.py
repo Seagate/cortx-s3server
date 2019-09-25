@@ -4,7 +4,7 @@ Unit Test for EOSCoreConfig class API.
 import os
 import pytest
 
-from eos_core_config import EOSCoreConfig
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
 
 CONFIG_LOG_DIR = "/var/log/seagate/s3/s3backgrounddelete"
 

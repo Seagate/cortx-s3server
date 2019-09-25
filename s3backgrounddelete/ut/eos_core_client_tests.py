@@ -6,8 +6,8 @@ from http.client import HTTPResponse
 from unittest.mock import Mock
 import pytest
 
-from eos_core_client import EOSCoreClient
-from eos_core_config import EOSCoreConfig
+from s3backgrounddelete.eos_core_client import EOSCoreClient
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
 
 def test_get_connection_success():
     """Test if HTTPConnection object is returned"""

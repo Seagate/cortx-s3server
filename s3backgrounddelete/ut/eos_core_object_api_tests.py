@@ -5,8 +5,8 @@ from http.client import HTTPConnection
 from http.client import HTTPResponse
 from unittest.mock import Mock
 
-from eos_core_object_api import EOSCoreObjectApi
-from eos_core_config import EOSCoreConfig
+from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
 
 def test_get_no_oid():
     """Test GET api without oid should return response as "None"."""

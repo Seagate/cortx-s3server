@@ -32,7 +32,9 @@ BuildRequires: gtest gtest-devel
 BuildRequires: gmock gmock-devel
 BuildRequires: git
 BuildRequires: log4cxx_eos log4cxx_eos-devel
-
+BuildRequires: python%{python3_other_pkgversion} >= 3.6
+BuildRequires: python%{python3_other_pkgversion}-devel
+BuildRequires: python%{python3_other_pkgversion}-setuptools
 
 Requires: mero = %{h_mero_version}
 Requires: libxml2
@@ -44,6 +46,8 @@ Requires: gflags
 Requires: glog
 Requires: pkgconfig
 Requires: log4cxx_eos log4cxx_eos-devel
+Requires: python%{python3_other_pkgversion} >= 3.6
+Requires: python%{python3_other_pkgversion}-yaml
 # Java used by Auth server
 Requires: java-1.8.0-openjdk-headless
 Requires: PyYAML
@@ -56,10 +60,19 @@ S3 server provides S3 REST API interface support for Mero object storage.
 
 %build
 ./rebuildall.sh --no-check-code --no-install
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
+# Build the background delete python module.
+cd s3backgrounddelete/s3backgrounddelete
+%{__python3_other} -m compileall -b *.py
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
+echo "build complete"
 
 %install
 rm -rf %{buildroot}
 ./installhelper.sh %{buildroot}
+# Install the background delete python module.
+cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete
+%{__python3_other} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 %clean
 bazel clean
@@ -106,6 +119,8 @@ rm -rf %{buildroot}
 /etc/cron.hourly/s3logfilerollover.sh
 /lib/systemd/system/s3authserver.service
 /lib/systemd/system/s3server@.service
+/lib/systemd/system/s3producer.service
+/lib/systemd/system/s3consumer.service
 /opt/seagate/auth/AuthServer-1.0-0.jar
 /opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/auth/startauth.sh
@@ -146,6 +161,15 @@ rm -rf %{buildroot}
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
+%{_bindir}/s3backgroundconsumer
+%{_bindir}/s3backgroundproducer
+%{python3_other_sitelib}/s3backgrounddelete/config/*.yaml
+%{python3_other_sitelib}/s3backgrounddelete/*.pyc
+%{python3_other_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
+%exclude %{python3_other_sitelib}/s3backgrounddelete/__pycache__/*
+%exclude %{python3_other_sitelib}/s3backgrounddelete/*.py
+%exclude %{python3_other_sitelib}/s3backgrounddelete/s3backgroundconsumer
+%exclude %{python3_other_sitelib}/s3backgrounddelete/s3backgroundproducer
 
 %post
 systemctl daemon-reload
