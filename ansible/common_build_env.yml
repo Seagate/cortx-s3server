@@ -29,6 +29,8 @@
     - gflags-devel
     - glog
     - glog-devel
+    - hiredis
+    - hiredis-devel
 
 - name: Install Python and dependencies
   yum: pkg={{item}} state=installed

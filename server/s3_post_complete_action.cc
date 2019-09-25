@@ -230,15 +230,19 @@ void S3PostCompleteAction::get_next_parts_info() {
 }
 
 void S3PostCompleteAction::get_next_parts_info_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering with size %d while requested %d\n",
+         (int)clovis_kv_reader->get_key_values().size(),
+         (int)count_we_requested);
   if (clovis_kv_reader->get_key_values().size() > 0) {
     // Do validation of parts
     if (!validate_parts()) {
+      s3_log(S3_LOG_DEBUG, request_id, "validate_parts failed");
       return;
     }
   }
 
   if (is_abort_multipart()) {
+    s3_log(S3_LOG_DEBUG, request_id, "aborting multipart");
     next();
   } else {
     if (clovis_kv_reader->get_key_values().size() < count_we_requested) {
@@ -246,12 +250,16 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
       validated_parts_count += clovis_kv_reader->get_key_values().size();
       if ((parts.size() != 0) ||
           (validated_parts_count != std::stoul(total_parts))) {
+        s3_log(S3_LOG_DEBUG, request_id,
+               "invalid: parts.size %d validated %d exp %d", (int)parts.size(),
+               (int)validated_parts_count, (int)std::stoul(total_parts));
         part_metadata->set_state(S3PartMetadataState::missing_partially);
         set_s3_error("InvalidPart");
         send_response_to_s3_client();
         return;
       }
       // All parts info processed and validated, finalize etag and move ahead.
+      s3_log(S3_LOG_DEBUG, request_id, "finalizing");
       etag = awsetag.finalize();
       next();
     } else {
@@ -260,6 +268,8 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
       if (!clovis_kv_reader->get_key_values().empty()) {
         last_key = clovis_kv_reader->get_key_values().rbegin()->first;
       }
+      s3_log(S3_LOG_DEBUG, request_id, "continue fetching with %s",
+             last_key.c_str());
       get_next_parts_info();
     }
   }

@@ -50,7 +50,7 @@ cc_binary(
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
       "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -lgf_complete -laio",
-      "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgflags",
+      "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgflags -lhiredis",
       "-pthread -lglog",
       "-Wl,-rpath,/opt/seagate/s3/libevent",
     ],
@@ -100,7 +100,7 @@ cc_test(
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
       "-lpthread -ldl -lm -lrt -lmero -lmero-helpers -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
-      "-pthread -lglog",
+      "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
     ],
 
@@ -154,7 +154,7 @@ cc_test(
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
       "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
-      "-pthread -lglog",
+      "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
     ],
 
@@ -286,7 +286,7 @@ cc_test(
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
       "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -lgf_complete -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
-      "-pthread -lglog",
+      "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
     ],
 )

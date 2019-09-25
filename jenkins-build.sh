@@ -3,7 +3,8 @@
 USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--use_ipv6] [--skip_build] [--skip_tests]
                                     [--cleanup_only]
-                                    [--fake_obj] [--fake_kvs] [--basic_test_only]
+                                    [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
+                                    [--local_redis_restart]
                                     [--callgraph /path/to/output/file]
                                     [--help | -h]
 
@@ -17,9 +18,12 @@ where:
 --fake_obj	   Run s3server with stubs for clovis object read/write ops
 --fake_kvs	   Run s3server with stubs for clovis kvs put/get/delete
 		   create idx/remove idx
+--redis_kvs	   Run s3server with redis stubs for clovis kvs put/get/delete
+		   create idx/remove idx
 --basic_test_only	   Do not run all the tests. Only basic s3cmd regression
 		   tests will be run. If --fake* params provided, tests will use
 		   zero filled objects
+--local_redis_restart	   In case redis server installed on local machine this option restarts redis-server
 --callgraph /path/to/output/file	   Generate valgrind call graph; Especially usefull
 		   together with --basic_test_only option
 --help (-h)        Display help"
@@ -33,8 +37,10 @@ cleanup_only=0
 skip_tests=0
 fake_obj=0
 fake_kvs=0
+redis_kvs=0
 basic_test_only=0
 callgraph_cmd=""
+local_redis_restart=0
 
 if [ $# -eq 0 ]
 then
@@ -77,6 +83,21 @@ else
           echo "Stubs for clovis object read/write ops";
           ;;
       --fake_kvs ) fake_kvs=1;
+          if [ $redis_kvs -eq 1 ]
+          then
+              echo "Redis kvs and fake kvs cannot be specified together"
+              echo "$USAGE"
+              exit 1
+          fi
+          echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
+          ;;
+      --redis_kvs ) redis_kvs=1;
+          if [ $fake_kvs -eq 1 ]
+          then
+              echo "Redis kvs and fake kvs cannot be specified together"
+              echo "$USAGE"
+              exit 1
+          fi
           echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
           ;;
       --basic_test_only ) basic_test_only=1;
@@ -91,6 +112,9 @@ else
                     fi
                     echo "Generate valgrind call graph with params $callgraph_cmd";
                     ;;
+      --local_redis_restart ) echo "redis-server will be restarted";
+                              local_redis_restart=1;
+                              ;;
       --help | -h )
           echo "$USAGE"
           exit 1
@@ -133,6 +157,12 @@ rpm -q stx-s3-client-certs
 systemctl status haproxy
 
 cd $S3_BUILD_DIR
+
+if [ $cleanup_only -eq 1 ]; then
+    set +e
+    $USE_SUDO kill -9 `pgrep redis`
+    set -e
+fi
 
 is_authsrv_running=1
 $USE_SUDO systemctl is-active s3authserver 2>&1 > /dev/null || is_authsrv_running=0
@@ -240,6 +270,19 @@ then
     fake_params+=" --fake_kvs"
 fi
 
+if [ $local_redis_restart -eq 1 ]; then
+    rpm -q redis
+    set +e
+    $USE_SUDO kill -9 `pgrep redis`
+    set -e
+    redis-server --port 6379 &
+fi
+
+if [ $redis_kvs -eq 1 ]
+then
+    fake_params+=" --redis_kvs"
+fi
+
 if [ $fake_obj -eq 1 ]
 then
     fake_params+=" --fake_obj"
@@ -295,7 +338,7 @@ basic_test_cmd_par=""
 if [ $basic_test_only -eq 1 ]
 then
     basic_test_cmd_par="--basic-s3cmd-rand"
-    if [ $fake_kvs -eq 1 ] || [ $fake_obj -eq 1 ]
+    if [ $fake_obj -eq 1 ]
     then
         basic_test_cmd_par="--basic-s3cmd-zero"
     fi

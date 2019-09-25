@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # Script to start S3 server in dev environment.
-#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>] [--fake_obj] [--fake_kvs] [--callgraph /path/to/graph]
+#   Usage: sudo ./dev-starts3.sh [<Number of S3 sever instances>] [--fake_obj] [--fake_kvs | --redis_kvs] [--callgraph /path/to/graph]
 #               Optional argument is:
 #                   Number of S3 server instances to start.
 #                   Max number of instances allowed = 20
@@ -33,6 +33,7 @@ set -e
 num_instances=1
 fake_obj=0
 fake_kvs=0
+redis_kvs=0
 
 callgraph_mode=0
 callgraph_out="/tmp/callgraph.out"
@@ -51,6 +52,9 @@ while [ "$1" != "" ]; do
         --fake_kvs ) fake_kvs=1;
                      echo "Stubs for clovis kvs put/get/delete/create idx/remove idx";
                      ;;
+        --redis_kvs ) redis_kvs=1;
+                      echo "Redis based stubs for clovis kvs put/get/delete";
+                      ;;
         --callgraph ) callgraph_mode=1;
                       num_instances=1;
                       echo "Generate call graph with valgrind";
@@ -67,6 +71,11 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [ $fake_kvs == 1 ] && [ $redis_kvs == 1 ]; then
+    echo "Only fake kvs or redis kvs can be specified";
+    exit 1;
+fi
 
 set -x
 
@@ -142,6 +151,11 @@ fake_params=""
 if [ $fake_kvs -eq 1 ]
 then
     fake_params+=" --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_getkv true --fake_clovis_putkv true --fake_clovis_deletekv true"
+fi
+
+if [ $redis_kvs -eq 1 ]
+then
+    fake_params+=" --fake_clovis_createidx true --fake_clovis_deleteidx true --fake_clovis_redis_kvs true"
 fi
 
 if [ $fake_obj -eq 1 ]

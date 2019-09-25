@@ -152,6 +152,9 @@ class S3Option {
   size_t libevent_pool_buffer_size;
   size_t libevent_max_read_size;
 
+  std::string redis_srv_addr;
+  unsigned short redis_srv_port;
+
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
 
@@ -253,6 +256,9 @@ class S3Option {
     statsd_port = FLAGS_statsd_port;
     statsd_max_send_retry = 3;
     stats_whitelist_filename = "/opt/seagate/s3/conf/s3stats-whitelist.yaml";
+
+    redis_srv_addr = "127.0.0.1";
+    redis_srv_port = 6397;
 
     eventbase = NULL;
 
@@ -383,9 +389,13 @@ class S3Option {
   bool is_fake_clovis_getkv();
   bool is_fake_clovis_putkv();
   bool is_fake_clovis_deletekv();
+  bool is_fake_clovis_redis_kvs();
 
   void set_eventbase(evbase_t* base);
   evbase_t* get_eventbase();
+
+  std::string get_redis_srv_addr();
+  unsigned short get_redis_srv_port();
 
   bool is_stats_enabled();
   void set_stats_enable(bool enable);

@@ -164,6 +164,12 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_STATS_WHITELIST_FILENAME");
       stats_whitelist_filename =
           s3_option_node["S3_STATS_WHITELIST_FILENAME"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_ADDRESS");
+      redis_srv_addr =
+          s3_option_node["S3_REDIS_SERVER_ADDRESS"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_PORT");
+      redis_srv_port =
+          s3_option_node["S3_REDIS_SERVER_PORT"].as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -424,6 +430,12 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOGGER_RSYSLOG_MSGID");
       audit_logger_rsyslog_msgid =
           s3_option_node["S3_AUDIT_LOGGER_RSYSLOG_MSGID"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_ADDRESS");
+      redis_srv_addr =
+          s3_option_node["S3_REDIS_SERVER_ADDRESS"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_PORT");
+      redis_srv_port =
+          s3_option_node["S3_REDIS_SERVER_PORT"].as<unsigned short>();
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -793,6 +805,8 @@ void S3Option::dump_options() {
          FLAGS_fake_clovis_putkv);
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_deletekv = %d\n",
          FLAGS_fake_clovis_deletekv);
+  s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_redis_kvs = %d\n",
+         FLAGS_fake_clovis_redis_kvs);
   s3_log(S3_LOG_INFO, "", "FLAGS_disable_auth = %d\n", FLAGS_disable_auth);
 
   s3_log(S3_LOG_INFO, "", "S3_ENABLE_STATS = %s\n",
@@ -803,6 +817,10 @@ void S3Option::dump_options() {
          statsd_max_send_retry);
   s3_log(S3_LOG_INFO, "", "S3_STATS_WHITELIST_FILENAME = %s\n",
          stats_whitelist_filename.c_str());
+
+  s3_log(S3_LOG_INFO, "", "S3_REDIS_SERVER_PORT = %d\n", (int)redis_srv_port);
+  s3_log(S3_LOG_INFO, "", "S3_REDIS_SERVER_ADDRESS = %s\n",
+         redis_srv_addr.c_str());
 
   return;
 }
@@ -1057,6 +1075,10 @@ bool S3Option::is_fake_clovis_putkv() { return FLAGS_fake_clovis_putkv; }
 
 bool S3Option::is_fake_clovis_deletekv() { return FLAGS_fake_clovis_deletekv; }
 
+bool S3Option::is_fake_clovis_redis_kvs() {
+  return FLAGS_fake_clovis_redis_kvs;
+}
+
 unsigned short S3Option::get_max_retry_count() { return max_retry_count; }
 
 unsigned short S3Option::get_retry_interval_in_millisec() {
@@ -1104,3 +1126,7 @@ bool S3Option::is_mero_http_reuseport_enabled() { return mero_http_reuseport; }
 bool S3Option::is_fi_enabled() { return FLAGS_fault_injection; }
 
 bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
+
+std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
+
+unsigned short S3Option::get_redis_srv_port() { return redis_srv_port; }

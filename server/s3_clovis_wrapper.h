@@ -25,6 +25,7 @@
 
 #include <functional>
 #include <iostream>
+
 #include "s3_clovis_rw_common.h"
 #include "s3_post_to_main_loop.h"
 
@@ -32,6 +33,7 @@
 #include "s3_fi_common.h"
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_fake_clovis_redis_kvs.h"
 
 extern struct m0_ufid_generator s3_ufid_generator;
 
@@ -117,6 +119,32 @@ class ConcreteClovisAPI : public ClovisAPI {
     S3PostToMainLoop((void *)user_ctx)(s3_clovis_dummy_op_stable);
   }
 
+  void clovis_fake_redis_op_launch(struct m0_clovis_op **op, uint32_t nr) {
+    s3_log(S3_LOG_DEBUG, "", "Entering\n");
+    auto redis_ctx = S3FakeClovisRedisKvs::instance();
+
+    for (uint32_t i = 0; i < nr; ++i) {
+      struct m0_clovis_op *cop = op[i];
+
+      assert(cop);
+
+      if (cop->op_code == M0_CLOVIS_IC_GET) {
+        redis_ctx->kv_read(cop);
+      } else if (M0_CLOVIS_IC_NEXT == cop->op_code) {
+        redis_ctx->kv_next(cop);
+      } else if (M0_CLOVIS_IC_PUT == cop->op_code) {
+        redis_ctx->kv_write(cop);
+      } else if (M0_CLOVIS_IC_DEL == cop->op_code) {
+        redis_ctx->kv_del(cop);
+      } else {
+        s3_log(S3_LOG_DEBUG, "", "Not a kvs op (%d) - ignore", cop->op_code);
+        cop->op_rc = 0;
+        s3_clovis_op_stable(cop);
+      }
+    }
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  }
+
   void clovis_fi_op_launch(struct m0_clovis_op **op, uint32_t nr) {
     s3_log(S3_LOG_DEBUG, "", "Called\n");
     for (uint32_t i = 0; i < nr; ++i) {
@@ -129,7 +157,8 @@ class ConcreteClovisAPI : public ClovisAPI {
   }
 
   bool is_clovis_sync_should_be_faked() {
-    return S3Option::get_instance()->is_fake_clovis_putkv();
+    auto inst = S3Option::get_instance();
+    return inst->is_fake_clovis_putkv() || inst->is_fake_clovis_redis_kvs();
   }
 
  public:
@@ -224,6 +253,15 @@ class ConcreteClovisAPI : public ClovisAPI {
     return m0_clovis_obj_op(obj, opcode, ext, data, attr, mask, op);
   }
 
+  bool is_kvs_op(ClovisOpType type) {
+    return type == ClovisOpType::getkv || type == ClovisOpType::putkv ||
+           type == ClovisOpType::deletekv;
+  }
+
+  bool is_redis_kvs_op(S3Option *opts, ClovisOpType type) {
+    return opts && opts->is_fake_clovis_redis_kvs() && is_kvs_op(type);
+  }
+
   void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr,
                         ClovisOpType type = ClovisOpType::unknown) {
     S3Option *config = S3Option::get_instance();
@@ -241,6 +279,8 @@ class ConcreteClovisAPI : public ClovisAPI {
         (config->is_fake_clovis_putkv() && type == ClovisOpType::putkv) ||
         (config->is_fake_clovis_deletekv() && type == ClovisOpType::deletekv)) {
       clovis_fake_op_launch(op, nr);
+    } else if (is_redis_kvs_op(config, type)) {
+      clovis_fake_redis_op_launch(op, nr);
     } else if ((type == ClovisOpType::createobj &&
                 s3_fi_is_enabled("clovis_obj_create_fail")) ||
                (type == ClovisOpType::openobj &&
@@ -261,6 +301,7 @@ class ConcreteClovisAPI : public ClovisAPI {
                 s3_fi_is_enabled("clovis_kv_get_fail"))) {
       clovis_fi_op_launch(op, nr);
     } else {
+      s3_log(S3_LOG_DEBUG, "", "m0_clovis_op_launch will be used");
       m0_clovis_op_launch(op, nr);
     }
   }

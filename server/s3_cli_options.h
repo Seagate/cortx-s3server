@@ -63,6 +63,7 @@ DECLARE_bool(fake_clovis_deleteidx);
 DECLARE_bool(fake_clovis_getkv);
 DECLARE_bool(fake_clovis_putkv);
 DECLARE_bool(fake_clovis_deletekv);
+DECLARE_bool(fake_clovis_redis_kvs);
 DECLARE_bool(fault_injection);
 DECLARE_bool(reuseport);
 DECLARE_bool(getoid);

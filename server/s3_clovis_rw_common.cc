@@ -99,7 +99,8 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
       (S3AsyncOpContextBase *)ctx->application_context;
   int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
   std::string request_id = app_ctx->get_request()->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Return code = %d\n", clovis_rc);
+  s3_log(S3_LOG_DEBUG, request_id, "Return code = %d op_code = %d\n", clovis_rc,
+         op->op_code);
 
   s3_log(S3_LOG_DEBUG, request_id, "op_index_in_launch = %d\n",
          ctx->op_index_in_launch);
@@ -199,8 +200,6 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
   // where m0_clovis_rc can't be mocked.
   op->op_rc = 0;  // fake success
 
-  s3_log(S3_LOG_DEBUG, "", "R %d, W %d, N %d cur %d", M0_CLOVIS_IC_GET,
-         M0_CLOVIS_IC_PUT, M0_CLOVIS_IC_NEXT, op->op_code);
   if (op->op_code == M0_CLOVIS_IC_GET) {
     struct s3_clovis_context_obj *ctx =
         (struct s3_clovis_context_obj *)op->op_datum;

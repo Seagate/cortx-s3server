@@ -68,6 +68,8 @@ DEFINE_bool(fake_clovis_deleteidx, false, "Fake out clovis delete index");
 DEFINE_bool(fake_clovis_getkv, false, "Fake out clovis get key-val");
 DEFINE_bool(fake_clovis_putkv, false, "Fake out clovis put key-val");
 DEFINE_bool(fake_clovis_deletekv, false, "Fake out clovis delete key-val");
+DEFINE_bool(fake_clovis_redis_kvs, false,
+            "Fake out clovis kvs with redis in-memory storage");
 DEFINE_bool(fault_injection, false, "Enable fault Injection flag for testing");
 DEFINE_bool(loading_indicators, false, "Enable logging load indicators");
 DEFINE_bool(addb, false, "Enable logging via ADDB mero subsystem");

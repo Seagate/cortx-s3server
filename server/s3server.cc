@@ -43,6 +43,8 @@
 #include "s3_uri_to_mero_oid.h"
 #include "s3_audit_info.h"
 #include "s3_audit_info_logger.h"
+#include "s3_fake_clovis_redis_kvs.h"
+
 #define FOUR_KB 4096
 
 #define WEBSTORE "/home/seagate/webstore"
@@ -885,6 +887,8 @@ int main(int argc, char **argv) {
            "Event base loop exited due to unhandled exception in libevent's "
            "backend\n");
   }
+
+  S3FakeClovisRedisKvs::destroy_instance();
 
   free_evhtp_handle(htp_ipv4);
   free_evhtp_handle(htp_ipv6);
