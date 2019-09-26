@@ -80,12 +80,12 @@ class ACLValidation {
   }
 
  public
-  ServerResponse validate() {
+  ServerResponse validate(AccessControlPolicy existingAcp) {
 
     if (!validation) {
       return responseGenerator.invalidACL();
     }
-    return validateACL();
+    return validateACL(existingAcp);
   }
 
   /**
@@ -105,7 +105,7 @@ class ACLValidation {
    *
    */
  private
-  ServerResponse validateACL() {
+  ServerResponse validateACL(AccessControlPolicy existingAcp) {
 
     ArrayList<Grant> grantList = acp.accessControlList.getGrantList();
     if (grantList.size() > AuthServerConfig.MAX_GRANT_SIZE)
@@ -116,6 +116,13 @@ class ACLValidation {
     /**
      * validate owner id and owner displayName.
      */
+    if (existingAcp != null) {
+      if (!existingAcp.owner.getCanonicalId().equals(
+               acp.owner.getCanonicalId())) {
+        return responseGenerator.invalidID();
+      }
+    }
+
     aclFlag =
         checkIdExists(acp.owner.getCanonicalId(), acp.owner.getDisplayName());
 

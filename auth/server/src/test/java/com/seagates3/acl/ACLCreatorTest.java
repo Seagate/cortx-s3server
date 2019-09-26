@@ -218,7 +218,7 @@ import com.seagates3.util.BinaryUtil;
         acp.getAccessControlList().getGrantList().get(1).getPermission(),
         "WRITE_ACP");
     Assert.assertNotNull(aclXml);
-    Assert.assertEquals(acp.getOwner().getDisplayName(), "kirungeb");
+    Assert.assertEquals(acp.getOwner().getDisplayName(), "Acc1");
   }
 
   @Test public void testCreateACLFromCannedInput_Success_private()

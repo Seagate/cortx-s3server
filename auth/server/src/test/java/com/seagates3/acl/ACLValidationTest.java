@@ -180,7 +180,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(ACLValidation.class);
     PowerMockito.when(ACLValidation.class, "checkIdExists", "id", "owner")
         .thenReturn(true);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
 
@@ -196,7 +196,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(mockAccountImpl.findByEmailAddress("xyz@seagate.com"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.exists()).thenReturn(true);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
 
@@ -212,7 +212,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     Mockito.when(mockAccountImpl.findByEmailAddress("xyz@seagate.com"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.exists()).thenReturn(true);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
   }
 
@@ -224,7 +224,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(ACLValidation.class);
     PowerMockito.when(ACLValidation.class, "checkIdExists", "id", "owner")
         .thenReturn(true);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
 
@@ -235,7 +235,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(ACLValidation.class);
     PowerMockito.when(ACLValidation.class, "checkIdExists", "id", null)
         .thenReturn(true);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
 
@@ -243,7 +243,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   @Test public void testValidate_invalid_acl_schema() throws Exception {
 
     aclValidation = new ACLValidation(acpXmlString_SchemaError);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
   }
 
@@ -252,7 +252,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       throws Exception {
 
     aclValidation = new ACLValidation(acpXmlString_MultipleDisplayName);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
   }
 
@@ -263,7 +263,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(ACLValidation.class);
     PowerMockito.when(ACLValidation.class, "checkIdExists", "id", "owner")
         .thenReturn(false);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
   }
 
@@ -274,7 +274,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(ACLValidation.class);
     PowerMockito.when(ACLValidation.class, "checkIdExists", "id", "owner")
         .thenReturn(true);
-    ServerResponse response = aclValidation.validate();
+    ServerResponse response = aclValidation.validate(null);
     assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
   }
 

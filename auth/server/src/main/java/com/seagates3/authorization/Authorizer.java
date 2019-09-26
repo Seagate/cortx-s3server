@@ -47,6 +47,8 @@ import java.util.HashMap;
 import java.util.List;
 import com.seagates3.acl.ACLAuthorizer;
 import com.seagates3.acl.ACLValidation;
+import com.seagates3.acl.AccessControlPolicy;
+import com.seagates3.util.BinaryUtil;
 
 public class Authorizer {
 
@@ -187,8 +189,22 @@ public class Authorizer {
                     AuthServerConfig.MAX_GRANT_SIZE);
        return responseGenerator.invalidACL();
      }
-
-     return aclValidation.validate();
+     AccessControlPolicy existingAcp = null;
+     try {
+       if (requestBody.get("Auth-ACL") != null) {
+         existingAcp = new AccessControlPolicy(
+             BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")));
+         LOGGER.debug(
+             "Sending Auth-ACL for validating new owner against existing "
+             "owner");
+       }
+     }
+     catch (ParserConfigurationException | SAXException | IOException |
+            GrantListFullException e1) {
+       LOGGER.error("Error while validating authorization ACL");
+       return responseGenerator.invalidACL();
+     }
+     return aclValidation.validate(existingAcp);
    }
  }
 

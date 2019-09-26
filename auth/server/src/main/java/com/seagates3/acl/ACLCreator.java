@@ -131,7 +131,8 @@ class ACLCreator {
     acp = new AccessControlPolicy(checkAndCreateDefaultAcp());
     updateAclFromAccountMap(accountPermissionMap, newAcl);
     updateAclFromGroupMap(groupPermissionMap, newAcl);
-    if (requestBody.get("Auth-ACL") != null) {
+    if (requestBody.get("Bucket-ACL") != null &&
+        requestBody.get("Auth-ACL") != null) {
       acp.setOwner(new AccessControlPolicy(
           BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")))
                        .getOwner());
