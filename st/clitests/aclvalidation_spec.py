@@ -191,7 +191,7 @@ print("ACL validation Completed..")
 
 # Put object with canned acl - private
 AwsTest('Aws can create object with \'private\' canned acl input')\
-.put_object("seagatebucketacl", "testObject", "private").execute_test().command_is_successful()
+.put_object("seagatebucketacl", "testObject", canned_acl="private").execute_test().command_is_successful()
 
 result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
 print("Object Canned ACL validation started..")
@@ -203,7 +203,7 @@ print("ACL validation Completed..")
 
 # Put object with canned acl - public-read
 AwsTest('Aws can create object with \'public-read\' canned acl input')\
-.put_object("seagatebucketacl", "testObject", "public-read").execute_test().command_is_successful()
+.put_object("seagatebucketacl", "testObject", canned_acl="public-read").execute_test().command_is_successful()
 
 result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
 print("Object Canned ACL validation started..")
@@ -215,7 +215,7 @@ print("ACL validation Completed..")
 
 # Put object with canned acl - public-read-write
 AwsTest('Aws can create object with \'public-read-write\' canned acl input')\
-.put_object("seagatebucketacl", "testObject", "public-read-write").execute_test().command_is_successful()
+.put_object("seagatebucketacl", "testObject", canned_acl="public-read-write").execute_test().command_is_successful()
 
 result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
 print("Object Canned ACL validation started..")
@@ -227,7 +227,7 @@ print("ACL validation Completed..")
 
 # Put object with canned acl - authenticated-read
 AwsTest('Aws can create object with \'authenticated-read\' canned acl input')\
-.put_object("seagatebucketacl", "testObject", "authenticated-read").execute_test().command_is_successful()
+.put_object("seagatebucketacl", "testObject", canned_acl="authenticated-read").execute_test().command_is_successful()
 
 result=AwsTest('Validate the object acl').get_object_acl("seagatebucketacl", "testObject").execute_test().command_is_successful()
 print("Object Canned ACL validation started..")
@@ -239,7 +239,7 @@ print("ACL validation Completed..")
 
 # Put object with invalid canned acl
 AwsTest('Aws can not create object with invalid \'private123\' canned acl input')\
-.put_object("seagatebucketacl", "testObject", "private123").execute_test(negative_case=True)\
+.put_object("seagatebucketacl", "testObject", canned_acl="private123").execute_test(negative_case=True)\
     .command_should_fail()
 
 #********** Delete object *************
