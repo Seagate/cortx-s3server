@@ -195,7 +195,7 @@ public class Authorizer {
          existingAcp = new AccessControlPolicy(
              BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")));
          LOGGER.debug(
-             "Sending Auth-ACL for validating new owner against existing "
+             "Sending Auth-ACL for validating new owner against existing " +
              "owner");
        }
      }
