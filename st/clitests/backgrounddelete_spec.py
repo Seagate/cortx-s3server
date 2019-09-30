@@ -15,14 +15,13 @@ from s3cmd import S3cmdTest
 import s3kvs
 import time
 
-#TODO RPM is not yet created for s3background delete modules so using sys.path to import modules.
 sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/')))
-from object_recovery_scheduler import ObjectRecoveryScheduler
-from object_recovery_processor import ObjectRecoveryProcessor
-from eos_core_config import EOSCoreConfig
-from eos_core_object_api import EOSCoreObjectApi
-from eos_core_error_respose import EOSCoreErrorResponse
+    os.path.abspath(os.path.join(os.path.dirname(__file__),  '../../s3backgrounddelete/s3backgrounddelete')))
+from s3backgrounddelete.object_recovery_scheduler import ObjectRecoveryScheduler
+from s3backgrounddelete.object_recovery_processor import ObjectRecoveryProcessor
+from s3backgrounddelete.eos_core_config import EOSCoreConfig
+from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
+from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
 
 # Run before all to setup the test environment.
 def before_all():
@@ -143,11 +142,12 @@ Scenario: Delete object leak test (DELETE api test)
    5. run background delete schedular
    6. run background delete processor
    7. verify cleanup of OID using HEAD api
+   8. verify cleanup of Object using aws s3api head-object api
 """
 # ********** Upload objects in bucket*************************
 result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
     .put_object("seagatebucket", "object1", 3000, debug_flag="True")\
-    .execute_test(ignore_err=True)
+    .execute_test(ignore_err=True).command_is_successful()
 
 object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
@@ -177,6 +177,10 @@ print("Processor has stopped...")
 # ************* Verify OID is not present in list*******
 perform_head_object(object1_oid_dict)
 
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object1" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object1").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
 
 
 """
@@ -188,6 +192,7 @@ Scenario: New object oid leak test(PUT api test)
     4. run background delete schedular
     5. run background delete processor
     6. verify cleanup of OID1 using HEAD api
+    7. verify cleanup of Object using aws s3api head-object api
 """
 # *********** Upload Object in bucket*************************
 S3fiTest('Enable FI clovis object write fail')\
@@ -224,6 +229,11 @@ print("Processor has stopped...")
 # *********** Validate OID is not present in list**********
 perform_head_object(object2_oid_dict)
 
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object2" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object2").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
 
 """
 # Test Scenario : 3
@@ -240,7 +250,7 @@ Scenario: Old object oid leak test (PUT api test)
 # *********** Upload Object in bucket*************************
 result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .put_object("seagatebucket", "object3", 3000, debug_flag="True")\
-    .execute_test(ignore_err=True)
+    .execute_test(ignore_err=True).command_is_successful()
 
 # wait till cleanup process completes and s3server sends response to client
 time.sleep(1)
@@ -287,7 +297,6 @@ AwsTest('Delete Object "object3"').delete_object("seagatebucket", "object3")\
    .execute_test().command_is_successful()
 
 
-
 """
 Test Scenario : 4
 Scenario: multidelete objects leak test (DELETE api test)
@@ -299,16 +308,18 @@ Scenario: multidelete objects leak test (DELETE api test)
     6. run background delete schedular
     7. run background delete processor
     8. verify cleanup of both oids using HEAD object api
+    9. verify cleanup of both Objects using aws s3api head-object api
+
 """
 # ********** Upload objects in bucket*************************
 result = AwsTest('Upload Object "object4" to bucket "seagatebucket"')\
     .put_object("seagatebucket", "object4", 3000, debug_flag="True")\
-    .execute_test(ignore_err=True)
+    .execute_test(ignore_err=True).command_is_successful()
 object4_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 result = AwsTest('Upload Object "object5" to bucket "seagatebucket"')\
     .put_object("seagatebucket", "object5", 3000, debug_flag="True")\
-    .execute_test(ignore_err=True)
+    .execute_test(ignore_err=True).command_is_successful()
 object5_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
 # ********** Delete objects with fault injection enabled*******
@@ -340,6 +351,15 @@ print("Processor has stopped...")
 perform_head_object(object4_oid_dict)
 perform_head_object(object5_oid_dict)
 
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object4" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object4").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
+AwsTest('Do head-object for "object5" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object5").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
 
 
 # Extract the upload id from response which has the following format
@@ -361,12 +381,12 @@ Scenario: Multipart upload objects leak test (Multipart upload test)
     7. disable fault point
     8. run background delete schedular
     9. run background delete processor
-    10.verify cleanup of 3Kfile oid
+    10.verify cleanup of OID
 """
 # *********** Upload Object in bucket*************************
 result = AwsTest('Upload Object "object6" to bucket "seagatebucket"')\
     .put_object("seagatebucket", "object6", 3000, debug_flag="True")\
-    .execute_test(ignore_err=True)
+    .execute_test(ignore_err=True).command_is_successful()
 
 object6_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
@@ -438,6 +458,7 @@ Scenario: Abort multipart upload objects leak test (Abort Multipart upload test)
     6. run background delete schedular
     7. run background delete processor
     8. verify cleanup of multipart oid
+    9. verify cleanup of Object using aws s3api head-object api
 """
 # ************** Create a multipart upload *********
 result=AwsTest('Aws can upload object7 10Mb file')\
@@ -479,6 +500,10 @@ print("Processor has stopped...")
 # ************* Verify clean up of OID's*****************
 perform_head_object(multipart_oid_dict)
 
+# ************* Verify cleanup of Object using aws s3api head-object api******
+AwsTest('Do head-object for "object7" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object7").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
 
 
 """
@@ -490,6 +515,7 @@ Scenario: Create multipart upload objects leak test (Abort Multipart upload test
     4. run background delete schedular
     5. run background delete processor
     6. verify cleanup of multipart oid using HEAD api
+    7. verify cleanup of Object using aws s3api head-object api
 """
 # ************** Create a multipart upload *********
 S3fiTest('Enable FI post multipartobject action create object shutdown fail')\
@@ -525,6 +551,12 @@ print("Processor has stopped...")
 
 # ************* Verify clean up of OID's*****************
 perform_head_object(multipart_oid_dict)
+
+# ************* Verify cleanup of Object using aws s3api head-object api*****************
+AwsTest('Do head-object for "object8" on bucket "seagatebucket"')\
+   .head_object("seagatebucket", "object8").execute_test(negative_case=True)\
+   .command_should_fail().command_error_should_have("Not Found")
+
 
 
 # ****** Delete bucket "seagatebucket" using s3-background-delete-svc account*****

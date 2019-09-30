@@ -10,7 +10,7 @@ import time
 import logging
 import datetime
 
-import s3backgrounddelete.object_recovery_queue
+from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 
@@ -29,7 +29,7 @@ class ObjectRecoveryScheduler(object):
         """Add object key value to object recovery queue."""
         self.logger.info("Adding kv list to queue")
         try:
-            mq_client = object_recovery_queue.ObjectRecoveryRabbitMq(
+            mq_client = ObjectRecoveryRabbitMq(
                 self.config,
                 self.config.get_rabbitmq_username(),
                 self.config.get_rabbitmq_password(),
