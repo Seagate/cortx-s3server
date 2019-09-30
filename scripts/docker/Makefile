@@ -5,18 +5,18 @@ DOCKER          := docker
 INAME = $(@:%-image=%)
 CNAME = $(@:%-container=%)
 
-.PHONY: docker-images
-docker-images: docker-image-latest \
-               docker-image-7.5 \
-               docker-image-eos
+.PHONY: images
+images: docker-image-latest \
+        docker-image-7.6 \
+        docker-image-eos
 
 .PHONY: docker-image-latest
 docker-image-latest: s3server-devel-image
 
-.PHONY: docker-image-7.5
-docker-image-7.5: CENTOS_RELEASE := 7.5
-docker-image-7.5: override DOCKER_OPTS += --build-arg CENTOS_RELEASE=$(CENTOS_RELEASE)
-docker-image-7.5: s3server-devel-image
+.PHONY: docker-image-7.6
+docker-image-7.6: CENTOS_RELEASE := 7.6
+docker-image-7.6: override DOCKER_OPTS += --build-arg CENTOS_RELEASE=$(CENTOS_RELEASE)
+docker-image-7.6: s3server-devel-image
 
 .PHONY: docker-image-eos
 docker-image-eos: CENTOS_RELEASE := eos
@@ -33,9 +33,10 @@ s3server-devel-image:
 			-t $(NAMESPACE)/mero/s3server:$(CENTOS_RELEASE) \
 			$(DOCKER_OPTS) -
 
+.PHONY: push
 name := s3server*
 tag  := *
-docker-push:
+push:
 	@for img in $$(docker images --filter=reference='$(NAMESPACE)/$(name):$(tag)' \
 				    --format '{{.Repository}}:{{.Tag}}' | grep -v none) \
 		    $$(docker images --filter=reference='$(NAMESPACE)/mero/$(name):$(tag)' \
@@ -45,7 +46,8 @@ docker-push:
 		$(DOCKER) push $$img ; \
 	done
 
-docker-clean:
+.PHONY: clean
+clean:
 	@for img in $$(docker images --filter=reference='$(NAMESPACE)/$(name):$(tag)' \
 				    --format '{{.Repository}}:{{.Tag}}') \
 		    $$(docker images --filter=reference='$(NAMESPACE)/mero/$(name):$(tag)' \
@@ -55,11 +57,10 @@ docker-clean:
 		$(DOCKER) rmi $$img ; \
 	done
 
+.PHONY: help
 help:
 	@echo 'Build targets:'
-	@echo '  docker-images   - create docker images for CI environment'
-	@echo "  docker-push     - upload local $(NAMESPACE)/* images to docker hub repository"
-	@echo "  docker-clean    - remove local $(NAMESPACE)/* images"
+	@echo '  images          - create docker images for CI environment'
 	@echo ''
 	@echo 'Publish targets:'
 	@echo "  push            - upload local $(NAMESPACE)/* images to docker hub repository"
