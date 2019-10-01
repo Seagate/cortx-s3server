@@ -80,7 +80,10 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
  public:
   S3PutChunkUploadObjectAction(
       std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
+      std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);

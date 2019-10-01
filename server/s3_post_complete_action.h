@@ -69,6 +69,8 @@ class S3PostCompleteAction : public S3ObjectAction {
       std::shared_ptr<ClovisAPI> clovis_api = nullptr,
       std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory =
           nullptr,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,

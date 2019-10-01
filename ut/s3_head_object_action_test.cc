@@ -162,27 +162,6 @@ TEST_F(S3HeadObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
-/*  TODO metadata fetch moved to s3_object_action class,
-//     so these test will be moved there
-TEST_F(S3HeadObjectActionTest,
-       FetchObjectInfoWhenBucketPresentAndObjIndexAbsent) {
-  CREATE_BUCKET_METADATA;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::HEAD));
-  EXPECT_CALL(*(mock_request),
-  get_operation_code()).WillOnce(Return(S3OperationCode::none));
-  action_under_test->fetch_object_info();
-
-  EXPECT_STREQ("NoSuchKey", action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata == NULL);
-}
-*/
 TEST_F(S3HeadObjectActionTest, FetchObjectInfoReturnedMissing) {
   CREATE_OBJECT_METADATA;
 

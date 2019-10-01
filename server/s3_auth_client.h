@@ -366,6 +366,7 @@ class S3AuthClient {
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth);
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1);
   FRIEND_TEST(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2);
+  FRIEND_TEST(S3BucketActionTest, SetAuthorizationMeta);
 };
 
 struct event_auth_timeout_arg {

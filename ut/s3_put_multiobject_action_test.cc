@@ -240,14 +240,6 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
                action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->auth_completed);
 }
-/*  TODO metadata fetch moved to s3_object_action class,
-//     so these test will be moved there
-TEST_F(S3PutMultipartObjectActionTestNoMockAuth, FetchBucketInfoTest) {
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test->fetch_bucket_info();
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-}
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        FetchBucketInfoFailedMissingTest) {
@@ -287,7 +279,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, FetchMultipartMetadata) {
       .Times(1);
   action_under_test->fetch_multipart_metadata();
 }
-*/
+
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        FetchMultiPartMetadataNoSuchUploadFailed) {
   action_under_test->object_multipart_metadata =

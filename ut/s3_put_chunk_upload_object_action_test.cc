@@ -40,16 +40,16 @@ using ::testing::DefaultValue;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                             \
-  do {                                                                     \
-    CREATE_BUCKET_METADATA;                                                \
-    EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state()) \
-        .WillOnce(Return(S3BucketMetadataState::present));                 \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(  \
-        object_list_indx_oid);                                             \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))  \
-        .Times(AtLeast(1));                                                \
-    action_under_test->fetch_object_info();                                \
+#define CREATE_OBJECT_METADATA                                            \
+  do {                                                                    \
+    CREATE_BUCKET_METADATA;                                               \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid( \
+        object_list_indx_oid);                                            \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
+        .Times(AtLeast(1));                                               \
+    EXPECT_CALL(*(mock_request), http_verb())                             \
+        .WillOnce(Return(S3HttpVerb::PUT));                               \
+    action_under_test->fetch_object_info();                               \
   } while (0)
 
 class S3PutChunkUploadObjectActionTestBase : public testing::Test {
@@ -122,7 +122,8 @@ class S3PutChunkUploadObjectActionTestNoAuth
       : S3PutChunkUploadObjectActionTestBase() {
     S3Option::get_instance()->disable_auth();
     action_under_test.reset(new S3PutChunkUploadObjectAction(
-        mock_request, clovis_writer_factory, ptr_mock_s3_clovis_api, nullptr,
+        mock_request, bucket_meta_factory, object_meta_factory,
+        clovis_writer_factory, nullptr, ptr_mock_s3_clovis_api, nullptr,
         clovis_kvs_writer_factory));
   }
 };
@@ -135,8 +136,9 @@ class S3PutChunkUploadObjectActionTestWithAuth
     S3Option::get_instance()->enable_auth();
     mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(mock_request);
     action_under_test.reset(new S3PutChunkUploadObjectAction(
-        mock_request, clovis_writer_factory, ptr_mock_s3_clovis_api, nullptr,
-        clovis_kvs_writer_factory));
+        mock_request, bucket_meta_factory, object_meta_factory,
+        clovis_writer_factory, mock_auth_factory, ptr_mock_s3_clovis_api,
+        nullptr, clovis_kvs_writer_factory));
   }
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
 };
@@ -230,36 +232,54 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3) {
   EXPECT_STREQ("InvalidTagError",
                action_under_test->get_s3_error_code().c_str());
 }
-/*  TODO Move these tests as part of S3_Object_Action_Test
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth, FetchBucketInfo) {
-  CREATE_BUCKET_METADATA;
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-}
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        FetchObjectInfoWhenBucketNotPresent) {
-  CREATE_BUCKET_METADATA;
-
+  CREATE_OBJECT_METADATA;
+  action_under_test->object_metadata =
+      object_meta_factory->mock_object_metadata;
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::missing));
+      .WillOnce(Return(S3BucketMetadataState::missing));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
 
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(AtLeast(1));
+  action_under_test->old_object_oid = {0xff1f, 0xffff};
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*mock_request, resume()).Times(1);
-
+  action_under_test->auth_in_progress = false;
   action_under_test->fetch_bucket_info_failed();
 
   EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata == NULL);
+  EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
        FetchObjectInfoWhenBucketFailed) {
-  CREATE_BUCKET_METADATA;
+  CREATE_OBJECT_METADATA;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .Times(1)
+      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
+      .Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _)).Times(AtLeast(1));
+  action_under_test->old_object_oid = {0xff1f, 0xffff};
+  action_under_test->clovis_kv_writer =
+      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
@@ -269,7 +289,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata == NULL);
+  EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
@@ -289,49 +309,6 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
                action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata == NULL);
-}
-
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
-       FetchObjectInfoWhenBucketAndObjIndexPresent) {
-  CREATE_BUCKET_METADATA;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
-      .Times(AtLeast(1));
-
-  action_under_test->fetch_object_info();
-
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata != NULL);
-}
-
-TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
-       FetchObjectInfoWhenBucketPresentAndObjIndexAbsent) {
-  CREATE_BUCKET_METADATA;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .Times(AtLeast(1))
-      .WillOnce(Return(S3BucketMetadataState::present));
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      zero_oid_idx);
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
-      .Times(0);
-
-  EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, send_response(500, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
-
-  action_under_test->fetch_object_info();
-
-  EXPECT_STREQ("MetaDataCorruption",
-               action_under_test->get_s3_error_code().c_str());
-  EXPECT_TRUE(action_under_test->bucket_metadata != nullptr);
-  EXPECT_TRUE(action_under_test->object_metadata == nullptr);
 }
 
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
@@ -410,7 +387,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_OID_EQ(zero_oid_idx, action_under_test->old_object_oid);
   EXPECT_OID_EQ(oid_before_regen, action_under_test->new_object_oid);
 }
-*/
+
 TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFirstAttempt) {
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               create_object(_, _, _))

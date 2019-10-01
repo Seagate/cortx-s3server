@@ -33,13 +33,16 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PostMultipartObjectAction::S3PostMultipartObjectAction(
     std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3ObjectAction(std::move(req)) {
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory)) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   s3_log(S3_LOG_INFO, request_id,
@@ -242,9 +245,7 @@ void S3PostMultipartObjectAction::check_multipart_object_info_status() {
       s3_log(S3_LOG_DEBUG, "", "Exiting\n");
       return;
     }
-
     s3_log(S3_LOG_DEBUG, request_id, "Found bucket metadata\n");
-    object_list_oid = bucket_metadata->get_object_list_index_oid();
     if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
       // object_list_oid is null only when bucket metadata is corrupted.
       // user has to delete and recreate the bucket again to make it work.

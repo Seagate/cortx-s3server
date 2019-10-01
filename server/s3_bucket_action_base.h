@@ -62,6 +62,11 @@ class S3BucketAction : public S3Action {
 
   void load_metadata();
   void set_authorization_meta();
+
+  FRIEND_TEST(S3BucketActionTest, Constructor);
+  FRIEND_TEST(S3BucketActionTest, FetchBucketInfo);
+  FRIEND_TEST(S3BucketActionTest, LoadMetadata);
+  FRIEND_TEST(S3BucketActionTest, SetAuthorizationMeta);
 };
 
 #endif

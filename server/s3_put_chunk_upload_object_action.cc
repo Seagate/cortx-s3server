@@ -35,11 +35,15 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
 S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
     std::shared_ptr<S3RequestObject> req,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory,
+    std::shared_ptr<S3AuthClientFactory> auth_factory,
     std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3ObjectAction(std::move(req)),
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory), true, auth_factory),
       auth_failed(false),
       write_failed(false),
       clovis_write_in_progress(false),
@@ -674,7 +678,6 @@ void S3PutChunkUploadObjectAction::
 
 void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
   if ((auth_in_progress) &&
       (get_auth_client()->get_state() == S3AuthClientOpState::started)) {
     get_auth_client()->abort_chunk_auth_op();
@@ -683,7 +686,6 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
   }
 
   if (S3Option::get_instance()->is_getoid_enabled()) {
-
     request->set_out_header_value("x-stx-oid",
                                   S3M0Uint128Helper::to_string(new_object_oid));
     request->set_out_header_value("x-stx-layout-id", std::to_string(layout_id));
@@ -706,7 +708,6 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
-
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
              object_metadata->get_state() == S3ObjectMetadataState::saved) {
@@ -733,7 +734,6 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
 
 void S3PutChunkUploadObjectAction::cleanup() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
   if (object_metadata &&
       (object_metadata->get_state() == S3ObjectMetadataState::saved)) {
     // process to delete old object
@@ -752,7 +752,6 @@ void S3PutChunkUploadObjectAction::cleanup() {
     // probable_dead_oid_list
     cleanup_oid_from_probable_dead_oid_list();
   }
-
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

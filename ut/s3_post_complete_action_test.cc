@@ -80,15 +80,15 @@ using ::testing::_;
             request_mock, oid);                                             \
   } while (0)
 
-#define CREATE_ACTION_UNDER_TEST_OBJ                                      \
-  do {                                                                    \
-    EXPECT_CALL(*request_mock, get_query_string_value("uploadId"))        \
-        .Times(AtLeast(1))                                                \
-        .WillRepeatedly(Return("uploadId"));                              \
-    action_under_test_ptr = std::make_shared<S3PostCompleteAction>(       \
-        request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,      \
-        object_mp_meta_factory, part_meta_factory, clovis_writer_factory, \
-        clovis_kvs_writer_factory);                                       \
+#define CREATE_ACTION_UNDER_TEST_OBJ                                          \
+  do {                                                                        \
+    EXPECT_CALL(*request_mock, get_query_string_value("uploadId"))            \
+        .Times(AtLeast(1))                                                    \
+        .WillRepeatedly(Return("uploadId"));                                  \
+    action_under_test_ptr = std::make_shared<S3PostCompleteAction>(           \
+        request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,          \
+        bucket_meta_factory, object_meta_factory, object_mp_meta_factory,     \
+        part_meta_factory, clovis_writer_factory, clovis_kvs_writer_factory); \
   } while (0)
 
 class S3PostCompleteActionTest : public testing::Test {
@@ -291,34 +291,6 @@ TEST_F(S3PostCompleteActionTest, ValidateRequestBodyMissingTag) {
   EXPECT_FALSE(action_under_test_ptr->validate_request_body(mock_xml));
   EXPECT_STREQ("", action_under_test_ptr->total_parts.c_str());
 }
-/*   TODO metadata fetch moved to s3_object_action class,
-//     so these test will be moved there
-TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedMissing) {
-  CREATE_BUCKET_METADATA_OBJ;
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3BucketMetadataState::missing));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
-  action_under_test_ptr->fetch_bucket_info_failed();
-  EXPECT_STREQ("NoSuchBucket",
-               action_under_test_ptr->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PostCompleteActionTest, FetchBucketInfoFailedInternalError) {
-  CREATE_BUCKET_METADATA_OBJ;
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3BucketMetadataState::failed));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
-  action_under_test_ptr->fetch_bucket_info_failed();
-  EXPECT_STREQ("InternalError",
-               action_under_test_ptr->get_s3_error_code().c_str());
-}
-*/
 TEST_F(S3PostCompleteActionTest, FetchMultipartInfo) {
   CREATE_BUCKET_METADATA_OBJ;
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))

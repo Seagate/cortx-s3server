@@ -34,11 +34,14 @@ extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 S3PostCompleteAction::S3PostCompleteAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory,
+    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
+    std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory,
     std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory,
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3ObjectAction(std::move(req), nullptr, nullptr, false) {
+    : S3ObjectAction(std::move(req), bucket_meta_factory, object_meta_factory,
+                     false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   upload_id = request->get_query_string_value("uploadId");

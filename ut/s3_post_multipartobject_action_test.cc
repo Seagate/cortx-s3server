@@ -74,9 +74,10 @@ class S3PostMultipartObjectTest : public testing::Test {
 
     EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PostMultipartObjectAction(
-        ptr_mock_request, object_mp_meta_factory, part_meta_factory,
-        clovis_writer_factory, bucket_tag_body_factory_mock,
-        ptr_mock_s3_clovis_api, clovis_kvs_writer_factory));
+        ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
+        object_meta_factory, part_meta_factory, clovis_writer_factory,
+        bucket_tag_body_factory_mock, ptr_mock_s3_clovis_api,
+        clovis_kvs_writer_factory));
   }
 
   std::shared_ptr<MockS3RequestObject> ptr_mock_request;
@@ -168,98 +169,31 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
   EXPECT_STREQ("MetaDataCorruption",
                action_under_test->get_s3_error_code().c_str());
 }
-/*  TODO metadata fetch moved to s3_object_action class,
-//     so these test will be moved there
-TEST_F(S3PostMultipartObjectTest, FetchObjectInfoMultipartPresent) {
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ObjectMetadataState::present));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-
-  EXPECT_CALL(*ptr_mock_request,
-              send_response(403, HasSubstr("<Code>InvalidObjectState</Code>")))
-      .Times(1);
-  action_under_test->fetch_object_info();
-  EXPECT_STREQ("InvalidObjectState",
-               action_under_test->get_s3_error_code().c_str());
-}
-
-TEST_F(S3PostMultipartObjectTest, FetchObjectInfoMultipartNotPresent) {
-  struct m0_uint128 oid = {0xffff, 0xffff};
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .Times(2)
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(oid);
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
-      .Times(AtLeast(1));
-  action_under_test->fetch_object_info();
-}
-
-TEST_F(S3PostMultipartObjectTest, FetchObjectInfoObjectNotPresent) {
-  struct m0_uint128 empty_oid = {0ULL, 0ULL};
-  action_under_test->object_multipart_metadata =
-      object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-
-  action_under_test->bucket_metadata =
-      bucket_meta_factory->mock_bucket_metadata;
-
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      empty_oid);
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-
-  action_under_test->fetch_object_info();
-  EXPECT_STREQ("MetaDataCorruption",
-               action_under_test->get_s3_error_code().c_str());
-}
 
 TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectPresent) {
-  struct m0_uint128 old_oid = {0x1ffff, 0x1ffff};
-  struct m0_uint128 empty_oid = {0ULL, 0ULL};
   action_under_test->object_metadata =
       object_meta_factory->mock_object_metadata;
   action_under_test->object_multipart_metadata =
       object_mp_meta_factory->mock_object_mp_metadata;
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .Times(1)
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .Times(1)
-      .WillOnce(Return(old_oid));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
-      .WillOnce(Return(layout_id));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(403, _)).Times(1);
 
-  action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
-  struct m0_uint128 oid_before_regen = action_under_test->oid;
   action_under_test->check_multipart_object_info_status();
-  EXPECT_EQ(1, call_count_one);
-  EXPECT_OID_NE(empty_oid, action_under_test->old_oid);
-  EXPECT_OID_NE(oid_before_regen, action_under_test->oid);
 }
 
 TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent) {
   struct m0_uint128 zero_oid = {0ULL, 0ULL};
   action_under_test->object_metadata =
       object_meta_factory->mock_object_metadata;
+  action_under_test->object_multipart_metadata =
+      object_mp_meta_factory->mock_object_mp_metadata;
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
+      .Times(2)
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  action_under_test->object_list_oid = {0xfff, 0xf1ff};
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .Times(1)
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
@@ -271,7 +205,7 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent) {
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_EQ(zero_oid, action_under_test->old_oid);
 }
-*/
+
 TEST_F(S3PostMultipartObjectTest, CreateObject) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;

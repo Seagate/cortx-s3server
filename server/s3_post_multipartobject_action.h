@@ -49,7 +49,6 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   S3Timer create_object_timer;
 
   std::map<std::string, std::string> probable_oid_list;
-
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
@@ -71,8 +70,10 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
  public:
   S3PostMultipartObjectAction(
       std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_meta_factory =
           nullptr,
+      std::shared_ptr<S3ObjectMetadataFactory> object_meta_factory = nullptr,
       std::shared_ptr<S3PartMetadataFactory> part_meta_factory = nullptr,
       std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory = nullptr,
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
