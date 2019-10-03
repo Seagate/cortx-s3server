@@ -61,15 +61,21 @@ inline const char* s3_log_get_req_id(const std::string& requestid) {
 //    only if S3 log level is set to DEBUG.
 // 2. Logging a FATAL message terminates the program (after the message is
 //    logged).
-#define s3_log(loglevel, requestid, fmt, ...)                           \
-  if (loglevel >= s3log_level) {                                        \
-    char* s3_log_msg__ = nullptr;                                       \
-    if (asprintf(&s3_log_msg__, "[%s] [ReqID: %s] " fmt "\n", __func__, \
-                 s3_log_get_req_id(requestid), ##__VA_ARGS__) > 0) {    \
-      s3_log_msg_##loglevel(s3_log_msg__);                              \
-      free(s3_log_msg__);                                               \
-    }                                                                   \
-  }
+#define s3_log(loglevel, requestid, fmt, ...)                             \
+  do {                                                                    \
+    if (loglevel >= s3log_level) {                                        \
+      char* s3_log_msg__ = nullptr;                                       \
+      int s3_log_len__ =                                                  \
+          asprintf(&s3_log_msg__, "[%s] [ReqID: %s] " fmt "\n", __func__, \
+                   s3_log_get_req_id(requestid), ##__VA_ARGS__);          \
+      if (s3_log_len__ > 0) {                                             \
+        if (s3_log_msg__[s3_log_len__ - 2] == '\n')                       \
+          s3_log_msg__[s3_log_len__ - 1] = '\0';                          \
+        s3_log_msg_##loglevel(s3_log_msg__);                              \
+        free(s3_log_msg__);                                               \
+      }                                                                   \
+    }                                                                     \
+  } while (0)
 
 // Note:
 // 1. Use syslog defined severity levels as loglevel.
