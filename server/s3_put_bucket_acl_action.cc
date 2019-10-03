@@ -74,10 +74,6 @@ void S3PutBucketACLAction::validate_acl_with_auth() {
   if (user_input_acl.empty()) {
     next();
   } else {
-
-    user_input_acl =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + user_input_acl;
-
     auth_client->set_validate_acl(user_input_acl);
 
     auth_client->validate_acl(
