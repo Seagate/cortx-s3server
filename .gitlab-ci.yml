@@ -1,0 +1,72 @@
+# Globals ----------------------------------------------------------------- {{{1
+#
+
+variables:
+  GIT_DEPTH: 2  # clone only the current commit and its parent
+                # (parent is needed to satisfy `git clang-format --diff --commit HEAD~1`)
+  GIT_STRATEGY: clone  # make a fresh `git clone` of the repo for every new CI job
+  GIT_SUBMODULE_STRATEGY: normal  # init and check out submodules
+  CENTOS_RELEASE: eos
+  M0_VG_NO_SYMLINKS: 'true'
+  WORKSPACE_NAME: "${CI_PROJECT_NAME}${CI_PIPELINE_ID}"
+  WORKSPACE_DIR:  "/home/gitlab-runner/workspaces/${CI_PROJECT_NAME}${CI_PIPELINE_ID}"
+
+stages:
+  - build
+
+before_script:
+  - date -u -Isec
+  - git --no-pager log -1 --pretty=fuller
+  - printenv
+
+after_script:
+  - date -u -Isec
+
+
+# Build ------------------------------------------------------------------- {{{1
+#
+
+build:
+  stage: build
+  tags: [ docker-build ]
+  except: [ master, tags ]
+  image: registry.gitlab.mero.colo.seagate.com/mero/s3server:$CENTOS_RELEASE
+  script:
+    - export LATEST_RELEASE_DIR="$(ls -td /releases/master/B* | head -n1)"
+    - yum install -y $LATEST_RELEASE_DIR/mero{,-devel}-[0-9]*.rpm
+    - time ./rebuildall.sh --no-install
+
+
+# Docker images ----------------------------------------------------------- {{{1
+#
+
+docker:rebuild-images:
+  stage: build
+  tags: [ docker-image-build ]
+  when: manual
+  only:
+    changes:
+      - scripts/docker/**/*
+  except: [ schedules ]
+
+  variables:
+    DOCKER_IMAGE_TAG: latest
+
+  script:
+    - make -C scripts/docker/ docker-image-$DOCKER_IMAGE_TAG
+    - make -C scripts/docker/ push tag="${DOCKER_IMAGE_TAG}*"
+
+
+docker:rebuild-images:76:
+  extends: docker:rebuild-images
+  variables:
+    DOCKER_IMAGE_TAG: '7.6'
+
+
+docker:rebuild-images:eos:
+  extends: docker:rebuild-images
+  variables:
+    DOCKER_IMAGE_TAG: eos
+
+
+# vim: foldmethod=marker shiftwidth=2 tabstop=2 expandtab
