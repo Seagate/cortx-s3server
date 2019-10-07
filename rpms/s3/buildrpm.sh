@@ -72,7 +72,11 @@ rm -rf s3server-${S3_VERSION}-git${GIT_VER}
 
 cd ~/rpmbuild/SOURCES/
 
-rpmbuild -ba --define "_s3_version ${S3_VERSION}"  --define "_s3_git_ver git${GIT_VER}" ${BASEDIR}/s3rpm.spec
+rpmbuild -ba \
+         --define "_s3_version ${S3_VERSION}" \
+         --define "_s3_git_ver git${GIT_VER}" \
+         ${python3_other_pkgversion:+--define "python3_other_pkgversion ${python3_other_pkgversion}"} \
+         ${BASEDIR}/s3rpm.spec
 
 if [ $INSTALL_AFTER_BUILD == 1 ]; then
     RPM_ARCH=$(rpm --eval "%{_arch}")
