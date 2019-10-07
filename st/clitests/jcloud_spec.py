@@ -93,6 +93,8 @@ for i, val in enumerate(pathstyle_values):
     result = auth_test.create_account(**account_args).execute_test()
     result.command_should_match_pattern(s3secondaccount_response_pattern)
     s3secondaccount_response_elements = get_response_elements(result.status.stdout)
+    s3secondaccount_canonicalid = s3secondaccount_response_elements['CanonicalId']
+    s3secondaccount_displayname = 's3secondaccount'
 
     # ************ Create bucket in s3secondaccount account************
     S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
@@ -129,45 +131,43 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('JCloudTest can not create bucket with name exsting in other account').create_bucket("seagate-bucket")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("ResourceAlreadyExists")
 
-#TODO  Enable this tests when authorization is enabled for this api calls.
-
     # ************ info_bucket owned by another account************
-#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-#    JCloudTest('JCloudTest can not access bucket owned by another account')\
-#        .check_bucket_exists("seagatebucket").execute_test(negative_case=True).command_should_fail()\
-#        .command_error_should_have('AuthorizationException')
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JCloudTest('JCloudTest can not access bucket owned by another account')\
+        .check_bucket_exists("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have('AuthorizationException')
 
-#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-#    S3ClientConfig.secret_key = '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'
-#    JCloudTest('JCloudTest can not access bucket owned by another account')\
-#        .check_bucket_exists("seagate-bucket").execute_test(negative_case=True).command_should_fail()\
-#        .command_error_should_have('AuthorizationException')
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JCloudTest('JCloudTest can not access bucket owned by another account')\
+        .check_bucket_exists("seagate-bucket").execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have('AuthorizationException')
 
     # ************ delete bucket owned by another account************
-#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-#    JCloudTest('JCloudTest can not delete bucket owned by another account')\
-#        .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
-#        .command_error_should_have("AuthorizationException")
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JCloudTest('JCloudTest can not delete bucket owned by another account')\
+        .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("AuthorizationException")
 
-#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-#    S3ClientConfig.secret_key = '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'
-#    JCloudTest('JCloudTest can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
-#        .execute_test(negative_case=True).command_should_fail().command_error_should_have("AuthorizationException")
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JCloudTest('JCloudTest can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("AuthorizationException")
 
     # ************ upload object to a bucket owned by another account************
-#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-#    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
-#        .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
-#        .command_error_should_have("AuthorizationException")
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
+        .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("AuthorizationException")
 
-#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-#    S3ClientConfig.secret_key = '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'
-#    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
-#        .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
-#        .command_should_fail().command_error_should_have("AuthorizationException")
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JCloudTest('JCloudTest can not upload 3k file to bucket owned by another account')\
+        .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
+        .command_should_fail().command_error_should_have("AuthorizationException")
 
     # ************ try to delete account which is having bucket ************
     S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
@@ -185,12 +185,6 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('JCloudTest can list buckets of s3secondaccount account')\
         .list_buckets().execute_test().command_is_successful()\
         .command_is_successful().command_response_should_have('')
-
-    # ************ try to delete empty account ************
-    test_msg = "Cannot delete account s3secondaccount with buckets"
-    account_args = {'AccountName': 's3secondaccount'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test()\
-        .command_response_should_have("Account deleted successfully")
 
     # restore default access key and secret key.
     S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
@@ -226,10 +220,16 @@ for i, val in enumerate(pathstyle_values):
         action="acl-grant", permission="WRITE:123")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
-    ''' JCloudTest('Jcloud can revoke WRITE permission on bucket').set_acl("seagatebucket",
-        action="acl-revoke", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")'''
+    JCloudTest('Jcloud can grant READ permission on bucket to cross account').set_acl("seagatebucket",
+        action="acl-grant", permission="READ:" + s3secondaccount_canonicalid + ":s3secondaccount")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
+    JCloudTest('Jcloud can verify READ permission to cross account on bucket').get_acl("seagatebucket")\
+        .execute_test().command_is_successful().command_response_should_have(s3secondaccount_canonicalid + ": READ")
+
+    JCloudTest('Jcloud can revoke READ permission to cross account on bucket').set_acl("seagatebucket",
+        action="acl-revoke", permission="READ:" + s3secondaccount_canonicalid)\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
 
     # Object ACL Tests.
     JCloudTest('Jcloud can set public ACL on object').set_acl("seagatebucket", "test/3kfile",
@@ -255,29 +255,57 @@ for i, val in enumerate(pathstyle_values):
     JCloudTest('Jcloud can verify private ACL on object').get_acl("seagatebucket", "test/3kfile")\
         .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
 
-#    JCloudTest('Jcloud can grant READ permission on object').set_acl("seagatebucket", "test/3kfile",
-#        action="acl-grant", permission="READ:123:tester")\
-#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+    JCloudTest('Jcloud can grant READ permission on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-grant", permission="READ:C12345:s3_test")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-#    JCloudTest('Jcloud can verify READ ACL on object').get_acl("seagatebucket", "test/3kfile")\
-#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-#        .command_response_should_not_have("WRITE")
+    JCloudTest('Jcloud can verify READ permission on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("C12345: READ")\
+        .command_response_should_not_have("WRITE")
 
-#    JCloudTest('Jcloud can grant WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
-#        action="acl-grant", permission="WRITE:123")\
-#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+    JCloudTest('Jcloud can grant WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-grant", permission="WRITE:C12345")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-#    JCloudTest('Jcloud can verify WRITE ACL on object').get_acl("seagatebucket", "test/3kfile")\
-#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-#        .command_response_should_have("tester: WRITE")
+    JCloudTest('Jcloud can verify WRITE permission on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("C12345: READ")\
+        .command_response_should_have("C12345: WRITE")
 
-#    JCloudTest('Jcloud can revoke WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
-#        action="acl-revoke", permission="WRITE:123")\
-#        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+    JCloudTest('Jcloud can revoke WRITE permission on object').set_acl("seagatebucket", "test/3kfile",
+        action="acl-revoke", permission="WRITE:C12345")\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
 
-#    JCloudTest('Jcloud can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "test/3kfile")\
-#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-#        .command_response_should_not_have("WRITE")
+    JCloudTest('Jcloud can verify WRITE permission is revoked on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("C12345: READ")\
+        .command_response_should_not_have("WRITE")
+
+    JCloudTest('Jcloud can grant WRITE permission on object to cross account').set_acl("seagatebucket", "test/3kfile",
+        action="acl-grant", permission="WRITE:" + s3secondaccount_canonicalid)\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JCloudTest('Jcloud can verify WRITE permission to cross account').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("C12345: READ")\
+        .command_response_should_have(s3secondaccount_canonicalid + ": WRITE")
+
+    JCloudTest('Jcloud can revoke WRITE permission to cross account').set_acl("seagatebucket", "test/3kfile",
+        action="acl-revoke", permission="WRITE:" + s3secondaccount_canonicalid)\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+
+    JCloudTest('Jcloud can verify WRITE permission is revoked on object').get_acl("seagatebucket", "test/3kfile")\
+        .execute_test().command_is_successful().command_response_should_have("C12345: READ")\
+        .command_response_should_not_have(s3secondaccount_canonicalid + ":WRITE")
+
+    # ************ try to delete empty account ************
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    test_msg = "Jcloud can delete account s3secondaccount"
+    account_args = {'AccountName': 's3secondaccount'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test()\
+        .command_response_should_have("Account deleted successfully")
+
+    # restore default access key and secret key.
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
 
     # Current version of Jcloud does not report error in deleteContainer
     # JCloudTest('Jcloud cannot delete bucket which is not empty').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotEmpty")

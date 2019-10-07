@@ -95,6 +95,7 @@ class ACLAuthorizer {
         LOGGER.debug("No Grants found in ACL for requested account");
         return false;
       }
+      LOGGER.info("Request authorized");
       return true;
     } else {
       // TODO: Code for Groups and Roles

@@ -80,8 +80,13 @@ class ACLAuthorizerTest {
       "   <Grantee xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"" +
       " xsi:type=\"CanonicalUser\">" + "    <ID>id6</ID>" +
       "    <DisplayName>owner</DisplayName>" + "   </Grantee>" +
-      "   <Permission>READ</Permission>" + "  </Grant>" +
-      " </AccessControlList>" + "</AccessControlPolicy>";
+      "   <Permission>READ</Permission>" + "  </Grant>" + "   <Grant>\r\n" +
+      "      <Grantee " +
+      "   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+      " xsi:type=\"AmazonCustomerByEmail\">\r\n" +
+      "        <EmailAddress>xyz@seagate.com</EmailAddress>\r\n" +
+      "      </Grantee>\r\n" + "      <Permission>READ</Permission>\r\n" +
+      "      </Grant>" + " </AccessControlList>" + "</AccessControlPolicy>";
 
   static String invalidAcpXmlString =
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -118,6 +123,22 @@ class ACLAuthorizerTest {
     assertEquals(true, result);
   }
 
+  // READ permission should grant GET access for grantee type=email
+  @Test public void testIsAuthorized_success_READ_For_READ_Grant_email()
+      throws ParserConfigurationException,
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
+    acl = acp.getAccessControlList();
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", requestUri);
+    Account account = new Account();
+    account.setCanonicalId("id1");
+    account.setEmail("xyz@seagate.com");
+    requestor.setAccount(account);
+    boolean result = new ACLAuthorizer().isAuthorized(requestor, requestBody);
+    assertEquals(true, result);
+  }
+
   // Write operation should be disallowed for READ grant
   @Test public void testIsAuthorized_Restrict_WRITE_For_READ_Grant()
       throws ParserConfigurationException,
@@ -148,6 +169,23 @@ class ACLAuthorizerTest {
     assertEquals(false, result);
   }
 
+  // READ_ACP operation should be disallowed for READ grant for grantee
+  // type=email
+  @Test public void testIsAuthorized_restrict_READ_ACP_For_READ_Grant_email()
+      throws ParserConfigurationException,
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
+    acl = acp.getAccessControlList();
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", requestUriAcl);
+    Account account = new Account();
+    account.setCanonicalId("id1");
+    account.setEmail("xyz@seagate.com");
+    requestor.setAccount(account);
+    boolean result = new ACLAuthorizer().isAuthorized(requestor, requestBody);
+    assertEquals(false, result);
+  }
+
   // WRITE_ACP operation should be disallowed for READ grant
   @Test public void testIsAuthorized_Restrict_WRITE_ACP_For_READ_GRANT()
       throws ParserConfigurationException,
@@ -158,6 +196,23 @@ class ACLAuthorizerTest {
     requestBody.put("ClientAbsoluteUri", requestUriAcl);
     Account account = new Account();
     account.setCanonicalId("id1");
+    requestor.setAccount(account);
+    boolean result = new ACLAuthorizer().isAuthorized(requestor, requestBody);
+    assertEquals(false, result);
+  }
+
+  // WRITE_ACP operation should be disallowed for READ grant for grantee
+  // type=email
+  @Test public void testIsAuthorized_restrict_WRITE_ACP_For_READ_Grant_email()
+      throws ParserConfigurationException,
+      SAXException, IOException, BadRequestException, GrantListFullException,
+      DataAccessException {
+    acl = acp.getAccessControlList();
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", requestUriAcl);
+    Account account = new Account();
+    account.setCanonicalId("id1");
+    account.setEmail("xyz@seagate.com");
     requestor.setAccount(account);
     boolean result = new ACLAuthorizer().isAuthorized(requestor, requestBody);
     assertEquals(false, result);

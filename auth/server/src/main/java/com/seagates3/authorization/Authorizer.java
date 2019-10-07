@@ -83,7 +83,7 @@ public class Authorizer {
             LOGGER.debug("ACL not present. Skipping ACL authorization.");
           } else if (!new ACLAuthorizer().isAuthorized(requestor,
                                                        requestBody)) {
-            LOGGER.debug(
+            LOGGER.info(
                 "Resource ACL denies access to the requestor for this " +
                 "operation.");
             return responseGenerator.AccessDenied();

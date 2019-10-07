@@ -123,8 +123,11 @@ class AccessControlList {
         Grant grantRecord = this.getGrantList().get(counter);
         GroupImpl groupImpl = new GroupImpl();
         String canonicalId = grantRecord.grantee.canonicalId;
+        String emailId = grantRecord.grantee.emailAddress;
         String uri = grantRecord.grantee.uri;
-        if ((account.getCanonicalId().equals(canonicalId)) ||
+        if ((canonicalId != null &&
+             canonicalId.equals(account.getCanonicalId())) ||
+            (emailId != null && emailId.equals(account.getEmail())) ||
             (isUserAuthenticated &&
              groupImpl.isPartOfAuthenticatedUsersGroup(uri)) ||
             groupImpl.isPartOfAllUsersGroup(uri) ||

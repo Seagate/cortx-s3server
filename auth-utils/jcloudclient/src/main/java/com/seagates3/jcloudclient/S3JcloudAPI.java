@@ -837,8 +837,8 @@ public class S3JcloudAPI {
         for (Grant grant: grants) {
             if (grant.getGrantee() instanceof CanonicalUserGrantee) {
                 CanonicalUserGrantee canonicalGrantee = (CanonicalUserGrantee) grant.getGrantee();
-                System.out.println(canonicalGrantee.getDisplayName()
-                        + ": " + grant.getPermission());
+                System.out.println(canonicalGrantee.getIdentifier() + ": " +
+                                   grant.getPermission());
             } else {
                 if (isAnnonRead(grant)) {
                     System.out.println("*anon*: " + grant.getPermission());

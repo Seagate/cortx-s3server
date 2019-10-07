@@ -133,9 +133,9 @@ public class AccountImpl implements AccountDAO {
         account.setName(name);
 
         String[] attrs = {
-            LDAPUtils.ACCOUNT_ID,         LDAPUtils.CANONICAL_ID,
-            LDAPUtils.PASSWORD,           LDAPUtils.PASSWORD_RESET_REQUIRED,
-            LDAPUtils.PROFILE_CREATE_DATE};
+            LDAPUtils.ACCOUNT_ID,          LDAPUtils.CANONICAL_ID,
+            LDAPUtils.PASSWORD,            LDAPUtils.PASSWORD_RESET_REQUIRED,
+            LDAPUtils.PROFILE_CREATE_DATE, LDAPUtils.EMAIL};
         String filter = String.format("(&(%s=%s)(%s=%s))",
                 LDAPUtils.ORGANIZATIONAL_NAME, name, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
@@ -164,6 +164,8 @@ public class AccountImpl implements AccountDAO {
                         getStringValue());
                 account.setCanonicalId(entry.getAttribute(
                         LDAPUtils.CANONICAL_ID).getStringValue());
+                account.setEmail(
+                    entry.getAttribute(LDAPUtils.EMAIL).getStringValue());
 
                 try {
                   account.setPassword(

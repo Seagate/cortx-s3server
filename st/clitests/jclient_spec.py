@@ -73,7 +73,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can call list objects on empty bucket').list_objects('seagatebucket').execute_test().command_is_successful()
 
     # get-bucket-acl
-    JClientTest('Jclient can get bucket ACL').get_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+    JClientTest('Jclient can get bucket ACL').get_acl("seagatebucket").execute_test().command_is_successful().command_response_should_have('C12345: FULL_CONTROL')
 
     # ************ 3k FILE TEST ************
     JClientTest('Jclient can verify object does not exist').head_object("seagatebucket", "3kfile").execute_test(negative_case=True).command_should_fail().command_error_should_have('Bucket or Object does not exist')
@@ -86,7 +86,7 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can upload 3k file in chunked mode').put_object("seagatebucket", "3kfilec", 3000, chunked=True).execute_test().command_is_successful()
 
-    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfilec").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfilec").execute_test().command_is_successful().command_response_should_have('C12345: FULL_CONTROL')
 
 
     # ************* File Overwrite Test **********
@@ -101,7 +101,7 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can verify object existence').head_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have("3kfile")
 
-    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "3kfile").execute_test().command_is_successful().command_response_should_have('C12345: FULL_CONTROL')
 
     # ************ cross account tests ********
     account_args = {}
@@ -115,6 +115,7 @@ for i, val in enumerate(pathstyle_values):
     result = auth_test.create_account(**account_args).execute_test()
     result.command_should_match_pattern(s3secondaccount_response_pattern)
     s3secondaccount_response_elements = get_response_elements(result.status.stdout)
+    s3secondaccountId = s3secondaccount_response_elements['CanonicalId']
 
     # ************ Create bucket in s3secondaccount account************
     S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
@@ -151,32 +152,30 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can not create bucket with name exsting in other account').create_bucket("seagate-bucket")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("BucketAlreadyExists")
 
-#TODO  Enable this tests when authorization is enabled for this api calls.
-
     # ************ delete bucket owned by another account************
-#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-#    JClientTest('Jclient can not delete bucket owned by another account')\
-#        .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
-#        .command_error_should_have("Access Denied")
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JClientTest('Jclient can not delete bucket owned by another account')\
+        .delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("Access Denied")
 
-#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-#    S3ClientConfig.secret_key = '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'
-#    JClientTest('Jclient can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
-#        .execute_test(negative_case=True).command_should_fail().command_error_should_have("Access Denied")
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JClientTest('Jclient can not deelte bucket owned by another account').delete_bucket("seagate-bucket")\
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("Access Denied")
 
     # ************ upload object to a bucket owned by another account************
-#    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
-#    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
-#    JClientTest('Jclient can not upload 3k file to bucket owned by another account')\
-#        .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
-#        .command_error_should_have("Access Denied")
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    JClientTest('Jclient can not upload 3k file to bucket owned by another account')\
+        .put_object("seagatebucket", "3kfile", 3000).execute_test(negative_case=True).command_should_fail()\
+        .command_error_should_have("Access Denied")
 
-#    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
-#    S3ClientConfig.secret_key = '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'
-#    JClientTest('Jclient can not upload 3k file to bucket owned by another account')\
-#        .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
-#        .command_should_fail().command_error_should_have("Access Denied")
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
+    JClientTest('Jclient can not upload 3k file to bucket owned by another account')\
+        .put_object("seagate-bucket", "3kfile", 3000).execute_test(negative_case=True)\
+        .command_should_fail().command_error_should_have("Access Denied")
 
     # ************ try to delete account which is having bucket ************
     S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
@@ -194,12 +193,6 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can list buckets of s3secondaccount account')\
         .list_buckets().execute_test().command_is_successful()\
         .command_is_successful().command_response_should_have('')
-
-    # ************ try to delete empty account ************
-    test_msg = "Cannot delete account s3secondaccount with buckets"
-    account_args = {'AccountName': 's3secondaccount'}
-    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
-        .command_response_should_have("Account deleted successfully")
 
     # restore default access key and secret key.
     S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
@@ -236,10 +229,17 @@ for i, val in enumerate(pathstyle_values):
         action="acl-grant", permission="WRITE:123")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
+    JClientTest('Jclient can not grant WRITE permission on bucket with InvalidId').set_acl("seagatebucket",
+        action="acl-grant", permission="WRITE:123")\
+        .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
-    '''JClientTest('Jclient can revoke WRITE permission on bucket').set_acl("seagatebucket",
-        action="acl-revoke", permission="WRITE:123")\
-        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")'''
+    JClientTest('Jclient can grant READ permission on bucket to another account').set_acl("seagatebucket",
+        action="acl-grant", permission="READ:" + s3secondaccountId)\
+        .execute_test().command_is_successful().command_response_should_not_have(s3secondaccountId + ": READ")
+
+    JClientTest('Jclient can revoke READ permission on bucket').set_acl("seagatebucket",
+        action="acl-revoke", permission="READ:" + s3secondaccountId)\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
 
     # Object ACL Tests.
 
@@ -266,28 +266,47 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can verify private ACL on object').get_acl("seagatebucket", "3kfile")\
         .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
 
-#    JClientTest('Jclient can grant READ permission on object').set_acl("seagatebucket", "3kfile",
-#        action="acl-grant", permission="READ:123:tester")\
-#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+    JClientTest('Jclient can grant READ permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-grant", permission="READ:"+ s3secondaccountId + ":s3secondaccount")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-#    JClientTest('Jclient can verify READ ACL on object').get_acl("seagatebucket", "3kfile")\
-#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-#        .command_response_should_not_have("WRITE")
+    JClientTest('Jclient can verify READ ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_have(s3secondaccountId + ": READ")\
+        .command_response_should_not_have("WRITE")
 
-#    JClientTest('Jclient can grant WRITE permission on object').set_acl("seagatebucket", "3kfile",
-#        action="acl-grant", permission="WRITE:123")\
-#        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+    JClientTest('Jclient can grant READ_ACP permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-grant", permission="READ_ACP:" + s3secondaccountId + ":tester")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-#    JClientTest('Jclient can verify WRITE ACL on object').get_acl("seagatebucket", "3kfile")\
-#        .execute_test().command_is_successful().command_response_should_have("tester: READ")\
-#        .command_response_should_have("tester: WRITE")
+    JClientTest('Jclient can verify READ ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_have(s3secondaccountId + ": READ_ACP")\
+        .command_response_should_not_have("WRITE")
 
-#    JClientTest('Jclient can revoke WRITE permission on object').set_acl("seagatebucket", "3kfile",
-#        action="acl-revoke", permission="WRITE:123")\
-#        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+    JClientTest('Jclient can grant WRITE_ACP permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-grant", permission="WRITE_ACP:" + s3secondaccountId + ":s3secondaccount")\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
-#    JClientTest('Jclient can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "3kfile")\
-#        .execute_test().command_is_successful().command_response_should_not_have("WRITE")
+    JClientTest('Jclient can verify WRITE_ACP ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_have(s3secondaccountId + ": WRITE_ACP")
+
+    JClientTest('Jclient can grant WRITE permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-grant", permission="WRITE:" + s3secondaccountId)\
+        .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
+
+    JClientTest('Jclient can verify WRITE ACL on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_have(s3secondaccountId + ": READ")\
+        .command_response_should_have(s3secondaccountId + ": WRITE")
+
+    JClientTest('Jclient can revoke WRITE permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-revoke", permission="WRITE:" + s3secondaccountId)\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+
+    JClientTest('Jclient can revoke WRITE_ACP permission on object').set_acl("seagatebucket", "3kfile",
+        action="acl-revoke", permission="WRITE_ACP:" + s3secondaccountId)\
+        .execute_test().command_is_successful().command_response_should_have("Revoke ACL successful")
+
+    JClientTest('Jclient can verify WRITE ACL is revoked on object').get_acl("seagatebucket", "3kfile")\
+        .execute_test().command_is_successful().command_response_should_not_have("WRITE")
 
     JClientTest('Jclient can download 3k file').get_object("seagatebucket", "3kfile").execute_test().command_is_successful().command_created_file("3kfile")
 
@@ -325,7 +344,7 @@ for i, val in enumerate(pathstyle_values):
     # ************ 18MB FILE TEST (Without multipart) ************
     JClientTest('Jclient can upload 18MB file').put_object("seagatebucket", "18MBfile", 18000000).execute_test().command_is_successful()
 
-    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "18MBfile").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "18MBfile").execute_test().command_is_successful().command_response_should_have('C12345: FULL_CONTROL')
 
     JClientTest('Jclient can delete 18MB file').delete_object("seagatebucket", "18MBfile").execute_test().command_is_successful()
 
@@ -335,7 +354,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can upload 18MB file (multipart)').put_object_multipart("seagatebucket", "18MBfile", 18000000, 15)\
             .execute_test().command_is_successful()
 
-    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "18MBfile").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "18MBfile").execute_test().command_is_successful().command_response_should_have('C12345: FULL_CONTROL')
 
     JClientTest('Jclient cannot upload 18MB file (multipart) to nonexistent bucket').put_object_multipart("seagate-bucket", "18MBfile", 18000000, 15)\
             .execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
@@ -352,7 +371,7 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient can upload 18MB file (multipart) in chunked mode').put_object_multipart("seagatebucket", "18MBfilec", 18000000, 15, chunked=True)\
             .execute_test().command_is_successful()
 
-    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "18MBfilec").execute_test().command_is_successful().command_response_should_have('s3_test: FULL_CONTROL')
+    JClientTest('Jclient can get object acl').get_acl("seagatebucket", "18MBfilec").execute_test().command_is_successful().command_response_should_have('C12345: FULL_CONTROL')
 
 
     JClientTest('Jclient can download 18MB file uploaded in chunked mode').get_object("seagatebucket", "18MBfilec")\
@@ -448,6 +467,18 @@ for i, val in enumerate(pathstyle_values):
     JClientTest('Jclient should not have bucket after its deletion').list_buckets().execute_test().command_is_successful().command_response_should_not_have('seagatebucket')
 
     JClientTest('Jclient cannot delete nonexistent bucket').delete_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("The specified bucket does not exist")
+
+    # ************ try to delete empty secondary account ************
+    S3ClientConfig.access_key_id = s3secondaccount_response_elements['AccessKeyId']
+    S3ClientConfig.secret_key = s3secondaccount_response_elements['SecretKey']
+    test_msg = "Jclient can delete empty account s3secondaccount"
+    account_args = {'AccountName': 's3secondaccount'}
+    AuthTest(test_msg).delete_account(**account_args).execute_test(negative_case=True)\
+        .command_response_should_have("Account deleted successfully")
+
+    # restore default access key and secret key.
+    S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+    S3ClientConfig.secret_key = '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'
 
     # ********** Tests to verify objects with special characters
     JClientTest('JClient can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
