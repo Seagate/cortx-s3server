@@ -31,6 +31,11 @@
 
 class S3GetObjectTaggingAction : public S3ObjectAction {
 
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_OBJECT_GET_TAGS_ID;
+  }
+
  public:
   S3GetObjectTaggingAction(
       std::shared_ptr<S3RequestObject> req,

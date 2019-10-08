@@ -28,8 +28,11 @@
 #include "s3_common_utilities.h"
 #include "request_object.h"
 #include "s3_stats.h"
+#include "s3_addb.h"
 
 extern S3Option* g_option_instance;
+
+uint64_t RequestObject::addb_request_id_gc;
 
 // evhttp Helpers
 /* evhtp_kvs_iterator */
@@ -84,12 +87,16 @@ RequestObject::RequestObject(
       is_chunked_upload(false),
       in_headers_copied(false),
       in_query_params_copied(false),
+      addb_request_id(++addb_request_id_gc),
       reply_buffer(NULL) {
 
   S3Uuid uuid;
   request_id = uuid.get_string_uuid();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   request_timer.start();
+
+  ADDB(ADDB_REQUEST_ID, addb_request_id, *(const uint64_t*)(uuid.ptr()),
+       *(const uint64_t*)(uuid.ptr() + sizeof(uint64_t)));
 
   if (async_buf_factory) {
     async_buffer_factory = std::move(async_buf_factory);

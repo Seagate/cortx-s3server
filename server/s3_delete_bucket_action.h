@@ -64,6 +64,11 @@ class S3DeleteBucketAction : public S3BucketAction {
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kvs_writer_factory;
 
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_BUCKET_DELETE_ID;
+  }
+
  public:
   S3DeleteBucketAction(
       std::shared_ptr<S3RequestObject> req,

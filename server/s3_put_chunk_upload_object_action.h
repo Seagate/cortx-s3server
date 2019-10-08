@@ -72,6 +72,11 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   // Used in UT Only
   void _set_layout_id(int layoutid) { layout_id = layoutid; }
 
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_OBJECT_PUT_CHUNK_ID;
+  }
+
  public:
   S3PutChunkUploadObjectAction(
       std::shared_ptr<S3RequestObject> req,

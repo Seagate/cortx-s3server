@@ -67,6 +67,7 @@ DECLARE_bool(fault_injection);
 DECLARE_bool(reuseport);
 DECLARE_bool(getoid);
 DECLARE_bool(loading_indicators);
+DECLARE_bool(addb);
 
 DECLARE_string(statsd_host);
 DECLARE_int32(statsd_port);

@@ -33,12 +33,18 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
       is_fi_hit(false),
       invalid_request(false),
       skip_auth(skip_auth) {
+
   request_id = base_request->get_request_id();
+  addb_request_id = base_request->addb_request_id;
+
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   task_iteration_index = 0;
   rollback_index = 0;
+
   state = ActionState::start;
   rollback_state = ActionState::start;
+  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
+
   mem_profile.reset(new S3MemoryProfile());
   // Set the callback that will be called, when read timeout happens
   base_request->set_client_read_timeout_callback(
@@ -94,6 +100,8 @@ void Action::start() {
   task_iteration_index = 0;
   if (task_list.size() > 0) {
     state = ActionState::running;
+    ADDB(get_addb_id(), addb_request_id, (uint64_t)state, 0);
+
     task_list[task_iteration_index++]();
   }
 }
@@ -107,6 +115,10 @@ void Action::next() {
   }
   if (task_iteration_index < task_list.size()) {
     if (base_request->client_connected()) {
+
+      ADDB(get_addb_id(), addb_request_id, (uint64_t)state,
+           task_iteration_index);
+
       task_list[task_iteration_index++]();
     } else {
       rollback_start();
@@ -119,23 +131,27 @@ void Action::next() {
 void Action::done() {
   task_iteration_index = 0;
   state = ActionState::complete;
+  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
   i_am_done();
 }
 
 void Action::pause() {
   // Set state as Paused.
   state = ActionState::paused;
+  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
 }
 
 void Action::resume() {
   // Resume only if paused.
   state = ActionState::running;
+  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
 }
 
 void Action::abort() {
   // Mark state as Aborted.
   task_iteration_index = 0;
   state = ActionState::stopped;
+  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
 }
 
 // rollback async steps

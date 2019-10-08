@@ -55,6 +55,11 @@ class S3GetBucketAction : public S3BucketAction {
   std::string request_marker_key;
   size_t max_keys;
 
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_BUCKET_GET_ID;
+  }
+
  public:
   S3GetBucketAction(
       std::shared_ptr<S3RequestObject> req,

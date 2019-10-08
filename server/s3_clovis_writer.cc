@@ -31,6 +31,7 @@
 #include "s3_stats.h"
 #include "s3_timer.h"
 #include "s3_uri_to_mero_oid.h"
+#include "s3_addb.h"
 
 extern struct m0_clovis_realm clovis_uber_realm;
 extern S3Option *g_option_instance;
@@ -268,6 +269,10 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
          "Clovis API: createobj(oid: ("
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid_list[0].u_hi, oid_list[0].u_lo);
+
+  ADDB(ADDB_REQUEST_TO_CLOVIS_ID, request->addb_request_id,
+       ctx->ops[0]->op_sm.sm_id);
+
   s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::createobj);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

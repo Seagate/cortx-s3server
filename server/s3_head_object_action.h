@@ -28,6 +28,12 @@
 #include "s3_object_action_base.h"
 
 class S3HeadObjectAction : public S3ObjectAction {
+
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_OBJECT_HEAD_ID;
+  }
+
  public:
   S3HeadObjectAction(
       std::shared_ptr<S3RequestObject> req,

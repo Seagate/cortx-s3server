@@ -34,6 +34,7 @@
 #include "s3_memory_profile.h"
 #include "request_object.h"
 #include "s3_timer.h"
+#include "s3_addb.h"
 
 #ifdef ENABLE_FAULT_INJECTION
 
@@ -62,7 +63,7 @@
 
 #endif  // ENABLE_FAULT_INJECTION
 
-enum class ActionState {
+enum class ActionState : unsigned {
   start,
   running,
   complete,
@@ -111,6 +112,9 @@ class Action {
 
  protected:
   std::string request_id;
+  // ADDB only allows numbers to be sent to log, so we need numerical
+  // request ID for ADDB
+  uint64_t addb_request_id;
   bool invalid_request;
   // Allow class object instiantiation without support for authentication
   bool skip_auth;
@@ -171,6 +175,12 @@ class Action {
   void set_is_fi_hit(bool hit) { is_fi_hit = hit; }
 
   bool get_is_fi_hit() { return is_fi_hit; }
+
+  // Maps the semantic of certain S3 operations to the enum
+  // for ADDB logging purposes
+  virtual enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const {
+    return ADDB_UNUSED_ID;
+  }
 
  public:
   // Self destructing object.

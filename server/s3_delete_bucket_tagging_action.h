@@ -30,6 +30,12 @@
 #include "s3_factory.h"
 
 class S3DeleteBucketTaggingAction : public S3BucketAction {
+
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_BUCKET_DELETE_TAGS_ID;
+  }
+
  public:
   S3DeleteBucketTaggingAction(
       std::shared_ptr<S3RequestObject> req,

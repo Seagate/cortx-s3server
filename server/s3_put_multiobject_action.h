@@ -71,6 +71,11 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   // Used only for UT
   void _set_layout_id(int layoutid) { layout_id = layoutid; }
 
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_OBJECT_PUT_MULTIPART_ID;
+  }
+
  public:
   S3PutMultiObjectAction(
       std::shared_ptr<S3RequestObject> req,

@@ -23,6 +23,7 @@
 #ifndef __S3_SERVER_REQUEST_OBJECT_H__
 #define __S3_SERVER_REQUEST_OBJECT_H__
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -315,6 +316,10 @@ class RequestObject {
   std::shared_ptr<S3AsyncBufferOptContainer> get_buffered_input() {
     return buffered_input;
   }
+
+  const uint64_t addb_request_id;
+  // Helper counter for assigning different addb_request_id's for each request
+  static uint64_t addb_request_id_gc;
 
   // Response Helpers
  private:

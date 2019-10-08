@@ -40,6 +40,11 @@ class S3DeleteObjectAction : public S3ObjectAction {
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
 
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_OBJECT_DELETE_ID;
+  }
+
  public:
   S3DeleteObjectAction(
       std::shared_ptr<S3RequestObject> req,

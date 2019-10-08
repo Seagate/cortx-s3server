@@ -29,6 +29,12 @@
 #include "s3_factory.h"
 
 class S3GetObjectACLAction : public S3ObjectAction {
+
+ protected:
+  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
+    return ADDB_OBJECT_GET_ACL_ID;
+  }
+
  public:
   S3GetObjectACLAction(
       std::shared_ptr<S3RequestObject> req,

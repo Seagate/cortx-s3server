@@ -43,6 +43,7 @@ int init_clovis(void) {
   /* CLOVIS_DEFAULT_EP, CLOVIS_DEFAULT_HA_ADDR*/
   clovis_conf.cc_is_oostore = option_instance->get_clovis_is_oostore();
   clovis_conf.cc_is_read_verify = option_instance->get_clovis_is_read_verify();
+  clovis_conf.cc_is_addb_init = FLAGS_addb;
   clovis_conf.cc_local_addr = option_instance->get_clovis_local_addr().c_str();
   clovis_conf.cc_ha_addr = option_instance->get_clovis_ha_addr().c_str();
   clovis_conf.cc_profile = option_instance->get_clovis_prof().c_str();

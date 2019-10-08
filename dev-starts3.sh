@@ -162,6 +162,6 @@ do
   pid_filename='/var/run/s3server.'$s3port'.pid'
   $callgraph_cmd s3server --s3pidfile $pid_filename \
            --clovislocal $local_ep:${clovis_local_port} --clovisha $ha_ep \
-           --s3port $s3port --fault_injection true $fake_params --loading_indicators
+           --s3port $s3port --fault_injection true $fake_params --loading_indicators --addb
   ((++counter))
 done

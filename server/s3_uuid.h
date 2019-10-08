@@ -50,5 +50,7 @@ class S3Uuid {
   bool operator!=(const S3Uuid& second_uuid) {
     return uuid_compare(this->uuid, second_uuid.uuid) != 0;
   }
+
+  const unsigned char* ptr() const { return uuid; }
 };
 #endif
