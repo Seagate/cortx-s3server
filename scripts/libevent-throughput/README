@@ -1,0 +1,20 @@
+The toolset was developed for testing libevent throughput.
+
+Server compilation:
+$ g++ -o server --std=c++11 -I <path_to_libevent_include_files> -L <path_to_libevent_libraries> -levent -lgflags server.cpp
+Server usage:
+$ LD_LIBRARY_PATH=<path_to_libevent_libraries> ./server [-port <TCP_port_number>] [-send]
+Where:
+- default TCP port is 60001;
+-send - the server SENDS data to a client and receives otherwise.
+
+Client compilation:
+$ g++ -o client --std=c++11 -lgflags client.cpp
+Client usage:
+$ ./client [-ip <IP_address_of_a_server>] [-port <TCP_port_number>] [-recv]
+Where:
+- default IP address is 127.0.0.1
+- default TCP port is 60001
+-recv - the client receives data from the server (sends by default).
+
+Both programs are needed "gflags-devel" package.
