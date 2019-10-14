@@ -149,4 +149,19 @@ public class KeyGenUtil {
           .append(Base64.getEncoder().encodeToString(hashPlusSalt))
           .toString();
     }
+
+    /**
+     * Return Canonical ID  for Account.
+     * Canonical ID should be,
+     * 1. AlphaNumeric
+     * 2. Length should be 64 characters
+     * 3. contains lower case letters only
+     * @return Cannonical ID.
+     */
+   public
+    static String createCanonicalId() {
+      String uuid1 = BinaryUtil.getAlphaNumericUUID();
+      String canonical_id = uuid1 + BinaryUtil.getAlphaNumericUUID();
+      return canonical_id.toLowerCase();
+    }
 }

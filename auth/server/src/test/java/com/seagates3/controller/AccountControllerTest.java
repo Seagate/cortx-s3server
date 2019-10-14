@@ -110,6 +110,8 @@ public class AccountControllerTest {
         PowerMockito.doReturn("C1234").when(KeyGenUtil.class,
                 "createId"
         );
+        PowerMockito.doReturn("can1234")
+            .when(KeyGenUtil.class, "createCanonicalId");
     }
 
     @Test
@@ -338,25 +340,22 @@ public class AccountControllerTest {
         Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
         Mockito.doReturn(resp).when(s3).notifyNewAccount(any(String.class),
                                      any(String.class), any(String.class));
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<CreateAccountResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<CreateAccountResult>"
-                + "<Account>"
-                + "<AccountId>987654test</AccountId>"
-                + "<CanonicalId>C1234</CanonicalId>"
-                + "<AccountName>s3test</AccountName>"
-                + "<RootUserName>root</RootUserName>"
-                + "<AccessKeyId>AKIASIAS</AccessKeyId>"
-                + "<RootSecretKeyId>htuspscae/123</RootSecretKeyId>"
-                + "<Status>Active</Status>"
-                + "</Account>"
-                + "</CreateAccountResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</CreateAccountResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<CreateAccountResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<CreateAccountResult>" + "<Account>" +
+            "<AccountId>987654test</AccountId>" +
+            "<CanonicalId>can1234</CanonicalId>" +
+            "<AccountName>s3test</AccountName>" +
+            "<RootUserName>root</RootUserName>" +
+            "<AccessKeyId>AKIASIAS</AccessKeyId>" +
+            "<RootSecretKeyId>htuspscae/123</RootSecretKeyId>" +
+            "<Status>Active</Status>" + "</Account>" +
+            "</CreateAccountResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</CreateAccountResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -438,7 +437,7 @@ public class AccountControllerTest {
         Account account = new Account();
         account.setName("s3test");
         account.setId("987654test");
-        account.setCanonicalId("C1234");
+        account.setCanonicalId("can1234");
         User root = new User();
         root.setName("root");
         root.setId("AKIASIAS");
@@ -461,25 +460,22 @@ public class AccountControllerTest {
 
         Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ResetAccountAccessKeyResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ResetAccountAccessKeyResult>"
-                + "<Account>"
-                + "<AccountId>987654test</AccountId>"
-                + "<CanonicalId>C1234</CanonicalId>"
-                + "<AccountName>s3test</AccountName>"
-                + "<RootUserName>root</RootUserName>"
-                + "<AccessKeyId>AKIASIAS</AccessKeyId>"
-                + "<RootSecretKeyId>htuspscae/123</RootSecretKeyId>"
-                + "<Status>Active</Status>"
-                + "</Account>"
-                + "</ResetAccountAccessKeyResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ResetAccountAccessKeyResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<ResetAccountAccessKeyResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ResetAccountAccessKeyResult>" + "<Account>" +
+            "<AccountId>987654test</AccountId>" +
+            "<CanonicalId>can1234</CanonicalId>" +
+            "<AccountName>s3test</AccountName>" +
+            "<RootUserName>root</RootUserName>" +
+            "<AccessKeyId>AKIASIAS</AccessKeyId>" +
+            "<RootSecretKeyId>htuspscae/123</RootSecretKeyId>" +
+            "<Status>Active</Status>" + "</Account>" +
+            "</ResetAccountAccessKeyResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</ResetAccountAccessKeyResponse>";
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());

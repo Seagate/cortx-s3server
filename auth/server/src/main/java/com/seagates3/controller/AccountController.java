@@ -108,7 +108,7 @@ public class AccountController extends AbstractController {
         }
 
         account.setId(KeyGenUtil.createUserId());
-        account.setCanonicalId(KeyGenUtil.createId());
+        account.setCanonicalId(KeyGenUtil.createCanonicalId());
         account.setEmail(requestBody.get("Email"));
 
         try {

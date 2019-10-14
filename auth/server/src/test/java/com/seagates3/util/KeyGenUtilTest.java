@@ -85,4 +85,16 @@ public class KeyGenUtilTest {
       assertNotNull(id);
       assertTrue(id.startsWith("{SSHA}"));
     }
+
+    @Test public void createCanonicalIdTest() {
+      String id = null;
+      // test multiple canonical ids and validate it
+      for (int i = 0; i < 10; i++) {
+        id = KeyGenUtil.createCanonicalId();
+
+        assertNotNull(id);
+        assertFalse(id.contains("-") || id.contains("_") || id.contains("&") ||
+                    id.contains("+"));
+      }
+    }
 }

@@ -117,8 +117,10 @@ class ACLValidation {
      * validate owner id and owner displayName.
      */
     if (existingAcp != null) {
+
       if (!existingAcp.owner.getCanonicalId().equals(
                acp.owner.getCanonicalId())) {
+        LOGGER.error("Invalid owner ID");
         return responseGenerator.invalidID();
       }
     }
@@ -138,6 +140,11 @@ class ACLValidation {
                             grantList.get(counter).grantee.getDisplayName());
 
           if (!aclFlag) {
+            LOGGER.error("Invalid grantee - id: " +
+                         grantList.get(counter).grantee.getCanonicalId() +
+                         " name: " +
+                         grantList.get(counter).grantee.getDisplayName());
+
             return responseGenerator.invalidID();
           }
 
@@ -177,6 +184,8 @@ class ACLValidation {
       }
 
     } else {
+      LOGGER.error("Invalid owner ID: " + acp.owner.getCanonicalId() +
+                   " Owner does not exist.");
       return responseGenerator.invalidID();
     }
     return responseGenerator.ok();
