@@ -105,9 +105,14 @@ void S3HeadObjectAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata->get_state() == S3ObjectMetadataState::present) {
+
+    // AWS add explicit quotes "" to etag values.
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html
+    std::string e_tag = "\"" + object_metadata->get_md5() + "\"";
+
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
-    request->set_out_header_value("ETag", object_metadata->get_md5());
+    request->set_out_header_value("ETag", e_tag);
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value("Content-Length",
                                   object_metadata->get_content_length_str());

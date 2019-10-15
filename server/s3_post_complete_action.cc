@@ -680,7 +680,7 @@ void S3PostCompleteAction::send_response_to_s3_client() {
     response += "<Location>" + object_uri + "</Location>";
     response += "<Bucket>" + bucket_name + "</Bucket>\n";
     response += "<Key>" + object_name + "</Key>\n";
-    response += "<ETag>" + etag + "</ETag>";
+    response += "<ETag>\"" + etag + "\"</ETag>";
     response += "</CompleteMultipartUploadResult>";
     request->send_response(S3HttpSuccess200, response);
   } else {

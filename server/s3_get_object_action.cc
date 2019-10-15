@@ -123,9 +123,13 @@ void S3GetObjectAction::validate_object_info() {
     }
 
     if (content_length == 0) {
+      // AWS add explicit quotes "" to etag values.
+      // https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
+      std::string e_tag = "\"" + object_metadata->get_md5() + "\"";
+
       request->set_out_header_value("Last-Modified",
                                     object_metadata->get_last_modified_gmt());
-      request->set_out_header_value("ETag", object_metadata->get_md5());
+      request->set_out_header_value("ETag", e_tag);
       request->set_out_header_value("Accept-Ranges", "bytes");
       request->set_out_header_value("Content-Length",
                                     object_metadata->get_content_length_str());
@@ -380,9 +384,15 @@ void S3GetObjectAction::send_data_to_client() {
   }
   if (!read_object_reply_started) {
     s3_timer.start();
+
+    // AWS add explicit quotes "" to etag values.
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
+    std::string e_tag = "\"" + object_metadata->get_md5() + "\"";
+
     request->set_out_header_value("Last-Modified",
                                   object_metadata->get_last_modified_gmt());
-    request->set_out_header_value("ETag", object_metadata->get_md5());
+    request->set_out_header_value("ETag", e_tag);
+    s3_log(S3_LOG_INFO, request_id, "e_tag= %s", e_tag.c_str());
     request->set_out_header_value("Accept-Ranges", "bytes");
     request->set_out_header_value(
         "Content-Length", std::to_string(get_requested_content_length()));

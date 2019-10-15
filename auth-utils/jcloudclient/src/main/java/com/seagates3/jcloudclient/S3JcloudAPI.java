@@ -234,7 +234,7 @@ public class S3JcloudAPI {
 
         EtagGenerator generator = new EtagGenerator(file, Long.parseLong(
                 cmd.getOptionValue("m")));
-        String expectedEtag = generator.getEtag();
+        String expectedEtag = "\"" + generator.getEtag() + "\"";
         if (!eTag.equals(expectedEtag))
             printError("The two ETags (" + expectedEtag + ", " + eTag +
                     ") do not match.");

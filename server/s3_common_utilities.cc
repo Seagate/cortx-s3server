@@ -56,10 +56,15 @@ std::string S3CommonUtilities::s3xmlEncodeSpecialChars(
 }
 
 std::string S3CommonUtilities::format_xml_string(std::string tag,
-                                                 const std::string &value) {
+                                                 const std::string &value,
+                                                 bool append_quotes) {
+
   std::string format_string = s3xmlEncodeSpecialChars(value);
   if (format_string.empty()) {
     return "<" + tag + "/>";
+  }
+  if (append_quotes) {
+    format_string = "\"" + format_string + "\"";
   }
   return "<" + tag + ">" + format_string + "</" + tag + ">";
 }

@@ -185,7 +185,7 @@ std::string& S3ObjectListResponse::get_xml() {
     response_xml += S3CommonUtilities::format_xml_string(
         "LastModified", object->get_last_modified_iso());
     response_xml +=
-        S3CommonUtilities::format_xml_string("ETag", object->get_md5());
+        S3CommonUtilities::format_xml_string("ETag", object->get_md5(), true);
     response_xml += S3CommonUtilities::format_xml_string(
         "Size", object->get_content_length_str());
     response_xml += S3CommonUtilities::format_xml_string(
@@ -311,8 +311,8 @@ std::string& S3ObjectListResponse::get_multipart_xml() {
         "PartNumber", part.second->get_part_number());
     response_xml += S3CommonUtilities::format_xml_string(
         "LastModified", part.second->get_last_modified_iso());
-    response_xml +=
-        S3CommonUtilities::format_xml_string("ETag", part.second->get_md5());
+    response_xml += S3CommonUtilities::format_xml_string(
+        "ETag", part.second->get_md5(), true);
     response_xml += S3CommonUtilities::format_xml_string(
         "Size", part.second->get_content_length_str());
     response_xml += "</Part>";

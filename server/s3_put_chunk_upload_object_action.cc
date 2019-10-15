@@ -711,7 +711,10 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
              object_metadata->get_state() == S3ObjectMetadataState::saved) {
-    request->set_out_header_value("ETag", clovis_writer->get_content_md5());
+    // AWS adds explicit quotes "" to etag values.
+    std::string e_tag = "\"" + clovis_writer->get_content_md5() + "\"";
+
+    request->set_out_header_value("ETag", e_tag);
 
     request->send_response(S3HttpSuccess200);
   } else {

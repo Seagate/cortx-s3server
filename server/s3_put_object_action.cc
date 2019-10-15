@@ -615,8 +615,11 @@ void S3PutObjectAction::send_response_to_s3_client() {
     const auto mss = s3_timer.elapsed_time_in_millisec();
     LOG_PERF("put_object_save_metadata_ms", request_id.c_str(), mss);
     s3_stats_timing("put_object_save_metadata", mss);
+    // AWS adds explicit quotes "" to etag values.
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html
+    std::string e_tag = "\"" + clovis_writer->get_content_md5() + "\"";
 
-    request->set_out_header_value("ETag", clovis_writer->get_content_md5());
+    request->set_out_header_value("ETag", e_tag);
 
     request->send_response(S3HttpSuccess200);
   } else {
