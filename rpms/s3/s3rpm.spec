@@ -4,6 +4,16 @@
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
 
+%global py_ver 3.6
+
+# pybasever without the dot:
+%global py_short_ver 36
+
+# XXX For strange reason setup.py uses /usr/lib
+# but %{_libdir} resolves to /usr/lib64 with python3.6
+#%global py36_sitelib %{_libdir}/python%{py_ver}
+%global py36_sitelib /usr/lib/python%{py_ver}/site-packages
+
 Name:       s3server
 Version:    %{_s3_version}
 Release:    %{build_num}_%{_s3_git_ver}_%{?dist:el7}
@@ -32,9 +42,10 @@ BuildRequires: gtest gtest-devel
 BuildRequires: gmock gmock-devel
 BuildRequires: git
 BuildRequires: log4cxx_eos log4cxx_eos-devel
-BuildRequires: python%{python3_other_pkgversion} >= 3.6
-BuildRequires: python%{python3_other_pkgversion}-devel
-BuildRequires: python%{python3_other_pkgversion}-setuptools
+BuildRequires: python3-rpm-macros
+BuildRequires: python%{py_short_ver}
+BuildRequires: python%{py_short_ver}-devel
+BuildRequires: python%{py_short_ver}-setuptools
 
 Requires: mero = %{h_mero_version}
 Requires: libxml2
@@ -46,8 +57,8 @@ Requires: gflags
 Requires: glog
 Requires: pkgconfig
 Requires: log4cxx_eos log4cxx_eos-devel
-Requires: python%{python3_other_pkgversion} >= 3.6
-Requires: python%{python3_other_pkgversion}-yaml
+Requires: python%{py_short_ver}
+Requires: python%{py_short_ver}-yaml
 # Java used by Auth server
 Requires: java-1.8.0-openjdk-headless
 Requires: PyYAML
@@ -63,7 +74,7 @@ S3 server provides S3 REST API interface support for Mero object storage.
 mkdir -p %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 # Build the background delete python module.
 cd s3backgrounddelete/s3backgrounddelete
-%{__python3_other} -m compileall -b *.py
+python%{py_ver} -m compileall -b *.py
 cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete/build/lib/s3backgrounddelete
 echo "build complete"
 
@@ -72,7 +83,7 @@ rm -rf %{buildroot}
 ./installhelper.sh %{buildroot}
 # Install the background delete python module.
 cd %{_builddir}/%{name}-%{version}-%{_s3_git_ver}/s3backgrounddelete
-%{__python3_other} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
+python%{py_ver} setup.py install --single-version-externally-managed -O1 --root=$RPM_BUILD_ROOT
 
 %clean
 bazel clean
@@ -163,13 +174,13 @@ rm -rf %{buildroot}
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
-%{python3_other_sitelib}/s3backgrounddelete/config/*.yaml
-%{python3_other_sitelib}/s3backgrounddelete/*.pyc
-%{python3_other_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
-%exclude %{python3_other_sitelib}/s3backgrounddelete/__pycache__/*
-%exclude %{python3_other_sitelib}/s3backgrounddelete/*.py
-%exclude %{python3_other_sitelib}/s3backgrounddelete/s3backgroundconsumer
-%exclude %{python3_other_sitelib}/s3backgrounddelete/s3backgroundproducer
+%{py36_sitelib}/s3backgrounddelete/config/*.yaml
+%{py36_sitelib}/s3backgrounddelete/*.pyc
+%{py36_sitelib}/s3backgrounddelete-%{version}-py?.?.egg-info
+%exclude %{py36_sitelib}/s3backgrounddelete/__pycache__/*
+%exclude %{py36_sitelib}/s3backgrounddelete/*.py
+%exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
+%exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
 
 %post
 systemctl daemon-reload
