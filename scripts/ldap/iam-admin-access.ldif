@@ -1,5 +1,5 @@
 # Add necessary permissions
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 add: olcAccess
 # Maintain the below order of permissions

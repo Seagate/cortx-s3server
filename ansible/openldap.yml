@@ -25,6 +25,14 @@
           - openldap-servers
           - openldap-clients
 
+      - name: Copy mdb ldiff file, if not present
+        copy:
+          src: files/ldap/olcDatabase={2}mdb.ldif
+          dest: /etc/openldap/slapd.d/cn=config/
+          force: no
+          owner: ldap
+          group: ldap
+
       # - name: Install ntp
       #   yum: pkg=ntp state=installed
       #

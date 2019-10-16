@@ -105,7 +105,7 @@ firewall-cmd --reload
 # 4. Verify permissions ls -ldZ /var/seagate/ldap
 # drwx------. ldap ldap system_u:object_r:slapd_db_t:s0  /var/seagate/ldap
 # More details https://www.systutorials.com/docs/linux/man/8-slapd_selinux/
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcDbDirectory
 olcDbDirectory: /var/seagate/ldap

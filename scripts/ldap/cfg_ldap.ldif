@@ -13,17 +13,25 @@ changetype: modify
 replace: olcRootPW
 olcRootPW: {{ slapdpasswdhash.stdout }}
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcSuffix
 olcSuffix: dc=seagate,dc=com
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcRootDN
 olcRootDN: cn=admin,dc=seagate,dc=com
 
-dn: olcDatabase={2}hdb,cn=config
+#Change the maximum size of the mdb database
+#its being set to 30GB from default size of 1MB
+#the database will not be allowed to grow beyond this size
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+add: olcDbMaxSize
+olcDbMaxSize: 32212254720
+
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcRootPW
 olcRootPW: {{ slapdpasswdhash.stdout }}
@@ -37,12 +45,12 @@ olcRootPW: {{ slapdpasswdhash.stdout }}
 # drwx------. ldap ldap system_u:object_r:slapd_db_t:s0  /var/seagate/ldap
 # More details https://www.systutorials.com/docs/linux/man/8-slapd_selinux/
 # Uncomment following lines to setup required directory
-#dn: olcDatabase={2}hdb,cn=config
+#dn: olcDatabase={2}mdb,cn=config
 #changetype: modify
 #replace: olcDbDirectory
 #olcDbDirectory: /var/seagate/ldap
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcAccess
 olcAccess: {0}to attrs=userPassword by self write by dn.base="cn=admin,dc=seagate,dc=com" write by anonymous auth by * none
@@ -50,7 +58,7 @@ olcAccess: {0}to attrs=userPassword by self write by dn.base="cn=admin,dc=seagat
 add: olcAccess
 olcAccess: {1}to * by dn.base="cn=admin,dc=seagate,dc=com" write by self write by * none
 
-dn: olcDatabase={2}hdb,cn=config
+dn: olcDatabase={2}mdb,cn=config
 changetype: modify
 replace: olcAccess
 olcAccess: {0}to attrs=userPassword by self write by dn.base="cn=sgiamadmin,dc=seagate,dc=com" write by anonymous auth by * none
