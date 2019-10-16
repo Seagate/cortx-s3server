@@ -100,7 +100,9 @@ void Action::start() {
   task_iteration_index = 0;
   if (task_list.size() > 0) {
     state = ActionState::running;
-    ADDB(get_addb_id(), addb_request_id, (uint64_t)state, 0);
+
+    ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
+    ADDB(get_addb_id(), addb_request_id, ADDB_TASK_LIST_OFFSET);
 
     task_list[task_iteration_index++]();
   }
@@ -116,8 +118,8 @@ void Action::next() {
   if (task_iteration_index < task_list.size()) {
     if (base_request->client_connected()) {
 
-      ADDB(get_addb_id(), addb_request_id, (uint64_t)state,
-           task_iteration_index);
+      ADDB(get_addb_id(), addb_request_id,
+           task_iteration_index + ADDB_TASK_LIST_OFFSET);
 
       task_list[task_iteration_index++]();
     } else {

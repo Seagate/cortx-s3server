@@ -23,19 +23,18 @@
 #include <vector>
 #include <addb2/addb2.h>
 
-/*
- If new API would be added and new operation would be needed for
- ADDB logging then the enum below should be updated and the function
- get_addb_id() need to be overridden accordingly.
-*/
+// If new API would be added and new operation would be needed for
+// ADDB logging then the enum below should be updated and the function
+// get_addb_id() need to be overridden accordingly.
+
 enum S3_ADDB_ENTRY_TYPE_ID : unsigned {
   ADDB_UNUSED_ID = 0,
   ADDB_RANGE_START_ID =
       0x10000,  // == M0_AVI_S3_RANGE_START (defined in addb2/identifier.h)
-  /* helper IDs e.g. for linking requests */
+  // helper IDs e.g. for linking requests
   ADDB_REQUEST_ID = ADDB_RANGE_START_ID,
   ADDB_REQUEST_TO_CLOVIS_ID,
-  /* Different request types */
+  // Different request types
   ADDB_BUCKET_DELETE_ID,
   ADDB_BUCKET_DELETE_POLICY_ID,
   ADDB_BUCKET_DELETE_TAGS_ID,
@@ -63,11 +62,13 @@ enum S3_ADDB_ENTRY_TYPE_ID : unsigned {
   ADDB_OBJECT_PUT_TAGS_ID
 };
 
-/*
- The id should be (the result of) get_addb_id().
- Other parameters should be (arbitrary) values of type uint64_t
- (or implicitly convertible)
-*/
+// The goal is to distinguish ActionState values from task_list indexes.
+#define ADDB_TASK_LIST_OFFSET 256u
+
+// The id should be (the result of) get_addb_id().
+// Other parameters should be (arbitrary) values of type uint64_t
+// (or implicitly convertible)
+
 #define ADDB(id, ...)                                           \
   do {                                                          \
     const uint64_t addb_id__ = (id);                            \
