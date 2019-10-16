@@ -17,9 +17,11 @@
  * Original creation date: 16-May-2016
  */
 
+#include <json/json.h>
 #include "s3_put_bucket_policy_action.h"
 #include "s3_error_codes.h"
 #include "s3_log.h"
+#include "base64.h"
 
 S3PutBucketPolicyAction::S3PutBucketPolicyAction(
     std::shared_ptr<S3RequestObject> req,
@@ -36,6 +38,7 @@ S3PutBucketPolicyAction::S3PutBucketPolicyAction(
 void S3PutBucketPolicyAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   add_task(std::bind(&S3PutBucketPolicyAction::validate_request, this));
+  add_task(std::bind(&S3PutBucketPolicyAction::validate_policy, this));
   add_task(std::bind(&S3PutBucketPolicyAction::set_policy, this));
   add_task(
       std::bind(&S3PutBucketPolicyAction::send_response_to_s3_client, this));
@@ -59,46 +62,43 @@ void S3PutBucketPolicyAction::validate_request() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutBucketPolicyAction::consume_incoming_content() {
-  s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
-  if (request->has_all_body_content()) {
-    new_bucket_policy = request->get_full_body_content_as_string();
-    validate_request_body(new_bucket_policy);
+void S3PutBucketPolicyAction::validate_policy() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (new_bucket_policy.empty()) {
+    next();
   } else {
-    // else just wait till entire body arrives. rare.
-    request->resume();
+    auth_client->set_acl_and_policy(
+        "", base64_encode((const unsigned char*)new_bucket_policy.c_str(),
+                          new_bucket_policy.size()));
+
+    auth_client->validate_policy(
+        std::bind(&S3PutBucketPolicyAction::on_policy_validation_success, this),
+        std::bind(&S3PutBucketPolicyAction::on_policy_validation_failure,
+                  this));
   }
 }
 
-void S3PutBucketPolicyAction::validate_request_body(std::string content) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-
-  // TODO: ACL implementation is partial, fix this when adding full support.
-  // S3PutBucketPolicyBody bucket_policy(content);
-  // if (bucket_policy.isOK()) {
-  //   next();
-  // } else {
-  //   set_s3_error("MalformedXML");
-  //   send_response_to_s3_client();
-  // }
+void S3PutBucketPolicyAction::on_policy_validation_success() {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutBucketPolicyAction::fetch_bucket_info_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+void S3PutBucketPolicyAction::on_policy_validation_failure() {
+  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  std::string error_code = auth_client->get_error_code();
+  s3_log(S3_LOG_INFO, request_id, "Auth server response = [%s]\n",
+         error_code.c_str());
 
-  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
-    set_s3_error("NoSuchBucket");
-  } else if (bucket_metadata->get_state() ==
-             S3BucketMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Bucket metadata load operation failed due to pre launch failure\n");
-    set_s3_error("ServiceUnavailable");
-  } else {
-    set_s3_error("InternalError");
-  }
-  send_response_to_s3_client();
+  // TODO: Until policy validation is implemented in Auth server
+  // we'll assume success in policy validation, so that system can write
+  // policy to s3 metadata.
+  // Commenting below code until the implementation is in place in Auth srv.
+
+  // set_s3_error(error_code);
+  // send_response_to_s3_client();
+
+  on_policy_validation_success();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -127,6 +127,62 @@ void S3PutBucketPolicyAction::set_policy_failed() {
     set_s3_error("InternalError");
   }
   send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutBucketPolicyAction::consume_incoming_content() {
+  s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
+  if (request->has_all_body_content()) {
+    new_bucket_policy = request->get_full_body_content_as_string();
+    validate_request_body(new_bucket_policy);
+  } else {
+    // else just wait till entire body arrives. rare.
+    request->resume();
+  }
+}
+
+void S3PutBucketPolicyAction::validate_request_body(std::string& content) {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+
+  bool isValid = false;
+  if (!new_bucket_policy.empty()) {
+    Json::Value policyRoot;
+    Json::Reader reader;
+    isValid = reader.parse(new_bucket_policy.c_str(), policyRoot);
+    if (!isValid) {
+      s3_log(S3_LOG_ERROR, request_id,
+             "Json Parsing failed for Bucket policy:%s\n",
+             reader.getFormattedErrorMessages().c_str());
+    } else {
+      isValid = true;
+      next();
+    }
+  }
+
+  if (!isValid) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket policy data is either empty or invalid\n");
+    set_s3_error("MalformedXML");  // TODO: Check the behaviour in AWS S3
+    send_response_to_s3_client();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutBucketPolicyAction::fetch_bucket_info_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
+    set_s3_error("NoSuchBucket");
+  } else if (bucket_metadata->get_state() ==
+             S3BucketMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Bucket metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

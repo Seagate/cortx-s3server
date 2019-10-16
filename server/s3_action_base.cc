@@ -72,6 +72,15 @@ void S3Action::check_authorization_failed() {
       s3_stats_inc("authorization_failed_invalid_accesskey_count");
     } else if (error_code == "SignatureDoesNotMatch") {
       s3_stats_inc("authorization_failed_signature_mismatch_count");
+    } else {
+      // Possible error_code values: AccessDenied, MethodNotAllowed.
+      // AccessDenied: When the requesting identity does not have
+      // 'PutBucketPolicy' permission.
+      //
+      // MethodNotAllowed: When the requesting identity has required
+      // permissions but does not belong to the bucket owner's account.
+      // Refer AWS s3 for more details.
+      set_s3_error(error_code);
     }
     s3_log(S3_LOG_ERROR, request_id, "Authorization failure: %s\n",
            error_code.c_str());

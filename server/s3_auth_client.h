@@ -47,6 +47,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   bool is_auth_successful;
   bool is_authorization_successful;
   bool is_aclvalidation_successful;
+  bool is_policyvalidation_successful;
 
   std::unique_ptr<S3AuthResponseSuccess> success_obj;
   std::unique_ptr<S3AuthResponseError> error_obj;
@@ -64,6 +65,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
         is_auth_successful(false),
         is_authorization_successful(false),
         is_aclvalidation_successful(false),
+        is_policyvalidation_successful(false),
         auth_response_xml("") {
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   }
@@ -106,6 +108,16 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   }
 
+  void set_policyvalidation_response_xml(const char* xml, bool success = true) {
+    s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+    is_policyvalidation_successful = success;
+    auth_response_xml = xml;
+    if (!success) {
+      error_obj.reset(new S3AuthResponseError(auth_response_xml));
+    }
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  }
+
   void set_authorization_response(const char* xml, bool success = true) {
     s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
     authorization_response_xml = xml;
@@ -137,6 +149,8 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   bool authorization_successful() { return is_authorization_successful; }
 
   bool aclvalidation_successful() { return is_aclvalidation_successful; }
+
+  bool policyvalidation_successful() { return is_policyvalidation_successful; }
 
   std::string get_user_id() {
     if (is_auth_successful) {
@@ -327,9 +341,14 @@ class S3AuthClient {
   void check_aclvalidation_successful();
   void check_aclvalidation_failed();
 
+  void policy_validation_successful();
+  void policy_validation_failed();
+
   void check_authorization();
   void validate_acl(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
+  void validate_policy(std::function<void(void)> on_success,
+                       std::function<void(void)> on_failed);
   void set_validate_acl(const std::string& validateacl);
   void check_authorization(std::function<void(void)> on_success,
                            std::function<void(void)> on_failed);

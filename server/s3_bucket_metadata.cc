@@ -199,7 +199,9 @@ std::string S3BucketMetadata::to_json() {
   } else {
     root["ACL"] = encoded_acl;
   }
-  root["Policy"] = bucket_policy;
+  root["Policy"] = base64_encode((const unsigned char*)bucket_policy.c_str(),
+                                 bucket_policy.size());
+
   for (const auto& tag : bucket_tags) {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
@@ -248,7 +250,7 @@ int S3BucketMetadata::from_json(std::string content) {
       newroot["mero_multipart_index_oid"].asString());
 
   acl_from_json((newroot["ACL"]).asString());
-  bucket_policy = newroot["Policy"].asString();
+  bucket_policy = base64_decode(newroot["Policy"].asString());
 
   members = newroot["User-Defined-Tags"].getMemberNames();
   for (const auto& tag : members) {

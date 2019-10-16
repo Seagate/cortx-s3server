@@ -113,7 +113,8 @@ enum class S3OperationCode {
 enum class S3AuthClientOpType {
   authentication,
   authorization,
-  aclvalidation
+  aclvalidation,
+  policyvalidation
 };
 
 struct compare {

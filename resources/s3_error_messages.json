@@ -142,5 +142,9 @@
   "InvalidRange": {
     "Description": "The requested range cannot be satisfied.",
     "httpcode": 416
+  },
+  "MethodNotAllowed": {
+    "Description": "The specified method is not allowed against this resource",
+    "httpcode": 405
   }
 }
