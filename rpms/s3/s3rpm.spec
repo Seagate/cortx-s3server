@@ -42,6 +42,7 @@ BuildRequires: gtest gtest-devel
 BuildRequires: gmock gmock-devel
 BuildRequires: git
 BuildRequires: log4cxx_eos log4cxx_eos-devel
+BuildRequires: hiredis hiredis-devel
 BuildRequires: python3-rpm-macros
 BuildRequires: python%{py_short_ver}
 BuildRequires: python%{py_short_ver}-devel
@@ -62,6 +63,7 @@ Requires: python%{py_short_ver}-yaml
 # Java used by Auth server
 Requires: java-1.8.0-openjdk-headless
 Requires: PyYAML
+Requires: hiredis
 
 %description
 S3 server provides S3 REST API interface support for Mero object storage.
