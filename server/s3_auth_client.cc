@@ -601,7 +601,8 @@ void S3AuthClient::setup_auth_request_body() {
     auth_request_body = "Action=AuthenticateUser";
   } else if (auth_request_type == S3AuthClientOpType::aclvalidation) {
 
-    add_key_val_to_body("ACL", acl_str);
+    add_key_val_to_body("ACL", user_acl);
+    add_key_val_to_body("Auth-ACL", acl_str);
     auth_request_body = "Action=ValidateACL";
   }
 
@@ -630,7 +631,7 @@ void S3AuthClient::set_acl_and_policy(std::string acl, std::string policy) {
 void S3AuthClient::set_bucket_acl(const std::string &acl) { bucket_acl = acl; }
 
 void S3AuthClient::set_validate_acl(const std::string &validateacl) {
-  acl_str = validateacl;
+  user_acl = validateacl;
 }
 
 void S3AuthClient::setup_auth_request_headers() {

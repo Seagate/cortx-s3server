@@ -282,6 +282,7 @@ class S3AuthClient {
   std::string hash_sha256_current_chunk;
   std::string policy_str;
   std::string acl_str;
+  std::string user_acl;
   bool last_chunk_added;
 
   bool chunk_auth_aborted;

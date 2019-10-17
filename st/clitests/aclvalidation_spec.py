@@ -41,6 +41,9 @@ invalid_acl_incorrect_ownerid = "file://" + os.path.abspath(invalid_acl_incorrec
 invalid_acl_incorrect_ownername_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_incorrect_ownername.json')
 invalid_acl_incorrect_ownername = "file://" + os.path.abspath(invalid_acl_incorrect_ownername_relative)
 
+invalid_acl_owner_id = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_owner_id.json')
+invalid_acl_owner_id = "file://" + os.path.abspath(invalid_acl_owner_id)
+
 # Load test config file
 def load_test_config():
     conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
@@ -164,6 +167,9 @@ AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObje
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
 AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", invalid_acl_incorrect_ownername)\
+    .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
+
+AwsTest('Aws can put object acl').put_object_acl_with_acp_file(bucket, "testObject", invalid_acl_owner_id)\
     .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
 #*********** Negative case to fetch bucket acl for non-existing bucket ****************************
