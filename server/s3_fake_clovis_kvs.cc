@@ -28,7 +28,8 @@ S3FakeClovisKvs::S3FakeClovisKvs() : in_mem_kv() {}
 
 int S3FakeClovisKvs::kv_read(struct m0_uint128 const &oid,
                              struct s3_clovis_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering oid %lu:%lu\n", oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
+         oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
     s3_log(S3_LOG_DEBUG, "", "Exiting NOENT\n");
     return -ENOENT;
@@ -59,7 +60,8 @@ int S3FakeClovisKvs::kv_read(struct m0_uint128 const &oid,
 
 int S3FakeClovisKvs::kv_next(struct m0_uint128 const &oid,
                              struct s3_clovis_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering oid %lu:%lu\n", oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
+         oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
     s3_log(S3_LOG_DEBUG, "", "Exiting ENOENT\n");
     return -ENOENT;
@@ -121,7 +123,8 @@ int S3FakeClovisKvs::kv_next(struct m0_uint128 const &oid,
 
 int S3FakeClovisKvs::kv_write(struct m0_uint128 const &oid,
                               struct s3_clovis_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering oid %lu:%lu\n", oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
+         oid.u_hi, oid.u_lo);
   KeyVal &obj_kv = in_mem_kv[oid];
 
   int cnt = kv.values->ov_vec.v_nr;
@@ -142,7 +145,8 @@ int S3FakeClovisKvs::kv_write(struct m0_uint128 const &oid,
 
 int S3FakeClovisKvs::kv_del(struct m0_uint128 const &oid,
                             struct s3_clovis_kvs_op_context const &kv) {
-  s3_log(S3_LOG_DEBUG, "", "Entering oid %lu:%lu\n", oid.u_hi, oid.u_lo);
+  s3_log(S3_LOG_DEBUG, "", "Entering with oid %" SCNx64 " : %" SCNx64 "\n",
+         oid.u_hi, oid.u_lo);
   if (in_mem_kv.count(oid) == 0) {
     s3_log(S3_LOG_DEBUG, "", "Exiting NOENT\n");
     return -ENOENT;

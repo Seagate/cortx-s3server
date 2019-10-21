@@ -77,7 +77,9 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
   int rc = 0;
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id,
+         "Entering with oid %" SCNx64 " : %" SCNx64 " and %zu keys\n", oid.u_hi,
+         oid.u_lo, keys.size());
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
   }
@@ -219,8 +221,9 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
                                     std::function<void(void)> on_success,
                                     std::function<void(void)> on_failed,
                                     unsigned int flag) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with key = %s and count = %zu\n",
-         key.c_str(), nr_kvp);
+  s3_log(S3_LOG_INFO, request_id, "Entering with idx_oid = %" SCNx64
+                                  " : %" SCNx64 " key = %s and count = %zu\n",
+         idx_oid.u_hi, idx_oid.u_lo, key.c_str(), nr_kvp);
   id = idx_oid;
   int rc = 0;
   last_result_keys_values.clear();

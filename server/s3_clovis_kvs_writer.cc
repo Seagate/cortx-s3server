@@ -64,7 +64,7 @@ void S3ClovisKVSWriter::clean_up_contexts() {
 void S3ClovisKVSWriter::create_index(std::string index_name,
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering with index_name = %s\n",
+  s3_log(S3_LOG_INFO, request_id, "Entering with index_name = %s\n",
          index_name.c_str());
 
   struct m0_uint128 id = {0ULL, 0ULL};
@@ -79,7 +79,9 @@ void S3ClovisKVSWriter::create_index(std::string index_name,
 void S3ClovisKVSWriter::create_index_with_oid(
     struct m0_uint128 idx_oid, std::function<void(void)> on_success,
     std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id,
+         "Entering with idx_oid = %" SCNx64 " : %" SCNx64 "\n", idx_oid.u_hi,
+         idx_oid.u_lo);
   int rc = 0;
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -234,7 +236,9 @@ void S3ClovisKVSWriter::sync_index_failed() {
 void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id,
+         "Entering with idx_oid = %" SCNx64 " : %" SCNx64 "\n", idx_oid.u_hi,
+         idx_oid.u_lo);
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
@@ -321,7 +325,14 @@ void S3ClovisKVSWriter::delete_index_failed() {
 void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
                                        std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id, "Entering with %zu indexes\n", oids.size());
+
+  {
+    for (auto &oid : oids) {
+      s3_log(S3_LOG_DEBUG, request_id, "oid = %" SCNx64 " : %" SCNx64 "\n",
+             oid.u_hi, oid.u_lo);
+    }
+  }
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -409,6 +420,16 @@ void S3ClovisKVSWriter::delete_indexes_failed() {
 void S3ClovisKVSWriter::put_keyval(
     struct m0_uint128 oid, const std::map<std::string, std::string> &kv_list,
     std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_INFO, request_id, "Entering with oid = %" SCNx64 " : %" SCNx64
+                                  " and %zu key/value pairs\n",
+         oid.u_hi, oid.u_lo, kv_list.size());
+  {
+    for (auto &kv : kv_list) {
+      s3_log(S3_LOG_DEBUG, request_id, "key = %s, value = %s\n",
+             kv.first.c_str(), kv.second.c_str());
+    }
+  }
+
   int rc = 0;
   oid_list.clear();
   oid_list.push_back(oid);
@@ -478,8 +499,9 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
                                    std::string val,
                                    std::function<void(void)> on_success,
                                    std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering with key = %s and value = %s\n",
-         key.c_str(), val.c_str());
+  s3_log(S3_LOG_INFO, request_id, "Entering with oid = %" SCNx64 " : %" SCNx64
+                                  " key = %s and value = %s\n",
+         oid.u_hi, oid.u_lo, key.c_str(), val.c_str());
 
   int rc = 0;
   oid_list.clear();
@@ -644,7 +666,9 @@ void S3ClovisKVSWriter::sync_keyval_failed() {
 void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid, std::string key,
                                       std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id,
+         "Entering with oid %" SCNx64 " : %" SCNx64 " and key %s\n", oid.u_hi,
+         oid.u_lo, key.c_str());
   std::vector<std::string> keys;
   keys.push_back(key);
 
@@ -656,7 +680,9 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
                                       std::vector<std::string> keys,
                                       std::function<void(void)> on_success,
                                       std::function<void(void)> on_failed) {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_INFO, request_id,
+         "Entering with oid %" SCNx64 " : %" SCNx64 " and %zu keys\n", oid.u_hi,
+         oid.u_lo, keys.size());
   int rc;
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
