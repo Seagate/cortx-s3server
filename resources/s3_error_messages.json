@@ -1,4 +1,8 @@
 {
+  "OperationNotSupported": {
+    "Description": "The requested operation is not supported.",
+    "httpcode":    401
+  },
   "AccessDenied": {
     "Description": "Access Denied",
     "httpcode":    403

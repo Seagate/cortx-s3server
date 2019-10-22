@@ -87,7 +87,7 @@ public class ACLPermissionUtil {
         }
     }
 
-   private
+   public
     static boolean isACLReadWrite(String uri, String queryParam) {
       if (uri.endsWith(ACL_QUERY) || "acl".equals(queryParam)) {
             return true;

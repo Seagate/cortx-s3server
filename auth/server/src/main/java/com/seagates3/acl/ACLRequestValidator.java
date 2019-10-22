@@ -80,6 +80,7 @@ class ACLRequestValidator {
     cannedAclSet.add("bucket-owner-read");
     cannedAclSet.add("bucket-owner-full-control");
     cannedAclSet.add("log-delivery-write");
+    cannedAclSet.add("aws-exec-read");
   }
 
   /**

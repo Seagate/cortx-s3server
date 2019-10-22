@@ -59,6 +59,12 @@ class AwsTest(S3PyCliTest):
                       + " --tagging " + quote(tagset) )
         return self
 
+    def put_bucket_canned_acl(self, bucket_name, canned_acl):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api" + " create-bucket " + "--bucket " + bucket_name
+                      + " --acl " + canned_acl )
+        return self
+
     def list_bucket_tagging(self, bucket_name):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + "get-bucket-tagging " + "--bucket " + bucket_name)

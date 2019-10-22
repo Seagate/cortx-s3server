@@ -803,6 +803,40 @@ AwsTest('Aws can not put object acl with invalid \'private123\' canned acl input
 .put_object_acl_with_canned_input("seagatebucketacl", "testObject", "private123").execute_test(negative_case=True)\
     .command_should_fail()
 
+# Put bucket with bucket-owner-read canned acl - bucket should be created with default acl
+AwsTest('Aws can create bucket by ignoring bucket-owner-read canned acl').put_bucket_canned_acl("seagatebucket01", "bucket-owner-read")\
+    .execute_test().command_is_successful()
+result=AwsTest('Validate the object acl').get_bucket_acl("seagatebucket01").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+# Put bucket with bucket-owner-full-control canned acl - bucket should be created with default acl
+AwsTest('Aws can create bucket by ignoring bucket-owner-full-control canned acl').put_bucket_canned_acl("seagatebucket02", "bucket-owner-full-control")\
+    .execute_test().command_is_successful()
+result=AwsTest('Validate the object acl').get_bucket_acl("seagatebucket02").execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('acl has valid Grants').validate_grant(result, "C12345", "s3_test", 1, "FULL_CONTROL")
+print("ACL validation Completed..")
+
+AwsTest('AWS can not put bucket acl with log-delivery-write canned input')\
+.put_bucket_acl_with_canned_input("seagatebucket02", "log-delivery-write").execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("OperationNotSupported")
+
+AwsTest('AWS can not put bucket acl with aws-exec-read canned input')\
+.put_bucket_acl_with_canned_input("seagatebucket02", "aws-exec-read").execute_test(negative_case=True)\
+    .command_should_fail().command_error_should_have("OperationNotSupported")
+
+AwsTest('AWS can delete bucket seagatebucket01').delete_bucket("seagatebucket01").execute_test().command_is_successful()
+
+AwsTest('AWS can delete bucket seagatebucket02').delete_bucket("seagatebucket02").execute_test().command_is_successful()
+
 #********** Delete object *************
 
 # Secondary account can not delete object from seagatebucketacl

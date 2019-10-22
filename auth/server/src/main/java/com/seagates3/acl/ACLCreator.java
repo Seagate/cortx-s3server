@@ -40,6 +40,7 @@ import com.seagates3.model.Account;
 import com.seagates3.model.Group;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
+import com.seagates3.util.ACLPermissionUtil;
 import com.seagates3.util.BinaryUtil;
 
 public
@@ -217,16 +218,17 @@ class ACLCreator {
       Owner bucketOwner;
       Owner owner = getOwner(requestor, existingAcp, requestBody);
       acp.setOwner(owner);
-      acl.clearGrantList();
       String errorMessage = null;
 
       switch (cannedInput) {
 
         case "private":
+          acl.clearGrantList();
           acl.addGrant(getOwnerGrant(requestor, existingAcp, requestBody));
           break;
 
         case "public-read":
+          acl.clearGrantList();
           acl.addGrant(getOwnerGrant(requestor, existingAcp, requestBody));
           acl.addGrant(new Grant(new Grantee(null, null, Group.AllUsersURI,
                                              null, Grantee.Types.Group),
@@ -234,6 +236,7 @@ class ACLCreator {
           break;
 
         case "public-read-write":
+          acl.clearGrantList();
           acl.addGrant(getOwnerGrant(requestor, existingAcp, requestBody));
           acl.addGrant(new Grant(new Grantee(null, null, Group.AllUsersURI,
                                              null, Grantee.Types.Group),
@@ -244,6 +247,7 @@ class ACLCreator {
           break;
 
         case "authenticated-read":
+          acl.clearGrantList();
           acl.addGrant(getOwnerGrant(requestor, existingAcp, requestBody));
           acl.addGrant(
               new Grant(new Grantee(null, null, Group.AuthenticatedUsersURI,
@@ -252,6 +256,11 @@ class ACLCreator {
           break;
 
         case "bucket-owner-read":
+
+          // Ignore if bucket-owner-read is applied while creating a bucket
+          if (isIgnoreBucketAclUpdate(requestBody)) break;
+
+          acl.clearGrantList();
           acl.addGrant(getOwnerGrant(requestor, existingAcp, requestBody));
           bucketOwner = getbucketOwner(requestBody);
           // if bucket owner and object owner are different then only add
@@ -270,6 +279,11 @@ class ACLCreator {
           break;
 
         case "bucket-owner-full-control":
+
+          // Ignore if bucket-owner-read is applied while creating a bucket
+          if (isIgnoreBucketAclUpdate(requestBody)) break;
+
+          acl.clearGrantList();
           acl.addGrant(getOwnerGrant(requestor, existingAcp, requestBody));
           bucketOwner = getbucketOwner(requestBody);
           // if bucket owner and object owner are different then only add
@@ -291,7 +305,13 @@ class ACLCreator {
           errorMessage = "log-delivery-write canned input is not supported.";
           LOGGER.error(errorMessage);
           throw new InternalServerException(
-              responseGenerator.operationNotSupported(errorMessage));
+              responseGenerator.operationNotSupported());
+
+        case "aws-exec-read":
+          errorMessage = "aws-exec-read canned input is not supported.";
+          LOGGER.error(errorMessage);
+          throw new InternalServerException(
+              responseGenerator.operationNotSupported());
 
         default:
           throw new InternalServerException(responseGenerator.invalidArgument(
@@ -312,6 +332,8 @@ class ACLCreator {
     Owner getOwner(Requestor requestor, AccessControlPolicy acp,
                    Map<String, String> requestBody) {
       Owner grant;
+      // Bucket-Acl will be present in request body only if the request is a
+      // put-acl. For put-acl call get the existing resource owner details
       if (acp != null && requestBody.get("Bucket-ACL") != null) {
         grant = acp.owner;
       } else {
@@ -335,6 +357,8 @@ class ACLCreator {
         throws ParserConfigurationException,
         SAXException, IOException, GrantListFullException {
       Owner owner = null;
+      // Bucket-Acl will be present in request body only if the request is a
+      // put-acl. For put-acl call get the existing resource owner details
       if (requestBody.get("Bucket-ACL") != null) {
         owner = new AccessControlPolicy(
             BinaryUtil.base64DecodeString(requestBody.get("Bucket-ACL")))
@@ -365,6 +389,8 @@ class ACLCreator {
         SAXException, IOException, GrantListFullException {
 
       Grant grant;
+      // Bucket-Acl will be present in request body only if the request is a
+      // put-acl. For put-acl call get the existing resource owner details
       if (acp != null && requestBody.get("Bucket-ACL") != null) {
         grant = new Grant(
             new Grantee(acp.getOwner().canonicalId, acp.getOwner().displayName),
@@ -375,6 +401,52 @@ class ACLCreator {
                           "FULL_CONTROL");
       }
       return grant;
+    }
+
+    /**
+     * Checks if the bucket-owner-* canned ACL update should be ignored for this
+     * request. The operation should be ignored if it is put-bucket.
+     * @param requestBody
+     * @return
+     */
+   private
+    static boolean isIgnoreBucketAclUpdate(Map<String, String> requestBody) {
+
+      // Check if the PUT operation is on the bucket and its not put-bucket-acl
+      return (isOperationOnBucket(requestBody) &&
+              !ACLPermissionUtil.isACLReadWrite(
+                   requestBody.get("ClientAbsoluteUri"),
+                   requestBody.get("ClientQueryParams")));
+    }
+
+    /**
+     * Checks if the operations is performed on a bucket
+     * @param requestBody
+     * @return - true if operation is performed on bucket
+     */
+   private
+    static boolean isOperationOnBucket(Map<String, String> requestBody) {
+
+      String clientAbsoluteUri = requestBody.get("ClientAbsoluteUri");
+      boolean result = false;
+
+      // Check if the ClientAbsoluteUri contains only the bucket name
+      if (clientAbsoluteUri != null && !clientAbsoluteUri.isEmpty()) {
+        String[] arr = clientAbsoluteUri.split("/");
+
+        if (arr.length >= 3) {
+          result = false;
+        } else {
+          if (arr.length == 2) {
+            if ((arr[0] != null && arr[0].isEmpty()) ||
+                (arr[1] != null && arr[1].isEmpty()))
+              result = true;
+          } else if (arr.length == 1) {
+            result = true;
+          }
+        }
+      }
+      return result;
     }
 }
 
