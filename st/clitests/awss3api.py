@@ -202,6 +202,10 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def put_acl_with_multiple_options(self, cmd):
+        self.with_cli(cmd)
+        return self
+
     def put_object_acl_with_canned_input(self, bucket_name, object_name, canned_input):
         cmd = "aws s3api " + "put-object-acl " + "--bucket " + bucket_name + " --key " + object_name +  " --acl " + canned_input
         self.with_cli(cmd)

@@ -32,16 +32,16 @@ public abstract class AbstractResponseGenerator {
     public ServerResponse badRequest() {
         String errorMessage = "Bad Request. Check request headers and body.";
 
-        return formatResponse(HttpResponseStatus.BAD_REQUEST,
-                "BadRequest", errorMessage);
+        return formatResponse(HttpResponseStatus.BAD_REQUEST, "BadRequest",
+                              errorMessage);
     }
 
     public ServerResponse invalidToken() {
-        String errorMessage = "The provided token is malformed or"
-                                           + " otherwise invalid.";
+       String errorMessage =
+           "The provided token is malformed or" + " otherwise invalid.";
 
-        return formatResponse(HttpResponseStatus.BAD_REQUEST,
-                "InvalidToken", errorMessage);
+       return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidToken",
+                             errorMessage);
     }
 
     public ServerResponse deleteConflict() {
@@ -84,8 +84,8 @@ public abstract class AbstractResponseGenerator {
 
     public ServerResponse invalidUser() {
         String errorMessage = "User is not authorized to perform invoked action. ";
-        return formatResponse(HttpResponseStatus.UNAUTHORIZED,
-                "InvalidUser", errorMessage);
+        return formatResponse(HttpResponseStatus.UNAUTHORIZED, "InvalidUser",
+                              errorMessage);
     }
 
     public ServerResponse invalidLdapUserId() {
@@ -160,8 +160,8 @@ public abstract class AbstractResponseGenerator {
         String errorMessage = "A required parameter for the specified action "
                 + "is not supplied.";
 
-        return formatResponse(HttpResponseStatus.BAD_REQUEST, "MissingParameter",
-                errorMessage);
+        return formatResponse(HttpResponseStatus.BAD_REQUEST,
+                              "MissingParameter", errorMessage);
     }
 
     public ServerResponse noSuchEntity() {
@@ -187,8 +187,8 @@ public abstract class AbstractResponseGenerator {
     public ServerResponse accountNotEmpty() {
         String errorMessage = "Account cannot be deleted as it owns some resources.";
 
-        return formatResponse(HttpResponseStatus.CONFLICT,
-                "AccountNotEmpty", errorMessage);
+        return formatResponse(HttpResponseStatus.CONFLICT, "AccountNotEmpty",
+                              errorMessage);
     }
 
     public ServerResponse invalidArgument() {
@@ -280,10 +280,11 @@ public abstract class AbstractResponseGenerator {
      * @param responseBody
      * @return
      */
-    protected ServerResponse formatResponse(HttpResponseStatus httpResponseStatus,
-            String responseCode, String responseBody) {
-        return new XMLResponseFormatter().formatErrorResponse(httpResponseStatus,
-                responseCode, responseBody);
+   protected
+    ServerResponse formatResponse(HttpResponseStatus httpResponseStatus,
+                                  String responseCode, String responseBody) {
+      return new XMLResponseFormatter().formatErrorResponse(
+          httpResponseStatus, responseCode, responseBody);
     }
 
    public
@@ -294,6 +295,7 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.UNAUTHORIZED,
                             "InvalidCredentials", errorMessage);
     }
+
    public
     ServerResponse passwordResetRequired() {
       String errorMessage =
@@ -302,6 +304,7 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.UNAUTHORIZED,
                             "PasswordResetRequired", errorMessage);
     }
+
    public
     ServerResponse maxDurationIntervalExceeded() {
       String errorMessage =
@@ -310,6 +313,7 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.NOT_ACCEPTABLE,
                             "MaxDurationIntervalExceeded", errorMessage);
     }
+
    public
     ServerResponse minDurationIntervalViolated() {
       String errorMessage =
@@ -337,6 +341,18 @@ public abstract class AbstractResponseGenerator {
    public
     ServerResponse invalidArgument(String errorMessage) {
       return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidArgument",
+                            errorMessage);
+    }
+
+   public
+    ServerResponse invalidRequest(String errorMessage) {
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "InvalidRequest",
+                            errorMessage);
+    }
+
+   public
+    ServerResponse unexpectedContent(String errorMessage) {
+      return formatResponse(HttpResponseStatus.BAD_REQUEST, "UnexpectedContent",
                             errorMessage);
     }
  }

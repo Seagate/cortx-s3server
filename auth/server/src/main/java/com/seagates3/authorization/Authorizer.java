@@ -173,6 +173,20 @@ public class Authorizer {
   public
    ServerResponse validateACL(Map<String, String> requestBody) {
 
+     Map<String, List<Account>> accountPermissionMap = new HashMap<>();
+     Map<String, List<Group>> groupPermissionMap = new HashMap<>();
+     LOGGER.debug("request body : " + requestBody.toString());
+     ServerResponse serverResponse = null;
+
+     serverResponse = new ACLRequestValidator().validateAclRequest(
+         requestBody, accountPermissionMap, groupPermissionMap);
+
+     if (serverResponse != null && serverResponse.getResponseStatus() != null &&
+         !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+       LOGGER.error("Invalid ACL Request");
+       return serverResponse;
+     }
+
      AuthorizationResponseGenerator responseGenerator =
          new AuthorizationResponseGenerator();
      ACLValidation aclValidation = null;

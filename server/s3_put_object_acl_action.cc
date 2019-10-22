@@ -117,7 +117,7 @@ void S3PutObjectACLAction::on_aclvalidation_failure() {
   if (error_code == "InvalidID") {
     set_s3_error("InvalidArgument");
   } else {
-    set_s3_error("MalformedACLError");
+    set_s3_error(error_code);
   }
   send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

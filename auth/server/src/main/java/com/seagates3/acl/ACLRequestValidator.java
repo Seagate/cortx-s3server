@@ -117,7 +117,15 @@ class ACLRequestValidator {
 
     if ((isCannedAclPresent + isPermissionHeaderPresent +
          isAclPresentInRequestBody) > 1) {
-      response = responseGenerator.badRequest();
+      String errorMessage = null;
+      if (isAclPresentInRequestBody == 1) {
+        errorMessage = "This request does not support content";
+        response = responseGenerator.unexpectedContent(errorMessage);
+      } else {
+        errorMessage =
+            "Specifying both Canned ACLs and Header Grants is not allowed";
+        response = responseGenerator.invalidRequest(errorMessage);
+      }
       LOGGER.error(
           response.getResponseStatus() +
           " : Request failed: More than one options are used in request");

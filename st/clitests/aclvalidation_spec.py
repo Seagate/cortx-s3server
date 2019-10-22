@@ -930,7 +930,24 @@ AwsTest('Aws can delete bucket').delete_bucket("authbucket").execute_test().comm
 AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
 cannonical_id_assignment = "id="
 AwsTest('Aws can put bucket acl').put_bucket_acl("testbucket", "grant-read" , cannonical_id_assignment ).execute_test(negative_case=True).command_should_fail()
-AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+
+#*************** put-bucket-acl - with more than one acl options ***********
+cmd = "aws s3api put-bucket-acl --bucket testbucket --acl bucket-owner-full-control\
+ --access-control-policy " + fullACP
+AwsTest('Aws can not put bucket acl with canned acl and aclxml').put_acl_with_multiple_options(cmd).\
+execute_test(negative_case=True).command_should_fail().command_error_should_have("UnexpectedContent")
+cmd = "aws s3api put-bucket-acl --bucket testbucket --grant-read " + "emailaddress=" +\
+testAccount2_email + " --access-control-policy " + fullACP
+AwsTest('Aws can not put bucket acl with aclxml and permissionheader').\
+put_acl_with_multiple_options(cmd).execute_test(negative_case=True).\
+command_should_fail().command_error_should_have("UnexpectedContent")
+cmd = "aws s3api put-bucket-acl --bucket testbucket --grant-read " + \
+"emailaddress=" + testAccount2_email + " --acl bucket-owner-full-control"
+AwsTest('Aws can not put bucket acl with cannedacl and permissionheader').\
+put_acl_with_multiple_options(cmd).execute_test(negative_case=True).command_should_fail().\
+command_error_should_have("InvalidRequest")
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").\
+execute_test().command_is_successful()
 
 ##**************** Test Case 7 ************
 AwsTest('Aws can create bucket').create_bucket("testbucket").execute_test().command_is_successful()
@@ -1194,8 +1211,26 @@ AwsTest('Aws can upload 3k file with tags').put_object_acl("testbucket", "3kfile
 result = AwsTest('Aws can get object acl').get_object_acl("testbucket", "3kfile").execute_test().command_is_successful()
 AclTest('acl has valid Owner').validate_owner(result,"C12345", "s3_test")
 print("Owner validation success")
-AwsTest('Aws can delete object').delete_object("testbucket","3kfile").execute_test().command_is_successful()
-AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
+
+#*************** put-object-acl - with more than one acl options ***********
+cmd = "aws s3api put-object-acl --bucket testbucket --key 3kfile --acl bucket-owner-full-control\
+ --access-control-policy " + fullACP
+AwsTest('Aws can not put object acl with canned acl and aclxml').put_acl_with_multiple_options(cmd).\
+execute_test(negative_case=True).command_should_fail().command_error_should_have("UnexpectedContent")
+cmd = "aws s3api put-object-acl --bucket testbucket --key 3kfile --grant-read " + "emailaddress="\
+ + testAccount2_email + " --access-control-policy " + fullACP
+AwsTest('Aws can not put object acl with aclxml and permissionheader').\
+put_acl_with_multiple_options(cmd).execute_test(negative_case=True).\
+command_should_fail().command_error_should_have("UnexpectedContent")
+cmd = "aws s3api put-object-acl --bucket testbucket --key 3kfile --grant-read " + \
+"emailaddress=" + testAccount2_email + " --acl bucket-owner-full-control"
+AwsTest('Aws can not put object acl with cannedacl and permissionheader').\
+put_acl_with_multiple_options(cmd).execute_test(negative_case=True).command_should_fail().\
+command_error_should_have("InvalidRequest")
+AwsTest('Aws can delete object').delete_object("testbucket","3kfile").\
+execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket("testbucket").\
+execute_test().command_is_successful()
 
 ##**************** Negative Test - put-object-acl - cross account authorization check************
 grantees = "id=" + testAccount_cannonicalid

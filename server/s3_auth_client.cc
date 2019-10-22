@@ -891,6 +891,12 @@ void S3AuthClient::validate_acl(std::function<void(void)> on_success,
 
   // Setup the Aclvalidation body to be sent to auth service
 
+  for (auto it : request->get_in_headers_copy()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
+           it.first.c_str(), it.second.c_str());
+    add_key_val_to_body(it.first.c_str(), it.second.c_str());
+  }
+
   setup_auth_request_body();
 
   setup_auth_request_headers();
@@ -984,7 +990,6 @@ void S3AuthClient::policy_validation_failed() {
 
 void S3AuthClient::check_authorization() {
 
-  data_key_val.clear();
   set_op_type(S3AuthClientOpType::authorization);
   state = S3AuthClientOpState::started;
 

@@ -119,6 +119,10 @@
     "Description": "The tag provided was not a valid tag. This error can occur if the tag did not pass input validation.",
     "httpcode": 400
   },
+  "InvalidRequest": {
+    "Description": "An error occurred (InvalidRequest) when calling the PutObject operation: Specifying both Canned ACLs and Header Grants is not allowed",
+    "httpcode": 400
+  },
   "BadDigest": {
     "Description": "The Content-MD5 you specified did not match what we received.",
     "httpcode": 400
