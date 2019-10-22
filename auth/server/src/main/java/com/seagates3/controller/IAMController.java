@@ -150,7 +150,8 @@ class IAMController {
         return responseGenerator.AccessDenied();
       }
       try {
-        if (!requestAction.equals("ValidateACL")) {
+        if (!requestAction.equals("ValidateACL") &&
+            !requestAction.equals("ValidatePolicy")) {
         requestor = RequestorService.getRequestor(clientRequestToken);
       }
       }
@@ -176,6 +177,10 @@ class IAMController {
       } else if (requestAction.equals("ValidateACL")) {
         LOGGER.debug("Validating Acl:");
         serverResponse = new Authorizer().validateACL(requestBody);
+        return serverResponse;
+      } else if (requestAction.equals("ValidatePolicy")) {
+        LOGGER.debug("Validating Policy:");
+        serverResponse = new Authorizer().validatePolicy(requestBody);
         return serverResponse;
       }
 

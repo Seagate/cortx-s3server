@@ -52,4 +52,8 @@ public interface UserDAO {
      * Modify user details.
      */
     public void update(User user, String newUserName, String newPath) throws DataAccessException;
+    public
+     User findByUserId(String userId) throws DataAccessException;
+    public
+     User findByArn(String arn) throws DataAccessException;
 }

@@ -74,6 +74,18 @@ public class ClientRequestParser {
             return null;
           }
 
+        } else if (requestAction.equals("ValidatePolicy")) {
+
+          if (requestBody.get("Policy") != null) {
+
+            ClientRequestToken clientRequestToken = new ClientRequestToken();
+
+            return clientRequestToken;
+          } else {
+
+            return null;
+          }
+
         } else {
             authorizationHeader = httpRequest.headers().get("authorization");
             LOGGER.debug("authheader is" + authorizationHeader);

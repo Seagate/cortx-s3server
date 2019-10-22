@@ -25,6 +25,7 @@ import com.seagates3.exception.GrantListFullException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
+import com.seagates3.policy.PolicyValidator;
 import com.seagates3.acl.ACLRequestValidator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
@@ -49,6 +50,7 @@ import com.seagates3.acl.ACLAuthorizer;
 import com.seagates3.acl.ACLValidation;
 import com.seagates3.acl.AccessControlPolicy;
 import com.seagates3.util.BinaryUtil;
+import com.seagates3.util.PolicyUtil;
 
 public class Authorizer {
 
@@ -220,6 +222,24 @@ public class Authorizer {
      }
      return aclValidation.validate(existingAcp);
    }
+
+   /**
+       * Below will call policy validator
+       * @param requestBody
+       * @return
+       */
+  public
+   ServerResponse validatePolicy(Map<String, String> requestBody) {
+     LOGGER.debug("request body : " + requestBody.toString());
+     ServerResponse serverResponse = null;
+     serverResponse = new PolicyValidator().validateBucketPolicy(
+         PolicyUtil.getBucketFromUri(requestBody.get("ClientAbsoluteUri")),
+         requestBody.get("Policy"));
+     if (serverResponse != null && serverResponse.getResponseStatus() != null &&
+         !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+       LOGGER.error("Invalid Bucket Policy");
+       return serverResponse;
+     }
+     return new AuthorizationResponseGenerator().ok();
+   }
  }
-
-

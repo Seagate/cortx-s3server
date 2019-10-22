@@ -94,6 +94,12 @@
             <artifactId>httpclient</artifactId>
             <version>4.5.5</version>
         </dependency>
+<!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-core -->
+<dependency>
+    <groupId>com.amazonaws</groupId>
+    <artifactId>aws-java-sdk-core</artifactId>
+    <version>1.11.653</version>
+</dependency>
     </dependencies>
 
     <build>

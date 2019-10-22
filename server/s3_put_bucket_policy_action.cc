@@ -90,15 +90,8 @@ void S3PutBucketPolicyAction::on_policy_validation_failure() {
   s3_log(S3_LOG_INFO, request_id, "Auth server response = [%s]\n",
          error_code.c_str());
 
-  // TODO: Until policy validation is implemented in Auth server
-  // we'll assume success in policy validation, so that system can write
-  // policy to s3 metadata.
-  // Commenting below code until the implementation is in place in Auth srv.
-
-  // set_s3_error(error_code);
-  // send_response_to_s3_client();
-
-  on_policy_validation_success();
+  set_s3_error(error_code);
+  send_response_to_s3_client();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
