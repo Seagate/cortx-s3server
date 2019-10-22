@@ -1,0 +1,7 @@
+# Ignore all files except sources
+*
+**/*
+!*.cpp
+!*.c
+!Makefile
+!README

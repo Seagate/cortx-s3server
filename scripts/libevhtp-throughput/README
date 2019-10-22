@@ -1,0 +1,24 @@
+The toolset was designed for testing "bare" throughput of 'libevhtp' library.
+
+The server is listerning on 60080 TCP port.
+The client connects to the same port.
+
+To launch server simply run ./server executable.
+The server does not have command line arguments, does not detach from console 
+and logs messages to console.
+
+The client is needed the packet 'libcurl-devel' for building and 
+'curl' packet only for executing.
+Client usage: ./client [--put] <server_IP> <size>
+Where 'size' is a decimal number with opt. suffix: 'k', 'm' or 'g'.
+The client makes HTTP GET request if '--put' argument is ommited.
+
+The client forms URL like http://<server_IP>:60080/<size>
+The 'size' instructs the server how much data it should send while GET request.
+The 'size' must be decimal number with optional suffix (K, M, G).
+  
+Examples of using third-party clients:
+
+$ wget -O /dev/null -S --no-http-keep-alive http://<server_IP>:60080/<size>
+$ dd if=/dev/zero of=/dev/stdout bs=65536 count=32752 | \
+curl http://<server_IP>:60080/<arbitrary_term> --upload-file -
