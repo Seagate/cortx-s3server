@@ -59,12 +59,8 @@ public class UserResponseGenerator extends AbstractResponseGenerator {
 
             String arn = "arn:aws:iam::000:user/" + user.getName();
             responseElements.put("Arn", arn);
-            responseElements.put("createDate", user.getCreateDate());
-
-            /**
-             * TODO - Replace password last used
-             */
-            responseElements.put("PasswordLastUsed", "");
+            responseElements.put("CreateDate", user.getCreateDate());
+            // responseElements.put("PasswordLastUsed", "");
 
             userMemebers.add(responseElements);
         }

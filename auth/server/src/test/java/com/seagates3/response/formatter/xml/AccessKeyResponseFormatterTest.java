@@ -39,7 +39,7 @@ public class AccessKeyResponseFormatterTest {
         responseElement1.put("UserName", "s3user1");
         responseElement1.put("AccessKeyId", "AKIA1213");
         responseElement1.put("Status", "Active");
-        responseElement1.put("createDate", "2015-12-19T07:20:29.000+0530");
+        responseElement1.put("CreateDate", "2015-12-19T07:20:29.000+0530");
 
         accessKeyMembers.add(responseElement1);
 
@@ -47,36 +47,27 @@ public class AccessKeyResponseFormatterTest {
         responseElement2.put("UserName", "s3user1");
         responseElement2.put("AccessKeyId", "AKIA4567");
         responseElement2.put("Status", "Active");
-        responseElement2.put("createDate", "2015-12-18T07:20:29.000+0530");
+        responseElement2.put("CreateDate", "2015-12-18T07:20:29.000+0530");
 
         accessKeyMembers.add(responseElement2);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListAccessKeysResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListAccessKeysResult>"
-                + "<UserName>s3user1</UserName>"
-                + "<AccessKeyMetadata>"
-                + "<member>"
-                + "<UserName>s3user1</UserName>"
-                + "<AccessKeyId>AKIA1213</AccessKeyId>"
-                + "<Status>Active</Status>"
-                + "<createDate>2015-12-19T07:20:29.000+0530</createDate>"
-                + "</member>"
-                + "<member>"
-                + "<UserName>s3user1</UserName>"
-                + "<AccessKeyId>AKIA4567</AccessKeyId>"
-                + "<Status>Active</Status>"
-                + "<createDate>2015-12-18T07:20:29.000+0530</createDate>"
-                + "</member>"
-                + "</AccessKeyMetadata>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListAccessKeysResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListAccessKeysResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<ListAccessKeysResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListAccessKeysResult>" + "<UserName>s3user1</UserName>" +
+            "<AccessKeyMetadata>" + "<member>" +
+            "<UserName>s3user1</UserName>" +
+            "<AccessKeyId>AKIA1213</AccessKeyId>" + "<Status>Active</Status>" +
+            "<CreateDate>2015-12-19T07:20:29.000+0530</CreateDate>" +
+            "</member>" + "<member>" + "<UserName>s3user1</UserName>" +
+            "<AccessKeyId>AKIA4567</AccessKeyId>" + "<Status>Active</Status>" +
+            "<CreateDate>2015-12-18T07:20:29.000+0530</CreateDate>" +
+            "</member>" + "</AccessKeyMetadata>" +
+            "<IsTruncated>false</IsTruncated>" + "</ListAccessKeysResult>" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</ListAccessKeysResponse>";
 
         ServerResponse response = new AccessKeyResponseFormatter().formatListResponse(
                 "s3user1", accessKeyMembers, false, "0000");

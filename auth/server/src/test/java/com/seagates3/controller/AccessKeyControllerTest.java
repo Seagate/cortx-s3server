@@ -779,26 +779,20 @@ public class AccessKeyControllerTest {
                 .thenReturn(user);
         Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAll(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListAccessKeysResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListAccessKeysResult>"
-                + "<UserName>s3testuser</UserName>"
-                + "<AccessKeyMetadata>"
-                + "<member>"
-                + "<UserName>s3testuser</UserName>"
-                + "<AccessKeyId>AKIAKTEST</AccessKeyId>"
-                + "<Status>Active</Status>"
-                + "<createDate>2016-01-06'T'10:15:11:000+530</createDate>"
-                + "</member>"
-                + "</AccessKeyMetadata>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListAccessKeysResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListAccessKeysResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<ListAccessKeysResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListAccessKeysResult>" + "<UserName>s3testuser</UserName>" +
+            "<AccessKeyMetadata>" + "<member>" +
+            "<UserName>s3testuser</UserName>" +
+            "<AccessKeyId>AKIAKTEST</AccessKeyId>" + "<Status>Active</Status>" +
+            "<CreateDate>2016-01-06'T'10:15:11:000+530</CreateDate>" +
+            "</member>" + "</AccessKeyMetadata>" +
+            "<IsTruncated>false</IsTruncated>" + "</ListAccessKeysResult>" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</ListAccessKeysResponse>";
 
         ServerResponse response = accessKeyController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -843,26 +837,20 @@ public class AccessKeyControllerTest {
                 .thenReturn(user);
         Mockito.doReturn(accessKeyList).when(accessKeyDAO).findAll(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListAccessKeysResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListAccessKeysResult>"
-                + "<UserName>s3requestor</UserName>"
-                + "<AccessKeyMetadata>"
-                + "<member>"
-                + "<UserName>s3requestor</UserName>"
-                + "<AccessKeyId>AKIAKTEST</AccessKeyId>"
-                + "<Status>Active</Status>"
-                + "<createDate>2016-01-06'T'10:15:11:000+530</createDate>"
-                + "</member>"
-                + "</AccessKeyMetadata>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListAccessKeysResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListAccessKeysResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<ListAccessKeysResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListAccessKeysResult>" + "<UserName>s3requestor</UserName>" +
+            "<AccessKeyMetadata>" + "<member>" +
+            "<UserName>s3requestor</UserName>" +
+            "<AccessKeyId>AKIAKTEST</AccessKeyId>" + "<Status>Active</Status>" +
+            "<CreateDate>2016-01-06'T'10:15:11:000+530</CreateDate>" +
+            "</member>" + "</AccessKeyMetadata>" +
+            "<IsTruncated>false</IsTruncated>" + "</ListAccessKeysResult>" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</ListAccessKeysResponse>";
 
         ServerResponse response = accessKeyController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());

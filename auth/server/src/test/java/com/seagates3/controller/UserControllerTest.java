@@ -673,27 +673,19 @@ public class UserControllerTest {
 
         Mockito.doReturn(expectedUserList).when(userDAO).findAll("s3test", "/");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListUsersResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListUsersResult>"
-                + "<Users>"
-                + "<member>"
-                + "<UserId>123</UserId>"
-                + "<Path>/</Path>"
-                + "<UserName>s3testuser</UserName>"
-                + "<Arn>arn:aws:iam::000:user/s3testuser</Arn>"
-                + "<createDate>2016-01-06T10:15:11.000+0530</createDate>"
-                + "<PasswordLastUsed/>"
-                + "</member>"
-                + "</Users>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListUsersResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListUsersResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ListUsersResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListUsersResult>" + "<Users>" + "<member>" +
+            "<UserId>123</UserId>" + "<Path>/</Path>" +
+            "<UserName>s3testuser</UserName>" +
+            "<Arn>arn:aws:iam::000:user/s3testuser</Arn>" +
+            "<CreateDate>2016-01-06T10:15:11.000+0530</CreateDate>" +
+            "</member>" + "</Users>" + "<IsTruncated>false</IsTruncated>" +
+            "</ListUsersResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</ListUsersResponse>";
 
         ServerResponse response = userController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -717,27 +709,19 @@ public class UserControllerTest {
 
         Mockito.doReturn(expectedUserList).when(userDAO).findAll("s3test", "/");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListUsersResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListUsersResult>"
-                + "<Users>"
-                + "<member>"
-                + "<UserId>123</UserId>"
-                + "<Path>/test</Path>"
-                + "<UserName>s3testuser</UserName>"
-                + "<Arn>arn:aws:iam::000:user/s3testuser</Arn>"
-                + "<createDate>2016-01-06'T'10:15:11.000+530</createDate>"
-                + "<PasswordLastUsed/>"
-                + "</member>"
-                + "</Users>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListUsersResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListUsersResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ListUsersResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListUsersResult>" + "<Users>" + "<member>" +
+            "<UserId>123</UserId>" + "<Path>/test</Path>" +
+            "<UserName>s3testuser</UserName>" +
+            "<Arn>arn:aws:iam::000:user/s3testuser</Arn>" +
+            "<CreateDate>2016-01-06'T'10:15:11.000+530</CreateDate>" +
+            "</member>" + "</Users>" + "<IsTruncated>false</IsTruncated>" +
+            "</ListUsersResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</ListUsersResponse>";
 
         ServerResponse response = userController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());

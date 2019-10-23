@@ -55,7 +55,7 @@ public class AccessKeyResponseGenerator extends AbstractResponseGenerator {
             responseElements.put("UserName", userName);
             responseElements.put("AccessKeyId", accessKey.getId());
             responseElements.put("Status", accessKey.getStatus());
-            responseElements.put("createDate", accessKey.getCreateDate());
+            responseElements.put("CreateDate", accessKey.getCreateDate());
 
             accessKeyMembers.add(responseElements);
         }

@@ -77,35 +77,23 @@ public class UserResponseGeneratorTest {
         users.add(user1);
         users.add(user2);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListUsersResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListUsersResult>"
-                + "<Users>"
-                + "<member>"
-                + "<UserId>123</UserId>"
-                + "<Path>/</Path>"
-                + "<UserName>s3user1</UserName>"
-                + "<Arn>arn:aws:iam::000:user/s3user1</Arn>"
-                + "<createDate>2015-12-19T07:20:29.000+0530</createDate>"
-                + "<PasswordLastUsed/>"
-                + "</member>"
-                + "<member>"
-                + "<UserId>456</UserId>"
-                + "<Path>/</Path>"
-                + "<UserName>s3user2</UserName>"
-                + "<Arn>arn:aws:iam::000:user/s3user2</Arn>"
-                + "<createDate>2015-12-19T07:20:29.000+0530</createDate>"
-                + "<PasswordLastUsed/>"
-                + "</member>"
-                + "</Users>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListUsersResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListUsersResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ListUsersResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListUsersResult>" + "<Users>" + "<member>" +
+            "<UserId>123</UserId>" + "<Path>/</Path>" +
+            "<UserName>s3user1</UserName>" +
+            "<Arn>arn:aws:iam::000:user/s3user1</Arn>" +
+            "<CreateDate>2015-12-19T07:20:29.000+0530</CreateDate>" +
+            "</member>" + "<member>" + "<UserId>456</UserId>" +
+            "<Path>/</Path>" + "<UserName>s3user2</UserName>" +
+            "<Arn>arn:aws:iam::000:user/s3user2</Arn>" +
+            "<CreateDate>2015-12-19T07:20:29.000+0530</CreateDate>" +
+            "</member>" + "</Users>" + "<IsTruncated>false</IsTruncated>" +
+            "</ListUsersResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</ListUsersResponse>";
 
         User[] userList = new User[users.size()];
         UserResponseGenerator responseGenerator = new UserResponseGenerator();

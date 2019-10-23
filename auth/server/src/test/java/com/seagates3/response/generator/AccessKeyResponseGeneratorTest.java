@@ -78,32 +78,23 @@ public class AccessKeyResponseGeneratorTest {
         accessKeys.add(accessKey1);
         accessKeys.add(accessKey2);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListAccessKeysResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListAccessKeysResult>"
-                + "<UserName>s3user1</UserName>"
-                + "<AccessKeyMetadata>"
-                + "<member>"
-                + "<UserName>s3user1</UserName>"
-                + "<AccessKeyId>AKIA1234</AccessKeyId>"
-                + "<Status>Active</Status>"
-                + "<createDate>2015-12-19T07:20:29.000+0530</createDate>"
-                + "</member>"
-                + "<member>"
-                + "<UserName>s3user1</UserName>"
-                + "<AccessKeyId>AKIA5678</AccessKeyId>"
-                + "<Status>Active</Status>"
-                + "<createDate>2015-12-18T07:20:29.000+0530</createDate>"
-                + "</member>"
-                + "</AccessKeyMetadata>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListAccessKeysResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListAccessKeysResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<ListAccessKeysResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListAccessKeysResult>" + "<UserName>s3user1</UserName>" +
+            "<AccessKeyMetadata>" + "<member>" +
+            "<UserName>s3user1</UserName>" +
+            "<AccessKeyId>AKIA1234</AccessKeyId>" + "<Status>Active</Status>" +
+            "<CreateDate>2015-12-19T07:20:29.000+0530</CreateDate>" +
+            "</member>" + "<member>" + "<UserName>s3user1</UserName>" +
+            "<AccessKeyId>AKIA5678</AccessKeyId>" + "<Status>Active</Status>" +
+            "<CreateDate>2015-12-18T07:20:29.000+0530</CreateDate>" +
+            "</member>" + "</AccessKeyMetadata>" +
+            "<IsTruncated>false</IsTruncated>" + "</ListAccessKeysResult>" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</ListAccessKeysResponse>";
 
         AccessKey[] accessKeyList = new AccessKey[accessKeys.size()];
         AccessKeyResponseGenerator responseGenerator = new AccessKeyResponseGenerator();
