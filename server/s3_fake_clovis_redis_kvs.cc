@@ -21,34 +21,14 @@
 #include <cstring>
 #include <vector>
 #include <algorithm>
-#include <cassert>
 
 #include "s3_fake_clovis_redis_kvs.h"
+#include "s3_fake_clovis_redis_kvs_internal.h"
 #include "s3_clovis_kvs_reader.h"
 #include "s3_clovis_kvs_writer.h"
 #include "s3_clovis_rw_common.h"
 
 std::unique_ptr<S3FakeClovisRedisKvs> S3FakeClovisRedisKvs::inst;
-
-typedef struct {
-  struct s3_clovis_context_obj *prev_ctx;  // previous m0_clovis_op::op_datum
-  int async_ops_cnt;  // number of async ops run for current m0_clovis_op
-  int replies_cnt;    // number of replies received so far; replies_cnt ==
-                      // async_ops_cnt means op finished
-  bool had_error;     // if some of resps failed
-
-  // on next_kv operation mero interface allows skip or include search initial
-  // key. on s3server side we always skip it, so in result set it is not incl.
-  // due to range requests and key-value concatenation it is hard to filter
-  // initial value with single req, so it should be filtered manually
-  char *skip_value;  // if first value should not be included
-  size_t skip_size;  // skip_value buf size;
-} s3_redis_context_obj;
-
-typedef struct {
-  int processing_idx;       // idx of the processing elem inside m0_bufvec
-  struct m0_clovis_op *op;  // current op
-} s3_redis_async_ctx;
 
 static void finalize_op(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering");
@@ -74,11 +54,14 @@ static void finalize_op(struct m0_clovis_op *op) {
 
 // key and val are delimited with zero byte
 // so key is just a begging of the buf
-static char *parse_key(char *kv, size_t kv_size) { return kv; }
+char *parse_key(char *kv, size_t kv_size) { return kv; }
 
 // val starts after key and zero byte
 char *parse_val(char *kv, size_t kv_size) {
-  assert(kv);
+  if (!kv) {
+    return nullptr;
+  }
+
   size_t klen = strlen(kv);
   if (klen + 1 < kv_size) {
     return kv + klen + 1;
@@ -86,13 +69,9 @@ char *parse_val(char *kv, size_t kv_size) {
   return nullptr;
 }
 
-typedef struct {
-  size_t len;
-  char *buf;
-} redis_key;
-
 // key and val separated with zero byte
-static redis_key prepare_rkey(char *key, size_t klen, char *val, size_t vlen) {
+redis_key prepare_rkey(const char *key, size_t klen, const char *val,
+                       size_t vlen) {
   size_t len = klen + vlen + 1 /*zero byte separator*/
                + 1 /*final byte*/;
   char *rkey = (char *)calloc(len, sizeof(char));
@@ -108,7 +87,7 @@ static redis_key prepare_rkey(char *key, size_t klen, char *val, size_t vlen) {
 // converts key to form "[key\xFF"
 // incl: true - [; false - (;
 // z: true - 0xFF; false - nothing added
-static redis_key prepare_border(char *str, size_t slen, bool incl, bool z) {
+redis_key prepare_border(const char *str, size_t slen, bool incl, bool z) {
   size_t len = slen + 1 /*incl byte*/ + (size_t)z /*z byte*/;
   char *brdr = (char *)calloc(len, sizeof(char));
   if (brdr == nullptr) {
@@ -124,19 +103,13 @@ static redis_key prepare_border(char *str, size_t slen, bool incl, bool z) {
   return {.len = len, .buf = brdr};
 }
 
-enum RedisRequestState {
-  REPL_ERR,      // reply cannot be processed
-  REPL_DONE,     // reply processing finished
-  REPL_CONTINUE  // processing of the reply object could be continued
-};
-
 // check whether libhiredis callback params are valid
 // glob_redis_ctx - contex for redis async ops
 // async_redis_reply - redis-server command reply data
 // privdata - user context
-static int redis_reply_check(redisAsyncContext *glob_redis_ctx,
-                             void *async_redis_reply, void *privdata,
-                             std::vector<int> const &exp_types) {
+int redis_reply_check(redisAsyncContext *glob_redis_ctx,
+                      void *async_redis_reply, void *privdata,
+                      std::vector<int> const &exp_types) {
 
   s3_redis_async_ctx *actx = (s3_redis_async_ctx *)privdata;
   if (!actx) {
