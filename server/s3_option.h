@@ -137,6 +137,7 @@ class S3Option {
   bool clovis_is_read_verify;
   unsigned int clovis_tm_recv_queue_min_len;
   unsigned int clovis_max_rpc_msg_size;
+  unsigned int clovis_op_wait_period;
   std::string clovis_process_fid;
   int clovis_idx_service_id;
   std::string clovis_cass_cluster_ep;
@@ -350,6 +351,7 @@ class S3Option {
   unsigned short get_clovis_layout_id();
   std::vector<int> get_clovis_unit_sizes_for_mem_pool();
   unsigned short get_clovis_units_per_request();
+  unsigned short get_clovis_op_wait_period();
   unsigned short get_client_req_read_timeout_secs();
   unsigned int get_clovis_write_payload_size(int layoutid);
   unsigned int get_clovis_read_payload_size(int layoutid);

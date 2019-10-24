@@ -32,7 +32,7 @@
 
 extern S3Option* g_option_instance;
 
-uint64_t RequestObject::addb_request_id_gc;
+uint64_t RequestObject::addb_request_id_gc = S3_ADDB_FIRST_GENERIC_REQUESTS_ID;
 
 // evhttp Helpers
 /* evhtp_kvs_iterator */

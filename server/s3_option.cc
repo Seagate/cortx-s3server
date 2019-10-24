@@ -229,6 +229,10 @@ bool S3Option::load_section(std::string section_name,
                                "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_OPERATION_WAIT_PERIOD");
+      clovis_op_wait_period =
+          s3_option_node["S3_CLOVIS_OPERATION_WAIT_PERIOD"].as<unsigned int>();
 
       std::string clovis_read_pool_initial_buffer_count_str;
       std::string clovis_read_pool_expandable_count_str;
@@ -504,6 +508,10 @@ bool S3Option::load_section(std::string section_name,
                                "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_OPERATION_WAIT_PERIOD");
+      clovis_op_wait_period =
+          s3_option_node["S3_CLOVIS_OPERATION_WAIT_PERIOD"].as<unsigned>();
 
       std::string clovis_read_pool_initial_buffer_count_str;
       std::string clovis_read_pool_expandable_count_str;
@@ -772,6 +780,8 @@ void S3Option::dump_options() {
          clovis_cass_keyspace.c_str());
   s3_log(S3_LOG_INFO, "", "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM = %d\n",
          clovis_cass_max_column_family_num);
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_OPERATION_WAIT_PERIOD = %d\n",
+         clovis_op_wait_period);
 
   s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT = %zu\n",
          clovis_read_pool_initial_buffer_count);
@@ -979,6 +989,10 @@ std::vector<int> S3Option::get_clovis_unit_sizes_for_mem_pool() {
 
 unsigned short S3Option::get_clovis_units_per_request() {
   return clovis_units_per_request;
+}
+
+unsigned short S3Option::get_clovis_op_wait_period() {
+  return clovis_op_wait_period;
 }
 
 int S3Option::get_clovis_idx_fetch_count() { return clovis_idx_fetch_count; }

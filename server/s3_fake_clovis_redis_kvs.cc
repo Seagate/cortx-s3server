@@ -390,8 +390,9 @@ void kv_status_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
   s3_redis_context_obj *redis_ctx = (s3_redis_context_obj *)actx->op->op_datum;
 
   if (repl_chk == REPL_CONTINUE) {
-    S3ClovisKVSWriterContext *write_ctx =
-        (S3ClovisKVSWriterContext *)redis_ctx->prev_ctx->application_context;
+    S3AsyncClovisKVSWriterContext *write_ctx =
+        (S3AsyncClovisKVSWriterContext *)
+        redis_ctx->prev_ctx->application_context;
 
     struct s3_clovis_kvs_op_context *kv = write_ctx->get_clovis_kvs_op_ctx();
     // reply->type is REDIS_REPLY_INTEGER)
@@ -426,8 +427,8 @@ void S3FakeClovisRedisKvs::kv_write(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
-  S3ClovisKVSWriterContext *write_ctx =
-      (S3ClovisKVSWriterContext *)ctx->application_context;
+  S3AsyncClovisKVSWriterContext *write_ctx =
+      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
   struct s3_clovis_kvs_op_context *kv = write_ctx->get_clovis_kvs_op_ctx();
   int cnt = kv->keys->ov_vec.v_nr;
 
@@ -470,8 +471,8 @@ void S3FakeClovisRedisKvs::kv_del(struct m0_clovis_op *op) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
-  S3ClovisKVSWriterContext *write_ctx =
-      (S3ClovisKVSWriterContext *)ctx->application_context;
+  S3AsyncClovisKVSWriterContext *write_ctx =
+      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
   struct s3_clovis_kvs_op_context *kv = write_ctx->get_clovis_kvs_op_ctx();
   int cnt = kv->keys->ov_vec.v_nr;
 

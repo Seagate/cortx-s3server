@@ -50,6 +50,11 @@ int s3_addb_init();
 // Used to distinguish ActionState values from task_list indexes.
 #define ADDB_TASK_LIST_OFFSET 256u
 
+// Used for s3starup calls without any request-objects.
+#define S3_ADDB_STARTUP_REQUESTS_ID 1
+// Default addb beginning request id.
+#define S3_ADDB_FIRST_GENERIC_REQUESTS_ID 2
+
 // Macro to create ADDB log entry.
 //
 // addb_action_type_id parameter must be a value from enum S3AddbActionTypeId.

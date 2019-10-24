@@ -22,12 +22,15 @@
 #include "clovis_helpers.h"
 #include "s3_log.h"
 #include "s3_option.h"
+#include "s3_m0_uint128_helper.h"
+#include "s3_factory.h"
+#include "s3_iem.h"
 
 static struct m0_clovis *clovis_instance = NULL;
 struct m0_ufid_generator s3_ufid_generator;
 struct m0_clovis_container clovis_container;
 struct m0_clovis_realm clovis_uber_realm;
-static struct m0_clovis_config clovis_conf;
+struct m0_clovis_config clovis_conf;
 
 static struct m0_idx_dix_config dix_conf;
 static struct m0_idx_cass_config cass_conf;
@@ -128,4 +131,31 @@ void fini_clovis(void) {
   s3_log(S3_LOG_INFO, "", "Entering!\n");
   m0_ufid_fini(&s3_ufid_generator);
   m0_clovis_fini(clovis_instance, true);
+}
+
+int create_new_instance_id(struct m0_uint128 *ufid) {
+  // Unique OID generation by mero.
+
+  std::unique_ptr<ClovisAPI> s3_clovis_api =
+      std::unique_ptr<ConcreteClovisAPI>(new ConcreteClovisAPI());
+  ;
+  int rc;
+
+  if (ufid == NULL) {
+    s3_log(S3_LOG_ERROR, "", "Invalid argument, ufid pointer is NULL");
+    return -EINVAL;
+  }
+
+  rc = s3_clovis_api->m0_h_ufid_next(ufid);
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, "", "Failed to generate UFID\n");
+    s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
+           S3_IEM_CLOVIS_CONN_FAIL_JSON);
+    return rc;
+  }
+  s3_log(S3_LOG_INFO, "",
+         "Instance Id "
+         "%" SCNx64 " : %" SCNx64 "\n",
+         ufid->u_hi, ufid->u_lo);
+  return rc;
 }

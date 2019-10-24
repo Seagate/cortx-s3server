@@ -73,6 +73,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT: 10         # 10 blocks, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_CLOVIS_READ_POOL_EXPANDABLE_COUNT: 20             # 20 blocks, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_CLOVIS_READ_POOL_MAX_THRESHOLD: 104857600         # 100 MB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_CLOVIS_OPERATION_WAIT_PERIOD: 10                  # 10 s, Maximum wait duration for sync clovis operations.
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 4096                   # Pool buffer size
                                                         # For S3_CLOVIS_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384

@@ -66,8 +66,8 @@ static void s3_test_clovis_op_launch(uint64_t, struct m0_clovis_op **op,
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op[0]->op_datum;
 
-  S3ClovisKVSWriterContext *app_ctx =
-      (S3ClovisKVSWriterContext *)ctx->application_context;
+  S3AsyncClovisKVSWriterContext *app_ctx =
+      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
   struct s3_clovis_idx_op_context *op_ctx = app_ctx->get_clovis_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
@@ -84,8 +84,8 @@ static void s3_test_clovis_op_launch_fail(uint64_t, struct m0_clovis_op **op,
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op[0]->op_datum;
 
-  S3ClovisKVSWriterContext *app_ctx =
-      (S3ClovisKVSWriterContext *)ctx->application_context;
+  S3AsyncClovisKVSWriterContext *app_ctx =
+      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
   struct s3_clovis_idx_op_context *op_ctx = app_ctx->get_clovis_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
@@ -103,8 +103,8 @@ static void s3_test_clovis_op_launch_fail_exists(uint64_t,
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op[0]->op_datum;
 
-  S3ClovisKVSWriterContext *app_ctx =
-      (S3ClovisKVSWriterContext *)ctx->application_context;
+  S3AsyncClovisKVSWriterContext *app_ctx =
+      (S3AsyncClovisKVSWriterContext *)ctx->application_context;
   struct s3_clovis_idx_op_context *op_ctx = app_ctx->get_clovis_idx_op_ctx();
 
   for (int i = 0; i < (int)nr; i++) {
@@ -320,7 +320,7 @@ TEST_F(S3ClovisKvsWritterTest, SyncIndex) {
       .WillOnce(Invoke(s3_test_alloc_sync_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
-  action_under_test->writer_context.reset(new S3ClovisKVSWriterContext(
+  action_under_test->writer_context.reset(new S3AsyncClovisKVSWriterContext(
       ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
   action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(
       1, sizeof(struct s3_clovis_idx_context));
@@ -344,7 +344,7 @@ TEST_F(S3ClovisKvsWritterTest, SyncIndex) {
 TEST_F(S3ClovisKvsWritterTest, SyncIndexSuccessful) {
   S3CallBack s3cloviskvscallbackobj;
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
-  action_under_test->writer_context.reset(new S3ClovisKVSWriterContext(
+  action_under_test->writer_context.reset(new S3AsyncClovisKVSWriterContext(
       ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
@@ -355,7 +355,7 @@ TEST_F(S3ClovisKvsWritterTest, SyncIndexSuccessful) {
 
 TEST_F(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata) {
   S3CallBack s3cloviskvscallbackobj;
-  action_under_test->sync_context.reset(new S3ClovisKVSWriterContext(
+  action_under_test->sync_context.reset(new S3AsyncClovisKVSWriterContext(
       ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
@@ -375,7 +375,7 @@ TEST_F(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata) {
 TEST_F(S3ClovisKvsWritterTest, SyncIndexFailedFailedMetadata) {
   S3CallBack s3cloviskvscallbackobj;
   action_under_test->sync_context.reset(
-      new S3ClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
+      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
 
   action_under_test->handler_on_failed =
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj);
@@ -442,7 +442,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessful) {
       .WillOnce(Invoke(s3_test_alloc_sync_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
   action_under_test->writer_context.reset(
-      new S3ClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
+      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
 
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
@@ -468,7 +468,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailed) {
       .WillOnce(Invoke(s3_test_clovis_op_launch_fail));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
       .WillRepeatedly(Return(-EPERM));
-  action_under_test->writer_context.reset(new S3ClovisKVSWriterContext(
+  action_under_test->writer_context.reset(new S3AsyncClovisKVSWriterContext(
       ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
   action_under_test->put_keyval(
       oid, "3kfile",
@@ -492,7 +492,7 @@ TEST_F(S3ClovisKvsWritterTest, SyncKeyVal) {
       .WillOnce(Invoke(s3_test_alloc_sync_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
   action_under_test->writer_context.reset(
-      new S3ClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
+      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
 
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
@@ -689,7 +689,7 @@ TEST_F(S3ClovisKvsWritterTest, DelIndexEntityDeleteFailed) {
 TEST_F(S3ClovisKvsWritterTest, DelIndexFailed) {
   S3CallBack s3cloviskvscallbackobj;
   action_under_test->writer_context.reset(
-      new S3ClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
+      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
   action_under_test->writer_context->ops_response[0].error_code = -ENOENT;
 
   action_under_test->handler_on_failed =

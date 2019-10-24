@@ -44,6 +44,8 @@
 #include "s3_audit_info.h"
 #include "s3_audit_info_logger.h"
 #include "s3_fake_clovis_redis_kvs.h"
+#include "s3_clovis_wrapper.h"
+#include "s3_m0_uint128_helper.h"
 
 #define FOUR_KB 4096
 
@@ -55,6 +57,7 @@
 #define GLOBAL_BUCKET_LIST_INDEX_OID_U_LO 1
 #define BUCKET_METADATA_LIST_INDEX_OID_U_LO 2
 #define OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO 3
+#define GLOBAL_INSTANCE_INDEX_U_LO 4
 
 S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
@@ -64,6 +67,8 @@ extern struct m0_clovis_realm clovis_uber_realm;
 struct m0_uint128 global_bucket_list_index_oid;
 // index will have bucket metada information
 struct m0_uint128 bucket_metadata_list_index_oid;
+// index will have s3server instance information
+struct m0_uint128 global_instance_list_index;
 // objects listed in this index are probable delete candidates and not absolute.
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -594,6 +599,8 @@ void free_evhtp_handle(evhtp_t *htp) {
 
 int main(int argc, char **argv) {
   int rc = 0;
+  // map will have s3server { fid, instance_id } information
+  std::map<std::string, std::string> s3server_instance_id;
 
   // Load Any configs.
   if (parse_and_load_config_options(argc, argv) < 0) {
@@ -819,6 +826,57 @@ int main(int argc, char **argv) {
                            OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
+    fini_auth_ssl();
+    fini_log();
+    return rc;
+  }
+
+  // global_instance_list_index - will hold s3server fid as key,
+  // instance id as value.
+  rc = create_global_index(global_instance_list_index,
+                           GLOBAL_INSTANCE_INDEX_U_LO);
+  if (rc < 0) {
+    s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
+    fini_auth_ssl();
+    fini_log();
+    return rc;
+  }
+
+  extern struct m0_clovis_config clovis_conf;
+
+  std::string s3server_fid = clovis_conf.cc_process_fid;
+  s3_log(S3_LOG_INFO, "", "Process Fid= %s \n", s3server_fid.c_str());
+
+  struct m0_uint128 instance_id;
+  rc = create_new_instance_id(&instance_id);
+
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "", "Failed to create unique instance id\n");
+    fini_auth_ssl();
+    fini_log();
+    return rc;
+  }
+
+  s3server_instance_id[s3server_fid] =
+      S3M0Uint128Helper::to_string(instance_id);
+
+  std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+  std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<ClovisAPI> s3_clovis_api;
+
+  s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
+  clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
+
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_sync_clovis_kvs_writer(
+        "", s3_clovis_api);
+  }
+
+  rc = clovis_kv_writer->put_keyval_sync(global_instance_list_index,
+                                         s3server_instance_id);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "",
+           "Failed to add unique instance id to global index\n");
     fini_auth_ssl();
     fini_log();
     return rc;

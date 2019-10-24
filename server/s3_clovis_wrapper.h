@@ -54,7 +54,6 @@ enum class ClovisOpType {
 
 class ClovisAPI {
  public:
-  virtual int init_clovis_api() = 0;
 
   virtual void clovis_idx_init(struct m0_clovis_idx *idx,
                                struct m0_clovis_realm *parent,
@@ -104,6 +103,7 @@ class ClovisAPI {
   virtual void clovis_op_launch(uint64_t addb_request_id,
                                 struct m0_clovis_op **op, uint32_t nr,
                                 ClovisOpType type = ClovisOpType::unknown) = 0;
+  virtual int clovis_op_wait(m0_clovis_op *op, uint64_t bits, m0_time_t to) = 0;
 
   virtual int clovis_op_rc(const struct m0_clovis_op *op) = 0;
   virtual int m0_h_ufid_next(struct m0_uint128 *ufid) = 0;
@@ -174,7 +174,6 @@ class ConcreteClovisAPI : public ClovisAPI {
   }
 
  public:
-  int init_clovis_api() { return init_clovis(); }
 
   void clovis_idx_init(struct m0_clovis_idx *idx,
                        struct m0_clovis_realm *parent,
@@ -318,6 +317,12 @@ class ConcreteClovisAPI : public ClovisAPI {
       s3_log(S3_LOG_DEBUG, "", "m0_clovis_op_launch will be used");
       m0_clovis_op_launch(op, nr);
     }
+  }
+
+  // Used for sync clovis calls
+  int clovis_op_wait(m0_clovis_op *op, uint64_t bits,
+                     m0_time_t op_wait_period) {
+    return m0_clovis_op_wait(op, bits, op_wait_period);
   }
 
   int clovis_op_rc(const struct m0_clovis_op *op) { return m0_clovis_rc(op); }

@@ -47,7 +47,6 @@ class MockS3Clovis : public ClovisAPI {
                int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
   MOCK_METHOD2(clovis_entity_delete,
                int(struct m0_clovis_entity *entity, struct m0_clovis_op **op));
-  MOCK_METHOD0(init_clovis_api, int());
   MOCK_METHOD3(clovis_op_setup,
                void(struct m0_clovis_op *op, const struct m0_clovis_op_ops *ops,
                     m0_time_t linger));
@@ -62,6 +61,8 @@ class MockS3Clovis : public ClovisAPI {
                     struct m0_clovis_op **op));
   MOCK_METHOD4(clovis_op_launch,
                void(uint64_t, struct m0_clovis_op **, uint32_t, ClovisOpType));
+  MOCK_METHOD3(clovis_op_wait,
+               int(struct m0_clovis_op *op, uint64_t bits, m0_time_t to));
   MOCK_METHOD1(clovis_sync_op_init, int(struct m0_clovis_op **sync_op));
   MOCK_METHOD2(clovis_sync_entity_add, int(struct m0_clovis_op *sync_op,
                                            struct m0_clovis_entity *entity));

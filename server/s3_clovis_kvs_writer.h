@@ -33,7 +33,7 @@
 #include "s3_log.h"
 #include "s3_request_object.h"
 
-class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
+class S3SyncClovisKVSWriterContext {
   // Basic Operation context.
   struct s3_clovis_idx_op_context* clovis_idx_op_context;
   bool has_clovis_idx_op_context;
@@ -41,17 +41,14 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   // Read/Write Operation context.
   struct s3_clovis_kvs_op_context* clovis_kvs_op_context;
   bool has_clovis_kvs_op_context;
+
   std::string request_id;
+  int ops_count = 1;
 
  public:
-  S3ClovisKVSWriterContext(std::shared_ptr<RequestObject> req,
-                           std::function<void()> success_callback,
-                           std::function<void()> failed_callback,
-                           int ops_count = 1,
-                           std::shared_ptr<ClovisAPI> clovis_api = nullptr)
-      : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
-                             clovis_api) {
-    request_id = request->get_request_id();
+  S3SyncClovisKVSWriterContext(std::string req_id, int ops_cnt)
+      : request_id(std::move(req_id)), ops_count(ops_cnt) {
+
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
     // Create or write, we need op context
     clovis_idx_op_context = create_basic_idx_op_ctx(ops_count);
@@ -60,7 +57,7 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
     has_clovis_kvs_op_context = false;
   }
 
-  ~S3ClovisKVSWriterContext() {
+  ~S3SyncClovisKVSWriterContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
     if (has_clovis_idx_op_context) {
       free_basic_idx_op_ctx(clovis_idx_op_context);
@@ -85,6 +82,32 @@ class S3ClovisKVSWriterContext : public S3AsyncOpContextBase {
   }
 };
 
+// Async Clovis context is inherited from Sync Context & S3AsyncOpContextBase
+
+class S3AsyncClovisKVSWriterContext : public S3SyncClovisKVSWriterContext,
+                                      public S3AsyncOpContextBase {
+
+  std::string request_id = "";
+
+ public:
+  S3AsyncClovisKVSWriterContext(std::shared_ptr<RequestObject> req,
+                                std::function<void()> success_callback,
+                                std::function<void()> failed_callback,
+                                int ops_count = 1,
+                                std::shared_ptr<ClovisAPI> clovis_api = nullptr)
+      : S3SyncClovisKVSWriterContext(req ? req->get_request_id() : "",
+                                     ops_count),
+        S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
+                             clovis_api) {
+    request_id = req ? req->get_request_id() : "";
+    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+  }
+
+  ~S3AsyncClovisKVSWriterContext() {
+    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+  }
+};
+
 enum class S3ClovisKVSWriterOpState {
   start,
   failed_to_launch,
@@ -104,8 +127,9 @@ class S3ClovisKVSWriter {
 
   std::shared_ptr<RequestObject> request;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
-  std::unique_ptr<S3ClovisKVSWriterContext> writer_context;
-  std::unique_ptr<S3ClovisKVSWriterContext> sync_context;
+  std::unique_ptr<S3AsyncClovisKVSWriterContext> writer_context;
+  std::unique_ptr<S3SyncClovisKVSWriterContext> sync_writer_context;
+  std::unique_ptr<S3AsyncClovisKVSWriterContext> sync_context;
   std::string kvs_key;
   std::string kvs_value;
 
@@ -122,6 +146,9 @@ class S3ClovisKVSWriter {
 
  public:
   S3ClovisKVSWriter(std::shared_ptr<RequestObject> req,
+                    std::shared_ptr<ClovisAPI> clovis_api = nullptr);
+
+  S3ClovisKVSWriter(std::string request_id,
                     std::shared_ptr<ClovisAPI> clovis_api = nullptr);
   virtual ~S3ClovisKVSWriter();
 
@@ -176,9 +203,15 @@ class S3ClovisKVSWriter {
   virtual void put_keyval(struct m0_uint128 oid, std::string key,
                           std::string val, std::function<void(void)> on_success,
                           std::function<void(void)> on_failed);
+  virtual int put_keyval_impl(const std::map<std::string, std::string>& kv_list,
+                              bool is_async);
+
   void put_keyval_successful();
   void put_keyval_failed();
 
+  // Sync save operation.
+  virtual int put_keyval_sync(
+      struct m0_uint128 oid, const std::map<std::string, std::string>& kv_list);
   // Async delete operation.
   void delete_keyval(struct m0_uint128 oid, std::string key,
                      std::function<void(void)> on_success,

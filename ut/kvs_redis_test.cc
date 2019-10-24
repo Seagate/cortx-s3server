@@ -230,11 +230,11 @@ class RedisKVSWriterTest : public RedisKVSBaseTest {
   RedisKVSWriterTest() : RedisKVSBaseTest() {}
 
  protected:
-  S3ClovisKVSWriterContext* w_ctx;
+  S3AsyncClovisKVSWriterContext* w_ctx;
 
   void SetUp() {
     check_state();
-    w_ctx = new S3ClovisKVSWriterContext(request, []() {}, []() {});
+    w_ctx = new S3AsyncClovisKVSWriterContext(request, []() {}, []() {});
     ASSERT_NE(w_ctx, nullptr);
     prev_ctx->application_context = w_ctx;
   }

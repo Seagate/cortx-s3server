@@ -222,8 +222,8 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
     struct s3_clovis_context_obj *ctx =
         (struct s3_clovis_context_obj *)op->op_datum;
 
-    S3ClovisKVSWriterContext *write_ctx =
-        (S3ClovisKVSWriterContext *)ctx->application_context;
+    S3AsyncClovisKVSWriterContext *write_ctx =
+        (S3AsyncClovisKVSWriterContext *)ctx->application_context;
 
     op->op_rc = S3FakeClovisKvs::instance()->kv_write(
         op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());
@@ -231,8 +231,8 @@ void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
     struct s3_clovis_context_obj *ctx =
         (struct s3_clovis_context_obj *)op->op_datum;
 
-    S3ClovisKVSWriterContext *write_ctx =
-        (S3ClovisKVSWriterContext *)ctx->application_context;
+    S3AsyncClovisKVSWriterContext *write_ctx =
+        (S3AsyncClovisKVSWriterContext *)ctx->application_context;
 
     op->op_rc = S3FakeClovisKvs::instance()->kv_del(
         op->op_entity->en_id, *write_ctx->get_clovis_kvs_op_ctx());

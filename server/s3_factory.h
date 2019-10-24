@@ -149,6 +149,13 @@ class S3ClovisKVSWriterFactory {
            "S3ClovisKVSWriterFactory::create_clovis_kvs_writer\n");
     return std::make_shared<S3ClovisKVSWriter>(req, s3_clovis_api);
   }
+  virtual std::shared_ptr<S3ClovisKVSWriter> create_sync_clovis_kvs_writer(
+      std::string request_id,
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
+    s3_log(S3_LOG_INFO, "",
+           "S3ClovisKVSWriterFactory::create_sync_clovis_kvs_writer\n");
+    return std::make_shared<S3ClovisKVSWriter>(request_id, s3_clovis_api);
+  }
 };
 
 class S3AsyncBufferOptContainerFactory {
