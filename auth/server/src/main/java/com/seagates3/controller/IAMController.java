@@ -101,7 +101,7 @@ class IAMController {
       }
 
       if (clientRequestToken == null) {
-        return responseGenerator.invalidToken();
+        return responseGenerator.AccessDenied();
       }
       AccessKey akey = new AccessKey();
       String ldapUser = AuthServerConfig.getLdapLoginCN();
@@ -147,7 +147,7 @@ class IAMController {
         * Client Request Token will be null if the request is incorrect.
       */
       if (clientRequestToken == null) {
-        return responseGenerator.invalidToken();
+        return responseGenerator.AccessDenied();
       }
       try {
         if (!requestAction.equals("ValidateACL")) {

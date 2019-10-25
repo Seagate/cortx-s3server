@@ -82,6 +82,7 @@ import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthenticationResponseGenerator;
+import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import com.seagates3.service.RequestorService;
 import com.seagates3.util.BinaryUtil;
 
@@ -209,6 +210,21 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     ServerResponse response = controller.serve(httpRequest, requestBody);
 
     assertEquals(serverResponse, response);
+  }
+
+  @Test public void serveTest_AccessDenied_No_Authheader() throws Exception {
+    requestBody.put("Action", "AuthenticateUser");
+    ServerResponse response = controller.serve(httpRequest, requestBody);
+
+    assertEquals(new AuthorizationResponseGenerator().AccessDenied(), response);
+  }
+
+  @Test public void serveTest_AccessDenied_Empty_Authheader() throws Exception {
+    requestBody.put("Action", "AuthenticateUser");
+    requestBody.put("authorization", "");
+    ServerResponse response = controller.serve(httpRequest, requestBody);
+
+    assertEquals(new AuthorizationResponseGenerator().AccessDenied(), response);
   }
 
   @Test public void serveTest_AuthorizeUser() throws Exception {

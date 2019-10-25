@@ -23,7 +23,6 @@ import com.seagates3.exception.InvalidTokenException;
 import com.seagates3.exception.InvalidArgumentException;
 import com.seagates3.util.IEMUtil;
 import io.netty.handler.codec.http.FullHttpRequest;
-import com.seagates3.response.generator.AuthenticationResponseGenerator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.ResponseGenerator;
 import com.seagates3.exception.InvalidAccessKeyException;
@@ -57,7 +56,6 @@ public class ClientRequestParser {
             InvalidArgumentException {
         String requestAction = requestBody.get("Action");
         String authorizationHeader;
-        String AuthorizationPattern;
         ClientRequestToken.AWSSigningVersion awsSigningVersion;
 
         if (requestAction.equals("AuthenticateUser")
@@ -81,7 +79,8 @@ public class ClientRequestParser {
             LOGGER.debug("authheader is" + authorizationHeader);
         }
 
-        if (authorizationHeader == null) {
+        if (authorizationHeader == null ||
+            authorizationHeader.replaceAll("\\s+", "").isEmpty()) {
             return null;
         }
         ClientRequestParser clientRequestParser = new ClientRequestParser();
@@ -173,7 +172,7 @@ public class ClientRequestParser {
         else if ((V4_PATTERN.matcher(authorizationHeader)).lookingAt())
         {
             tokens = authorizationHeader.split(",");
-            String[] credTokens, credScopeTokens;
+            String[] credTokens;
             subTokens = tokens[0].split("=");
             credTokens = subTokens[1].split("/");
             access_key=credTokens[0];
