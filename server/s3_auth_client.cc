@@ -441,6 +441,12 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
     context->set_op_status_for(0, S3AsyncOpStatus::failed,
                                "Authentication failed:Bad Request");
     context->set_auth_response_xml(auth_response_body, false);
+  } else if (auth_resp_status == S3HttpFailed403) {
+    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
+           "Authentication failed\n");
+    context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                               "Authentication failed:Access denied");
+    context->set_auth_response_xml(auth_response_body, false);
   } else {
     s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
            "Something is wrong with Auth server\n");
