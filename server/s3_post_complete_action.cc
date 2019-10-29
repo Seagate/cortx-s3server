@@ -470,6 +470,7 @@ void S3PostCompleteAction::save_metadata() {
         request, bucket_metadata->get_object_list_index_oid());
   }
   object_metadata->set_oid(multipart_metadata->get_oid());
+  object_metadata->set_layout_id(multipart_metadata->get_layout_id());
 
   if (is_abort_multipart()) {
     next();
@@ -485,7 +486,6 @@ void S3PostCompleteAction::save_metadata() {
     object_metadata->set_tags(multipart_metadata->get_tags());
     object_metadata->set_content_length(std::to_string(object_size));
     object_metadata->set_md5(etag);
-    object_metadata->set_layout_id(multipart_metadata->get_layout_id());
 
     object_metadata->save(
         std::bind(&S3PostCompleteAction::save_object_metadata_succesful, this),

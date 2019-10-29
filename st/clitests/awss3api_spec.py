@@ -202,5 +202,28 @@ AwsTest('Aws can list object tags for multipart upload').list_object_tagging("se
 #************** Delete Object  ********
 AwsTest('Aws can delete object').delete_object("seagatebuckettag","10Mbfile").execute_test().command_is_successful()
 
+#******* Multipart upload should fail if non-last part is less then 5 Mb ******
+
+result=AwsTest('Multipart upload with wrong-sized parts').create_multipart_upload("seagatebuckettag", "10Mbfile", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+result=AwsTest('Aws can upload 4Mb first part').upload_part("seagatebuckettag", "firstpart", 4194304, "10Mbfile", "1" , upload_id).execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+print(e_tag_1)
+
+result=AwsTest('Aws can upload 4Mb second part').upload_part("seagatebuckettag", "secondpart", 4194304, "10Mbfile", "2" , upload_id).execute_test().command_is_successful()
+e_tag_2 = result.status.stdout
+print(e_tag_2)
+
+result=AwsTest('Aws can upload 2Mb third part').upload_part("seagatebuckettag", "thirdpart", 2097152, "10Mbfile", "3" , upload_id).execute_test().command_is_successful()
+e_tag_3 = result.status.stdout
+print(e_tag_3)
+
+parts="Parts=[{ETag="+e_tag_1.strip('\n')+",PartNumber=1},{ETag="+e_tag_2.strip('\n')+",PartNumber=2},{ETag="+e_tag_3.strip('\n')+",PartNumber=3}]"
+print(parts)
+
+result=AwsTest('Aws cannot complete multipart upload when non-last part is less than 5MB').complete_multipart_upload("seagatebuckettag", "10Mbfile", parts, upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("EntityTooSmall")
+
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()

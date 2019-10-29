@@ -18,6 +18,7 @@
  */
 
 #include "s3_fi_common.h"
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,9 +48,8 @@ s3_fp *s3_fp_alloc(const char *tag) {
   /* alloc mem */
   fp_ptr = (s3_fp *)calloc(1, sizeof(s3_fp));
   M0_ASSERT(fp_ptr != NULL);
-  tag_ptr = (char *)calloc(1, strlen(tag) + 1);
+  tag_ptr = strdup(tag);
   M0_ASSERT(tag_ptr != NULL);
-  strcpy(tag_ptr, tag);
   fp_ptr->fp_tag = tag_ptr;
   fp_ptr->fp_func = S3_FI_FUNC_NAME;
   fp_ptr->fp_module = S3_MODULE_NAME;
