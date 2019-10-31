@@ -162,7 +162,8 @@ int S3ClovisWriter::open_objects() {
 
   s3_log(S3_LOG_INFO, request_id, "Clovis API: openobj(oid: %s)\n",
          oid_list_stream.str().c_str());
-  s3_clovis_api->clovis_op_launch(ctx->ops, ops_count, ClovisOpType::openobj);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
+                                  ClovisOpType::openobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return rc;
 }
@@ -270,10 +271,8 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
          "%" SCNx64 " : %" SCNx64 "))\n",
          oid_list[0].u_hi, oid_list[0].u_lo);
 
-  ADDB(ADDB_REQUEST_TO_CLOVIS_ID, request->addb_request_id,
-       ctx->ops[0]->op_sm.sm_id);
-
-  s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::createobj);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
+                                  ClovisOpType::createobj);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -426,7 +425,8 @@ void S3ClovisWriter::write_content() {
          " start_offset_in_object(%zu), total_bytes_written_at_offset(%zu))\n",
          oid_list[0].u_hi, oid_list[0].u_lo, rw_ctx->ext->iv_index[0],
          size_in_current_write);
-  s3_clovis_api->clovis_op_launch(ctx->ops, 1, ClovisOpType::writeobj);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, 1,
+                                  ClovisOpType::writeobj);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -528,7 +528,8 @@ void S3ClovisWriter::delete_objects() {
 
   s3_log(S3_LOG_INFO, request_id, "Clovis API: deleteobj(oid: %s)\n",
          oid_list_stream.str().c_str());
-  s3_clovis_api->clovis_op_launch(ctx->ops, ops_count, ClovisOpType::deleteobj);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, ctx->ops, ops_count,
+                                  ClovisOpType::deleteobj);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

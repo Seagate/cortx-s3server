@@ -290,3 +290,39 @@ cc_test(
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
     ],
 )
+
+cc_library(
+    # How to run build
+    # bazel build //:s3addbplugin --define MERO_INC=<mero headers path>
+    #                             --define MERO_LIB=<mero lib path>
+    #                             --define MERO_HELPERS_LIB=<mero helpers lib path>
+    #                             --define MERO_EXTRA_LIB=<mero extra lib path>
+    # To build with debug symbols (to be able to analyze core files,
+    # or to run under GDB) add the following option to the command line
+    # arguments listed above:
+    #                         --strip=never
+    # Without this option, bazel strips debug symbols from the binary.
+
+    name = "s3addbplugin",
+
+    srcs = glob(["addb/plugin/*.c", "addb/plugin/*.h", "server/s3_addb*.h"]),
+
+    # In case of release mode we may have to remove option -ggdb3
+    # In case of debug mode we may have to remove option -O3
+    copts = [
+      "-DEVHTP_HAS_C99", "-DEVHTP_SYS_ARCH=64", "-DGCC_VERSION=4002",
+      "-DHAVE_CONFIG_H", "-DM0_TARGET=ClovisTest", "-D_REENTRANT",
+      "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
+      # Do NOT change the order of strings in below line
+      "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
+      "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2",
+      "-iquote", "server/", "-fno-common", "-Wall", "-Wno-attributes",
+      "-fno-strict-aliasing", "-fno-omit-frame-pointer", "-Werror", "-ggdb3",
+      "-O3", "-DNDEBUG",
+    ],
+
+    includes = [
+      "$(MERO_INC)",
+    ],
+)
+

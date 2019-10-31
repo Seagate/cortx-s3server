@@ -19,63 +19,59 @@
 
 #pragma once
 
+#ifndef __S3_SERVER_ADDB_H__
+#define __S3_SERVER_ADDB_H__
+
 #include <cstdint>
 #include <vector>
 #include <addb2/addb2.h>
 
-// If new API would be added and new operation would be needed for
-// ADDB logging then the enum below should be updated and the function
-// get_addb_id() need to be overridden accordingly.
+#include "s3_addb_plugin_auto.h"
 
-enum S3_ADDB_ENTRY_TYPE_ID : unsigned {
-  ADDB_UNUSED_ID = 0,
-  ADDB_RANGE_START_ID =
-      0x10000,  // == M0_AVI_S3_RANGE_START (defined in addb2/identifier.h)
-  // helper IDs e.g. for linking requests
-  ADDB_REQUEST_ID = ADDB_RANGE_START_ID,
-  ADDB_REQUEST_TO_CLOVIS_ID,
-  // Different request types
-  ADDB_BUCKET_DELETE_ID,
-  ADDB_BUCKET_DELETE_POLICY_ID,
-  ADDB_BUCKET_DELETE_TAGS_ID,
-  ADDB_BUCKET_GET_ID,
-  ADDB_BUCKET_GET_ACL_ID,
-  ADDB_BUCKET_GET_LOCATION_ID,
-  ADDB_BUCKET_GET_POLICY_ID,
-  ADDB_BUCKET_GET_TAGS_ID,
-  ADDB_BUCKET_HEAD_ID,
-  ADDB_BUCKET_PUT_ID,
-  ADDB_BUCKET_PUT_ACL_ID,
-  ADDB_BUCKET_PUT_POLICY_ID,
-  ADDB_BUCKET_PUT_TAGS_ID,
-  ADDB_OBJECT_DELETE_ID,
-  ADDB_OBJECT_DELETE_TAGS_ID,
-  ADDB_OBJECT_GET_ID,
-  ADDB_OBJECT_GET_ACL_ID,
-  ADDB_OBJECT_GET_TAGS_ID,
-  ADDB_OBJECT_HEAD_ID,
-  ADDB_OBJECT_POST_MULTIPART_ID,
-  ADDB_OBJECT_PUT_ID,
-  ADDB_OBJECT_PUT_ACL_ID,
-  ADDB_OBJECT_PUT_CHUNK_ID,
-  ADDB_OBJECT_PUT_MULTIPART_ID,
-  ADDB_OBJECT_PUT_TAGS_ID
-};
+// This header defines what is needed to use Mero ADDB.
+//
+// Mero ADDB is a subsystem which allows to efficiently store certain run-time
+// metrics.  They are called ADDB log entries.  Every entry is time stamped
+// (with nanosecond precision), and contains up to 15 unsigned 64 bit integers.
+// It is up to us what information to store there.  The convention is that the
+// first integer is an "action type id" (see enum S3AddbActionTypeId).  This ID
+// must be within a range designated to S3 server.  It serves later as a means
+// to distinguish between different kinds of log entries that we save to ADDB.
+//
+// The very first basic usage for ADDB is performance monitoring: s3 server
+// will track every API request, and create ADDB log entries when the request
+// goes through it's stages, and when it changes state, and also track which
+// Clovis operations it executes.
 
-// The goal is to distinguish ActionState values from task_list indexes.
+// Initialize addb subsystem (see detailed comments in the implementation).
+// Depends on s3_log.
+int s3_addb_init();
+
+// Used to distinguish ActionState values from task_list indexes.
 #define ADDB_TASK_LIST_OFFSET 256u
 
-// The id should be (the result of) get_addb_id().
-// Other parameters should be (arbitrary) values of type uint64_t
-// (or implicitly convertible)
-
-#define ADDB(id, ...)                                           \
-  do {                                                          \
-    const uint64_t addb_id__ = (id);                            \
-    if (FLAGS_addb && (addb_id__ != ADDB_UNUSED_ID)) {          \
-      uint64_t addb_params__[] = {__VA_ARGS__};                 \
-      constexpr auto addb_pars_size__ =                         \
-          sizeof addb_params__ / sizeof addb_params__[0];       \
-      m0_addb2_add(addb_id__, addb_pars_size__, addb_params__); \
-    }                                                           \
+// Macro to create ADDB log entry.
+//
+// addb_action_type_id parameter must be a value from enum S3AddbActionTypeId.
+// See also Action::get_addb_action_type_id().
+//
+// Other parameters must be values of type uint64_t (or implicitly
+// convertible).  Current limit is 14 parameters (totals to 15 integers in one
+// addb entry since we include addb_action_id).
+#define ADDB(addb_action_type_id, ...)                                        \
+  do {                                                                        \
+    const uint64_t addb_id__ = (addb_action_type_id);                         \
+    if (FLAGS_addb) {                                                         \
+      if (addb_id__ < S3_ADDB_RANGE_START || addb_id__ > S3_ADDB_RANGE_END) { \
+        s3_log(S3_LOG_FATAL, "", "Invalid ADDB Action Type ID %" PRIu64 "\n", \
+               addb_id__);                                                    \
+      } else {                                                                \
+        uint64_t addb_params__[] = {__VA_ARGS__};                             \
+        constexpr auto addb_params_size__ =                                   \
+            sizeof addb_params__ / sizeof addb_params__[0];                   \
+        m0_addb2_add(addb_id__, addb_params_size__, addb_params__);           \
+      }                                                                       \
+    }                                                                         \
   } while (false)
+
+#endif

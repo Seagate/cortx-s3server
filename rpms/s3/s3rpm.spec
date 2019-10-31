@@ -120,6 +120,7 @@ rm -rf %{buildroot}
 %dir /opt/seagate/auth/resources
 %dir /opt/seagate/auth/resources/static
 %dir /opt/seagate/s3
+%dir /opt/seagate/s3/addb-plugin
 %dir /opt/seagate/s3/bin
 %dir /opt/seagate/s3/conf
 %dir /opt/seagate/s3/libevent
@@ -138,6 +139,7 @@ rm -rf %{buildroot}
 /opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/auth/startauth.sh
 /opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh
+/opt/seagate/s3/addb-plugin/libs3addbplugin.so
 /opt/seagate/s3/bin/cloviskvscli
 /opt/seagate/s3/bin/s3server
 /opt/seagate/s3/libevent/libevent-2.1.so.6

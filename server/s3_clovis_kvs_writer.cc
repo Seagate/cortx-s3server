@@ -131,7 +131,8 @@ void S3ClovisKVSWriter::create_index_with_oid(
 
   writer_context->start_timer_for("create_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::createidx);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::createidx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -201,7 +202,8 @@ void S3ClovisKVSWriter::sync_index(std::function<void(void)> on_success,
 
   s3_clovis_api->clovis_op_setup(idx_op_ctx->sync_op, idx_op_ctx->cbs, 0);
   sync_context->start_timer_for("sync_index_op");
-  s3_clovis_api->clovis_op_launch(&idx_op_ctx->sync_op, 1,
+  s3_clovis_api->clovis_op_launch(request->addb_request_id,
+                                  &idx_op_ctx->sync_op, 1,
                                   ClovisOpType::createidx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -297,7 +299,8 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
   s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
   writer_context->start_timer_for("delete_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::deleteidx);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::deleteidx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -395,8 +398,8 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
 
   writer_context->start_timer_for("delete_index_op");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, oids.size(),
-                                  ClovisOpType::deleteidx);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops,
+                                  oids.size(), ClovisOpType::deleteidx);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -490,7 +493,8 @@ void S3ClovisKVSWriter::put_keyval(
 
   writer_context->start_timer_for("put_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::putkv);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::putkv);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -561,7 +565,8 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 
   writer_context->start_timer_for("put_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::putkv);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::putkv);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -632,11 +637,12 @@ void S3ClovisKVSWriter::sync_keyval(std::function<void(void)> on_success,
   s3_clovis_api->clovis_op_setup(idx_op_ctx->sync_op, idx_op_ctx->cbs, 0);
   sync_context->start_timer_for("sync_keyval_op");
   if (state == S3ClovisKVSWriterOpState::deleting) {
-    s3_clovis_api->clovis_op_launch(&idx_op_ctx->sync_op, 1,
+    s3_clovis_api->clovis_op_launch(request->addb_request_id,
+                                    &idx_op_ctx->sync_op, 1,
                                     ClovisOpType::deletekv);
   } else {
-    s3_clovis_api->clovis_op_launch(&idx_op_ctx->sync_op, 1,
-                                    ClovisOpType::putkv);
+    s3_clovis_api->clovis_op_launch(
+        request->addb_request_id, &idx_op_ctx->sync_op, 1, ClovisOpType::putkv);
   }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -753,7 +759,8 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
 
   writer_context->start_timer_for("delete_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::deletekv);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::deletekv);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

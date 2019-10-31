@@ -28,11 +28,6 @@
 
 class S3HeadBucketAction : public S3BucketAction {
 
- protected:
-  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
-    return ADDB_BUCKET_HEAD_ID;
-  }
-
  public:
   S3HeadBucketAction(
       std::shared_ptr<S3RequestObject> req,

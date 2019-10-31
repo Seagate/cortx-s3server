@@ -37,11 +37,6 @@ class S3PutObjectTaggingAction : public S3ObjectAction {
   std::string new_object_tags;
   std::map<std::string, std::string> object_tags_map;
 
- protected:
-  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
-    return ADDB_OBJECT_PUT_TAGS_ID;
-  }
-
  public:
   S3PutObjectTaggingAction(
       std::shared_ptr<S3RequestObject> req,

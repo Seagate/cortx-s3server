@@ -34,6 +34,7 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
       invalid_request(false),
       skip_auth(skip_auth) {
 
+  addb_action_type_id = S3_ADDB_ACTION_BASE_ID;
   request_id = base_request->get_request_id();
   addb_request_id = base_request->addb_request_id;
 
@@ -43,7 +44,7 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
 
   state = ActionState::start;
   rollback_state = ActionState::start;
-  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
+  ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 
   mem_profile.reset(new S3MemoryProfile());
   // Set the callback that will be called, when read timeout happens
@@ -101,8 +102,9 @@ void Action::start() {
   if (task_list.size() > 0) {
     state = ActionState::running;
 
-    ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
-    ADDB(get_addb_id(), addb_request_id, ADDB_TASK_LIST_OFFSET);
+    ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
+    ADDB(get_addb_action_type_id(), addb_request_id,
+         ADDB_TASK_LIST_OFFSET + task_iteration_index);
 
     task_list[task_iteration_index++]();
   }
@@ -118,8 +120,8 @@ void Action::next() {
   if (task_iteration_index < task_list.size()) {
     if (base_request->client_connected()) {
 
-      ADDB(get_addb_id(), addb_request_id,
-           task_iteration_index + ADDB_TASK_LIST_OFFSET);
+      ADDB(get_addb_action_type_id(), addb_request_id,
+           ADDB_TASK_LIST_OFFSET + task_iteration_index);
 
       task_list[task_iteration_index++]();
     } else {
@@ -133,27 +135,27 @@ void Action::next() {
 void Action::done() {
   task_iteration_index = 0;
   state = ActionState::complete;
-  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
+  ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
   i_am_done();
 }
 
 void Action::pause() {
   // Set state as Paused.
   state = ActionState::paused;
-  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
+  ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 }
 
 void Action::resume() {
   // Resume only if paused.
   state = ActionState::running;
-  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
+  ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 }
 
 void Action::abort() {
   // Mark state as Aborted.
   task_iteration_index = 0;
   state = ActionState::stopped;
-  ADDB(get_addb_id(), addb_request_id, (uint64_t)state);
+  ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 }
 
 // rollback async steps

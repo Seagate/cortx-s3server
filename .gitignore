@@ -35,5 +35,16 @@ auth/encryptutil/target/
 auth/server/dependency-reduced-pom.xml
 auth/server/target/
 .*.sw[po]
+.sw[po]
 *~
 \#*#
+mempool/.deps/
+mempool/.dirstamp
+mempool/.libs/
+*.lo
+*.o
+s3backgrounddelete/build/
+s3backgrounddelete/dist/
+s3backgrounddelete/s3backgrounddelete.egg-info/
+st/clitests/jclient.properties
+st/clitests/jcloud.properties

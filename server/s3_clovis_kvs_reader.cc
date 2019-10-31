@@ -150,7 +150,8 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   reader_context->start_timer_for("get_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::getkv);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::getkv);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }
@@ -290,7 +291,8 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   reader_context->start_timer_for("get_keyval");
 
-  s3_clovis_api->clovis_op_launch(idx_op_ctx->ops, 1, ClovisOpType::getkv);
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::getkv);
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return;
 }

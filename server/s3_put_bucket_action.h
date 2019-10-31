@@ -42,11 +42,6 @@ class S3PutBucketAction : public S3Action {
   std::string request_content;
   std::string location_constraint;  // Received in request body.
 
- protected:
-  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
-    return ADDB_BUCKET_PUT_ID;
-  }
-
  public:
   S3PutBucketAction(
       std::shared_ptr<S3RequestObject> req,

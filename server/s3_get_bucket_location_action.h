@@ -29,11 +29,6 @@
 
 class S3GetBucketlocationAction : public S3BucketAction {
 
- protected:
-  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
-    return ADDB_BUCKET_GET_LOCATION_ID;
-  }
-
  public:
   S3GetBucketlocationAction(
       std::shared_ptr<S3RequestObject> req,

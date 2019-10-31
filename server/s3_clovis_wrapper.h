@@ -34,6 +34,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_fake_clovis_redis_kvs.h"
+#include "s3_addb.h"
 
 extern struct m0_ufid_generator s3_ufid_generator;
 
@@ -100,7 +101,8 @@ class ClovisAPI {
                              struct m0_bufvec *attr, uint64_t mask,
                              struct m0_clovis_op **op) = 0;
 
-  virtual void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr,
+  virtual void clovis_op_launch(uint64_t addb_request_id,
+                                struct m0_clovis_op **op, uint32_t nr,
                                 ClovisOpType type = ClovisOpType::unknown) = 0;
 
   virtual int clovis_op_rc(const struct m0_clovis_op *op) = 0;
@@ -159,6 +161,16 @@ class ConcreteClovisAPI : public ClovisAPI {
   bool is_clovis_sync_should_be_faked() {
     auto inst = S3Option::get_instance();
     return inst->is_fake_clovis_putkv() || inst->is_fake_clovis_redis_kvs();
+  }
+
+  static void clovis_op_launch_addb_add(uint64_t addb_request_id,
+                                        struct m0_clovis_op **op, uint32_t nr) {
+    for (uint32_t i = 0; i < nr; ++i) {
+      s3_log(S3_LOG_DEBUG, "", "request-to-clovis: request_id %" PRId64
+                               ", clovis id %" PRId64 "\n",
+             addb_request_id, op[i]->op_sm.sm_id);
+      ADDB(S3_ADDB_REQUEST_TO_CLOVIS_ID, addb_request_id, op[i]->op_sm.sm_id);
+    }
   }
 
  public:
@@ -262,9 +274,11 @@ class ConcreteClovisAPI : public ClovisAPI {
     return opts && opts->is_fake_clovis_redis_kvs() && is_kvs_op(type);
   }
 
-  void clovis_op_launch(struct m0_clovis_op **op, uint32_t nr,
+  void clovis_op_launch(uint64_t addb_request_id, struct m0_clovis_op **op,
+                        uint32_t nr,
                         ClovisOpType type = ClovisOpType::unknown) {
     S3Option *config = S3Option::get_instance();
+    clovis_op_launch_addb_add(addb_request_id, op, nr);
     if ((config->is_fake_clovis_createobj() &&
          type == ClovisOpType::createobj) ||
         (config->is_fake_clovis_writeobj() && type == ClovisOpType::writeobj) ||

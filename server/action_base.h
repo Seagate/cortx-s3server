@@ -112,8 +112,14 @@ class Action {
 
  protected:
   std::string request_id;
-  // ADDB only allows numbers to be sent to log, so we need numerical
-  // request ID for ADDB
+  // ADDB action type id.  See s3_addb.h for details on ADDB.  Should not be
+  // used directly, use get_addb_action_type_id() instead.
+  enum S3AddbActionTypeId addb_action_type_id;
+  // For ADDB, we need request ID. In S3 API, request ID is UUID, which can be
+  // represented either as a string, or 128-bit integer.  ADDB does not support
+  // neither strings, nor 128bit integers.  So, this addb_request_id below
+  // is added to support ADDB logs, and it will be used to create ADDB logs.
+  // It is generated in RequestObject (see RequestObject::addb_request_id).
   uint64_t addb_request_id;
   bool invalid_request;
   // Allow class object instiantiation without support for authentication
@@ -176,10 +182,26 @@ class Action {
 
   bool get_is_fi_hit() { return is_fi_hit; }
 
-  // Maps the semantic of certain S3 operations to the enum
-  // for ADDB logging purposes
-  virtual enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const {
-    return ADDB_UNUSED_ID;
+  // Every Action class gets its own unique unchanging ID.  This method uses
+  // RTTI (typeid) to determine what is the actual class of a given instance,
+  // and then returns ADDB action type ID for that class.
+  static enum S3AddbActionTypeId lookup_addb_action_type_id(
+      const Action& instance);
+  enum S3AddbActionTypeId get_addb_action_type_id() {
+    // Note that typeid() cannot identify the actual class of an instance when
+    // used inside the constructor of a base class.  In partially constructed
+    // instances it returns the base class which has been constructed so far,
+    // not the "final" derived class which is actually being constructed.  And
+    // we're using ADDB in Action::Action constructor.  So, to work around
+    // that, we'll use S3_ADDB_ACTION_BASE_ID until the object is fully
+    // constructed, and will use proper action type id after that.  The lookup
+    // method call below will return S3_ADDB_ACTION_BASE_ID unless the class is
+    // recognized (i.e. instance is fully constructed), so we'll be attempting
+    // the lookup until class is identified.
+    if (addb_action_type_id == S3_ADDB_ACTION_BASE_ID) {
+      addb_action_type_id = lookup_addb_action_type_id(*this);
+    }
+    return addb_action_type_id;
   }
 
  public:

@@ -782,6 +782,15 @@ int main(int argc, char **argv) {
     return rc;
   }
 
+  // Init addb
+  rc = s3_addb_init();
+  if (rc < 0) {
+    s3_log(S3_LOG_FATAL, "", "S3 ADDB Init failed!\n");
+    fini_auth_ssl();
+    fini_log();
+    return rc;
+  }
+
   // global_bucket_list_index_oid - will hold bucket name as key, its owner
   // account information and region as value.
   rc = create_global_index(global_bucket_list_index_oid,

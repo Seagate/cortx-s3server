@@ -87,6 +87,14 @@ RequestObject::RequestObject(
       is_chunked_upload(false),
       in_headers_copied(false),
       in_query_params_copied(false),
+      // FIXME:
+      // For the time being, we are generating ADDB request IDs as a simple
+      // sequence starting from 1 and then simply increasing (1,2,3,...).   It
+      // works for now, while ADDB logs are only used for debugging (since
+      // we don't need to mix ADDB logs for different s3 server instances).  If
+      // and when ADDB will be used in production, we will need to generate
+      // proper globally unique IDs here.  Specifically, we'll need to address
+      // uniqueness across all instances of S3 Server.
       addb_request_id(++addb_request_id_gc),
       reply_buffer(NULL) {
 
@@ -95,7 +103,7 @@ RequestObject::RequestObject(
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   request_timer.start();
 
-  ADDB(ADDB_REQUEST_ID, addb_request_id, *(const uint64_t*)(uuid.ptr()),
+  ADDB(S3_ADDB_REQUEST_ID, addb_request_id, *(const uint64_t*)(uuid.ptr()),
        *(const uint64_t*)(uuid.ptr() + sizeof(uint64_t)));
 
   if (async_buf_factory) {

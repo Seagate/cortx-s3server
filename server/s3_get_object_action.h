@@ -52,11 +52,6 @@ class S3GetObjectAction : public S3ObjectAction {
     return last_byte_offset_to_read - first_byte_offset_to_read + 1;
   }
 
- protected:
-  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
-    return ADDB_OBJECT_GET_ID;
-  }
-
  public:
   S3GetObjectAction(
       std::shared_ptr<S3RequestObject> req,

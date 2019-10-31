@@ -37,11 +37,6 @@ class S3DeleteBucketPolicyAction : public S3BucketAction {
     return "BUCKET/" + request->get_bucket_name();
   }
 
- protected:
-  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
-    return ADDB_BUCKET_DELETE_POLICY_ID;
-  }
-
  public:
   S3DeleteBucketPolicyAction(
       std::shared_ptr<S3RequestObject> req,

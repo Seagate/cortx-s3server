@@ -29,6 +29,7 @@ rm -rf $S3_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION
 mkdir -p $AUTH_INSTALL_LOCATION/resources
 mkdir -p $AUTH_INSTALL_LOCATION/scripts
+mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
@@ -50,6 +51,9 @@ cp bazel-bin/s3server $S3_INSTALL_LOCATION/bin/
 
 # Copy cloviskvscli tool
 cp bazel-bin/cloviskvscli $S3_INSTALL_LOCATION/bin/
+
+# Copy addb plugin
+cp bazel-bin/libs3addbplugin.so $S3_INSTALL_LOCATION/addb-plugin/
 
 # Copy the resources
 cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json

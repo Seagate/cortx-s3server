@@ -31,11 +31,6 @@
 class S3PutObjectACLAction : public S3ObjectAction {
   // std::string user_input_acl;
 
- protected:
-  enum S3_ADDB_ENTRY_TYPE_ID get_addb_id() const override {
-    return ADDB_OBJECT_PUT_ACL_ID;
-  }
-
  public:
   S3PutObjectACLAction(
       std::shared_ptr<S3RequestObject> req,
