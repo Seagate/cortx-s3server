@@ -110,6 +110,8 @@ class Action {
 
   S3Timer auth_timer;
 
+  bool is_date_header_present_in_request() const;
+
  protected:
   std::string request_id;
   // ADDB action type id.  See s3_addb.h for details on ADDB.  Should not be
