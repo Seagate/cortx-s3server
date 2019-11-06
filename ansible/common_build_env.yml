@@ -42,25 +42,36 @@
 #   - python34-yaml
 #   - python34-scripttest
     - python36
-    - python36-setuptools
-    - python36-dateutil
-    - python36-devel
-    - python36-yaml
+    - "{{python_version}}-setuptools"
+    - "{{python_version}}-dateutil"
+    - "{{python_version}}-devel"
+    - "{{python_version}}-yaml"
     # - xmltodict
     # - boto3
     # - botocore
-    - python36-scripttest
+    - "{{python_version}}-scripttest"
+
+- name: Install Python and dependencies
+  when: ansible_distribution == "RedHat" and ansible_distribution_version == "8.0"
+  yum: pkg={{item}} state=installed
+  with_items:
+    # - xmltodict
+    - "{{python_version}}-boto3"
+    - "{{python_version}}-botocore"
+    - "{{python_version}}-jmespath"
+    - "{{python_version}}-s3transfer"
+    - "{{python_version}}-wheel"
 
 - name: Install python modules to build python36 dependencies
   yum: pkg={{item}} state=installed
   with_items:
-    - python36-pytest
-    - python36-pika
+    - "{{python_version}}-pytest"
+    - "{{python_version}}-pika"
     - python-jsonschema
     - python-keyring
     - python-nose
     #- python34-nose
-    - python36-nose
+    - "{{python_version}}-nose"
     - python-mock
     - python-wheel
     - python2-botocore
@@ -69,8 +80,8 @@
     - python2-s3transfer
     #- python34-mock
     - python34-ply
-    - python36-mock
-    - python36-ply
+    - "{{python_version}}-mock"
+    - "{{python_version}}-ply"
 
 - name: Install python modules required by S3 system tests and s3 (iam) auth cli
   yum: pkg={{item}} state=installed
@@ -81,12 +92,17 @@
     #- python34-botocore
     #- python34-s3transfer
     #- python34-boto3
-    - python36-wheel
-    - python36-jmespath
-    - python36-xmltodict
-    - python36-botocore
-    - python36-s3transfer
-    - python36-boto3
+    - "{{python_version}}-wheel"
+    - "{{python_version}}-jmespath"
+    - "{{python_version}}-botocore"
+    - "{{python_version}}-s3transfer"
+    - "{{python_version}}-boto3"
+
+- name: Install python module xmltodict
+  when: (ansible_distribution == 'CentOS' and ansible_distribution_version == '7') or (ansible_distribution == 'RedHat' and ansible_distribution_version == '7.6')
+  yum: pkg={{item}} state=installed
+  with_items:
+    - "{{python_version}}-xmltodict"
 
 - name: Install bazel rpm
   yum:

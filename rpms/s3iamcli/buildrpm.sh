@@ -1,9 +1,11 @@
 #!/bin/sh
 
-set -e
+set -xe
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
+OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
+VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
 
 GIT_VER=
 S3IAMCLI_VERSION=1.0.0
@@ -68,6 +70,9 @@ cp s3iamcli-${S3IAMCLI_VERSION}-git${GIT_VER}.tar.gz ~/rpmbuild/SOURCES/
 cd ~/rpmbuild/SOURCES/
 rm -rf s3server-${S3IAMCLI_VERSION}-git${GIT_VER}
 
-yum-builddep -y ${BASEDIR}/s3iamcli.spec
-
-rpmbuild -ba --define "_s3iamcli_version ${S3IAMCLI_VERSION}"  --define "_s3iamcli_git_ver git${GIT_VER}" ${BASEDIR}/s3iamcli.spec --with python3
+extra_defines=()
+if [ $VERSION = "\"8.0\"" ]; then
+  extra_defines=(--define "s3_with_python36_ver8 1")
+fi
+yum-builddep -y ${BASEDIR}/s3iamcli.spec "${extra_defines[@]}"
+rpmbuild -ba --define "_s3iamcli_version ${S3IAMCLI_VERSION}"  --define "_s3iamcli_git_ver git${GIT_VER}" "${extra_defines[@]}" --with python3

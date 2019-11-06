@@ -95,7 +95,7 @@ sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
 ansible-playbook -i ./hosts_local --connection local jenkins_yum_repos.yml -v  -k
 
 # Setup dev env
-ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos75.yml -v  -k
+ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos75_8.yml -v  -k
 
 rm -f ./hosts_local
 

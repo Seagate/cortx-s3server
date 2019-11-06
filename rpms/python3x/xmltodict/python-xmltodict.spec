@@ -1,4 +1,4 @@
-%if 0%{?s3_with_python34:1}
+%if 0%{?s3_with_python34:1}%{?s3_with_python36_ver8:1} != 0
 %{!?py3ver: %global py3ver %(%{__python3} -c "import sys ; print(sys.version[:3])")}
 %else
 %{!?__python2: %global __python2 /usr/bin/python2}
@@ -12,7 +12,11 @@
 
 %global srcname xmltodict
 
+%if 0%{?s3_with_python36_ver8:1}
+Name:               python3-xmltodict
+%else
 Name:               python-xmltodict
+%endif
 Version:            0.9.0
 Release:            1%{?dist}
 Summary:            Makes working with XML feel like you are working with JSON
@@ -24,8 +28,13 @@ Source0:            http://pypi.python.org/packages/source/x/%{srcname}/%{srcnam
 
 BuildArch:          noarch
 
+%if 0%{?s3_with_python36_ver8:1}
+BuildRequires:      python3-devel
+BuildRequires:      python3-nose
+%else
 BuildRequires:      python2-devel
 BuildRequires:      python-nose
+%endif
 
 %if 0%{?s3_with_python34:1}
 BuildRequires:      python%{python3_pkgversion}-devel
@@ -135,10 +144,16 @@ Wikipedia.
     u'element as well'
 %endif # with_python36
 
+%if 0%{?s3_with_python36_ver8:1}
+#%package -n python3-xmltodict
+
+Requires:           python36
+
+%endif # with_python36_ver8
+
 %prep
 %setup -q -n %{srcname}-%{version}
 rm -rf %{srcname}.egg-info
-find -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python2}|'
 
 %if 0%{?s3_with_python34:1}
 rm -rf %{py3dir}
@@ -152,9 +167,18 @@ cp -a . %{py3dir}-for%{python3_other_pkgversion}
 find %{py3dir}-for%{python3_other_pkgversion} -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python3_other}|'
 %endif # with_python36
 
+%if 0%{?s3_with_python36_ver8:1}
+rm -rf %{py3dir}
+cp -a . %{py3dir}
+find %{py3dir} -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python3}|'
+%endif
 
 %build
+%if 0%{?s3_with_python36_ver8:1}
+%{__python3} setup.py build
+%else
 %{__python2} setup.py build
+%endif
 %if 0%{?s3_with_python34:1}
 pushd %{py3dir}
 %{__python3} setup.py build
@@ -165,6 +189,11 @@ pushd %{py3dir}-for%{python3_other_pkgversion}
 %{__python3_other} setup.py build
 popd
 %endif # with_python36
+%if 0%{?s3_with_python36_ver8:1}
+pushd %{py3dir}
+%{__python3} setup.py build
+popd
+%endif
 
 %install
 %if 0%{?s3_with_python36:1}
@@ -177,10 +206,18 @@ pushd %{py3dir}
 %{__python3} setup.py install -O1 --skip-build --root=%{buildroot}
 popd
 %endif
-%{__python2} setup.py install -O1 --skip-build --root=%{buildroot}
+%if 0%{?s3_with_python36_ver8:1}
+pushd %{py3dir}
+%{__python3} setup.py install -O1 --skip-build --root=%{buildroot}
+popd
+%endif
 
 %check
+%if 0%{?s3_with_python36_ver8:1}
+nosetests-3
+%else
 nosetests-%{py2ver}
+%endif
 %if 0%{?s3_with_python34:1}
 pushd %{py3dir}
 nosetests-%{py3ver}
@@ -191,11 +228,11 @@ pushd %{py3dir}-for%{python3_other_pkgversion}
 nosetests-%{py3ver_other}
 popd
 %endif # with_python36
-
-%files
-%doc README.md LICENSE PKG-INFO
-%{python_sitelib}/%{srcname}.py*
-%{python_sitelib}/%{srcname}-%{version}*
+%if 0%{?s3_with_python36_ver8:1}
+pushd %{py3dir}
+nosetests-3
+popd
+%endif
 
 %if 0%{?s3_with_python34:1}
 %files -n python%{python3_pkgversion}-xmltodict
@@ -212,6 +249,15 @@ popd
 %{python3_other_sitelib}/%{srcname}-%{version}-*
 %{python3_other_sitelib}/__pycache__/%{srcname}*
 %endif # with_python36
+
+%if 0%{?s3_with_python36_ver8:1}
+%files -n python3-xmltodict
+%doc README.md LICENSE PKG-INFO
+%{python3_sitelib}/%{srcname}.py
+%{python3_sitelib}/%{srcname}-%{version}-*
+%{python3_sitelib}/__pycache__/%{srcname}*
+%endif
+
 
 %changelog
 * Thu Oct 02 2014 Fabian Affolter <mail@fabian-affolter.ch> - 0.9.0-1
