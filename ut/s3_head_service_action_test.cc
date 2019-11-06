@@ -43,6 +43,10 @@ class S3HeadServiceActionTest : public testing::Test {
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
 
     // Object to be tested.
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3HeadServiceAction(ptr_mock_request));
   }
 

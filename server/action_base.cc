@@ -82,15 +82,28 @@ bool Action::is_error_state() { return state == ActionState::error; }
 
 void Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
+
+  check_authorization_header();
+
   s3_log(S3_LOG_DEBUG, request_id,
          "S3Option::is_auth_disabled: (%d), skip_auth: (%d)\n",
          S3Option::get_instance()->is_auth_disabled(), skip_auth);
 
-  if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth) {
+  if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth &&
+      (is_authorizationheader_present)) {
+
     add_task(std::bind(&Action::check_authentication, this));
   }
 }
 
+void Action::check_authorization_header() {
+  is_authorizationheader_present = false;
+  for (auto it : base_request->get_in_headers_copy()) {
+    if (strcmp(it.first.c_str(), "Authorization") == 0) {
+      is_authorizationheader_present = true;
+    }
+  }
+}
 void Action::start() {
 
   if (check_shutdown_signal && check_shutdown_and_rollback()) {

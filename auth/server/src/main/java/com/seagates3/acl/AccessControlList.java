@@ -118,6 +118,8 @@ class AccessControlList {
            "WRITE_ACP".equals(requiredPermission))) {
         isPermissionAvailable = true;
       }
+    }
+
       if (!isPermissionAvailable) {
       for (int counter = 0; counter < this.getGrantList().size(); counter++) {
         Grant grantRecord = this.getGrantList().get(counter);
@@ -125,22 +127,31 @@ class AccessControlList {
         String canonicalId = grantRecord.grantee.canonicalId;
         String emailId = grantRecord.grantee.emailAddress;
         String uri = grantRecord.grantee.uri;
-        if ((canonicalId != null &&
-             canonicalId.equals(account.getCanonicalId())) ||
-            (emailId != null && emailId.equals(account.getEmail())) ||
-            (isUserAuthenticated &&
-             groupImpl.isPartOfAuthenticatedUsersGroup(uri)) ||
-            groupImpl.isPartOfAllUsersGroup(uri) ||
-            (uri != null &&
-             groupImpl.findByPathAndAccount(account, uri).exists())) {
-          Grant grant = this.getGrantList().get(counter);
+
+        Grant grant = this.getGrantList().get(counter);
+
+        if (account != null) {
+          if ((canonicalId != null &&
+               canonicalId.equals(account.getCanonicalId())) ||
+              (emailId != null && emailId.equals(account.getEmail())) ||
+              (uri != null &&
+               groupImpl.findByPathAndAccount(account, uri).exists()) ||
+              (isUserAuthenticated &&
+               groupImpl.isPartOfAuthenticatedUsersGroup(uri)) ||
+              (groupImpl.isPartOfAllUsersGroup(uri))) {
+            if (hasPermission(grant, requiredPermission)) {
+              isPermissionAvailable = true;
+              break;
+            }
+          }
+
+        } else if (groupImpl.isPartOfAllUsersGroup(uri)) {
           if (hasPermission(grant, requiredPermission)) {
             isPermissionAvailable = true;
             break;
           }
         }
       }
-    }
     }
     return isPermissionAvailable;
   }

@@ -20,7 +20,6 @@
 #include <functional>
 #include <iostream>
 #include "gtest/gtest.h"
-
 #include "mock_evhtp_wrapper.h"
 #include "mock_s3_memory_profile.h"
 #include "mock_s3_request_object.h"
@@ -32,6 +31,7 @@ using ::testing::Return;
 using ::testing::Eq;
 using ::testing::_;
 using ::testing::AtLeast;
+using ::testing::ReturnRef;
 
 // Before you create an object of this class, ensure
 // auth is disabled for unit tests.
@@ -69,6 +69,10 @@ class ActionTest : public testing::Test {
         std::make_shared<MockS3RequestObject>(req, new EvhtpWrapper());
     call_count_one = call_count_two = 0;
     S3Option::get_instance()->disable_auth();
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     ptr_Actionobject = new ActionTestbase(ptr_mock_request);
     EXPECT_CALL(*ptr_mock_request, get_api_type())
         .WillRepeatedly(Return(S3ApiType::object));
@@ -169,6 +173,10 @@ TEST_F(ActionTest, RollbacklistRun) {
 }
 
 TEST_F(ActionTest, SkipAuthTest) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   ptr_Actionobject->skip_auth = true;
   ptr_Actionobject->setup_steps();
   // No tasks
@@ -176,6 +184,10 @@ TEST_F(ActionTest, SkipAuthTest) {
 }
 
 TEST_F(ActionTest, EnableAuthTest) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   S3Option::get_instance()->enable_auth();
   ptr_Actionobject->setup_steps();
   S3Option::get_instance()->disable_auth();
@@ -184,6 +196,10 @@ TEST_F(ActionTest, EnableAuthTest) {
 }
 
 TEST_F(ActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   S3Option::get_instance()->disable_auth();
   ptr_Actionobject->skip_auth = true;
   ptr_Actionobject->setup_steps();
@@ -192,6 +208,10 @@ TEST_F(ActionTest, SetSkipAuthFlagAndSetS3OptionDisableAuthFlag) {
 }
 
 TEST_F(ActionTest, DisableSkipAuthFlagAndSetS3OptionDisableAuthFlag) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   S3Option::get_instance()->disable_auth();
   ptr_Actionobject->setup_steps();
   // no tasks

@@ -1371,5 +1371,35 @@ account_args = {'AccountName': 'testAccount2', 'Email': 'testAccount2@seagate.co
 S3ClientConfig.access_key_id = testAccount2_access_key
 S3ClientConfig.secret_key = testAccount2_secret_key
 AuthTest(test_msg).delete_account(**account_args).execute_test().command_response_should_have("Account deleted successfully")
-#****************************************
+#***********AllUsers Test************************
+AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command_is_successful()
 
+cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('AccessDenied For allusers').execute_curl(cmd).\
+execute_test().command_is_successful().command_response_should_have("AccessDenied")
+
+AwsTest("put_bucket_canned_acl_with public read-write permission").put_bucket_acl_with_canned_input("seagate", "public-read-write").execute_test().command_is_successful()
+
+cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('Accessible For allusers').execute_curl(cmd).execute_test().command_is_successful()
+
+AwsTest('Aws can create object').put_object("seagate", "testObject").execute_test().command_is_successful()
+
+cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate/testObject --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('AccessDenied For allusers').execute_curl(cmd).\
+execute_test().command_is_successful().command_response_should_have("AccessDenied")
+
+AwsTest("put_object_canned_acl_with public read-write permission").put_object_acl_with_canned_input("seagate", "testObject", "public-read-write").execute_test().command_is_successful()
+
+cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate/testObject --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('Accessible For allusers').execute_curl(cmd).execute_test().command_is_successful()
+
+cmd = "curl -s -X DELETE -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate/testObject --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('Accessible For allusers').execute_curl(cmd).execute_test().command_is_successful()
+
+AwsTest('Aws can delete bucket').delete_bucket("seagate").execute_test().command_is_successful()

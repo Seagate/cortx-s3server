@@ -106,7 +106,10 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
 
     clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
         mock_request, ptr_mock_s3_clovis_api);
-
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3DeleteMultipleObjectsAction(
         mock_request, bucket_meta_factory, object_meta_factory,
         clovis_writer_factory, clovis_kvs_reader_factory,

@@ -1026,7 +1026,14 @@ void S3AuthClient::check_authorization() {
 
 void S3AuthClient::check_authorization(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
+
+  auth_context.reset(new S3AuthClientOpContext(
+      request, std::bind(&S3AuthClient::check_authorization_successful, this),
+      std::bind(&S3AuthClient::check_authorization_failed, this)));
+
   set_op_type(S3AuthClientOpType::authorization);
+  S3AuthClientOpType auth_request_type = get_op_type();
+  auth_context->init_auth_op_ctx(auth_request_type);
   // auth_context.reset(new S3AuthClientOpContext(request, std::bind(
   // &S3AuthClient::check_authorization_successful, this), std::bind(
   // &S3AuthClient::check_authentication_failed, this)));

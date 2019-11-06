@@ -70,7 +70,10 @@ class S3DeleteBucketActionTest : public testing::Test {
             upload_id);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
-
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3DeleteBucketAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
         object_mp_meta_factory, object_meta_factory, clovis_writer_factory,

@@ -42,6 +42,7 @@
 
 using ::testing::Eq;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::_;
 
 class S3BucketAPIHandlerTest : public testing::Test {
@@ -86,6 +87,10 @@ TEST_F(S3BucketAPIHandlerTest, ManageSelfAndReset) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketlocationAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::location));
 
@@ -124,6 +129,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps) {
 }
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3DeleteMultipleObjectsAction) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   S3Option::get_instance()->enable_murmurhash_oid();
   // Creation handler per test as it will be specific
 
@@ -140,6 +149,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3DeleteMultipleObjectsAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketACLAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::acl));
 
@@ -154,6 +167,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketACLAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketACLAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::acl));
 
@@ -168,6 +185,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketACLAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetMultipartBucketAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::multipart));
 
@@ -183,6 +204,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetMultipartBucketAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketPolicyAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::policy));
 
@@ -197,6 +222,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketPolicyAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketPolicyAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::policy));
 
@@ -211,6 +240,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketPolicyAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3DeleteBucketPolicyAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::policy));
 
@@ -226,6 +259,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3DeleteBucketPolicyAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3HeadBucketAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::none));
 
@@ -240,6 +277,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3HeadBucketAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::none));
 
@@ -256,6 +297,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3GetBucketAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::none));
 
@@ -270,6 +315,10 @@ TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3PutBucketAction) {
 
 TEST_F(S3BucketAPIHandlerTest, ShouldCreateS3DeleteBucketAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3BucketAPIHandler(mock_request, S3OperationCode::none));
 

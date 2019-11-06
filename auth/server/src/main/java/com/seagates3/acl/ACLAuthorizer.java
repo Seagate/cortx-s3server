@@ -61,6 +61,7 @@ class ACLAuthorizer {
       throws ParserConfigurationException,
       SAXException, IOException, BadRequestException, GrantListFullException,
       DataAccessException {
+
     String encodedACL = requestBody.get("Auth-ACL");
     if (encodedACL == null || encodedACL.isEmpty()) {
       String ex = "Bad request. Resource ACL absent in the request.";
@@ -86,7 +87,6 @@ class ACLAuthorizer {
       LOGGER.error(ex);
       throw new BadRequestException(ex);
     }
-
     if (requestor != null) {
       boolean isAuthorized = acp.getAccessControlList().isPermissionAvailable(
           requestor.getAccount(), requiredPermission,
@@ -98,8 +98,10 @@ class ACLAuthorizer {
       LOGGER.info("Request authorized");
       return true;
     } else {
-      // TODO: Code for Groups and Roles
-      return false;  // temporary, till this part is implemented
+      // AllUsers Group.
+      boolean isAuthorized = acp.getAccessControlList().isPermissionAvailable(
+          null, requiredPermission, acp.getOwner().getCanonicalId(), false);
+      return isAuthorized;
     }
   }
 }

@@ -29,6 +29,7 @@
 
 using ::testing::Eq;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::_;
 using ::testing::AtLeast;
 
@@ -81,6 +82,10 @@ TEST_F(S3APIHandlerTest, ManageSelfAndReset) {
 
 TEST_F(S3APIHandlerTest, DispatchActionTest) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::none));
 

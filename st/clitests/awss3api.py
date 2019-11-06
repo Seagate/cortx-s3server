@@ -29,7 +29,9 @@ class AwsTest(S3PyCliTest):
         super(AwsTest, self).run()
 
     def with_cli(self, cmd):
-        if Config.no_ssl:
+        if cmd.startswith("curl"):
+           cmd = cmd
+        elif Config.no_ssl:
             cmd = cmd + " --endpoint-url %s" % (S3ClientConfig.s3_uri_http)
         else:
             cmd = cmd + " --endpoint-url %s" % (S3ClientConfig.s3_uri_https)
@@ -242,4 +244,8 @@ class AwsTest(S3PyCliTest):
     def head_bucket(self, bucket_name):
         self.bucket_name = bucket_name
         self.with_cli("aws s3api " + "head-bucket " + "--bucket " + bucket_name)
+        return self
+
+    def execute_curl(self, cmd):
+        self.with_cli(cmd)
         return self

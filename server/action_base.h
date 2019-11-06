@@ -95,6 +95,7 @@ class Action {
   std::shared_ptr<Action> self_ref;
 
   std::string s3_error_code;
+  bool is_authorizationheader_present;
   ActionState state;
   ActionState rollback_state;
 
@@ -152,6 +153,8 @@ class Action {
   }
 
   std::shared_ptr<S3AuthClient>& get_auth_client() { return auth_client; }
+
+  virtual void check_authorization_header();
 
   // Add tasks to list after each successful operation that needs rollback.
   // This list can be used to rollback changes in the event of error

@@ -252,6 +252,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
           " </AccessControlList>\n" + "</AccessControlPolicy>\n";
 
     requestBody.put("Action", "AuthorizeUser");
+    requestBody.put("Authorization", "abc");
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
     Account account = mock(Account.class);
     when(AuthServerConfig.getReqId()).thenReturn("0000");

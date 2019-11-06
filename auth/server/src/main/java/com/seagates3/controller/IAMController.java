@@ -76,7 +76,6 @@ class IAMController {
  public
   ServerResponse serve(FullHttpRequest httpRequest,
                        Map<String, String> requestBody) {
-
     String requestAction = requestBody.get("Action");
     LOGGER.info("Requested action is  - " + requestAction);
     ClientRequestToken clientRequestToken;
@@ -128,6 +127,12 @@ class IAMController {
         LOGGER.error("Incorrect signature. Request not authenticated");
         return serverResponse;
       }
+    } else if ((requestBody.get("Authorization") == null) &&
+               requestAction.equals("AuthorizeUser")) {
+
+      serverResponse = new Authorizer().authorize(null, requestBody);
+      return serverResponse;
+
     } else if (!requestAction.equals("AssumeRoleWithSAML") &&
                !requestAction.equals("GetTempAuthCredentials")) {
       LOGGER.debug("Parsing Client Request");

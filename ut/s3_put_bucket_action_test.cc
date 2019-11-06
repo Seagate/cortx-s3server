@@ -41,6 +41,7 @@ class S3PutBucketActionTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
              // accessed from sub-classes.
   S3PutBucketActionTest() {
+
     call_count_one = 0;
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
@@ -50,6 +51,10 @@ class S3PutBucketActionTest : public testing::Test {
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     bucket_body_factory_mock =
         std::make_shared<MockS3PutBucketBodyFactory>(MockBucketBody);
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test_ptr = std::make_shared<S3PutBucketAction>(
         request_mock, bucket_meta_factory, bucket_body_factory_mock);
     MockBucketBody.assign("MockBucketBodyData");

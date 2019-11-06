@@ -26,7 +26,6 @@
 #include <cstdlib>
 
 using ::testing::Return;
-using ::testing::ReturnRef;
 using ::testing::Invoke;
 using ::testing::_;
 using ::testing::ReturnRef;
@@ -68,7 +67,10 @@ class S3AbortMultipartActionTest : public testing::Test {
         ptr_mock_request, ptr_mock_s3_clovis_api);
     clovis_kvs_writer_factory = std::make_shared<MockS3ClovisKVSWriterFactory>(
         ptr_mock_request, ptr_mock_s3_clovis_api);
-
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3AbortMultipartAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
         object_mp_meta_factory, part_meta_factory, clovis_writer_factory,

@@ -85,6 +85,10 @@ using ::testing::_;
     EXPECT_CALL(*request_mock, get_query_string_value("uploadId"))            \
         .Times(AtLeast(1))                                                    \
         .WillRepeatedly(Return("uploadId"));                                  \
+    std::map<std::string, std::string> input_headers;                         \
+    input_headers["Authorization"] = "1";                                     \
+    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(      \
+        ReturnRef(input_headers));                                            \
     action_under_test_ptr = std::make_shared<S3PostCompleteAction>(           \
         request_mock, s3_clovis_api_mock, clovis_kvs_reader_factory,          \
         bucket_meta_factory, object_meta_factory, object_mp_meta_factory,     \

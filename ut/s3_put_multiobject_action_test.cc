@@ -28,7 +28,6 @@
 
 using ::testing::Eq;
 using ::testing::Return;
-using ::testing::ReturnRef;
 using ::testing::Invoke;
 using ::testing::_;
 using ::testing::ReturnRef;
@@ -115,6 +114,10 @@ class S3PutMultipartObjectActionTestNoMockAuth
         .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
 
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(false));
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(
         new S3PutMultiObjectAction(ptr_mock_request, object_mp_meta_factory,
                                    part_meta_factory, clovis_writer_factory));
@@ -130,6 +133,10 @@ class S3PutMultipartObjectActionTestWithMockAuth
     EXPECT_CALL(*ptr_mock_request, is_chunked()).WillRepeatedly(Return(true));
     mock_auth_factory =
         std::make_shared<MockS3AuthClientFactory>(ptr_mock_request);
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3PutMultiObjectAction(
         ptr_mock_request, object_mp_meta_factory, part_meta_factory,
         clovis_writer_factory, mock_auth_factory));

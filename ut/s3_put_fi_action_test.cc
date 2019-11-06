@@ -27,6 +27,7 @@
 
 using ::testing::Invoke;
 using ::testing::AtLeast;
+using ::testing::ReturnRef;
 
 #define SETUP_FI_CHECKS_SUCCESS(FIPARAM)                                       \
   do {                                                                         \
@@ -56,7 +57,10 @@ class S3PutFiActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test_ptr = std::make_shared<S3PutFiAction>(request_mock);
   }
 

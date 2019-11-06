@@ -29,6 +29,7 @@
 
 using ::testing::Eq;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::_;
 
 class S3APIHandlerFactoryTest : public testing::Test {
@@ -70,6 +71,10 @@ class S3APIHandlerFactoryTest : public testing::Test {
 };
 
 TEST_F(S3APIHandlerFactoryTest, ShouldCreateS3ServiceAPIHandler) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   std::shared_ptr<S3APIHandler> handler =
       factory_under_test->create_api_handler(S3ApiType::service, mock_request,
                                              S3OperationCode::none);
@@ -78,6 +83,10 @@ TEST_F(S3APIHandlerFactoryTest, ShouldCreateS3ServiceAPIHandler) {
 }
 
 TEST_F(S3APIHandlerFactoryTest, ShouldCreateS3BucketAPIHandler) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   std::shared_ptr<S3APIHandler> handler =
       factory_under_test->create_api_handler(S3ApiType::bucket, mock_request,
                                              S3OperationCode::none);
@@ -86,6 +95,10 @@ TEST_F(S3APIHandlerFactoryTest, ShouldCreateS3BucketAPIHandler) {
 }
 
 TEST_F(S3APIHandlerFactoryTest, ShouldCreateS3ObjectAPIHandler) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   std::shared_ptr<S3APIHandler> handler =
       factory_under_test->create_api_handler(S3ApiType::object, mock_request,
                                              S3OperationCode::none);

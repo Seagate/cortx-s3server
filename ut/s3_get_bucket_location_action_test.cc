@@ -55,6 +55,10 @@ class S3GetBucketLocationActionTest : public testing::Test {
             S3Option::get_instance()->get_libevent_pool_buffer_size());
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(mock_request);
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test = std::make_shared<S3GetBucketlocationAction>(
         mock_request, bucket_meta_factory);
   }

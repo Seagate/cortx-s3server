@@ -26,6 +26,7 @@
 
 using ::testing::Eq;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::_;
 using ::testing::AtLeast;
 
@@ -72,7 +73,10 @@ class S3HeadObjectActionTest : public testing::Test {
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         mock_request, object_list_indx_oid);
-
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3HeadObjectAction(
         mock_request, bucket_meta_factory, object_meta_factory));
   }

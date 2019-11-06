@@ -27,6 +27,7 @@
 #include "s3_object_action_base.h"
 
 using ::testing::AtLeast;
+using ::testing::ReturnRef;
 
 #define CREATE_BUCKET_METADATA                          \
   do {                                                  \
@@ -83,6 +84,10 @@ class S3ObjectActionTest : public testing::Test {
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
         request_mock, object_list_indx_oid);
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*request_mock, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test_ptr = std::make_shared<S3ObjectActionTestBase>(
         request_mock, bucket_meta_factory, object_meta_factory, true,
         mock_auth_factory, false);

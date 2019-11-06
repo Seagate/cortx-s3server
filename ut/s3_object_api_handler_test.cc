@@ -43,6 +43,7 @@
 using ::testing::Eq;
 using ::testing::StrEq;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::_;
 
 class S3ObjectAPIHandlerTest : public testing::Test {
@@ -88,6 +89,10 @@ TEST_F(S3ObjectAPIHandlerTest, ManageSelfAndReset) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectACLAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::acl));
 
@@ -102,6 +107,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectACLAction) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectACLAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::acl));
 
@@ -129,6 +138,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldNotHaveAction4OtherHttpOps) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PostCompleteAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
 
@@ -146,6 +159,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PostCompleteAction) {
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PostMultipartObjectAction) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   S3Option::get_instance()->enable_murmurhash_oid();
   // Creation handler per test as it will be specific
   handler_under_test.reset(
@@ -179,6 +196,10 @@ TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyPart) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
 
@@ -198,6 +219,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutMultiObjectAction) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetMultipartPartAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
 
@@ -214,6 +239,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetMultipartPartAction) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3AbortMultipartAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::multipart));
 
@@ -231,6 +260,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3AbortMultipartAction) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3HeadObjectAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
 
@@ -244,8 +277,11 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3HeadObjectAction) {
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutChunkUploadObjectAction) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   S3Option::get_instance()->enable_murmurhash_oid();
-  // Creation handler per test as it will be specific
   // Creation handler per test as it will be specific
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
@@ -281,6 +317,10 @@ TEST_F(S3ObjectAPIHandlerTest, DoesNotSupportCopyObject) {
 }
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction) {
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   S3Option::get_instance()->enable_murmurhash_oid();
   // Creation handler per test as it will be specific
   handler_under_test.reset(
@@ -304,6 +344,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3PutObjectAction) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
 
@@ -318,6 +362,10 @@ TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3GetObjectAction) {
 
 TEST_F(S3ObjectAPIHandlerTest, ShouldCreateS3DeleteObjectAction) {
   // Creation handler per test as it will be specific
+  std::map<std::string, std::string> input_headers;
+  input_headers["Authorization"] = "1";
+  EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
   handler_under_test.reset(
       new S3ObjectAPIHandler(mock_request, S3OperationCode::none));
 

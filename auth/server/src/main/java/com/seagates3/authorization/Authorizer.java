@@ -60,6 +60,7 @@ public class Authorizer {
   public
    ServerResponse authorize(Requestor requestor,
                             Map<String, String> requestBody) {
+
         AuthorizationResponseGenerator responseGenerator
                 = new AuthorizationResponseGenerator();
         Map<String, List<Account>> accountPermissionMap = new HashMap<>();
@@ -105,6 +106,12 @@ public class Authorizer {
           LOGGER.error("Exception while authorizing ", e3);
           responseGenerator.internalServerError();
         }
+
+        // After ALLUser Requested Permission is Authorized.
+        if (requestor == null) {
+          return responseGenerator.ok();
+        }
+
         // Initialize a  default AccessControlPolicy object and generate
         // authorization response if request header contains param value true
         // for- Request-ACL

@@ -121,6 +121,10 @@ class S3PutChunkUploadObjectActionTestNoAuth
   S3PutChunkUploadObjectActionTestNoAuth()
       : S3PutChunkUploadObjectActionTestBase() {
     S3Option::get_instance()->disable_auth();
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3PutChunkUploadObjectAction(
         mock_request, bucket_meta_factory, object_meta_factory,
         clovis_writer_factory, nullptr, ptr_mock_s3_clovis_api, nullptr,
@@ -135,6 +139,10 @@ class S3PutChunkUploadObjectActionTestWithAuth
       : S3PutChunkUploadObjectActionTestBase() {
     S3Option::get_instance()->enable_auth();
     mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(mock_request);
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
     action_under_test.reset(new S3PutChunkUploadObjectAction(
         mock_request, bucket_meta_factory, object_meta_factory,
         clovis_writer_factory, mock_auth_factory, ptr_mock_s3_clovis_api,

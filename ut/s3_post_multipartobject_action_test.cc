@@ -73,6 +73,11 @@ class S3PostMultipartObjectTest : public testing::Test {
         ptr_mock_request, ptr_mock_s3_clovis_api);
 
     EXPECT_CALL(*ptr_mock_request, get_header_value(_));
+    std::map<std::string, std::string> input_headers;
+    input_headers["Authorization"] = "1";
+    EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+        ReturnRef(input_headers));
+
     action_under_test.reset(new S3PostMultipartObjectAction(
         ptr_mock_request, bucket_meta_factory, object_mp_meta_factory,
         object_meta_factory, part_meta_factory, clovis_writer_factory,
