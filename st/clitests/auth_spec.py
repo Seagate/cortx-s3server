@@ -91,11 +91,12 @@ def account_tests():
     GlobalTestState.root_secret_key = account_response_elements['SecretKey']
 
     # Create Account again with same email ID
-    test_msg = "Create account s3test1"
+    test_msg = "Create account s3test1 should fail with EmailAlreadyExists"
     account_args = {'AccountName': 's3test1', 'Email': 's3test@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
     account_response_pattern = "Account wasn't created."
     result = AuthTest(test_msg).create_account(**account_args).execute_test(negative_case=True)
     result.command_should_match_pattern(account_response_pattern)
+    result.command_response_should_have("EmailAlreadyExists")
 
     test_msg = "List accounts"
     account_args = {'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}

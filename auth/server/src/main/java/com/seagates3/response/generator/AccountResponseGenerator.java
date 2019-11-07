@@ -95,4 +95,13 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
         return formatResponse(HttpResponseStatus.CONFLICT,
                 "EntityAlreadyExists", errorMessage);
     }
+
+   public
+    ServerResponse emailAlreadyExists() {
+      String errorMessage = "The request was rejected because " +
+                            "account with this email already exists.";
+
+      return formatResponse(HttpResponseStatus.CONFLICT, "EmailAlreadyExists",
+                            errorMessage);
+    }
 }

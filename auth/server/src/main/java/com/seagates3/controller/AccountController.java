@@ -93,6 +93,7 @@ public class AccountController extends AbstractController {
     @Override
     public ServerResponse create() {
         String name = requestBody.get("AccountName");
+        String email = requestBody.get("Email");
         Account account;
 
         LOGGER.info("Creating account: " + name);
@@ -109,11 +110,24 @@ public class AccountController extends AbstractController {
 
         account.setId(KeyGenUtil.createUserId());
         account.setCanonicalId(KeyGenUtil.createCanonicalId());
-        account.setEmail(requestBody.get("Email"));
+        account.setEmail(email);
 
         try {
             accountDao.save(account);
         } catch (DataAccessException ex) {
+          // Check for constraint violation exception for email address
+          if (ex.getMessage().contains("some attributes not unique")) {
+            try {
+              account = accountDao.findByEmailAddress(email);
+            }
+            catch (DataAccessException e) {
+              return accountResponseGenerator.internalServerError();
+            }
+
+            if (account.exists()) {
+              return accountResponseGenerator.emailAlreadyExists();
+            }
+          }
             return accountResponseGenerator.internalServerError();
         }
 
