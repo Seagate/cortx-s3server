@@ -242,6 +242,29 @@ public class AccountControllerTest {
                 response.getResponseStatus());
     }
 
+    @Test public void
+    CreateAccount_UniqueCanonicalIdGenerationFailed_ReturnInternalServerError()
+        throws Exception {
+      Account account = new Account();
+      account.setName("s3test");
+
+      Mockito.when(accountDAO.find("s3test")).thenReturn(account);
+      Mockito.doReturn(account).when(accountDAO).findByCanonicalID("can1234");
+
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<Error><Code>InternalFailure</Code>" +
+          "<Message>The request processing has failed because of an " +
+          "unknown error, exception or failure.</Message></Error>" +
+          "<RequestId>0000</RequestId>" + "</ErrorResponse>";
+
+      ServerResponse response = accountController.create();
+      Assert.assertEquals(expectedResponseBody, response.getResponseBody());
+      Assert.assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
+                          response.getResponseStatus());
+    }
+
     @Test
     public void CreateAccount_AccountSaveFailed_ReturnInternalServerError()
             throws Exception {
@@ -251,6 +274,8 @@ public class AccountControllerTest {
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doThrow(new DataAccessException("failed to add new account.\n"))
                 .when(accountDAO).save(account);
+        Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+            "can1234");
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
@@ -277,6 +302,8 @@ public class AccountControllerTest {
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doThrow(new DataAccessException("failed to save new user.\n"))
                 .when(userDAO).save(any(User.class));
+        Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+            "can1234");
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
@@ -304,6 +331,8 @@ public class AccountControllerTest {
         Mockito.doNothing().when(userDAO).save(any(User.class));
         Mockito.doThrow(new DataAccessException("failed to save root access key.\n"))
                 .when(accessKeyDAO).save(any(AccessKey.class));
+        Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+            "can1234");
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
@@ -340,6 +369,9 @@ public class AccountControllerTest {
         Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
         Mockito.doReturn(resp).when(s3).notifyNewAccount(any(String.class),
                                      any(String.class), any(String.class));
+        Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
+            "can1234");
+
         final String expectedResponseBody =
             "<?xml version=\"1.0\" " +
             "encoding=\"UTF-8\" standalone=\"no\"?>" +

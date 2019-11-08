@@ -109,7 +109,21 @@ public class AccountController extends AbstractController {
         }
 
         account.setId(KeyGenUtil.createUserId());
-        account.setCanonicalId(KeyGenUtil.createCanonicalId());
+
+        try {
+          // Generate unique canonical id for account
+          String canonicalId = generateUniqueCanonicalId();
+          if (canonicalId != null) {
+            account.setCanonicalId(canonicalId);
+          } else {
+            // Failed to generate unique canonical id
+            return accountResponseGenerator.internalServerError();
+          }
+        }
+        catch (DataAccessException ex) {
+          return accountResponseGenerator.internalServerError();
+        }
+
         account.setEmail(email);
 
         try {
@@ -147,6 +161,25 @@ public class AccountController extends AbstractController {
 
         return accountResponseGenerator.generateCreateResponse(account, root,
                 rootAccessKey);
+    }
+
+    /**
+     * Generate canonical id and check if its unique in ldap
+     * @throws DataAccessException
+     */
+   private
+    String generateUniqueCanonicalId() throws DataAccessException {
+      Account account;
+      String canonicalId;
+      for (int i = 0; i < 5; i++) {
+        canonicalId = KeyGenUtil.createCanonicalId();
+        account = accountDao.findByCanonicalID(canonicalId);
+
+        if (!account.exists()) {
+          return canonicalId;
+        }
+      }
+      return null;
     }
 
     public ServerResponse resetAccountAccessKey() {
