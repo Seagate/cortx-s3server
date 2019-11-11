@@ -75,4 +75,4 @@ if [ $VERSION = "\"8.0\"" ]; then
   extra_defines=(--define "s3_with_python36_ver8 1")
 fi
 yum-builddep -y ${BASEDIR}/s3iamcli.spec "${extra_defines[@]}"
-rpmbuild -ba --define "_s3iamcli_version ${S3IAMCLI_VERSION}"  --define "_s3iamcli_git_ver git${GIT_VER}" "${extra_defines[@]}" --with python3
+rpmbuild -ba --define "_s3iamcli_version ${S3IAMCLI_VERSION}"  --define "_s3iamcli_git_ver git${GIT_VER}" "${extra_defines[@]}" ${BASEDIR}/s3iamcli.spec --with python3
