@@ -1,4 +1,4 @@
-ARG  CENTOS_RELEASE=latest
+ARG  CENTOS_RELEASE=7
 FROM registry.gitlab.mero.colo.seagate.com/mero/mero:${CENTOS_RELEASE}
 
 COPY s3server-uploads.repo /etc/yum.repos.d/
