@@ -40,8 +40,8 @@ S3PostCompleteAction::S3PostCompleteAction(
     std::shared_ptr<S3PartMetadataFactory> part_meta_factory,
     std::shared_ptr<S3ClovisWriterFactory> clovis_s3_writer_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory)
-    : S3ObjectAction(std::move(req), bucket_meta_factory, object_meta_factory,
-                     false) {
+    : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
+                     std::move(object_meta_factory), false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   upload_id = request->get_query_string_value("uploadId");
@@ -253,7 +253,9 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
         s3_log(S3_LOG_DEBUG, request_id,
                "invalid: parts.size %d validated %d exp %d", (int)parts.size(),
                (int)validated_parts_count, (int)std::stoul(total_parts));
-        part_metadata->set_state(S3PartMetadataState::missing_partially);
+        if (part_metadata) {
+          part_metadata->set_state(S3PartMetadataState::missing_partially);
+        }
         set_s3_error("InvalidPart");
         send_response_to_s3_client();
         return;
@@ -280,7 +282,9 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
     // There may not be any records left
     if ((parts.size() != 0) ||
         (validated_parts_count != std::stoul(total_parts))) {
-      part_metadata->set_state(S3PartMetadataState::missing_partially);
+      if (part_metadata) {
+        part_metadata->set_state(S3PartMetadataState::missing_partially);
+      }
       set_s3_error("InvalidPart");
       send_response_to_s3_client();
       return;

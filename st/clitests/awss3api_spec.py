@@ -225,5 +225,15 @@ print(parts)
 
 result=AwsTest('Aws cannot complete multipart upload when non-last part is less than 5MB').complete_multipart_upload("seagatebuckettag", "10Mbfile", parts, upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("EntityTooSmall")
 
+#******* Multipart upload should fail if user completes multipart-upload with wrong ETag ******
+
+result=AwsTest('Multipart upload with wrong ETag').create_multipart_upload("seagatebuckettag", "10Mbfile", 10485760, "domain=storage" ).execute_test().command_is_successful()
+upload_id = get_upload_id(result.status.stdout)
+print(upload_id)
+
+parts="Parts=[{ETag=00000000000000000000000000000000,PartNumber=1}]"
+
+result=AwsTest('Aws cannot complete multipart upload with wrong ETag').complete_multipart_upload("seagatebuckettag", "10Mbfile", parts, upload_id).execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidPart")
+
 #******* Delete bucket **********
 AwsTest('Aws can delete bucket').delete_bucket("seagatebuckettag").execute_test().command_is_successful()
