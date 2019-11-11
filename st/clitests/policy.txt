@@ -8,12 +8,8 @@
         "s3:ListBucket"
       ],
       "Effect": "Allow",
-      "Resource": "arn:aws:s3:::tests3",
-      "Principal": {
-        "AWS": [
-          "arn:aws:iam::232866342366:user/s3"
-        ]
-      }
+      "Resource": "arn:aws:s3:::seagatebucket",
+      "Principal":"*" 
     }
   ]
 }
