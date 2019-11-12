@@ -30,7 +30,8 @@
 
 std::unique_ptr<S3FakeClovisRedisKvs> S3FakeClovisRedisKvs::inst;
 
-static void finalize_op(struct m0_clovis_op *op) {
+void finalize_op(struct m0_clovis_op *op, op_stable_cb stable,
+                 op_failed_cb failed) {
   s3_log(S3_LOG_DEBUG, "", "Entering");
   if (!op) return;
 
@@ -40,11 +41,11 @@ static void finalize_op(struct m0_clovis_op *op) {
 
   op->op_datum = (void *)redis_ctx->prev_ctx;
   if (!redis_ctx->had_error) {
-    s3_clovis_op_stable(op);
+    stable(op);
   } else {
     op->op_rc = -ETIMEDOUT;  // fake network failure
     redis_ctx->prev_ctx->is_fake_failure = 1;
-    s3_clovis_op_failed(op);
+    failed(op);
   }
 
   free(redis_ctx);
@@ -144,8 +145,8 @@ int redis_reply_check(redisAsyncContext *glob_redis_ctx,
 // glob_redis_ctx - contex for redis async ops
 // async_redis_reply - redis-server command reply data
 // privdata - user context
-static void kv_read_cb(redisAsyncContext *glob_redis_ctx,
-                       void *async_redis_reply, void *privdata) {
+void kv_read_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
+                void *privdata) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   // during the destruction redisAsyncContext will be null
   // in this case do nothing and simply return
@@ -153,9 +154,8 @@ static void kv_read_cb(redisAsyncContext *glob_redis_ctx,
     s3_log(S3_LOG_DEBUG, "", "redisAsyncContext is null, do nothing");
     return;
   }
-  int repl_chk = redis_reply_check(
-      glob_redis_ctx, async_redis_reply, privdata,
-      {REDIS_REPLY_ARRAY, REDIS_REPLY_STRING, REDIS_REPLY_NIL});
+  int repl_chk = redis_reply_check(glob_redis_ctx, async_redis_reply, privdata,
+                                   {REDIS_REPLY_ARRAY});
   if (repl_chk == REPL_ERR) {
     s3_log(S3_LOG_FATAL, "", "Cannot process redis reply");
   }
@@ -172,17 +172,10 @@ static void kv_read_cb(redisAsyncContext *glob_redis_ctx,
     kv->rcs[actx->processing_idx] = -ENOENT;
     actx->op->op_rc = -ENOENT;
 
-    redisReply *tmp_reply = reply;
-    if (reply->type == REDIS_REPLY_ARRAY && reply->elements > 0) {
-      tmp_reply = reply->element[0];
-      if (reply->elements > 1) {
-        s3_log(S3_LOG_FATAL, "", "Expect only one elem but have %d\n",
-               (int)reply->elements);
-      }
-    }
-
-    if (tmp_reply->type == REDIS_REPLY_STRING) {
-      char *val = parse_val(tmp_reply->str, tmp_reply->len);
+    redisReply *str_reply =
+        (reply->elements == 1) ? reply->element[0] : nullptr;
+    if (str_reply && str_reply->type == REDIS_REPLY_STRING) {
+      char *val = parse_val(str_reply->str, str_reply->len);
       kv->rcs[actx->processing_idx] = 0;
       actx->op->op_rc = 0;
       kv->values->ov_vec.v_count[actx->processing_idx] = strlen(val);
@@ -238,8 +231,8 @@ void S3FakeClovisRedisKvs::kv_read(struct m0_clovis_op *op) {
 // glob_redis_ctx - contex for redis async ops
 // async_redis_reply - redis-server command reply data
 // privdata - user context
-static void kv_next_cb(redisAsyncContext *glob_redis_ctx,
-                       void *async_redis_reply, void *privdata) {
+void kv_next_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
+                void *privdata) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   // during the destruction redisAsyncContext will be null
   // in this case do nothing and simply return
@@ -247,9 +240,8 @@ static void kv_next_cb(redisAsyncContext *glob_redis_ctx,
     s3_log(S3_LOG_DEBUG, "", "redisAsyncContext is null, do nothing");
     return;
   }
-  int repl_chk = redis_reply_check(
-      glob_redis_ctx, async_redis_reply, privdata,
-      {REDIS_REPLY_STRING, REDIS_REPLY_NIL, REDIS_REPLY_ARRAY});
+  int repl_chk = redis_reply_check(glob_redis_ctx, async_redis_reply, privdata,
+                                   {REDIS_REPLY_ARRAY});
   if (repl_chk == REPL_ERR) {
     s3_log(S3_LOG_FATAL, "", "Cannot process redis reply");
   }
@@ -271,12 +263,10 @@ static void kv_next_cb(redisAsyncContext *glob_redis_ctx,
 
     size_t repl_idx = 0;
     size_t result_idx = 0;
-    redisReply *tmp_reply = reply;
-    if (reply->type == REDIS_REPLY_ARRAY && reply->elements > 0) {
-      tmp_reply = reply->element[0];
-    }
+    redisReply *tmp_reply = (reply->elements > 0) ? reply->element[0] : nullptr;
 
-    if (redis_ctx->skip_size > 0 && tmp_reply->type == REDIS_REPLY_STRING) {
+    if (redis_ctx->skip_size > 0 && tmp_reply &&
+        tmp_reply->type == REDIS_REPLY_STRING) {
       std::string key(parse_key(tmp_reply->str, tmp_reply->len));
       std::string skip(redis_ctx->skip_value, redis_ctx->skip_size);
 
@@ -286,11 +276,8 @@ static void kv_next_cb(redisAsyncContext *glob_redis_ctx,
       if (key == skip) {
         s3_log(S3_LOG_DEBUG, "", "skipping");
         ++repl_idx;
-        if (reply->type == REDIS_REPLY_ARRAY && repl_idx < reply->elements) {
-          tmp_reply = reply->element[repl_idx];
-        } else {
-          tmp_reply = nullptr;
-        }
+        tmp_reply =
+            (repl_idx < reply->elements) ? reply->element[repl_idx] : nullptr;
       }
     }
 
@@ -383,8 +370,8 @@ void S3FakeClovisRedisKvs::kv_next(struct m0_clovis_op *op) {
 // glob_redis_ctx - contex for redis async ops
 // async_redis_reply - redis-server command reply data
 // privdata - user context
-static void kv_status_cb(redisAsyncContext *glob_redis_ctx,
-                         void *async_redis_reply, void *privdata) {
+void kv_status_cb(redisAsyncContext *glob_redis_ctx, void *async_redis_reply,
+                  void *privdata) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   // during the destruction redisAsyncContext will be null
   // in this case do nothing and simply return
@@ -392,9 +379,8 @@ static void kv_status_cb(redisAsyncContext *glob_redis_ctx,
     s3_log(S3_LOG_DEBUG, "", "redisAsyncContext is null, do nothing");
     return;
   }
-  int repl_chk = redis_reply_check(
-      glob_redis_ctx, async_redis_reply, privdata,
-      {REDIS_REPLY_NIL, REDIS_REPLY_STATUS, REDIS_REPLY_INTEGER});
+  int repl_chk = redis_reply_check(glob_redis_ctx, async_redis_reply, privdata,
+                                   {REDIS_REPLY_INTEGER});
   if (repl_chk == REPL_ERR) {
     s3_log(S3_LOG_FATAL, "", "Cannot process redis reply");
   }
@@ -408,19 +394,10 @@ static void kv_status_cb(redisAsyncContext *glob_redis_ctx,
         (S3ClovisKVSWriterContext *)redis_ctx->prev_ctx->application_context;
 
     struct s3_clovis_kvs_op_context *kv = write_ctx->get_clovis_kvs_op_ctx();
-    if (reply->type == REDIS_REPLY_STATUS) {
-      s3_log(S3_LOG_INFO, "", "Reply status :>%s", reply->str);
-      kv->rcs[actx->processing_idx] = 0;
-      actx->op->op_rc = 0;
-    } else if (reply->type == REDIS_REPLY_INTEGER) {
-      s3_log(S3_LOG_INFO, "", "Reply integer :>%lld", reply->integer);
-      kv->rcs[actx->processing_idx] = (reply->integer > 0) ? 0 : -ENOENT;
-      actx->op->op_rc = kv->rcs[actx->processing_idx];
-    } else {
-      s3_log(S3_LOG_INFO, "", "Reply NIL");
-      kv->rcs[actx->processing_idx] = -ENOENT;
-      actx->op->op_rc = -ENOENT;
-    }
+    // reply->type is REDIS_REPLY_INTEGER)
+    s3_log(S3_LOG_INFO, "", "Reply integer :>%lld", reply->integer);
+    kv->rcs[actx->processing_idx] = (reply->integer > 0) ? 0 : -ENOENT;
+    actx->op->op_rc = kv->rcs[actx->processing_idx];
   }
 
   finalize_op(actx->op);
