@@ -176,6 +176,16 @@ cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
 cp <s3-src>/scripts/haproxy/503.http /etc/haproxy/503.http
 ```
 
+## Auth Server health check
+haproxy makes HEAD request with uri "/auth/health" to Auth server with interval
+of 2 seconds and Auth server returns `200 OK` response for this request.
+If you want to change frequency of health check, HAProxy config needs to be updated.
+for example:
+ default-server inter 2s fastinter 100 rise 1 fall 5 on-error fastinter
+
+For more info, please refer below link
+https://cbonte.github.io/haproxy-dconv/1.7/configuration.html#5.2-inter
+
 ## Install SSL certificates for S3 service (haproxy)
 See Build SSL section above.
 ```sh

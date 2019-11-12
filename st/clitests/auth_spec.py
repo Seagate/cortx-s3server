@@ -1691,6 +1691,12 @@ def reset_account_accesskey_tests():
     AuthTest(test_msg).delete_account(**account_args).execute_test()\
             .command_response_should_have("Account deleted successfully")
 
+def auth_health_check_tests():
+    # e.g curl -s -I -X HEAD https://iam.seagate.com:9443/auth/health
+    health_check_uri = "/auth/health"
+    result = AuthTest('Auth server health check').get_auth_health(health_check_uri).\
+    execute_test().command_is_successful().command_response_should_have("200 OK")
+
 def execute_all_system_tests():
     if Config.no_ssl :
         print('Executing auth system tests over HTTP connection')
@@ -1707,6 +1713,7 @@ def execute_all_system_tests():
     get_federation_token_test()
     delete_account_tests()
     reset_account_accesskey_tests()
+    auth_health_check_tests()
 
 if __name__ == '__main__':
 

@@ -445,3 +445,14 @@ class AuthTest(PyCliTest):
             tokens = key_pair.split('=')
             response_elements[tokens[0].strip()] = tokens[1].strip()
         return response_elements
+
+    def get_auth_health(self, request_uri):
+        # e.g curl -s -I -X HEAD https://iam.seagate.com:9443/auth/health
+        cmd = "curl -s -I -X HEAD"
+        if Config.no_ssl:
+            cmd = cmd + " " + S3ClientConfig.iam_uri_http
+        else:
+            cmd = cmd + " " + S3ClientConfig.iam_uri_https
+        cmd = cmd + request_uri
+        self.with_cli(cmd)
+        return self

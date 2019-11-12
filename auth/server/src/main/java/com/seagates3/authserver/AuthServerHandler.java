@@ -70,6 +70,8 @@ public class AuthServerHandler extends ChannelInboundHandlerAdapter {
                     new AuthServerPostHandler(ctx, httpRequest).run();
                 } else if (httpRequest.getMethod().equals(HttpMethod.GET)) {
                     new AuthServerGetHandler(ctx, httpRequest).run();
+                } else if (httpRequest.getMethod().equals(HttpMethod.HEAD)) {
+                  new AuthServerHeadHandler(ctx, httpRequest).run();
                 }
             } finally {
                 httpRequest.release();
