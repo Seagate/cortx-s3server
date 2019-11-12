@@ -25,7 +25,8 @@ import com.seagates3.exception.GrantListFullException;
 import com.seagates3.exception.InternalServerException;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.policy.PolicyValidator;
+import com.seagates3.policy.BucketPolicyValidator;
+import com.seagates3.policy.PolicyUtil;
 import com.seagates3.acl.ACLRequestValidator;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
@@ -50,13 +51,18 @@ import com.seagates3.acl.ACLAuthorizer;
 import com.seagates3.acl.ACLValidation;
 import com.seagates3.acl.AccessControlPolicy;
 import com.seagates3.util.BinaryUtil;
-import com.seagates3.util.PolicyUtil;
 
 public class Authorizer {
 
   private
    final Logger LOGGER = LoggerFactory.getLogger(Authorizer.class.getName());
 
+   /**
+    * Request authorization
+    * @param requestor
+    * @param requestBody
+    * @return
+   */
   public
    ServerResponse authorize(Requestor requestor,
                             Map<String, String> requestBody) {
@@ -164,6 +170,11 @@ public class Authorizer {
       * @return
       */
 
+   /**
+    * Check if the specified {@link User} is a Root user.
+    * @param user
+    * @return
+    */
   public
    static boolean isRootUser(User user) {
      boolean isRoot = false;
@@ -231,15 +242,15 @@ public class Authorizer {
    }
 
    /**
-       * Below will call policy validator
-       * @param requestBody
-       * @return
-       */
+    * Validate the policy
+    * @param requestBody
+    * @return
+    */
   public
    ServerResponse validatePolicy(Map<String, String> requestBody) {
      LOGGER.debug("request body : " + requestBody.toString());
      ServerResponse serverResponse = null;
-     serverResponse = new PolicyValidator().validateBucketPolicy(
+     serverResponse = new BucketPolicyValidator().validatePolicy(
          PolicyUtil.getBucketFromUri(requestBody.get("ClientAbsoluteUri")),
          requestBody.get("Policy"));
      if (serverResponse != null && serverResponse.getResponseStatus() != null &&

@@ -5,27 +5,11 @@ import com.seagates3.response.ServerResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 public
-class BucketPolicyResponseGenerator extends AbstractResponseGenerator {
+class BucketPolicyResponseGenerator extends PolicyResponseGenerator {
 
- public
-  ServerResponse malformedPolicy(String errorMessage) {
-    return formatResponse(HttpResponseStatus.BAD_REQUEST, "MalformedPolicy",
-                          errorMessage);
-  }
-
- public
-  ServerResponse noSuchBucketPolicy() {
+  @Override public ServerResponse noSuchPolicy() {
     String errorMessage = "The specified bucket does not have a bucket policy.";
-    return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchBucketPolicy",
+    return formatResponse(HttpResponseStatus.NOT_FOUND, "NoSuchPolicy",
                           errorMessage);
-  }
-
- public
-  ServerResponse invalidPolicyDocument() {
-    String errorMessage =
-        "The content of the form does not meet the conditions specified in " +
-        "the " + "policy document.";
-    return formatResponse(HttpResponseStatus.BAD_REQUEST,
-                          "InvalidPolicyDocument", errorMessage);
   }
 }

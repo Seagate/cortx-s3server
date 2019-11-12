@@ -1,0 +1,14 @@
+{
+        "s3:AbortMultipartUpload" : "1",
+        "s3:DeleteBucket" : "1",
+        "s3:DeleteBucketPolicy" : "1",
+        "s3:DeleteObject" : "0",
+        "s3:GetObject" : "0",
+        "s3:GetObjectAcl" : "0",
+        "s3:ListBucket" : "1",
+        "s3:ListMultipartUpload" : "1",
+        "s3:PutBucketAcl" : "1",
+        "s3:PutObject" : "0",
+        "s3:PutObjectAcl" : "0",
+        "s3:GetBucketAcl" : "1"
+}

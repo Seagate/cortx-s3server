@@ -19,7 +19,6 @@
 package com.seagates3.dao.ldap;
 
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,6 @@ import com.seagates3.exception.DataAccessException;
 import com.seagates3.model.Account;
 import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
-import com.seagates3.util.PolicyUtil;
 
 public class UserImpl implements UserDAO {
 
@@ -444,6 +442,13 @@ public class UserImpl implements UserDAO {
       return user;
     }
 
+    /**
+     * Find the {@link User} by its ARN.
+     * @param arn - ARN of the User
+     *              ARN format: arn:aws:iam:<region>:<account ID>:<user name>
+     *              e.g. arn:aws:iam::KO87b1p0TKWa184S6xrINQ:user/u1
+     * @return the {@link User}
+     */
     @Override public User findByArn(String arn) throws DataAccessException {
       User user = null;
       String accountId = null;
@@ -467,4 +472,3 @@ public class UserImpl implements UserDAO {
       return user;
     }
 }
-
