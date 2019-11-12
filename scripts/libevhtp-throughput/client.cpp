@@ -39,13 +39,17 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#include <gflags/gflags.h>
+
 #include <curl/curl.h>
 
 const char sz_usage[] =
-  "Usage: client [--put] <server_IP> <size>\n"
+  "Usage: client [-put] [-port N] <server_IP> <size>\n"
   "'size' is a decimal number with opt. suffix: 'k', 'm' or 'g'\n";
 
-static bool f_put;
+DEFINE_bool(put, false, "Use PUT instead of GET");
+DEFINE_int32(port, 60080, "TCP port for listerning connections");
+
 const char *sz_ip;
 static sockaddr_in sin;
 static unsigned long file_size;
@@ -81,7 +85,7 @@ static size_t write_callback(
   return size * nmemb;
 }
 
-static int parse_command_line(int argc, char **argv)
+static int parse_args(int argc, char **argv)
 {
   if (argc < 3 || argc > 4)
   {
@@ -90,11 +94,6 @@ static int parse_command_line(int argc, char **argv)
   int idx = 1;
   char *sz_arg = argv[idx];
 
-  if (!strcmp(sz_arg, "--put"))
-  {
-    f_put = true;
-    sz_arg = argv[++idx];
-  }
   if ( ! inet_aton(sz_arg, &sin.sin_addr))
   {
     return 1;
@@ -152,14 +151,17 @@ static std::string build_url()
 {
   std::ostringstream oss;
 
-  oss << "http://" << sz_ip << ":60080/" << file_size;
+  oss << "http://" << sz_ip << ":" << FLAGS_port << "/" << file_size;
 
   return oss.str();
 }
 
 int main(int argc, char **argv)
 {
-  if (parse_command_line(argc, argv))
+  gflags::SetUsageMessage(sz_usage);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  if (parse_args(argc, argv))
   {
     std::cout << sz_usage;
     return 1;
@@ -175,7 +177,7 @@ int main(int argc, char **argv)
 
   curl_easy_setopt(sp_curl.get(), CURLOPT_URL, s_url.c_str());
 
-  if (f_put)
+  if (FLAGS_put)
   {
     curl_easy_setopt(sp_curl.get(), CURLOPT_UPLOAD, 1);
 

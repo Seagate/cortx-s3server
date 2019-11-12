@@ -14,12 +14,10 @@ all: $(SERVER) $(CLIENT)
 $(SERVER): $(THIS_DIR)/server.cpp
 	g++ -o $@ --std=c++11 $< \
 	-I $(BUILD_ROOT_DIR)/third_party/libevent/s3_dist/include \
-	-I $(BUILD_ROOT_DIR)/third_party/libevhtp/s3_dist/include/evhtp \
 	-L $(BUILD_ROOT_DIR)/third_party/libevent/s3_dist/lib \
-	-L $(BUILD_ROOT_DIR)/third_party/libevhtp/s3_dist/lib \
-	-lgflags -levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto \
-	-pthread -Wl,-rpath,/opt/seagate/s3/libevent
+	-lgflags -levent \
+	-Wl,-rpath,/opt/seagate/s3/libevent
 
 $(CLIENT): $(THIS_DIR)/client.cpp
-	g++ -o $@ --std=c++11 -lgflags -lcurl $<
+	g++ -o $@ --std=c++11 -lgflags $<
 

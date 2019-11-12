@@ -71,12 +71,16 @@ static void fn_read(evutil_socket_t fd, short events, void *arg)
 {
   int result = 0;
 
-  for (;;)
+  // Limit this to only read a portion at a time, not read out everything,
+  // otherwise it blocks main loop forever.
+  for (int size = 0; size < 16 * 1024 * 1022; size += result)
   {
     result = recv(fd, buf, sizeof buf, 0);
 
-    if (result > 0) g_counter += result;
-    else break;
+    if (result > 0)
+      g_counter += result;
+    else
+      break;
   }
   if (0 == result || EAGAIN != errno)
   {
@@ -177,6 +181,8 @@ int main(int argc, char **argv)
 
   evconnlistener_free(listener);
   event_base_free(ev_base);
+
+  gflags::ShutDownCommandLineFlags();
 
   return 0;
 }

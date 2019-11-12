@@ -34,6 +34,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#include <gflags/gflags.h>
+
 #include <event2/event.h>
 #include <event2/thread.h>
 #include <evhtp.h>
@@ -44,6 +46,9 @@
 #define POOL_MAX_THRESHOLD   1048576000
 #define MAX_READ_SIZE             16384
 #define CREATE_ALIGNED_MEMORY 0x0001
+
+DEFINE_int32(port, 60080, "TCP port for listerning connections");
+DEFINE_bool(pool, false, "Use s3server-customized memory pool");
 
 static unsigned long long g_counter;
 
@@ -357,34 +362,18 @@ static evhtp_res on_post_accept_cb(
   return EVHTP_RES_OK;
 }
 
-static bool f_pool;
-
-static int parse_command_line(
-    int argc,
-    char **argv)
-{
-  switch (argc)
-  {
-    case 2:
-      if (strcasecmp(argv[1], "--pool"))
-      {
-        break;
-      }
-      f_pool = true;
-    case 1:
-      return 0;
-  }
-  return 1;
-}
-
 int main(int argc, char **argv)
 {
-  if (parse_command_line(argc, argv))
+  gflags::SetUsageMessage("Starts libevhtp test server");
+  gflags::ParseCommandLineFlags(&argc, &argv, false);
+
+  if (FLAGS_port < 1024 || FLAGS_port > 65535)
   {
-    std::cout << "Usage: ./server [--pool]\n";
+    std::cout << "Illegal port number (" << FLAGS_port << ")\n";
     return 1;
   }
-  if (f_pool)
+
+  if (FLAGS_pool)
   {
     if (event_use_mempool(POOL_BUFFER_SIZE,
             POOL_INITIAL_SIZE, POOL_EXPANDABLE_SIZE,
@@ -430,7 +419,7 @@ int main(int argc, char **argv)
   evhtp_set_post_accept_cb(sp_htp.get(), on_post_accept_cb, NULL);
   evhtp_set_gencb(sp_htp.get(), on_request_cb, NULL);
 
-  if (evhtp_bind_socket(sp_htp.get(), "0.0.0.0", 60080, 256) < 0)
+  if (evhtp_bind_socket(sp_htp.get(), "0.0.0.0", FLAGS_port, 256) < 0)
   {
     std::cout << "evhtp_bind_socket() failed!\n";
     return 1;
@@ -448,6 +437,8 @@ int main(int argc, char **argv)
   event_free(p_ev_timer);
 
   evhtp_unbind_socket(sp_htp.get());
+
+  gflags::ShutDownCommandLineFlags();
 
   return 0;
 }
