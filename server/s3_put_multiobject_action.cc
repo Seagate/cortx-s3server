@@ -80,6 +80,7 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
 void S3PutMultiObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
+  add_task(std::bind(&S3PutMultiObjectAction::check_part_number, this));
   add_task(std::bind(&S3PutMultiObjectAction::fetch_multipart_metadata, this));
   if (part_number == 1) {
     // Save first part size to multipart metadata in case of non
@@ -105,6 +106,18 @@ void S3PutMultiObjectAction::setup_steps() {
   add_task(
       std::bind(&S3PutMultiObjectAction::send_response_to_s3_client, this));
   // ...
+}
+
+void S3PutMultiObjectAction::check_part_number() {
+  // "Part numbers can be any number from 1 to 10,000, inclusive."
+  // https://docs.aws.amazon.com/en_us/AmazonS3/latest/API/API_UploadPart.html
+  if (part_number >= MINIMUM_PART_NUMBER &&
+      part_number <= MAXIMUM_PART_NUMBER) {
+    next();
+  } else {
+    set_s3_error("InvalidPart");
+    send_response_to_s3_client();
+  }
 }
 
 void S3PutMultiObjectAction::chunk_auth_successful() {

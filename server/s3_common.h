@@ -49,6 +49,10 @@
 
 // Part sizes for multipart operation
 #define MINIMUM_ALLOWED_PART_SIZE 5242880
+// Minmimum part number for multipart operations
+#define MINIMUM_PART_NUMBER 1
+// Maxmimum part number for multipart operations
+#define MAXIMUM_PART_NUMBER 10000
 
 enum class S3ApiType {
   service,

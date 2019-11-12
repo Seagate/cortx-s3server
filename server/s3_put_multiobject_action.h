@@ -62,6 +62,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   void chunk_auth_successful();
   void chunk_auth_failed();
   void send_chunk_details_if_any();
+  void check_part_number();
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
@@ -123,6 +124,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, FetchBucketInfoTest);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchBucketInfoFailedMissingTest);
+  FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
+              CheckPartNumberFailedInvalidPartTest);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth,
               FetchBucketInfoFailedInternalErrorTest);
   FRIEND_TEST(S3PutMultipartObjectActionTestNoMockAuth, FetchMultipartMetadata);

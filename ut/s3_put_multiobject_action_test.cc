@@ -263,6 +263,40 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+       CheckPartNumberFailedInvalidPartTest) {
+
+  action_under_test->part_number = MINIMUM_PART_NUMBER - 1;
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  action_under_test->check_part_number();
+  EXPECT_STREQ("InvalidPart", action_under_test->get_s3_error_code().c_str());
+  EXPECT_EQ(0, call_count_one);
+
+  action_under_test->part_number = MAXIMUM_PART_NUMBER + 1;
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  action_under_test->check_part_number();
+  EXPECT_STREQ("InvalidPart", action_under_test->get_s3_error_code().c_str());
+  EXPECT_EQ(0, call_count_one);
+
+  action_under_test->part_number = MINIMUM_PART_NUMBER;
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  action_under_test->check_part_number();
+  EXPECT_EQ(1, call_count_one);
+
+  action_under_test->part_number = MAXIMUM_PART_NUMBER;
+  action_under_test->clear_tasks();
+  action_under_test->add_task(
+      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  action_under_test->check_part_number();
+  EXPECT_EQ(2, call_count_one);
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        FetchBucketInfoFailedInternalErrorTest) {
   action_under_test->bucket_metadata =
       bucket_meta_factory->mock_bucket_metadata;
