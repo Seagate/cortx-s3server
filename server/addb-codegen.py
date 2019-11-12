@@ -121,11 +121,22 @@ def generate_enums(classes):
 
 def camel_to_c_upcase(identifier):
   # Generate addb_action_type_id constant name for a given class name.
-  # based on this: https://stackoverflow.com/a/1176023
-  s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', identifier)
-  s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).upper()
-  # add prefix and suffix
-  return "S3_ADDB_" + s2 + '_ID';
+  # Find words:
+  camel_case = identifier
+  c_upcase = 'S3_ADDB'
+  while len(camel_case) > 0:
+    allcaps_word = re.match(r'([A-Z0-9]+)[A-Z]', camel_case)
+    regular_word = re.match(r'[A-Z][a-z0-9_]+', camel_case)
+    if allcaps_word:
+      word = allcaps_word.group(1)
+    elif regular_word:
+      word = regular_word.group(0)
+    else:
+      print(f'Failed to convert class name {identifier} from camel-case to c-case; stuck here: {camel_case}\n')
+      raise AssertionError
+    c_upcase = c_upcase + '_' + word
+    camel_case = camel_case[len(word):]
+  return c_upcase.upper() + '_ID';
 
 
 ###########################################################################
