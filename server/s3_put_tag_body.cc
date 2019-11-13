@@ -125,50 +125,42 @@ bool S3PutTagBody::parse_and_validate() {
 bool S3PutTagBody::read_key_value_node(xmlNodePtr &tag_node) {
   // Validate key values node
   xmlNodePtr key_value_node = tag_node->xmlChildrenNode;
-  xmlChar *key = NULL;
-  xmlChar *value = NULL;
   std::string tag_key, tag_value;
-  while (key_value_node != NULL) {
+  while (key_value_node && key_value_node->name) {
     s3_log(S3_LOG_DEBUG, request_id, "Key_Value_node = %s",
            key_value_node->name);
+    xmlChar *val = xmlNodeGetContent(key_value_node);
 
     if (!(xmlStrcmp(key_value_node->name, (const xmlChar *)"Key"))) {
-      key = xmlNodeGetContent(key_value_node);
-      tag_key = reinterpret_cast<char *>(key);
-      s3_log(S3_LOG_DEBUG, request_id, "Key Node = %s ", tag_key.c_str());
-      // Key should not be null
-      // Use each key only once for each resource as per AWS standards,
-      // duplicate tags are not allowed
-      if (tag_key.empty() || bucket_tags.count(tag_key) >= 1) {
-        s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
-        xmlFree(key);
-        xmlFree(value);
-        return false;
-      }
+      tag_key = reinterpret_cast<char *>(val);
     } else if (!(xmlStrcmp(key_value_node->name, (const xmlChar *)"Value"))) {
-      value = xmlNodeGetContent(key_value_node);
-      tag_value = reinterpret_cast<char *>(value);
-      s3_log(S3_LOG_DEBUG, request_id, "Value Node = %s ", tag_value.c_str());
-      if (tag_value.empty()) {
-        s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
-        xmlFree(key);
-        xmlFree(value);
-        return false;
-      } else {
-        bucket_tags[tag_key] = tag_value;
-      }
+      tag_value = reinterpret_cast<char *>(val);
     } else {
-      s3_log(S3_LOG_WARN, request_id, "XML request body Invalid.\n");
-      xmlFree(key);
-      xmlFree(value);
+      s3_log(S3_LOG_WARN, request_id,
+             "XML request body Invalid: unknown tag %s.\n",
+             reinterpret_cast<const char *>(key_value_node->name));
+      xmlFree(val);
       return false;
     }
-
+    xmlFree(val);
     // Only a single pair of Key-Value exists within Tag Node.
     key_value_node = key_value_node->next;
   }
-  xmlFree(key);
-  xmlFree(value);
+
+  if (tag_key.empty() || tag_value.empty()) {
+    s3_log(S3_LOG_WARN, request_id, "XML request body Invalid: empty node.\n");
+    return false;
+  }
+  if (bucket_tags.count(tag_key) >= 1) {
+    s3_log(S3_LOG_WARN, request_id,
+           "XML request body Invalid: tag duplication.\n");
+    return false;
+  }
+
+  s3_log(S3_LOG_DEBUG, request_id, "Add tag %s = %s ", tag_key.c_str(),
+         tag_value.c_str());
+  bucket_tags[tag_key] = tag_value;
+
   return true;
 }
 

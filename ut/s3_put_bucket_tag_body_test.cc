@@ -216,3 +216,27 @@ TEST_F(S3PutTagBodyTest, ValidateRequestInvalidTagCount) {
   result = put_bucket_tag_body->validate_bucket_xml_tags(bucket_tags_map);
   EXPECT_FALSE(result);
 }
+
+TEST_F(S3PutTagBodyTest, ValidateRequestBodyXmlReversedNodesOrder) {
+  BucketTagsStr.assign(
+      "<Tagging "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/"
+      "\"><TagSet><Tag><Value>vlv1</Value><Key>key1</Key></"
+      "Tag><Tag><Key>key2</Key><Value>vlv2</Value></Tag></"
+      "TagSet></Tagging>");
+  RequestId.assign("RequestId");
+
+  std::map<std::string, std::string> templ_to_cmp = {{"key1", "vlv1"},
+                                                     {"key2", "vlv2"}};
+
+  put_bucket_tag_body =
+      put_bucket_tag_body_factory->create_put_resource_tags_body(BucketTagsStr,
+                                                                 RequestId);
+  result = put_bucket_tag_body->isOK();
+  EXPECT_TRUE(result);
+
+  auto parsed_tags_map = put_bucket_tag_body->get_resource_tags_as_map();
+  EXPECT_EQ(templ_to_cmp.size(), parsed_tags_map.size());
+  EXPECT_TRUE(std::equal(std::begin(templ_to_cmp), std::end(templ_to_cmp),
+                         std::begin(parsed_tags_map)));
+}
