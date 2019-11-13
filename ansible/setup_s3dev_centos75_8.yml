@@ -9,7 +9,7 @@
   remote_user: root
   gather_facts: yes
   vars:
-    python_version: "{{ 'python36' if ((ansible_distribution == 'CentOS' and ansible_distribution_version == '7') or (ansible_distribution == 'RedHat' and ansible_distribution_version == '7.6')) else 'python3'}}"
+    python_version: "{{ 'python36' if ((ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')) else 'python3'}}"
 
 
   tasks:
