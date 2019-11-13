@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.6
 
 #
 # This script generates source code files needed to support ADDB logging.
