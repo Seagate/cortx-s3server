@@ -298,7 +298,7 @@ class S3AuthClient {
   std::string acl_str;
   std::string user_acl;
   bool last_chunk_added;
-
+  bool is_authheader_present;
   bool chunk_auth_aborted;
   bool skip_authorization;
   void trigger_authentication(std::function<void(void)> on_success,
@@ -328,8 +328,8 @@ class S3AuthClient {
   void setup_auth_request_headers();
   void setup_auth_request_body();
   virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx);
-
   void add_key_val_to_body(std::string key, std::string val);
+  void set_is_authheader_present(bool is_authorizationheader_present);
 
   // Non-aws-chunk auth
   void check_authentication();

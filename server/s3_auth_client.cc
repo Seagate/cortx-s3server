@@ -775,6 +775,11 @@ void S3AuthClient::setup_auth_request_headers() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3AuthClient::set_is_authheader_present(
+    bool is_authorizationheader_present) {
+  is_authheader_present = is_authorizationheader_present;
+}
+
 void S3AuthClient::execute_authconnect_request(
     struct s3_auth_op_context *auth_ctx) {
   S3AuthClientOpType auth_request_type = get_op_type();
@@ -1027,19 +1032,21 @@ void S3AuthClient::check_authorization() {
 void S3AuthClient::check_authorization(std::function<void(void)> on_success,
                                        std::function<void(void)> on_failed) {
 
-  auth_context.reset(new S3AuthClientOpContext(
-      request, std::bind(&S3AuthClient::check_authorization_successful, this),
-      std::bind(&S3AuthClient::check_authorization_failed, this)));
-
   set_op_type(S3AuthClientOpType::authorization);
+
+  if (!is_authheader_present) {
+    auth_context.reset(new S3AuthClientOpContext(
+        request, std::bind(&S3AuthClient::check_authorization_successful, this),
+        std::bind(&S3AuthClient::check_authorization_failed, this)));
+
   S3AuthClientOpType auth_request_type = get_op_type();
+
   auth_context->init_auth_op_ctx(auth_request_type);
-  // auth_context.reset(new S3AuthClientOpContext(request, std::bind(
-  // &S3AuthClient::check_authorization_successful, this), std::bind(
-  // &S3AuthClient::check_authentication_failed, this)));
-  auth_context->reset_callbacks(
-      std::bind(&S3AuthClient::check_authorization_successful, this),
-      std::bind(&S3AuthClient::check_authorization_failed, this));
+  } else {
+    auth_context->reset_callbacks(
+        std::bind(&S3AuthClient::check_authorization_successful, this),
+        std::bind(&S3AuthClient::check_authorization_failed, this));
+  }
 
   state = S3AuthClientOpState::started;
   retry_count = 0;

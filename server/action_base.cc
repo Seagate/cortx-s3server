@@ -103,6 +103,7 @@ void Action::check_authorization_header() {
       is_authorizationheader_present = true;
     }
   }
+  auth_client->set_is_authheader_present(is_authorizationheader_present);
 }
 void Action::start() {
 
