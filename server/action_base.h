@@ -95,7 +95,6 @@ class Action {
   std::shared_ptr<Action> self_ref;
 
   std::string s3_error_code;
-  bool is_authorizationheader_present;
   ActionState state;
   ActionState rollback_state;
 
@@ -127,7 +126,7 @@ class Action {
   bool invalid_request;
   // Allow class object instiantiation without support for authentication
   bool skip_auth;
-
+  bool is_authorizationheader_present;
   std::shared_ptr<S3AuthClient> auth_client;
 
   std::shared_ptr<S3MemoryProfile> mem_profile;

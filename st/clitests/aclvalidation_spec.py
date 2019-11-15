@@ -1403,3 +1403,13 @@ cmd = "curl -s -X DELETE -H \"Accept: application/json\" -H \"Content-Type: appl
 AwsTest('Accessible For allusers').execute_curl(cmd).execute_test().command_is_successful()
 
 AwsTest('Aws can delete bucket').delete_bucket("seagate").execute_test().command_is_successful()
+
+cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/ --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('AccessDenied For allusers to listallbuckets').execute_curl(cmd).\
+execute_test().command_is_successful().command_response_should_have("AccessDenied")
+
+cmd = "curl -s -X PUT -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/seagate --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('AccessDenied For allusers to create buckets').execute_curl(cmd).\
+execute_test().command_is_successful().command_response_should_have("AccessDenied")

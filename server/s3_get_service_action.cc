@@ -63,14 +63,20 @@ void S3GetServiceAction::setup_steps() {
 
 void S3GetServiceAction::initialization() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_list.set_owner_name(request->get_user_name());
-  bucket_list.set_owner_id(request->get_user_id());
-  // to filter keys
-  key_prefix = get_search_bucket_prefix();
-  // fetch the keys having account id as a prefix
-  last_key = key_prefix;
-  next();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  if (!is_authorizationheader_present) {
+    set_s3_error("AccessDenied");
+    s3_log(S3_LOG_ERROR, request_id, "missing authorization header\n");
+    send_response_to_s3_client();
+  } else {
+    bucket_list.set_owner_name(request->get_user_name());
+    bucket_list.set_owner_id(request->get_user_id());
+    // to filter keys
+    key_prefix = get_search_bucket_prefix();
+    // fetch the keys having account id as a prefix
+    last_key = key_prefix;
+    next();
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  }
 }
 
 void S3GetServiceAction::get_next_buckets() {
