@@ -508,8 +508,9 @@ void S3GetObjectAction::send_response_to_s3_client() {
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (object_metadata &&
-             ((object_metadata->get_content_length() == 0) ||
-              (clovis_reader->get_state() == S3ClovisReaderOpState::success))) {
+             (object_metadata->get_content_length() == 0 ||
+              (clovis_reader &&
+               clovis_reader->get_state() == S3ClovisReaderOpState::success))) {
     request->send_reply_end();
   } else {
     if (read_object_reply_started) {
