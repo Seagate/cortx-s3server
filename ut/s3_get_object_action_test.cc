@@ -1189,3 +1189,9 @@ TEST_F(S3GetObjectActionTest, SendErrorResponseForErrorReadingObject) {
 
   action_under_test->send_response_to_s3_client();
 }
+
+TEST_F(S3GetObjectActionTest, RangeHeaderContainsSpacesOnly) {
+  std::string range_value(" \t\n");
+  EXPECT_TRUE(action_under_test->validate_range_header_and_set_read_options(
+      range_value));
+}

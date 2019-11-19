@@ -17,6 +17,7 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include <algorithm>
 #include "s3_get_object_action.h"
 #include "s3_clovis_layout.h"
 #include "s3_error_codes.h"
@@ -181,6 +182,13 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
 bool S3GetObjectAction::validate_range_header_and_set_read_options(
     const std::string& range_value) {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // The header can consist of 'blank' character(s) only
+  if (std::find_if_not(range_value.begin(), range_value.end(), &::isspace) ==
+      range_value.end()) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "\"Range:\" header consists of blank symbol(s) only");
+    return true;
+  }
   // reference: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35.
   // parse the Range header value
   // eg: bytes=0-1024 value
