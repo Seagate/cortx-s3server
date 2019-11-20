@@ -237,7 +237,7 @@ public class UserImplTest {
     public void FindById_UserDoesNotExist_ReturnUserObject() throws Exception {
         User expectedUser = new User();
         expectedUser.setAccountName("s3test");
-        expectedUser.setId("s3UserId");
+        expectedUser.setId(null);
 
         String userBaseDN = "ou=users,o=s3test,ou=accounts,"
                 + "dc=s3,dc=seagate,dc=com";
@@ -590,3 +590,4 @@ public class UserImplTest {
     }
 
 }
+

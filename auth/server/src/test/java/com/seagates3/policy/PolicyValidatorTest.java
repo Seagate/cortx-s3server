@@ -36,15 +36,15 @@ import io.netty.handler.codec.http.HttpResponseStatus;
    */
   @Test public void validateBucketPolicy_Positive() {
     String positiveJsonInput =
-        "{\r\n" + "  \"Id\": \"Policy1572590142744\",\r\n" +
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
         "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
-        "    {\r\n" + "      \"Sid\": \"Stmt1572590138556\",\r\n" +
-        "      \"Action\": [\r\n" + "        \"s3:GetBucketAcl\",\r\n" +
-        "        \"s3:DeleteBucket\"\r\n" + "      ],\r\n" +
-        "      \"Effect\": \"Allow\",\r\n" +
-        "      \"Resource\": \"arn:aws:s3:::MyBucket\",\r\n" +
-        "      \"Principal\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" +
-        "}   \r\n" + "";
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::MyBucket/a.txt\",\r\n" +
+        "      \"Action\": [\r\n" + "              \"s3:GetObject\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "            \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+        "          \"*\"\r\n" + "        ]\r\n" + "      }\r\n" + "    }\r\n" +
+        "  ]\r\n" + "}";
     requestBody.put("ClientAbsoluteUri", "/MyBucket");
     requestBody.put("Policy",
                     BinaryUtil.encodeToBase64String(positiveJsonInput));
@@ -160,15 +160,15 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   @Test public void
   validateBucketPolicy_ActionWithWildCardChars_Positive_Check() {
     String inputJson =
-        "{\r\n" + "  \"Id\": \"Policy1572590142744\",\r\n" +
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
         "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
-        "    {\r\n" + "      \"Sid\": \"Stmt1572590138556\",\r\n" +
-        "      \"Action\": [\r\n" + "        \"s3:GetOb*\",\r\n" +
-        "        \"s3:GetObject?cl\"\r\n" + "      ],\r\n" +
-        "      \"Effect\": \"Allow\",\r\n" +
-        "      \"Resource\": \"arn:aws:s3:::MyBucket/sample.txt\",\r\n" +
-        "      \"Principal\": \"*\"\r\n" + "    }\r\n" + "  ]\r\n" +
-        "}   \r\n" + "";
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::MyBucket/a.txt\",\r\n" +
+        "      \"Action\": [\r\n" + "              \"s3:GetOb*\"\r\n" +
+        "      ],\r\n" + "      \"Effect\": \"Allow\",\r\n" +
+        "            \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+        "          \"*\"\r\n" + "        ]\r\n" + "      }\r\n" + "    }\r\n" +
+        "  ]\r\n" + "}";
     requestBody.put("ClientAbsoluteUri", "/MyBucket");
     requestBody.put("Policy", BinaryUtil.encodeToBase64String(inputJson));
     Authorizer authorizer = new Authorizer();
@@ -204,3 +204,5 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         response.getResponseBody());
   }
 }
+
+

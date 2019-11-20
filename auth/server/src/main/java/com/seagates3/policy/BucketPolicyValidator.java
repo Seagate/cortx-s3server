@@ -21,7 +21,10 @@ package com.seagates3.policy;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,16 +35,25 @@ import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.Statement;
+import com.amazonaws.auth.policy.Statement.Effect;
 import com.amazonaws.auth.policy.conditions.ArnCondition;
 import com.amazonaws.auth.policy.conditions.DateCondition;
 import com.amazonaws.auth.policy.conditions.IpAddressCondition;
 import com.amazonaws.auth.policy.conditions.NumericCondition;
 import com.amazonaws.auth.policy.conditions.StringCondition;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.amazonaws.auth.policy.internal.JsonDocumentFields;
+import com.amazonaws.util.json.JSONArray;
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
+import com.seagates3.dao.ldap.AccountImpl;
+import com.seagates3.dao.ldap.UserImpl;
+import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
+import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.BucketPolicyResponseGenerator;
 import com.seagates3.util.BinaryUtil;
+import com.seagates3.policy.PolicyUtil;
 
 public
 class BucketPolicyValidator extends PolicyValidator {
@@ -49,6 +61,8 @@ class BucketPolicyValidator extends PolicyValidator {
  private
   final Logger LOGGER =
       LoggerFactory.getLogger(BucketPolicyValidator.class.getName());
+  static Set<String> policyElements = new HashSet<>();
+  static Set<String> nestedPolicyElements = new HashSet<>();
 
  private
   ServerResponse response = null;
@@ -57,11 +71,37 @@ class BucketPolicyValidator extends PolicyValidator {
   BucketPolicyValidator() {
     responseGenerator = new BucketPolicyResponseGenerator();
     try {
-      ActionsInitializer.init(PolicyUtil.Services.S3);
+      Actions.init(PolicyUtil.Services.S3);
+      initializePolicyElements();
+      initializeNestedPolicyElements();
     }
     catch (UnsupportedEncodingException e) {
-      LOGGER.error("Exception during Ppolicy Validator initializer");
+      LOGGER.error("Exception during policy Validator initializer");
     }
+  }
+
+ private
+  void initializePolicyElements() {
+    policyElements.add("Version");
+    policyElements.add("Id");
+    policyElements.add("Statement");
+    policyElements.add("Effect");
+    policyElements.add("Sid");
+    policyElements.add("Principal");
+    policyElements.add("Action");
+    policyElements.add("Resource");
+    policyElements.add("Condition");
+  }
+
+ private
+  static void initializeNestedPolicyElements() {
+
+    nestedPolicyElements.add("Effect");
+    nestedPolicyElements.add("Sid");
+    nestedPolicyElements.add("Principal");
+    nestedPolicyElements.add("Action");
+    nestedPolicyElements.add("Resource");
+    nestedPolicyElements.add("Condition");
   }
 
   /**
@@ -70,14 +110,17 @@ class BucketPolicyValidator extends PolicyValidator {
    * @return null if policy validated successfully. not null if policy
    *         invalidated.
    */
-  @Override public ServerResponse validatePolicy(String inputBucket,
-                                                 String jsonPolicy) {
-
-    JsonParser jsonParser = new JsonParser();
-    JsonObject obj =
-        (JsonObject)jsonParser.parse(BinaryUtil.base64DecodeString(jsonPolicy));
+ public
+  ServerResponse validatePolicy(String inputBucket, String jsonPolicy) {
+    ServerResponse response = null;
     Policy policy = null;
     try {
+      JSONObject obj =
+          new JSONObject(BinaryUtil.base64DecodeString(jsonPolicy));
+      response = validatePolicyElements(obj);
+      if (response != null) {
+        return response;
+      }
       policy = Policy.fromJson(obj.toString());
     }
     catch (Exception e) {
@@ -116,53 +159,58 @@ class BucketPolicyValidator extends PolicyValidator {
     return response;
   }
 
-  @Override public ServerResponse validatePrincipal(
-      List<Principal> principals) {
-    if (principals != null && !principals.isEmpty()) {
-      for (Principal principal : principals) {
-        if (!"*".equals(principal.getId()) && !isPrincipalIdValid(principal)) {
-          response =
-              responseGenerator.malformedPolicy("Invalid principal in policy");
-          LOGGER.error("Invalid principal in policy");
-          break;
-        }
-      }
-    } else {
-      response =
-          responseGenerator.malformedPolicy("Missing required field Principal");
-      LOGGER.error("Missing required field Principal");
-    }
-    return response;
-  }
+ private
+  ServerResponse validatePolicyElements(JSONObject jsonObject)
+      throws JSONException {
 
-  @Override public ServerResponse validateActionAndResource(
-      List<Action> actionList, List<Resource> resourceValues,
-      String inputBucket) {
-    List<String> matchingActionsList = null;
-    if (actionList != null && !actionList.isEmpty()) {
-      for (Action action : actionList) {
-        if (action != null) {
-          matchingActionsList =
-              PolicyUtil.getAllMatchingActions(action.getActionName());
-        }
-        if (matchingActionsList == null || matchingActionsList.isEmpty()) {
-          response =
-              responseGenerator.malformedPolicy("Policy has invalid action");
-          LOGGER.error("Policy has invalid action");
+    ServerResponse response = null;
+    Iterator<String> keys = jsonObject.keys();
+    while (keys.hasNext()) {
+      String key = keys.next();
+      if (!policyElements.contains(key)) {  // some unknown field found
+        response = responseGenerator.malformedPolicy("Unknown field " + key);
+        LOGGER.error("Unknown field - " + key);
+        break;
+      }
+      if (jsonObject.get(key) instanceof JSONArray) {
+        if (!key.equals(JsonDocumentFields.STATEMENT)) {
+          response = responseGenerator.malformedPolicy(
+              "Invalid bucket policy syntax.");
+          LOGGER.error(
+              "Invalid bucket policy syntax. Misplaced policy elements");
           break;
-        } else {
-          response = validateResource(resourceValues, inputBucket,
-                                      matchingActionsList);
-          if (response != null) {
-            break;
+        }
+        JSONArray arr = (JSONArray)jsonObject.get(key);
+        for (int count = 0; count < arr.length(); count++) {
+          JSONObject obj = (JSONObject)arr.get(count);
+          Iterator<String> objKeys = obj.keys();
+          while (objKeys.hasNext()) {
+            String objKey = objKeys.next();
+            if (!policyElements.contains(objKey)) {
+              response =
+                  responseGenerator.malformedPolicy("Unknown field " + objKey);
+              LOGGER.error("Unknown field - " + objKey);
+              return response;
+            }
+            if (!nestedPolicyElements.contains(objKey)) {
+              response = responseGenerator.malformedPolicy(
+                  "Invalid bucket policy syntax.");
+              LOGGER.error(
+                  "Invalid bucket policy syntax. Misplaced policy elements");
+              return response;
+            }
           }
         }
+      } else {
+        if (!JsonDocumentFields.POLICY_ID.equals(key) &&
+            !JsonDocumentFields.VERSION.equals(key)) {
+          response = responseGenerator.malformedPolicy(
+              "Invalid bucket policy syntax.");
+          LOGGER.error(
+              "Invalid bucket policy syntax. Misplaced policy elements");
+          break;
+        }
       }
-
-    } else {
-      response =
-          responseGenerator.malformedPolicy("Missing required field Action");
-      LOGGER.error("Missing required field Action");
     }
     return response;
   }
@@ -171,6 +219,7 @@ class BucketPolicyValidator extends PolicyValidator {
   ServerResponse validateResource(List<Resource> resourceValues,
                                   String inputBucket,
                                   List<String> actionsList) {
+    ServerResponse response = null;
     if (resourceValues != null && !resourceValues.isEmpty()) {
       for (Resource resource : resourceValues) {
         String resourceArn = resource.getId();
@@ -214,41 +263,36 @@ class BucketPolicyValidator extends PolicyValidator {
     return response;
   }
 
-  @Override public ServerResponse validateCondition(
-      List<Condition> conditionList) {
-    if (conditionList != null) {
-      for (Condition condition : conditionList) {
-        String invalidConditionType =
-            checkAndGetInvalidConditionType(condition);
-        if (invalidConditionType != null) {
-          response = responseGenerator.malformedPolicy(
-              "Invalid Condition type : " + invalidConditionType);
-          LOGGER.error("Condition type is invalid in bucket policy");
+  @Override ServerResponse
+  validateActionAndResource(List<Action> actionList,
+                            List<Resource> resourceValues, String inputBucket) {
+    ServerResponse response = null;
+    List<String> matchingActionsList = null;
+    if (actionList != null && !actionList.isEmpty()) {
+      for (Action action : actionList) {
+        if (action != null) {
+          matchingActionsList =
+              PolicyUtil.getAllMatchingActions(action.getActionName());
+        }
+        if (matchingActionsList == null || matchingActionsList.isEmpty()) {
+          response =
+              responseGenerator.malformedPolicy("Policy has invalid action");
+          LOGGER.error("Policy has invalid action");
           break;
+        } else {
+          response = validateResource(resourceValues, inputBucket,
+                                      matchingActionsList);
+          if (response != null) {
+            break;
+          }
         }
       }
+
+    } else {
+      response =
+          responseGenerator.malformedPolicy("Missing required field Action");
+      LOGGER.error("Missing required field Action");
     }
     return response;
-  }
-
- private
-  String checkAndGetInvalidConditionType(Condition condition) {
-    String conditionType = condition.getType();
-    if (ArnCondition.ArnComparisonType.valueOf(conditionType) != null) {
-      conditionType = null;
-    } else if (StringCondition.StringComparisonType.valueOf(conditionType) !=
-               null) {
-      conditionType = null;
-    } else if (NumericCondition.NumericComparisonType.valueOf(conditionType) !=
-               null) {
-      conditionType = null;
-    } else if (DateCondition.DateComparisonType.valueOf(conditionType) !=
-               null) {
-      conditionType = null;
-    } else if (IpAddressCondition.IpAddressComparisonType.valueOf(
-                   conditionType) != null) {
-      conditionType = null;
-    }
-    return conditionType;
   }
 }

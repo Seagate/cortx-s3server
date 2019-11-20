@@ -30,19 +30,16 @@ import com.seagates3.response.ServerResponse;
 public
 class IAMPolicyValidator extends PolicyValidator {
 
-  @Override ServerResponse validateCondition(List<Condition> conditionList) {
+  @Override ServerResponse
+  validateActionAndResource(List<Action> actionList,
+                            List<Resource> resourceValues,
+                            String inputResource) {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override ServerResponse
-  validateActionAndResource(List<Action> actionList,
-                            List<Resource> resourceValues, String inputBucket) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override ServerResponse validatePrincipal(List<Principal> principals) {
+  validatePolicy(String inputResource, String jsonPolicy) {
     // TODO Auto-generated method stub
     return null;
   }

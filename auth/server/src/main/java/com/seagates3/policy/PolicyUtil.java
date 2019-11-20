@@ -50,15 +50,21 @@ class PolicyUtil {
   }
 
   /**
-   * Get all matching actions from Actions.json
-   * @param inputAction
-   * @return
-   */
+      * Get all matching actions from Actions.json
+      *
+      * @param inputAction
+      * @return
+      */
  public
   static List<String> getAllMatchingActions(String inputAction) {
     List<String> matchingActions = new ArrayList<>();
-    for (String action : ActionsInitializer.getActionsMap().keySet()) {
-      if (strmatch(action, inputAction)) {
+    for (String action : Actions.getBucketOperations()) {
+      if (isPatternForActionValid(action, inputAction)) {
+        matchingActions.add(action);
+      }
+    }
+    for (String action : Actions.getObjectOperations()) {
+      if (isPatternForActionValid(action, inputAction)) {
         matchingActions.add(action);
       }
     }
@@ -66,55 +72,37 @@ class PolicyUtil {
   }
 
   /**
-   * Function that matches input str with given wildcard pattern
-   * @param str
-   * @param pattern
-   * @param n
-   * @param m
-   * @return
-   */
+ * Function that matches input string with given wildcard pattern
+     *
+     * @param input - Source string to match the pattern with
+     * @param pattern - Pattern with wildchar characters to match. eg- GetObj*
+ *or GetObjectAc?
+     * @return - true/false
+     */
  private
-  static boolean strmatch(String str, String pattern) {
-    // empty pattern can only match with
-    // empty string
-    int inputStringLength = str.length();
+  static boolean isPatternForActionValid(String input, String pattern) {
+    int inputLength = input.length();
     int patternLength = pattern.length();
-    if (patternLength == 0) return (inputStringLength == 0);
-
-    // lookup table for storing results of
-    // subproblems
-    boolean[][] lookup = new boolean[inputStringLength + 1][patternLength + 1];
-
-    // initailze lookup table to false
-    for (int i = 0; i < inputStringLength + 1; i++)
-      Arrays.fill(lookup[i], false);
-
-    // empty pattern can match with empty string
-    lookup[0][0] = true;
-
+    if (patternLength == 0) return (inputLength == 0);
+    boolean[][] data = new boolean[inputLength + 1][patternLength + 1];
+    for (int count = 0; count < inputLength + 1; count++)
+      Arrays.fill(data[count], false);
+    data[0][0] = true;
     // Only '*' can match with empty string
-    for (int j = 1; j <= patternLength; j++)
-      if (pattern.charAt(j - 1) == '*') lookup[0][j] = lookup[0][j - 1];
-
-    // fill the table in bottom-up fashion
-    for (int i = 1; i <= inputStringLength; i++) {
+    for (int count = 1; count <= patternLength; count++)
+      if (pattern.charAt(count - 1) == '*') data[0][count] = data[0][count - 1];
+    for (int i = 1; i <= inputLength; i++) {
       for (int j = 1; j <= patternLength; j++) {
-
         if (pattern.charAt(j - 1) == '*')
-          lookup[i][j] = lookup[i][j - 1] || lookup[i - 1][j];
-
-        // Current characters are considered as
-        // matching in two cases
-        // (a) current character of pattern is '?'
-        // (b) characters actually match
+          data[i][j] = data[i][j - 1] || data[i - 1][j];
         else if (pattern.charAt(j - 1) == '?' ||
-                 str.charAt(i - 1) == pattern.charAt(j - 1))
-          lookup[i][j] = lookup[i - 1][j - 1];
+                 input.charAt(i - 1) == pattern.charAt(j - 1))
+          data[i][j] = data[i - 1][j - 1];
         else
-          lookup[i][j] = false;
+          data[i][j] = false;
       }
     }
-    return lookup[inputStringLength][patternLength];
+    return data[inputLength][patternLength];
   }
 
  public
@@ -122,12 +110,12 @@ class PolicyUtil {
                                           int slashPosition) {
     boolean isValid = true;
     for (String action : actions) {
-      if ("1".equals(ActionsInitializer.getActionsMap().get(action)) &&
+      if ((Actions.getBucketOperations().contains(action)) &&
           slashPosition !=
               -1) {  // Bucket operation but object is present in resource
         isValid = false;
         break;
-      } else if ("0".equals(ActionsInitializer.getActionsMap().get(action)) &&
+      } else if (Actions.getObjectOperations().contains(action) &&
                  slashPosition == -1) {  // object operation but object is
                                          // missing in resource
         isValid = false;

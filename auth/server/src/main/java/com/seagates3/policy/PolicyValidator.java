@@ -42,6 +42,11 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.PolicyResponseGenerator;
 import com.seagates3.util.BinaryUtil;
+import com.amazonaws.auth.policy.conditions.ArnCondition;
+import com.amazonaws.auth.policy.conditions.DateCondition;
+import com.amazonaws.auth.policy.conditions.IpAddressCondition;
+import com.amazonaws.auth.policy.conditions.NumericCondition;
+import com.amazonaws.auth.policy.conditions.StringCondition;
 
 /**
  * Generic class to validate Policy. Sub classes of this class should be
@@ -57,117 +62,7 @@ abstract class PolicyValidator {
  protected
   PolicyResponseGenerator responseGenerator = null;
 
-  /**
-   * Validate Policy
-   * @param inputBucket
-   * @param jsonPolicy
-   * @return {@link ServerResponse}
-   */
- public
-  ServerResponse validatePolicy(String inputBucket, String jsonPolicy) {
-
-    ServerResponse response = null;
-    JsonParser jsonParser = new JsonParser();
-    JsonObject obj =
-        (JsonObject)jsonParser.parse(BinaryUtil.base64DecodeString(jsonPolicy));
-    Policy policy = null;
-    try {
-      policy = Policy.fromJson(obj.toString());
-    }
-    catch (Exception e) {
-      response = responseGenerator.malformedPolicy(
-          "This policy contains invalid Json");
-      LOGGER.error("This policy contains invalid Json");
-      return response;
-    }
-    // Statement validation
-    if (policy.getStatements() != null) {
-      List<Statement> statementList =
-          new ArrayList<Statement>(policy.getStatements());
-      for (Statement stmt : statementList) {
-        // Action validation
-        response = validateActionAndResource(stmt.getActions(),
-                                             stmt.getResources(), inputBucket);
-        if (response != null) break;
-
-        // Effect validation
-        response = validateEffect(stmt.getEffect());
-        if (response != null) break;
-
-        // condition validation
-        response = validateCondition(stmt.getConditions());
-        if (response != null) break;
-
-        // Principal Validation
-        response = validatePrincipal(stmt.getPrincipals());
-        if (response != null) break;
-      }
-    } else {  // statement null
-      response =
-          responseGenerator.malformedPolicy("Missing required field Statement");
-      LOGGER.error("Missing required field Statement");
-    }
-    return response;
-  }
-
-  /**
-   * Validate if Principal form the Policy Statement is valid
-   * @param principal
-   * @return true if Principal is valid
-   */
- protected
-  boolean isPrincipalIdValid(Principal principal) {
-    boolean isValid = true;
-    String provider = principal.getProvider();
-    String id = principal.getId();
-    AccountImpl accountImpl = new AccountImpl();
-    UserImpl userImpl = new UserImpl();
-    Account account = null;
-    switch (provider) {
-      case "AWS":
-        account = null;
-        User user = null;
-        try {
-          if (new PrincipalArnParser().isArnFormatValid(id)) {
-            user = userImpl.findByArn(id);
-            if (user == null || !user.exists()) {
-              isValid = false;
-            }
-          } else {
-            account = accountImpl.findByID(id);
-            if (account == null || !account.exists()) {
-              user = userImpl.findByUserId(id);
-              if (user == null || !user.exists()) {
-                isValid = false;
-              }
-            }
-          }
-        }
-        catch (DataAccessException e) {
-          LOGGER.error("Exception occurred while finding account by account id",
-                       e);
-          isValid = false;
-        }
-        break;
-      case "CanonicalUser":
-        account = null;
-        try {
-          account = accountImpl.findByCanonicalID(id);
-        }
-        catch (DataAccessException e) {
-          LOGGER.error(
-              "Exception occurred while finding account by canonical id", e);
-        }
-        if (account == null || !account.exists()) isValid = false;
-        break;
-      case "Federated":
-        // Not supporting as of now
-        isValid = false;
-        break;
-    }
-    return isValid;
-  }
-
+  abstract ServerResponse validatePolicy(String inputBucket, String jsonPolicy);
   /**
    * Validate if the Effect value is one of - Allow/Deny
    * @param effectValue
@@ -195,25 +90,138 @@ abstract class PolicyValidator {
    * @param conditionList
    * @return {@link ServerResponse}
    */
-  abstract ServerResponse validateCondition(List<Condition> conditionList);
+ protected
+  ServerResponse validateCondition(List<Condition> conditionList) {
+    ServerResponse response = null;
+    if (conditionList != null) {
+      for (Condition condition : conditionList) {
+        String invalidConditionType =
+            checkAndGetInvalidConditionType(condition);
+        if (invalidConditionType != null) {
+          response = responseGenerator.malformedPolicy(
+              "Invalid Condition type : " + invalidConditionType);
+          LOGGER.error("Condition type is invalid in bucket policy");
+          break;
+        }
+      }
+    }
+    return response;
+  }
+
+ private
+  String checkAndGetInvalidConditionType(Condition condition) {
+    String conditionType = condition.getType();
+    if (ArnCondition.ArnComparisonType.valueOf(conditionType) != null) {
+      conditionType = null;
+    } else if (StringCondition.StringComparisonType.valueOf(conditionType) !=
+               null) {
+      conditionType = null;
+    } else if (NumericCondition.NumericComparisonType.valueOf(conditionType) !=
+               null) {
+      conditionType = null;
+    } else if (DateCondition.DateComparisonType.valueOf(conditionType) !=
+               null) {
+      conditionType = null;
+    } else if (IpAddressCondition.IpAddressComparisonType.valueOf(
+                   conditionType) != null) {
+      conditionType = null;
+    }
+    return conditionType;
+  }
+
+ protected
+  ServerResponse validatePrincipal(List<Principal> principals) {
+    ServerResponse response = null;
+    if (principals != null && !principals.isEmpty()) {
+      for (Principal principal : principals) {
+        if (!principal.getProvider().equals("AWS") &&
+            !principal.getProvider().equals("CanonicalUser") &&
+            !principal.getProvider().equals("Federated") &&
+            !principal.getProvider().equals("*")) {
+
+          response =
+              responseGenerator.malformedPolicy("Invalid bucket policy syntax");
+          LOGGER.error("Invalid bucket policy syntax");
+          break;
+        }
+        if (!"*".equals(principal.getId()) && !isPrincipalIdValid(principal)) {
+          response =
+              responseGenerator.malformedPolicy("Invalid principal in policy");
+          LOGGER.error("Invalid principal in policy");
+          break;
+        }
+      }
+    } else {
+      response =
+          responseGenerator.malformedPolicy("Missing required field Principal");
+      LOGGER.error("Missing required field Principal");
+    }
+    return response;
+  }
+
+ private
+  boolean isPrincipalIdValid(Principal principal) {
+    boolean isValid = true;
+    String provider = principal.getProvider();
+    String id = principal.getId();
+    AccountImpl accountImpl = new AccountImpl();
+    UserImpl userImpl = new UserImpl();
+    Account account = null;
+    switch (provider) {
+      case "AWS":
+        account = null;
+        User user = null;
+        try {
+          if (new PrincipalArnParser().isArnFormatValid(id)) {
+            user = userImpl.findByArn(id);
+            if (!user.exists()) {
+              isValid = false;
+            }
+          } else {
+            account = accountImpl.findByID(id);
+            if (!account.exists()) {
+              user = userImpl.findByUserId(id);
+              if (!user.exists()) {
+                isValid = false;
+              }
+            }
+          }
+        }
+        catch (DataAccessException e) {
+          LOGGER.error("Exception occurred while finding principal", e);
+          isValid = false;
+        }
+        break;
+      case "CanonicalUser":
+        account = null;
+        try {
+          account = accountImpl.findByCanonicalID(id);
+        }
+        catch (DataAccessException e) {
+          LOGGER.error(
+              "Exception occurred while finding account by canonical id", e);
+        }
+        if (account == null || !account.exists()) isValid = false;
+        break;
+      case "Federated":
+        // Not supporting as of now
+        isValid = false;
+        break;
+    }
+    return isValid;
+  }
 
   /**
-   * Validate Action and Resource respectively first. Then validate each
-   * Resource against the Actions.
-   * @param actionList
-   * @param resourceValues
-   * @param inputBucket
-   * @return {@link ServerResponse}
-   */
+     * Validate Action and Resource respectively first. Then validate each
+     * Resource against the Actions.
+     * @param actionList
+     * @param resourceValues
+     * @param inputBucket
+     * @return {@link ServerResponse}
+     */
   abstract ServerResponse
       validateActionAndResource(List<Action> actionList,
                                 List<Resource> resourceValues,
                                 String inputBucket);
 
-  /**
-   * Validate Principal from the Policy Statement
-   * @param principals
-   * @return {@link ServerResponse}
-   */
-  abstract ServerResponse validatePrincipal(List<Principal> principals);
 }
