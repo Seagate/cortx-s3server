@@ -121,6 +121,7 @@ public class KeyGenUtil {
 
         return c;
     }
+
     /**
      * This method generates SHA-1 hash of give string
      * @param String
@@ -151,17 +152,50 @@ public class KeyGenUtil {
     }
 
     /**
-     * Return Canonical ID  for Account.
-     * Canonical ID should be,
+     * Geneate a new canonical id for Account.
+     * canonical id should be,
      * 1. AlphaNumeric
      * 2. Length should be 64 characters
-     * 3. contains lower case letters only
-     * @return Cannonical ID.
+     * 3. Lower case letters
+     * @return canonicalId
      */
    public
     static String createCanonicalId() {
       String uuid1 = BinaryUtil.getAlphaNumericUUID();
       String canonical_id = uuid1 + BinaryUtil.getAlphaNumericUUID();
       return canonical_id.toLowerCase();
+    }
+
+    /**
+     * Generate a new user id for IAM user.
+     * user id should be,
+     * 1. Alphanumeric
+     * 2. Length should be 21 i.e USER_ID_PREFIX + userId
+     * 3. Upper case letters
+     * e.g AIDA5KZQJXPTROAIAKCKO
+     * where User_ID_Prefix i.e. "AIDA" is used to represent IAM user id
+     * @return UserId
+     */
+   public
+    static String createIamUserId() {
+      String id = BinaryUtil.getAlphaNumericUUID().substring(0, 17);
+      // PREFIX "AIDA" will be added to this userId in Controller class
+      return id.toUpperCase();
+    }
+
+    /**
+     * Generate a new account id.
+     * account id should be,
+     * 1. Contains digits only
+     * 2. Length should be 12
+     * e.g 234755435308
+     * @return AccountId
+     */
+   public
+    static String createAccountId() {
+      long max = 999999999999L;
+      long min = 100000000000L;
+      long account_id = min + (long)(Math.random() * ((max - min) + 1));
+      return String.valueOf(account_id);
     }
 }

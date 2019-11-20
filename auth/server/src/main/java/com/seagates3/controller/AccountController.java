@@ -108,7 +108,7 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.entityAlreadyExists();
         }
 
-        account.setId(KeyGenUtil.createUserId());
+        account.setId(KeyGenUtil.createAccountId());
 
         try {
           // Generate unique canonical id for account

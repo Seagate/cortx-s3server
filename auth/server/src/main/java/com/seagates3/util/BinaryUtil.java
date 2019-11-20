@@ -250,19 +250,24 @@ public class BinaryUtil {
         return toString(encodeToHex(src));
     }
 
-    /*
-     * Return a base 64 encoded UUID.
-     */
+     /*
+      * Return a base 64 encoded UUID.
+      * This uuid might contains speical characters i.e "-","_"
+      */
     public static String base64UUID() {
         return encodeToUrlSafeBase64String(getRandomUUIDAsByteArray());
     }
 
     /*
-     * Generate random alphanumeric UUID string
+     * Generate random alphanumeric UUID string of length 32 characters
+     * e.g 8048ddd913c540d29ddac1f174aa1072
      */
    public
     static String getAlphaNumericUUID() {
       UUID uid = UUID.randomUUID();
+      // uid will be in format of "8048ddd9-13c5-40d2-9dda-c1f174aa1072" of
+      // length 36 characters
+      // after replacing "-" with "", uid becomes 32 character string
       String id = uid.toString().replace("-", "");
       return id;
     }

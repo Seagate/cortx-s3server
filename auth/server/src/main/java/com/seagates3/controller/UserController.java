@@ -38,6 +38,8 @@ public class UserController extends AbstractController {
     private final UserResponseGenerator userResponseGenerator;
     private final Logger LOGGER =
             LoggerFactory.getLogger(UserController.class.getName());
+    private
+     static final String USER_ID_PREFIX = "AIDA";
 
     public UserController(Requestor requestor,
             Map<String, String> requestBody) {
@@ -76,7 +78,9 @@ public class UserController extends AbstractController {
         }
 
         user.setUserType(User.UserType.IAM_USER);
-        user.setId(KeyGenUtil.createUserId());
+        // UserId should starts with "AIDA".
+        // for more info, please see EOS-2790
+        user.setId(USER_ID_PREFIX + KeyGenUtil.createIamUserId());
 
         try {
             userDAO.save(user);

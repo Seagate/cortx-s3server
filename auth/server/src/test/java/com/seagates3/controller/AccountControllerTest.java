@@ -104,9 +104,8 @@ public class AccountControllerTest {
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
 
-        PowerMockito.doReturn("987654test").when(KeyGenUtil.class,
-                "createUserId"
-        );
+        PowerMockito.doReturn("987654352188")
+            .when(KeyGenUtil.class, "createAccountId");
         PowerMockito.doReturn("C1234").when(KeyGenUtil.class,
                 "createId"
         );
@@ -165,32 +164,27 @@ public class AccountControllerTest {
             throws Exception {
         Account expectedAccount = new Account();
         expectedAccount.setName("s3test");
-        expectedAccount.setId("123456");
+        expectedAccount.setId("123456789012");
         expectedAccount.setCanonicalId("canonicalid");
         expectedAccount.setEmail("user.name@seagate.com");
         Account[] expectedAccountList = new Account[]{expectedAccount};
 
         Mockito.doReturn(expectedAccountList).when(accountDAO).findAll();
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListAccountsResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListAccountsResult>"
-                + "<Accounts>"
-                + "<member>"
-                + "<AccountName>s3test</AccountName>"
-                + "<AccountId>123456</AccountId>"
-                + "<CanonicalId>canonicalid</CanonicalId>"
-                + "<Email>user.name@seagate.com</Email>"
-                + "</member>"
-                + "</Accounts>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListAccountsResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListAccountsResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<ListAccountsResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListAccountsResult>" + "<Accounts>" + "<member>" +
+            "<AccountName>s3test</AccountName>" +
+            "<AccountId>123456789012</AccountId>" +
+            "<CanonicalId>canonicalid</CanonicalId>" +
+            "<Email>user.name@seagate.com</Email>" + "</member>" +
+            "</Accounts>" + "<IsTruncated>false</IsTruncated>" +
+            "</ListAccountsResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</ListAccountsResponse>";
 
         ServerResponse response = accountController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -222,7 +216,7 @@ public class AccountControllerTest {
     public void CreateAccount_AccountExists_ReturnEntityAlreadyExists()
             throws Exception {
         Account account = new Account();
-        account.setId("12345");
+        account.setId("123456789012");
         account.setName("s3test");
 
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
@@ -378,7 +372,7 @@ public class AccountControllerTest {
             "<CreateAccountResponse " +
             "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
             "<CreateAccountResult>" + "<Account>" +
-            "<AccountId>987654test</AccountId>" +
+            "<AccountId>987654352188</AccountId>" +
             "<CanonicalId>can1234</CanonicalId>" +
             "<AccountName>s3test</AccountName>" +
             "<RootUserName>root</RootUserName>" +
@@ -468,7 +462,7 @@ public class AccountControllerTest {
             throws Exception {
         Account account = new Account();
         account.setName("s3test");
-        account.setId("987654test");
+        account.setId("987654352188");
         account.setCanonicalId("can1234");
         User root = new User();
         root.setName("root");
@@ -498,7 +492,7 @@ public class AccountControllerTest {
             "<ResetAccountAccessKeyResponse " +
             "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
             "<ResetAccountAccessKeyResult>" + "<Account>" +
-            "<AccountId>987654test</AccountId>" +
+            "<AccountId>987654352188</AccountId>" +
             "<CanonicalId>can1234</CanonicalId>" +
             "<AccountName>s3test</AccountName>" +
             "<RootUserName>root</RootUserName>" +

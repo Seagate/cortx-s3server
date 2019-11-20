@@ -95,6 +95,33 @@ public class KeyGenUtilTest {
         assertNotNull(id);
         assertFalse(id.contains("-") || id.contains("_") || id.contains("&") ||
                     id.contains("+"));
+        assertEquals(64, id.length());
+      }
+    }
+
+    @Test public void createAccountIdTest() {
+      String id = null;
+      // test multiple account ids and validate it
+      for (int i = 0; i < 10; i++) {
+        id = KeyGenUtil.createAccountId();
+
+        assertNotNull(id);
+        assertFalse(id.contains("-") || id.contains("_") || id.contains("&") ||
+                    id.contains("+"));
+        assertEquals(12, id.length());
+      }
+    }
+
+    @Test public void createIamUserIdTest() {
+      String id = null;
+      // test multiple iam user ids and validate it
+      for (int i = 0; i < 10; i++) {
+        id = KeyGenUtil.createIamUserId();
+
+        assertNotNull(id);
+        assertFalse(id.contains("-") || id.contains("_") || id.contains("&") ||
+                    id.contains("+"));
+        assertEquals(17, id.length());
       }
     }
 }

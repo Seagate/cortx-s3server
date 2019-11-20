@@ -50,7 +50,8 @@ public class UserControllerTest {
     private UserDAO userDAO;
     private AccessKeyDAO accessKeyDAO;
     private final String ACCOUNT_NAME = "s3test";
-    private final String ACCOUNT_ID = "12345";
+    private
+     final String ACCOUNT_ID = "AIDA5KZQJXPTROAIAKCKO";
     private final Account ACCOUNT;
 
     public UserControllerTest() {
@@ -190,9 +191,8 @@ public class UserControllerTest {
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
 
-        PowerMockito.doReturn("987654").when(KeyGenUtil.class,
-                "createUserId"
-        );
+        PowerMockito.doReturn("5KZQJXPTROAIAKCKO")
+            .when(KeyGenUtil.class, "createIamUserId");
     }
 
     @Test
@@ -226,7 +226,7 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
 
@@ -285,22 +285,17 @@ public class UserControllerTest {
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<CreateUserResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<CreateUserResult>"
-                + "<User>"
-                + "<Path>/</Path>"
-                + "<UserName>s3testuser</UserName>"
-                + "<UserId>987654</UserId>"
-                + "<Arn>arn:aws:iam::1:user/s3testuser</Arn>"
-                + "</User>"
-                + "</CreateUserResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</CreateUserResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<CreateUserResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<CreateUserResult>" + "<User>" + "<Path>/</Path>" +
+            "<UserName>s3testuser</UserName>" +
+            "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" +
+            "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" + "</User>" +
+            "</CreateUserResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</CreateUserResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -311,22 +306,17 @@ public class UserControllerTest {
     @Test
     public void CreateUser_NewUserCreatedWithDefaultPath_ReturnCreateResponse()
             throws Exception {
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<CreateUserResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<CreateUserResult>"
-                + "<User>"
-                + "<Path>/</Path>"
-                + "<UserName>s3testuser</UserName>"
-                + "<UserId>987654</UserId>"
-                + "<Arn>arn:aws:iam::1:user/s3testuser</Arn>"
-                + "</User>"
-                + "</CreateUserResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</CreateUserResponse>";
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<CreateUserResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<CreateUserResult>" + "<User>" + "<Path>/</Path>" +
+          "<UserName>s3testuser</UserName>" +
+          "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" +
+          "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" + "</User>" +
+          "</CreateUserResult>" + "<ResponseMetadata>" +
+          "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+          "</CreateUserResponse>";
 
         Requestor requestor = new Requestor();
         requestor.setAccount(ACCOUNT);
@@ -363,22 +353,17 @@ public class UserControllerTest {
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<CreateUserResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<CreateUserResult>"
-                + "<User>"
-                + "<Path>/test</Path>"
-                + "<UserName>s3testuser</UserName>"
-                + "<UserId>987654</UserId>"
-                + "<Arn>arn:aws:iam::1:user/s3testuser</Arn>"
-                + "</User>"
-                + "</CreateUserResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</CreateUserResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<CreateUserResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<CreateUserResult>" + "<User>" + "<Path>/test</Path>" +
+            "<UserName>s3testuser</UserName>" +
+            "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" +
+            "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" + "</User>" +
+            "</CreateUserResult>" + "<ResponseMetadata>" +
+            "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+            "</CreateUserResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -443,11 +428,12 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doThrow(new DataAccessException("Failed to search access keys"))
-                .when(accessKeyDAO).hasAccessKeys("123");
+            .when(accessKeyDAO)
+            .hasAccessKeys("AIDA5KZQJXPTROAIAKCKO");
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
@@ -472,11 +458,11 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
-        Mockito.doReturn(Boolean.TRUE)
-                .when(accessKeyDAO).hasAccessKeys("123");
+        Mockito.doReturn(Boolean.TRUE).when(accessKeyDAO).hasAccessKeys(
+            "AIDA5KZQJXPTROAIAKCKO");
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
                 + "encoding=\"UTF-8\" standalone=\"no\"?>"
@@ -502,11 +488,11 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
-        Mockito.doReturn(Boolean.FALSE)
-                .when(accessKeyDAO).hasAccessKeys("123");
+        Mockito.doReturn(Boolean.FALSE).when(accessKeyDAO).hasAccessKeys(
+            "AIDA5KZQJXPTROAIAKCKO");
         Mockito.doThrow(new DataAccessException("Failed to delete user"))
                 .when(userDAO).delete(user);
 
@@ -533,11 +519,11 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
-        Mockito.doReturn(Boolean.FALSE)
-                .when(accessKeyDAO).hasAccessKeys("123");
+        Mockito.doReturn(Boolean.FALSE).when(accessKeyDAO).hasAccessKeys(
+            "AIDA5KZQJXPTROAIAKCKO");
         Mockito.doNothing().when(userDAO).delete(user);
 
         final String expectedResponseBody = "<?xml version=\"1.0\" "
@@ -586,7 +572,7 @@ public class UserControllerTest {
         User expectedUser = new User();
         expectedUser.setAccountName("s3test");
         expectedUser.setName("s3testuser");
-        expectedUser.setId("123");
+        expectedUser.setId("AIDA5KZQJXPTROAIAKCKO");
         expectedUser.setUserType("iamUser");
         expectedUser.setPath("/");
         expectedUser.setCreateDate("2016-01-06T10:15:11.000+0530");
@@ -643,7 +629,7 @@ public class UserControllerTest {
         User expectedUser = new User();
         expectedUser.setAccountName("s3test");
         expectedUser.setName("s3testuser");
-        expectedUser.setId("123");
+        expectedUser.setId("AIDA5KZQJXPTROAIAKCKO");
         expectedUser.setUserType("iamUser");
         expectedUser.setPath("/");
         expectedUser.setCreateDate("2016-01-06T10:15:11.000+0530");
@@ -664,7 +650,7 @@ public class UserControllerTest {
         User expectedUser = new User();
         expectedUser.setAccountName("s3test");
         expectedUser.setName("s3testuser");
-        expectedUser.setId("123");
+        expectedUser.setId("AIDA5KZQJXPTROAIAKCKO");
         expectedUser.setUserType("iamUser");
         expectedUser.setPath("/");
         expectedUser.setCreateDate("2016-01-06T10:15:11.000+0530");
@@ -678,7 +664,7 @@ public class UserControllerTest {
             "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ListUsersResponse " +
             "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
             "<ListUsersResult>" + "<Users>" + "<member>" +
-            "<UserId>123</UserId>" + "<Path>/</Path>" +
+            "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" + "<Path>/</Path>" +
             "<UserName>s3testuser</UserName>" +
             "<Arn>arn:aws:iam::000:user/s3testuser</Arn>" +
             "<CreateDate>2016-01-06T10:15:11.000+0530</CreateDate>" +
@@ -700,7 +686,7 @@ public class UserControllerTest {
         User expectedUser = new User();
         expectedUser.setAccountName("s3test");
         expectedUser.setName("s3testuser");
-        expectedUser.setId("123");
+        expectedUser.setId("AIDA5KZQJXPTROAIAKCKO");
         expectedUser.setUserType("iamUser");
         expectedUser.setPath("/test");
         expectedUser.setCreateDate("2016-01-06'T'10:15:11.000+530");
@@ -714,7 +700,7 @@ public class UserControllerTest {
             "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ListUsersResponse " +
             "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
             "<ListUsersResult>" + "<Users>" + "<member>" +
-            "<UserId>123</UserId>" + "<Path>/test</Path>" +
+            "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" + "<Path>/test</Path>" +
             "<UserName>s3testuser</UserName>" +
             "<Arn>arn:aws:iam::000:user/s3testuser</Arn>" +
             "<CreateDate>2016-01-06'T'10:15:11.000+530</CreateDate>" +
@@ -822,7 +808,7 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         Mockito.doReturn(user).when(userDAO).find("s3test", "s3testuser");
         Mockito.when(userDAO.find("s3test", "s3newuser")).thenThrow(
@@ -851,12 +837,12 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         User newUser = new User();
         newUser.setAccountName("s3test");
         newUser.setName("s3newuser");
-        newUser.setId("456");
+        newUser.setId("AIDA6MQQJXOTCOAIAKCYW");
 
         Mockito.doReturn(user).when(userDAO).find("s3test", "s3testuser");
         Mockito.doReturn(newUser).when(userDAO).find("s3test", "s3newuser");
@@ -884,7 +870,7 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         User newUser = new User();
         newUser.setAccountName("s3test");
@@ -918,7 +904,7 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
-        user.setId("123");
+        user.setId("AIDA5KZQJXPTROAIAKCKO");
 
         User newUser = new User();
         newUser.setAccountName("s3test");
