@@ -22,8 +22,6 @@ package com.seagates3.policy;
 import java.util.List;
 
 import com.amazonaws.auth.policy.Action;
-import com.amazonaws.auth.policy.Condition;
-import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Resource;
 import com.seagates3.response.ServerResponse;
 

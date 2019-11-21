@@ -8,10 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.seagates3.acl.ACLRequestValidator;
 import com.seagates3.authorization.Authorizer;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.BucketPolicyResponseGenerator;
@@ -19,9 +17,8 @@ import com.seagates3.util.BinaryUtil;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-@RunWith(PowerMockRunner.class) @PowerMockIgnore({"javax.management.*"})
-    @PrepareForTest(
-        ACLRequestValidator.class) public class PolicyValidatorTest {
+@RunWith(PowerMockRunner.class) @PowerMockIgnore(
+    {"javax.management.*"}) public class BucketPolicyValidatorTest {
 
   String positiveJsonInput = null;
   String negativeJsonInput = null;
@@ -203,6 +200,29 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             .getResponseBody(),
         response.getResponseBody());
   }
+
+  /**
+   * Below will validate json with missing Effect field
+   */
+  @Test public void validateBucketPolicy_Effect_Missing() {
+    String inputJson =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::MyBucket/a.txt\",\r\n" +
+        "	  \"Action\": [\r\n" +
+        "	          \"s3:GetObjec?\"\r\n" + "      ],\r\n" +
+        "      \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+        "          \"*\"\r\n" + "        ]\r\n" + "      }\r\n" + "    }\r\n" +
+        "  ]\r\n" + "}";
+
+    requestBody.put("ClientAbsoluteUri", "/MyBucket");
+    requestBody.put("Policy", BinaryUtil.encodeToBase64String(inputJson));
+    Authorizer authorizer = new Authorizer();
+    ServerResponse response = authorizer.validatePolicy(requestBody);
+    Assert.assertEquals(new BucketPolicyResponseGenerator()
+                            .malformedPolicy("Missing required field Effect")
+                            .getResponseBody(),
+                        response.getResponseBody());
+  }
 }
-
-

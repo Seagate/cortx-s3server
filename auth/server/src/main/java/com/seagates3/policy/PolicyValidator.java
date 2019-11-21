@@ -19,7 +19,6 @@
 
 package com.seagates3.policy;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -27,13 +26,15 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
-import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.auth.policy.Statement.Effect;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.amazonaws.auth.policy.conditions.ArnCondition;
+import com.amazonaws.auth.policy.conditions.DateCondition;
+import com.amazonaws.auth.policy.conditions.IpAddressCondition;
+import com.amazonaws.auth.policy.conditions.NumericCondition;
+import com.amazonaws.auth.policy.conditions.StringCondition;
 import com.seagates3.dao.ldap.AccountImpl;
 import com.seagates3.dao.ldap.UserImpl;
 import com.seagates3.exception.DataAccessException;
@@ -41,12 +42,6 @@ import com.seagates3.model.Account;
 import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.PolicyResponseGenerator;
-import com.seagates3.util.BinaryUtil;
-import com.amazonaws.auth.policy.conditions.ArnCondition;
-import com.amazonaws.auth.policy.conditions.DateCondition;
-import com.amazonaws.auth.policy.conditions.IpAddressCondition;
-import com.amazonaws.auth.policy.conditions.NumericCondition;
-import com.amazonaws.auth.policy.conditions.StringCondition;
 
 /**
  * Generic class to validate Policy. Sub classes of this class should be
@@ -63,8 +58,10 @@ abstract class PolicyValidator {
   PolicyResponseGenerator responseGenerator = null;
 
   abstract ServerResponse validatePolicy(String inputBucket, String jsonPolicy);
+
   /**
    * Validate if the Effect value is one of - Allow/Deny
+   *
    * @param effectValue
    * @return {@link ServerResponse}
    */
@@ -87,6 +84,7 @@ abstract class PolicyValidator {
 
   /**
    * Validate the Conditions form Statement
+   *
    * @param conditionList
    * @return {@link ServerResponse}
    */
@@ -212,16 +210,17 @@ abstract class PolicyValidator {
   }
 
   /**
-     * Validate Action and Resource respectively first. Then validate each
-     * Resource against the Actions.
-     * @param actionList
-     * @param resourceValues
-     * @param inputBucket
-     * @return {@link ServerResponse}
-     */
+   * Validate Action and Resource respectively first. Then validate each
+   *Resource
+   * against the Actions.
+   *
+   * @param actionList
+   * @param resourceValues
+   * @param inputBucket
+   * @return {@link ServerResponse}
+   */
   abstract ServerResponse
       validateActionAndResource(List<Action> actionList,
                                 List<Resource> resourceValues,
                                 String inputBucket);
-
 }

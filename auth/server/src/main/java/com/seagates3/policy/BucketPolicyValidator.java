@@ -30,30 +30,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.policy.Action;
-import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.Policy;
-import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.Statement;
-import com.amazonaws.auth.policy.Statement.Effect;
-import com.amazonaws.auth.policy.conditions.ArnCondition;
-import com.amazonaws.auth.policy.conditions.DateCondition;
-import com.amazonaws.auth.policy.conditions.IpAddressCondition;
-import com.amazonaws.auth.policy.conditions.NumericCondition;
-import com.amazonaws.auth.policy.conditions.StringCondition;
 import com.amazonaws.auth.policy.internal.JsonDocumentFields;
 import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
-import com.seagates3.dao.ldap.AccountImpl;
-import com.seagates3.dao.ldap.UserImpl;
-import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.Account;
-import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.BucketPolicyResponseGenerator;
 import com.seagates3.util.BinaryUtil;
-import com.seagates3.policy.PolicyUtil;
 
 public
 class BucketPolicyValidator extends PolicyValidator {
@@ -63,9 +49,6 @@ class BucketPolicyValidator extends PolicyValidator {
       LoggerFactory.getLogger(BucketPolicyValidator.class.getName());
   static Set<String> policyElements = new HashSet<>();
   static Set<String> nestedPolicyElements = new HashSet<>();
-
- private
-  ServerResponse response = null;
 
  public
   BucketPolicyValidator() {
@@ -106,6 +89,7 @@ class BucketPolicyValidator extends PolicyValidator {
 
   /**
    * Below method will validate bucket policy json passed in
+   *
    * @param jsonPolicy
    * @return null if policy validated successfully. not null if policy
    *         invalidated.
@@ -164,6 +148,7 @@ class BucketPolicyValidator extends PolicyValidator {
       throws JSONException {
 
     ServerResponse response = null;
+    boolean isEffectFieldPresent = false;
     Iterator<String> keys = jsonObject.keys();
     while (keys.hasNext()) {
       String key = keys.next();
@@ -182,6 +167,7 @@ class BucketPolicyValidator extends PolicyValidator {
         }
         JSONArray arr = (JSONArray)jsonObject.get(key);
         for (int count = 0; count < arr.length(); count++) {
+          isEffectFieldPresent = false;
           JSONObject obj = (JSONObject)arr.get(count);
           Iterator<String> objKeys = obj.keys();
           while (objKeys.hasNext()) {
@@ -198,7 +184,17 @@ class BucketPolicyValidator extends PolicyValidator {
               LOGGER.error(
                   "Invalid bucket policy syntax. Misplaced policy elements");
               return response;
+            } else if ("Effect".equals(objKey)) {  // Adding effect check here
+                                                   // as json parser setting the
+              // default value when not present
+              isEffectFieldPresent = true;
             }
+          }
+          if (!isEffectFieldPresent) {
+            response = responseGenerator.malformedPolicy(
+                "Missing required field Effect");
+            LOGGER.error("Missing required field Effect");
+            return response;
           }
         }
       } else {
