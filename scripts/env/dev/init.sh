@@ -1,56 +1,31 @@
 #!/bin/sh
 
-set -e
+set -xe
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 CURRENT_DIR=`pwd`
 hostnamectl set-hostname s3dev
+OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
+VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
 
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 
 rpm -q git || yum install -y git
 
-if [ "$OS" = "\"rhel\"" ]; then
-  # We need to checkout mero, so that we can run install-build-deps
-  cd $BASEDIR/../../../
-  if [ ! -d "./mero" ]; then
-    git clone http://gerrit.mero.colo.seagate.com:8080/mero
-  fi
+if [ $VERSION = "\"8.0\"" ]; then
   ./update-hosts.sh
-  # Setup system for the build of mero
-  echo "=========================================================================================================="
-  echo ""
-  echo "mero build setup script may fail due to unavailability of repository http://debuginfo.centos.org"
-  echo "comment section 'configure 'Debuginfo' repository' in mero/scripts/provisioning/roles/base-os/tasks/main.yml"
-  echo "and remove '/etc/yum.repos.d/debuginfo.repo' file"
-  echo ""
-  echo "For lnet, in file 'mero/scripts/provisioning/roles/lustre-client/tasks/main.yml'"
-  echo "remove 'tcp(eth1)' and put appropriate interface instead of eth0 in "
-  echo "'options lnet networks=tcp(eth1),tcp1(eth0) config_on_load=1'"
-  echo "For example: 'options lnet networks=tcp1(ens33) config_on_load=1'"
-  echo ""
-  echo "Comment complete section 'install up-to-date tools from Software Collections repo' in"
-  echo "mero/scripts/provisioning/roles/mero-build/tasks/main.yml"
-  echo ""
-  echo "Without above changes currently the setup won't succeed"
-  echo "=========================================================================================================="
-  read -p "Continue (y/n)?" choice
-  case "$choice" in
-    y|Y ) echo "continuing...";;
-    n|N ) exit;;
-    * ) exit;;
-  esac
   subscription-manager repos --enable=*
   subscription-manager repos --disable=rhel-atomic-7-cdk-3.*
-  subscription-manager repos --disable=rhel-7-server-extras-beta-*
-  yum localinstall -y http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-  yum install -y perl-YAML-LibYAML
-  #Got error -- Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
-  yum install -y deltarpm
-  $BASEDIR/../../../mero/scripts/install-build-deps
+  subscription-manager repos --disable=*-eus-*
+  #dnf clean all
+  #rm -rf /var/cache/dnf
+  #dnf upgrade
   rpm -q s3cmd && rpm -e s3cmd
-  rm -rf mero
+  yum install rpm-build
+  yum install apr apr-devel apr-util apr-util-devel -y
+  yum install libtool -y
+  yum install @development --skip-broken -y
 fi
 
 cd $BASEDIR

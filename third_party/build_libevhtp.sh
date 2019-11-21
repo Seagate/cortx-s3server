@@ -6,10 +6,16 @@
 # previous patch: libevhtp-v1.2.11-prev.patch
 # current branch: develop commit: c84f68d258d07c4015820ceb87fd17decd054bfc
 
-cd libevhtp
+VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
 
-# Apply the libevhtp patch
-patch -f -p1 < ../../patches/libevhtp-v1.2.11.patch
+cd libevhtp
+if [ "$VERSION" = "\"8.0\"" ]; then
+  # Apply the libevhtp rhel patch
+  patch -f -p1 < ../../patches/libevhtp-v1.2.11-rhel8.patch
+else
+  # Apply the libevhtp patch
+  patch -f -p1 < ../../patches/libevhtp-v1.2.11.patch
+fi
 
 INSTALL_DIR=`pwd`/s3_dist
 rm -rf $INSTALL_DIR

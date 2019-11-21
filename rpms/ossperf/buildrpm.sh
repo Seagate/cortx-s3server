@@ -13,10 +13,13 @@ rm -rf ossperf
 mkdir ossperf-${VERSION}
 
 git clone https://github.com/christianbaun/ossperf  ossperf-${VERSION}
+cd ossperf-${VERSION}
+git checkout 58eafade5ada0f98d7b34f2d41cfc673c8d7b301
+cd ..
 tar -zcvf ossperf-${VERSION}.tar.gz ossperf-${VERSION}
 rm -rf ossperf-${VERSION}
 cp ${BASEDIR}/ossperf.patch .
 
-cd -
+cd ~/rpmbuild/SOURCES/
 
 rpmbuild -ba ${BASEDIR}/ossperf.spec

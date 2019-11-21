@@ -6,7 +6,7 @@ License:        BSD
 Group:          Development/Tools
 URL:            https://github.com/google/googletest
 Source:         %{name}-%{version}.tar.gz
-BuildRequires:  python cmake libtool
+BuildRequires:  python36 cmake libtool
 BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %description
@@ -16,6 +16,10 @@ xUnit architecture. Supports automatic test discovery, a rich set of
 assertions, user-defined assertions, death tests, fatal and non-fatal
 failures, various options for running the tests, and XML test report
 generation.
+
+# below definition needed, without that on RHEL 8 seeing failure
+# error: Empty %files file /root/rpmbuild/BUILD/gmock-1.7.0/debugsourcefiles.list
+%global debug_package %{nil}
 
 %package        devel
 Summary:        Development files for %{name}

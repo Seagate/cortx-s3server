@@ -156,6 +156,7 @@
         no_log: true
 
       - name: Backup original slapd file
+        when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
         copy:
           src:  /etc/sysconfig/slapd
           dest: /etc/sysconfig/slapd.bak
@@ -163,6 +164,7 @@
           remote_src: yes
 
       - name: Add ssl & non-ssl ldap URIs
+        when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
         command: sed -i "s/^SLAPD_URLS=.*/SLAPD_URLS={{ldap_url}}/" /etc/sysconfig/slapd
         no_log: true
 

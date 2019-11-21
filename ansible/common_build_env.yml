@@ -17,18 +17,22 @@
   yum: pkg={{item}} state=installed
   with_items:
     - openssl
-    - openssl-libs
-    - openssl-devel
     - libxml2
     - libxml2-devel
     - libyaml
     - libyaml-devel
-    - yaml-cpp
-    - yaml-cpp-devel
     - gflags
     - gflags-devel
     - glog
     - glog-devel
+
+- name: Install S3 development build time dependencies
+  yum: pkg={{item}} state=installed
+  with_items:
+    - openssl-libs
+    - openssl-devel
+    - yaml-cpp
+    - yaml-cpp-devel
     - hiredis
     - hiredis-devel
 
@@ -49,10 +53,9 @@
     # - xmltodict
     # - boto3
     # - botocore
-    - "{{python_version}}-scripttest"
 
-- name: Install Python and dependencies
-  when: ansible_distribution == "RedHat" and ansible_distribution_version == "8.0"
+- name: Install Python and dependencies for Rhel version 8
+  when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "8"
   yum: pkg={{item}} state=installed
   with_items:
     # - xmltodict
@@ -60,26 +63,20 @@
     - "{{python_version}}-botocore"
     - "{{python_version}}-jmespath"
     - "{{python_version}}-s3transfer"
-    - "{{python_version}}-wheel"
+    # python3-wheel not there, python3-pip-wheel and python3-setuptools-wheel is there in RHEL 8.1
+    #- "{{python_version}}-wheel"
 
 - name: Install python modules to build python36 dependencies
   yum: pkg={{item}} state=installed
   with_items:
     - "{{python_version}}-pytest"
     - "{{python_version}}-pika"
-    - python-jsonschema
-    - python-keyring
-    - python-nose
+    - "{{python_version}}-jsonschema"
     #- python34-nose
     - "{{python_version}}-nose"
-    - python-mock
-    - python-wheel
-    - python2-botocore
-    - python2-jmespath
-    - python-futures
-    - python2-s3transfer
+    - "{{python_version}}-mock"
     #- python34-mock
-    - python34-ply
+    #- python34-ply
     - "{{python_version}}-mock"
     - "{{python_version}}-ply"
 
@@ -99,10 +96,18 @@
     - "{{python_version}}-boto3"
 
 - name: Install python module xmltodict
-  when: (ansible_distribution == 'CentOS' and ansible_distribution_version == '7') or (ansible_distribution == 'RedHat' and ansible_distribution_version == '7.6')
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
   yum: pkg={{item}} state=installed
   with_items:
     - "{{python_version}}-xmltodict"
+    - "{{python_version}}-scripttest"
+    - "{{python_version}}-wheel"
+    - "{{python_version}}-pika"
+    - python-keyring
+    - python-futures
+    #- python2-botocore
+    #- python2-jmespath
+    #- python2-s3transfer
 
 - name: Install bazel rpm
   yum:
@@ -126,9 +131,7 @@
   with_items:
     - git-clang-format
 
-- easy_install:
-    name: pip
-    state: latest
-
 - name: Install AWS CLI
-  pip: name=awscli state=latest
+  yum:
+    name: awscli
+    state: present

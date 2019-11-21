@@ -2,10 +2,11 @@
 - name: Setup yum repos for development (devvm and release test vm)
   hosts: s3*
   remote_user: root
-  gather_facts: no
+  gather_facts: yes
 
   tasks:
     - name: Add repository for lustre
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: releases_eos_lustre
         description: Yum repo for lustre
@@ -14,6 +15,7 @@
         priority: 1
 
     - name: Add repository for halon
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: releases_eos_halon
         description: Yum repo for halon
@@ -22,6 +24,7 @@
         priority: 1
 
     - name: Add repository for mero
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: releases_eos_mero
         description: Yum repo for mero
@@ -30,6 +33,7 @@
         priority: 1
 
     - name: Add repository for s3server
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: releases_eos_s3server
         description: Yum repo for s3server
@@ -37,7 +41,8 @@
         gpgcheck: no
         priority: 1
 
-    - name: Add S3 deps repository
+    - name: Add S3 deps repository for major version 7
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: releases_s3server_uploads
         description: Yum repo for S3 server dependencies
@@ -45,10 +50,30 @@
         gpgcheck: no
         priority: 1
 
-    - name: Add Provisioner epel mirror
+    - name: Add S3 deps repository for major version 8
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+      yum_repository:
+        name: releases_s3server_uploads
+        description: Yum repo for S3 server dependencies for version 8
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/eos/s3server_uploads/centos8/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add Provisioner epel 7 mirror
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
       yum_repository:
         name: prvsnr_local_repository
         description: Yum local repo for S3 server dependencies
         baseurl: http://ci-storage.mero.colo.seagate.com/prvsnr/vendor/centos/epel/
+        gpgcheck: no
+        priority: 1
+
+    - name: Add Provisioner epel 8 mirror
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+      yum_repository:
+        name: prvsnr_local_repository
+        description: Yum local repo for S3 server dependencies
+        # TODO Change it from public to mirror repo, once available
+        baseurl: http://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/
         gpgcheck: no
         priority: 1

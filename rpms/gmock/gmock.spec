@@ -11,7 +11,7 @@ BuildRequires:  gtest-devel >= 1.7.0
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
-BuildRequires:  python
+BuildRequires:  python36
 Requires:       gtest >= 1.7.0
 
 %description
@@ -28,6 +28,10 @@ Google Mock:
  o is extensible by users, and
  o works on Linux, Mac OS X, Windows, Windows Mobile, minGW, and
    Symbian.
+
+# below definition needed, without that on RHEL 8 seeing failure
+# error: Empty %files file /root/rpmbuild/BUILD/gmock-1.7.0/debugsourcefiles.list
+%global debug_package %{nil}
 
 %package        devel
 Summary:        Development files for %{name}
