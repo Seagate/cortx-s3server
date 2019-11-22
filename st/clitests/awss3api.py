@@ -249,3 +249,18 @@ class AwsTest(S3PyCliTest):
     def execute_curl(self, cmd):
         self.with_cli(cmd)
         return self
+
+    def put_bucket_policy(self, bucket_name, policy):
+        cmd = "aws s3api " + "put-bucket-policy " + "--bucket " + bucket_name + " --policy " + policy
+        self.with_cli(cmd)
+        return self
+
+    def get_bucket_policy(self, bucket_name):
+        cmd = "aws s3api " + "get-bucket-policy " + "--bucket " + bucket_name
+        self.with_cli(cmd)
+        return self
+
+    def delete_bucket_policy(self, bucket_name):
+        cmd = "aws s3api " + "delete-bucket-policy " + "--bucket " + bucket_name
+        self.with_cli(cmd)
+        return self
