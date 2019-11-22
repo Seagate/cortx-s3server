@@ -1,15 +1,16 @@
 package com.seagates3.policy;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.amazonaws.auth.policy.Condition;
 import com.seagates3.authorization.Authorizer;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.BucketPolicyResponseGenerator;
@@ -22,11 +23,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 
   String positiveJsonInput = null;
   String negativeJsonInput = null;
-  Map<String, String> requestBody = null;
-
-  @Before public void setup() {
-    requestBody = new TreeMap<>();
-  }
+  Map<String, String> requestBody = new TreeMap<>();
+  PolicyValidator validator = new BucketPolicyValidator();
 
   /**
    * Test to validate json- Positive test with correct json
@@ -227,8 +225,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   /**
-           * Below positive test will validate multiple resources in json
-           */
+   * Below positive test will validate multiple resources in json
+   */
   @Test public void validateBucketPolicy_multiple_resources_positive_test() {
     String inputJson =
         "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
@@ -273,5 +271,226 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                  "Action does not apply to any resource(s) in statement")
             .getResponseBody(),
         response.getResponseBody());
+  }
+
+  /**
+   * Validate StringEquals valid condition
+   */
+  @Test public void test_validateCondition_StringEquals_success() {
+
+    Condition condition = new Condition()
+                              .withType("StringEquals")
+                              .withConditionKey("s3:x-amz-acl")
+                              .withValues("bucket-owner-read");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate StringEqualsIfExists valid condition
+   */
+  @Test public void test_validateCondition_StringEqualsIfExists_success() {
+
+    Condition condition = new Condition()
+                              .withType("StringEqualsIfExists")
+                              .withConditionKey("s3:x-amz-acl")
+                              .withValues("bucket-owner-read");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate Bool valid condition
+   */
+  @Test public void test_validateCondition_Bool_success() {
+
+    Condition condition = new Condition()
+                              .withType("Bool")
+                              .withConditionKey("aws:SecureTransport")
+                              .withValues("true");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate Bool valid condition but with invalid key value pairs
+   */
+  @Test public void test_validateCondition_Bool_invalidKeyValue_success() {
+
+    Condition condition =
+        new Condition().withType("Bool").withConditionKey("aws:").withValues(
+            "abc");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate ArnEquals valid condition
+   */
+  @Test public void test_validateCondition_ArnEquals_success() {
+
+    Condition condition = new Condition()
+                              .withType("ArnEquals")
+                              .withConditionKey("aws:SourceArn")
+                              .withValues("arn:aws:s3:::bucket");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate ArnEquals valid condition but invalid key value pair
+   */
+  @Test public void test_validateCondition_ArnEquals_invalidKeyValue_success() {
+
+    Condition condition = new Condition()
+                              .withType("ArnEquals")
+                              .withConditionKey("s3:x-amz-acl")
+                              .withValues("bucket-owner*");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate ArnLike valid condition
+   */
+  @Test public void test_validateCondition_ArnLike_success() {
+
+    Condition condition = new Condition()
+                              .withType("ArnLike")
+                              .withConditionKey("s3:x-amz-acl")
+                              .withValues("bucket-owner*");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate NumericLessThanEquals valid condition
+   */
+  @Test public void test_validateCondition_NumericLessThanEquals_success() {
+
+    Condition condition = new Condition()
+                              .withType("NumericLessThanEquals")
+                              .withConditionKey("s3:max-keys")
+                              .withValues("10");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate DateLessThan valid condition
+   */
+  @Test public void test_validateCondition_DateLessThan_success() {
+
+    Condition condition = new Condition()
+                              .withType("DateLessThan")
+                              .withConditionKey("aws:CurrentTime")
+                              .withValues("2013-06-30T00:00:00Z");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate BinaryEquals valid condition
+   */
+  @Test public void test_validateCondition_BinaryEquals_success() {
+
+    Condition condition = new Condition()
+                              .withType("BinaryEquals")
+                              .withConditionKey("aws:key")
+                              .withValues("QmluYXJ5VmFsdWVJbkJhc2U2NA==");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate BinaryEquals invalid condition value
+   */
+  @Test public void test_validateCondition_BinaryEquals_invalidValue_fail() {
+
+    Condition condition = new Condition()
+                              .withType("BinaryEquals")
+                              .withConditionKey("aws:key")
+                              .withValues("...");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNotNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate BinaryEquals invalid condition value null
+   */
+  @Test public void test_validateCondition_BinaryEquals_nullValue_fail() {
+
+    Condition condition =
+        new Condition().withType("BinaryEquals").withConditionKey("aws:key");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNotNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate BinaryEquals invalid condition key
+   */
+  @Test public void test_validateCondition_BinaryEquals_invalidKey_fail() {
+
+    Condition condition = new Condition()
+                              .withType("BinaryEquals")
+                              .withConditionKey("key")
+                              .withValues("QmluYXJ5VmFsdWVJbkJhc2U2NA==");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNotNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate StringLike valid condition
+   */
+  @Test public void test_validateCondition_StringLike_success() {
+
+    Condition condition = new Condition()
+                              .withType("StringLike")
+                              .withConditionKey("s3:x-amz-acl")
+                              .withValues("bucket-owner*");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate StringLike invalid key - should fail
+   */
+  @Test public void test_validateCondition_StringLike_invalidKey_fail() {
+
+    Condition condition = new Condition()
+                              .withType("StringLike")
+                              .withConditionKey("s3:x-")
+                              .withValues("bucket-owner*");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNotNull(validator.validateCondition(list));
+  }
+
+  /**
+   * Validate StringLike valid condition key - aws:*
+   */
+  @Test public void test_validateCondition_StringLike_validKeyAWS_success() {
+
+    Condition condition = new Condition()
+                              .withType("StringLike")
+                              .withConditionKey("aws:garbage")
+                              .withValues("qwerty");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Assert.assertNull(validator.validateCondition(list));
   }
 }

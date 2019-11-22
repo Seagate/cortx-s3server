@@ -30,7 +30,8 @@ import java.util.LinkedHashMap;
 public class PolicyResponseGenerator extends AbstractResponseGenerator {
 
     public ServerResponse generateCreateResponse(Policy policy) {
-        LinkedHashMap responseElements = new LinkedHashMap();
+       LinkedHashMap<String, String> responseElements =
+           new LinkedHashMap<String, String>();
         responseElements.put("PolicyName", policy.getName());
         responseElements.put("DefaultVersionId", policy.getDefaultVersionid());
         responseElements.put("PolicyId", policy.getPolicyId());

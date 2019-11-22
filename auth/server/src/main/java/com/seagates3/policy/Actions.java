@@ -22,13 +22,14 @@ package com.seagates3.policy;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-
+import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 
 public
 class Actions {
@@ -63,10 +64,12 @@ class Actions {
     InputStreamReader reader = new InputStreamReader(in, "UTF-8");
 
     Gson gson = new Gson();
+    Type listType = new TypeToken<HashSet<String>>() {}
+    .getType();
     JsonParser jsonParser = new JsonParser();
     JsonObject element = (JsonObject)jsonParser.parse(reader);
-    bucketOperations = gson.fromJson(element.get("Bucket"), HashSet.class);
-    objectOperations = gson.fromJson(element.get("Object"), HashSet.class);
+    bucketOperations = gson.fromJson(element.get("Bucket"), listType);
+    objectOperations = gson.fromJson(element.get("Object"), listType);
   }
  public
   static Set<String> getBucketOperations() { return bucketOperations; }

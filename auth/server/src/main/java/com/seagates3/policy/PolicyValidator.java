@@ -30,11 +30,6 @@ import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.auth.policy.Statement.Effect;
-import com.amazonaws.auth.policy.conditions.ArnCondition;
-import com.amazonaws.auth.policy.conditions.DateCondition;
-import com.amazonaws.auth.policy.conditions.IpAddressCondition;
-import com.amazonaws.auth.policy.conditions.NumericCondition;
-import com.amazonaws.auth.policy.conditions.StringCondition;
 import com.seagates3.dao.ldap.AccountImpl;
 import com.seagates3.dao.ldap.UserImpl;
 import com.seagates3.exception.DataAccessException;
@@ -91,14 +86,27 @@ abstract class PolicyValidator {
  protected
   ServerResponse validateCondition(List<Condition> conditionList) {
     ServerResponse response = null;
+    ConditionUtil util = ConditionUtil.getInstance();
     if (conditionList != null) {
       for (Condition condition : conditionList) {
-        String invalidConditionType =
-            checkAndGetInvalidConditionType(condition);
-        if (invalidConditionType != null) {
+        String conditionType = condition.getType();
+        if (!util.isConditionTypeValid(conditionType)) {
           response = responseGenerator.malformedPolicy(
-              "Invalid Condition type : " + invalidConditionType);
-          LOGGER.error("Condition type is invalid in bucket policy");
+              "Invalid Condition type : " + conditionType);
+          LOGGER.error("Condition type - " + conditionType +
+                       " is invalid in bucket policy");
+          break;
+        }
+        if (!util.isConditionKeyValid(condition.getConditionKey())) {
+          response = responseGenerator.malformedPolicy(
+              "Policy has an invalid condition key");
+          LOGGER.error("Policy has an invalid condition key: " + conditionType);
+          break;
+        }
+        if (!util.isConditionValueValid(conditionType, condition.getValues())) {
+          response = responseGenerator.malformedPolicy(
+              "Invalid Base64 value for binary condition");
+          LOGGER.error("Invalid Base64 value for binary condition");
           break;
         }
       }
@@ -106,27 +114,11 @@ abstract class PolicyValidator {
     return response;
   }
 
- private
-  String checkAndGetInvalidConditionType(Condition condition) {
-    String conditionType = condition.getType();
-    if (ArnCondition.ArnComparisonType.valueOf(conditionType) != null) {
-      conditionType = null;
-    } else if (StringCondition.StringComparisonType.valueOf(conditionType) !=
-               null) {
-      conditionType = null;
-    } else if (NumericCondition.NumericComparisonType.valueOf(conditionType) !=
-               null) {
-      conditionType = null;
-    } else if (DateCondition.DateComparisonType.valueOf(conditionType) !=
-               null) {
-      conditionType = null;
-    } else if (IpAddressCondition.IpAddressComparisonType.valueOf(
-                   conditionType) != null) {
-      conditionType = null;
-    }
-    return conditionType;
-  }
-
+  /**
+   * Validate the Principal
+   * @param principals
+   * @return {@link ServerResponse}
+   */
  protected
   ServerResponse validatePrincipal(List<Principal> principals) {
     ServerResponse response = null;
@@ -224,3 +216,4 @@ abstract class PolicyValidator {
                                 List<Resource> resourceValues,
                                 String inputBucket);
 }
+

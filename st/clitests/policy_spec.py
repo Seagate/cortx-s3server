@@ -22,6 +22,48 @@ policy = "file://" + os.path.abspath(policy_relative)
 policy_put_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_put_bucket.txt')
 policy_put_bucket = "file://" + os.path.abspath(policy_put_bucket_relative)
 
+policy_condition_StringEquals_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringEquals_success.json')
+policy_condition_StringEquals_success = "file://" + os.path.abspath(policy_condition_StringEquals_success_relative)
+
+policy_condition_ArnLike_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_ArnLike_success.json')
+policy_condition_ArnLike_success = "file://" + os.path.abspath(policy_condition_ArnLike_success_relative)
+
+policy_condition_StringLike_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringLike_success.json')
+policy_condition_StringLike_success = "file://" + os.path.abspath(policy_condition_StringLike_success_relative)
+
+policy_condition_StringEqualsIfExists_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringEqualsIfExists_success.json')
+policy_condition_StringEqualsIfExists_success = "file://" + os.path.abspath(policy_condition_StringEqualsIfExists_success_relative)
+
+policy_condition_Bool_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_Bool_success.json')
+policy_condition_Bool_success = "file://" + os.path.abspath(policy_condition_Bool_success_relative)
+
+policy_condition_Bool_RandomKeyValue_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_Bool_RandomKeyValue_success.json')
+policy_condition_Bool_RandomKeyValue_success = "file://" + os.path.abspath(policy_condition_Bool_RandomKeyValue_success_relative)
+
+policy_condition_Bool_invalidKey_fail_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_Bool_invalidKey_fail.json')
+policy_condition_Bool_invalidKey_fail = "file://" + os.path.abspath(policy_condition_Bool_invalidKey_fail_relative)
+
+policy_condition_StringEquals_invalidKey_fail_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringEquals_invalidKey_fail.json')
+policy_condition_StringEquals_invalidKey_fail = "file://" + os.path.abspath(policy_condition_StringEquals_invalidKey_fail_relative)
+
+policy_condition_NumericLessThanEquals_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericLessThanEquals_success.json')
+policy_condition_NumericLessThanEquals_success = "file://" + os.path.abspath(policy_condition_NumericLessThanEquals_success_relative)
+
+policy_condition_DateLessThan_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_DateLessThan_success.json')
+policy_condition_DateLessThan_success = "file://" + os.path.abspath(policy_condition_DateLessThan_success_relative)
+
+policy_condition_BinaryEquals_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_BinaryEquals_success.json')
+policy_condition_BinaryEquals_success = "file://" + os.path.abspath(policy_condition_BinaryEquals_success_relative)
+
+policy_condition_BinaryEquals_invalidValue_fail_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_BinaryEquals_invalidValue_fail.json')
+policy_condition_BinaryEquals_invalidValue_fail = "file://" + os.path.abspath(policy_condition_BinaryEquals_invalidValue_fail_relative)
+
+policy_condition_StringLike_invalidKey_fail_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringLike_invalidKey_fail.json')
+policy_condition_StringLike_invalidKey_fail = "file://" + os.path.abspath(policy_condition_StringLike_invalidKey_fail_relative)
+
+policy_condition_StringLikeIfExists_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringLikeIfExists_success.json')
+policy_condition_StringLikeIfExists_success = "file://" + os.path.abspath(policy_condition_StringLikeIfExists_success_relative)
+
 AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command_is_successful()
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucketPolicy")
@@ -43,7 +85,6 @@ AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_tes
 AwsTest("Aws can delete policy on bucket").delete_bucket_policy("seagate").execute_test().command_is_successful()
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucketPolicy")
-
 
 #put-bucket-policy - Effect field absent
 policy_put_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_put_bucket_effect_missing.txt')
@@ -96,5 +137,53 @@ policy_put_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_fil
 policy_put_bucket = "file://" + os.path.abspath(policy_put_bucket_relative)
 AwsTest("Put Bucket Policy with valid Principal in policy json").put_bucket_policy("seagate", policy_put_bucket).execute_test().command_is_successful()
 
+# Validate Conditions in Bucket Policy
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEquals_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_ArnLike_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:SourceArn")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLike_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEqualsIfExists_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:SecureTransport")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_RandomKeyValue_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:xyz")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEquals_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_NumericLessThanEquals_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:max-keys")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_DateLessThan_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:CurrentTime")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:key")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_invalidValue_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLike_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLikeIfExists_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
 
 AwsTest('Aws can delete bucket seagate').delete_bucket("seagate").execute_test().command_is_successful()
