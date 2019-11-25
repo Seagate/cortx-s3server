@@ -124,4 +124,10 @@ class PolicyUtil {
     }
     return isValid;
   }
+
+ public
+  static List<String> convertCommaSeparatedStringToList(String str) {
+    List<String> list = Arrays.asList(str.split("\\s*,\\s*"));
+    return list;
+  }
 }

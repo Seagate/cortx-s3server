@@ -225,4 +225,53 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                             .getResponseBody(),
                         response.getResponseBody());
   }
+
+  /**
+           * Below positive test will validate multiple resources in json
+           */
+  @Test public void validateBucketPolicy_multiple_resources_positive_test() {
+    String inputJson =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": " +
+        "\"arn:aws:s3:::MyBucket,arn:aws:s3:::MyBucket/a.txt\",\r\n" +
+        "	  \"Action\": [\r\n" +
+        "	          \"s3:GetObjec?\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Allow\",\r\n" + "	  \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"*\"\r\n" + "        ]\r\n" +
+        "      }\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    requestBody.put("ClientAbsoluteUri", "/MyBucket");
+    requestBody.put("Policy", BinaryUtil.encodeToBase64String(inputJson));
+    Authorizer authorizer = new Authorizer();
+    ServerResponse response = authorizer.validatePolicy(requestBody);
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+  }
+
+  /**
+   * Below negative test will validate multiple invalid resources in json
+   */
+  @Test public void validateBucketPolicy_multiple_resources_negative_test() {
+    String inputJson =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": " +
+        "\"arn:aws:s3:::MyBucket/b.txt,arn:aws:s3:::MyBucket/a.txt\",\r\n" +
+        "	  \"Action\": [\r\n" +
+        "	          \"s3:GetBucketAcl\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Allow\",\r\n" + "	  \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"*\"\r\n" + "        ]\r\n" +
+        "      }\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+    requestBody.put("ClientAbsoluteUri", "/MyBucket");
+    requestBody.put("Policy", BinaryUtil.encodeToBase64String(inputJson));
+    Authorizer authorizer = new Authorizer();
+    ServerResponse response = authorizer.validatePolicy(requestBody);
+    Assert.assertEquals(
+        new BucketPolicyResponseGenerator()
+            .malformedPolicy(
+                 "Action does not apply to any resource(s) in statement")
+            .getResponseBody(),
+        response.getResponseBody());
+  }
 }

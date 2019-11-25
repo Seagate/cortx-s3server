@@ -216,9 +216,11 @@ class BucketPolicyValidator extends PolicyValidator {
                                   String inputBucket,
                                   List<String> actionsList) {
     ServerResponse response = null;
+    boolean isMatchFound = false;
     if (resourceValues != null && !resourceValues.isEmpty()) {
-      for (Resource resource : resourceValues) {
-        String resourceArn = resource.getId();
+      List<String> resources = PolicyUtil.convertCommaSeparatedStringToList(
+          resourceValues.get(0).getId());
+      for (String resourceArn : resources) {
         if (new S3ArnParser().isArnFormatValid(resourceArn)) {
           String resourceName =
               PolicyUtil.getResourceFromResourceArn(resourceArn);
@@ -236,11 +238,9 @@ class BucketPolicyValidator extends PolicyValidator {
             break;
           } else {
             // check for resource and action combination validity
-            if (!PolicyUtil.isActionValidForResource(actionsList,
-                                                     slashPosition)) {
-              response = responseGenerator.malformedPolicy(
-                  "Action does not apply to any resource(s) in statement");
-              LOGGER.error("Action and resource combination invalid");
+            if (PolicyUtil.isActionValidForResource(actionsList,
+                                                    slashPosition)) {
+              isMatchFound = true;
               break;
             }
           }
@@ -255,6 +255,11 @@ class BucketPolicyValidator extends PolicyValidator {
       response =
           responseGenerator.malformedPolicy("Missing required field Resource");
       LOGGER.error("Missing required field Resource");
+    }
+    if (response == null && !isMatchFound) {
+      response = responseGenerator.malformedPolicy(
+          "Action does not apply to any resource(s) in statement");
+      LOGGER.error("Action and resource combination invalid");
     }
     return response;
   }
