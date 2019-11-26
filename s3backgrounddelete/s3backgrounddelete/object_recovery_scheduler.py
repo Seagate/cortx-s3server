@@ -41,7 +41,7 @@ class ObjectRecoveryScheduler(object):
                 self.logger)
             result, index_response = EOSCoreIndexApi(
                 self.config, logger=self.logger).list(
-                    self.config.get_probable_delete_index_id(), self.config.get_probable_delete_max_keys(), marker)
+                    self.config.get_probable_delete_index_id(), self.config.get_max_keys(), marker)
             if result:
                 self.logger.info("Index listing result :" +
                                  str(index_response.get_index_content()))

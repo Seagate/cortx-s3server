@@ -31,6 +31,8 @@
 #include "s3_m0_uint128_helper.h"
 #include "s3_stats.h"
 
+extern struct m0_uint128 global_instance_id;
+
 void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   json_parsing_error = false;
   account_name = request->get_account_name();
@@ -726,6 +728,7 @@ std::string S3ObjectMetadata::create_probable_delete_record(
   root["index_id"] = index_oid_str;
   root["object_metadata_path"] = get_object_name();
   root["object_layout_id"] = override_layout_id;
+  root["global_instance_id"] = S3M0Uint128Helper::to_string(global_instance_id);
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);

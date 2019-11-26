@@ -72,6 +72,8 @@ struct m0_uint128 global_instance_list_index;
 // objects listed in this index are probable delete candidates and not absolute.
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 
+struct m0_uint128 global_instance_id;
+
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   // placeholder, required to complete the request processing.
   s3_log(S3_LOG_DEBUG, "", "Request Completed.\n");
@@ -847,8 +849,7 @@ int main(int argc, char **argv) {
   std::string s3server_fid = clovis_conf.cc_process_fid;
   s3_log(S3_LOG_INFO, "", "Process Fid= %s \n", s3server_fid.c_str());
 
-  struct m0_uint128 instance_id;
-  rc = create_new_instance_id(&instance_id);
+  rc = create_new_instance_id(&global_instance_id);
 
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "", "Failed to create unique instance id\n");
@@ -858,7 +859,7 @@ int main(int argc, char **argv) {
   }
 
   s3server_instance_id[s3server_fid] =
-      S3M0Uint128Helper::to_string(instance_id);
+      S3M0Uint128Helper::to_string(global_instance_id);
 
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;

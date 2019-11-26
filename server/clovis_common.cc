@@ -138,7 +138,7 @@ int create_new_instance_id(struct m0_uint128 *ufid) {
 
   std::unique_ptr<ClovisAPI> s3_clovis_api =
       std::unique_ptr<ConcreteClovisAPI>(new ConcreteClovisAPI());
-  ;
+
   int rc;
 
   if (ufid == NULL) {

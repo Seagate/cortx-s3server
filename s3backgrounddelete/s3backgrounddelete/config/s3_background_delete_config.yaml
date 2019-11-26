@@ -35,5 +35,6 @@ rabbitmq:                                    # Section for RabbitMQ configs
 
 indexid:
 
-   probable_delete_index_id: "AAAAAAAAAHg=-AwAQAAAAAAA="      # Index id containing list of probable delete object oid. This is fix index id shared with s3server.
+   probable_delete_index_id: "AAAAAAAAAHg=-AwAQAAAAAAA="      # Index id containing list of probable delete object oid. This is fixed index id shared with s3server.
+   global_instance_index_id: "AAAAAAAAAHg=-BAAQAAAAAAA="      # Index id containing global instance id's. This is also fixed index id shared with s3server.
    max_keys: 1000                                             # Maximum number of keys in global index to be queried from list of probable delete object oid.
