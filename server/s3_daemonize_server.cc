@@ -132,9 +132,11 @@ S3Daemonize::S3Daemonize() : noclose(0) {
 void S3Daemonize::daemonize() {
   int rc;
   std::string daemon_wd;
+
   struct sigaction s3hup_act;
-  s3hup_act.sa_flags = 0;
+  memset(&s3hup_act, 0, sizeof s3hup_act);
   s3hup_act.sa_handler = SIG_IGN;
+
   rc = daemon(1, noclose);
   if (rc) {
     s3_log(S3_LOG_FATAL, "", "Failed to daemonize s3 server, errno = %d\n",
@@ -238,18 +240,20 @@ int S3Daemonize::delete_pidfile() {
 
 void S3Daemonize::register_signals() {
   struct sigaction s3action;
-  struct sigaction fatal_action;
+  memset(&s3action, 0, sizeof s3action);
+
   s3action.sa_handler = s3_terminate_sig_handler;
-  sigemptyset(&s3action.sa_mask);
-  s3action.sa_flags = 0;
   sigaction(SIGTERM, &s3action, NULL);
   sigaction(SIGINT, &s3action, NULL);
 
+  struct sigaction fatal_action;
+  memset(&fatal_action, 0, sizeof fatal_action);
+
   fatal_action.sa_handler = s3_terminate_fatal_handler;
-  sigemptyset(&fatal_action.sa_mask);
   // Call default signal handler if at all heap corruption creates another
   // SIGSEGV within signal handler
   fatal_action.sa_flags = SA_RESETHAND | SA_NODEFER;
+
   sigaction(SIGSEGV, &fatal_action, NULL);
   sigaction(SIGABRT, &fatal_action, NULL);
   sigaction(SIGILL, &fatal_action, NULL);
