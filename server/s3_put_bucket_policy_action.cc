@@ -87,10 +87,13 @@ void S3PutBucketPolicyAction::on_policy_validation_success() {
 void S3PutBucketPolicyAction::on_policy_validation_failure() {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   std::string error_code = auth_client->get_error_code();
+  std::string error_messag = auth_client->get_error_message();
   s3_log(S3_LOG_INFO, request_id, "Auth server response = [%s]\n",
          error_code.c_str());
 
   set_s3_error(error_code);
+  set_s3_error_message(error_messag);
+  request->respond_error(error_code, {}, error_messag);
   send_response_to_s3_client();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -537,6 +537,22 @@ void S3AuthClient::remember_auth_details_in_request() {
   }
 }
 
+std::string S3AuthClient::get_error_message() {
+  if ((((!auth_context->auth_successful()) &&
+        get_op_type() == S3AuthClientOpType::authentication)) ||
+      ((!auth_context->authorization_successful()) &&
+       get_op_type() == S3AuthClientOpType::authorization) ||
+      ((!auth_context->aclvalidation_successful() &&
+        get_op_type() == S3AuthClientOpType::aclvalidation)) ||
+      ((!auth_context->policyvalidation_successful() &&
+        get_op_type() == S3AuthClientOpType::policyvalidation))) {
+
+    std::string message = auth_context->get_error_message();
+    return message;
+  }
+  return "";
+}
+
 // Returns AccessDenied | InvalidAccessKeyId | SignatureDoesNotMatch
 // auth InactiveAccessKey maps to InvalidAccessKeyId in S3
 std::string S3AuthClient::get_error_code() {

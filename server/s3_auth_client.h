@@ -189,12 +189,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
 
   std::string get_error_code() { return error_obj->get_code(); }
 
-  std::string get_error_message() {
-    if (!is_auth_successful) {
-      return error_obj->get_message();
-    }
-    return "";
-  }
+  std::string get_error_message() { return error_obj->get_message(); }
 
   // Call this when you want to do auth op.
   virtual bool init_auth_op_ctx(const S3AuthClientOpType& type) {
@@ -322,6 +317,8 @@ class S3AuthClient {
   // Returns AccessDenied | InvalidAccessKeyId | SignatureDoesNotMatch
   // auth InactiveAccessKey maps to InvalidAccessKeyId in S3
   std::string get_error_code();
+  std::string get_error_message();
+
   std::string get_signature_from_response();
 
   void do_skip_authorization() { skip_authorization = true; }

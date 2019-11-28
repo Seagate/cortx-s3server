@@ -95,6 +95,7 @@ class Action {
   std::shared_ptr<Action> self_ref;
 
   std::string s3_error_code;
+  std::string s3_error_message;
   ActionState state;
   ActionState rollback_state;
 
@@ -139,7 +140,9 @@ class Action {
   virtual ~Action();
 
   void set_s3_error(std::string code);
+  void set_s3_error_message(std::string message);
   std::string& get_s3_error_code();
+  std::string& get_s3_error_message();
   bool is_error_state();
   void client_read_timeout_callback();
 

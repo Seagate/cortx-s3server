@@ -690,7 +690,9 @@ void RequestObject::send_reply_end() {
 }
 
 void RequestObject::respond_error(
-    std::string error_code, const std::map<std::string, std::string>& headers) {
+    std::string error_code, const std::map<std::string, std::string>& headers,
+    std::string error_message) {
+
   error_code_str = error_code;
   if (client_connected()) {
     std::string resource_key;
@@ -700,7 +702,7 @@ void RequestObject::respond_error(
     } else {
       resource_key = full_path_decoded_uri;
     }
-    S3Error error(error_code, get_request_id(), resource_key);
+    S3Error error(error_code, get_request_id(), resource_key, error_message);
     std::string& response_xml = error.to_xml();
     set_out_header_value("Content-Type", "application/xml");
     set_out_header_value("Content-Length",

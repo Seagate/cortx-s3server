@@ -19,11 +19,13 @@
 
 #include "s3_error_codes.h"
 #include "s3_common_utilities.h"
+
 S3Error::S3Error(std::string error_code, std::string req_id,
-                 std::string res_key)
+                 std::string res_key, std::string error_message)
     : code(error_code),
       request_id(req_id),
       resource_key(res_key),
+      auth_error_message(error_message),
       details(S3ErrorMessages::get_instance()->get_details(error_code)) {}
 
 int S3Error::get_http_status_code() { return details.get_http_status_code(); }
@@ -39,8 +41,13 @@ std::string& S3Error::to_xml() {
   xml_message = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   xml_message += "<Error>\n";
   xml_message += S3CommonUtilities::format_xml_string("Code", code);
+  if (auth_error_message.empty()) {
   xml_message +=
       S3CommonUtilities::format_xml_string("Message", details.get_message());
+  } else {
+    xml_message +=
+        S3CommonUtilities::format_xml_string("Message", auth_error_message);
+  }
   xml_message += S3CommonUtilities::format_xml_string("Resource", resource_key);
   xml_message += S3CommonUtilities::format_xml_string("RequestId", request_id);
   xml_message += "</Error>\n";

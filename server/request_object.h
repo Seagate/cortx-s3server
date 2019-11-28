@@ -334,7 +334,8 @@ class RequestObject {
 
   void respond_error(std::string error_code,
                      const std::map<std::string, std::string>& headers =
-                         std::map<std::string, std::string>());
+                         std::map<std::string, std::string>(),
+                     std::string error_message = "");
 
   void respond_unsupported_api();
   virtual void respond_retry_after(int retry_after_in_secs = 1);

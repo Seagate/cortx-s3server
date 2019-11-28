@@ -66,6 +66,11 @@ void Action::set_s3_error(std::string code) {
   s3_error_code = code;
 }
 
+void Action::set_s3_error_message(std::string message) {
+
+  s3_error_message = message;
+}
+
 void Action::client_read_timeout_callback() {
   set_s3_error("RequestTimeout");
   if (rollback_state == ActionState::start) {
@@ -77,6 +82,8 @@ void Action::client_read_timeout_callback() {
 }
 
 std::string& Action::get_s3_error_code() { return s3_error_code; }
+
+std::string& Action::get_s3_error_message() { return s3_error_message; }
 
 bool Action::is_error_state() { return state == ActionState::error; }
 
