@@ -2,69 +2,36 @@
 
 # Prerequisites: Necessary yum repos setup, possibly jenkins_yum_repos.yml
 
-- name: Install S3 development build tools
-  yum: pkg={{item}} state=installed
-  with_items:
-    - java-1.8.0-openjdk
-    - java-1.8.0-openjdk-devel
-    - maven
-    - unzip
-    - clang
-    - cmake
-    - zlib-devel
+- name: Install yum-utils if not present
+  yum:
+    name: yum-utils
+    state: installed
 
-- name: Install S3 development build time dependencies
-  yum: pkg={{item}} state=installed
-  with_items:
-    - openssl
-    - libxml2
-    - libxml2-devel
-    - libyaml
-    - libyaml-devel
-    - gflags
-    - gflags-devel
-    - glog
-    - glog-devel
+- name: Run script which will install mero build dependencies
+  # TODO Currently mero is not supported for CentOS 8, when support is there remove below check
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+  script: ./s3mero-build-depencies.sh
 
-- name: Install S3 development build time dependencies
-  yum: pkg={{item}} state=installed
-  with_items:
-    - openssl-libs
-    - openssl-devel
-    - yaml-cpp
-    - yaml-cpp-devel
-    - hiredis
-    - hiredis-devel
+- name: Install S3 server development build dependencies & tools
+  # TODO Currently mero is not supported for CentOS 8, when support is there remove below check
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+  command: yum-builddep -v -y {{ s3_src }}/rpms/s3/s3rpm.spec
 
-- name: Install Python and dependencies
-  yum: pkg={{item}} state=installed
-  with_items:
-#   - python34
-#   - python34-setuptools
-#   - python34-dateutil
-#   - python34-devel
-#   - python34-yaml
-#   - python34-scripttest
-    - python36
-    - "{{python_version}}-setuptools"
-    - "{{python_version}}-dateutil"
-    - "{{python_version}}-devel"
-    - "{{python_version}}-yaml"
-    # - xmltodict
-    # - boto3
-    # - botocore
+- name: Install S3 server development build dependencies & tools
+  # TODO Currently mero is not supported for CentOS 8, when support is there, above yum-builddep (without disabling mero)
+  # will suffice for both CentOS 7 and 8, remove this one
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+  command: yum-builddep -v -y {{ s3_src }}/rpms/s3/s3rpm.spec --define "disable_mero_dependencies 1"
 
-- name: Install Python and dependencies for Rhel version 8
-  when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "8"
+- name: Install s3iamcli development build dependencies & tools
+  command: yum-builddep -y {{ s3_src }}/rpms/s3iamcli/s3iamcli.spec
+
+- name: Install dependency for s3cmd version 1.6.1-1.el7
+  # In case of RHEL 8 higher version of s3cmd being used
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
   yum: pkg={{item}} state=installed
   with_items:
-    # - xmltodict
-    - "{{python_version}}-boto3"
-    - "{{python_version}}-botocore"
-    - "{{python_version}}-jmespath"
-    - "{{python_version}}-s3transfer"
-    # python3-wheel not there, python3-pip-wheel and python3-setuptools-wheel is there in RHEL 8.1
-    #- "{{python_version}}-wheel"
+    - python-dateutil
 
 - name: Install python modules to build python36 dependencies
   yum: pkg={{item}} state=installed
@@ -72,66 +39,6 @@
     - "{{python_version}}-pytest"
     - "{{python_version}}-pika"
     - "{{python_version}}-jsonschema"
-    #- python34-nose
     - "{{python_version}}-nose"
     - "{{python_version}}-mock"
-    #- python34-mock
-    #- python34-ply
-    - "{{python_version}}-mock"
     - "{{python_version}}-ply"
-
-- name: Install python modules required by S3 system tests and s3 (iam) auth cli
-  yum: pkg={{item}} state=installed
-  with_items:
-    #- python34-wheel
-    #- python34-jmespath
-    #- python34-xmltodict
-    #- python34-botocore
-    #- python34-s3transfer
-    #- python34-boto3
-    - "{{python_version}}-wheel"
-    - "{{python_version}}-jmespath"
-    - "{{python_version}}-botocore"
-    - "{{python_version}}-s3transfer"
-    - "{{python_version}}-boto3"
-
-- name: Install python module xmltodict
-  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
-  yum: pkg={{item}} state=installed
-  with_items:
-    - "{{python_version}}-xmltodict"
-    - "{{python_version}}-scripttest"
-    - "{{python_version}}-wheel"
-    - "{{python_version}}-pika"
-    - python-keyring
-    - python-futures
-    #- python2-botocore
-    #- python2-jmespath
-    #- python2-s3transfer
-
-- name: Install bazel rpm
-  yum:
-    name: bazel
-    state: present
-
-- name: Install gtest and gtest-devel rpm
-  yum: pkg={{item}} state=installed
-  with_items:
-    - gtest
-    - gtest-devel
-
-- name: Install gmock and gmock-devel rpm
-  yum: pkg={{item}} state=installed
-  with_items:
-    - gmock
-    - gmock-devel
-
-- name: Install git_clang_format_rpm rpm
-  yum: pkg={{item}} state=installed
-  with_items:
-    - git-clang-format
-
-- name: Install AWS CLI
-  yum:
-    name: awscli
-    state: present

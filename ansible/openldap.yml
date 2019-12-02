@@ -20,10 +20,18 @@
         yum: pkg=selinux-policy state=latest
 
       - name: Install Openldap packages
+        when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
         yum: pkg={{item}} state=installed
         with_items:
           - openldap-servers
           - openldap-clients
+
+      - name: Install Openldap packages
+        when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+        yum: pkg={{item}} state=installed
+        with_items:
+          - openldap-servers-2.4.46-9.el8
+          - openldap-clients-2.4.46-9.el8
 
       - name: Copy mdb ldiff file, if not present
         copy:

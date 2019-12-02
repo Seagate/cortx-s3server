@@ -2,6 +2,7 @@
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
+S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
 # We are setting up new VM, so just attempt clean openldap
@@ -44,7 +45,7 @@ sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
 ansible-playbook -i ./hosts_local --connection local jenkins_yum_repos.yml -v  -k
 
 # Set up release node
-ansible-playbook -i ./hosts_local --connection local setup_release_node.yml -v  -k
+ansible-playbook -i ./hosts_local --connection local setup_release_node.yml -v  -k  --extra-vars "s3_src=${S3_SRC_DIR}"
 
 rm -f ./hosts_local
 

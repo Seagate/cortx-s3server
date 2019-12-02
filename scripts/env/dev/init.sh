@@ -4,28 +4,21 @@ set -xe
 
 SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
+S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 hostnamectl set-hostname s3dev
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
-VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
+VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
+major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 
 rpm -q git || yum install -y git
 
-if [ $VERSION = "\"8.0\"" ]; then
-  ./update-hosts.sh
-  subscription-manager repos --enable=*
-  subscription-manager repos --disable=rhel-atomic-7-cdk-3.*
-  subscription-manager repos --disable=*-eus-*
-  #dnf clean all
-  #rm -rf /var/cache/dnf
-  #dnf upgrade
+if [ "$major_version" = "8" ]; then
   rpm -q s3cmd && rpm -e s3cmd
+  yum install @development -y
   yum install rpm-build
-  yum install apr apr-devel apr-util apr-util-devel -y
-  yum install libtool -y
-  yum install @development --skip-broken -y
 fi
 
 cd $BASEDIR
@@ -70,7 +63,7 @@ sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
 ansible-playbook -i ./hosts_local --connection local jenkins_yum_repos.yml -v  -k
 
 # Setup dev env
-ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos75_8.yml -v  -k
+ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos75_8.yml -v  -k --extra-vars "s3_src=${S3_SRC_DIR}"
 
 rm -f ./hosts_local
 

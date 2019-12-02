@@ -2,32 +2,19 @@
 
 # Prerequisites: Necessary yum repos setup, possibly jenkins_yum_repos.yml
 
-- name: Install S3 dependencies
-  yum: pkg={{item}} state=installed
-  with_items:
-    - java-1.8.0-openjdk-headless
+# All S3 dependencies are listed in s3 rpm spec and will be installed
+# when s3 rpm is installed.
 
 - name: Update to latest selinux-policy (required by latest openldap)
   yum: pkg={{item}} state=latest
   with_items:
     - selinux-policy
 
-- name: Install S3 runtime dependencies
-  yum: pkg={{item}} state=installed
-  with_items:
-    - openssl
-    - openssl-libs
-    - libxml2
-    - libyaml
-    - yaml-cpp
-    - gflags
-    - glog
-    - redis
-
-- name: Update to latest selinux-policy (required by latest openldap)
-  yum: pkg={{item}} state=latest
-  with_items:
-    - selinux-policy
+# Required only in dev testing.
+- name: Install redis
+  yum:
+    name: redis
+    state: installed
 
 # Keep commented for future reference
 # - name: Install nginx

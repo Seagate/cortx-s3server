@@ -3,8 +3,15 @@
 
 %global py_ver 3.6
 
+%if 0%{?el7}
 # pybasever without the dot:
 %global py_short_ver 36
+%endif
+
+%if 0%{?el8}
+# pybasever without the dot:
+%global py_short_ver 3
+%endif
 
 # XXX For strange reason setup.py uses /usr/lib
 # but %{_libdir} resolves to /usr/lib64 with python3.6
@@ -27,30 +34,18 @@ BuildArch:  noarch
 Vendor:     Seagate
 
 BuildRequires:  python3-rpm-macros
-BuildRequires:  python%{py_short_ver}
+BuildRequires:  python36
 BuildRequires:  python%{py_short_ver}-devel
-%if 0%{?s3_with_python36_ver8:1}
-BuildRequires:  python3-setuptools
-%else
 BuildRequires:  python%{py_short_ver}-setuptools
-%endif
+BuildRequires:  python%{py_short_ver}-wheel
 
-Requires:  python%{py_short_ver}
-%if 0%{?s3_with_python36_ver8:1}
-Requires:  python3-pyyaml
-Requires:  python3-xmltodict >= 0.9.0
-Requires:  python3-jmespath >= 0.7.1
-Requires:  python3-botocore >= 1.5.0
-Requires:  python3-s3transfer >= 0.1.10
-Requires:  python3-boto3 >= 1.4.6
-%else
+Requires:  python36
 Requires:  python%{py_short_ver}-yaml
 Requires:  python%{py_short_ver}-xmltodict >= 0.9.0
 Requires:  python%{py_short_ver}-jmespath >= 0.7.1
 Requires:  python%{py_short_ver}-botocore >= 1.5.0
 Requires:  python%{py_short_ver}-s3transfer >= 0.1.10
 Requires:  python%{py_short_ver}-boto3 >= 1.4.6
-%endif
 
 %description
 Seagate S3 IAM CLI
@@ -60,30 +55,17 @@ Summary:        Development files for %{name}
 Group:          Development/Tools
 
 BuildRequires:  python3-rpm-macros
-BuildRequires:  python%{py_short_ver}
+BuildRequires:  python36
 BuildRequires:  python%{py_short_ver}-devel
-%if 0%{?s3_with_python36_ver8:1}
-BuildRequires:  python3-setuptools
-%else
 BuildRequires:  python%{py_short_ver}-setuptools
-%endif
 
-Requires:  python%{py_short_ver}
-%if 0%{?s3_with_python36_ver8:1}
-Requires:  python3-pyyaml
-Requires:  python3-xmltodict >= 0.9.0
-Requires:  python3-jmespath >= 0.7.1
-Requires:  python3-botocore >= 1.5.0
-Requires:  python3-s3transfer >= 0.1.10
-Requires:  python3-boto3 >= 1.4.6
-%else
+Requires:  python36
 Requires:  python%{py_short_ver}-yaml
 Requires:  python%{py_short_ver}-xmltodict >= 0.9.0
 Requires:  python%{py_short_ver}-jmespath >= 0.7.1
 Requires:  python%{py_short_ver}-botocore >= 1.5.0
 Requires:  python%{py_short_ver}-s3transfer >= 0.1.10
 Requires:  python%{py_short_ver}-boto3 >= 1.4.6
-%endif
 
 %description    devel
 This package contains development files for %{name}.

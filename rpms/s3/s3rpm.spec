@@ -1,3 +1,9 @@
+%if 0%{?disable_mero_dependencies:1}
+%bcond_with mero
+%else
+%bcond_without mero
+%endif
+
 # mero version
 %define h_mero_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' mero)
 
@@ -6,8 +12,15 @@
 
 %global py_ver 3.6
 
+%if 0%{?el7}
 # pybasever without the dot:
 %global py_short_ver 36
+%endif
+
+%if 0%{?el8}
+# pybasever without the dot:
+%global py_short_ver 3
+%endif
 
 # XXX For strange reason setup.py uses /usr/lib
 # but %{_libdir} resolves to /usr/lib64 with python3.6
@@ -28,11 +41,14 @@ BuildRequires: automake
 BuildRequires: bazel
 BuildRequires: cmake >= 2.8.12
 BuildRequires: libtool
+%if %{with mero}
 BuildRequires: mero mero-devel
+%endif
 BuildRequires: openssl openssl-devel
 BuildRequires: java-1.8.0-openjdk
 BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: maven
+BuildRequires: unzip clang zlib-devel
 BuildRequires: libxml2 libxml2-devel
 BuildRequires: libyaml libyaml-devel
 BuildRequires: yaml-cpp yaml-cpp-devel
@@ -40,13 +56,21 @@ BuildRequires: gflags gflags-devel
 BuildRequires: glog glog-devel
 BuildRequires: gtest gtest-devel
 BuildRequires: gmock gmock-devel
-BuildRequires: git
+BuildRequires: git git-clang-format
 BuildRequires: log4cxx_eos log4cxx_eos-devel
 BuildRequires: hiredis hiredis-devel
+# Required by S3 background delete based on python
 BuildRequires: python3-rpm-macros
-BuildRequires: python%{py_short_ver}
+BuildRequires: python36
 BuildRequires: python%{py_short_ver}-devel
 BuildRequires: python%{py_short_ver}-setuptools
+BuildRequires: python%{py_short_ver}-dateutil
+BuildRequires: python%{py_short_ver}-yaml
+BuildRequires: python%{py_short_ver}-pika
+%if 0%{?el7}
+BuildRequires: python-keyring python-futures
+%endif
+# TODO for rhel 8
 
 Requires: mero = %{h_mero_version}
 Requires: libxml2
@@ -58,8 +82,14 @@ Requires: gflags
 Requires: glog
 Requires: pkgconfig
 Requires: log4cxx_eos log4cxx_eos-devel
-Requires: python%{py_short_ver}
+# Required by S3 background delete based on python
+Requires: python36
 Requires: python%{py_short_ver}-yaml
+Requires: python%{py_short_ver}-pika
+%if 0%{?el7}
+Requires: python-keyring python-futures
+%endif
+
 # Java used by Auth server
 Requires: java-1.8.0-openjdk-headless
 Requires: PyYAML

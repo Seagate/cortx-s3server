@@ -19,6 +19,14 @@ Ensure you have at least 8GB RAM for dev VM and 4GB RAM for release/rpmbuild VM.
 For custom domain configuration see S3 readme for more details.
 
 # To setup dev vm
+
+In case of RHEL/CentOS 8 (Not needed for CentOS 7) Run
+script to upgrade packages and enable repos
+```sh
+cd <s3 src>
+./scripts/env/dev/upgrade-enablerepo.sh
+```
+
 Run setup script to configure dev vm
 ```sh
 cd <s3 src>

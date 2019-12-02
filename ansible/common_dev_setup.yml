@@ -31,20 +31,20 @@
     enablerepo: releases_s3server_uploads
     state: present
 
-- name: Install patched log4cxx_eos
-  yum:
-    name:
-      - log4cxx_eos
-      - log4cxx_eos-devel
-    state: present
-
 - name: Install tools for ST
   yum: pkg={{item}} state=installed
   with_items:
+    - awscli
     - ossperf
     - parallel
     - bc
     - coreutils
+
+- name: Install scripttest for system testing
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+  yum: pkg={{item}} state=installed
+  with_items:
+    - "{{python_version}}-scripttest"
 
 - name: Configure lnet
   # TODO - Once lustre mirror repo available for RHEL 8, remove below check

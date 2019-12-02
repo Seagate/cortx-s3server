@@ -6,10 +6,11 @@
 # previous patch: libevhtp-v1.2.11-prev.patch
 # current branch: develop commit: c84f68d258d07c4015820ceb87fd17decd054bfc
 
-VERSION=$(cat /etc/os-release | grep -w VERSION_ID | cut -d '=' -f 2)
+VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
+major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 
 cd libevhtp
-if [ "$VERSION" = "\"8.0\"" ]; then
+if [ "$major_version" = "8" ]; then
   # Apply the libevhtp rhel patch
   patch -f -p1 < ../../patches/libevhtp-v1.2.11-rhel8.patch
 else
