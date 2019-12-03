@@ -112,6 +112,11 @@ TEST_F(S3BucketActionTest, SetAuthorizationMeta) {
   action_under_test_ptr->bucket_metadata =
       action_under_test_ptr->bucket_metadata_factory
           ->create_bucket_metadata_obj(request_mock);
+  std::string MockJsonResponse("Mockresponse");
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_policy_as_json()).WillRepeatedly(ReturnRef(MockJsonResponse));
   action_under_test_ptr->set_authorization_meta();
   EXPECT_EQ(1, call_count_one);
 }

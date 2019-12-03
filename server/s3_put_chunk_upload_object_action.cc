@@ -803,7 +803,7 @@ void S3PutChunkUploadObjectAction::cleanup_oid_from_probable_dead_oid_list() {
 void S3PutChunkUploadObjectAction::set_authorization_meta() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
-                                  "");
+                                  bucket_metadata->get_policy_as_json());
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

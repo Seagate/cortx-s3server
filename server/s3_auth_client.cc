@@ -730,7 +730,8 @@ void S3AuthClient::setup_auth_request_body() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3AuthClient::set_acl_and_policy(std::string acl, std::string policy) {
+void S3AuthClient::set_acl_and_policy(const std::string &acl,
+                                      const std::string &policy) {
   policy_str = policy;
   acl_str = acl;
 }

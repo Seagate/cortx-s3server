@@ -81,7 +81,7 @@ void S3PutObjectACLAction::validate_acl_with_auth() {
 void S3PutObjectACLAction::set_authorization_meta() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   auth_client->set_acl_and_policy(object_metadata->get_encoded_object_acl(),
-                                  "");
+                                  bucket_metadata->get_policy_as_json());
   auth_client->set_bucket_acl(bucket_metadata->get_encoded_bucket_acl());
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

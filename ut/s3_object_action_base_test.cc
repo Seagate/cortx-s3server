@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "mock_s3_bucket_metadata.h"
 #include "mock_s3_object_metadata.h"
 #include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
@@ -166,6 +167,15 @@ TEST_F(S3ObjectActionTest, SetAuthorizationMeta) {
   action_under_test_ptr->clear_tasks();
   action_under_test_ptr->add_task(
       std::bind(&S3ObjectActionTest::func_callback_one, this));
+  action_under_test_ptr->bucket_metadata =
+      action_under_test_ptr->bucket_metadata_factory
+          ->create_bucket_metadata_obj(request_mock);
+
+  std::string MockJsonResponse("Mockresponse");
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
+      .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_policy_as_json()).WillRepeatedly(ReturnRef(MockJsonResponse));
   action_under_test_ptr->set_authorization_meta();
   EXPECT_EQ(1, call_count_one);
 }
