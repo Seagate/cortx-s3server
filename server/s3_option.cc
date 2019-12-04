@@ -1093,6 +1093,11 @@ bool S3Option::is_fake_clovis_redis_kvs() {
   return FLAGS_fake_clovis_redis_kvs;
 }
 
+/* For the moment sync kvs operation for fake kvs is not supported */
+bool S3Option::is_sync_kvs_allowed() {
+  return !(FLAGS_fake_clovis_redis_kvs || FLAGS_fake_clovis_putkv);
+}
+
 unsigned short S3Option::get_max_retry_count() { return max_retry_count; }
 
 unsigned short S3Option::get_retry_interval_in_millisec() {

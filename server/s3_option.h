@@ -393,6 +393,9 @@ class S3Option {
   bool is_fake_clovis_deletekv();
   bool is_fake_clovis_redis_kvs();
 
+  /* For the moment sync kvs operation for fake kvs is not supported */
+  bool is_sync_kvs_allowed();
+
   void set_eventbase(evbase_t* base);
   evbase_t* get_eventbase();
 

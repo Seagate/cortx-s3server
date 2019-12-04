@@ -557,6 +557,10 @@ int S3ClovisKVSWriter::put_keyval_sync(
   s3_log(S3_LOG_INFO, request_id, "Entering with oid = %" SCNx64 " : %" SCNx64
                                   " and %zu key/value pairs\n",
          oid.u_hi, oid.u_lo, kv_list.size());
+
+  /* For the moment sync kvs operation for fake kvs is not supported */
+  assert(S3Option::get_instance()->is_sync_kvs_allowed());
+
   {
     for (const auto &kv : kv_list) {
       s3_log(S3_LOG_DEBUG, request_id, "key = %s, value = %s\n",
