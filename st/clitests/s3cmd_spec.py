@@ -566,7 +566,7 @@ S3cmdTest('s3cmd can revoke acl on bucket').revoke_acl_bucket("seagatebucket","r
 S3cmdTest('s3cmd can revoke acl on object').revoke_acl_object("seagatebucket","3kfile","read:123").execute_test().command_is_successful()
 S3cmdTest('s3cmd can set policy on bucket').setpolicy_bucket("seagatebucket","policy.txt").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete 3kfile after setting acl').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
-S3cmdTest('s3cmd can set policy on bucket').delpolicy_bucket("seagatebucket").execute_test().command_is_successful()
+#S3cmdTest('s3cmd can set policy on bucket').delpolicy_bucket("seagatebucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket after setting policy/acl').delete_bucket("seagatebucket").execute_test().command_is_successful()
 
 # ********** s3cmd accesslog should return NotImplemented ***********

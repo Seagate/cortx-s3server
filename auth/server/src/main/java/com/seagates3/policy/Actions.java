@@ -41,14 +41,15 @@ class Actions {
   static final String IAM_ACTIONS_FILE = "/IAMActions.json";
 
  private
-  static Set<String> bucketOperations = new HashSet<String>();
+  static Set<String> bucketOperations = null;
  private
-  static Set<String> objectOperations = new HashSet<String>();
+  static Set<String> objectOperations = null;
 
  public
   static void init(PolicyUtil.Services service)
       throws UnsupportedEncodingException {
     InputStream in = null;
+    if (bucketOperations == null && objectOperations == null) {
     switch (service) {
       case S3:
         in = Actions.class.getResourceAsStream(S3_ACTIONS_FILE);
@@ -68,8 +69,11 @@ class Actions {
     .getType();
     JsonParser jsonParser = new JsonParser();
     JsonObject element = (JsonObject)jsonParser.parse(reader);
+    bucketOperations = new HashSet<>();
+    objectOperations = new HashSet<>();
     bucketOperations = gson.fromJson(element.get("Bucket"), listType);
     objectOperations = gson.fromJson(element.get("Object"), listType);
+  }
   }
  public
   static Set<String> getBucketOperations() { return bucketOperations; }

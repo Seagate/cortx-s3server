@@ -355,4 +355,10 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.BAD_REQUEST, "UnexpectedContent",
                             errorMessage);
     }
+
+   public
+    ServerResponse methodNotAllowed(String errorMessage) {
+      return formatResponse(HttpResponseStatus.METHOD_NOT_ALLOWED,
+                            "MethodNotAllowed", errorMessage);
+    }
  }

@@ -50,6 +50,22 @@ class PolicyUtil {
   }
 
   /**
+      * Fetch entire resource value from ClientAbsoluteUri
+    *eg-/bucketName/objectName
+      * ouput-bucketName/objectName
+      *
+      * @param uri
+      * @return
+      */
+ public
+  static String getResourceFromUri(String uri) {
+    if (uri == null || uri.isEmpty()) {
+      return null;
+    }
+    return uri.substring(1);
+  }
+
+  /**
       * Get all matching actions from Actions.json
       *
       * @param inputAction
@@ -129,5 +145,16 @@ class PolicyUtil {
   static List<String> convertCommaSeparatedStringToList(String str) {
     List<String> list = Arrays.asList(str.split("\\s*,\\s*"));
     return list;
+  }
+
+ public
+  static boolean isPolicyOperation(String operation) {
+    boolean isValid = false;
+    if (PolicyAuthorizerConstants.PUT_BUCKET_POLICY.equals(operation) ||
+        PolicyAuthorizerConstants.GET_BUCKET_POLICY.equals(operation) ||
+        PolicyAuthorizerConstants.DELETE_BUCKET_POLICY.equals(operation)) {
+      isValid = true;
+    }
+    return isValid;
   }
 }

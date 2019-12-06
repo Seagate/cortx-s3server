@@ -10,7 +10,9 @@
     "s3:GetBucketTagging",
     "s3:GetBucketLocation",
     "s3:PutBucketTagging",
-    "s3:DeleteBucketTagging"
+    "s3:DeleteBucketTagging",
+    "s3:PutBucketPolicy",
+    "s3:GetBucketPolicy"
   ],
   "Object": [
     "s3:DeleteObject",

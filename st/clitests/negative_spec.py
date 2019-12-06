@@ -584,9 +584,9 @@ for i, type in enumerate(config_types):
     S3cmdTest('S3cmd can abort multipart upload').\
     abort_multipart("seagatebucket", "18MBfile", upload_id).\
     execute_test().command_is_successful()
-    S3cmdTest('s3cmd can delete policy on bucket').\
-        delpolicy_bucket("seagatebucket").\
-        execute_test().command_is_successful()
+#    S3cmdTest('s3cmd can delete policy on bucket').\
+ #       delpolicy_bucket("seagatebucket").\
+  #      execute_test().command_is_successful()
 
     # Negative test cases for sync_index
     S3fiTest('s3cmd enable FI clovis idx op fail').\

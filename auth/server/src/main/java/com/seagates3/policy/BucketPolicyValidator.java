@@ -53,14 +53,8 @@ class BucketPolicyValidator extends PolicyValidator {
  public
   BucketPolicyValidator() {
     responseGenerator = new BucketPolicyResponseGenerator();
-    try {
-      Actions.init(PolicyUtil.Services.S3);
       initializePolicyElements();
       initializeNestedPolicyElements();
-    }
-    catch (UnsupportedEncodingException e) {
-      LOGGER.error("Exception during policy Validator initializer");
-    }
   }
 
  private

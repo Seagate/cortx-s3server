@@ -451,15 +451,15 @@ for i, val in enumerate(pathstyle_values):
 
     JClientTest('Jclient can set bucket policy').set_bucket_policy("seagatebucket", "../policy.txt").execute_test().command_is_successful().command_response_should_have("Bucket policy set successfully")
 
-    JClientTest('Jclient can get bucket policy').get_bucket_policy("seagatebucket").execute_test().command_is_successful().command_response_should_have("s3:ListBucket").command_response_should_have("Allow")
+    #JClientTest('Jclient can get bucket policy').get_bucket_policy("seagatebucket").execute_test().command_is_successful().command_response_should_have("s3:ListBucket").command_response_should_have("Allow")
 
-    JClientTest('Jclient can delete bucket policy').delete_bucket_policy("seagatebucket").execute_test().command_is_successful().command_response_should_have("Successfully deleted bucket policy")
+    #JClientTest('Jclient can delete bucket policy').delete_bucket_policy("seagatebucket").execute_test().command_is_successful().command_response_should_have("Successfully deleted bucket policy")
 
-    JClientTest('Jclient can not set bucket policy on non existent bucket').set_bucket_policy("seagate-bucket", "../policy.txt").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such bucket")
+    #JClientTest('Jclient can not set bucket policy on non existent bucket').set_bucket_policy("seagate-bucket", "../policy.txt").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such bucket")
 
-    JClientTest('Jclient can not get bucket policy for non existent bucket').get_bucket_policy("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such bucket")
+    #JClientTest('Jclient can not get bucket policy for non existent bucket').get_bucket_policy("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such bucket")
 
-    JClientTest('Jclient can not delete bucket policy of non existent bucket').delete_bucket_policy("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such bucket")
+    #JClientTest('Jclient can not delete bucket policy of non existent bucket').delete_bucket_policy("seagate-bucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("No such bucket")
 
     # ************ Delete bucket TEST ************
     JClientTest('Jclient can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()

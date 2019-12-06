@@ -33,17 +33,24 @@
 
 package com.seagates3.acl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.ldap.GroupImpl;
+import com.seagates3.exception.BadRequestException;
 import com.seagates3.exception.DataAccessException;
 import com.seagates3.exception.GrantListFullException;
 import com.seagates3.model.Account;
+import com.seagates3.util.BinaryUtil;
 
 public
 class AccessControlList {
@@ -173,6 +180,33 @@ class AccessControlList {
       return true;
     }
     return false;
+  }
+
+  /**
+      * Below will retrieve owner from bucket ACL
+      * @param requestBody
+      * @return
+      */
+ public
+  String getOwner(Map<String, String> requestBody) {
+    String encodedACL = requestBody.get("Auth-ACL");
+    String owner = null;
+    try {
+      if (encodedACL == null || encodedACL.isEmpty()) {
+        String ex = "Bad request. Resource ACL absent in the request.";
+        LOGGER.error(ex);
+        throw new BadRequestException(ex);
+      }
+      AccessControlPolicy acp =
+          new AccessControlPolicy(BinaryUtil.base64DecodeString(encodedACL));
+      owner = acp.getOwner().getCanonicalId();
+    }
+    catch (ParserConfigurationException | SAXException | IOException |
+           GrantListFullException | BadRequestException e) {
+      LOGGER.error("Exception while getting owner.. ", e);
+    }
+
+    return owner;
   }
 }
 

@@ -11,23 +11,30 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.seagates3.acl.ACLValidation;
 import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.dao.ldap.AccountImpl;
 import com.seagates3.dao.ldap.LDAPUtils;
+import com.seagates3.dao.ldap.UserImpl;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
+import com.seagates3.model.User;
+import com.seagates3.policy.BucketPolicyAuthorizer;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 import com.seagates3.util.BinaryUtil;
-import com.seagates3.acl.ACLValidation;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+
 @RunWith(PowerMockRunner.class)
-    @PrepareForTest({LDAPUtils.class, ACLValidation.class})
+    @PrepareForTest({LDAPUtils.class, ACLValidation.class,
+                     BucketPolicyAuthorizer.class})
     @PowerMockIgnore({"javax.management.*"}) public class AuthorizerTest {
 
  private
@@ -37,9 +44,17 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  private
   String requestHeaderName = "Request-ACL";
  private
+  AccountImpl mockAccountImpl;
+ private
+  UserImpl mockUserImpl;
+ private
   Authorizer authorizer;
   AuthorizationResponseGenerator responseGenerator =
       new AuthorizationResponseGenerator();
+ private
+  Account mockAccount;
+ private
+  User user;
 
  private
   String serverResponseStringWithoutAcl =
@@ -69,6 +84,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     authorizer = new Authorizer();
     PowerMockito.mockStatic(LDAPUtils.class);
     PowerMockito.mockStatic(ACLValidation.class);
+    mockAccountImpl = Mockito.mock(AccountImpl.class);
+    mockAccount = Mockito.mock(Account.class);
+    mockUserImpl = Mockito.mock(UserImpl.class);
+    user = new User();
+    user.setName("root");
   }
 
   @Test public void validateServerResponseWithRequestHeaderAsTrue() {
@@ -232,6 +252,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertEquals(HttpResponseStatus.BAD_REQUEST,
                  actualServerResponse.getResponseStatus());
   }
+
   @Test public void authorize_validate_acl_valid_id() throws Exception {
     ServerResponse actualServerResponse = null;
     String acl =
@@ -300,6 +321,227 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Request-ACL", "true");
     actualServerResponse = authorizer.authorize(requestor, requestBody);
     assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Below will test- PutBucketPolicy first time call
+   */
+  @Test public void authorize_policy_positive() {
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "policy");
+    requestBody.put("Method", "PUT");
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Below will test- PutBucketPolicy second time call with Allow effect
+   *
+   * @throws Exception
+   */
+  @Test public void authorize_policy_when_reuploaded_with_allow_permission()
+      throws Exception {
+    String policy =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::try1\",\r\n" +
+        "          \"Action\": [\r\n" +
+        "                  \"s3:PutBucketPolicy\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Allow\",\r\n" + "          \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"*\"\r\n" + "        ]\r\n" +
+        "      }\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "policy");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/try1");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Below will test owner access being DENY in policy
+   *
+   * @throws Exception
+   */
+  @Test public void
+  authorize_policy_success_for_owner_with_DENY_permission_in_policy()
+      throws Exception {
+
+    String policy =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::try1\",\r\n" +
+        "          \"Action\": [\r\n" +
+        "                  \"s3:PutBucketPolicy\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Deny\",\r\n" + "          \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"12345\"\r\n" + "        ]\r\n" +
+        "      }\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "policy");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/try1");
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Authorize Delete bucket policy for owner w.o permission
+   *
+   * @throws Exception
+   */
+  @Test public void authorize_delete_bucket_policy_success_for_owner()
+      throws Exception {
+
+    String policy =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::try1\",\r\n" +
+        "          \"Action\": [\r\n" +
+        "                  \"s3:PutBucketPolicy\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Deny\",\r\n" + "          \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"12345\"\r\n" + "        ]\r\n" +
+        "      }\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "policy");
+    requestBody.put("Method", "DELETE");
+    requestBody.put("ClientAbsoluteUri", "/try1");
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * MethodNotAllowed response for cross accounts
+   *
+   * @throws Exception
+   */
+  @Test public void authorize_put_bucket_policy_for_cross_account_scenario()
+      throws Exception {
+
+    String policy =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::try1\",\r\n" +
+        "          \"Action\": [\r\n" +
+        "                  \"s3:PutBucketPolicy\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Allow\",\r\n" + "          \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"12345\"\r\n" + "        ]\r\n" +
+        "      }\r\n" + "    }\r\n" + "  ]\r\n" + "}";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" +
+        "b103e16d027d24270d8facf37a48b141fd88ac8f43f9f942b91ba1cf1dc33f71" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "policy");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/try1");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("abcd");
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.METHOD_NOT_ALLOWED,
                  actualServerResponse.getResponseStatus());
   }
 }
