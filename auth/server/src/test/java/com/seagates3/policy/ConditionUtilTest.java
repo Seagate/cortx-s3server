@@ -19,9 +19,6 @@
 
 package com.seagates3.policy;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -82,8 +79,8 @@ class ConditionUtilTest {
   /**
    * Validate Condition Key
    */
-  @Test public void testIsConditionKeyValid_SourceArn_success() {
-    Assert.assertTrue(util.isConditionKeyValid("aws:SourceArn"));
+  @Test public void testIsConditionKeyValid_invalid_SourceArn_success() {
+    Assert.assertFalse(util.isConditionKeyValid("CurrentTime"));
   }
 
   /**
@@ -126,23 +123,5 @@ class ConditionUtilTest {
    */
   @Test public void testIsConditionKeyValid_empty_fail() {
     Assert.assertFalse(util.isConditionKeyValid(""));
-  }
-
-  /**
-   * Validate Condition value
-   */
-  @Test public void testIsConditionValueValid_valid_success() {
-    List<String> list = new ArrayList<>();
-    list.add("QmluYXJ5VmFsdWVJbkJhc2U2NA==");
-    Assert.assertTrue(util.isConditionValueValid("BinaryEquals", list));
-  }
-
-  /**
-   * Validate Condition value
-   */
-  @Test public void testIsConditionValueValid_invalid_fail() {
-    List<String> list = new ArrayList<>();
-    list.add("...");
-    Assert.assertFalse(util.isConditionValueValid("BinaryEquals", list));
   }
 }

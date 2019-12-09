@@ -74,12 +74,16 @@ class PolicyUtil {
  public
   static List<String> getAllMatchingActions(String inputAction) {
     List<String> matchingActions = new ArrayList<>();
-    for (String action : Actions.getBucketOperations()) {
+    for (String action : S3Actions.getInstance()
+             .getBucketOperations()
+             .keySet()) {
       if (isPatternForActionValid(action, inputAction)) {
         matchingActions.add(action);
       }
     }
-    for (String action : Actions.getObjectOperations()) {
+    for (String action : S3Actions.getInstance()
+             .getObjectOperations()
+             .keySet()) {
       if (isPatternForActionValid(action, inputAction)) {
         matchingActions.add(action);
       }
@@ -126,12 +130,13 @@ class PolicyUtil {
                                           int slashPosition) {
     boolean isValid = true;
     for (String action : actions) {
-      if ((Actions.getBucketOperations().contains(action)) &&
+      if ((S3Actions.getInstance().getBucketOperations().containsKey(action)) &&
           slashPosition !=
               -1) {  // Bucket operation but object is present in resource
         isValid = false;
         break;
-      } else if (Actions.getObjectOperations().contains(action) &&
+      } else if (S3Actions.getInstance().getObjectOperations().containsKey(
+                     action) &&
                  slashPosition == -1) {  // object operation but object is
                                          // missing in resource
         isValid = false;

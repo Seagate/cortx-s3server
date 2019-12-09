@@ -64,6 +64,9 @@ policy_condition_StringLike_invalidKey_fail = "file://" + os.path.abspath(policy
 policy_condition_StringLikeIfExists_success_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringLikeIfExists_success.json')
 policy_condition_StringLikeIfExists_success = "file://" + os.path.abspath(policy_condition_StringLikeIfExists_success_relative)
 
+policy_condition_combination_fail_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_combination_fail.json')
+policy_condition_combination_fail = "file://" + os.path.abspath(policy_condition_combination_fail_relative)
+
 AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command_is_successful()
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucketPolicy")
@@ -142,9 +145,7 @@ AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_cond
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
 
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_ArnLike_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:SourceArn")
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_ArnLike_success).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
 
 AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLike_success).execute_test().command_is_successful()
 
@@ -174,9 +175,7 @@ AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_cond
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:CurrentTime")
 
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:key")
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_success).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
 
 AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_invalidValue_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
 
@@ -185,5 +184,7 @@ AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_cond
 AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLikeIfExists_success).execute_test().command_is_successful()
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_combination_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("Conditions do not apply to combination of actions and resources in statement")
 
 AwsTest('Aws can delete bucket seagate').delete_bucket("seagate").execute_test().command_is_successful()

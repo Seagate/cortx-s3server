@@ -21,10 +21,10 @@ package com.seagates3.policy;
 
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-
-import org.apache.commons.codec.binary.Base64;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -41,19 +41,17 @@ class ConditionUtil {
   HashSet<String> conditionKeys = new HashSet<>();
 
  private
-  static final String CONDITION_TYPES_FILE = "/policy/ConditionTypes.json";
+  HashMap<String, Set<String>> s3ActionsMap = new HashMap<>();
 
  private
-  static final String CONDITION_KEYS_FILE = "/policy/ConditionKeys.json";
+  static final String CONDITION_FIELDS_FILE =
+      "/policy/PolicyConditionFields.json";
 
   /**
    * private constructor - initializes the ConditionTypes and ConditionKeys
    */
  private
-  ConditionUtil() {
-    initConditionTypes();
-    initConditionKeys();
-  }
+  ConditionUtil() { initConditionFields(); }
 
   /**
    * Singleton class holder
@@ -73,41 +71,28 @@ class ConditionUtil {
   }
 
   /**
-   * Initialize conditionTypes set with the condition types from
-   * ConditionTypes.json file
+   * Initialize conditionTypes and conditionKeys set from
+   * PolicyConditionFields.json file
    */
  private
-  void initConditionTypes() {
+  void initConditionFields() {
     InputStreamReader reader = new InputStreamReader(
-        PolicyValidator.class.getResourceAsStream(CONDITION_TYPES_FILE));
-
-    Type setType = new TypeToken<HashSet<String>>() {}
-    .getType();
-    JsonParser jsonParser = new JsonParser();
-    JsonObject element = (JsonObject)jsonParser.parse(reader);
-    conditionTypes =
-        new Gson().fromJson(element.get("ConditionTypes"), setType);
-  }
-
-  /**
-   * Initialize conditionKeys set with the condition types from
-   * ConditionKeys.json file
-   */
- private
-  void initConditionKeys() {
-    InputStreamReader reader = new InputStreamReader(
-        PolicyValidator.class.getResourceAsStream(CONDITION_KEYS_FILE));
+        PolicyValidator.class.getResourceAsStream(CONDITION_FIELDS_FILE));
 
     Gson gson = new Gson();
     Type setType = new TypeToken<HashSet<String>>() {}
     .getType();
     JsonParser jsonParser = new JsonParser();
     JsonObject element = (JsonObject)jsonParser.parse(reader);
+    conditionTypes = gson.fromJson(element.get("ConditionTypes"), setType);
+    JsonObject keyElement = (JsonObject)element.get("ConditionKeys");
     HashSet<String> globalKeys =
-        gson.fromJson(element.get("GlobalKeys"), setType);
-    HashSet<String> s3Keys = gson.fromJson(element.get("S3Keys"), setType);
+        gson.fromJson(keyElement.get("GlobalKeys"), setType);
+    HashSet<String> s3Keys = gson.fromJson(keyElement.get("S3Keys"), setType);
     conditionKeys.addAll(globalKeys);
     conditionKeys.addAll(s3Keys);
+    s3ActionsMap.putAll(S3Actions.getInstance().getBucketOperations());
+    s3ActionsMap.putAll(S3Actions.getInstance().getObjectOperations());
   }
 
   /**
@@ -145,23 +130,30 @@ class ConditionUtil {
   }
 
   /**
-   * Check if the condition value is valid.
-   * Only value for Binary condition is validated here.
-   * For everything else return true.
-   * @param condition
+   * Validate if the combination of Action to the Condition Key is proper.
+   * Method validates the condition against the Action with the help of
+   * S3Actions.json resource
+   * @param conditionKey
+   * @param action
    * @return
    */
  public
-  boolean isConditionValueValid(String conditionType, List<String> values) {
-    if (conditionType != null &&
-        (conditionType.equals("BinaryEquals") ||
-         conditionType.equals("BinaryEqualsIfExists"))) {
+  boolean isConditionCombinationValid(String conditionKey, String action) {
 
-      if (values == null || values.isEmpty() ||
-          !Base64.isBase64(values.get(0))) {
-        return false;
+    if (conditionKey == null || conditionKey.isEmpty() || action == null ||
+        action.isEmpty())
+      return false;
+
+    // Combination check does not apply for global condition keys.
+    if (conditionKey.startsWith("aws:")) return true;
+
+    for (Entry<String, Set<String>> entry : s3ActionsMap.entrySet()) {
+      if (action.equals(entry.getKey())) {
+        if (entry.getValue().contains(conditionKey)) {
+          return true;
+        }
       }
     }
-    return true;
+    return false;
   }
 }

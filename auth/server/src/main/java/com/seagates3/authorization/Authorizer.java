@@ -19,7 +19,6 @@
 package com.seagates3.authorization;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,6 @@ import com.seagates3.model.Account;
 import com.seagates3.model.Group;
 import com.seagates3.model.Requestor;
 import com.seagates3.model.User;
-import com.seagates3.policy.Actions;
 import com.seagates3.policy.BucketPolicyAuthorizer;
 import com.seagates3.policy.BucketPolicyValidator;
 import com.seagates3.policy.PolicyUtil;
@@ -63,14 +61,7 @@ class Authorizer {
   final Logger LOGGER = LoggerFactory.getLogger(Authorizer.class.getName());
 
  public
-  Authorizer() {
-    try {
-      Actions.init(PolicyUtil.Services.S3);
-    }
-    catch (UnsupportedEncodingException e) {
-      LOGGER.error("Exception while initializing Actions", e);
-    }
-  }
+  Authorizer() {}
 
   /**
    * Request authorization
@@ -125,102 +116,95 @@ class Authorizer {
                                        Map<String, String> requestBody) {
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
-        Map<String, List<Account>> accountPermissionMap = new HashMap<>();
-        Map<String, List<Group>> groupPermissionMap = new HashMap<>();
-        LOGGER.debug("request body : " + requestBody.toString());
-        // Here we are assuming that - Authentication is successful hence
-        // proceeding with authorization
-        ServerResponse serverResponse = null;
+    Map<String, List<Account>> accountPermissionMap = new HashMap<>();
+    Map<String, List<Group>> groupPermissionMap = new HashMap<>();
+    LOGGER.debug("request body : " + requestBody.toString());
+    // Here we are assuming that - Authentication is successful hence
+    // proceeding with authorization
+    ServerResponse serverResponse = null;
 
-        if (("PUT".equals(requestBody.get("Method")))) {
-          serverResponse = new ACLRequestValidator().validateAclRequest(
-              requestBody, accountPermissionMap, groupPermissionMap);
-        }
-        if (serverResponse != null &&
-            serverResponse.getResponseStatus() != null &&
-            !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
-          LOGGER.error("ACL authorization request validation failed");
-          return serverResponse;
-        }
-        LOGGER.info("ACL authorization request is validated successfully");
-        // Authorize the request
-        try {
-          if (requestBody.get("Auth-ACL") == null) {
-            LOGGER.debug("ACL not present. Skipping ACL authorization.");
-          } else if (!new ACLAuthorizer().isAuthorized(requestor,
-                                                       requestBody)) {
-            LOGGER.info(
-                "Resource ACL denies access to the requestor for this " +
-                "operation.");
-            return responseGenerator.AccessDenied();
-          }
-        }
-        catch (ParserConfigurationException | SAXException | IOException |
-               GrantListFullException e1) {
-          LOGGER.error("Error while initializing authorization ACL");
-          return responseGenerator.invalidACL();
-        }
-        catch (BadRequestException e2) {
-          LOGGER.error("Request does not contain the mandatory - " +
-                       "ACL, Method or ClientAbsoluteUri");
-          return responseGenerator.badRequest();
-        }
-        catch (DataAccessException e3) {
-          LOGGER.error("Exception while authorizing ", e3);
-          responseGenerator.internalServerError();
-        }
+    if (("PUT".equals(requestBody.get("Method")))) {
+      serverResponse = new ACLRequestValidator().validateAclRequest(
+          requestBody, accountPermissionMap, groupPermissionMap);
+    }
+    if (serverResponse != null && serverResponse.getResponseStatus() != null &&
+        !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+      LOGGER.error("ACL authorization request validation failed");
+      return serverResponse;
+    }
+    LOGGER.info("ACL authorization request is validated successfully");
+    // Authorize the request
+    try {
+      if (requestBody.get("Auth-ACL") == null) {
+        LOGGER.debug("ACL not present. Skipping ACL authorization.");
+      } else if (!new ACLAuthorizer().isAuthorized(requestor, requestBody)) {
+        LOGGER.info("Resource ACL denies access to the requestor for this " +
+                    "operation.");
+        return responseGenerator.AccessDenied();
+      }
+    }
+    catch (ParserConfigurationException | SAXException | IOException |
+           GrantListFullException e1) {
+      LOGGER.error("Error while initializing authorization ACL");
+      return responseGenerator.invalidACL();
+    }
+    catch (BadRequestException e2) {
+      LOGGER.error("Request does not contain the mandatory - " +
+                   "ACL, Method or ClientAbsoluteUri");
+      return responseGenerator.badRequest();
+    }
+    catch (DataAccessException e3) {
+      LOGGER.error("Exception while authorizing ", e3);
+      responseGenerator.internalServerError();
+    }
 
-        // After ALLUser Requested Permission is Authorized.
-        if (requestor == null &&
-            !("true".equals(requestBody.get("Request-ACL")))) {
-          return responseGenerator.ok();
+    // After ALLUser Requested Permission is Authorized.
+    if (requestor == null && !("true".equals(requestBody.get("Request-ACL")))) {
+      return responseGenerator.ok();
+    }
+
+    // Initialize a default AccessControlPolicy object and generate
+    // authorization response if request header contains param value true
+    // for- Request-ACL
+    if ("true".equals(requestBody.get("Request-ACL"))) {
+      try {
+        String acl = null;
+        ACLCreator aclCreator = new ACLCreator();
+
+        if (!accountPermissionMap.isEmpty() || !groupPermissionMap.isEmpty()) {
+          acl = aclCreator.createAclFromPermissionHeaders(
+              requestor, accountPermissionMap, groupPermissionMap, requestBody);
+
+        } else if (requestBody.get("x-amz-acl") != null) {
+          acl = aclCreator.createACLFromCannedInput(requestor, requestBody);
+
+        } else {  // neither permission headers nor canned acl requested so
+                  // create default acl
+          acl = aclCreator.createDefaultAcl(requestor);
         }
-
-        // Initialize a default AccessControlPolicy object and generate
-        // authorization response if request header contains param value true
-        // for- Request-ACL
-        if ("true".equals(requestBody.get("Request-ACL"))) {
-          try {
-            String acl = null;
-            ACLCreator aclCreator = new ACLCreator();
-
-            if (!accountPermissionMap.isEmpty() ||
-                !groupPermissionMap.isEmpty()) {
-              acl = aclCreator.createAclFromPermissionHeaders(
-                  requestor, accountPermissionMap, groupPermissionMap,
-                  requestBody);
-
-            } else if (requestBody.get("x-amz-acl") != null) {
-              acl = aclCreator.createACLFromCannedInput(requestor, requestBody);
-
-            } else {  // neither permission headers nor canned acl requested so
-                      // create default acl
-              acl = aclCreator.createDefaultAcl(requestor);
-            }
-            LOGGER.info("Updated xml is - " + acl);
-            return responseGenerator.generateAuthorizationResponse(requestor,
-                                                                   acl);
-          }
-          catch (ParserConfigurationException | SAXException | IOException e) {
-            LOGGER.error("Error while initializing default ACL");
-            return responseGenerator.invalidACL();
-          }
-          catch (GrantListFullException e) {
-            LOGGER.error("Error while initializing default ACL." +
-                         " Grants more than " +
-                         AuthServerConfig.MAX_GRANT_SIZE + " are not allowed.");
-            return responseGenerator.grantListSizeViolation();
-          }
-          catch (TransformerException e) {
-            LOGGER.error("Error while generating the Authorization Response");
-            return responseGenerator.internalServerError();
-          }
-          catch (InternalServerException e) {
-            LOGGER.error(e.getMessage());
-            return e.getServerResponse();
-          }
-        }
-        return responseGenerator.generateAuthorizationResponse(requestor, null);
+        LOGGER.info("Updated xml is - " + acl);
+        return responseGenerator.generateAuthorizationResponse(requestor, acl);
+      }
+      catch (ParserConfigurationException | SAXException | IOException e) {
+        LOGGER.error("Error while initializing default ACL");
+        return responseGenerator.invalidACL();
+      }
+      catch (GrantListFullException e) {
+        LOGGER.error("Error while initializing default ACL." +
+                     " Grants more than " + AuthServerConfig.MAX_GRANT_SIZE +
+                     " are not allowed.");
+        return responseGenerator.grantListSizeViolation();
+      }
+      catch (TransformerException e) {
+        LOGGER.error("Error while generating the Authorization Response");
+        return responseGenerator.internalServerError();
+      }
+      catch (InternalServerException e) {
+        LOGGER.error(e.getMessage());
+        return e.getServerResponse();
+      }
+    }
+    return responseGenerator.generateAuthorizationResponse(requestor, null);
   }
 
   /**

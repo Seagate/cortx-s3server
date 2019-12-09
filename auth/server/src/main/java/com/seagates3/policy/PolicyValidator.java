@@ -81,15 +81,20 @@ abstract class PolicyValidator {
    * Validate the Conditions form Statement
    *
    * @param conditionList
+ * @param actionList
    * @return {@link ServerResponse}
    */
  protected
-  ServerResponse validateCondition(List<Condition> conditionList) {
+  ServerResponse validateCondition(List<Condition> conditionList,
+                                   List<Action> actionList) {
     ServerResponse response = null;
     ConditionUtil util = ConditionUtil.getInstance();
     if (conditionList != null) {
       for (Condition condition : conditionList) {
         String conditionType = condition.getType();
+        String conditionKey = condition.getConditionKey();
+
+        // Validate Condition Type
         if (!util.isConditionTypeValid(conditionType)) {
           response = responseGenerator.malformedPolicy(
               "Invalid Condition type : " + conditionType);
@@ -97,17 +102,25 @@ abstract class PolicyValidator {
                        " is invalid in bucket policy");
           break;
         }
-        if (!util.isConditionKeyValid(condition.getConditionKey())) {
+
+        // Validate Condition Key
+        if (!util.isConditionKeyValid(conditionKey)) {
           response = responseGenerator.malformedPolicy(
               "Policy has an invalid condition key");
-          LOGGER.error("Policy has an invalid condition key: " + conditionType);
+          LOGGER.error("Policy has an invalid condition key: " + conditionKey);
           break;
         }
-        if (!util.isConditionValueValid(conditionType, condition.getValues())) {
-          response = responseGenerator.malformedPolicy(
-              "Invalid Base64 value for binary condition");
-          LOGGER.error("Invalid Base64 value for binary condition");
-          break;
+
+        // Validate combination of Condition key and Action
+        for (Action action : actionList) {
+          if (!util.isConditionCombinationValid(conditionKey,
+                                                action.getActionName())) {
+            String errorMsg = "Conditions do not apply to combination of " +
+                              "actions and resources in statement";
+            response = responseGenerator.malformedPolicy(errorMsg);
+            LOGGER.error(errorMsg + " for condition key: " + conditionKey);
+            break;
+          }
         }
       }
     }
@@ -216,4 +229,3 @@ abstract class PolicyValidator {
                                 List<Resource> resourceValues,
                                 String inputBucket);
 }
-

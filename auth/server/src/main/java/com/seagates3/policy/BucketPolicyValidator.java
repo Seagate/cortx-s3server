@@ -19,7 +19,6 @@
 
 package com.seagates3.policy;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -53,8 +52,8 @@ class BucketPolicyValidator extends PolicyValidator {
  public
   BucketPolicyValidator() {
     responseGenerator = new BucketPolicyResponseGenerator();
-      initializePolicyElements();
-      initializeNestedPolicyElements();
+    initializePolicyElements();
+    initializeNestedPolicyElements();
   }
 
  private
@@ -122,7 +121,7 @@ class BucketPolicyValidator extends PolicyValidator {
         if (response != null) break;
 
         // condition validation
-        response = validateCondition(stmt.getConditions());
+        response = validateCondition(stmt.getConditions(), stmt.getActions());
         if (response != null) break;
 
         // Principal Validation

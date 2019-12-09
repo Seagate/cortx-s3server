@@ -10,7 +10,9 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
+import com.amazonaws.auth.policy.actions.S3Actions;
 import com.seagates3.authorization.Authorizer;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.BucketPolicyResponseGenerator;
@@ -284,7 +286,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("bucket-owner-read");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -298,7 +303,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("bucket-owner-read");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -312,7 +320,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("true");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -325,49 +336,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
             "abc");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
-  }
-
-  /**
-   * Validate ArnEquals valid condition
-   */
-  @Test public void test_validateCondition_ArnEquals_success() {
-
-    Condition condition = new Condition()
-                              .withType("ArnEquals")
-                              .withConditionKey("aws:SourceArn")
-                              .withValues("arn:aws:s3:::bucket");
-    ArrayList<Condition> list = new ArrayList<>();
-    list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
-  }
-
-  /**
-   * Validate ArnEquals valid condition but invalid key value pair
-   */
-  @Test public void test_validateCondition_ArnEquals_invalidKeyValue_success() {
-
-    Condition condition = new Condition()
-                              .withType("ArnEquals")
-                              .withConditionKey("s3:x-amz-acl")
-                              .withValues("bucket-owner*");
-    ArrayList<Condition> list = new ArrayList<>();
-    list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
-  }
-
-  /**
-   * Validate ArnLike valid condition
-   */
-  @Test public void test_validateCondition_ArnLike_success() {
-
-    Condition condition = new Condition()
-                              .withType("ArnLike")
-                              .withConditionKey("s3:x-amz-acl")
-                              .withValues("bucket-owner*");
-    ArrayList<Condition> list = new ArrayList<>();
-    list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -381,7 +353,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("10");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
+    Action acton = S3Actions.ListObjects;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -395,61 +370,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("2013-06-30T00:00:00Z");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
-  }
-
-  /**
-   * Validate BinaryEquals valid condition
-   */
-  @Test public void test_validateCondition_BinaryEquals_success() {
-
-    Condition condition = new Condition()
-                              .withType("BinaryEquals")
-                              .withConditionKey("aws:key")
-                              .withValues("QmluYXJ5VmFsdWVJbkJhc2U2NA==");
-    ArrayList<Condition> list = new ArrayList<>();
-    list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
-  }
-
-  /**
-   * Validate BinaryEquals invalid condition value
-   */
-  @Test public void test_validateCondition_BinaryEquals_invalidValue_fail() {
-
-    Condition condition = new Condition()
-                              .withType("BinaryEquals")
-                              .withConditionKey("aws:key")
-                              .withValues("...");
-    ArrayList<Condition> list = new ArrayList<>();
-    list.add(condition);
-    Assert.assertNotNull(validator.validateCondition(list));
-  }
-
-  /**
-   * Validate BinaryEquals invalid condition value null
-   */
-  @Test public void test_validateCondition_BinaryEquals_nullValue_fail() {
-
-    Condition condition =
-        new Condition().withType("BinaryEquals").withConditionKey("aws:key");
-    ArrayList<Condition> list = new ArrayList<>();
-    list.add(condition);
-    Assert.assertNotNull(validator.validateCondition(list));
-  }
-
-  /**
-   * Validate BinaryEquals invalid condition key
-   */
-  @Test public void test_validateCondition_BinaryEquals_invalidKey_fail() {
-
-    Condition condition = new Condition()
-                              .withType("BinaryEquals")
-                              .withConditionKey("key")
-                              .withValues("QmluYXJ5VmFsdWVJbkJhc2U2NA==");
-    ArrayList<Condition> list = new ArrayList<>();
-    list.add(condition);
-    Assert.assertNotNull(validator.validateCondition(list));
+    Action acton = S3Actions.ListObjects;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -463,7 +387,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("bucket-owner*");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -477,7 +404,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("bucket-owner*");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNotNull(validator.validateCondition(list));
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNotNull(validator.validateCondition(list, actionList));
   }
 
   /**
@@ -491,6 +421,27 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                               .withValues("qwerty");
     ArrayList<Condition> list = new ArrayList<>();
     list.add(condition);
-    Assert.assertNull(validator.validateCondition(list));
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    Assert.assertNull(validator.validateCondition(list, actionList));
+  }
+
+  /**
+   * Validate StringEquals valid condition
+   */
+  @Test public void test_validateCondition_invalidCombination_fail() {
+
+    Condition condition = new Condition()
+                              .withType("StringEquals")
+                              .withConditionKey("s3:max-keys")
+                              .withValues("bucket-owner-read");
+    ArrayList<Condition> list = new ArrayList<>();
+    list.add(condition);
+    Action acton = S3Actions.PutObject;
+    ArrayList<Action> actionList = new ArrayList<>();
+    actionList.add(acton);
+    ServerResponse response = validator.validateCondition(list, actionList);
+    Assert.assertNotNull(response);
   }
 }

@@ -5,16 +5,16 @@
     {
       "Sid": "Stmt1462526862401",
       "Action": [
-        "s3:ListBucket"
+        "s3:GetObject"
       ],
       "Effect": "Allow",
-      "Resource": "arn:aws:s3:::seagate",
-      "Condition": {
-        "NumericLessThanEquals": {
-          "s3:max-keys": "10"
+      "Resource": "arn:aws:s3:::seagate/abc",
+	  "Condition": {
+        "StringEquals": {
+          "s3:x-amz-acl": "bucket-owner-read"
         }
       },
-      "Principal":"*"
+      "Principal": "*"
     }
   ]
 }
