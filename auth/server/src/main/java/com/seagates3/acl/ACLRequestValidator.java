@@ -197,7 +197,6 @@ class ACLRequestValidator {
 
   /**
    * Below method will validate the requested account
-   *
    * @param grantee
    * @return true/false
    */
@@ -206,41 +205,51 @@ class ACLRequestValidator {
                          Map<String, List<Account>> accountPermissionMap,
                          Map<String, List<Group>> groupPermissionMap,
                          String permission) {
+
     boolean isValid = true;
     AccountImpl accountImpl = new AccountImpl();
     GroupImpl groupImpl = new GroupImpl();
-    String granteeDetails = grantee.substring(grantee.indexOf('=') + 1);
-    String actualGrantee = grantee.substring(0, grantee.indexOf('='));
-    Account account = null;
-    Group group = null;
-    try {
-      if (granteeDetails != null && !granteeDetails.trim().isEmpty()) {
-        if (actualGrantee.equalsIgnoreCase("emailaddress")) {
-          account = accountImpl.findByEmailAddress(granteeDetails);
-        } else if (actualGrantee.equalsIgnoreCase("id")) {
-          account = accountImpl.findByCanonicalID(granteeDetails);
-        } else if (actualGrantee.equalsIgnoreCase("URI")) {
-          group = groupImpl.getGroup(granteeDetails);
+    int index = grantee.indexOf('=');
+    if (index == -1) {
+      response.setResponseBody(
+          responseGenerator.invalidArgument().getResponseBody());
+      response.setResponseStatus(
+          responseGenerator.invalidArgument().getResponseStatus());
+      return false;
         }
-        if (account != null && account.exists()) {
-          updateAccountPermissionMap(accountPermissionMap, permission, account);
-        } else if (group != null && group.exists()) {
-          updateGroupPermissionMap(groupPermissionMap, permission, group);
-        } else {
-          setInvalidResponse(actualGrantee, response);
-          isValid = false;
-        }
+        String granteeDetails = grantee.substring(index + 1);
+        String actualGrantee = grantee.substring(0, index);
+        Account account = null;
+        Group group = null;
+        try {
+          if (granteeDetails != null && !granteeDetails.trim().isEmpty()) {
+            if (actualGrantee.equalsIgnoreCase("emailaddress")) {
+              account = accountImpl.findByEmailAddress(granteeDetails);
+            } else if (actualGrantee.equalsIgnoreCase("id")) {
+              account = accountImpl.findByCanonicalID(granteeDetails);
+            } else if (actualGrantee.equalsIgnoreCase("URI")) {
+              group = groupImpl.getGroup(granteeDetails);
+            }
+            if (account != null && account.exists()) {
+              updateAccountPermissionMap(accountPermissionMap, permission,
+                                         account);
+            } else if (group != null && group.exists()) {
+              updateGroupPermissionMap(groupPermissionMap, permission, group);
+            } else {
+              setInvalidResponse(actualGrantee, response);
+              isValid = false;
+            }
 
-      } else {
-        setInvalidResponse(actualGrantee, response);
-        isValid = false;
-      }
-    }
-    catch (Exception e) {
-      isValid = false;
-      LOGGER.error("Exception occurred while validating grantee - ", e);
-    }
-    return isValid;
+          } else {
+            setInvalidResponse(actualGrantee, response);
+            isValid = false;
+          }
+        }
+        catch (Exception e) {
+          isValid = false;
+          LOGGER.error("Exception occurred while validating grantee - ", e);
+        }
+        return isValid;
   }
 
   /**
