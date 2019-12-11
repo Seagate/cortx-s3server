@@ -170,9 +170,17 @@ We use haproxy as a load balancer, as well as have support for nginx. We started
 nginx and moved to haproxy during Hermi release.
 Haproxy listens on port 80(http)/443(https) and forwards traffic to running S3 instances.
 
+In case of CentOS 7:
 ```sh
 yum install haproxy
-cp <s3-src>/scripts/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg
+cp <s3-src>/scripts/haproxy/haproxy_osver7.cfg /etc/haproxy/haproxy.cfg
+cp <s3-src>/scripts/haproxy/503.http /etc/haproxy/503.http
+```
+
+In case of RHEL/CentOS 8:
+```sh
+yum install haproxy
+cp <s3-src>/scripts/haproxy/haproxy_osver8.cfg /etc/haproxy/haproxy.cfg
 cp <s3-src>/scripts/haproxy/503.http /etc/haproxy/503.http
 ```
 

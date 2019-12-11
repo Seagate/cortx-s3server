@@ -46,8 +46,15 @@
     state: present
 
 - name: Setup haproxy config
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
   copy:
-    src: ./files/haproxy/haproxy.cfg
+    src: ./files/haproxy/haproxy_osver7.cfg
+    dest: /etc/haproxy/haproxy.cfg
+
+- name: Setup haproxy config for RHEL/CentOS 8
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '8')
+  copy:
+    src: ./files/haproxy/haproxy_osver8.cfg
     dest: /etc/haproxy/haproxy.cfg
 
 - name: Setup haproxy 503 error code to http file
