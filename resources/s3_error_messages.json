@@ -7,6 +7,10 @@
     "Description": "Access Denied",
     "httpcode":    403
   },
+  "RequestTimeTooSkewed": {
+    "Description": "The difference between request time and current time is too large",
+    "httpcode":    403
+  },
   "BucketAlreadyExists":	{
     "Description": "The requested bucket name is not available. The bucket namespace is shared by all users of the system. Please select a different name and try again.",
     "httpcode":	409

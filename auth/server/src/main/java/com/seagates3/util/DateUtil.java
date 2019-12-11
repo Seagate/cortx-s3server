@@ -172,4 +172,24 @@ public class DateUtil {
         return d;
     }
 
+    /**
+     * Returns Date in given pattern in UTC format.
+     */
+   public
+    static Date parseDateString(String dateString, String pattern) {
+
+      Date date = null;
+      SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+      sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+      if (dateString == null || dateString.trim().isEmpty()) {
+        return null;
+      }
+      try {
+        date = sdf.parse(dateString);
+        return date;
+      }
+      catch (ParseException e) {
+      }
+      return null;
+    }
 }

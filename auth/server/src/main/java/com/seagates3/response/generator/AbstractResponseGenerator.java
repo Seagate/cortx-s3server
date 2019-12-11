@@ -361,4 +361,13 @@ public abstract class AbstractResponseGenerator {
       return formatResponse(HttpResponseStatus.METHOD_NOT_ALLOWED,
                             "MethodNotAllowed", errorMessage);
     }
+
+   public
+    ServerResponse invalidSignatureDate() {
+      String errorMessage =
+          "AWS authentication requires a valid Date or x-amz-date header";
+
+      return formatResponse(HttpResponseStatus.FORBIDDEN, "AccessDenied",
+                            errorMessage);
+    }
  }

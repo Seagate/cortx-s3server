@@ -24,6 +24,7 @@ import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.AuthenticationResponseFormatter;
 import java.util.LinkedHashMap;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 public class AuthenticationResponseGenerator extends AbstractResponseGenerator {
 
@@ -39,5 +40,17 @@ public class AuthenticationResponseGenerator extends AbstractResponseGenerator {
         return (ServerResponse) new AuthenticationResponseFormatter()
             .formatAuthenticatedResponse(responseElements,
                                          AuthServerConfig.getReqId());
+    }
+
+   public
+    ServerResponse requestTimeTooSkewed(String requestTime, String serverTime) {
+      String errorMessage =
+          "The difference between request time and current time is too large";
+
+      return (ServerResponse) new AuthenticationResponseFormatter()
+          .formatSignatureErrorResponse(HttpResponseStatus.FORBIDDEN,
+                                        "RequestTimeTooSkewed", errorMessage,
+                                        requestTime, serverTime, "900000",
+                                        AuthServerConfig.getReqId());
     }
 }
