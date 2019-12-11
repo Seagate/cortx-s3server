@@ -83,10 +83,10 @@ cp ./system/s3server@.service $SERVICE_FILE_LOCATION
 cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 
 # Copy the s3 background producer file for systemctl support.
-cp s3backgrounddelete/s3producer.service $SERVICE_FILE_LOCATION
+cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
 
 # Copy the s3 background consumer file for systemctl support.
-cp s3backgrounddelete/s3consumer.service $SERVICE_FILE_LOCATION
+cp s3backgrounddelete/s3backgroundconsumer.service $SERVICE_FILE_LOCATION
 
 # Copy Auth server jar to install location
 cp -f auth/server/target/AuthServer-1.0-0.jar $AUTH_INSTALL_LOCATION/

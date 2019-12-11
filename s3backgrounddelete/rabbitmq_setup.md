@@ -9,10 +9,11 @@
 
 2) Install pika on all nodes( BSD 3-Clause license)
 
-    >yum --enablerepo=epel -y install python-pika
+    CentOS 7:
+   > yum -y install  python36-pika
 
-    or
-    >yum --enablerepo=epel -y install python2-pika
+    RHEL/CentOS 8:
+   > yum -y localinstall https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/p/python3-pika
 
 3) Setup hosts file (/etc/hosts) on each node, so that nodes are
    accessible from each other
