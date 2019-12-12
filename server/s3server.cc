@@ -454,6 +454,8 @@ int create_global_index(struct m0_uint128 &root_index_oid,
   struct m0_clovis_op *ops[1] = {NULL};
   struct m0_clovis_op *sync_op = NULL;
   struct m0_clovis_idx idx;
+  unsigned short clovis_op_wait_period =
+      g_option_instance->get_clovis_op_wait_period();
 
   memset(&idx, 0, sizeof(idx));
   ops[0] = NULL;
@@ -465,7 +467,7 @@ int create_global_index(struct m0_uint128 &root_index_oid,
 
   rc = m0_clovis_op_wait(ops[0],
                          M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                         m0_time_from_now(10, 0));
+                         m0_time_from_now(clovis_op_wait_period, 0));
   rc = (rc < 0) ? rc : m0_clovis_rc(ops[0]);
   if (rc < 0) {
     if (rc != -EEXIST) {
@@ -485,7 +487,7 @@ int create_global_index(struct m0_uint128 &root_index_oid,
     m0_clovis_op_launch(&sync_op, 1);
     rc = m0_clovis_op_wait(sync_op,
                            M0_BITS(M0_CLOVIS_OS_FAILED, M0_CLOVIS_OS_STABLE),
-                           m0_time_from_now(10, 0));
+                           m0_time_from_now(clovis_op_wait_period, 0));
     if (rc < 0) {
       goto FAIL;
     }
