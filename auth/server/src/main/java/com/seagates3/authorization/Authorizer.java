@@ -63,6 +63,7 @@ public class Authorizer {
     * @param requestBody
     * @return
    */
+
   public
    ServerResponse authorize(Requestor requestor,
                             Map<String, String> requestBody) {
@@ -114,7 +115,8 @@ public class Authorizer {
         }
 
         // After ALLUser Requested Permission is Authorized.
-        if (requestor == null) {
+        if (requestor == null &&
+            !("true".equals(requestBody.get("Request-ACL")))) {
           return responseGenerator.ok();
         }
 
@@ -125,7 +127,6 @@ public class Authorizer {
           try {
             String acl = null;
             ACLCreator aclCreator = new ACLCreator();
-
             if (!accountPermissionMap.isEmpty() ||
                 !groupPermissionMap.isEmpty()) {
               acl = aclCreator.createAclFromPermissionHeaders(
@@ -162,6 +163,7 @@ public class Authorizer {
             return e.getServerResponse();
           }
         }
+
         return responseGenerator.generateAuthorizationResponse(requestor, null);
    }
    /**

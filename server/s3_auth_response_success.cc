@@ -27,6 +27,7 @@
 S3AuthResponseSuccess::S3AuthResponseSuccess(std::string &xml)
     : xml_content(xml), is_valid(false) {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+  alluserrequest = false;
   is_valid = parse_and_validate();
 }
 
@@ -154,6 +155,11 @@ bool S3AuthResponseSuccess::parse_and_validate() {
           } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"ACL"))) {
             s3_log(S3_LOG_DEBUG, "", "ACL =%s\n", (const char *)key);
             acl = (const char *)key;
+          } else if ((!xmlStrcmp(child_node->name,
+                                 (const xmlChar *)"AllUserRequest"))) {
+            //<Alluserrequest> true/false </Alluserrequest>
+            s3_log(S3_LOG_DEBUG, "", "Alluserrequest =%s\n", (const char *)key);
+            alluserrequest = (const char *)key;
           }
 
           xmlFree(key);
@@ -166,15 +172,20 @@ bool S3AuthResponseSuccess::parse_and_validate() {
   xmlFreeDoc(document);
   xmlCleanupCharEncodingHandlers();
   xmlCleanupParser();
-  if (user_name.empty() || user_id.empty() || account_name.empty() ||
-      account_id.empty()) {
-    // We dont have enough user info from auth server.
-    s3_log(
-        S3_LOG_ERROR, "-",
-        "Auth server returned partial User info for authorization result.\n");
-    is_valid = false;
-  } else {
-    s3_log(S3_LOG_DEBUG, "", "Auth server returned complete User info.\n");
+
+  if (!alluserrequest) {
+    if (user_name.empty() || user_id.empty() || account_name.empty() ||
+        account_id.empty()) {
+      // We dont have enough user info from auth server.
+      s3_log(
+          S3_LOG_ERROR, "-",
+          "Auth server returned partial User info for authorization result.\n");
+      is_valid = false;
+    } else {
+      s3_log(S3_LOG_DEBUG, "", "Auth server returned complete User info.\n");
+      is_valid = true;
+    }
+  } else if (!acl.empty()) {
     is_valid = true;
   }
   return is_valid;

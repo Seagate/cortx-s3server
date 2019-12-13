@@ -1402,6 +1402,36 @@ cmd = "curl -s -X DELETE -H \"Accept: application/json\" -H \"Content-Type: appl
 
 AwsTest('Accessible For allusers').execute_curl(cmd).execute_test().command_is_successful()
 
+group_uri = "uri=http://acs.amazonaws.com/groups/global/AllUsers"
+
+AwsTest('Aws can upload 3k file with permission headers').put_bucket_acl("seagate", "grant-write-acp" , group_uri ).execute_test().command_is_successful()
+
+cmd = "curl -s -X PUT -H \"Accept: application/json\" -H \"Content-Type: application/json\" http://s3.seagate.com/seagate?acl -H \"x-amz-acl: private\" --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('write acp For allusers').execute_curl(cmd).execute_test().command_is_successful()
+
+result=AwsTest('Validate the bucket acl').get_bucket_acl("seagate").execute_test().command_is_successful()
+
+AclTest('aws command has valid response').check_response_status(result)
+
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+
+AwsTest('Aws can create object').put_object("seagate", "testObject").execute_test().command_is_successful()
+
+AwsTest('Aws can upload 3k file with permission headers').put_object_acl("seagate", "testObject", "grant-write-acp" , group_uri ).execute_test().command_is_successful()
+
+cmd = "curl -s -X PUT -H \"Accept: application/json\" -H \"Content-Type: application/json\" http://s3.seagate.com/seagate/testObject?acl -H \"x-amz-acl: private\" --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"
+
+AwsTest('Write acp For allusers').execute_curl(cmd).execute_test().command_is_successful()
+
+result=AwsTest('Validate the object acl').get_bucket_acl("seagate").execute_test().command_is_successful()
+
+AclTest('aws command has valid response').check_response_status(result)
+
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test", "C12345", "s3_test", "FULL_CONTROL")
+
+AwsTest('Aws can delete object').delete_object("seagate", "testObject").execute_test().command_is_successful()
+
 AwsTest('Aws can delete bucket').delete_bucket("seagate").execute_test().command_is_successful()
 
 cmd = "curl -s -X GET -H \"Accept: application/json\" -H \"Content-Type: application/json\"  https://s3.seagate.com/ --cacert /etc/ssl/stx-s3-clients/s3/ca.crt"

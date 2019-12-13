@@ -30,13 +30,16 @@ public class AuthorizationResponseGenerator extends AbstractResponseGenerator {
    ServerResponse generateAuthorizationResponse(Requestor requestor,
                                                 String acpXml) {
         LinkedHashMap responseElements = new LinkedHashMap();
-        responseElements.put("UserId", requestor.getId());
-        responseElements.put("UserName", requestor.getName());
-        responseElements.put("AccountId", requestor.getAccount().getId());
-        responseElements.put("AccountName", requestor.getAccount().getName());
+        if (requestor != null) {
+          responseElements.put("UserId", requestor.getId());
+          responseElements.put("UserName", requestor.getName());
+          responseElements.put("AccountId", requestor.getAccount().getId());
+          responseElements.put("AccountName", requestor.getAccount().getName());
+        } else {
+          responseElements.put("AllUserRequest", "true");
+        }
 
         return (ServerResponse) new AuthorizationResponseFormatter().authorized(
             responseElements, AuthServerConfig.getReqId(), acpXml);
     }
-
 }

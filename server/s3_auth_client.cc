@@ -1059,6 +1059,11 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
   S3AuthClientOpType auth_request_type = get_op_type();
 
   auth_context->init_auth_op_ctx(auth_request_type);
+  for (auto it : request->get_in_headers_copy()) {
+    s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
+           it.first.c_str(), it.second.c_str());
+    add_key_val_to_body(it.first.c_str(), it.second.c_str());
+  }
   } else {
     auth_context->reset_callbacks(
         std::bind(&S3AuthClient::check_authorization_successful, this),

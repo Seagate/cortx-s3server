@@ -37,6 +37,7 @@ class S3AuthResponseSuccess {
   std::string signature_SHA256;
   std::string request_id;
   std::string acl;
+  bool alluserrequest;
 
   bool parse_and_validate();
 

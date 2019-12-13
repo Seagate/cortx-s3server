@@ -81,10 +81,15 @@ class ACLCreator {
   AccessControlPolicy initDefaultAcp(Requestor requestor) throws IOException,
       ParserConfigurationException, SAXException, GrantListFullException,
       TransformerException {
+
     AccessControlPolicy acp =
         new AccessControlPolicy(checkAndCreateDefaultAcp());
-    acp.initDefaultACL(requestor.getAccount().getCanonicalId(),
-                       requestor.getAccount().getName());
+    if (requestor != null) {
+      acp.initDefaultACL(requestor.getAccount().getCanonicalId(),
+                         requestor.getAccount().getName());
+    } else {
+      acp.initDefaultACL("", "");
+    }
     return acp;
   }
 
@@ -132,8 +137,9 @@ class ACLCreator {
     acp = new AccessControlPolicy(checkAndCreateDefaultAcp());
     updateAclFromAccountMap(accountPermissionMap, newAcl);
     updateAclFromGroupMap(groupPermissionMap, newAcl);
-    if (requestBody.get("Bucket-ACL") != null &&
-        requestBody.get("Auth-ACL") != null) {
+    if ((requestBody.get("Bucket-ACL") != null &&
+         requestBody.get("Auth-ACL") != null) ||
+        requestor == null) {
       acp.setOwner(new AccessControlPolicy(
           BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")))
                        .getOwner());
@@ -327,14 +333,18 @@ class ACLCreator {
      * @param acp
      * @param requestBody
      * @return
+     * @throws TransformerException
      */
    private
     Owner getOwner(Requestor requestor, AccessControlPolicy acp,
-                   Map<String, String> requestBody) {
+                   Map<String, String> requestBody)
+        throws TransformerException {
       Owner grant;
       // Bucket-Acl will be present in request body only if the request is a
       // put-acl. For put-acl call get the existing resource owner details
-      if (acp != null && requestBody.get("Bucket-ACL") != null) {
+
+      if ((acp != null && requestBody.get("Bucket-ACL") != null) ||
+          requestor == null) {
         grant = acp.owner;
       } else {
         grant = new Owner(requestor.getAccount().getCanonicalId(),
@@ -391,7 +401,8 @@ class ACLCreator {
       Grant grant;
       // Bucket-Acl will be present in request body only if the request is a
       // put-acl. For put-acl call get the existing resource owner details
-      if (acp != null && requestBody.get("Bucket-ACL") != null) {
+      if ((acp != null && requestBody.get("Bucket-ACL") != null) ||
+          requestor == null) {
         grant = new Grant(
             new Grantee(acp.getOwner().canonicalId, acp.getOwner().displayName),
             "FULL_CONTROL");
