@@ -204,11 +204,12 @@ RequestObject::~RequestObject() {
 const std::map<std::string, std::string, compare>&
 RequestObject::get_query_parameters() {
   if (!in_query_params_copied) {
-    if (client_connected() && (ev_req != NULL) && (ev_req->uri != NULL) &&
-        (ev_req->uri->query != NULL)) {
-      evhtp_obj->http_kvs_for_each(ev_req->uri->query, consume_query_parameters,
-                                   this);
-      in_query_params_copied = true;
+    if (client_connected() && ev_req) {
+      if (ev_req->uri && ev_req->uri->query) {
+        evhtp_obj->http_kvs_for_each(ev_req->uri->query,
+                                     consume_query_parameters, this);
+        in_query_params_copied = true;
+      }
     } else {
       s3_log(S3_LOG_WARN, request_id,
              "s3 client disconnected state or ev_req(NULL).\n");

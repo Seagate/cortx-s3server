@@ -27,38 +27,50 @@ int MD5hash::Update(const char *input, size_t length) {
   if (input == NULL) {
     return -1;
   }
-  if (status == 0) {
-    return -1;  // failure
+  if (status > 0) {
+    status = MD5_Update(&md5ctx, input, length);
   }
-  status = MD5_Update(&md5ctx, input, length);
-  if (status == 0) {
+  if (status < 1) {
     return -1;  // failure
   }
   return 0;  // success
 }
 
 int MD5hash::Finalize() {
-  status = MD5_Final(md5_digest, &md5ctx);
-  if (status == 0) {
+  if (is_finalized) {
+    return 0;
+  }
+  if (status > 0) {
+    status = MD5_Final(md5_digest, &md5ctx);
+  }
+  if (status < 1) {
     return -1;  // failure
   }
-
-  for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
-    sprintf((char *)(&md5_digest_chars[i * 2]), "%02x", (int)md5_digest[i]);
-  }
+  is_finalized = true;
   return 0;
 }
 
+const char hex_tbl[] = "0123456789abcdef";
+
 std::string MD5hash::get_md5_string() {
-  if (status == 0) {
-    return std::string("");  // failure
+  if (Finalize() < 0) {
+    return std::string();  // failure
   }
-  return std::string(md5_digest_chars);
+  std::string s_hex;
+  s_hex.reserve(MD5_DIGEST_LENGTH * 2);
+
+  for (int i = 0; i < MD5_DIGEST_LENGTH; ++i) {
+    const unsigned ch = md5_digest[i] & 255;
+
+    s_hex += hex_tbl[ch >> 4];
+    s_hex += hex_tbl[ch & 15];
+  }
+  return s_hex;
 }
 
 std::string MD5hash::get_md5_base64enc_string() {
-  if (status == 0) {
-    return std::string("");  // failure
+  if (Finalize() < 0) {
+    return std::string();  // failure
   }
   return base64_encode(md5_digest, MD5_DIGEST_LENGTH);
 }

@@ -47,7 +47,8 @@ TEST(MD5HashTest, FinalBasic) {
   EXPECT_EQ(0, ret);
   // MD5 value from RFC 1321
   // https://www.ietf.org/rfc/rfc1321.txt
-  EXPECT_STREQ("c3fcd3d76192e4007dfb496cca67e13b", md5hashobj.md5_digest_chars);
+  std::string s_hash = md5hashobj.get_md5_string();
+  EXPECT_STREQ("c3fcd3d76192e4007dfb496cca67e13b", s_hash.c_str());
 }
 
 TEST(MD5HashTest, FinalEmptyStr) {
@@ -57,7 +58,8 @@ TEST(MD5HashTest, FinalEmptyStr) {
   md5hashobj.Update(input, 0);
   ret = md5hashobj.Finalize();
   EXPECT_EQ(0, ret);
-  EXPECT_STREQ("d41d8cd98f00b204e9800998ecf8427e", md5hashobj.md5_digest_chars);
+  std::string s_hash = md5hashobj.get_md5_string();
+  EXPECT_STREQ("d41d8cd98f00b204e9800998ecf8427e", s_hash.c_str());
 }
 
 TEST(MD5HashTest, FinalNumeral) {
@@ -69,7 +71,8 @@ TEST(MD5HashTest, FinalNumeral) {
   md5hashobj.Update(input, 80);
   ret = md5hashobj.Finalize();
   EXPECT_EQ(0, ret);
-  EXPECT_STREQ("57edf4a22be3c955ac49da2e2107b67a", md5hashobj.md5_digest_chars);
+  std::string s_hash = md5hashobj.get_md5_string();
+  EXPECT_STREQ("57edf4a22be3c955ac49da2e2107b67a", s_hash.c_str());
 }
 
 TEST(MD5HashTest, GetMD5) {

@@ -196,6 +196,10 @@ class S3ClovisWriter {
     return content_md5;
   }
 
+  virtual std::string get_content_md5_base64() {
+    return md5crypt.get_md5_base64enc_string();
+  }
+
   // async create
   virtual void create_object(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed, int layoutid);

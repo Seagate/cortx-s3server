@@ -501,6 +501,20 @@ void S3PutObjectAction::write_object_failed() {
 
 void S3PutObjectAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  std::string s_md5_got = request->get_header_value("content-md5");
+  if (!s_md5_got.empty()) {
+    std::string s_md5_calc = clovis_writer->get_content_md5_base64();
+    s3_log(S3_LOG_DEBUG, request_id, "MD5 calculated: %s, MD5 got %s",
+           s_md5_calc.c_str(), s_md5_got.c_str());
+
+    if (s_md5_calc != s_md5_got) {
+      s3_log(S3_LOG_INFO, request_id, "Content MD5 mismatch\n");
+      set_s3_error("BadDigest");
+      rollback_start();
+      return;
+    }
+  }
   s3_timer.start();
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");

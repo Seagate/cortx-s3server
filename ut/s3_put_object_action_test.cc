@@ -101,7 +101,7 @@ class S3PutObjectActionTest : public testing::Test {
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
         ReturnRef(input_headers));
-    EXPECT_CALL(*ptr_mock_request, get_header_value(_));
+    // EXPECT_CALL(*ptr_mock_request, get_header_value(_));
     action_under_test.reset(new S3PutObjectAction(
         ptr_mock_request, ptr_mock_s3_clovis_api, bucket_meta_factory,
         object_meta_factory, clovis_writer_factory,
