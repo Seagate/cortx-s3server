@@ -398,63 +398,77 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
   } else {
     auth_resp_status = evhtp_request_status(req);
   }
-  s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
-         "auth_resp_status = %d\n", auth_resp_status);
+  const auto &request_id = context->get_request()->get_request_id();
+
+  s3_log(S3_LOG_DEBUG, request_id, "auth_resp_status = %d\n", auth_resp_status);
 
   // Note: Do not remove this, else you will have s3 crashes as the
   // callbacks are invoked after request/connection is freed.
-  evhtp_unset_all_hooks(&context->get_auth_op_ctx()->conn->hooks);
-  evhtp_unset_all_hooks(&context->get_auth_op_ctx()->authrequest->hooks);
+  auto *p_auth_op_ctx = context->get_auth_op_ctx();
 
+  if (p_auth_op_ctx) {
+    if (p_auth_op_ctx->conn) {
+      evhtp_unset_all_hooks(&p_auth_op_ctx->conn->hooks);
+    }
+    if (p_auth_op_ctx->authrequest) {
+      evhtp_unset_all_hooks(&p_auth_op_ctx->authrequest->hooks);
+    }
+  } else {
+    s3_log(S3_LOG_WARN, request_id,
+           "S3AuthClientOpContext::get_auth_op_ctx() returns NULL");
+  }
   if (!context->get_request()->client_connected()) {
     // S3 client has already disconnected, ignore
-    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
-           "S3 Client has already disconnected.\n");
+    s3_log(S3_LOG_DEBUG, request_id, "S3 Client has already disconnected.\n");
     // Calling failed handler to do proper cleanup to avoid leaks
     // i.e cleanup of S3Request and respective action chain.
     context->on_failed_handler()();  // Invoke the handler.
     return EVHTP_RES_OK;
   }
+  const auto buffer_len = evbuffer_get_length(buf);
+  char *auth_response_body = (char *)malloc(buffer_len + 1);
 
-  size_t buffer_len = evbuffer_get_length(buf) + 1;
-  char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
-  memset(auth_response_body, 0, buffer_len);
-  evbuffer_copyout(buf, auth_response_body, buffer_len);
-  s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
-         "Response data received from Auth service = [[%s]]\n\n\n",
-         auth_response_body);
-  if (auth_resp_status == S3HttpSuccess200) {
-    s3_log(S3_LOG_DEBUG, context->get_request()->get_request_id(),
-           "Authentication successful\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::success,
-                               "Authentication successful");
-    context->set_auth_response_xml(auth_response_body, true);
-  } else if (auth_resp_status == S3HttpFailed401) {
-    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
-           "Authentication failed\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authentication failed");
-    context->set_auth_response_xml(auth_response_body, false);
-  } else if (auth_resp_status == S3HttpFailed400) {
-    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
-           "Authentication failed\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authentication failed:Bad Request");
-    context->set_auth_response_xml(auth_response_body, false);
-  } else if (auth_resp_status == S3HttpFailed403) {
-    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
-           "Authentication failed\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Authentication failed:Access denied");
-    context->set_auth_response_xml(auth_response_body, false);
+  if (auth_response_body) {
+    const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
+
+    if (nread > 0) {
+      auth_response_body[nread] = '\0';
+    } else {
+      auth_response_body[0] = '\0';
+    }
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Response data received from Auth service = [[%s]]\n\n\n",
+           auth_response_body);
+    if (auth_resp_status == S3HttpSuccess200) {
+      s3_log(S3_LOG_DEBUG, request_id, "Authentication successful\n");
+      context->set_op_status_for(0, S3AsyncOpStatus::success,
+                                 "Authentication successful");
+      context->set_auth_response_xml(auth_response_body, true);
+    } else if (auth_resp_status == S3HttpFailed401) {
+      s3_log(S3_LOG_ERROR, request_id, "Authentication failed\n");
+      context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                                 "Authentication failed");
+      context->set_auth_response_xml(auth_response_body, false);
+    } else if (auth_resp_status == S3HttpFailed400) {
+      s3_log(S3_LOG_ERROR, request_id, "Authentication failed\n");
+      context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                                 "Authentication failed:Bad Request");
+      context->set_auth_response_xml(auth_response_body, false);
+    } else if (auth_resp_status == S3HttpFailed403) {
+      s3_log(S3_LOG_ERROR, request_id, "Authentication failed\n");
+      context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                                 "Authentication failed:Access denied");
+      context->set_auth_response_xml(auth_response_body, false);
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "Something is wrong with Auth server\n");
+      context->set_op_status_for(0, S3AsyncOpStatus::failed,
+                                 "Something is wrong with Auth server");
+      context->set_auth_response_xml("", false);
+    }
+    free(auth_response_body);
   } else {
-    s3_log(S3_LOG_ERROR, context->get_request()->get_request_id(),
-           "Something is wrong with Auth server\n");
-    context->set_op_status_for(0, S3AsyncOpStatus::failed,
-                               "Something is wrong with Auth server");
-    context->set_auth_response_xml("", false);
+    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL");
   }
-  free(auth_response_body);
   if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
     s3_auth_op_success(context, 0);  // Invoke the handler.
   } else {
