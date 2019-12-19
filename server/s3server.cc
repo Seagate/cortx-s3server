@@ -491,12 +491,10 @@ int create_global_index(struct m0_uint128 &root_index_oid,
     }
   }
   if (ops[0] != NULL) {
-    m0_clovis_op_fini(ops[0]);
-    m0_clovis_op_free(ops[0]);
+    teardown_clovis_op(ops[0]);
   }
   if (sync_op != NULL) {
-    m0_clovis_op_fini(sync_op);
-    m0_clovis_op_free(sync_op);
+    teardown_clovis_op(sync_op);
   }
 
   if (idx.in_entity.en_sm.sm_state != 0) {
@@ -507,12 +505,10 @@ int create_global_index(struct m0_uint128 &root_index_oid,
 
 FAIL:
   if (ops[0] != NULL) {
-    m0_clovis_op_fini(ops[0]);
-    m0_clovis_op_free(ops[0]);
+    teardown_clovis_op(ops[0]);
   }
   if (sync_op != NULL) {
-    m0_clovis_op_fini(sync_op);
-    m0_clovis_op_free(sync_op);
+    teardown_clovis_op(sync_op);
   }
 
   return rc;

@@ -159,3 +159,13 @@ int create_new_instance_id(struct m0_uint128 *ufid) {
          ufid->u_hi, ufid->u_lo);
   return rc;
 }
+
+void teardown_clovis_op(struct m0_clovis_op *op) {
+  if (op != NULL) {
+    if (op->op_sm.sm_state == M0_CLOVIS_OS_LAUNCHED) {
+      m0_clovis_op_cancel(&op, 1);
+    }
+    m0_clovis_op_fini(op);
+    m0_clovis_op_free(op);
+  }
+}

@@ -22,6 +22,7 @@
 
 #include "s3_clovis_context.h"
 #include "s3_mem_pool_manager.h"
+#include "clovis_helpers.h"
 
 // Helper methods to free m0_bufvec array which holds
 // Memory buffers from custom memory pool
@@ -142,8 +143,7 @@ int free_basic_op_ctx(struct s3_clovis_op_context *ctx) {
 
   for (size_t i = 0; i < ctx->op_count; i++) {
     if (ctx->ops[i] != NULL) {
-      m0_clovis_op_fini(ctx->ops[i]);
-      m0_clovis_op_free(ctx->ops[i]);
+      teardown_clovis_op(ctx->ops[i]);
     }
   }
   free(ctx->ops);
@@ -270,13 +270,11 @@ int free_basic_idx_op_ctx(struct s3_clovis_idx_op_context *ctx) {
     if (ctx->ops[i] == NULL) {
       continue;
     }
-    m0_clovis_op_fini(ctx->ops[i]);
-    m0_clovis_op_free(ctx->ops[i]);
+    teardown_clovis_op(ctx->ops[i]);
   }
 
   if (ctx->sync_op != NULL) {
-    m0_clovis_op_fini(ctx->sync_op);
-    m0_clovis_op_free(ctx->sync_op);
+    teardown_clovis_op(ctx->sync_op);
   }
 
   free(ctx->ops);
