@@ -228,7 +228,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     boolean isMatching = false;
     for (String resourceArn : resourceList) {
       String resource = PolicyUtil.getResourceFromResourceArn(resourceArn);
-      if (resource.equals(requestedResource)) {
+      if (PolicyUtil.isPatternMatching(requestedResource, resource)) {
         isMatching = true;
         break;
       }

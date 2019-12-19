@@ -66,25 +66,25 @@ class PolicyUtil {
   }
 
   /**
-      * Get all matching actions from Actions.json
-      *
-      * @param inputAction
-      * @return
-      */
+   * Get all matching actions from Actions.json
+   *
+   * @param inputAction
+   * @return
+   */
  public
   static List<String> getAllMatchingActions(String inputAction) {
     List<String> matchingActions = new ArrayList<>();
     for (String action : S3Actions.getInstance()
              .getBucketOperations()
              .keySet()) {
-      if (isPatternForActionValid(action, inputAction)) {
+      if (isPatternMatching(action, inputAction)) {
         matchingActions.add(action);
       }
     }
     for (String action : S3Actions.getInstance()
              .getObjectOperations()
              .keySet()) {
-      if (isPatternForActionValid(action, inputAction)) {
+      if (isPatternMatching(action, inputAction)) {
         matchingActions.add(action);
       }
     }
@@ -92,15 +92,15 @@ class PolicyUtil {
   }
 
   /**
- * Function that matches input string with given wildcard pattern
-     *
-     * @param input - Source string to match the pattern with
-     * @param pattern - Pattern with wildchar characters to match. eg- GetObj*
- *or GetObjectAc?
-     * @return - true/false
-     */
- private
-  static boolean isPatternForActionValid(String input, String pattern) {
+   * Function that matches input string with given wildcard pattern
+   *
+   * @param input - Source string to match the pattern with
+   * @param pattern - Pattern with wildchar characters to match. eg- GetObj*
+   *or GetObjectAc?
+   * @return - true/false
+   */
+ public
+  static boolean isPatternMatching(String input, String pattern) {
     int inputLength = input.length();
     int patternLength = pattern.length();
     if (patternLength == 0) return (inputLength == 0);
