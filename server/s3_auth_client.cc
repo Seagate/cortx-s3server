@@ -793,15 +793,15 @@ void S3AuthClient::setup_auth_request_headers() {
 
   evhtp_headers_add_header(auth_request->headers_out,
                            evhtp_header_new("User-Agent", "s3server", 1, 1));
+  /* Using a new connection per request, all types of requests like
+  *   authenticarion, authorization, validateacl, validatepolicy open
+  *   a connection and it will be closed by Authserver.
+  *   TODO : Evaluate performance and change this approach to reuse
+  *   connections
+  */
 
-  if ((!skip_authorization &&
-       (auth_request_type == S3AuthClientOpType::authorization)) ||
-      (auth_request_type == S3AuthClientOpType::aclvalidation) ||
-      (auth_request_type == S3AuthClientOpType::policyvalidation)) {
-
-    evhtp_headers_add_header(auth_request->headers_out,
-                             evhtp_header_new("Connection", "close", 1, 1));
-  }
+  evhtp_headers_add_header(auth_request->headers_out,
+                           evhtp_header_new("Connection", "close", 1, 1));
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -816,14 +816,7 @@ void S3AuthClient::execute_authconnect_request(
   S3AuthClientOpType auth_request_type = get_op_type();
 
   if (auth_request_type == S3AuthClientOpType::authorization) {
-    // Free http request used for authentication, when we make request via
-    // evhtp_make_request in the connnection data structure, the http request of
-    // auth will be replaced with http authorization request ie
-    // auth_ctx->authorization_request
-    if (auth_ctx->authrequest != NULL) {
-      evhtp_request_free(auth_ctx->authrequest);
-      auth_ctx->authrequest = NULL;
-    }
+
     if (s3_fi_is_enabled("fake_authorization_fail")) {
       s3_auth_fake_evhtp_request(S3AuthClientOpType::authorization,
                                  auth_context.get());
@@ -1070,9 +1063,6 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
         request, std::bind(&S3AuthClient::check_authorization_successful, this),
         std::bind(&S3AuthClient::check_authorization_failed, this)));
 
-  S3AuthClientOpType auth_request_type = get_op_type();
-
-  auth_context->init_auth_op_ctx(auth_request_type);
   for (auto it : request->get_in_headers_copy()) {
     s3_log(S3_LOG_DEBUG, request_id, "Header = %s, Value = %s\n",
            it.first.c_str(), it.second.c_str());
@@ -1089,6 +1079,9 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
+  S3AuthClientOpType auth_request_type = get_op_type();
+
+  auth_context->init_auth_op_ctx(auth_request_type);
 
   struct s3_auth_op_context *auth_ctx = auth_context->get_auth_op_ctx();
   auth_ctx->authorization_request = evhtp_request_new(NULL, auth_ctx->evbase);
