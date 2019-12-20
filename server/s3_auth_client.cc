@@ -31,6 +31,7 @@
 #include "s3_iem.h"
 #include "s3_option.h"
 #include "s3_common_utilities.h"
+#include "atexit.h"
 
 void s3_auth_op_done_on_main_thread(evutil_socket_t, short events,
                                     void *user_data) {
@@ -499,6 +500,15 @@ extern "C" void timeout_cb_auth_retry(evutil_socket_t fd, short event,
 
 /******/
 
+void S3AuthClientOpContext::set_auth_response_error(std::string error_code,
+                                                    std::string error_message,
+                                                    std::string request_id) {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  error_obj.reset(new S3AuthResponseError(
+      std::move(error_code), std::move(error_message), std::move(request_id)));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 S3AuthClient::S3AuthClient(std::shared_ptr<RequestObject> req,
                            bool skip_authorization)
     : request(req),
@@ -600,7 +610,7 @@ std::string S3AuthClient::get_error_code() {
   return "ServiceUnavailable";  // auth server may be down
 }
 
-void S3AuthClient::setup_auth_request_body() {
+bool S3AuthClient::setup_auth_request_body() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
   S3AuthClientOpType auth_request_type = get_op_type();
@@ -726,15 +736,32 @@ void S3AuthClient::setup_auth_request_body() {
     add_key_val_to_body("Policy", policy_str);
     auth_request_body = "Action=ValidatePolicy";
   }
+  bool f_evhttp_encode_uri_succ = true;
 
-  for (auto it : data_key_val) {
+  for (auto &it : data_key_val) {
+
     char *encoded_key = evhttp_encode_uri(it.first.c_str());
-    char *encoded_value = evhttp_encode_uri(it.second.c_str());
-    auth_request_body += std::string("&") + encoded_key + "=" + encoded_value;
+    if (!encoded_key) {
+      f_evhttp_encode_uri_succ = false;
+      break;
+    }
+    auth_request_body += '&';
+    auth_request_body += encoded_key;
     free(encoded_key);
+
+    char *encoded_value = evhttp_encode_uri(it.second.c_str());
+    if (!encoded_value) {
+      f_evhttp_encode_uri_succ = false;
+      break;
+    }
+    auth_request_body += '=';
+    auth_request_body += encoded_value;
     free(encoded_value);
   }
-
+  if (!f_evhttp_encode_uri_succ) {
+    s3_log(S3_LOG_ERROR, request_id, "evhttp_encode_uri() returned NULL");
+    auth_request_body.clear();
+  }
   // evbuffer_add_printf(op_ctx->authrequest->buffer_out,
   // auth_request_body.c_str());
   req_body_buffer = evbuffer_new();
@@ -742,6 +769,8 @@ void S3AuthClient::setup_auth_request_body() {
                auth_request_body.length());
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+
+  return !auth_request_body.empty();
 }
 
 void S3AuthClient::set_acl_and_policy(const std::string &acl,
@@ -859,6 +888,17 @@ void S3AuthClient::execute_authconnect_request(
 void S3AuthClient::trigger_authentication() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
 
+  AtExit at_exit_on_error([this]() {
+    if (auth_context) {
+      auth_context->set_auth_response_error(
+          "InternalError", "Error while preparing request to Auth server",
+          request_id);
+    }
+    if (handler_on_failed) {
+      handler_on_failed();
+    }
+  });
+
   state = S3AuthClientOpState::started;
   S3AuthClientOpType auth_request_type = get_op_type();
   auth_context->init_auth_op_ctx(auth_request_type);
@@ -878,7 +918,9 @@ void S3AuthClient::trigger_authentication() {
   }
 
   // Setup the body to be sent to auth service
-  setup_auth_request_body();
+  if (!setup_auth_request_body()) {
+    return;
+  }
   setup_auth_request_headers();
 
   char mybuff[2000] = {0};
@@ -888,6 +930,7 @@ void S3AuthClient::trigger_authentication() {
 
   execute_authconnect_request(auth_ctx);
 
+  at_exit_on_error.cancel();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -903,6 +946,7 @@ void S3AuthClient::trigger_authentication(std::function<void(void)> on_success,
   trigger_authentication();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+
 void S3AuthClient::validate_acl(std::function<void(void)> on_success,
                                 std::function<void(void)> on_failed) {
 
@@ -1182,6 +1226,7 @@ void S3AuthClient::check_authentication(std::function<void(void)> on_success,
 
   is_chunked_auth = false;
   set_op_type(S3AuthClientOpType::authentication);
+
   trigger_authentication(on_success, on_failed);
 }
 

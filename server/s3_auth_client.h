@@ -78,6 +78,10 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     }
   }
 
+  void set_auth_response_error(std::string error_code,
+                               std::string error_message,
+                               std::string request_id);
+
   void set_auth_response_xml(const char* xml, bool success = true) {
     s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
     auth_response_xml = xml;
@@ -187,9 +191,9 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     return "";
   }
 
-  std::string get_error_code() { return error_obj->get_code(); }
+  const std::string& get_error_code() { return error_obj->get_code(); }
 
-  std::string get_error_message() { return error_obj->get_message(); }
+  const std::string& get_error_message() { return error_obj->get_message(); }
 
   // Call this when you want to do auth op.
   virtual bool init_auth_op_ctx(const S3AuthClientOpType& type) {
@@ -323,7 +327,7 @@ class S3AuthClient {
 
   void do_skip_authorization() { skip_authorization = true; }
   void setup_auth_request_headers();
-  void setup_auth_request_body();
+  bool setup_auth_request_body();
   virtual void execute_authconnect_request(struct s3_auth_op_context* auth_ctx);
   void add_key_val_to_body(std::string key, std::string val);
   void set_is_authheader_present(bool is_authorizationheader_present);

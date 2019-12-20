@@ -18,25 +18,40 @@
  * Original creation date: 10-Mar-2016
  */
 
+#include <utility>
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
 
 #include "s3_auth_response_error.h"
 #include "s3_log.h"
 
-S3AuthResponseError::S3AuthResponseError(std::string& xml)
-    : xml_content(xml), is_valid(false) {
+S3AuthResponseError::S3AuthResponseError(std::string xml)
+    : xml_content(std::move(xml)) {
   s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   is_valid = parse_and_validate();
 }
 
-bool S3AuthResponseError::isOK() { return is_valid; }
+S3AuthResponseError::S3AuthResponseError(std::string error_code_,
+                                         std::string error_message_,
+                                         std::string request_id_)
+    : is_valid(false),
+      error_code(std::move(error_code_)),
+      error_message(std::move(error_message_)),
+      request_id(std::move(request_id_)) {
+  s3_log(S3_LOG_DEBUG, "", "Constructor\n");
+}
 
-const std::string& S3AuthResponseError::get_code() { return error_code; }
+bool S3AuthResponseError::isOK() const { return is_valid; }
 
-const std::string& S3AuthResponseError::get_message() { return error_message; }
+const std::string& S3AuthResponseError::get_code() const { return error_code; }
 
-const std::string& S3AuthResponseError::get_request_id() { return request_id; }
+const std::string& S3AuthResponseError::get_message() const {
+  return error_message;
+}
+
+const std::string& S3AuthResponseError::get_request_id() const {
+  return request_id;
+}
 
 bool S3AuthResponseError::parse_and_validate() {
   s3_log(S3_LOG_DEBUG, "", "Parsing Auth server Error response\n");

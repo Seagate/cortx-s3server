@@ -37,12 +37,15 @@ class S3AuthResponseError {
   bool parse_and_validate();
 
  public:
-  S3AuthResponseError(std::string& xml);
-  bool isOK();
+  S3AuthResponseError(std::string xml);
+  S3AuthResponseError(std::string error_code_, std::string error_message_,
+                      std::string request_id_);
 
-  const std::string& get_code();
-  const std::string& get_message();
-  const std::string& get_request_id();
+  bool isOK() const;
+
+  const std::string& get_code() const;
+  const std::string& get_message() const;
+  const std::string& get_request_id() const;
 
   FRIEND_TEST(S3AuthResponseErrorTest, ConstructorTest);
   FRIEND_TEST(S3AuthResponseErrorTest, ValidateMustFailForEmptyXML);
