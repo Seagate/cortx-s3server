@@ -28,7 +28,6 @@ import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.auth.policy.Statement.Effect;
-import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 import com.seagates3.acl.AccessControlList;
 import com.seagates3.authorization.Authorizer;
@@ -67,11 +66,8 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
                                requestedResource, bucketOwner);
       }
     }
-    catch (JSONException e) {
-      LOGGER.error("Exception while parsing", e);
-    }
-    catch (DataAccessException e) {
-      LOGGER.error("Error while finding user by ARN", e);
+    catch (Exception e) {
+      LOGGER.error("Exception while authorizing", e);
     }
     return serverResponse;
   }

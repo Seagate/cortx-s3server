@@ -77,14 +77,14 @@ class PolicyUtil {
     for (String action : S3Actions.getInstance()
              .getBucketOperations()
              .keySet()) {
-      if (isPatternMatching(action, inputAction)) {
+      if (isPatternMatching(action.toLowerCase(), inputAction.toLowerCase())) {
         matchingActions.add(action);
       }
     }
     for (String action : S3Actions.getInstance()
              .getObjectOperations()
              .keySet()) {
-      if (isPatternMatching(action, inputAction)) {
+      if (isPatternMatching(action.toLowerCase(), inputAction.toLowerCase())) {
         matchingActions.add(action);
       }
     }

@@ -50,7 +50,8 @@ void S3PutBucketPolicyAction::validate_request() {
 
   if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
-    validate_request_body(new_bucket_policy);
+    next();
+    //    validate_request_body(new_bucket_policy);
   } else {
     // Start streaming, logically pausing action till we get data.
     request->listen_for_incoming_data(
@@ -130,7 +131,8 @@ void S3PutBucketPolicyAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
   if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
-    validate_request_body(new_bucket_policy);
+    next();
+    // validate_request_body(new_bucket_policy);
   } else {
     // else just wait till entire body arrives. rare.
     request->resume();

@@ -101,9 +101,8 @@ class BucketPolicyValidator extends PolicyValidator {
       policy = Policy.fromJson(obj.toString());
     }
     catch (Exception e) {
-      response = responseGenerator.malformedPolicy(
-          "This policy contains invalid Json");
-      LOGGER.error("This policy contains invalid Json");
+      response = responseGenerator.malformedPolicy(e.getMessage());
+      LOGGER.error("Exception in ValidatePolicy -  ", e);
       return response;
     }
     // Statement validation
@@ -139,7 +138,6 @@ class BucketPolicyValidator extends PolicyValidator {
  private
   ServerResponse validatePolicyElements(JSONObject jsonObject)
       throws JSONException {
-
     ServerResponse response = null;
     boolean isEffectFieldPresent = false;
     Iterator<String> keys = jsonObject.keys();
@@ -180,7 +178,29 @@ class BucketPolicyValidator extends PolicyValidator {
             } else if ("Effect".equals(objKey)) {  // Adding effect check here
                                                    // as json parser setting the
               // default value when not present
+              String effectValue = obj.get(objKey).toString();
+              if (effectValue != null &&
+                  !effectValue.equals(Statement.Effect.Allow.toString()) &&
+                  !effectValue.equals(Statement.Effect.Deny.toString())) {
+                response = responseGenerator.malformedPolicy(
+                    "Invalid effect : " + effectValue);
+                LOGGER.error("Effect value is invalid in bucket policy - " +
+                             effectValue);
+              }
               isEffectFieldPresent = true;
+            } else if ("Principal".equals(objKey)) {
+              if (obj.get(objKey) != null &&
+                  obj.get(objKey) instanceof String) {
+                if (obj.get(objKey).toString().isEmpty()) {
+                  response = responseGenerator.malformedPolicy(
+                      "Missing required field Principal cannot be empty!");
+                  LOGGER.error("Principal value is empty..");
+                } else if (!obj.get(objKey).toString().equals("*")) {
+                  response = responseGenerator.malformedPolicy(
+                      "Invalid policy syntax.");
+                  LOGGER.error("Principal value is not following syntax..");
+                }
+              }
             }
           }
           if (!isEffectFieldPresent) {
@@ -264,10 +284,10 @@ class BucketPolicyValidator extends PolicyValidator {
     List<String> matchingActionsList = null;
     if (actionList != null && !actionList.isEmpty()) {
       for (Action action : actionList) {
-        if (action != null) {
+        if (action != null && action.getActionName() != null &&
+            !action.getActionName().isEmpty()) {
           matchingActionsList =
               PolicyUtil.getAllMatchingActions(action.getActionName());
-        }
         if (matchingActionsList == null || matchingActionsList.isEmpty()) {
           response =
               responseGenerator.malformedPolicy("Policy has invalid action");
@@ -280,8 +300,12 @@ class BucketPolicyValidator extends PolicyValidator {
             break;
           }
         }
+        } else {
+          response = responseGenerator.malformedPolicy(
+              "Missing required field Action cannot be empty!");
+          LOGGER.error("Required field Action is empty");
+        }
       }
-
     } else {
       response =
           responseGenerator.malformedPolicy("Missing required field Action");
