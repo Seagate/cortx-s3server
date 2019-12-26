@@ -23,6 +23,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_perf_logger.h"
+#include "s3_perf_metrics.h"
 
 S3PutMultiObjectAction::S3PutMultiObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -391,6 +392,8 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_consume_incoming_content_shutdown_fail");
   log_timed_counter(put_timed_counter, "incoming_object_data_blocks");
+  s3_perf_count_incoming_bytes(
+      request->get_buffered_input()->get_content_length());
   if (!clovis_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=

@@ -29,6 +29,7 @@
 #include "s3_uri_to_mero_oid.h"
 #include <evhttp.h>
 #include "s3_m0_uint128_helper.h"
+#include "s3_perf_metrics.h"
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -423,6 +424,8 @@ void S3PutObjectAction::consume_incoming_content() {
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_object_action_consume_incoming_content_shutdown_fail");
   log_timed_counter(put_timed_counter, "incoming_object_data_blocks");
+  s3_perf_count_incoming_bytes(
+      request->get_buffered_input()->get_content_length());
   // Resuming the action since we have data.
   if (!write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||

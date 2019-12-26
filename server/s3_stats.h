@@ -25,6 +25,7 @@
 #include <gtest/gtest_prod.h>
 #include <math.h>
 #include <limits>
+#include <cstdint>
 #include <string>
 #include <unordered_set>
 #include "s3_log.h"
@@ -37,7 +38,7 @@ class S3Stats {
   static void delete_instance();
 
   // Increase/decrease count for `key` by `value`
-  int count(const std::string& key, int value, int retry = 1,
+  int count(const std::string& key, int64_t value, int retry = 1,
             float sample_rate = 1.0);
 
   // Log the time in ms for `key`
@@ -138,7 +139,7 @@ static inline int s3_stats_dec(const std::string& key, int retry = 1,
   return g_stats_instance->count(key, -1, retry, sample_rate);
 }
 
-static inline int s3_stats_count(const std::string& key, int value,
+static inline int s3_stats_count(const std::string& key, int64_t value,
                                  int retry = 1, float sample_rate = 1.0) {
   if (!g_option_instance->is_stats_enabled()) {
     return 0;

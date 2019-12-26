@@ -46,6 +46,7 @@
 #include "s3_fake_clovis_redis_kvs.h"
 #include "s3_clovis_wrapper.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_perf_metrics.h"
 
 #define FOUR_KB 4096
 
@@ -945,6 +946,17 @@ int main(int argc, char **argv) {
     }
   }
 
+  rc = s3_perf_metrics_init(global_evbase_handle);
+  if (rc != 0) {
+    s3_log(S3_LOG_FATAL, "", "Could not init perf metrics: %s\n",
+           strerror(-rc));
+    fini_auth_ssl();
+    evhtp_free(htp_mero);
+    fini_clovis();
+    fini_log();
+    return rc;
+  }
+
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()
   // to keep looping even when there are no pending events
@@ -956,6 +968,8 @@ int main(int argc, char **argv) {
            "Event base loop exited due to unhandled exception in libevent's "
            "backend\n");
   }
+
+  s3_perf_metrics_fini();
 
   S3FakeClovisRedisKvs::destroy_instance();
 

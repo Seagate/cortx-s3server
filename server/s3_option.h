@@ -164,6 +164,7 @@ class S3Option {
   unsigned short statsd_port;
   unsigned short statsd_max_send_retry;
   std::string stats_whitelist_filename;
+  uint32_t perf_stats_inout_bytes_interval_msec;
 
   evbase_t* eventbase;
 
@@ -257,6 +258,7 @@ class S3Option {
     statsd_port = FLAGS_statsd_port;
     statsd_max_send_retry = 3;
     stats_whitelist_filename = "/opt/seagate/s3/conf/s3stats-whitelist.yaml";
+    perf_stats_inout_bytes_interval_msec = 1000;
 
     redis_srv_addr = "127.0.0.1";
     redis_srv_port = 6397;
@@ -408,6 +410,7 @@ class S3Option {
   unsigned short get_statsd_port();
   unsigned short get_statsd_max_send_retry();
   std::string get_stats_whitelist_filename();
+  uint32_t get_perf_stats_inout_bytes_interval_msec();
   void set_stats_whitelist_filename(std::string filename);
 
   // Fault injection Option

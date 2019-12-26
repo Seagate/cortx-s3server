@@ -25,6 +25,7 @@
 #include "s3_option.h"
 #include "s3_common_utilities.h"
 #include "s3_stats.h"
+#include "s3_perf_metrics.h"
 
 S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3RequestObject> req,
@@ -458,6 +459,7 @@ void S3GetObjectAction::send_data_to_client() {
     data_sent_to_client += length;
     s3_log(S3_LOG_DEBUG, request_id, "Sending %zu bytes to client.\n", length);
     request->send_reply_body(data + read_data_start_offset, length);
+    s3_perf_count_outcoming_bytes(length);
     length = clovis_reader->get_next_block(&data);
   }
   s3_timer.stop();

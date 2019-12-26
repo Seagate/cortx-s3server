@@ -48,7 +48,7 @@ void S3Stats::delete_instance() {
   }
 }
 
-int S3Stats::count(const std::string& key, int value, int retry,
+int S3Stats::count(const std::string& key, int64_t value, int retry,
                    float sample_rate) {
   return form_and_send_msg(key, "c", std::to_string(value), retry, sample_rate);
 }

@@ -121,3 +121,6 @@
 # PUT/GET callbacks from libevhtp
 - incoming_object_data_blocks_count
 - outgoing_object_data_blocks_count
+# Received/sent object content bytes, for CSM
+- incoming_object_bytes_count
+- outcoming_object_bytes_count
