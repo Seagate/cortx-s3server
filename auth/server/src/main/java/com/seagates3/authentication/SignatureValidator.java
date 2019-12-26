@@ -124,7 +124,7 @@ public class SignatureValidator {
           Math.abs(currentDateTime.getMillis() - requestDate.getTime());
       long diffInMinutes =
           TimeUnit.MINUTES.convert(timeInterval, TimeUnit.MILLISECONDS);
-      if (diffInMinutes == 0 || diffInMinutes <= 15) {
+      if (diffInMinutes <= 15) {
         isRequestInSkewTime = true;
       }
 
@@ -191,8 +191,9 @@ public class SignatureValidator {
         return false;
       }
 
-      Calendar cal1 = Calendar.getInstance();
-      Calendar cal2 = Calendar.getInstance();
+      // Use UTC timezone while comparing the date object
+      Calendar cal1 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+      Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
       cal1.setTime(requestDate);
       cal2.setTime(credentialScopeDate);
 
