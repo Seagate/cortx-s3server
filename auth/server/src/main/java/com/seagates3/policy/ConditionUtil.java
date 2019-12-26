@@ -21,6 +21,7 @@ package com.seagates3.policy;
 
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -91,6 +92,15 @@ class ConditionUtil {
     HashSet<String> s3Keys = gson.fromJson(keyElement.get("S3Keys"), setType);
     conditionKeys.addAll(globalKeys);
     conditionKeys.addAll(s3Keys);
+
+    // Convert conditionKeys elements to lower case
+    String[] keysArray = conditionKeys.toArray(new String[0]);
+    for (int i = 0; i < keysArray.length; ++i) {
+      keysArray[i] = keysArray[i].toLowerCase();
+    }
+    conditionKeys.clear();
+    conditionKeys.addAll(Arrays.asList(keysArray));
+
     s3ActionsMap.putAll(S3Actions.getInstance().getBucketOperations());
     s3ActionsMap.putAll(S3Actions.getInstance().getObjectOperations());
   }
@@ -122,8 +132,11 @@ class ConditionUtil {
    */
  public
   boolean isConditionKeyValid(String conditionKey) {
+
+    if (conditionKey == null) return false;
+    conditionKey = conditionKey.toLowerCase();
     if (conditionKeys.contains(conditionKey) ||
-        conditionKey != null && conditionKey.startsWith("aws:")) {
+        conditionKey.startsWith("aws:")) {
       return true;
     }
     return false;
@@ -148,12 +161,28 @@ class ConditionUtil {
     if (conditionKey.startsWith("aws:")) return true;
 
     for (Entry<String, Set<String>> entry : s3ActionsMap.entrySet()) {
-      if (action.equals(entry.getKey())) {
+      if (action.equalsIgnoreCase(entry.getKey())) {
         if (entry.getValue().contains(conditionKey)) {
           return true;
         }
       }
     }
     return false;
+  }
+
+  /**
+   * Removes the prefix ('s3:' or 'aws:') from Condition key
+   * @param key
+   * @return String after removing prefix, if present.
+   */
+ public
+  static String removeKeyPrefix(String key) {
+    if (key != null) {
+      if (key.startsWith("s3:"))
+        return key.substring(3);
+      else if (key.startsWith("aws:"))
+        return key.substring(4);
+    }
+    return key;
   }
 }

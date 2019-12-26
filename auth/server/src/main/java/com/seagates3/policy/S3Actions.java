@@ -64,14 +64,14 @@ class S3Actions {
              entry : element.get("Bucket").getAsJsonObject().entrySet()) {
       JsonElement setElem = entry.getValue();
       keys = gson.fromJson(setElem, setType);
-      bucketOperations.put(entry.getKey(), keys);
+      bucketOperations.put(entry.getKey().toLowerCase(), keys);
     }
 
     for (Entry<String, JsonElement>
              entry : element.get("Object").getAsJsonObject().entrySet()) {
       JsonElement setElem = entry.getValue();
       keys = gson.fromJson(setElem, setType);
-      objectOperations.put(entry.getKey(), keys);
+      objectOperations.put(entry.getKey().toLowerCase(), keys);
     }
   }
 

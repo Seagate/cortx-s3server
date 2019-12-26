@@ -24,10 +24,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.amazonaws.auth.policy.Action;
+import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Principal;
 import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.auth.policy.Statement.Effect;
+import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 import com.seagates3.acl.AccessControlList;
 import com.seagates3.authorization.Authorizer;
@@ -53,17 +55,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     // authorized if match is found
     // AccessDenied if Deny found
     try {
-      String requestedOperation = identifyOperationToAuthorize(requestBody);
+      String requestedOperation =
+          identifyOperationToAuthorize(requestBody).toLowerCase();
       if (requestedOperation != null) {
-        JSONObject obj = new JSONObject(requestBody.get("Policy"));
-        Policy policy = Policy.fromJson(obj.toString());
-        String requestedResource =
-            PolicyUtil.getResourceFromUri(requestBody.get("ClientAbsoluteUri"));
-        String bucketOwner = new AccessControlList().getOwner(requestBody);
-
         serverResponse =
-            authorizeOperation(policy, requestedOperation, requestor,
-                               requestedResource, bucketOwner);
+            authorizeOperation(requestBody, requestedOperation, requestor);
       }
     }
     catch (Exception e) {
@@ -110,20 +106,30 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
    * @param resourceOwner
    * @return
    * @throws DataAccessException
+   * @throws JSONException
    */
  private
   ServerResponse authorizeOperation(
-      Policy existingPolicy, String requestedOperation, Requestor requestor,
-      String requestedResource,
-      String resourceOwner) throws DataAccessException {
+      Map<String, String> requestBody, String requestedOperation,
+      Requestor requestor) throws DataAccessException,
+      JSONException {
+
     ServerResponse response = null;
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
+
+    JSONObject obj = new JSONObject(requestBody.get("Policy"));
+    Policy existingPolicy = Policy.fromJson(obj.toString());
+    String requestedResource =
+        PolicyUtil.getResourceFromUri(requestBody.get("ClientAbsoluteUri"));
+    String resourceOwner = new AccessControlList().getOwner(requestBody);
+
     List<Statement> statementList =
         new ArrayList<Statement>(existingPolicy.getStatements());
 
     for (Statement stmt : statementList) {
       List<Principal> principalList = stmt.getPrincipals();
+      List<Condition> conditions = stmt.getConditions();
       if (isPrincipalMatching(principalList, requestor)) {
         List<String> resourceList =
             PolicyUtil.convertCommaSeparatedStringToList(
@@ -131,10 +137,12 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         if (isResourceMatching(resourceList, requestedResource)) {
           List<Action> actionsList = stmt.getActions();
           if (isActionMatching(actionsList, requestedOperation)) {
-            if (stmt.getEffect().equals(Effect.Allow)) {
-              response = responseGenerator.ok();
-            } else {
-              response = responseGenerator.AccessDenied();
+            if (isConditionMatching(conditions, requestBody)) {
+              if (stmt.getEffect().equals(Effect.Allow)) {
+                response = responseGenerator.ok();
+              } else {
+                response = responseGenerator.AccessDenied();
+              }
             }
           }
         }
@@ -258,5 +266,42 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       }
     }
     return isMatching;
+  }
+
+  /**
+   * Checks if the Conditions from policy are satisfied in the request.
+   * Returns true if there are no conditions in policy.
+   * @param conditions
+   * @param requestBody
+   * @return - true if policy conditions are satisfied
+   */
+ private
+  boolean isConditionMatching(List<Condition> conditions,
+                              Map<String, String> requestBody) {
+    if (conditions.isEmpty()) return true;
+
+    /**
+     * Check if the headers from requestBody satisfy the policy conditions
+     * Sample Condition -
+     * "Condition": {
+     *   "StringEquals": {
+     *     "s3:x-amz-acl": ["bucket-owner-read", "bucket-owner-full-control"]
+     *   }
+     * }
+     */
+    boolean result = false;
+    for (Condition condition : conditions) {
+      PolicyCondition pc = ConditionFactory.getCondition(
+          condition.getType(),
+          ConditionUtil.removeKeyPrefix(condition.getConditionKey()),
+          condition.getValues());
+      if (pc != null)
+        result = pc.isSatisfied(requestBody);
+      else
+        result = false;
+
+      if (!result) break;
+    }
+    return result;
   }
 }

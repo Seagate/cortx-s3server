@@ -155,9 +155,12 @@ class PolicyUtil {
  public
   static boolean isPolicyOperation(String operation) {
     boolean isValid = false;
-    if (PolicyAuthorizerConstants.PUT_BUCKET_POLICY.equals(operation) ||
-        PolicyAuthorizerConstants.GET_BUCKET_POLICY.equals(operation) ||
-        PolicyAuthorizerConstants.DELETE_BUCKET_POLICY.equals(operation)) {
+    if (PolicyAuthorizerConstants.PUT_BUCKET_POLICY.equalsIgnoreCase(
+            operation) ||
+        PolicyAuthorizerConstants.GET_BUCKET_POLICY.equalsIgnoreCase(
+            operation) ||
+        PolicyAuthorizerConstants.DELETE_BUCKET_POLICY.equalsIgnoreCase(
+            operation)) {
       isValid = true;
     }
     return isValid;

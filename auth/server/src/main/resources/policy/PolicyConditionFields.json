@@ -80,7 +80,16 @@
             "s3:object-lock-remaining-retention-days",
             "s3:object-lock-mode",
             "s3:object-lock-retain-until-date",
-            "s3:object-lock-legal-hold"
+            "s3:object-lock-legal-hold",
+            "s3:x-amz-content-sha256",
+            "s3:signatureversion",
+            "s3:signatureage",
+            "s3:authtype",
+            "s3:DataAccessPointAccount",
+            "s3:DataAccessPointArn",
+            "s3:AccessPointNetworkOrigin",
+            "s3:x-amz-storage-class",
+            "s3:x-amz-website-redirect-location"
         ]
     }
 }

@@ -124,4 +124,46 @@ class ConditionUtilTest {
   @Test public void testIsConditionKeyValid_empty_fail() {
     Assert.assertFalse(util.isConditionKeyValid(""));
   }
+
+  /**
+   * Validate removeKeyPrefix
+   */
+  @Test public void testRemoveKeyPrefix_s3_success() {
+    Assert.assertEquals("abc", ConditionUtil.removeKeyPrefix("s3:abc"));
+  }
+
+  /**
+   * Validate removeKeyPrefix
+   */
+  @Test public void testRemoveKeyPrefix_aws_success() {
+    Assert.assertEquals("abc", ConditionUtil.removeKeyPrefix("aws:abc"));
+  }
+
+  /**
+   * Validate removeKeyPrefix
+   */
+  @Test public void testRemoveKeyPrefix_fail() {
+    Assert.assertEquals("abc:abc", ConditionUtil.removeKeyPrefix("abc:abc"));
+  }
+
+  /**
+   * Validate removeKeyPrefix
+   */
+  @Test public void testRemoveKeyPrefix_fail2() {
+    Assert.assertEquals("abc", ConditionUtil.removeKeyPrefix("abc"));
+  }
+
+  /**
+   * Validate removeKeyPrefix
+   */
+  @Test public void testRemoveKeyPrefix_empty() {
+    Assert.assertEquals("", ConditionUtil.removeKeyPrefix(""));
+  }
+
+  /**
+   * Validate removeKeyPrefix
+   */
+  @Test public void testRemoveKeyPrefix_null() {
+    Assert.assertNull(ConditionUtil.removeKeyPrefix(null));
+  }
 }
