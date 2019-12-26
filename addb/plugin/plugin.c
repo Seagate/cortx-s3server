@@ -18,66 +18,39 @@
  */
 
 #include <stdio.h>
-#include <inttypes.h>
-
-/* #include <addb2/plugin_api.h> */
-/* Waiting till Mero team lands their change, see
- * http://gerrit.mero.colo.seagate.com:8080/#/c/18477/ */
-
-/* definitions from not-yet-merged mero change, to be able to build this
- * plugin (copied from <addb2/pluginapi.h>: */
-
-enum {
-  FIELD_MAX = 15
-};
-
-struct context;
-
-struct m0_id_intrp {
-  uint64_t ii_id;
-  const char *ii_name;
-  void (*ii_print[FIELD_MAX])(struct context *ctx, const uint64_t *v,
-                              char *buf);
-  const char *ii_field[FIELD_MAX];
-  void (*ii_spec)(struct context *ctx, char *buf);
-  int ii_repeat;
-};
-
-int m0_addb2_load_interps(uint64_t flags, struct m0_id_intrp **intrps_array);
-
-/* end of definitions from not-yet-merged mero change <addb2/plugin_api.h> */
+#include <addb2/plugin_api.h>
 
 #include "s3_addb_plugin_auto.h"
 
 /* Borrowed from addb2/dump.c, hope Mero will publish it as API in future */
 
-static void dec(struct context *ctx, const uint64_t *v, char *buf) {
+static void dec(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
   sprintf(buf, "%" PRId64, v[0]);
 }
 
-static void hex(struct context *ctx, const uint64_t *v, char *buf) {
+static void hex(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
   sprintf(buf, "%" PRIx64, v[0]);
 }
 
-static void hex0x(struct context *ctx, const uint64_t *v, char *buf) {
+static void hex0x(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
   sprintf(buf, "0x%" PRIx64, v[0]);
 }
 
-static void oct(struct context *ctx, const uint64_t *v, char *buf) {
+static void oct(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
   sprintf(buf, "%" PRIo64, v[0]);
 }
 
-static void ptr(struct context *ctx, const uint64_t *v, char *buf) {
+static void ptr(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
   sprintf(buf, "@%p", *(void **)v);
 }
 
-static void bol(struct context *ctx, const uint64_t *v, char *buf) {
+static void bol(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
   sprintf(buf, "%s", v[0] ? "true" : "false");
 }
 
 /* end of clip from dump.c */
 
-static struct m0_id_intrp gs_curr_ids[] = {
+static struct m0_addb2__id_intrp gs_curr_ids[] = {
     {S3_ADDB_REQUEST_ID,
      "s3-request-uid",
      {&dec, &hex0x, &hex0x},
@@ -93,7 +66,8 @@ static struct m0_id_intrp gs_curr_ids[] = {
      .ii_repeat = (S3_ADDB_LAST_REQUEST_ID - S3_ADDB_FIRST_REQUEST_ID)},
     {0}};
 
-int m0_addb2_load_interps(uint64_t flags, struct m0_id_intrp **intrps_array) {
+int m0_addb2_load_interps(uint64_t flags,
+                          struct m0_addb2__id_intrp **intrps_array) {
   /* suppres "unused" warnings */
   (void)dec;
   (void)hex0x;

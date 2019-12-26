@@ -181,9 +181,7 @@ def generate_header_file(out_file_name, classes, enums):
 #ifndef __S3_SERVER_ADDB_PLUGIN_AUTO_H__
 #define __S3_SERVER_ADDB_PLUGIN_AUTO_H__
 
-/* #include <addb2/ext_id_ranges.h> */
-/* Waiting till Mero team lands their change, see
- * http://gerrit.mero.colo.seagate.com:8080/#/c/18477/ */
+#include <addb2/addb2_internal.h>
 
 /* See comments in addb-codegen.py and s3_addb.h for more details.
  *
@@ -194,7 +192,7 @@ enum S3AddbActionTypeId {
 
   /* See comment on ext_id_ranges.h above; had to use magic number here,
    * as mero headers are not yet merged to master. */
-  S3_ADDB_RANGE_START = 0x0010000, /* M0_ADDB2__EXT_RANGE_1, */
+  S3_ADDB_RANGE_START = M0_ADDB2__EXT_RANGE_1,
 
   /* helper IDs e.g. for linking requests */
 
