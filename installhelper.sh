@@ -33,6 +33,7 @@ mkdir -p $S3_INSTALL_LOCATION/addb-plugin
 mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
+mkdir -p $S3_INSTALL_LOCATION/scripts
 mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $S3_LOG_ROTATE_FILE_LOCATION
 mkdir -p $SERVICE_FILE_LOCATION
@@ -108,6 +109,9 @@ cp startauth.sh $AUTH_INSTALL_LOCATION/
 
 # Copy auth server Helper scripts
 cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
+
+# Copy s3-sanity
+cp -f s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
 
 # Copy the auth service file for systemctl support.
 cp auth/server/s3authserver.service $SERVICE_FILE_LOCATION

@@ -169,6 +169,7 @@ rm -rf %{buildroot}
 /opt/seagate/auth/AuthPassEncryptCLI-1.0-0.jar
 /opt/seagate/auth/startauth.sh
 /opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh
+/opt/seagate/s3/scripts/s3-sanity-test.sh
 /opt/seagate/s3/addb-plugin/libs3addbplugin.so
 /opt/seagate/s3/bin/cloviskvscli
 /opt/seagate/s3/bin/s3server

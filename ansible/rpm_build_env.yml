@@ -6,6 +6,8 @@
   hosts: s3devvm
   remote_user: root
   gather_facts: yes
+  vars:
+    python_version: "{{ 'python36' if ((ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')) else 'python3'}}"
 
   tasks:
     - import_tasks: common_build_env.yml
