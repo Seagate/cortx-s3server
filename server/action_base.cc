@@ -238,43 +238,19 @@ void Action::check_authentication_successful() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-bool Action::is_date_header_present_in_request() const {
-
-  for (const auto& hdr : base_request->get_in_headers_copy()) {
-    const char* sz_hdr_name = hdr.first.c_str();
-
-    if (!strcasecmp(sz_hdr_name, "date") ||
-        !strcasecmp(sz_hdr_name, "x-amz-date")) {
-      return true;
-    }
-  }
-  s3_log(S3_LOG_DEBUG, "",
-         "Both \"Date\" and \"x-amz-date\" headers are absent");
-  return false;
-}
-
 void Action::check_authentication_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (base_request->client_connected()) {
     std::string error_code = auth_client->get_error_code();
+    std::string error_message = auth_client->get_error_message();
     if (error_code == "InvalidAccessKeyId") {
       s3_stats_inc("authentication_failed_invalid_accesskey_count");
     } else if (error_code == "SignatureDoesNotMatch") {
-      /* Auth server does not check that date stamp presents in a request.
-       * This pointfix is added for compliance with Amazon S3 behavior.
-       * https://jts.seagate.com/browse/EOS-2388
-       * Once Auth server will check date stamp then this pointfix
-       * can be removed.
-       */
-      if (!is_date_header_present_in_request()) {
-        error_code = "AccessDenied";
-      } else {
-        s3_stats_inc("authentication_failed_signature_mismatch_count");
-      }
+      s3_stats_inc("authentication_failed_signature_mismatch_count");
     }
     s3_log(S3_LOG_ERROR, request_id, "Authentication failure: %s\n",
            error_code.c_str());
-    base_request->respond_error(error_code);
+    base_request->respond_error(error_code, {}, error_message);
   }
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -172,7 +172,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       // Verify
       assertEquals(HttpResponseStatus.FORBIDDEN, response.getResponseStatus());
     }
-    /* TODO
+
     @Test public void validateSignatureDateTest_ShouldReturnOK()
         throws Exception {
       // Arrange
@@ -211,7 +211,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       // Verify
       assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
-     */
+
     @Test
     public void getSignerTest_AWSSignV2() throws Exception {
         // Arrange
