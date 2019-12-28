@@ -81,3 +81,5 @@ S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_INITIAL_SIZE: 419430400             # Four Hundred 1mb blocks, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 104857600          # 100mb, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_LIBEVENT_POOL_MAX_THRESHOLD: 1048576000            # 1GB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_LIBEVENT_POOL_RESERVE_SIZE: 1048576               # Deny PUT request if mempool free space is less than the mentioned size in bytes
+   S3_LIBEVENT_POOL_RESERVE_PERCENT: 5                  # Deny PUT request if mempool free space in percent is less than the mentioned percent

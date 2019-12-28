@@ -180,14 +180,13 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   }
 
   // Check if we have enough approx memory to proceed with request
-  if (s3_request->get_api_type() == S3ApiType::object) {
+  if (s3_request->get_api_type() == S3ApiType::object &&
+      s3_request->http_verb() == S3HttpVerb::PUT) {
     int layout_id =
         S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
             s3_request->get_data_length());
-    std::shared_ptr<S3MemoryProfile> mem_profile =
-        std::make_shared<S3MemoryProfile>();
-    if (s3_request->http_verb() == S3HttpVerb::PUT &&
-        !mem_profile->we_have_enough_memory_for_put_obj(layout_id)) {
+    S3MemoryProfile mem_profile;
+    if (!mem_profile.we_have_enough_memory_for_put_obj(layout_id)) {
       s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
              "Limited memory: Rejecting PUT object/part request with retry.\n");
       s3_request->respond_retry_after(1);

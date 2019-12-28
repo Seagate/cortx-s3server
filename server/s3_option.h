@@ -152,6 +152,8 @@ class S3Option {
   size_t libevent_pool_max_threshold;
   size_t libevent_pool_buffer_size;
   size_t libevent_max_read_size;
+  size_t libevent_pool_reserve_size;
+  unsigned libevent_pool_reserve_percent;
 
   std::string redis_srv_addr;
   unsigned short redis_srv_port;
@@ -232,6 +234,8 @@ class S3Option {
     libevent_pool_expandable_size = 1048576;
     libevent_pool_max_threshold = 104857600;
     libevent_max_read_size = 16384;  // libevent max
+    libevent_pool_reserve_size = 1048576;
+    libevent_pool_reserve_percent = 5;
 
     auth_ip_addr = FLAGS_authhost;
     auth_port = FLAGS_authport;
@@ -369,6 +373,8 @@ class S3Option {
   size_t get_libevent_pool_max_threshold();
   size_t get_libevent_pool_buffer_size();
   size_t get_libevent_max_read_size();
+  size_t get_libevent_pool_reserve_size() const;
+  unsigned get_libevent_pool_reserve_percent() const;
 
   bool get_clovis_is_oostore();
   bool get_clovis_is_read_verify();
