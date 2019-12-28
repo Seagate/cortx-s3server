@@ -97,9 +97,13 @@ int s3_perf_metrics_init(evbase_t *evbase) {
   if (!gs_throughput_event) {
     return -ENOMEM;
   }
-  tv.tv_sec = S3Option::get_instance()->get_perf_stats_inout_bytes_interval_msec() / 1000;
+  tv.tv_sec =
+      S3Option::get_instance()->get_perf_stats_inout_bytes_interval_msec() /
+      1000;
   tv.tv_usec =
-      1000 * (S3Option::get_instance()->get_perf_stats_inout_bytes_interval_msec() % 1000);
+      1000 *
+      (S3Option::get_instance()->get_perf_stats_inout_bytes_interval_msec() %
+       1000);
   rc = gs_throughput_event->add_evtimer(tv);
   if (rc != 0) {
     return rc;

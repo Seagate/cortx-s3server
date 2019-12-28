@@ -167,7 +167,8 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC");
       perf_stats_inout_bytes_interval_msec =
-          s3_option_node["S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC"].as<uint32_t>();
+          s3_option_node["S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC"]
+              .as<uint32_t>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_ADDRESS");
       redis_srv_addr =
           s3_option_node["S3_REDIS_SERVER_ADDRESS"].as<std::string>();
@@ -831,7 +832,8 @@ void S3Option::dump_options() {
          statsd_max_send_retry);
   s3_log(S3_LOG_INFO, "", "S3_STATS_WHITELIST_FILENAME = %s\n",
          stats_whitelist_filename.c_str());
-  s3_log(S3_LOG_INFO, "", "S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC = %" PRIu32 "\n",
+  s3_log(S3_LOG_INFO, "",
+         "S3_PERF_STATS_INOUT_BYTES_INTERVAL_MSEC = %" PRIu32 "\n",
          perf_stats_inout_bytes_interval_msec);
 
   s3_log(S3_LOG_INFO, "", "S3_REDIS_SERVER_PORT = %d\n", (int)redis_srv_port);
