@@ -10,9 +10,14 @@ die() {
 print_usage_and_exit() {
   progname=runall.sh
   cat <<EOF
-Usage: $progname run_time mpatha mpathb ... mpathlast
+Usage:
+  $progname -h|-help|--help
+  $progname run_time [-min] mpatha mpathb ... mpathlast
 
 run_time is time to run in seconds.
+
+When -min is specified, instead of full suite script will only run basic seq
+read and seq write tests.
 
 To find which mpathX are available on your system, run:
 
@@ -46,6 +51,12 @@ if ! [[ $run_time =~ ^[1-9][0-9]*$ ]]; then
   print_usage_and_exit "run_time specifed as '$run_time'. must be an integer, valid for fio 'runtime' parameter."
 fi
 
+min_test=false
+if [ "$1" = '-min' ]; then
+  min_test=true
+  shift
+fi
+
 mpaths=("${@}")
 
 fullpath() {
@@ -76,7 +87,12 @@ test -f "runall.sh" && die "Current folder already contains results, create new 
 mkdir "$outputs_dir/test_suite"
 
 cd "$fio_dir/fio-configs"
-for i in 7volumes.*.fio; do
+if $min_test; then
+  fio_configs=(7volumes.rw-read.numjobs-1.bs-2m.fio 7volumes.rw-write.numjobs-1.bs-2m.fio)
+else
+  fio_configs=(7volumes.*.fio)
+fi
+for i in "${fio_configs[@]}"; do
   cd "$outputs_dir"
   echo "Running $i."
   config="$outputs_dir/test_suite/$i"
