@@ -45,11 +45,12 @@ class S3Action : public Action {
  private:
   std::shared_ptr<S3ObjectMetadata> object_metadata;
   std::shared_ptr<S3BucketMetadata> bucket_metadata;
+  bool skip_authorization;
 
  public:
   S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown = true,
            std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr,
-           bool skip_auth = false);
+           bool skip_auth = false, bool skip_authorize = false);
   virtual ~S3Action();
 
   // Register all the member functions required to complete the action.

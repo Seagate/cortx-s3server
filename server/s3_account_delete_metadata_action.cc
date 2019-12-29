@@ -29,7 +29,7 @@ extern struct m0_uint128 bucket_metadata_list_index_oid;
 S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3ClovisKVSReaderFactory> kvs_reader_factory)
-    : S3Action(req) {
+    : S3Action(req, true, nullptr, false, true) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   // get the account_id from uri
   account_id_from_uri = request->c_get_file_name();

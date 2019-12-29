@@ -25,8 +25,10 @@
 
 S3Action::S3Action(std::shared_ptr<S3RequestObject> req, bool check_shutdown,
                    std::shared_ptr<S3AuthClientFactory> auth_factory,
-                   bool skip_auth)
-    : Action(req, check_shutdown, auth_factory, skip_auth), request(req) {
+                   bool skip_auth, bool skip_authorize)
+    : Action(req, check_shutdown, auth_factory, skip_auth),
+      request(req),
+      skip_authorization(skip_authorize) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
   setup_steps();
 }
@@ -39,7 +41,8 @@ void S3Action::setup_steps() {
          "S3Option::is_auth_disabled: (%d), skip_auth: (%d)\n",
          S3Option::get_instance()->is_auth_disabled(), skip_auth);
   add_task(std::bind(&S3Action::load_metadata, this));
-  if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth) {
+  if ((!S3Option::get_instance()->is_auth_disabled() && !skip_auth) &&
+      (!skip_authorization)) {
     // add_task(std::bind( &S3Action::fetch_acl_policies, this ));
     // Commented till we implement Authorization feature completely.
     // Current authorisation implementation in AuthServer is partial
