@@ -100,6 +100,7 @@ then
   UT_DEATHTESTS_BIN=`pwd`/bazel-bin/s3utdeathtests
   UT_MEMPOOL_BIN=`pwd`/bazel-bin/s3mempoolut
   UT_MEMPOOLMGR_BIN=`pwd`/bazel-bin/s3mempoolmgrut
+  UT_S3BACKGROUNDDELETE=`pwd`/s3backgrounddelete/scripts/run_all_ut.sh
 
   printf "\nCheck s3ut..."
   type  $UT_BIN >/dev/null
@@ -124,6 +125,12 @@ then
   printf "OK \n"
 
   $UT_MEMPOOL_BIN 2>&1
+
+  printf "\nCheck s3backgrounddeleteut..."
+  type $UT_S3BACKGROUNDDELETE >/dev/null
+  printf "OK \n"
+
+  $UT_S3BACKGROUNDDELETE 2>&1
 fi
 
 if [ $no_st_run -eq 0 ]

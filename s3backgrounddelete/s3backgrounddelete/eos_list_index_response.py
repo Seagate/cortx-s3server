@@ -18,3 +18,7 @@ class EOSCoreListIndexResponse(object):
         """Returns the content value based on key."""
         json_value = json.loads(self._index_content[key].decode("utf-8"))
         return json_value
+
+    def set_index_content(self, index_content):
+        """Sets index content."""
+        self._index_content = json.loads(index_content.decode("utf-8"))
