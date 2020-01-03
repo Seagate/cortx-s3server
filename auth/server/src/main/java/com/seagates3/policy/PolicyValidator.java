@@ -177,14 +177,14 @@ abstract class PolicyValidator {
         try {
           if (new PrincipalArnParser().isArnFormatValid(id)) {
             user = userImpl.findByArn(id);
-            if (!user.exists()) {
+            if (user == null || !user.exists()) {
               isValid = false;
             }
           } else {
             account = accountImpl.findByID(id);
-            if (!account.exists()) {
+            if (account == null || !account.exists()) {
               user = userImpl.findByUserId(id);
-              if (!user.exists()) {
+              if (user == null || !user.exists()) {
                 isValid = false;
               }
             }

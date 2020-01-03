@@ -128,18 +128,18 @@ class PolicyUtil {
  public
   static boolean isActionValidForResource(List<String> actions,
                                           int slashPosition) {
-    boolean isValid = true;
+    boolean isValid = false;
     for (String action : actions) {
-      if ((S3Actions.getInstance().getBucketOperations().containsKey(action)) &&
-          slashPosition !=
-              -1) {  // Bucket operation but object is present in resource
-        isValid = false;
+      if ((S3Actions.getInstance().getBucketOperations().keySet().contains(
+              action)) &&
+          slashPosition == -1) {  // Bucket operation and object not present
+        isValid = true;
         break;
-      } else if (S3Actions.getInstance().getObjectOperations().containsKey(
-                     action) &&
-                 slashPosition == -1) {  // object operation but object is
-                                         // missing in resource
-        isValid = false;
+      }
+      if ((S3Actions.getInstance().getObjectOperations().keySet().contains(
+              action)) &&
+          slashPosition != -1) {  // object operation and object is present
+        isValid = true;
         break;
       }
     }

@@ -466,7 +466,8 @@ public class UserImpl implements UserDAO {
         userType = userName.substring(0, slashPosition);
         userName = userName.substring(slashPosition + 1);
         }
-        if ("user".equals(userType)) {
+        if (userName != null && !userName.isEmpty() &&
+            !userName.contains("*") && "user".equals(userType)) {
           Account account = new AccountImpl().findByID(accountId);
           if (account != null && account.exists()) {
             user = find(account.getName(), userName);
