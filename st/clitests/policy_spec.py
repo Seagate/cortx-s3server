@@ -67,6 +67,16 @@ policy_condition_StringLikeIfExists_success = "file://" + os.path.abspath(policy
 policy_condition_combination_fail_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_combination_fail.json')
 policy_condition_combination_fail = "file://" + os.path.abspath(policy_condition_combination_fail_relative)
 
+policy_for_iam_user_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'newaccount_policy.txt')
+policy_for_iam_user = "file://" + os.path.abspath(policy_for_iam_user_relative)
+
+deny_policy_for_iam_user_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'deny_newaccount_policy.txt')
+deny_policy_for_iam_user = "file://" + os.path.abspath(deny_policy_for_iam_user_relative)
+
+policy_access_only_to_owner_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'deny_newaccount_policy.txt')
+policy_access_only_to_owner = "file://" + os.path.abspath(policy_access_only_to_owner_relative)
+
+
 AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command_is_successful()
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucketPolicy")
@@ -139,6 +149,101 @@ AwsTest("Put Bucket Policy with invalid Principal ID in policy json").put_bucket
 policy_put_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_put_bucket_with_valid_principal.txt')
 policy_put_bucket = "file://" + os.path.abspath(policy_put_bucket_relative)
 AwsTest("Put Bucket Policy with valid Principal in policy json").put_bucket_policy("seagate", policy_put_bucket).execute_test().command_is_successful()
+
+
+
+
+############### Authorize Policy #######################
+print("Authorizing policy tests start....")
+
+def load_test_config():
+    conf_file = os.path.join(os.path.dirname(__file__),'s3iamcli_test_config.yaml')
+    with open(conf_file, 'r') as f:
+            config = yaml.safe_load(f)
+            S3ClientConfig.ldapuser = config['ldapuser']
+            S3ClientConfig.ldappasswd = config['ldappasswd']
+
+
+load_test_config()
+#put-bucket-policy - Valid principal
+policy_put_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'get_bucket_policy_restricted_cross_account.txt')
+policy_put_bucket = "file://" + os.path.abspath(policy_put_bucket_relative)
+AwsTest("Put Bucket Policy with Allow access for all").put_bucket_policy("seagate", policy_put_bucket).execute_test().command_is_successful()
+
+# Create secondary account
+test_msg = "Create account newaccount"
+account_args = {'AccountName': 'newaccount', 'Email': 'newaccount@seagate.com', 'ldapuser': S3ClientConfig.ldapuser, 'ldappasswd': S3ClientConfig.ldappasswd}
+account_response_pattern = "AccountId = [\w-]*, CanonicalId = [\w-]*, RootUserName = [\w+=,.@-]*, AccessKeyId = [\w-]*, SecretKey = [\w/+]*$"
+result = AuthTest(test_msg).create_account(**account_args).execute_test()
+result.command_should_match_pattern(account_response_pattern)
+account_response_elements = AuthTest.get_response_elements(result.status.stdout)
+secondary_access_key = account_response_elements['AccessKeyId']
+secondary_secret_key = account_response_elements['SecretKey']
+S3ClientConfig.access_key_id = secondary_access_key
+S3ClientConfig.secret_key = secondary_secret_key
+print(secondary_access_key)
+print(secondary_secret_key)
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+AwsTest("Cross account can not perform GetBucketPolicy").get_bucket_policy("seagate").execute_test(negative_case=True).command_should_fail().command_error_should_have("MethodNotAllowed")
+
+# Test access for IAM user under bucket owner account
+# IAM user can peform Get,PUT and DELETE bucket policy operations if granted access
+# Bucket owenr can perform Get,PUT and DELETE bucket policy operations even if denied access in policy
+AwsTest('Aws can create bucket').create_bucket("newaccountbucket").execute_test().command_is_successful()
+AwsTest("Aws can put policy on bucket").put_bucket_policy("newaccountbucket",policy_for_iam_user).execute_test().command_is_successful()
+AwsTest("Aws can get policy on bucket").get_bucket_policy("newaccountbucket").execute_test().command_is_successful()
+account_args['UserName'] = "u1"
+test_msg = "Create User u1"
+user1_response_pattern = "UserId = [\w-]*, ARN = [\S]*, Path = /$"
+result = AuthTest(test_msg).create_user(**account_args).execute_test()
+result.command_should_match_pattern(user1_response_pattern)
+user_access_key_args = {}
+accesskey_response_pattern = "AccessKeyId = [\w-]*, SecretAccessKey = [\w/+]*, Status = [\w]*$"
+result = AuthTest(test_msg).create_access_key(**account_args).execute_test()
+result.command_should_match_pattern(accesskey_response_pattern)
+accesskey_response_elements = AuthTest.get_response_elements(result.status.stdout)
+user_access_key_args['AccessKeyId'] = accesskey_response_elements['AccessKeyId']
+user_access_key_args['SecretAccessKey'] = accesskey_response_elements['SecretAccessKey']
+user_access_key_args['UserName'] = "u1"
+os.environ["AWS_ACCESS_KEY_ID"] = accesskey_response_elements['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = accesskey_response_elements['SecretAccessKey']
+
+AwsTest("IAM user can get policy on bucket").get_bucket_policy("newaccountbucket").execute_test().command_is_successful()
+AwsTest("IAM user can delete policy on bucket").delete_bucket_policy("newaccountbucket").execute_test().command_is_successful()
+#Setting Deny in Policy for bucket Owner
+AwsTest("Aws can put policy on bucket").put_bucket_policy("newaccountbucket",deny_policy_for_iam_user).execute_test().command_is_successful()
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+#Switching back to newaccount and checkig if owner can perform GET,PUT and DELETE policy though Deny in Policy
+AwsTest("IAM user can get policy on bucket").get_bucket_policy("newaccountbucket").execute_test().command_is_successful()
+AwsTest("IAM user can delete policy on bucket").delete_bucket_policy("newaccountbucket").execute_test().command_is_successful()
+AwsTest("Aws can put policy on bucket").put_bucket_policy("newaccountbucket",policy_access_only_to_owner).execute_test().command_is_successful()
+#As per permissions provided in above new policy , iam users will not be able to execute any operations
+os.environ["AWS_ACCESS_KEY_ID"] = accesskey_response_elements['AccessKeyId']
+os.environ["AWS_SECRET_ACCESS_KEY"] = accesskey_response_elements['SecretAccessKey']
+
+AwsTest("IAM users restricted get policy on bucket").get_bucket_policy("newaccountbucket").execute_test(negative_case=True).command_should_fail()
+AwsTest("IAM user restricted  delete policy on bucket").delete_bucket_policy("newaccountbucket").execute_test(negative_case=True).command_should_fail()
+AwsTest("Aws can put policy on bucket").put_bucket_policy("newaccountbucket",policy_access_only_to_owner).execute_test(negative_case=True).command_should_fail()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+AwsTest('Aws can delete bucket').delete_bucket("newaccountbucket").execute_test().command_is_successful()
+test_msg = 'Delete access key'
+result = AuthTest(test_msg).delete_access_key(**user_access_key_args).execute_test()
+result.command_response_should_have("Access key deleted.")
+result = AuthTest(test_msg).delete_user(**account_args).execute_test()
+result.command_response_should_have("User deleted.")
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AuthTest(test_msg).delete_account(**account_args).execute_test()
+
+print("Authorizing policy tests end....")
+
 
 # Validate Conditions in Bucket Policy
 AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEquals_success).execute_test().command_is_successful()
