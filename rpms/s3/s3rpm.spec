@@ -157,6 +157,7 @@ rm -rf %{buildroot}
 %dir /opt/seagate/s3/libevent/pkgconfig
 %dir /opt/seagate/s3/nodejs
 %dir /opt/seagate/s3/resources
+%dir /opt/seagate/s3/install/haproxy
 %dir /var/log/seagate/
 %dir /var/log/seagate/auth
 %dir /var/log/seagate/s3
@@ -204,10 +205,22 @@ rm -rf %{buildroot}
 /opt/seagate/s3/libevent/pkgconfig/libevent_pthreads.pc
 /opt/seagate/s3/libevent/pkgconfig/libevent_core.pc
 /opt/seagate/s3/libevent/pkgconfig/libevent_extra.pc
+/opt/seagate/s3/install/haproxy/503.http
+/opt/seagate/s3/install/haproxy/haproxy_osver7.cfg
+/opt/seagate/s3/install/haproxy/haproxy_osver8.cfg
+/opt/seagate/s3/install/haproxy/logrotate/haproxy
+/opt/seagate/s3/install/haproxy/logrotate/logrotate
+/opt/seagate/s3/install/haproxy/rsyslog.d/haproxy.conf
+/opt/seagate/s3/install/haproxy/ssl/s3.seagate.com.crt
+/opt/seagate/s3/install/haproxy/ssl/s3.seagate.com.pem
+/opt/seagate/s3/install/haproxy/503.http
+/opt/seagate/s3/install/provisioning/s3setup.yaml
+/opt/seagate/s3/install/provisioning/setup_s3.sh
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
+/etc/keepalived/keepalived.conf.master
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
