@@ -711,6 +711,9 @@ bool S3AuthClient::setup_auth_request_body() {
     if (bucket_acl != "") {
       add_key_val_to_body("Bucket-ACL", bucket_acl);
     }
+    if (s3_request->get_action_str() != "") {
+      add_key_val_to_body("S3Action", s3_request->get_action_str());
+    }
 
     auth_request_body = "Action=AuthorizeUser";
   } else if (auth_request_type ==

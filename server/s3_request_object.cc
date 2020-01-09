@@ -62,8 +62,15 @@ std::string S3RequestObject::get_object_uri() {
   return bucket_name + "/" + object_name;
 }
 
+std::string S3RequestObject::get_action_str() { return s3_action; }
+
 void S3RequestObject::set_bucket_name(const std::string& name) {
   bucket_name = name;
+}
+
+void S3RequestObject::set_action_str(const std::string& action) {
+  s3_log(S3_LOG_INFO, request_id, "S3Action =  %s\n", action.c_str());
+  s3_action = action;
 }
 
 void S3RequestObject::set_object_size(size_t obj_size) {

@@ -50,6 +50,7 @@ class S3RequestObject : public RequestObject {
   std::string bucket_name;
   std::string object_name;
   std::string default_acl;
+  std::string s3_action;
 
   S3AuditInfo audit_log_obj;
   size_t object_size;
@@ -64,7 +65,6 @@ class S3RequestObject : public RequestObject {
           nullptr,
       EventInterface* event_obj_ptr = nullptr);
   virtual ~S3RequestObject();
-
   void set_api_type(S3ApiType apitype);
   virtual S3ApiType get_api_type();
   void set_operation_code(S3OperationCode operation_code);
@@ -75,12 +75,13 @@ class S3RequestObject : public RequestObject {
   virtual void set_object_size(size_t obj_size);
   // Operation params.
   std::string get_object_uri();
+  std::string get_action_str();
 
   virtual void set_bucket_name(const std::string& name);
   virtual const std::string& get_bucket_name();
   virtual void set_object_name(const std::string& name);
   virtual const std::string& get_object_name();
-
+  virtual void set_action_str(const std::string& action);
   virtual void set_default_acl(const std::string& name);
   virtual const std::string& get_default_acl();
 
