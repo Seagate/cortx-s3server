@@ -308,7 +308,42 @@ class S3AuthClient {
  public:
   S3AuthClient(std::shared_ptr<RequestObject> req,
                bool skip_authorization = false);
-  virtual ~S3AuthClient() { s3_log(S3_LOG_DEBUG, "", "Destructor\n"); }
+  virtual ~S3AuthClient() {
+    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
+    if (state == S3AuthClientOpState::started) {
+      unset_hooks();
+    }
+  }
+
+  void unset_hooks() {
+    s3_log(S3_LOG_DEBUG, request_id, "Unsetting various auth related hooks\n");
+    if (auth_context != NULL) {
+      struct s3_auth_op_context* auth_op_ctx = auth_context->get_auth_op_ctx();
+      if (auth_op_ctx != NULL) {
+        if ((auth_op_ctx->conn != NULL)) {
+          s3_log(S3_LOG_DEBUG, request_id, "Unsetting auth connection hooks\n");
+          evhtp_unset_all_hooks(&auth_op_ctx->conn->hooks);
+        }
+        if (auth_op_ctx->authrequest != NULL) {
+          s3_log(S3_LOG_DEBUG, "", "Unsetting auth hooks\n");
+          evhtp_unset_all_hooks(&auth_op_ctx->authrequest->hooks);
+        }
+        if (auth_op_ctx->authorization_request != NULL) {
+          s3_log(S3_LOG_DEBUG, "", "Unsetting authorization hooks\n");
+          evhtp_unset_all_hooks(&auth_op_ctx->authorization_request->hooks);
+        }
+        if (auth_op_ctx->aclvalidation_request != NULL) {
+          s3_log(S3_LOG_DEBUG, "", "Unsetting acl validation hooks\n");
+          evhtp_unset_all_hooks(&auth_op_ctx->aclvalidation_request->hooks);
+        }
+        if (auth_op_ctx->policyvalidation_request != NULL) {
+          s3_log(S3_LOG_DEBUG, "", "Unsetting policy validation hooks\n");
+          evhtp_unset_all_hooks(&auth_op_ctx->policyvalidation_request->hooks);
+        }
+      }
+    }
+    s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  }
 
   S3AuthClientOpState get_state() { return state; }
 
