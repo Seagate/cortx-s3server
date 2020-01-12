@@ -1,25 +1,25 @@
-S3server:
-post_install:
-		script: /opt/seagate/s3/install/setup_s3.sh
-		args:
-		- --configldap
-		- --postdependency
-init:
-		script: /opt/seagate/s3/install/setup_s3.sh
-		args:
-		- --setupjenkinsyumrepo
-		- --installdependency
-		- --purgeconfigldap
-config:
-		script: /opt/seagate/s3/install/setup_s3.sh
-		args:
-		- --configldap
-# TODO : Need to setup test UT's or ST's
-		test:
-		script: /opt/seagate/s3/install/setup_s3.sh
-		args:
-		- --test
-reset:
-		script: /opt/seagate/s3/install/setup_s3.sh
-		args:
-		- --purgeconfigldap
+s3server:
+  post_install:
+    script: /opt/seagate/s3/install/setup_s3.sh
+    args:
+      - --configldap
+      - --postdependency
+  init:
+    script: /opt/seagate/s3/install/setup_s3.sh
+    args:
+      - --setupjenkinsyumrepo
+      - --installdependency
+      - --purgeconfigldap
+  config:
+    script: /opt/seagate/s3/install/setup_s3.sh
+    args:
+      - --configldap
+  # TODO : Need to setup test UT's or ST's
+  test:
+    script: /opt/seagate/s3/install/setup_s3.sh
+    args:
+      - --test
+  reset:
+    script: /opt/seagate/s3/install/setup_s3.sh
+    args:
+      - --purgeconfigldap
