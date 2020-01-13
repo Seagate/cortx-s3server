@@ -18,6 +18,35 @@
  */
 package com.seagates3.service;
 
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.internal.WhiteboxImpl;
+import org.slf4j.LoggerFactory;
+
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -28,35 +57,15 @@ import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.model.AccessKey;
+import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
-import org.powermock.core.classloader.annotations.MockPolicy;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.internal.WhiteboxImpl;
-import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({RequestorService.class, DAODispatcher.class, LoggerFactory.class, S3Perf.class})
-@PowerMockIgnore("javax.management.*")
-@MockPolicy(Slf4jMockPolicy.class)
-public class RequestorServiceTest {
+    @PrepareForTest({RequestorService.class, DAODispatcher.class,
+                     LoggerFactory.class,    S3Perf.class})
+    @PowerMockIgnore("javax.management.*")
+    @MockPolicy(Slf4jMockPolicy.class) public class RequestorServiceTest {
 
     private AccessKeyDAO accessKeyDAO;
     private ClientRequestToken clientRequestToken;
@@ -64,6 +73,8 @@ public class RequestorServiceTest {
     private RequestorDAO requestorDAO;
     private S3Perf s3Perf;
     private AccessKey accessKey;
+     Map<String, String> requestBody = new HashMap<>();
+     Account mockAccount;
 
     private final String accessKeyID = "AKIAJTYX36YCKQSAJT7Q";
 
@@ -71,7 +82,8 @@ public class RequestorServiceTest {
     public void setUp() throws Exception {
         accessKeyDAO = mock(AccessKeyDAO.class);
         mockStatic(DAODispatcher.class);
-        when(DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY)).thenReturn(accessKeyDAO);
+        when(DAODispatcher.getResourceDAO(DAOResource.ACCESS_KEY))
+            .thenReturn(accessKeyDAO);
 
         clientRequestToken = mock(ClientRequestToken.class);
         doReturn(accessKeyID).when(clientRequestToken).getAccessKeyId();
@@ -81,41 +93,54 @@ public class RequestorServiceTest {
         accessKey = mock(AccessKey.class);
         requestorDAO = mock(RequestorDAO.class);
         requestor = mock(Requestor.class);
+        mockAccount = mock(Account.class);
     }
 
     @Test
     public void getRequestorTest() throws Exception {
         when(accessKeyDAO.find(accessKeyID)).thenReturn(accessKey);
         spy(RequestorService.class);
-        doReturn(Boolean.TRUE).when(RequestorService.class, "validateAccessKey", accessKey);
-        when(DAODispatcher.getResourceDAO(DAOResource.REQUESTOR)).thenReturn(requestorDAO);
+        doReturn(Boolean.TRUE)
+            .when(RequestorService.class, "validateAccessKey", accessKey);
+        when(DAODispatcher.getResourceDAO(DAOResource.REQUESTOR))
+            .thenReturn(requestorDAO);
         when(requestorDAO.find(accessKey)).thenReturn(requestor);
-        doReturn(Boolean.TRUE).when(RequestorService.class, "validateRequestor", requestor,
-                clientRequestToken);
-
-        Requestor result = RequestorService.getRequestor(clientRequestToken);
+        doReturn(Boolean.TRUE).when(RequestorService.class, "validateRequestor",
+                                    requestor, clientRequestToken);
+        Mockito.when(requestor.getAccount()).thenReturn(mockAccount);
+        Mockito.when(mockAccount.getId()).thenReturn("123");
+        Requestor result =
+            RequestorService.getRequestor(clientRequestToken, requestBody);
 
         assertEquals(requestor, result);
         verify(accessKeyDAO).find(accessKeyID);
         verify(requestorDAO).find(accessKey);
     }
 
-    @Test(expected = InternalServerException.class)
-    public void getRequestorTest_RequestorFindShouldThrowException() throws Exception {
+    @Test(
+        expected =
+            InternalServerException
+                .class) public void getRequestorTest_RequestorFindShouldThrowException()
+        throws Exception {
         when(accessKeyDAO.find(accessKeyID)).thenReturn(accessKey);
         spy(RequestorService.class);
-        doReturn(Boolean.TRUE).when(RequestorService.class, "validateAccessKey", accessKey);
-        when(DAODispatcher.getResourceDAO(DAOResource.REQUESTOR)).thenReturn(requestorDAO);
+        doReturn(Boolean.TRUE)
+            .when(RequestorService.class, "validateAccessKey", accessKey);
+        when(DAODispatcher.getResourceDAO(DAOResource.REQUESTOR))
+            .thenReturn(requestorDAO);
         when(requestorDAO.find(accessKey)).thenThrow(DataAccessException.class);
 
-        RequestorService.getRequestor(clientRequestToken);
+        RequestorService.getRequestor(clientRequestToken, requestBody);
     }
 
-    @Test(expected = InternalServerException.class)
-    public void getRequestorTest_AccessKeyFindShouldThrowException() throws Exception {
-        when(accessKeyDAO.find(accessKeyID)).thenThrow(DataAccessException.class);
+    @Test(
+        expected =
+            InternalServerException
+                .class) public void getRequestorTest_AccessKeyFindShouldThrowException()
+        throws Exception {
+      when(accessKeyDAO.find(accessKeyID)).thenThrow(DataAccessException.class);
 
-        RequestorService.getRequestor(clientRequestToken);
+      RequestorService.getRequestor(clientRequestToken, requestBody);
     }
 
     @Test
@@ -123,16 +148,17 @@ public class RequestorServiceTest {
         when(accessKey.exists()).thenReturn(Boolean.TRUE);
         when(accessKey.isAccessKeyActive()).thenReturn(Boolean.TRUE);
 
-        Boolean result = WhiteboxImpl.invokeMethod(RequestorService.class, "validateAccessKey",
-                accessKey);
+        Boolean result = WhiteboxImpl.invokeMethod(
+            RequestorService.class, "validateAccessKey", accessKey);
 
         assertTrue(result);
     }
 
-    @Test
-    public void validateAccessKeyTest_AccessKeyDoesNotExist() throws Exception {
+    @Test public void validateAccessKeyTest_AccessKeyDoesNotExist()
+        throws Exception {
         try {
-            WhiteboxImpl.invokeMethod(RequestorService.class, "validateAccessKey", accessKey);
+          WhiteboxImpl.invokeMethod(RequestorService.class, "validateAccessKey",
+                                    accessKey);
             fail("Should throw InvalidAccessKeyException");
         } catch (InvalidAccessKeyException e) {
             assertThat(e.getMessage(), containsString("InvalidAccessKeyId"));
@@ -146,7 +172,8 @@ public class RequestorServiceTest {
         when(accessKey.exists()).thenReturn(Boolean.TRUE);
 
         try {
-            WhiteboxImpl.invokeMethod(RequestorService.class, "validateAccessKey", accessKey);
+          WhiteboxImpl.invokeMethod(RequestorService.class, "validateAccessKey",
+                                    accessKey);
             fail("Should throw InvalidAccessKeyException");
         } catch (InvalidAccessKeyException e) {
             assertThat(e.getMessage(), containsString("InactiveAccessKey"));
@@ -162,8 +189,9 @@ public class RequestorServiceTest {
         when(requestor.isFederatedUser()).thenReturn(Boolean.FALSE);
         when(requestor.getAccesskey()).thenReturn(accessKey);
 
-        Boolean result = WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
-                requestor, clientRequestToken);
+        Boolean result = WhiteboxImpl.invokeMethod(
+            RequestorService.class, "validateRequestor", requestor,
+            clientRequestToken);
 
         assertTrue(result);
     }
@@ -171,8 +199,8 @@ public class RequestorServiceTest {
     @Test
     public void validateRequestorTest_RequestorDoesntExist() throws Exception {
         try {
-            WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
-                    requestor, clientRequestToken);
+          WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
+                                    requestor, clientRequestToken);
             fail("Should throw exception if requestor doesn't exist.");
         } catch (InvalidRequestorException e) {
             assertThat(e.getMessage(), containsString("InternalFailure"));
@@ -181,59 +209,67 @@ public class RequestorServiceTest {
         verify(requestor, times(0)).isFederatedUser();
     }
 
-    @Test
-    public void validateRequestorTest_RequstorIsFederatedUser() throws Exception {
+    @Test public void validateRequestorTest_RequstorIsFederatedUser()
+        throws Exception {
         when(requestor.exists()).thenReturn(Boolean.TRUE);
         when(requestor.getAccesskey()).thenReturn(accessKey);
         when(requestor.isFederatedUser()).thenReturn(Boolean.TRUE);
         Map headers = mock(Map.class);
         when(clientRequestToken.getRequestHeaders()).thenReturn(headers);
-        when(headers.get("X-Amz-Security-Token")).thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
+        when(headers.get("X-Amz-Security-Token"))
+            .thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
         when(accessKey.getToken()).thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
         when(accessKey.getExpiry()).thenReturn("9999-01-10T08:02:47.806-05:00");
 
-        Boolean result = WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
-                requestor, clientRequestToken);
+        Boolean result = WhiteboxImpl.invokeMethod(
+            RequestorService.class, "validateRequestor", requestor,
+            clientRequestToken);
 
         assertTrue(result);
     }
 
-    @Test
-    public void validateRequestorTest_RequstorIsFedUser_InvalidClientTokenID() throws Exception {
+    @Test public void
+    validateRequestorTest_RequstorIsFedUser_InvalidClientTokenID()
+        throws Exception {
         when(requestor.exists()).thenReturn(Boolean.TRUE);
         when(requestor.getAccesskey()).thenReturn(accessKey);
         when(requestor.isFederatedUser()).thenReturn(Boolean.TRUE);
         Map headers = mock(Map.class);
         when(clientRequestToken.getRequestHeaders()).thenReturn(headers);
-        when(headers.get("X-Amz-Security-Token")).thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
+        when(headers.get("X-Amz-Security-Token"))
+            .thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
         when(accessKey.getToken()).thenReturn("INVALID-TOKEN");
 
         try {
-            WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
-                    requestor, clientRequestToken);
+          WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
+                                    requestor, clientRequestToken);
             fail("Should throw InvalidRequestorException if client token id is invalid.");
         } catch (InvalidRequestorException e) {
             assertThat(e.getMessage(), containsString("InvalidClientTokenId"));
         }
     }
 
-    @Test
-    public void validateRequestorTest_RequstorIsFedUser_ExpiredCredential() throws Exception {
+    @Test public void
+    validateRequestorTest_RequstorIsFedUser_ExpiredCredential()
+        throws Exception {
         when(requestor.exists()).thenReturn(Boolean.TRUE);
         when(requestor.getAccesskey()).thenReturn(accessKey);
         when(requestor.isFederatedUser()).thenReturn(Boolean.TRUE);
         Map headers = mock(Map.class);
         when(clientRequestToken.getRequestHeaders()).thenReturn(headers);
-        when(headers.get("X-Amz-Security-Token")).thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
+        when(headers.get("X-Amz-Security-Token"))
+            .thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
         when(accessKey.getToken()).thenReturn("AAAHVXNlclRrbgfOpSykBAXO7g");
         when(accessKey.getExpiry()).thenReturn("1970-01-10T08:02:47.806-05:00");
 
         try {
-            WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
-                    requestor, clientRequestToken);
+          WhiteboxImpl.invokeMethod(RequestorService.class, "validateRequestor",
+                                    requestor, clientRequestToken);
             fail("Should throw InvalidRequestorException if federated credentials have expired");
-        } catch(InvalidRequestorException e) {
+        }
+        catch (InvalidRequestorException e) {
             assertThat(e.getMessage(), containsString("ExpiredCredential"));
         }
     }
 }
+

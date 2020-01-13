@@ -293,6 +293,22 @@ def user_tests():
     result = AuthTest(test_msg).get_temp_auth_credentials(account_name_flag, password_flag ,**access_key_args).execute_test(negative_case=True)
     result.command_response_should_have("PasswordResetRequired")
 
+    # UpdateAccountLoginProfile and DeleteAccount with Temp Credentials -- Start
+
+    os.environ["AWS_ACCESS_KEY_ID"] = response_elements['AccessKeyId']
+    os.environ["AWS_SECRET_ACCESS_KEY"] = response_elements['SecretAccessKey']
+    os.environ["AWS_SESSION_TOKEN"] = response_elements['SessionToken']
+
+    test_msg = 'UpdateAccountLoginProfile Successfull'
+    account_args = {}
+    account_name_flag = "-n"
+    password_flag = "--password"
+    account_args['AccountName'] ="tempAuthTestAccount"
+    account_args['Password'] ="newpwd1234"
+    account_profile_response_pattern = "Account login profile updated."
+    result = AuthTest(test_msg).update_account_login_profile(account_name_flag, password_flag, **account_args).execute_test()
+    result.command_should_match_pattern(account_profile_response_pattern)
+
     #Delete account
     test_msg = "Delete account tempAuthTestAccount"
     account_args = {'AccountName': 'tempAuthTestAccount', 'Email': 'tempAuthTestAccount@seagate.com',  'force': True}
@@ -300,6 +316,12 @@ def user_tests():
             .command_response_should_have("Account deleted successfully")
     S3ClientConfig.access_key_id = s3test_access_key
     S3ClientConfig.secret_key = s3test_secret_key
+
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    del os.environ["AWS_SESSION_TOKEN"]
+    
+    # UpdateAccountLoginProfile and DeleteAccount with Temp Credentials -- End
 
 #GetTempAuth End
 
