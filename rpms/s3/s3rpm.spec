@@ -217,6 +217,9 @@ rm -rf %{buildroot}
 /opt/seagate/s3/install/haproxy/503.http
 /opt/seagate/s3/install/provisioning/s3setup.yaml
 /opt/seagate/s3/install/provisioning/setup_s3.sh
+/opt/seagate/s3/install/ldap/syncprov_mod.ldif
+/opt/seagate/s3/install/ldap/syncprov.ldif
+/opt/seagate/s3/install/ldap/replicate.ldif
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh

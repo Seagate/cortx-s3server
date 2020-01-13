@@ -4,8 +4,16 @@
 # Install and configure release S3Server installation #
 #######################################################
 
-USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo][--installdependency]
-              [--postdependency][--purgeconfigldap][--configldap] [--help | -h]
+USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
+                                    [--installdependency]
+                                    [--postdependency]
+                                    [--purgeconfigldap]
+                                    [--configldap]
+                                    [--ldapreplication]
+                                    [--olcserverid <Value>]
+                                    [--eesnode1 <Value>]
+                                    [--eesnode2 <Value>]
+                                    [--help | -h]
 Install and configure release S3server setup.
 
 where:
@@ -14,6 +22,10 @@ where:
 --postdependency      Configure S3server post installation of dependencies.
 --purgeconfigldap     Clear and Setup all LDAP configs
 --configldap          Setup all LDAP configs
+--ldapreplication     Setup LDAP replication
+--eesnode1            EES node 1 for LDAP replication
+--eesnode2            EES node 2 for LDAP replication
+--olcserverid         Host olcServerID (Unique for different nodes)
 --help                Display this help and exit"
 
 set -e
@@ -25,6 +37,10 @@ VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
 major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 selinux_status=$(sestatus| grep -w "SELinux status" | cut -d ':' -f 2  | xargs)
 
+olc_server_id=1
+ees_node1=127.0.0.1
+ees_node2=127.0.0.1
+ldap_replication=false
 install_dependency=false
 post_dependency=false
 purge_config_ldap=false
@@ -51,6 +67,18 @@ do
         ;;
     --purgeconfigldap )
         purge_config_ldap=true
+        ;;
+    --ldapreplication )
+        ldap_replication=true
+        ;;
+    --olcserverid ) shift;
+        olc_server_id=$1
+        ;;
+    --eesnode1 ) shift;
+        ees_node1=$1
+        ;;
+    --eesnode2 ) shift;
+        ees_node2=$1
         ;;
     --setupjenkinsyumrepo )
         setup_jenkins_yum_repo=true
@@ -165,20 +193,43 @@ then
     yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 fi
 
+setup_ldap_replication()
+{
+    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/s3/install/ldap/syncprov_mod.ldif
+    ldapadd -Y EXTERNAL -H ldapi:/// -f /opt/seagate/s3/install/ldap/syncprov.ldif
+    firewall-cmd --zone=public --add-port=389/tcp --permanent
+    firewall-cmd --reload
+
+    # Openldap replication for 2 node setup for EES.
+    sed -i 's/#//g' /opt/seagate/s3/install/ldap/replicate.ldif
+    sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node1/g' scripts/ldap/replicate.ldif
+    sed -i '0,/<sample_provider_URI>/ s/<sample_provider_URI>/$ees_node2/g' scripts/ldap/replicate.ldif
+    sed -i 's/olcServerID: /olcServerID: $olc_server_id/g' scripts/ldap/replicate.ldif
+
+    ldapmodify -Y EXTERNAL  -H ldapi:/// -f /opt/seagate/s3/install/ldap/replicate.ldif
+}
+
 # Install and Configure Openldap over Non-SSL.
 if [[ $purge_config_ldap == true ]]
 then
     $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
     $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
           -p /opt/seagate/auth/resources/authserver.properties
+
 elif [[ $config_ldap == true ]]
 then
     $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --skipssl
     $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
-          -p /opt/seagate/auth/resources/authserver.properties
+          -p /opt/seagate/auth/resources/authserver.propertie
 fi
 
-# Post S3 dependncies installation steps for configuring S3.
+# Setup Openldap replication for EES setup.
+if [[ $ldap_replication == true ]]
+then
+    setup_ldap_replication
+fi
+
+# Post S3 dependency installation steps for configuring S3.
 if [[ $post_dependency == true ]]
 then
     rpm -q openssl java-1.8.0-openjdk-headless redis haproxy keepalived rsyslog stx-s3-certs stx-s3-client-certs|| exit 1

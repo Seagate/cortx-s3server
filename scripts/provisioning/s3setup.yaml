@@ -4,17 +4,30 @@ s3server:
     args:
       - --configldap
       - --postdependency
+      - --ldapreplication
+      - --olcserverid 1
+      - --eesnode1 <IP address of node 1>
+      - --eesnode2 <IP address of node 2>
   init:
     script: /opt/seagate/s3/install/setup_s3.sh
     args:
       - --setupjenkinsyumrepo
       - --installdependency
       - --purgeconfigldap
+      - --ldapreplication
+      - --olcserverid 1
+      - --eesnode1 <IP address of node 1>
+      - --eesnode2 <IP address of node 2>
   config:
     script: /opt/seagate/s3/install/setup_s3.sh
     args:
       - --configldap
-  # TODO : Need to setup test UT's or ST's
+      - --ldapreplication
+      - --olcserverid 1
+      - --eesnode1 <IP address of node 1>
+      - --eesnode2 <IP address of node 2>
+
+      # TODO : Need to setup test UT's or ST's
   test:
     script: /opt/seagate/s3/install/setup_s3.sh
     args:

@@ -46,6 +46,7 @@ mkdir -p $S3_INSTALL_LOCATION/bin
 mkdir -p $S3_INSTALL_LOCATION/libevent
 mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts
+mkdir -p $S3_INSTALL_LOCATION/install/ldap
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
 mkdir -p $S3_INSTALL_LOCATION/install/provisioning
 mkdir -p $S3_INSTALL_LOCATION/docs
@@ -129,6 +130,11 @@ cp -f auth/resources/authserver.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
+
+# Copy LDAP replication to install location
+cp -f scripts/ldap/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/syncprov.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/replicate.ldif $S3_INSTALL_LOCATION/install/ldap/
 
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/
