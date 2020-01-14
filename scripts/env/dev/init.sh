@@ -15,8 +15,11 @@ OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 
 rpm -q git || yum install -y git
 
+#It seems mero dependency script install s3cmd(2.0.0)
+#for s3 system test we need patched s3cmd(1.6.1), which s3 ansible installs
+rpm -q s3cmd && rpm -e s3cmd --nodeps
+
 if [ "$major_version" = "8" ]; then
-  rpm -q s3cmd && rpm -e s3cmd
   yum install @development -y
   yum install rpm-build
 fi
