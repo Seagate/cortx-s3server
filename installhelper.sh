@@ -110,6 +110,9 @@ cp startauth.sh $AUTH_INSTALL_LOCATION/
 # Copy auth server Helper scripts
 cp -f scripts/enc_ldap_passwd_in_cfg.sh $AUTH_INSTALL_LOCATION/scripts/
 
+# Copy auth server Helper scripts
+cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
+
 # Copy s3-sanity
 cp -f s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
 
