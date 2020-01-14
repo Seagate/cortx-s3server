@@ -59,13 +59,10 @@ docker:rebuild-images:
   stage: build
   tags: [ docker-image-build ]
   when: manual
-  only:
-    changes:
-      - scripts/docker/**/*
   except: [ schedules ]
 
   variables:
-    DOCKER_IMAGE_TAG: latest
+    DOCKER_IMAGE_TAG: 7
 
   script:
     - make -C scripts/docker/ docker-image-$DOCKER_IMAGE_TAG
