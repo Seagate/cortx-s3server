@@ -71,4 +71,13 @@ systemctl restart haproxy
 
 sed  -ie '/secure_path/s/$/:\/opt\/seagate\/s3\/bin/' /etc/sudoers
 
+if ! command -v python36 &>/dev/null; then
+  if command -v python3.6 &>/dev/null; then
+    ln -s "`command -v python3.6`" /usr/bin/python36
+  else
+    echo "Python v3.6 is not installed (neither python36 nor python3.6 are found in PATH)."
+    exit 1
+  fi
+fi
+
 cd ${CURRENT_DIR}
