@@ -5,8 +5,8 @@
   gather_facts: yes
 
   tasks:
-    - name: Add repository for lustre
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+    - name: Add repository for lustre in release 7.5.1804
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (facter_operatingsystemrelease == '7.5.1804')
       yum_repository:
         name: releases_eos_lustre
         description: Yum repo for lustre
@@ -14,8 +14,18 @@
         gpgcheck: no
         priority: 1
 
-    - name: Add repository for halon
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+    - name: Add repository for lustre s3server mero and halon in release 7.7.1908
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (facter_operatingsystemrelease == '7.7.1908')
+      yum_repository:
+        name: releases_eos_lustre_s3server_halon_mero
+        description: Yum repo for lustre s3server halon mero
+        baseurl: http://ci-storage.mero.colo.seagate.com/releases/eos/integration/centos-7.7.1908/last_successful/
+        gpgcheck: no
+        priority: 1
+
+
+    - name: Add repository for halon in release 7.5.1804
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (facter_operatingsystemrelease == '7.5.1804')
       yum_repository:
         name: releases_eos_halon
         description: Yum repo for halon
@@ -23,8 +33,8 @@
         gpgcheck: no
         priority: 1
 
-    - name: Add repository for mero
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+    - name: Add repository for mero in release 7.5.1804
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (facter_operatingsystemrelease == '7.5.1804')
       yum_repository:
         name: releases_eos_mero
         description: Yum repo for mero
@@ -32,8 +42,8 @@
         gpgcheck: no
         priority: 1
 
-    - name: Add repository for s3server
-      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
+    - name: Add repository for s3server in release 7.5.1804
+      when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (facter_operatingsystemrelease == '7.5.1804')
       yum_repository:
         name: releases_eos_s3server
         description: Yum repo for s3server
