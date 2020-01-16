@@ -54,7 +54,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
  private
   Account mockAccount;
  private
-  User user;
+  User user, iamUser1, iamUser2;
+  static Account account = new Account();
+  static Account secondaryAccount = new Account();
 
  private
   String serverResponseStringWithoutAcl =
@@ -73,6 +75,10 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     account.setId("12345");
     account.setName("testAccount");
 
+    secondaryAccount.setCanonicalId("ACDDDFfeffTga8gbpcuY79SA");
+    secondaryAccount.setId("123456");
+    secondaryAccount.setName("testAccount2");
+
     requestor = new Requestor();
     requestor.setId("456");
     requestor.setName("tester");
@@ -89,6 +95,15 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     mockUserImpl = Mockito.mock(UserImpl.class);
     user = new User();
     user.setName("root");
+
+    iamUser1 = new User();
+    iamUser2 = new User();
+    iamUser1.setName("user1");
+    iamUser1.setAccountName("testAccount");
+    iamUser1.setId("userid1");
+    iamUser2.setName("user2");
+    iamUser2.setAccountName("testAccount");
+    iamUser2.setId("userid2");
   }
 
   @Test public void validateServerResponseWithRequestHeaderAsTrue() {
@@ -389,6 +404,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("ClientQueryParams", "policy");
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1");
+    requestBody.put("S3Action", "PutBucketPolicy");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
@@ -439,6 +455,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("ClientQueryParams", "policy");
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1");
+    requestBody.put("S3Action", "PutBucketPolicy");
     PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
         mockUserImpl);
     Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
@@ -487,6 +504,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("ClientQueryParams", "policy");
     requestBody.put("Method", "DELETE");
     requestBody.put("ClientAbsoluteUri", "/try1");
+    requestBody.put("S3Action", "DeleteBucketPolicy");
     PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
         mockUserImpl);
     Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
@@ -535,6 +553,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("ClientQueryParams", "policy");
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1");
+    requestBody.put("S3Action", "PutBucketPolicy");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
@@ -544,4 +563,358 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertEquals(HttpResponseStatus.METHOD_NOT_ALLOWED,
                  actualServerResponse.getResponseStatus());
   }
+
+  /**
+   * Below will test- PutBucketPolicy with other IAM user restricted
+   *
+   * @throws Exception
+   */
+  @Test public void
+  authorize_policy_one_IAM_user_allowed_otherIAM_user_restricted()
+      throws Exception {
+    String policy =
+        "{\r\n" + "   \"Statement\": [\r\n" + "      {\r\n" +
+        "         \"Effect\": \"Allow\",\r\n" +
+        "         \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+        "          \"userid1\"\r\n" + "        ]\r\n" + "      },\r\n" +
+        "         \"Action\": \"s3:PutBucketPolicy\",\r\n" +
+        "         \"Resource\": \"arn:aws:s3:::try1\"\r\n" + "      },\r\n" +
+        "      {\r\n" + "         \"Effect\": \"Deny\",\r\n" +
+        "         \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+        "          \"userid2\"\r\n" + "        ]\r\n" + "      },\r\n" +
+        "         \"Action\": \"s3:PutBucketPolicy\",\r\n" +
+        "         \"Resource\": \"arn:aws:s3:::try1\"\r\n" + "      }\r\n" +
+        "   ]\r\n" + "}";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "ACDDDFfeffTga8gbpcuY79SA" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "policy");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/try1");
+    requestBody.put("S3Action", "PutBucketPolicy");
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(iamUser2);
+    requestor.getAccount().setId("userid2");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor, requestBody);
+    assertEquals(HttpResponseStatus.FORBIDDEN,
+                 actualServerResponse.getResponseStatus());
+
+    requestor.getAccount().setId("12345");
+  }
+
+  /**
+   * Below will test- GetObjectAcl operation DENY in policy but ALLOW in ACL
+   *
+   * @throws Exception
+   */
+  @Test public void getObjectAcl_deny_inPolicy_allow_inAcl() throws Exception {
+    Requestor requestor2 = new Requestor();
+    requestor2.setId("456");
+    requestor2.setName("tester2");
+    requestor2.setAccount(secondaryAccount);
+    String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+                    "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
+                    "  \"Statement\": [\r\n" + "        {\r\n" +
+                    "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+                    "      \"Resource\": \"arn:aws:s3:::try1\",\r\n" +
+                    "      \"Action\": \"s3:GetObjectAcl\",\r\n" +
+                    "      \"Effect\": \"Deny\",\r\n" +
+                    "     \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+                    "          \"123456\"\r\n" + "        ]\r\n" +
+                    "      }\r\n" + "    }\r\n" + "    ]\r\n" + "}\r\n" +
+                    "\r\n" + "\r\n" + "";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "ACDDDFfeffTga8gbpcuY79SA" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>FULL_CONTROL</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "acl");
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/try1/a.txt");
+    requestBody.put("S3Action", "GetObjectAcl");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor2, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Below will test- PutObject operation DENY in policy but ALLOW in ACL
+   *
+   * @throws Exception
+   */
+  @Test public void putObject_allow_inPolicy_deny_inAcl() throws Exception {
+    Requestor requestor2 = new Requestor();
+    requestor2.setId("456");
+    requestor2.setName("tester2");
+    requestor2.setAccount(secondaryAccount);
+    String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+                    "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
+                    "  \"Statement\": [\r\n" + "        {\r\n" +
+                    "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+                    "      \"Resource\": \"arn:aws:s3:::try1/a.txt\",\r\n" +
+                    "      \"Action\": \"s3:PutObject\",\r\n" +
+                    "      \"Effect\": \"Allow\",\r\n" +
+                    "     \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+                    "          \"123456\"\r\n" + "        ]\r\n" +
+                    "      }\r\n" + "    }\r\n" + "    ]\r\n" + "}\r\n" +
+                    "\r\n" + "\r\n" + "";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "ACDDDFfeffTga8gbpcuY79SA" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>READ</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/try1/a.txt");
+    requestBody.put("S3Action", "PutObject");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor2, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Below will test- GetObjectAcl operation not present in policy and not
+   *present
+   * in ACL
+   *
+   * @throws Exception
+   */
+  @Test public void getObjectAcl_notpresent_inPolicy_notpresent_inAcl()
+      throws Exception {
+    Requestor requestor2 = new Requestor();
+    requestor2.setId("456");
+    requestor2.setName("tester2");
+    requestor2.setAccount(secondaryAccount);
+    String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+                    "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
+                    "  \"Statement\": [\r\n" + "        {\r\n" +
+                    "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+                    "      \"Resource\": \"arn:aws:s3:::try1/a.txt\",\r\n" +
+                    "      \"Action\": \"s3:PutObject\",\r\n" +
+                    "      \"Effect\": \"Allow\",\r\n" +
+                    "     \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+                    "          \"123456\"\r\n" + "        ]\r\n" +
+                    "      }\r\n" + "    }\r\n" + "    ]\r\n" + "}\r\n" +
+                    "\r\n" + "\r\n" + "";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "ACDDDFfeffTga8gbpcuY79SA" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>READ</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "acl");
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/try1/a.txt");
+    requestBody.put("S3Action", "getObjectacl");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor2, requestBody);
+    assertEquals(HttpResponseStatus.FORBIDDEN,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+   * Below will test- PutObjectAcl operation with Conflicting permissions in
+   * policy and Allow in ACL
+   *
+   * @throws Exception
+   */
+  @Test public void putObjectAcl_conflicting_inPolicy_present_inAcl()
+      throws Exception {
+    Requestor requestor2 = new Requestor();
+    requestor2.setId("456");
+    requestor2.setName("tester2");
+    requestor2.setAccount(secondaryAccount);
+    String policy =
+        "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
+        "  \"Statement\": [\r\n" + "        {\r\n" +
+        "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::try1/a.txt\",\r\n" +
+        "      \"Action\": \"s3:putobjectacl\",\r\n" +
+        "      \"Effect\": \"Allow\",\r\n" + "     \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"123456\"\r\n" +
+        "        ]\r\n" + "      }\r\n" + "    },\r\n" + "    {\r\n" +
+        "      \"Sid\": \"Stmt1571741573371\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::try1/a.txt\",\r\n" +
+        "      \"Action\": \"s3:putobjectacl\",\r\n" +
+        "      \"Effect\": \"Deny\",\r\n" + "     \"Principal\": {\r\n" +
+        "        \"AWS\": [\r\n" + "          \"123456\"\r\n" +
+        "        ]\r\n" + "      }\r\n" + "    }\r\n" + "    ]\r\n" + "}\r\n" +
+        "\r\n" + "\r\n" + "";
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "ACDDDFfeffTga8gbpcuY79SA" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>WRITE_ACP</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "acl");
+    requestBody.put("Method", "PUT");
+    requestBody.put("ClientAbsoluteUri", "/try1/a.txt");
+    requestBody.put("S3Action", "PutObjectAcl");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor2, requestBody);
+    assertEquals(HttpResponseStatus.FORBIDDEN,
+                 actualServerResponse.getResponseStatus());
+  }
+
+  /**
+       * Below will test- GetObjectAcl operation when no permission in policy
+    *but
+       * allow in acl
+       *
+       * @throws Exception
+  */
+  @Test public void putObjectAcl_nopermission_inPolicy_present_inAcl()
+      throws Exception {
+    Requestor requestor2 = new Requestor();
+    requestor2.setId("456");
+    requestor2.setName("tester2");
+    requestor2.setAccount(secondaryAccount);
+    String policy = "{\r\n" + "  \"Id\": \"Policy1571741920713\",\r\n" +
+                    "  \"Version\": \"2012-10-17\",\r\n" + "\r\n" +
+                    "  \"Statement\": [\r\n" + "        {\r\n" +
+                    "      \"Sid\": \"Stmt1571741573370\",\r\n" +
+                    "      \"Resource\": \"arn:aws:s3:::try1/a.txt\",\r\n" +
+                    "      \"Action\": \"s3:PutObject\",\r\n" +
+                    "      \"Effect\": \"Allow\",\r\n" +
+                    "     \"Principal\": {\r\n" + "        \"AWS\": [\r\n" +
+                    "          \"123456\"\r\n" + "        ]\r\n" +
+                    "      }\r\n" + "    }\r\n" + "    ]\r\n" + "}\r\n" +
+                    "\r\n" + "\r\n" + "";
+
+    String acl =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<AccessControlPolicy" +
+        " xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" + "<Owner><ID>" +
+        "qWwZGnGYTga8gbpcuY79SA" + "</ID>" +
+        "<DisplayName>kirungeb</DisplayName></Owner><AccessControlList>" +
+        "<Grant>" + "<Grantee " +
+        "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+        "xsi:type=\"CanonicalUser\"><ID>" + "ACDDDFfeffTga8gbpcuY79SA" +
+        "</ID>" + "<DisplayName>kirungeb</DisplayName></Grantee>" +
+        "<Permission>READ_ACP</Permission></Grant></AccessControlList>" +
+        "</AccessControlPolicy>";
+
+    requestBody = new TreeMap<>();
+    requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(acl));
+    requestBody.put("Policy", policy);
+    ServerResponse actualServerResponse = null;
+    requestBody.put("ClientQueryParams", "acl");
+    requestBody.put("Method", "GET");
+    requestBody.put("ClientAbsoluteUri", "/try1/a.txt");
+    requestBody.put("S3Action", "GetObjectAcl");
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
+    Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
+        .thenReturn(mockAccount);
+    Mockito.when(mockAccount.getName()).thenReturn("testAccount");
+    actualServerResponse = authorizer.authorize(requestor2, requestBody);
+    assertEquals(HttpResponseStatus.OK,
+                 actualServerResponse.getResponseStatus());
+  }
 }
+
+

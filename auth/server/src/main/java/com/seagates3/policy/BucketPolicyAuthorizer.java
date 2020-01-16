@@ -57,6 +57,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     try {
       String requestedOperation =
           identifyOperationToAuthorize(requestBody).toLowerCase();
+      LOGGER.debug("operation to authorize - " + requestedOperation);
       if (requestedOperation != null) {
         serverResponse =
             authorizeOperation(requestBody, requestedOperation, requestor);
@@ -65,6 +66,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     catch (Exception e) {
       LOGGER.error("Exception while authorizing", e);
     }
+    LOGGER.debug("authorizePolicy response - " + serverResponse);
     return serverResponse;
   }
 
@@ -74,25 +76,9 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
    * @param requestBody
    * @return
    */
-  // TODO: Handle all possible operation combinations here
  private
   String identifyOperationToAuthorize(Map<String, String> requestBody) {
-    String operation = null;
-
-    HttpMethod httpMethod = HttpMethod.valueOf(requestBody.get("Method"));
-    String clientQueryParams = requestBody.get("ClientQueryParams");
-
-    if ("policy".equals(clientQueryParams)) {
-      if (HttpMethod.PUT.equals(httpMethod)) {
-        operation = PUT_BUCKET_POLICY;
-      } else if (HttpMethod.GET.equals(httpMethod)) {
-        operation = GET_BUCKET_POLICY;
-      } else if (HttpMethod.DELETE.equals(httpMethod)) {
-        operation = DELETE_BUCKET_POLICY;
-      }
-    }
-
-    return operation;
+    return "s3:" + requestBody.get("S3Action");
   }
 
   /**
@@ -216,6 +202,8 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         break;
       }
     }
+    LOGGER.debug("isPrincipalMatching:: result - " +
+                 String.valueOf(isMatching));
     return isMatching;
   }
 
@@ -237,6 +225,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         break;
       }
     }
+    LOGGER.debug("isResourceMatching:: result - " + String.valueOf(isMatching));
     return isMatching;
   }
 
@@ -265,6 +254,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         break;
       }
     }
+    LOGGER.debug("isActionMatching:: result - " + String.valueOf(isMatching));
     return isMatching;
   }
 
@@ -302,6 +292,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
 
       if (!result) break;
     }
+    LOGGER.debug("isConditionMatching:: result - " + String.valueOf(result));
     return result;
   }
 }

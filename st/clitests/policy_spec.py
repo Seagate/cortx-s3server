@@ -76,6 +76,10 @@ deny_policy_for_iam_user = "file://" + os.path.abspath(deny_policy_for_iam_user_
 policy_access_only_to_owner_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'deny_newaccount_policy.txt')
 policy_access_only_to_owner = "file://" + os.path.abspath(policy_access_only_to_owner_relative)
 
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'deny_policy_allow_acl.txt')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+
+
 
 AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command_is_successful()
 
@@ -238,8 +242,82 @@ result.command_response_should_have("Access key deleted.")
 result = AuthTest(test_msg).delete_user(**account_args).execute_test()
 result.command_response_should_have("User deleted.")
 
+
+############# Deny in Policy but Allow in ACL ###############
+
+AwsTest('Aws can create bucket').create_bucket("auth-bucket").execute_test().command_is_successful()
+
+AwsTest('Aws can upload file').put_object_with_permission_headers("auth-bucket", "samplefile", "grant-read-acp" , "id=C12345" ).execute_test().command_is_successful()
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("auth-bucket",policy_authorization).execute_test().command_is_successful()
+
+
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+AwsTest('Aws can get object acl').get_object_acl("auth-bucket", "samplefile").execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+################## Allow in Policy and No permission in ACL #################
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'allow_policy_nopermission_acl.txt')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("auth-bucket",policy_authorization).execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+AwsTest('Aws can upload file').put_object_with_permission_headers("auth-bucket", "samplefile2", "grant-read-acp" , "id=C12345" ).execute_test().command_is_successful()
+
+########################### No permission in policy and no permission in acl ###########
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'nopermission_policy_nopermission_acl.txt')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("auth-bucket",policy_authorization).execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+AwsTest('Unauthorized account can not get object').get_object("auth-bucket", "samplefile")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+############################ Allow-Deny policy and no permission in acl ###################
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'allow_and_deny_policy_nopermission_acl.txt')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("auth-bucket",policy_authorization).execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+AwsTest('Aws can upload file').put_object_with_permission_headers("auth-bucket", "samplefile2", "grant-read-acp" , "id=C12345" ).execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+
+
+############################ nopermission in policy and allow in acl ###################
+
+AwsTest('Aws can get object acl').get_object_acl("auth-bucket", "samplefile").execute_test().command_is_successful()
+
+################## clean up #####################
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+AwsTest('Aws can delete object owned by itself').delete_object("auth-bucket","samplefile").execute_test().command_is_successful()
+AwsTest('Aws can delete object owned by itself').delete_object("auth-bucket","samplefile2").execute_test().command_is_successful()
+
+AwsTest('AWS can delete bucket seagatebucket02').delete_bucket("auth-bucket").execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
 AuthTest(test_msg).delete_account(**account_args).execute_test()
 
 print("Authorizing policy tests end....")

@@ -102,11 +102,16 @@ class Authorizer {
         /// check for ACL Authorization if either policy is null or policy
         /// authorization
         /// is None
+        LOGGER.debug("inside acl authorization....");
         serverResponse = checkAclAuthorization(requestor, requestBody);
       }
     }
     catch (Exception e) {
       LOGGER.error("exception in authorizaation.. ", e);
+    }
+    if (serverResponse != null) {
+      LOGGER.debug("Authorization response is - " +
+                   serverResponse.getResponseStatus());
     }
     return serverResponse;
   }
