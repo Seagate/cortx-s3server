@@ -5,12 +5,23 @@
 #   - argument 1: directory prefix - where to create install dirs.
 set -e
 
-if [ $# -ne 1 ]
-then
-  printf "%s%s\n\t%s\n" "Invalid number of arguments to the script..." \
-         "Enter the directory prefix." \
-         "Usage: ./installhelper.sh <DIR_PREFIX>"
+usage()
+{
+  echo "Invalid arguments."
+  echo "Usage: ./installhelper.sh <DIR_PREFIX> [--release]"
   exit 1
+}
+
+if [ $# -eq 1 ] ; then
+  IS_RELEASE=
+elif [ $# -eq 2 ] ; then
+  if [ "$2" != "--release" ] ; then
+    usage
+  else
+    IS_RELEASE=1
+  fi
+else
+  usage
 fi
 
 INSTALL_PREFIX=$1
@@ -60,7 +71,11 @@ cp bazel-bin/libs3addbplugin.so $S3_INSTALL_LOCATION/addb-plugin/
 cp resources/s3_error_messages.json $S3_INSTALL_LOCATION/resources/s3_error_messages.json
 
 # Copy the S3 Config option file
-cp s3config.yaml $S3_CONFIG_FILE_LOCATION
+if [ -z "${IS_RELEASE}" ] ; then
+  cp s3config.yaml $S3_CONFIG_FILE_LOCATION
+else
+  cp s3config.release.yaml ${S3_CONFIG_FILE_LOCATION}/s3config.yaml
+fi
 
 # Copy the S3 Audit Log Config file
 cp s3server_audit_log.properties $S3_CONFIG_FILE_LOCATION
