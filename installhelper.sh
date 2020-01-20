@@ -48,6 +48,7 @@ mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
 mkdir -p $S3_INSTALL_LOCATION/install/provisioning
+mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $S3_LOG_ROTATE_FILE_LOCATION
 mkdir -p $KEEPALIVED_CFG_DIR_LOCATION
@@ -140,6 +141,9 @@ cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
 
 # Copy s3-sanity
 cp -f s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
+
+# Copy openldap_backup readme
+cp -f scripts/ldap/openldap_backup_readme $S3_INSTALL_LOCATION/docs
 
 # Copy the auth service file for systemctl support.
 cp auth/server/s3authserver.service $SERVICE_FILE_LOCATION
