@@ -63,8 +63,11 @@ TEST_F(S3DeleteBucketPolicyActionTest, DeleteBucketPolicy) {
       action_under_test_ptr->bucket_metadata_factory
           ->create_bucket_metadata_obj(request_mock);
 
+  std::string MockJsonResponse("Mockresponse");
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
+              get_policy_as_json()).WillRepeatedly(ReturnRef(MockJsonResponse));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), deletepolicy())
       .Times(AtLeast(1));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), save(_, _))

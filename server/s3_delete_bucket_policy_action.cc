@@ -61,12 +61,18 @@ void S3DeleteBucketPolicyAction::fetch_bucket_info_failed() {
 void S3DeleteBucketPolicyAction::delete_bucket_policy() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (bucket_metadata->get_state() == S3BucketMetadataState::present) {
+    std::string response_json = bucket_metadata->get_policy_as_json();
+    if (response_json.empty()) {
+      set_s3_error("NoSuchBucketPolicy");
+      send_response_to_s3_client();
+    } else {
     bucket_metadata->deletepolicy();
     bucket_metadata->save(
         std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy_successful,
                   this),
         std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy_failed,
                   this));
+    }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
