@@ -100,6 +100,12 @@ class BucketPolicyValidator extends PolicyValidator {
       }
       policy = Policy.fromJson(obj.toString());
     }
+    catch (JSONException e) {
+      response = responseGenerator.malformedPolicy(
+          "This policy contains invalid Json");
+      LOGGER.error("This policy contains invalid Json");
+      return response;
+    }
     catch (Exception e) {
       response = responseGenerator.malformedPolicy(e.getMessage());
       LOGGER.error("Exception in ValidatePolicy -  ", e);
