@@ -140,7 +140,7 @@ public class AuthServerConfigTest {
 
         assertEquals("seagate", AuthServerConfig.getKeyPassword());
 
-        assertTrue(AuthServerConfig.isHttpsEnabled());
+        assertFalse(AuthServerConfig.isHttpsEnabled());
 
         assertEquals("ldap", AuthServerConfig.getDataSource());
 
@@ -150,8 +150,7 @@ public class AuthServerConfigTest {
 
         assertEquals(636, AuthServerConfig.getLdapSSLPort());
 
-        assertEquals(true, AuthServerConfig.isSSLToLdapEnabled());
-
+        assertEquals(false, AuthServerConfig.isSSLToLdapEnabled());
     }
 
     @Test(expected = IOException.class)
