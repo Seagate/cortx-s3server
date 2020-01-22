@@ -18,19 +18,9 @@
  */
 package com.seagates3.controller;
 
-import com.seagates3.dao.AccessKeyDAO;
-import com.seagates3.dao.DAODispatcher;
-import com.seagates3.dao.DAOResource;
-import com.seagates3.dao.UserDAO;
-import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.Account;
-import com.seagates3.model.Requestor;
-import com.seagates3.model.User;
-import com.seagates3.response.ServerResponse;
-import com.seagates3.util.KeyGenUtil;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,10 +31,22 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-@PowerMockIgnore({"javax.management.*"})
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DAODispatcher.class, KeyGenUtil.class})
-public class UserControllerTest {
+import com.seagates3.dao.AccessKeyDAO;
+import com.seagates3.dao.DAODispatcher;
+import com.seagates3.dao.DAOResource;
+import com.seagates3.dao.UserDAO;
+import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
+import com.seagates3.model.Requestor;
+import com.seagates3.model.User;
+import com.seagates3.response.ServerResponse;
+import com.seagates3.util.KeyGenUtil;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
+
+@PowerMockIgnore({"javax.management.*"}) @RunWith(PowerMockRunner.class)
+    @PrepareForTest({DAODispatcher.class,
+                     KeyGenUtil.class}) public class UserControllerTest {
 
     private UserController userController;
     private UserDAO userDAO;
@@ -86,9 +88,8 @@ public class UserControllerTest {
 
         userDAO = Mockito.mock(UserDAO.class);
 
-        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.USER
-        );
+        PowerMockito.doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
 
         userController = new UserController(requestor, requestBody);
     }
@@ -103,18 +104,17 @@ public class UserControllerTest {
         Requestor requestor = new Requestor();
         requestor.setAccount(ACCOUNT);
 
-        Map<String, String> requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, String> requestBody =
+            new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         requestBody.put("UserName", "s3testuser");
 
         userDAO = Mockito.mock(UserDAO.class);
         accessKeyDAO = Mockito.mock(AccessKeyDAO.class);
 
-        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.USER
-        );
-        PowerMockito.doReturn(accessKeyDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.ACCESS_KEY
-        );
+        PowerMockito.doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
+        PowerMockito.doReturn(accessKeyDAO).when(
+            DAODispatcher.class, "getResourceDAO", DAOResource.ACCESS_KEY);
 
         userController = new UserController(requestor, requestBody);
     }
@@ -139,14 +139,14 @@ public class UserControllerTest {
         Requestor requestor = new Requestor();
         requestor.setAccount(ACCOUNT);
 
-        Map<String, String> requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, String> requestBody =
+            new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         requestBody.put("Path", path);
 
         userDAO = Mockito.mock(UserDAO.class);
 
-        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.USER
-        );
+        PowerMockito.doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
 
         userController = new UserController(requestor, requestBody);
     }
@@ -157,17 +157,20 @@ public class UserControllerTest {
      * @param path User path attribute.
      * @throws Exception
      */
-    private void createUserController_UpdateAPI(String newUserName,
-                                                String newPath) throws Exception {
+   private
+    void createUserController_UpdateAPI(String newUserName,
+                                        String newPath) throws Exception {
         createUserController_UpdateAPI("s3testuser", newUserName, newPath);
     }
 
-    private void createUserController_UpdateAPI(String userName, String newUserName,
-                                                String newPath) throws Exception {
+   private
+    void createUserController_UpdateAPI(String userName, String newUserName,
+                                        String newPath) throws Exception {
         Requestor requestor = new Requestor();
         requestor.setAccount(ACCOUNT);
 
-        Map<String, String> requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, String> requestBody =
+            new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         requestBody.put("UserName", userName);
         if (newPath != null) {
             requestBody.put("NewPath", newPath);
@@ -179,9 +182,8 @@ public class UserControllerTest {
 
         userDAO = Mockito.mock(UserDAO.class);
 
-        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.USER
-        );
+        PowerMockito.doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
 
         userController = new UserController(requestor, requestBody);
     }
@@ -203,14 +205,14 @@ public class UserControllerTest {
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -230,14 +232,15 @@ public class UserControllerTest {
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>EntityAlreadyExists</Code>"
-                + "<Message>The request was rejected because it attempted "
-                + "to create or update a resource that already exists.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>EntityAlreadyExists</Code>" +
+            "<Message>The request was rejected because it attempted " +
+            "to create or update a resource that already " +
+            "exists.</Message></Error>" + "<RequestId>0000</RequestId>" +
+            "</ErrorResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -258,14 +261,14 @@ public class UserControllerTest {
         Mockito.doThrow(new DataAccessException("failed to save new user.\n"))
                 .when(userDAO).save(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -281,6 +284,7 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
+        user.setArn("arn:aws:iam::1:user/s3testuser");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
@@ -292,8 +296,8 @@ public class UserControllerTest {
             "<CreateUserResult>" + "<User>" + "<Path>/</Path>" +
             "<UserName>s3testuser</UserName>" +
             "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" +
-            "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" + "</User>" +
-            "</CreateUserResult>" + "<ResponseMetadata>" +
+            "<Arn>arn:aws:iam::AIDA5KZQJXPTROAIAKCKO:user/s3testuser</Arn>" +
+            "</User>" + "</CreateUserResult>" + "<ResponseMetadata>" +
             "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
             "</CreateUserResponse>";
 
@@ -313,8 +317,8 @@ public class UserControllerTest {
           "<CreateUserResult>" + "<User>" + "<Path>/</Path>" +
           "<UserName>s3testuser</UserName>" +
           "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" +
-          "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" + "</User>" +
-          "</CreateUserResult>" + "<ResponseMetadata>" +
+          "<Arn>arn:aws:iam::AIDA5KZQJXPTROAIAKCKO:user/s3testuser</Arn>" +
+          "</User>" + "</CreateUserResult>" + "<ResponseMetadata>" +
           "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
           "</CreateUserResponse>";
 
@@ -324,12 +328,12 @@ public class UserControllerTest {
                 String.CASE_INSENSITIVE_ORDER);
         requestBody.put("UserName", "s3testuser");
         userDAO = Mockito.mock(UserDAO.class);
-        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.USER
-        );
+        PowerMockito.doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
         userController = new UserController(requestor, requestBody);
         User user = new User();
         user.setAccountName("s3test");
+        user.setArn("arn:aws:iam::1:user/s3testuser");
         user.setName("s3testuser");
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
@@ -349,6 +353,7 @@ public class UserControllerTest {
         User user = new User();
         user.setAccountName("s3test");
         user.setName("s3testuser");
+        user.setArn("arn:aws:iam::1:user/s3testuser");
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
         Mockito.doNothing().when(userDAO).save(user);
@@ -360,8 +365,8 @@ public class UserControllerTest {
             "<CreateUserResult>" + "<User>" + "<Path>/test</Path>" +
             "<UserName>s3testuser</UserName>" +
             "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" +
-            "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" + "</User>" +
-            "</CreateUserResult>" + "<ResponseMetadata>" +
+            "<Arn>arn:aws:iam::AIDA5KZQJXPTROAIAKCKO:user/s3testuser</Arn>" +
+            "</User>" + "</CreateUserResult>" + "<ResponseMetadata>" +
             "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
             "</CreateUserResponse>";
 
@@ -379,14 +384,14 @@ public class UserControllerTest {
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -405,14 +410,14 @@ public class UserControllerTest {
 
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenReturn(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "entity that does not exist. </Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>NoSuchEntity</Code>" +
+            "<Message>The request was rejected because it referenced an " +
+            "entity that does not exist. </Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -435,14 +440,14 @@ public class UserControllerTest {
             .when(accessKeyDAO)
             .hasAccessKeys("AIDA5KZQJXPTROAIAKCKO");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -464,15 +469,15 @@ public class UserControllerTest {
         Mockito.doReturn(Boolean.TRUE).when(accessKeyDAO).hasAccessKeys(
             "AIDA5KZQJXPTROAIAKCKO");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>DeleteConflict</Code>"
-                + "<Message>The request was rejected because it attempted to "
-                + "delete a resource that has attached subordinate entities. "
-                + "The error message describes these entities.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>DeleteConflict</Code>" +
+            "<Message>The request was rejected because it attempted to " +
+            "delete a resource that has attached subordinate entities. " +
+            "The error message describes these entities.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -496,14 +501,14 @@ public class UserControllerTest {
         Mockito.doThrow(new DataAccessException("Failed to delete user"))
                 .when(userDAO).delete(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -526,14 +531,12 @@ public class UserControllerTest {
             "AIDA5KZQJXPTROAIAKCKO");
         Mockito.doNothing().when(userDAO).delete(user);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<DeleteUserResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</DeleteUserResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<DeleteUserResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</DeleteUserResponse>";
 
         ServerResponse response = userController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -549,14 +552,14 @@ public class UserControllerTest {
         Mockito.when(userDAO.findAll("s3test", "/")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -581,50 +584,42 @@ public class UserControllerTest {
 
         Mockito.doReturn(expectedUserList).when(userDAO).findAll("s3test", "/");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListUsersResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListUsersResult>"
-                + "<Users/>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListUsersResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListUsersResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ListUsersResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListUsersResult>" + "<Users/>" +
+            "<IsTruncated>false</IsTruncated>" + "</ListUsersResult>" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</ListUsersResponse>";
 
         ServerResponse response = userController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
     }
-
 
     @Test
     public void ListUser_UserListEmptyWithPathPrefix_ReturnListUserResponse()
             throws Exception {
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListUsersResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListUsersResult>"
-                + "<Users/>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListUsersResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListUsersResponse>";
+      final String expectedResponseBody =
+          "<?xml version=\"1.0\" " + "encoding=\"UTF-8\" standalone=\"no\"?>" +
+          "<ListUsersResponse " +
+          "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+          "<ListUsersResult>" + "<Users/>" +
+          "<IsTruncated>false</IsTruncated>" + "</ListUsersResult>" +
+          "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+          "</ResponseMetadata>" + "</ListUsersResponse>";
 
         Requestor requestor = new Requestor();
         requestor.setAccount(ACCOUNT);
-        Map<String, String> requestBody = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, String> requestBody =
+            new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         requestBody.put("PathPrefix", "/");
 
         userDAO = Mockito.mock(UserDAO.class);
-        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.USER
-        );
+        PowerMockito.doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
         userController = new UserController(requestor, requestBody);
         User expectedUser = new User();
         expectedUser.setAccountName("s3test");
@@ -639,7 +634,8 @@ public class UserControllerTest {
         ServerResponse response = userController.list();
 
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -654,6 +650,7 @@ public class UserControllerTest {
         expectedUser.setUserType("iamUser");
         expectedUser.setPath("/");
         expectedUser.setCreateDate("2016-01-06T10:15:11.000+0530");
+        expectedUser.setArn("arn:aws:iam::1:user/s3testuser");
 
         User[] expectedUserList = new User[]{expectedUser};
 
@@ -666,7 +663,7 @@ public class UserControllerTest {
             "<ListUsersResult>" + "<Users>" + "<member>" +
             "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" + "<Path>/</Path>" +
             "<UserName>s3testuser</UserName>" +
-            "<Arn>arn:aws:iam::000:user/s3testuser</Arn>" +
+            "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" +
             "<CreateDate>2016-01-06T10:15:11.000+0530</CreateDate>" +
             "</member>" + "</Users>" + "<IsTruncated>false</IsTruncated>" +
             "</ListUsersResult>" + "<ResponseMetadata>" +
@@ -675,7 +672,8 @@ public class UserControllerTest {
 
         ServerResponse response = userController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -690,6 +688,7 @@ public class UserControllerTest {
         expectedUser.setUserType("iamUser");
         expectedUser.setPath("/test");
         expectedUser.setCreateDate("2016-01-06'T'10:15:11.000+530");
+        expectedUser.setArn("arn:aws:iam::1:user/s3testuser");
 
         User[] expectedUserList = new User[]{expectedUser};
 
@@ -702,7 +701,7 @@ public class UserControllerTest {
             "<ListUsersResult>" + "<Users>" + "<member>" +
             "<UserId>AIDA5KZQJXPTROAIAKCKO</UserId>" + "<Path>/test</Path>" +
             "<UserName>s3testuser</UserName>" +
-            "<Arn>arn:aws:iam::000:user/s3testuser</Arn>" +
+            "<Arn>arn:aws:iam::1:user/s3testuser</Arn>" +
             "<CreateDate>2016-01-06'T'10:15:11.000+530</CreateDate>" +
             "</member>" + "</Users>" + "<IsTruncated>false</IsTruncated>" +
             "</ListUsersResult>" + "<ResponseMetadata>" +
@@ -711,7 +710,8 @@ public class UserControllerTest {
 
         ServerResponse response = userController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -719,14 +719,14 @@ public class UserControllerTest {
             throws Exception {
         createUserController_UpdateAPI(null, null);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>MissingParameter</Code>"
-                + "<Message>A required parameter for the specified action is "
-                + "not supplied.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>MissingParameter</Code>" +
+            "<Message>A required parameter for the specified action is " +
+            "not supplied.</Message></Error>" + "<RequestId>0000</RequestId>" +
+            "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -734,16 +734,17 @@ public class UserControllerTest {
                 response.getResponseStatus());
     }
 
-    @Test
-    public void UpdateUser_UpdateRootUser_ShouldFail()
-            throws Exception {
+    @Test public void UpdateUser_UpdateRootUser_ShouldFail() throws Exception {
         createUserController_UpdateAPI("root", "rootNewName", null);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
-                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc" +
-                "/2010-05-08/\"><Error><Code>OperationNotSupported</Code><Message>Cannot" +
-                " change user name of root user.</Message></Error><RequestId>0000<" +
-                "/RequestId></ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+            "standalone=\"no\"?><ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc" +
+            "/2010-05-08/\"><Error><Code>OperationNotSupported</" +
+            "Code><Message>Cannot" + " change user name of root " +
+            "user.</Message></Error><RequestId>0000<" +
+            "/RequestId></ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -759,14 +760,14 @@ public class UserControllerTest {
         Mockito.when(userDAO.find("s3test", "s3testuser")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -785,14 +786,14 @@ public class UserControllerTest {
 
         Mockito.doReturn(user).when(userDAO).find("s3test", "s3testuser");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>NoSuchEntity</Code>"
-                + "<Message>The request was rejected because it referenced an "
-                + "entity that does not exist. </Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>NoSuchEntity</Code>" +
+            "<Message>The request was rejected because it referenced an " +
+            "entity that does not exist. </Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -814,14 +815,14 @@ public class UserControllerTest {
         Mockito.when(userDAO.find("s3test", "s3newuser")).thenThrow(
                 new DataAccessException("failed to search user.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -847,14 +848,15 @@ public class UserControllerTest {
         Mockito.doReturn(user).when(userDAO).find("s3test", "s3testuser");
         Mockito.doReturn(newUser).when(userDAO).find("s3test", "s3newuser");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>EntityAlreadyExists</Code>"
-                + "<Message>The request was rejected because it attempted to "
-                + "create or update a resource that already exists.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>EntityAlreadyExists</Code>" +
+            "<Message>The request was rejected because it attempted to " +
+            "create or update a resource that already " +
+            "exists.</Message></Error>" + "<RequestId>0000</RequestId>" +
+            "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -881,14 +883,14 @@ public class UserControllerTest {
         Mockito.doThrow(new DataAccessException("Failed to update user.\n"))
                 .when(userDAO).update(user, "s3newuser", "/test/update");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -912,20 +914,20 @@ public class UserControllerTest {
 
         Mockito.doReturn(user).when(userDAO).find("s3test", "s3testuser");
         Mockito.doReturn(newUser).when(userDAO).find("s3test", "s3newuser");
-        Mockito.doNothing().when(userDAO).update(user,
-                "s3newuser", "/test/update");
+        Mockito.doNothing().when(userDAO).update(user, "s3newuser",
+                                                 "/test/update");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<UpdateUserResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</UpdateUserResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<UpdateUserResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</UpdateUserResponse>";
 
         ServerResponse response = userController.update();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
     }
 }
+

@@ -51,6 +51,8 @@ public class User {
      String profileCreateDate;
     private
      String pwdResetRequired = "false";
+    private
+     String arn;
 
     /**
      * TODO - Remove RoleName. User Type is sufficient to identify a role user
@@ -161,4 +163,10 @@ public class User {
 
    public
     void setPwdResetRequired(String pwdReset) { pwdResetRequired = pwdReset; }
+
+   public
+    String getArn() { return arn; }
+
+   public
+    void setArn(String arn) { this.arn = arn; }
 }

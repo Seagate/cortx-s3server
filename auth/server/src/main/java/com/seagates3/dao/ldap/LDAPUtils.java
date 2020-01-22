@@ -89,6 +89,8 @@ public class LDAPUtils {
     public static final String TOKEN = "token";
     public static final String USER_ID = "s3userid";
     public static final String USER_OU = "users";
+    public
+     static final String ARN = "arn";
 
     public
      static String getBaseDN() { return BASE_DN; }

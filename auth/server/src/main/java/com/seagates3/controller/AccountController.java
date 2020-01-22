@@ -147,7 +147,7 @@ public class AccountController extends AbstractController {
 
         User root;
         try {
-            root = createRootUser(name);
+          root = createRootUser(name, account.getId());
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
         }
@@ -233,15 +233,16 @@ public class AccountController extends AbstractController {
     /*
      * Create a root user for the account.
      */
-    private User createRootUser(String accountName) throws DataAccessException {
+   private
+    User createRootUser(String accountName,
+                        String accountId) throws DataAccessException {
         User user = new User();
         user.setAccountName(accountName);
         user.setName("root");
         user.setPath("/");
         user.setUserType(User.UserType.IAM_USER);
-
         user.setId(KeyGenUtil.createUserId());
-
+        user.setArn("arn:aws:iam::" + accountId + ":root");
         LOGGER.info("Creating root user for account: " + accountName);
 
         userDAO.save(user);

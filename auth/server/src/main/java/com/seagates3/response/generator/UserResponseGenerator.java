@@ -26,15 +26,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 public class UserResponseGenerator extends AbstractResponseGenerator {
-
     public ServerResponse generateCreateResponse(User user) {
         LinkedHashMap responseElements = new LinkedHashMap();
         responseElements.put("Path", user.getPath());
         responseElements.put("UserName", user.getName());
         responseElements.put("UserId", user.getId());
-
-        String arnValue = String.format("arn:aws:iam::1:user/%s", user.getName());
-        responseElements.put("Arn", arnValue);
+        responseElements.put("Arn", user.getArn());
 
         return new XMLResponseFormatter().formatCreateResponse(
             "CreateUser", "User", responseElements,
@@ -50,21 +47,16 @@ public class UserResponseGenerator extends AbstractResponseGenerator {
 
         ArrayList<LinkedHashMap<String, String>> userMemebers = new ArrayList<>();
         LinkedHashMap responseElements;
-
         for (User user : userList) {
             responseElements = new LinkedHashMap();
             responseElements.put("UserId", user.getId());
             responseElements.put("Path", user.getPath());
             responseElements.put("UserName", user.getName());
-
-            String arn = "arn:aws:iam::000:user/" + user.getName();
-            responseElements.put("Arn", arn);
+            responseElements.put("Arn", user.getArn());
             responseElements.put("CreateDate", user.getCreateDate());
             // responseElements.put("PasswordLastUsed", "");
-
             userMemebers.add(responseElements);
         }
-
         return new XMLResponseFormatter().formatListResponse(
             "ListUsers", "Users", userMemebers, false,
             AuthServerConfig.getReqId());

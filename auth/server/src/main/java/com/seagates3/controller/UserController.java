@@ -82,6 +82,11 @@ public class UserController extends AbstractController {
         // for more info, please see EOS-2790
         user.setId(USER_ID_PREFIX + KeyGenUtil.createIamUserId());
 
+        // create and set arn here
+        String arn = "arn:aws:iam::" + requestor.getAccount().getId() +
+                     ":user/" + user.getName();
+        LOGGER.debug("Creating and setting ARN - " + arn);
+        user.setArn(arn);
         try {
             userDAO.save(user);
         } catch (DataAccessException ex) {

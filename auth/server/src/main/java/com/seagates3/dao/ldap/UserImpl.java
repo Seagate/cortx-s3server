@@ -22,7 +22,7 @@ import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.seagates3.model.Account;
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
 import com.novell.ldap.LDAPConnection;
@@ -32,7 +32,6 @@ import com.novell.ldap.LDAPModification;
 import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.dao.UserDAO;
 import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.Account;
 import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
 
@@ -60,10 +59,11 @@ public class UserImpl implements UserDAO {
         user.setName(userName);
 
         String[] attrs = {
-            LDAPUtils.USER_ID,                 LDAPUtils.PATH,
-            LDAPUtils.ROLE_NAME,               LDAPUtils.OBJECT_CLASS,
-            LDAPUtils.CREATE_TIMESTAMP,        LDAPUtils.PASSWORD,
-            LDAPUtils.PASSWORD_RESET_REQUIRED, LDAPUtils.PROFILE_CREATE_DATE};
+            LDAPUtils.USER_ID,            LDAPUtils.PATH,
+            LDAPUtils.ARN,                LDAPUtils.ROLE_NAME,
+            LDAPUtils.OBJECT_CLASS,       LDAPUtils.CREATE_TIMESTAMP,
+            LDAPUtils.PASSWORD,           LDAPUtils.PASSWORD_RESET_REQUIRED,
+            LDAPUtils.PROFILE_CREATE_DATE};
 
         String userBaseDN = String.format(
             "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
@@ -99,7 +99,6 @@ public class UserImpl implements UserDAO {
             }
 
             user.setId(entry.getAttribute(LDAPUtils.USER_ID).getStringValue());
-
             String objectClass =
                 entry.getAttribute(LDAPUtils.OBJECT_CLASS).getStringValue();
             user.setUserType(objectClass);
@@ -140,6 +139,12 @@ public class UserImpl implements UserDAO {
             catch (Exception e) {
               LOGGER.debug("profileCreateDate value not found in ldap");
             }
+            try {
+              user.setArn((entry.getAttribute(LDAPUtils.ARN).getStringValue()));
+            }
+            catch (Exception e) {
+              LOGGER.debug("ARN value not found in ldap");
+            }
         }
         return user;
     }
@@ -162,9 +167,9 @@ public class UserImpl implements UserDAO {
 
         LDAPSearchResults ldapResults;
 
-        String[] attrs = {LDAPUtils.COMMON_NAME,     LDAPUtils.PATH,
-                          LDAPUtils.ROLE_NAME,       LDAPUtils.OBJECT_CLASS,
-                          LDAPUtils.CREATE_TIMESTAMP};
+        String[] attrs = {LDAPUtils.COMMON_NAME,  LDAPUtils.PATH,
+                          LDAPUtils.ARN,          LDAPUtils.ROLE_NAME,
+                          LDAPUtils.OBJECT_CLASS, LDAPUtils.CREATE_TIMESTAMP};
         String userBaseDN = String.format(
             "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
             LDAPUtils.USER_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
@@ -210,6 +215,7 @@ public class UserImpl implements UserDAO {
                 entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
                     .getStringValue());
             user.setCreateDate(createTime);
+            user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
         }
 
         return user;
@@ -230,7 +236,8 @@ public class UserImpl implements UserDAO {
       User user;
 
       String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.COMMON_NAME,
-                        LDAPUtils.PATH,    LDAPUtils.CREATE_TIMESTAMP};
+                        LDAPUtils.PATH,    LDAPUtils.CREATE_TIMESTAMP,
+                        LDAPUtils.ARN};
       String userBaseDN = String.format(
           "%s=%s,%s=%s,%s=%s,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
           LDAPUtils.USER_OU, LDAPUtils.ORGANIZATIONAL_NAME, accountName,
@@ -274,7 +281,7 @@ public class UserImpl implements UserDAO {
                 entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
                     .getStringValue());
             user.setCreateDate(createTime);
-
+            user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
             users.add(user);
         }
 
@@ -326,6 +333,7 @@ public class UserImpl implements UserDAO {
 
         if (user.getUserType() == User.UserType.IAM_USER) {
           attributeSet.add(new LDAPAttribute(LDAPUtils.PATH, user.getPath()));
+          attributeSet.add(new LDAPAttribute(LDAPUtils.ARN, user.getArn()));
         }
 
         if (user.getUserType() == User.UserType.ROLE_USER) {
@@ -374,6 +382,13 @@ public class UserImpl implements UserDAO {
         if (newUserName != null) {
             attr = new LDAPAttribute(LDAPUtils.COMMON_NAME, newUserName);
             modList.add(new LDAPModification(LDAPModification.REPLACE, attr));
+            // replacing oldUserName with newUserName inside ARN
+            String newArn =
+                user.getArn().substring(0, user.getArn().indexOf("/") + 1) +
+                newUserName;
+            LOGGER.debug("updating new arn - " + newArn);
+            attr = new LDAPAttribute(LDAPUtils.ARN, newArn);
+            modList.add(new LDAPModification(LDAPModification.REPLACE, attr));
         }
 
         if (newPath != null) {
@@ -400,9 +415,9 @@ public class UserImpl implements UserDAO {
 
       LDAPSearchResults ldapResults;
 
-      String[] attrs = {LDAPUtils.COMMON_NAME,     LDAPUtils.PATH,
-                        LDAPUtils.ROLE_NAME,       LDAPUtils.OBJECT_CLASS,
-                        LDAPUtils.CREATE_TIMESTAMP};
+      String[] attrs = {LDAPUtils.COMMON_NAME,      LDAPUtils.PATH,
+                        LDAPUtils.ROLE_NAME,        LDAPUtils.OBJECT_CLASS,
+                        LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.ARN};
       String filter =
           String.format("(&(%s=%s)(%s=%s))", LDAPUtils.USER_ID, userId,
                         LDAPUtils.OBJECT_CLASS, LDAPUtils.IAMUSER_OBJECT_CLASS);
@@ -438,43 +453,69 @@ public class UserImpl implements UserDAO {
           String createTime = DateUtil.toServerResponseFormat(
               entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
           user.setCreateDate(createTime);
+          user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
         }
 
         return user;
     }
 
     /**
-         * Find the {@link User} by its ARN.
-         * @param arn - ARN of the User
-         *              ARN format: arn:aws:iam:<region>:<account ID>:<user
-     * name>
-         *              e.g. arn:aws:iam::KO87b1p0TKWa184S6xrINQ:user/u1
-         * @return the {@link User}
-         */
+     * Find {@link User} by its ARN.
+     *
+     * @param arnToFind - ARN of the User ARN format:
+     *arn:aws:iam:<region>:<account
+     *                  ID>:<user name> e.g.
+     *                  arn:aws:iam::KO87b1p0TKWa184S6xrINQ:user/u1
+     * @return the {@link User}
+     */
 
-    @Override public User findByArn(String arn) throws DataAccessException {
-      User user = null;
-      String accountId = null;
-      String userName = null;
-      String userType = null;
-      String tokens[] = arn.split(":");
-      accountId = tokens[4];
-      userName = tokens[5];
-      LOGGER.info(accountId + "......." + userName);
-      int slashPosition = userName.indexOf('/');
-      if (slashPosition > -1) {
-        userType = userName.substring(0, slashPosition);
-        userName = userName.substring(slashPosition + 1);
+    @Override public User findByArn(String arnToFind)
+        throws DataAccessException {
+      User user = new User();
+      LDAPSearchResults ldapResults;
+      String[] attrs = {LDAPUtils.COMMON_NAME,  LDAPUtils.PATH,
+                        LDAPUtils.USER_ID,      LDAPUtils.ROLE_NAME,
+                        LDAPUtils.OBJECT_CLASS, LDAPUtils.CREATE_TIMESTAMP};
+      String filter =
+          String.format("(&(%s=%s)(%s=%s))", LDAPUtils.ARN, arnToFind,
+                        LDAPUtils.OBJECT_CLASS, LDAPUtils.IAMUSER_OBJECT_CLASS);
+      try {
+        ldapResults = LDAPUtils.search(LDAPUtils.BASE_DN,
+                                       LDAPConnection.SCOPE_SUB, filter, attrs);
+      }
+      catch (LDAPException ex) {
+        LOGGER.error("Failed to find details of user: " + arnToFind);
+        throw new DataAccessException("Failed to find user details.\n" + ex);
         }
-        if (userName != null && !userName.isEmpty() &&
-            !userName.contains("*") && "user".equals(userType)) {
-          Account account = new AccountImpl().findByID(accountId);
-          if (account != null && account.exists()) {
-            user = find(account.getName(), userName);
+        if (ldapResults.hasMore()) {
+          LOGGER.info("inside search loop");
+          LDAPEntry entry;
+          try {
+            entry = ldapResults.next();
+            user.setArn(arnToFind);
           }
+          catch (LDAPException ex) {
+            LOGGER.error("Failed to find details of user: " + arnToFind);
+            throw new DataAccessException("Failed to find user details.\n" +
+                                          ex);
+          }
+          user.setName(
+              entry.getAttribute(LDAPUtils.COMMON_NAME).getStringValue());
+          user.setId(entry.getAttribute(LDAPUtils.USER_ID).getStringValue());
+          user.setUserType(
+              entry.getAttribute(LDAPUtils.OBJECT_CLASS).getStringValue());
+          if (user.getUserType() == User.UserType.IAM_USER) {
+            user.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
+          } else if (user.getUserType() == User.UserType.ROLE_USER) {
+            user.setRoleName(
+                entry.getAttribute(LDAPUtils.ROLE_NAME).getStringValue());
+          }
+          String createTime = DateUtil.toServerResponseFormat(
+              entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
+          user.setCreateDate(createTime);
+          user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
         }
+
         return user;
     }
-}
-
-
+ }
