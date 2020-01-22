@@ -82,7 +82,7 @@ def update_signature_headers(params):
 # Get current date in GMT format e.g. Thu, 05 Jul 2018 03:55:43 GMT
 def _get_date_utc_timestamp():
     epoch_t = datetime.utcnow()
-    return epoch_t.strftime('%a, %d %b %Y %I:%M:%S %ZGMT')
+    return epoch_t.strftime('%a, %d %b %Y %H:%M:%S %ZGMT')
 
 test_data = {}
 test_data_file = os.path.join(os.path.dirname(__file__), 'auth_spec_signcalc_test_data.yaml')
