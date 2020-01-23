@@ -195,7 +195,7 @@ class RequestObject {
   const std::string& get_account_name();
   void set_account_id(const std::string& id);
   const std::string& get_account_id();
-  const std::string& get_request_id() const { return request_id; }
+  std::string get_request_id() const { return request_id; }
 
   S3RequestError get_request_error() const { return request_error; }
 

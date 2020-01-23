@@ -345,6 +345,8 @@ class S3AuthClient {
     s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
   }
 
+  std::string get_request_id() { return request_id; }
+
   S3AuthClientOpState get_state() { return state; }
 
   S3AuthClientOpType get_op_type() { return op_type; }

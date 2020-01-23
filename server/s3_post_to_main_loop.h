@@ -45,7 +45,8 @@ class S3PostToMainLoop {
     s3_log(S3_LOG_DEBUG, "", "Constructor\n");
   }
 
-  void operator()(user_event_on_main_loop callback);
+  void operator()(user_event_on_main_loop callback,
+                  const std::string &request_id = "");
 };
 
 #endif

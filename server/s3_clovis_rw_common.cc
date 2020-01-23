@@ -53,8 +53,9 @@
 // This is run on main thread.
 void clovis_op_done_on_main_thread(evutil_socket_t, short events,
                                    void *user_data) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  std::string request_id;
   if (user_data == NULL) {
+    s3_log(S3_LOG_DEBUG, "", "Entering\n");
     s3_log(S3_LOG_ERROR, "", "Input argument user_data is NULL\n");
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
@@ -65,9 +66,13 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
   if (context == NULL) {
     s3_log(S3_LOG_ERROR, "", "context pointer is NULL\n");
   }
+  if (context->get_request() != NULL) {
+    request_id = context->get_request()->get_request_id();
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   struct event *s3user_event = (struct event *)user_context->user_event;
   if (s3user_event == NULL) {
-    s3_log(S3_LOG_ERROR, "", "User event is NULL\n");
+    s3_log(S3_LOG_ERROR, request_id, "User event is NULL\n");
   }
   context->log_timer();
 
@@ -86,7 +91,7 @@ void clovis_op_done_on_main_thread(evutil_socket_t, short events,
   free(user_data);
   // Free user event
   if (s3user_event) event_free(s3user_event);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
 // Clovis callbacks, run in clovis thread
@@ -99,6 +104,7 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
       (S3AsyncOpContextBase *)ctx->application_context;
   int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
   std::string request_id = app_ctx->get_request()->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   s3_log(S3_LOG_DEBUG, request_id, "Return code = %d op_code = %d\n", clovis_rc,
          op->op_code);
 
@@ -126,20 +132,21 @@ void s3_clovis_op_stable(struct m0_clovis_op *op) {
     short events = 0;
     clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
 #else
-    S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread);
+    S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread,
+                                       request_id);
 #endif  // S3_GOOGLE_TEST
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
 void s3_clovis_op_failed(struct m0_clovis_op *op) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   struct s3_clovis_context_obj *ctx =
       (struct s3_clovis_context_obj *)op->op_datum;
 
   S3AsyncOpContextBase *app_ctx =
       (S3AsyncOpContextBase *)ctx->application_context;
   std::string request_id = app_ctx->get_request()->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
   s3_log(S3_LOG_DEBUG, request_id, "Error code = %d\n", clovis_rc);
 
@@ -165,17 +172,18 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
     short events = 0;
     clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
 #else
-    S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread);
+    S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread,
+                                       request_id);
 #endif  // S3_GOOGLE_TEST
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
 void s3_clovis_op_pre_launch_failure(void *application_context, int rc) {
-  s3_log(S3_LOG_DEBUG, "", "Entering\n");
   S3AsyncOpContextBase *app_ctx = (S3AsyncOpContextBase *)application_context;
-  s3_log(S3_LOG_DEBUG, app_ctx->get_request()->get_request_id(),
-         "Error code = %d\n", rc);
+  std::string request_id = app_ctx->get_request()->get_request_id();
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Error code = %d\n", rc);
   app_ctx->set_op_errno_for(0, rc);
   app_ctx->set_op_status_for(0, S3AsyncOpStatus::failed, "Operation Failed.");
   struct user_event_context *user_ctx =
@@ -186,9 +194,9 @@ void s3_clovis_op_pre_launch_failure(void *application_context, int rc) {
   short events = 0;
   clovis_op_done_on_main_thread(test_sock, events, (void *)user_ctx);
 #else
-  S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread);
+  S3PostToMainLoop((void *)user_ctx)(clovis_op_done_on_main_thread, request_id);
 #endif  // S3_GOOGLE_TEST
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
 void s3_clovis_dummy_op_stable(evutil_socket_t, short events, void *user_data) {
