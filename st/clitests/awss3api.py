@@ -104,9 +104,13 @@ class AwsTest(S3PyCliTest):
         self.with_cli("aws s3api " + "get-object-tagging " + " --bucket " + bucket_name + " --key " + object_name)
         return self
 
-    def list_objects(self, bucket_name):
+    def list_objects(self, bucket_name, max_keys=None):
         self.bucket_name = bucket_name
-        self.with_cli("aws s3api " + "list-objects " + "--bucket " + bucket_name)
+        cmd = "aws s3api " + "list-objects " + "--bucket " + bucket_name
+        if(max_keys is not None):
+           self.max_keys = max_keys;
+           cmd = cmd + " --max-keys " + max_keys
+        self.with_cli(cmd)
         return self
 
     def delete_object_tagging(self, bucket_name, object_name):

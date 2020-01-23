@@ -61,4 +61,19 @@ class DateCondition extends PolicyCondition {
     // TODO: Add logic to check the headers as per Date Condition type
     return true;
   }
+
+  /**
+   * Returns the enum value of the String
+   * @param enumName
+   * @return
+   */
+ public
+  static DateComparisonType getEnum(String enumName) {
+    try {
+      return DateComparisonType.valueOf(enumName);
+    }
+    catch (Exception ex) {
+      return null;
+    }
+  }
 }

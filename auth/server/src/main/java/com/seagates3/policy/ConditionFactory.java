@@ -21,8 +21,6 @@ package com.seagates3.policy;
 
 import java.util.List;
 
-import com.seagates3.policy.BooleanCondition.BooleanComparisonType;
-
 public
 class ConditionFactory {
 
@@ -37,23 +35,18 @@ class ConditionFactory {
   static PolicyCondition getCondition(String ConditionType, String key,
                                       List<String> values) {
 
-    if (StringCondition.StringComparisonType.valueOf(ConditionType) != null) {
-      return new StringCondition(
-          StringCondition.StringComparisonType.valueOf(ConditionType), key,
-          values);
-    } else if (DateCondition.DateComparisonType.valueOf(ConditionType) !=
-               null) {
-      return new DateCondition(
-          DateCondition.DateComparisonType.valueOf(ConditionType), key, values);
-    } else if (NumericCondition.NumericComparisonType.valueOf(ConditionType) !=
-               null) {
-      return new NumericCondition(
-          NumericCondition.NumericComparisonType.valueOf(ConditionType), key,
-          values);
-    } else if (BooleanCondition.BooleanComparisonType.valueOf(ConditionType) !=
-               null) {
-      return new BooleanCondition(BooleanComparisonType.valueOf(ConditionType),
-                                  key, values);
+    if (StringCondition.getEnum(ConditionType) != null) {
+      return new StringCondition(StringCondition.getEnum(ConditionType), key,
+                                 values);
+    } else if (DateCondition.getEnum(ConditionType) != null) {
+      return new DateCondition(DateCondition.getEnum(ConditionType), key,
+                               values);
+    } else if (NumericCondition.getEnum(ConditionType) != null) {
+      return new NumericCondition(NumericCondition.getEnum(ConditionType), key,
+                                  values);
+    } else if (BooleanCondition.getEnum(ConditionType) != null) {
+      return new BooleanCondition(BooleanCondition.getEnum(ConditionType), key,
+                                  values);
     } else if ("Null".equals(ConditionType)) {
       return new NullCondition(key, values);
     } else {

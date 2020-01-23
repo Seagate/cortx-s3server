@@ -165,4 +165,18 @@ class PolicyUtil {
     }
     return isValid;
   }
+
+  /**
+   * Fetch the query parameter value corresponding to the key
+   * @param queryParams
+   * @param key
+   * @return
+   */
+ public
+  static String fetchQueryParamValue(String queryParams, String key) {
+    for (String param : queryParams.split("&")) {
+      if (param.contains(key)) return param.split("=")[1];
+    }
+    return null;
+  }
 }

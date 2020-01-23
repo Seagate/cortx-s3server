@@ -66,8 +66,13 @@ class NumericCondition extends PolicyCondition {
     // Fetch the header value for corresponding Condition key
     String headerVal = null;
     for (Entry<String, String> entry : requestBody.entrySet()) {
-      if (entry.getKey().equalsIgnoreCase(this.conditionKey))
+      if (entry.getKey().equalsIgnoreCase(this.conditionKey)) {
         headerVal = entry.getValue();
+      } else if (entry.getKey().equals("ClientQueryParams")) {
+        headerVal = PolicyUtil.fetchQueryParamValue(entry.getValue(),
+                                                    this.conditionKey);
+        if (headerVal != null) break;
+      }
     }
     boolean result = false;
 
@@ -86,11 +91,11 @@ class NumericCondition extends PolicyCondition {
         break;
 
       case NumericLessThan:
-        result = !numericGreaterThanEquals(headerVal);
+        if (headerVal != null) result = !numericGreaterThanEquals(headerVal);
         break;
 
       case NumericLessThanEquals:
-        result = !numericGreaterThan(headerVal);
+        if (headerVal != null) result = !numericGreaterThan(headerVal);
         break;
 
       case NumericNotEquals:
@@ -216,5 +221,20 @@ class NumericCondition extends PolicyCondition {
       return false;
     }
     return false;
+  }
+
+  /**
+   * Returns the enum value of the String
+   * @param enumName
+   * @return
+   */
+ public
+  static NumericComparisonType getEnum(String enumName) {
+    try {
+      return NumericComparisonType.valueOf(enumName);
+    }
+    catch (Exception ex) {
+      return null;
+    }
   }
 }

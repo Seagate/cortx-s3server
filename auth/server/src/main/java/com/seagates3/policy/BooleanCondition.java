@@ -56,8 +56,13 @@ class BooleanCondition extends PolicyCondition {
     // Fetch the header value for corresponding Condition key
     String headerVal = null;
     for (Entry<String, String> entry : requestBody.entrySet()) {
-      if (entry.getKey().equalsIgnoreCase(this.conditionKey))
+      if (entry.getKey().equalsIgnoreCase(this.conditionKey)) {
         headerVal = entry.getValue();
+      } else if (entry.getKey().equals("ClientQueryParams")) {
+        headerVal = PolicyUtil.fetchQueryParamValue(entry.getValue(),
+                                                    this.conditionKey);
+        if (headerVal != null) break;
+      }
     }
     boolean result = false;
 
@@ -100,5 +105,20 @@ class BooleanCondition extends PolicyCondition {
       boolValues.add(Boolean.parseBoolean(s));
     }
     return boolValues.contains(boolHeader);
+  }
+
+  /**
+   * Returns the enum value of the String
+   * @param enumName
+   * @return
+   */
+ public
+  static BooleanComparisonType getEnum(String enumName) {
+    try {
+      return BooleanComparisonType.valueOf(enumName);
+    }
+    catch (Exception ex) {
+      return null;
+    }
   }
 }

@@ -85,8 +85,6 @@ AwsTest('Aws can create bucket').create_bucket("seagate").execute_test().command
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test(negative_case=True).command_should_fail().command_error_should_have("NoSuchBucketPolicy")
 
-AwsTest("Aws can delete policy on bucket").delete_bucket_policy("seagate").execute_test().command_is_successful()
-
 AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy).execute_test().command_is_successful()
 
 AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("Resource")
@@ -154,7 +152,52 @@ policy_put_bucket_relative = os.path.join(os.path.dirname(__file__), 'policy_fil
 policy_put_bucket = "file://" + os.path.abspath(policy_put_bucket_relative)
 AwsTest("Put Bucket Policy with valid Principal in policy json").put_bucket_policy("seagate", policy_put_bucket).execute_test().command_is_successful()
 
+# Validate Conditions in Bucket Policy
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEquals_success).execute_test().command_is_successful()
 
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_ArnLike_success).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLike_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEqualsIfExists_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:SecureTransport")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_RandomKeyValue_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:xyz")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEquals_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_NumericLessThanEquals_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:max-keys")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_DateLessThan_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:CurrentTime")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_success).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_invalidValue_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLike_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLikeIfExists_success).execute_test().command_is_successful()
+
+AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
+
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_combination_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("Conditions do not apply to combination of actions and resources in statement")
 
 
 ############### Authorize Policy #######################
@@ -299,11 +342,407 @@ del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 AwsTest('Aws can upload file').put_object_with_permission_headers("auth-bucket", "samplefile2", "grant-read-acp" , "id=C12345" ).execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
 
-
-
 ############################ nopermission in policy and allow in acl ###################
 
 AwsTest('Aws can get object acl').get_object_acl("auth-bucket", "samplefile").execute_test().command_is_successful()
+
+
+############################ policy authorization with condition StringEquals #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringEquals_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition StringEquals to 'bucket_owner_read'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can put object with canned acl bucket_owner_read
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+# seocndary account can not put object without canned acl bucket_owner_read
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition StringEqualsIgnoreCase #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringEqualsIgnoreCase_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition StringEqualsIgnoreCase to 'Bucket_owner_read' (B capital)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can put object with canned acl bucket_owner_read
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+# seocndary account can not put object without canned acl bucket_owner_read
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition StringNotEquals #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringNotEquals_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition StringNotEquals to 'bucket_owner_read'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can put object with any canned acl except bucket_owner_read
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-full-control\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-full-control").execute_test().command_is_successful()
+# seocndary account can not put object with canned acl bucket_owner_read
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition StringNotEqualsIgnoreCase #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringNotEqualsIgnoreCase_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition StringNotEqualsIgnoreCase to 'Bucket_owner_read' (B capital)
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can not put object with canned acl bucket_owner_read
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can put object with any canned acl except bucket-owner-read (case insensitive)
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition StringLike #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringLike_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition StringLike to 'bucket_*'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can put object with canned acl bucket_owner_read
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read").execute_test().command_is_successful()
+# seocndary account can not put object without canned acl bucket_owner_read
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition StringEqualsIfExists #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_StringEqualsIfExists_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition StringEqualsIfExists to 'bucket_owner_read'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can not put object with canned acl other than bucket_owner_read, if exists
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-full-control\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-full-control")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can put object if no canned acl exists
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition NumericEquals #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericEquals_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# list objects
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'ListBucket' with condition NumericEquals to 'max-keys=2'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# list objects by owner after policy application
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# seocndary account can list objects with query param max-keys 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="2").execute_test().command_is_successful()
+# seocndary account can not list objects with query param max-keys other than 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can not list objects').list_objects("seagate", max_keys="3").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can not list objects without max key condition
+AwsTest('AWS can not list objects').list_objects("seagate")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition NumericNotEquals #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericNotEquals_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# list objects
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'ListBucket' with condition NumericNotEquals to 'max-keys=2'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# list objects by owner after policy application
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# seocndary account can list objects with query param max-keys other than 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="3").execute_test().command_is_successful()
+# seocndary account can not list objects with query param max-keys 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can not list objects').list_objects("seagate", max_keys="2").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can list objects without max key condition
+AwsTest('AWS can not list objects').list_objects("seagate").execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition NumericLessThan #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericLessThan_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# list objects
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'ListBucket' with condition NumericLessThan to 'max-keys=2'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# list objects by owner after policy application
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# seocndary account can list objects with query param max-keys 1
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="1").execute_test().command_is_successful()
+# seocndary account can not list objects with query param max-keys greater than or equals to 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can not list objects').list_objects("seagate", max_keys="3").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Aws can not list objects').list_objects("seagate", max_keys="2").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can not list objects without max key condition
+AwsTest('AWS can not list objects').list_objects("seagate")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition NumericLessThanEquals #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericLessThanEquals_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# list objects
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'ListBucket' with condition NumericLessThanEquals to 'max-keys=2'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# list objects by owner after policy application
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# seocndary account can list objects with query param max-keys less than or equals to 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="1").execute_test().command_is_successful()
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="2").execute_test().command_is_successful()
+# seocndary account can not list objects with query param max-keys greater than 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects').list_objects("seagate", max_keys="3").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can not list objects without max key condition
+AwsTest('AWS can not list objects').list_objects("seagate")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition NumericGreaterThan #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericGreaterThan_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# list objects
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'ListBucket' with condition NumericGreaterThan to 'max-keys=2'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# list objects by owner after policy application
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# seocndary account can list objects with query param max-keys greater than 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="3").execute_test().command_is_successful()
+# seocndary account can not list objects with query param max-keys less than or equals to 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can not list objects').list_objects("seagate", max_keys="1").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+AwsTest('Aws can not list objects').list_objects("seagate", max_keys="2").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can not list objects without max key condition
+AwsTest('AWS can not list objects').list_objects("seagate")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition NumericGreaterThanEquals #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericGreaterThanEquals_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# list objects
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'ListBucket' with condition NumericGreaterThanEquals to 'max-keys=2'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# list objects by owner after policy application
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# seocndary account can list objects with query param max-keys greater than or equals to 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="3").execute_test().command_is_successful()
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="2").execute_test().command_is_successful()
+# seocndary account can not list objects with query param max-keys less than 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects').list_objects("seagate", max_keys="1").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can not list objects without max key condition
+AwsTest('AWS can not list objects').list_objects("seagate")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition NumericEqualsIfExists #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_NumericEqualsIfExists_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# list objects
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'ListBucket' with condition NumericEqualsIfExists to 'max-keys=2'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# list objects by owner after policy application
+AwsTest('Bucket Owner can list objects of seagate bucket').list_objects("seagate")\
+.execute_test().command_is_successful()
+# seocndary account can list objects with query param max-keys 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can list objects')\
+.list_objects("seagate", max_keys="2").execute_test().command_is_successful()
+# seocndary account can not list objects with query param max-keys other than 2
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can not list objects').list_objects("seagate", max_keys="3").execute_test(negative_case=True)\
+.command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can list objects without max key condition
+AwsTest('AWS can list objects').list_objects("seagate").execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition type - Null: true #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_Null_true_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition Null to 's3:x-amz-acl': true
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can not put object with canned acl input
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+# seocndary account can put object without canned acl input
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition type - Null: false #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_Null_false_authorize.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# put bucket policy on every Principal for 'put object' with condition Null to 's3:x-amz-acl': false
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# Owner account is able to put object
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+# seocndary account can put object with canned acl input
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+AwsTest('Aws can create object with \'bucket-owner-read\' canned acl input')\
+.put_object("seagate", "testObject", canned_acl="bucket-owner-read")\
+.execute_test().command_is_successful()
+# seocndary account can not put object without canned acl input
+AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
 
 ################## clean up #####################
 
@@ -322,52 +761,5 @@ AuthTest(test_msg).delete_account(**account_args).execute_test()
 
 print("Authorizing policy tests end....")
 
-
-# Validate Conditions in Bucket Policy
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEquals_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_ArnLike_success).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLike_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEqualsIfExists_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:SecureTransport")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_RandomKeyValue_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:xyz")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_Bool_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringEquals_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_NumericLessThanEquals_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:max-keys")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_DateLessThan_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("aws:CurrentTime")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_success).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_BinaryEquals_invalidValue_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLike_invalidKey_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("MalformedPolicy")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_StringLikeIfExists_success).execute_test().command_is_successful()
-
-AwsTest("Aws can get policy on bucket").get_bucket_policy("seagate").execute_test().command_is_successful().command_response_should_have("s3:x-amz-acl")
-
-AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_condition_combination_fail).execute_test(negative_case=True).command_should_fail().command_error_should_have("Conditions do not apply to combination of actions and resources in statement")
-
+AwsTest('Aws can delete object owned by itself').delete_object("seagate","testObject").execute_test().command_is_successful()
 AwsTest('Aws can delete bucket seagate').delete_bucket("seagate").execute_test().command_is_successful()

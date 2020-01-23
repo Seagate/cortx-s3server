@@ -52,6 +52,12 @@ class NullCondition extends PolicyCondition {
             if (entry.getKey().equalsIgnoreCase(this.conditionKey)) {
               found = true;
               break;
+            } else if (entry.getKey().equals("ClientQueryParams")) {
+              if (PolicyUtil.fetchQueryParamValue(entry.getValue(),
+                                                  this.conditionKey) != null) {
+                found = true;
+                break;
+              }
             }
           }
           if (!found) return true;
@@ -62,6 +68,11 @@ class NullCondition extends PolicyCondition {
             if (entry.getKey().equalsIgnoreCase(this.conditionKey) &&
                 entry.getValue() != null) {
               return true;
+            } else if (entry.getKey().equals("ClientQueryParams")) {
+              if (PolicyUtil.fetchQueryParamValue(entry.getValue(),
+                                                  this.conditionKey) != null) {
+                return true;
+              }
             }
           }
         }
