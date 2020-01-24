@@ -41,13 +41,10 @@ S3PutBucketTaggingAction::S3PutBucketTaggingAction(
 
 void S3PutBucketTaggingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3PutBucketTaggingAction::validate_request, this));
-  add_task(
-      std::bind(&S3PutBucketTaggingAction::validate_request_xml_tags, this));
-  add_task(
-      std::bind(&S3PutBucketTaggingAction::save_tags_to_bucket_metadata, this));
-  add_task(
-      std::bind(&S3PutBucketTaggingAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3PutBucketTaggingAction::validate_request, this);
+  ACTION_TASK_ADD(S3PutBucketTaggingAction::validate_request_xml_tags, this);
+  ACTION_TASK_ADD(S3PutBucketTaggingAction::save_tags_to_bucket_metadata, this);
+  ACTION_TASK_ADD(S3PutBucketTaggingAction::send_response_to_s3_client, this);
   // ...
 }
 

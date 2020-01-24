@@ -49,11 +49,11 @@ S3PutBucketAction::S3PutBucketAction(
 
 void S3PutBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3PutBucketAction::validate_request, this));
-  add_task(std::bind(&S3PutBucketAction::validate_bucket_name, this));
-  add_task(std::bind(&S3PutBucketAction::read_metadata, this));
-  add_task(std::bind(&S3PutBucketAction::create_bucket, this));
-  add_task(std::bind(&S3PutBucketAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3PutBucketAction::validate_request, this);
+  ACTION_TASK_ADD(S3PutBucketAction::validate_bucket_name, this);
+  ACTION_TASK_ADD(S3PutBucketAction::read_metadata, this);
+  ACTION_TASK_ADD(S3PutBucketAction::create_bucket, this);
+  ACTION_TASK_ADD(S3PutBucketAction::send_response_to_s3_client, this);
   // ...
 }
 

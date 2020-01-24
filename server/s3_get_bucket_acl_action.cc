@@ -35,7 +35,7 @@ S3GetBucketACLAction::S3GetBucketACLAction(
 
 void S3GetBucketACLAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetBucketACLAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetBucketACLAction::send_response_to_s3_client, this);
   // ...
 }
 

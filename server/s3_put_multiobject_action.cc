@@ -81,8 +81,8 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
 void S3PutMultiObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
-  add_task(std::bind(&S3PutMultiObjectAction::check_part_number, this));
-  add_task(std::bind(&S3PutMultiObjectAction::fetch_multipart_metadata, this));
+  ACTION_TASK_ADD(S3PutMultiObjectAction::check_part_number, this);
+  ACTION_TASK_ADD(S3PutMultiObjectAction::fetch_multipart_metadata, this);
   if (part_number == 1) {
     // Save first part size to multipart metadata in case of non
     // chunked mode.
@@ -90,22 +90,20 @@ void S3PutMultiObjectAction::setup_steps() {
     // http header within part reqquest, so we cannot save it -- Size
     // is specified within streamed payload chunks(body)
     if (!request->is_chunked()) {
-      add_task(
-          std::bind(&S3PutMultiObjectAction::save_multipart_metadata, this));
+      ACTION_TASK_ADD(S3PutMultiObjectAction::save_multipart_metadata, this);
     }
   } else {
     // For chunked multipart upload only we need to access first part
     // info for part one size, in case of non chunked multipart upload
     // we get the same from multipart metadata.
     if (request->is_chunked()) {
-      add_task(std::bind(&S3PutMultiObjectAction::fetch_firstpart_info, this));
+      ACTION_TASK_ADD(S3PutMultiObjectAction::fetch_firstpart_info, this);
     }
   }
-  add_task(std::bind(&S3PutMultiObjectAction::compute_part_offset, this));
-  add_task(std::bind(&S3PutMultiObjectAction::initiate_data_streaming, this));
-  add_task(std::bind(&S3PutMultiObjectAction::save_metadata, this));
-  add_task(
-      std::bind(&S3PutMultiObjectAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3PutMultiObjectAction::compute_part_offset, this);
+  ACTION_TASK_ADD(S3PutMultiObjectAction::initiate_data_streaming, this);
+  ACTION_TASK_ADD(S3PutMultiObjectAction::save_metadata, this);
+  ACTION_TASK_ADD(S3PutMultiObjectAction::send_response_to_s3_client, this);
   // ...
 }
 

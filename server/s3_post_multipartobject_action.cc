@@ -111,19 +111,17 @@ void S3PostMultipartObjectAction::setup_steps() {
 
   if (!request->get_header_value("x-amz-tagging").empty()) {
 
-    add_task(std::bind(
-        &S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this));
+    ACTION_TASK_ADD(
+        S3PostMultipartObjectAction::validate_x_amz_tagging_if_present, this);
   }
-  add_task(std::bind(&S3PostMultipartObjectAction::check_upload_is_inprogress,
-                     this));
-  add_task(std::bind(&S3PostMultipartObjectAction::create_object, this));
-  add_task(
-      std::bind(&S3PostMultipartObjectAction::create_part_meta_index, this));
-  add_task(std::bind(&S3PostMultipartObjectAction::save_upload_metadata, this));
-  add_task(
-      std::bind(&S3PostMultipartObjectAction::save_multipart_metadata, this));
-  add_task(std::bind(&S3PostMultipartObjectAction::send_response_to_s3_client,
-                     this));
+  ACTION_TASK_ADD(S3PostMultipartObjectAction::check_upload_is_inprogress,
+                  this);
+  ACTION_TASK_ADD(S3PostMultipartObjectAction::create_object, this);
+  ACTION_TASK_ADD(S3PostMultipartObjectAction::create_part_meta_index, this);
+  ACTION_TASK_ADD(S3PostMultipartObjectAction::save_upload_metadata, this);
+  ACTION_TASK_ADD(S3PostMultipartObjectAction::save_multipart_metadata, this);
+  ACTION_TASK_ADD(S3PostMultipartObjectAction::send_response_to_s3_client,
+                  this);
   // ...
 }
 void S3PostMultipartObjectAction::fetch_object_info_failed() { next(); }
@@ -356,7 +354,7 @@ void S3PostMultipartObjectAction::create_object_failed() {
   }
 
   if (clovis_writer->get_state() == S3ClovisWriterOpState::exists) {
-      collision_occured();
+    collision_occured();
   } else if (clovis_writer->get_state() ==
              S3ClovisWriterOpState::failed_to_launch) {
     s3_log(S3_LOG_WARN, request_id, "Create object failed.\n");

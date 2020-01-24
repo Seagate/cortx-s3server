@@ -234,11 +234,9 @@ TEST_F(S3GetObjectActionTest, ValidateObjectOfSizeZero) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_content_length())
-      .WillRepeatedly(Return(0));
+              get_content_length()).WillRepeatedly(Return(0));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_content_length_str())
-      .WillRepeatedly(Return("0"));
+              get_content_length_str()).WillRepeatedly(Return("0"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               check_object_tags_exists()).WillOnce(Return(false));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
@@ -261,8 +259,8 @@ TEST_F(S3GetObjectActionTest, CheckFullOrRangeObjectReadWithEmptyRange) {
       Return(""));
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->check_full_or_range_object_read();
   EXPECT_EQ(1, call_count_one);
 }
@@ -287,8 +285,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -320,8 +318,8 @@ TEST_F(
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -353,8 +351,8 @@ TEST_F(
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -385,8 +383,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -418,8 +416,8 @@ TEST_F(
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -450,8 +448,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -482,8 +480,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -514,8 +512,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -546,8 +544,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -578,8 +576,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -611,8 +609,8 @@ TEST_F(
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -809,8 +807,8 @@ TEST_F(S3GetObjectActionTest,
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetObjectActionTest::func_callback_one, this);
   action_under_test->validate_object_info();
   action_under_test->check_full_or_range_object_read();
   action_under_test->set_total_blocks_to_read_from_object();
@@ -841,8 +839,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_content_length())
-      .WillRepeatedly(Return(obj_size));
+              get_content_length()).WillRepeatedly(Return(obj_size));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str())
       .WillRepeatedly(Return(std::to_string(obj_size)));
@@ -894,8 +891,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeEqualToUnitSize) {
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
       .WillRepeatedly(Return(layout_id));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_content_length())
-      .WillRepeatedly(Return(obj_size));
+              get_content_length()).WillRepeatedly(Return(obj_size));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str())
       .WillRepeatedly(Return(std::to_string(obj_size)));
@@ -955,8 +951,7 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeMoreThanUnitSize) {
       .WillRepeatedly(Return(layout_id));
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              get_content_length())
-      .WillRepeatedly(Return(obj_size));
+              get_content_length()).WillRepeatedly(Return(obj_size));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               get_content_length_str())
       .WillRepeatedly(Return(std::to_string(obj_size)));
@@ -1081,8 +1076,7 @@ TEST_F(S3GetObjectActionTest,
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request,
-              set_out_header_value(Eq("Retry-After"), Eq("1")))
-      .Times(1);
+              set_out_header_value(Eq("Retry-After"), Eq("1"))).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(AtLeast(1));
 
   // send_response_to_s3_client is called in check_shutdown_and_rollback

@@ -48,9 +48,9 @@ MeroKVSListingAction::MeroKVSListingAction(
 
 void MeroKVSListingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&MeroKVSListingAction::validate_request, this));
-  add_task(std::bind(&MeroKVSListingAction::get_next_key_value, this));
-  add_task(std::bind(&MeroKVSListingAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(MeroKVSListingAction::validate_request, this);
+  ACTION_TASK_ADD(MeroKVSListingAction::get_next_key_value, this);
+  ACTION_TASK_ADD(MeroKVSListingAction::send_response_to_s3_client, this);
   // ...
 }
 

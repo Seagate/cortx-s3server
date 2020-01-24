@@ -27,6 +27,7 @@
 #include <addb2/addb2.h>
 
 #include "s3_addb_plugin_auto.h"
+#include "s3_addb_map.h"
 
 // This header defines what is needed to use Mero ADDB.
 //
@@ -46,9 +47,6 @@
 // Initialize addb subsystem (see detailed comments in the implementation).
 // Depends on s3_log.
 int s3_addb_init();
-
-// Used to distinguish ActionState values from task_list indexes.
-#define ADDB_TASK_LIST_OFFSET 256u
 
 // Used for s3starup calls without any request-objects.
 #define S3_ADDB_STARTUP_REQUESTS_ID 1

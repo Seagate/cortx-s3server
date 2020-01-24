@@ -91,13 +91,12 @@ void S3PutObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
   if (!request->get_header_value("x-amz-tagging").empty()) {
-    add_task(
-        std::bind(&S3PutObjectAction::validate_x_amz_tagging_if_present, this));
+    ACTION_TASK_ADD(S3PutObjectAction::validate_x_amz_tagging_if_present, this);
   }
-  add_task(std::bind(&S3PutObjectAction::create_object, this));
-  add_task(std::bind(&S3PutObjectAction::initiate_data_streaming, this));
-  add_task(std::bind(&S3PutObjectAction::save_metadata, this));
-  add_task(std::bind(&S3PutObjectAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3PutObjectAction::create_object, this);
+  ACTION_TASK_ADD(S3PutObjectAction::initiate_data_streaming, this);
+  ACTION_TASK_ADD(S3PutObjectAction::save_metadata, this);
+  ACTION_TASK_ADD(S3PutObjectAction::send_response_to_s3_client, this);
   // ...
 }
 

@@ -111,8 +111,8 @@ TEST_F(S3PutObjectTaggingActionTest, ValidateRequest) {
       .WillRepeatedly(ReturnRef(MockObjectTags));
 
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutObjectTaggingActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutObjectTaggingActionTest::func_callback_one, this);
   action_under_test_ptr->validate_request();
   EXPECT_EQ(1, call_count_one);
 }

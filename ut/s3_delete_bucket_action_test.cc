@@ -118,8 +118,7 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataPresent) {
   action_under_test->bucket_metadata->set_object_list_index_oid(oid);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _, _))
-      .Times(1);
+              next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test->fetch_first_object_metadata();
   EXPECT_TRUE(action_under_test->clovis_kv_reader != nullptr);
 }
@@ -134,11 +133,10 @@ TEST_F(S3DeleteBucketActionTest, FetchFirstObjectMetadataEmptyBucket) {
   action_under_test->bucket_metadata->set_object_list_index_oid(zero_oid);
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _, _))
-      .Times(0);
+              next_keyval(_, _, _, _, _, _)).Times(0);
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->fetch_first_object_metadata();
 
   EXPECT_TRUE(action_under_test->is_bucket_empty == true);
@@ -209,8 +207,8 @@ TEST_F(S3DeleteBucketActionTest,
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->fetch_first_object_metadata_failed();
   EXPECT_TRUE(action_under_test->is_bucket_empty == true);
@@ -240,8 +238,7 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectsMultipartPresent) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _, _))
-      .Times(1);
+              next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test->fetch_multipart_objects();
 }
 
@@ -251,8 +248,8 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectsMultipartNotPresent) {
   action_under_test->bucket_metadata->set_multipart_index_oid(zero_oid);
 
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->fetch_multipart_objects();
   EXPECT_EQ(1, call_count_one);
@@ -283,8 +280,8 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccess) {
       .Times(1)
       .WillOnce(ReturnRef(mymap));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   object_mp_meta_factory->mock_object_mp_metadata->set_oid(oid);
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file2", action_under_test->last_key.c_str());
@@ -310,8 +307,8 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessIllegalJson) {
       .Times(1)
       .WillOnce(ReturnRef(mymap));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_EQ(0, action_under_test->part_oids.size());
   EXPECT_EQ(0, action_under_test->multipart_object_oids.size());
@@ -346,8 +343,8 @@ TEST_F(S3DeleteBucketActionTest,
       .Times(1)
       .WillOnce(ReturnRef(mymap));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   object_mp_meta_factory->mock_object_mp_metadata->set_oid(oid);
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("file1", action_under_test->last_key.c_str());
@@ -368,8 +365,8 @@ TEST_F(S3DeleteBucketActionTest, FetchMultipartObjectSuccessNoMultipart) {
       .Times(1)
       .WillOnce(ReturnRef(mymap));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   object_mp_meta_factory->mock_object_mp_metadata->set_oid(oid);
   action_under_test->fetch_multipart_objects_successful();
   EXPECT_STREQ("", action_under_test->last_key.c_str());
@@ -382,16 +379,15 @@ TEST_F(S3DeleteBucketActionTest,
        DeleteMultipartObjectsMultipartObjectsPresent) {
   action_under_test->multipart_object_oids.push_back(oid);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_objects(_, _, _, _))
-      .Times(1);
+              delete_objects(_, _, _, _)).Times(1);
   action_under_test->delete_multipart_objects();
 }
 
 TEST_F(S3DeleteBucketActionTest,
        DeleteMultipartObjectsMultipartObjectsNotPresent) {
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->delete_multipart_objects();
   EXPECT_EQ(1, call_count_one);
@@ -399,8 +395,8 @@ TEST_F(S3DeleteBucketActionTest,
 
 TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsSuccess) {
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->delete_multipart_objects_successful();
   EXPECT_EQ(1, call_count_one);
@@ -408,8 +404,8 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsSuccess) {
   action_under_test->multipart_object_oids.push_back(oid);
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               get_op_ret_code_for_delete_op(_))
       .Times(2)
@@ -419,16 +415,16 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsSuccess) {
   action_under_test->delete_multipart_objects_successful();
   EXPECT_EQ(2, call_count_one);
 
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->delete_multipart_objects_successful();
   EXPECT_EQ(3, call_count_one);
 }
 
 TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsFailed) {
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .WillOnce(Return(S3ClovisWriterOpState::failed));
@@ -436,8 +432,8 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsFailed) {
   EXPECT_EQ(1, call_count_one);
 
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
@@ -453,37 +449,36 @@ TEST_F(S3DeleteBucketActionTest, DeleteMultipartObjectsFailed) {
       .WillOnce(Return(-ENOENT));
 
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->delete_multipart_objects_successful();
   EXPECT_EQ(2, call_count_one);
 
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
   action_under_test->delete_multipart_objects_successful();
   EXPECT_EQ(3, call_count_one);
 }
 
 TEST_F(S3DeleteBucketActionTest, RemovePartIndexes) {
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->remove_part_indexes();
   EXPECT_EQ(1, call_count_one);
 
   action_under_test->part_oids.push_back(oid);
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_indexes(_, _, _))
-      .Times(1);
+              delete_indexes(_, _, _)).Times(1);
   action_under_test->remove_part_indexes();
 }
 
 TEST_F(S3DeleteBucketActionTest, RemovePartIndexesSuccess) {
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->remove_part_indexes_successful();
   EXPECT_EQ(1, call_count_one);
@@ -496,8 +491,8 @@ TEST_F(S3DeleteBucketActionTest, RemovePartIndexesFailed) {
       .Times(1)
       .WillOnce(Return(S3BucketMetadataState::failed));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->remove_part_indexes_failed();
   EXPECT_EQ(1, call_count_one);
@@ -522,16 +517,15 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartPresent) {
       bucket_meta_factory->mock_bucket_metadata;
   action_under_test->bucket_metadata->set_multipart_index_oid(oid);
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_index(_, _, _))
-      .Times(1);
+              delete_index(_, _, _)).Times(1);
   action_under_test->remove_multipart_index();
 }
 
 TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexMultipartNotPresent) {
   action_under_test->multipart_present = false;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->remove_multipart_index();
   EXPECT_EQ(1, call_count_one);
@@ -544,8 +538,8 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailed) {
       .Times(1)
       .WillOnce(Return(S3BucketMetadataState::failed));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->remove_multipart_index_failed();
   EXPECT_EQ(1, call_count_one);
@@ -567,16 +561,15 @@ TEST_F(S3DeleteBucketActionTest, RemoveMultipartIndexFailedToLaunch) {
 TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndex) {
   action_under_test->object_list_index_oid = {0ULL, 0ULL};
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->remove_object_list_index();
   EXPECT_EQ(1, call_count_one);
 
   action_under_test->object_list_index_oid = oid;
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_index(_, _, _))
-      .Times(1);
+              delete_index(_, _, _)).Times(1);
   action_under_test->remove_object_list_index();
 }
 
@@ -587,8 +580,8 @@ TEST_F(S3DeleteBucketActionTest, RemoveObjectListIndexFailed) {
       .Times(1)
       .WillOnce(Return(S3BucketMetadataState::failed));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3DeleteBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3DeleteBucketActionTest::func_callback_one, this);
 
   action_under_test->remove_object_list_index_failed();
   EXPECT_EQ(1, call_count_one);
@@ -683,8 +676,7 @@ TEST_F(S3DeleteBucketActionTest, SendSuccessResponse) {
 TEST_F(S3DeleteBucketActionTest, SendInternalErrorRetry) {
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request,
-              set_out_header_value(Eq("Retry-After"), Eq("1")))
-      .Times(1);
+              set_out_header_value(Eq("Retry-After"), Eq("1"))).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();

@@ -63,14 +63,22 @@
 
 #endif  // ENABLE_FAULT_INJECTION
 
-enum class ActionState : unsigned {
-  start,
-  running,
-  complete,
-  paused,
-  stopped,  // Aborted
-  error,
-};
+/* All tasks should be added with the following macro to be sure
+ * that proper furntion idx is used */
+#define ACTION_TASK_ADD(task_name, obj)                 \
+  do {                                                  \
+    add_task(std::bind(&task_name, (obj)), #task_name); \
+  } while (0)
+
+/* All tasks should be added with the following macro to be sure
+ * that proper furntion idx is used.
+ * This macro is used in case add_task func needs to be called outside
+ * action class via pointer to corresponding obj.
+ * Used in tests*/
+#define ACTION_TASK_ADD_OBJPTR(ptr, task_name, obj)            \
+  do {                                                         \
+    (ptr)->add_task(std::bind(&task_name, (obj)), #task_name); \
+  } while (0)
 
 // Derived Action Objects will have steps (member functions)
 // required to complete the action.
@@ -80,11 +88,18 @@ enum class ActionState : unsigned {
 // done/abort etc depending on the result of the operation.
 class Action {
  private:
+  // Holds mapping from action's task name to addb idx
+  static std::map<std::string, uint64_t> s3_task_name_to_addb_task_id_map;
+  static void s3_task_name_to_addb_task_id_map_init();
+
+ private:
   std::shared_ptr<RequestObject> base_request;
 
   // Holds the member functions that will process the request.
   // member function signature should be void fn();
   std::vector<std::function<void()>> task_list;
+  // Holds task's addb index
+  std::vector<uint64_t> task_addb_id_list;
   size_t task_iteration_index;
 
   // Hold member functions that will rollback
@@ -147,10 +162,24 @@ class Action {
   void client_read_timeout_callback();
 
  protected:
-  void add_task(std::function<void()> task) { task_list.push_back(task); }
+  void add_task(std::function<void()> task, const char* func_name) {
+    s3_task_name_to_addb_task_id_map_init();
+
+    if (s3_task_name_to_addb_task_id_map.count(func_name) == 0) {
+      s3_log(S3_LOG_FATAL, "",
+             "Function %s was not found in addb index map. "
+             "Make sure you use ACTION_TASK_ADD macro to call add_task. "
+             "Regenerate code with addb-codegen.py",
+             func_name);
+    }
+
+    task_list.push_back(task);
+    task_addb_id_list.push_back(s3_task_name_to_addb_task_id_map[func_name]);
+  }
 
   void clear_tasks() {
     task_list.clear();
+    task_addb_id_list.clear();
     task_iteration_index = 0;
   }
 

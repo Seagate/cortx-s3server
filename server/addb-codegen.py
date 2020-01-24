@@ -7,9 +7,10 @@
 #   cd s3server.git/server/
 #   ./addb-codegen.py
 #
-# Script scans through s3server code, identifies all Action classes, and
-# generates ADDB enums and initialization code to register these classes in
-# ADDB classes map.
+# Script scans through s3server code, identifies all Action classes, all
+# Actions' task and generates ADDB enums and initialization code to register
+# these classes in ADDB classes map. Additional mapping table is created for
+# all Actions' tasks.
 #
 # The main goal of this code generation is to define two things:
 #
@@ -138,6 +139,43 @@ def camel_to_c_upcase(identifier):
     camel_case = camel_case[len(word):]
   return c_upcase.upper() + '_ID';
 
+rex_task_add = re.compile(".*ACTION_TASK_ADD\((.*),.*\);")
+rex_task_add_obj = re.compile(".*ACTION_TASK_ADD_OBJPTR\(.*,\s*(.*),.*\);")
+
+def extract_task_name(task_line):
+  mm = rex_task_add.match(task_line)
+  if mm:
+    return mm.group(1)
+
+  mm = rex_task_add_obj.match(task_line)
+  if mm:
+    return mm.group(1)
+
+  print("NOT MATCHED {}\n".format(task_line))
+  assert(mm)
+  return None
+
+def find_task_names():
+  cc_list = glob.glob("*.cc") + glob.glob("../ut/*.cc")
+  func_names = []
+  for cc_file in cc_list:
+    task_line = ""
+    in_proc_line = False
+    with open(cc_file) as cur_file:
+      for cur_line in cur_file:
+        if in_proc_line:
+          task_line += cur_line.strip()
+        else:
+          in_proc_line = "ACTION_TASK_ADD" in cur_line
+          task_line = cur_line.strip()
+        if in_proc_line and task_line.endswith(";"):
+          extr_task_name = extract_task_name(task_line)
+          if extr_task_name is not None:
+            func_names.append(extr_task_name)
+          task_line = ""
+          in_proc_line = False
+
+  return func_names
 
 ###########################################################################
 # Seagate copyright #
@@ -288,6 +326,30 @@ enum S3AddbActionTypeId Action::lookup_addb_action_type_id(
 }
 """)
 
+
+def gen_task_name_map(task_names_list):
+  task_list = list(set(task_names_list))
+  task_list.sort()
+  assert(len(task_list) > 0)
+  with open("s3_addb_map_auto.c", "w") as out_c:
+    out_c.write(copyright)
+    up_lines = r'''
+#include "s3_addb_map.h"
+
+const uint64_t g_s3_to_addb_idx_func_name_map_size = '''
+
+    up_lines += "{};\n".format(len(task_list))
+
+    map_decl = r'''
+const char* g_s3_to_addb_idx_func_name_map[] = {
+'''
+    tasks = ""
+    for t in task_list[:-1]:
+      tasks += '    "{}",\n'.format(t)
+    tasks += '    "{}"'.format(task_list[-1])
+    tasks += r'''};'''
+    out_c.write("{}{}{}\n".format(up_lines, map_decl, tasks))
+
 ###########################################################################
 # main() #
 ##########
@@ -302,6 +364,7 @@ def main():
   enums = generate_enums(classes)
   generate_header_file("s3_addb_plugin_auto.h", classes, enums)
   generate_s3_cc_file("s3_addb_plugin_auto.cc", classes, enums, headers)
+  gen_task_name_map(find_task_names())
 
 if __name__ == "__main__":
   main()

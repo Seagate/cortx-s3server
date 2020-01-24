@@ -122,8 +122,8 @@ TEST_F(S3PostMultipartObjectTest, ValidateRequestTags) {
   EXPECT_CALL(*ptr_mock_request, get_header_value(_))
       .WillOnce(Return("key1=value1&key2=value2"));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PostMultipartObjectTest::func_callback_one, this);
 
   action_under_test->validate_x_amz_tagging_if_present();
 
@@ -160,8 +160,8 @@ TEST_F(S3PostMultipartObjectTest, UploadInProgress) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PostMultipartObjectTest::func_callback_one, this);
   action_under_test->bucket_metadata->set_multipart_index_oid(empty_oid);
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), load(_, _))
       .Times(0);
@@ -204,8 +204,8 @@ TEST_F(S3PostMultipartObjectTest, FetchObjectInfoStatusObjectNotPresent) {
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
 
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PostMultipartObjectTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PostMultipartObjectTest::func_callback_one, this);
   action_under_test->check_multipart_object_info_status();
   EXPECT_EQ(1, call_count_one);
   EXPECT_OID_EQ(zero_oid, action_under_test->old_oid);
@@ -219,14 +219,12 @@ TEST_F(S3PostMultipartObjectTest, CreateObject) {
 
   action_under_test->tried_count = 0;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              create_object(_, _, _))
-      .Times(1);
+              create_object(_, _, _)).Times(1);
   action_under_test->create_object();
 
   action_under_test->tried_count = 1;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              create_object(_, _, _))
-      .Times(1);
+              create_object(_, _, _)).Times(1);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
   action_under_test->create_object();
@@ -283,8 +281,7 @@ TEST_F(S3PostMultipartObjectTest, CreateObjectFailedDueToCollision) {
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              create_object(_, _, _))
-      .Times(1);
+              create_object(_, _, _)).Times(1);
   action_under_test->tried_count = 1;
   action_under_test->create_object_failed();
   EXPECT_EQ(2, action_under_test->tried_count);
@@ -295,8 +292,7 @@ TEST_F(S3PostMultipartObjectTest, CollisionOccured) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   action_under_test->tried_count = 1;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              create_object(_, _, _))
-      .Times(AtLeast(1));
+              create_object(_, _, _)).Times(AtLeast(1));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
   action_under_test->collision_occured();
@@ -323,8 +319,7 @@ TEST_F(S3PostMultipartObjectTest, CreateNewOid) {
 TEST_F(S3PostMultipartObjectTest, RollbackCreate) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _))
-      .Times(1);
+              delete_object(_, _, _)).Times(1);
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
       .Times(1);
   action_under_test->rollback_create();

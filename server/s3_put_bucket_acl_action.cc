@@ -35,10 +35,10 @@ S3PutBucketACLAction::S3PutBucketACLAction(
 
 void S3PutBucketACLAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3PutBucketACLAction::validate_request, this));
-  add_task(std::bind(&S3PutBucketACLAction::validate_acl_with_auth, this));
-  add_task(std::bind(&S3PutBucketACLAction::setacl, this));
-  add_task(std::bind(&S3PutBucketACLAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3PutBucketACLAction::validate_request, this);
+  ACTION_TASK_ADD(S3PutBucketACLAction::validate_acl_with_auth, this);
+  ACTION_TASK_ADD(S3PutBucketACLAction::setacl, this);
+  ACTION_TASK_ADD(S3PutBucketACLAction::send_response_to_s3_client, this);
 }
 
 void S3PutBucketACLAction::validate_request() {

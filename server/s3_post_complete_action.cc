@@ -99,18 +99,18 @@ S3PostCompleteAction::S3PostCompleteAction(
 void S3PostCompleteAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
-  add_task(std::bind(&S3PostCompleteAction::load_and_validate_request, this));
-  add_task(std::bind(&S3PostCompleteAction::fetch_multipart_info, this));
-  add_task(std::bind(&S3PostCompleteAction::get_next_parts_info, this));
+  ACTION_TASK_ADD(S3PostCompleteAction::load_and_validate_request, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::fetch_multipart_info, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::get_next_parts_info, this);
   if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-    add_task(std::bind(
-        &S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list, this));
+    ACTION_TASK_ADD(
+        S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list, this);
   }
-  add_task(std::bind(&S3PostCompleteAction::save_metadata, this));
-  add_task(std::bind(&S3PostCompleteAction::delete_part_index, this));
-  add_task(std::bind(&S3PostCompleteAction::delete_parts, this));
-  add_task(std::bind(&S3PostCompleteAction::delete_multipart_metadata, this));
-  add_task(std::bind(&S3PostCompleteAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3PostCompleteAction::save_metadata, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::delete_part_index, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::delete_parts, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::delete_multipart_metadata, this);
+  ACTION_TASK_ADD(S3PostCompleteAction::send_response_to_s3_client, this);
   // ...
 }
 

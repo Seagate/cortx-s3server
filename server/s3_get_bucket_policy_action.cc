@@ -35,10 +35,8 @@ S3GetBucketPolicyAction::S3GetBucketPolicyAction(
 
 void S3GetBucketPolicyAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(
-      std::bind(&S3GetBucketPolicyAction::check_metadata_missing_status, this));
-  add_task(
-      std::bind(&S3GetBucketPolicyAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetBucketPolicyAction::check_metadata_missing_status, this);
+  ACTION_TASK_ADD(S3GetBucketPolicyAction::send_response_to_s3_client, this);
   // ...
 }
 

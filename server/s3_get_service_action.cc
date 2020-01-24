@@ -55,9 +55,9 @@ S3GetServiceAction::S3GetServiceAction(
 
 void S3GetServiceAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetServiceAction::initialization, this));
-  add_task(std::bind(&S3GetServiceAction::get_next_buckets, this));
-  add_task(std::bind(&S3GetServiceAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetServiceAction::initialization, this);
+  ACTION_TASK_ADD(S3GetServiceAction::get_next_buckets, this);
+  ACTION_TASK_ADD(S3GetServiceAction::send_response_to_s3_client, this);
   // ...
 }
 

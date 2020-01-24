@@ -165,8 +165,8 @@ TEST_F(S3ObjectActionTest, FetchObjectInfoSuccess) {
 TEST_F(S3ObjectActionTest, SetAuthorizationMeta) {
   CREATE_OBJECT_METADATA;
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3ObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3ObjectActionTest::func_callback_one, this);
   action_under_test_ptr->bucket_metadata =
       action_under_test_ptr->bucket_metadata_factory
           ->create_bucket_metadata_obj(request_mock);

@@ -81,8 +81,9 @@ TEST_F(S3AccountDeleteMetadataActionTest, ValidateRequestSuceess) {
                ptr_mock_request->get_account_id().c_str());
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3AccountDeleteMetadataActionTest::func_callback_one,
+                         this);
   action_under_test->validate_request();
   EXPECT_EQ(1, call_count_one);
 }
@@ -97,8 +98,9 @@ TEST_F(S3AccountDeleteMetadataActionTest, ValidateRequestFailed) {
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3AccountDeleteMetadataActionTest::func_callback_one,
+                         this);
   action_under_test->validate_request();
   EXPECT_EQ(0, call_count_one);
   EXPECT_STREQ("InvalidAccountForMgmtApi",
@@ -153,8 +155,9 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataNotExist) {
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3AccountDeleteMetadataActionTest::func_callback_one,
+                         this);
   action_under_test->fetch_first_bucket_metadata_successful();
 }
 
@@ -167,8 +170,9 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataMissing) {
       .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3AccountDeleteMetadataActionTest::func_callback_one,
+                         this);
   action_under_test->fetch_first_bucket_metadata_failed();
 }
 
@@ -182,8 +186,9 @@ TEST_F(S3AccountDeleteMetadataActionTest, FetchFirstBucketMetadataFailed) {
       .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3AccountDeleteMetadataActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3AccountDeleteMetadataActionTest::func_callback_one,
+                         this);
   action_under_test->fetch_first_bucket_metadata_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }

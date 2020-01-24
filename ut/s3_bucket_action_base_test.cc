@@ -107,8 +107,8 @@ TEST_F(S3BucketActionTest, LoadMetadata) {
 
 TEST_F(S3BucketActionTest, SetAuthorizationMeta) {
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3BucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3BucketActionTest::func_callback_one, this);
   action_under_test_ptr->bucket_metadata =
       action_under_test_ptr->bucket_metadata_factory
           ->create_bucket_metadata_obj(request_mock);

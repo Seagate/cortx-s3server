@@ -104,14 +104,13 @@ S3GetMultipartPartAction::S3GetMultipartPartAction(
 }
 
 void S3GetMultipartPartAction::setup_steps() {
-  add_task(std::bind(&S3GetMultipartPartAction::get_multipart_metadata, this));
+  ACTION_TASK_ADD(S3GetMultipartPartAction::get_multipart_metadata, this);
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
   if (!request_marker_key.empty()) {
-    add_task(std::bind(&S3GetMultipartPartAction::get_key_object, this));
+    ACTION_TASK_ADD(S3GetMultipartPartAction::get_key_object, this);
   }
-  add_task(std::bind(&S3GetMultipartPartAction::get_next_objects, this));
-  add_task(
-      std::bind(&S3GetMultipartPartAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetMultipartPartAction::get_next_objects, this);
+  ACTION_TASK_ADD(S3GetMultipartPartAction::send_response_to_s3_client, this);
   // ...
 }
 

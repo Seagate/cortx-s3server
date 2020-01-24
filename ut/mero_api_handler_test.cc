@@ -98,8 +98,8 @@ TEST_F(MeroAPIHandlerTest, DispatchActionTest) {
 
   //
   handler_under_test->_get_action()->clear_tasks();
-  handler_under_test->_get_action()->add_task(
-      std::bind(&MeroAPIHandlerTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(handler_under_test->_get_action(),
+                         MeroAPIHandlerTest::func_callback_one, this);
 
   handler_under_test->dispatch();
 

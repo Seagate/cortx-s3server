@@ -41,7 +41,7 @@ void MeroAction::setup_steps() {
          S3Option::get_instance()->is_auth_disabled(), skip_auth);
 
   if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth) {
-    add_task(std::bind(&MeroAction::check_authorization, this));
+    ACTION_TASK_ADD(MeroAction::check_authorization, this);
   }
 }
 

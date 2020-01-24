@@ -129,9 +129,8 @@ TEST_F(S3PutBucketActionTest, ValidateRequestInvalid) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateRequestMoreContent) {
-  EXPECT_CALL(*request_mock, has_all_body_content())
-      .Times(1)
-      .WillOnce(Return(false));
+  EXPECT_CALL(*request_mock, has_all_body_content()).Times(1).WillOnce(
+      Return(false));
   EXPECT_CALL(*request_mock, get_data_length()).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*request_mock, listen_for_incoming_data(_, _)).Times(1);
 
@@ -141,8 +140,8 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest1) {
   request_mock->bucket_name = "seagatebucket";
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_bucket_name();
   EXPECT_EQ(1, call_count_one);
@@ -153,8 +152,8 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest2) {
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_bucket_name();
   EXPECT_EQ(1, call_count_one);
@@ -165,8 +164,8 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest3) {
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_bucket_name();
   EXPECT_EQ(1, call_count_one);
@@ -177,8 +176,8 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest4) {
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_bucket_name();
   EXPECT_EQ(1, call_count_one);
@@ -189,8 +188,8 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest5) {
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_bucket_name();
   EXPECT_EQ(1, call_count_one);
@@ -201,8 +200,8 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest6) {
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_bucket_name();
   EXPECT_EQ(1, call_count_one);
@@ -368,8 +367,7 @@ TEST_F(S3PutBucketActionTest, CreateBucketSuccess) {
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata),
-              set_location_constraint(_))
-      .Times(AtLeast(1));
+              set_location_constraint(_)).Times(AtLeast(1));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), save(_, _))
       .Times(AtLeast(1));
   action_under_test_ptr->create_bucket();

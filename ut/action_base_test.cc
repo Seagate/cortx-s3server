@@ -98,7 +98,7 @@ class ActionTest : public testing::Test {
 TEST_F(ActionTest, Constructor) {
   ptr_Actionobject->set_defaults();
   EXPECT_EQ(NULL, ptr_Actionobject->task_iteration_index);
-  EXPECT_TRUE(ActionState::start == ptr_Actionobject->state);
+  EXPECT_TRUE(ACTS_START == ptr_Actionobject->state);
   EXPECT_EQ(0, ptr_Actionobject->task_list.size());
   EXPECT_EQ(0, ptr_Actionobject->rollback_list.size());
   EXPECT_EQ(NULL, call_count_one);
@@ -106,7 +106,7 @@ TEST_F(ActionTest, Constructor) {
 }
 
 TEST_F(ActionTest, ClientReadTimeoutCallBackRollback) {
-  ptr_Actionobject->rollback_state = ActionState::start;
+  ptr_Actionobject->rollback_state = ACTS_START;
   ptr_Actionobject->add_task_rollback(
       std::bind(&ActionTest::func_callback_one, this));
   ptr_Actionobject->add_task_rollback(
@@ -117,7 +117,7 @@ TEST_F(ActionTest, ClientReadTimeoutCallBackRollback) {
 }
 
 TEST_F(ActionTest, ClientReadTimeoutCallBack) {
-  ptr_Actionobject->rollback_state = ActionState::complete;
+  ptr_Actionobject->rollback_state = ACTS_COMPLETE;
   ptr_Actionobject->add_task_rollback(
       std::bind(&ActionTest::func_callback_one, this));
   EXPECT_TRUE(call_count_one == 0);
@@ -128,8 +128,8 @@ TEST_F(ActionTest, ClientReadTimeoutCallBack) {
 
 TEST_F(ActionTest, AddTask) {
   ptr_Actionobject->set_defaults();
-  ptr_Actionobject->add_task(std::bind(&ActionTest::func_callback_one, this));
-  ptr_Actionobject->add_task(std::bind(&ActionTest::func_callback_two, this));
+  ACTION_TASK_ADD_OBJPTR(ptr_Actionobject, ActionTest::func_callback_one, this);
+  ACTION_TASK_ADD_OBJPTR(ptr_Actionobject, ActionTest::func_callback_two, this);
   // test size of list
   EXPECT_EQ(2, ptr_Actionobject->task_list.size());
 }
@@ -146,8 +146,8 @@ TEST_F(ActionTest, AddTaskRollback) {
 
 TEST_F(ActionTest, TasklistRun) {
   ptr_Actionobject->set_defaults();
-  ptr_Actionobject->add_task(std::bind(&ActionTest::func_callback_one, this));
-  ptr_Actionobject->add_task(std::bind(&ActionTest::func_callback_two, this));
+  ACTION_TASK_ADD_OBJPTR(ptr_Actionobject, ActionTest::func_callback_one, this);
+  ACTION_TASK_ADD_OBJPTR(ptr_Actionobject, ActionTest::func_callback_two, this);
 
   ptr_Actionobject->start();
   EXPECT_TRUE(call_count_one == 1);

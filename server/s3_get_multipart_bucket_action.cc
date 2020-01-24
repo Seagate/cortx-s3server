@@ -104,9 +104,8 @@ void S3GetMultipartBucketAction::object_list_setup() {
 
 void S3GetMultipartBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetMultipartBucketAction::get_next_objects, this));
-  add_task(
-      std::bind(&S3GetMultipartBucketAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetMultipartBucketAction::get_next_objects, this);
+  ACTION_TASK_ADD(S3GetMultipartBucketAction::send_response_to_s3_client, this);
   // ...
 }
 

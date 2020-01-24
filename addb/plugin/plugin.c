@@ -21,6 +21,7 @@
 #include <addb2/plugin_api.h>
 
 #include "s3_addb_plugin_auto.h"
+#include "s3_addb_map.h"
 
 /* Borrowed from addb2/dump.c, hope Mero will publish it as API in future */
 
@@ -50,6 +51,12 @@ static void bol(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
 
 /* end of clip from dump.c */
 
+static void idx_to_state(struct m0_addb2__context *ctx, const uint64_t *v,
+                         char *buf) {
+  const char *state_name = addb_idx_to_s3_state(*v);
+  sprintf(buf, "%s", state_name);
+}
+
 static struct m0_addb2__id_intrp gs_curr_ids[] = {
     {S3_ADDB_REQUEST_ID,
      "s3-request-uid",
@@ -61,7 +68,7 @@ static struct m0_addb2__id_intrp gs_curr_ids[] = {
      {"s3_request_id", "clovis_id"}},
     {S3_ADDB_FIRST_REQUEST_ID,
      "s3-request-state",
-     {&dec, &dec},
+     {&dec, &idx_to_state},
      {"s3_request_id", "state"},
      .ii_repeat = (S3_ADDB_LAST_REQUEST_ID - S3_ADDB_FIRST_REQUEST_ID)},
     {0}};

@@ -204,11 +204,9 @@ TEST_F(S3GetMultipartPartActionTest,
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
-              get_upload_id())
-      .WillRepeatedly(Return(upload_id));
+              get_upload_id()).WillRepeatedly(Return(upload_id));
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              get_keyval(_, "1", _, _))
-      .Times(1);
+              get_keyval(_, "1", _, _)).Times(1);
   action_under_test->get_key_object();
 }
 
@@ -219,8 +217,7 @@ TEST_F(S3GetMultipartPartActionTest,
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
-              get_upload_id())
-      .WillRepeatedly(Return("upload_id_mismatch"));
+              get_upload_id()).WillRepeatedly(Return("upload_id_mismatch"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
   action_under_test->get_key_object();
@@ -268,8 +265,8 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectSuccessfulValueEmpty) {
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
       .WillRepeatedly(Return(""));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetMultipartPartActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetMultipartPartActionTest::func_callback_one, this);
   action_under_test->get_key_object_successful();
 
   EXPECT_EQ(1, call_count_one);
@@ -283,7 +280,7 @@ TEST_F(S3GetMultipartPartActionTest,
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
       .WillRepeatedly(Return(
-          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   action_under_test->return_list_size = action_under_test->max_parts - 1;
@@ -303,13 +300,13 @@ TEST_F(S3GetMultipartPartActionTest,
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
       .WillRepeatedly(Return(
-          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
   action_under_test->return_list_size = 0;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetMultipartPartActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetMultipartPartActionTest::func_callback_one, this);
   action_under_test->get_key_object_successful();
   EXPECT_EQ(1, action_under_test->return_list_size);
   EXPECT_FALSE(action_under_test->multipart_part_list.response_is_truncated);
@@ -325,12 +322,12 @@ TEST_F(S3GetMultipartPartActionTest,
       object_mp_meta_factory->mock_object_mp_metadata;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_value())
       .WillRepeatedly(Return(
-          "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
+           "{\"Bucket-Name\":\"seagate_bucket\",\"Object-Name\":\"3kfile\"}"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(1));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetMultipartPartActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetMultipartPartActionTest::func_callback_one, this);
   action_under_test->get_key_object_successful();
   EXPECT_FALSE(action_under_test->multipart_part_list.response_is_truncated);
   EXPECT_FALSE(action_under_test->fetch_successful);
@@ -344,8 +341,8 @@ TEST_F(S3GetMultipartPartActionTest, GetKeyObjectFailedNoMetadata) {
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .WillRepeatedly(Return(S3ClovisKVSReaderOpState::missing));
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3GetMultipartPartActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3GetMultipartPartActionTest::func_callback_one, this);
   action_under_test->get_key_object_failed();
   EXPECT_EQ(1, call_count_one);
   EXPECT_TRUE(action_under_test->fetch_successful);
@@ -373,8 +370,7 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsMultipartPresent) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _, _))
-      .Times(1);
+              next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test->get_next_objects();
 }
 
@@ -440,8 +436,7 @@ TEST_F(S3GetMultipartPartActionTest,
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_last_modified_iso())
       .WillRepeatedly(Return("last_modified"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
-              get_content_length_str())
-      .WillRepeatedly(Return("1024"));
+              get_content_length_str()).WillRepeatedly(Return("1024"));
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(0));
@@ -488,8 +483,7 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulListNotTruncated) {
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_last_modified_iso())
       .WillRepeatedly(Return("last_modified"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
-              get_content_length_str())
-      .WillRepeatedly(Return("1024"));
+              get_content_length_str()).WillRepeatedly(Return("1024"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(1);
 
@@ -540,8 +534,7 @@ TEST_F(S3GetMultipartPartActionTest, GetNextObjectsSuccessfulGetMoreObjects) {
   action_under_test->clovis_kv_reader =
       clovis_kvs_reader_factory->mock_clovis_kvs_reader;
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _, _))
-      .Times(1);
+              next_keyval(_, _, _, _, _, _)).Times(1);
 
   action_under_test->get_next_objects_successful();
 

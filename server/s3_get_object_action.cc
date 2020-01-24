@@ -59,11 +59,10 @@ S3GetObjectAction::S3GetObjectAction(
 
 void S3GetObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetObjectAction::validate_object_info, this));
-  add_task(
-      std::bind(&S3GetObjectAction::check_full_or_range_object_read, this));
-  add_task(std::bind(&S3GetObjectAction::read_object, this));
-  add_task(std::bind(&S3GetObjectAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetObjectAction::validate_object_info, this);
+  ACTION_TASK_ADD(S3GetObjectAction::check_full_or_range_object_read, this);
+  ACTION_TASK_ADD(S3GetObjectAction::read_object, this);
+  ACTION_TASK_ADD(S3GetObjectAction::send_response_to_s3_client, this);
   // ...
 }
 
@@ -111,50 +110,50 @@ void S3GetObjectAction::fetch_object_info_failed() {
 
 void S3GetObjectAction::validate_object_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-    content_length = object_metadata->get_content_length();
-    // as per RFC last_byte_offset_to_read is taken to be equal to one less than
-    // the content length in bytes.
-    last_byte_offset_to_read =
-        (content_length == 0) ? content_length : (content_length - 1);
-    s3_log(S3_LOG_DEBUG, request_id, "Found object of size %zu\n",
-           content_length);
-    if (object_metadata->check_object_tags_exists()) {
-      request->set_out_header_value(
-          "x-amz-tagging-count",
-          std::to_string(object_metadata->object_tags_count()));
+  content_length = object_metadata->get_content_length();
+  // as per RFC last_byte_offset_to_read is taken to be equal to one less than
+  // the content length in bytes.
+  last_byte_offset_to_read =
+      (content_length == 0) ? content_length : (content_length - 1);
+  s3_log(S3_LOG_DEBUG, request_id, "Found object of size %zu\n",
+         content_length);
+  if (object_metadata->check_object_tags_exists()) {
+    request->set_out_header_value(
+        "x-amz-tagging-count",
+        std::to_string(object_metadata->object_tags_count()));
+  }
+
+  if (content_length == 0) {
+    // AWS add explicit quotes "" to etag values.
+    // https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
+    std::string e_tag = "\"" + object_metadata->get_md5() + "\"";
+
+    request->set_out_header_value("Last-Modified",
+                                  object_metadata->get_last_modified_gmt());
+    request->set_out_header_value("ETag", e_tag);
+    request->set_out_header_value("Accept-Ranges", "bytes");
+    request->set_out_header_value("Content-Length",
+                                  object_metadata->get_content_length_str());
+    for (auto it : object_metadata->get_user_attributes()) {
+      request->set_out_header_value(it.first, it.second);
     }
 
-    if (content_length == 0) {
-      // AWS add explicit quotes "" to etag values.
-      // https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html
-      std::string e_tag = "\"" + object_metadata->get_md5() + "\"";
-
-      request->set_out_header_value("Last-Modified",
-                                    object_metadata->get_last_modified_gmt());
-      request->set_out_header_value("ETag", e_tag);
-      request->set_out_header_value("Accept-Ranges", "bytes");
-      request->set_out_header_value("Content-Length",
-                                    object_metadata->get_content_length_str());
-      for (auto it : object_metadata->get_user_attributes()) {
-        request->set_out_header_value(it.first, it.second);
-      }
-
-      request->send_reply_start(S3HttpSuccess200);
-      send_response_to_s3_client();
-    } else {
-      size_t clovis_unit_size =
-          S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-              object_metadata->get_layout_id());
-      s3_log(S3_LOG_DEBUG, request_id,
-             "clovis_unit_size = %zu for layout_id = %d\n", clovis_unit_size,
-             object_metadata->get_layout_id());
-      /* Count Data blocks from data size */
-      total_blocks_in_object =
-          (content_length + (clovis_unit_size - 1)) / clovis_unit_size;
-      s3_log(S3_LOG_DEBUG, request_id, "total_blocks_in_object: (%zu)\n",
-             total_blocks_in_object);
-      next();
-    }
+    request->send_reply_start(S3HttpSuccess200);
+    send_response_to_s3_client();
+  } else {
+    size_t clovis_unit_size =
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
+            object_metadata->get_layout_id());
+    s3_log(S3_LOG_DEBUG, request_id,
+           "clovis_unit_size = %zu for layout_id = %d\n", clovis_unit_size,
+           object_metadata->get_layout_id());
+    /* Count Data blocks from data size */
+    total_blocks_in_object =
+        (content_length + (clovis_unit_size - 1)) / clovis_unit_size;
+    s3_log(S3_LOG_DEBUG, request_id, "total_blocks_in_object: (%zu)\n",
+           total_blocks_in_object);
+    next();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

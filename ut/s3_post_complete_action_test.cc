@@ -218,8 +218,8 @@ TEST_F(S3PostCompleteActionTest, LoadValidateRequest) {
   EXPECT_CALL(*request_mock, get_full_body_content_as_string())
       .WillOnce(ReturnRef(mock_xml));
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
 
   action_under_test_ptr->load_and_validate_request();
   EXPECT_EQ(1, call_count_one);
@@ -335,8 +335,7 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsInfo) {
   CREATE_MP_METADATA_OBJ;
 
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
-              next_keyval(_, _, _, _, _, _))
-      .Times(1);
+              next_keyval(_, _, _, _, _, _)).Times(1);
   action_under_test_ptr->get_next_parts_info();
 }
 
@@ -356,8 +355,8 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessful) {
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
 
   action_under_test_ptr->get_next_parts_info_successful();
   EXPECT_EQ(0, call_count_one);
@@ -372,8 +371,8 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessfulAbortSet) {
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   action_under_test_ptr->set_abort_multipart(true);
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
 
   action_under_test_ptr->get_next_parts_info_successful();
   EXPECT_EQ(1, call_count_one);
@@ -395,8 +394,8 @@ TEST_F(S3PostCompleteActionTest, GetNextPartsSuccessfulNext) {
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
 
   action_under_test_ptr->total_parts = "3";
   action_under_test_ptr->get_next_parts_info_successful();
@@ -427,8 +426,8 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessful) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(action_under_test_ptr->parts["0"]));
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_parts();
   EXPECT_EQ(0, call_count_one);
@@ -455,8 +454,8 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_content_length())
       .WillRepeatedly(Return(action_under_test_ptr->parts["0"].length()));
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
 
   action_under_test_ptr->validate_parts();
   EXPECT_EQ(0, call_count_one);
@@ -508,8 +507,8 @@ TEST_F(S3PostCompleteActionTest, SaveMetadataAbortMultipart) {
   m0_uint128 oid = {0x1ffff, 0x1ffff};
   action_under_test_ptr->set_abort_multipart(true);
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+S3PostCompleteActionTest::func_callback_one, this);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_oid(_))
       .Times(AtLeast(1));
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_oid())
@@ -586,8 +585,8 @@ TEST_F(S3PostCompleteActionTest, DeletePartsNext) {
 
   action_under_test_ptr->set_abort_multipart(false);
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PostCompleteActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
   action_under_test_ptr->delete_parts();
   EXPECT_EQ(1, call_count_one);
 }

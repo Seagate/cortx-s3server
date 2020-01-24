@@ -35,9 +35,9 @@ S3DeleteBucketTaggingAction::S3DeleteBucketTaggingAction(
 
 void S3DeleteBucketTaggingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3DeleteBucketTaggingAction::delete_bucket_tags, this));
-  add_task(std::bind(&S3DeleteBucketTaggingAction::send_response_to_s3_client,
-                     this));
+  ACTION_TASK_ADD(S3DeleteBucketTaggingAction::delete_bucket_tags, this);
+  ACTION_TASK_ADD(S3DeleteBucketTaggingAction::send_response_to_s3_client,
+                  this);
   // ...
 }
 

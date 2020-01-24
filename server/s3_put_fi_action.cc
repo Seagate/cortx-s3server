@@ -37,8 +37,8 @@ S3PutFiAction::S3PutFiAction(std::shared_ptr<S3RequestObject> req)
 
 void S3PutFiAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3PutFiAction::set_fault_injection, this));
-  add_task(std::bind(&S3PutFiAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3PutFiAction::set_fault_injection, this);
+  ACTION_TASK_ADD(S3PutFiAction::send_response_to_s3_client, this);
   // ...
 }
 

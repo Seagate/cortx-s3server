@@ -73,11 +73,11 @@ void S3DeleteObjectAction::setup_steps() {
   // lead to object leak in mero which can handle separately.
   // To delete stale objects: ref: MINT-602
   if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-    add_task(std::bind(
-        &S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list, this));
+    ACTION_TASK_ADD(
+        S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list, this);
   }
-  add_task(std::bind(&S3DeleteObjectAction::delete_metadata, this));
-  add_task(std::bind(&S3DeleteObjectAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3DeleteObjectAction::delete_metadata, this);
+  ACTION_TASK_ADD(S3DeleteObjectAction::send_response_to_s3_client, this);
   // ...
 }
 
@@ -100,19 +100,18 @@ void S3DeleteObjectAction::fetch_bucket_info_failed() {
 void S3DeleteObjectAction::fetch_object_info_failed() {
   if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
       (object_metadata->get_state() == S3ObjectMetadataState::missing)) {
-      s3_log(S3_LOG_WARN, request_id, "Object not found\n");
-    } else if (object_metadata->get_state() ==
-               S3ObjectMetadataState::failed_to_launch) {
-      s3_log(
-          S3_LOG_ERROR, request_id,
-          "Object metadata load operation failed due to pre launch failure\n");
-      set_s3_error("ServiceUnavailable");
-    } else {
-      s3_log(S3_LOG_WARN, request_id, "Failed to look up Object metadata\n");
-      set_s3_error("InternalError");
-    }
-    send_response_to_s3_client();
-    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    s3_log(S3_LOG_WARN, request_id, "Object not found\n");
+  } else if (object_metadata->get_state() ==
+             S3ObjectMetadataState::failed_to_launch) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Object metadata load operation failed due to pre launch failure\n");
+    set_s3_error("ServiceUnavailable");
+  } else {
+    s3_log(S3_LOG_WARN, request_id, "Failed to look up Object metadata\n");
+    set_s3_error("InternalError");
+  }
+  send_response_to_s3_client();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteObjectAction::add_object_oid_to_probable_dead_oid_list() {
@@ -221,16 +220,16 @@ void S3DeleteObjectAction::cleanup_oid_from_probable_dead_oid_list() {
       probable_dead_object_oid.u_lo != 0ULL) {
     std::string probable_dead_object_oid_str =
         S3M0Uint128Helper::to_string(probable_dead_object_oid);
-      if (!clovis_kv_writer) {
-        clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-            request, s3_clovis_api);
-      }
-      clovis_kv_writer->delete_keyval(
-          global_probable_dead_object_list_index_oid,
-          probable_dead_object_oid_str, std::bind(&Action::done, this),
-          std::bind(&Action::done, this));
-    } else {
-      done();
+    if (!clovis_kv_writer) {
+      clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+          request, s3_clovis_api);
+    }
+    clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+                                    probable_dead_object_oid_str,
+                                    std::bind(&Action::done, this),
+                                    std::bind(&Action::done, this));
+  } else {
+    done();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

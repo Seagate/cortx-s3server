@@ -173,8 +173,9 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthSucessfulNext) {
   action_under_test->clovis_write_completed = true;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
 
   action_under_test->chunk_auth_successful();
   EXPECT_EQ(1, call_count_one);
@@ -228,8 +229,9 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthFailedShuttingDown) {
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthFailedNext) {
   action_under_test->clovis_write_in_progress = true;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
 
   action_under_test->chunk_auth_failed();
   EXPECT_EQ(0, call_count_one);
@@ -267,31 +269,35 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
   action_under_test->part_number = MINIMUM_PART_NUMBER - 1;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
   action_under_test->check_part_number();
   EXPECT_STREQ("InvalidPart", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);
 
   action_under_test->part_number = MAXIMUM_PART_NUMBER + 1;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
   action_under_test->check_part_number();
   EXPECT_STREQ("InvalidPart", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);
 
   action_under_test->part_number = MINIMUM_PART_NUMBER;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
   action_under_test->check_part_number();
   EXPECT_EQ(1, call_count_one);
 
   action_under_test->part_number = MAXIMUM_PART_NUMBER;
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
   action_under_test->check_part_number();
   EXPECT_EQ(2, call_count_one);
 }
@@ -530,8 +536,9 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffset) {
       .WillRepeatedly(Return(layout_id));
 
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
   action_under_test->compute_part_offset();
   EXPECT_TRUE(action_under_test->clovis_writer != nullptr);
   EXPECT_EQ(1, call_count_one);
@@ -557,8 +564,9 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
       .WillRepeatedly(Return(oid));
 
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
   action_under_test->compute_part_offset();
   EXPECT_TRUE(action_under_test->clovis_writer != nullptr);
   EXPECT_EQ(1, call_count_one);
@@ -567,17 +575,16 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetNoChunk) {
 TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
        InitiateDataStreamingForZeroSizeObject) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*ptr_mock_request, get_data_length())
-      .Times(1)
-      .WillOnce(Return(0));
+  EXPECT_CALL(*ptr_mock_request, get_data_length()).Times(1).WillOnce(
+      Return(0));
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
-              init_chunk_auth_cycle(_, _))
-      .Times(1);
+              init_chunk_auth_cycle(_, _)).Times(1);
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
 
   action_under_test->initiate_data_streaming();
   EXPECT_FALSE(action_under_test->clovis_write_in_progress);
@@ -586,12 +593,10 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        InitiateDataStreamingExpectingMoreData) {
-  EXPECT_CALL(*ptr_mock_request, get_data_length())
-      .Times(1)
-      .WillOnce(Return(1024));
-  EXPECT_CALL(*ptr_mock_request, has_all_body_content())
-      .Times(1)
-      .WillOnce(Return(false));
+  EXPECT_CALL(*ptr_mock_request, get_data_length()).Times(1).WillOnce(
+      Return(1024));
+  EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
+      Return(false));
   EXPECT_CALL(*ptr_mock_request, listen_for_incoming_data(_, _)).Times(1);
 
   action_under_test->initiate_data_streaming();
@@ -605,13 +610,11 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*ptr_mock_request, get_data_length())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(1024));
-  EXPECT_CALL(*ptr_mock_request, has_all_body_content())
-      .Times(1)
-      .WillOnce(Return(true));
+  EXPECT_CALL(*ptr_mock_request, has_all_body_content()).Times(1).WillOnce(
+      Return(true));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
 
   action_under_test->initiate_data_streaming();
 
@@ -628,8 +631,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillRepeatedly(Return(1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
   action_under_test->consume_incoming_content();
 
   EXPECT_TRUE(action_under_test->clovis_write_in_progress);
@@ -645,11 +647,10 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
+           S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
 
@@ -667,12 +668,11 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   // S3Option::get_instance()->get_clovis_write_payload_size() = 1048576 * 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) +
-          1024));
+           S3Option::get_instance()->get_clovis_write_payload_size(layout_id) +
+           1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
 
@@ -691,12 +691,11 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
-          S3Option::get_instance()->get_read_ahead_multiple() * 2));
+           S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
+           S3Option::get_instance()->get_read_ahead_multiple() * 2));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->consume_incoming_content();
 
@@ -711,8 +710,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillRepeatedly(Return(true));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(0);
+              write_content(_, _, _)).Times(0);
 
   action_under_test->consume_incoming_content();
 }
@@ -729,13 +727,11 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false));
-  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail())
-      .Times(1)
-      .WillOnce(Return(detail));
+  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail()).Times(1).WillOnce(
+      Return(detail));
 
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
-              add_checksum_for_chunk(_, _))
-      .Times(1);
+              add_checksum_for_chunk(_, _)).Times(1);
 
   action_under_test->send_chunk_details_if_any();
 
@@ -755,13 +751,11 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
       .WillOnce(Return(true))
       .WillOnce(Return(true))
       .WillOnce(Return(false));
-  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail())
-      .Times(2)
-      .WillRepeatedly(Return(detail));
+  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail()).Times(2).WillRepeatedly(
+      Return(detail));
 
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
-              add_checksum_for_chunk(_, _))
-      .Times(2);
+              add_checksum_for_chunk(_, _)).Times(2);
 
   action_under_test->send_chunk_details_if_any();
 
@@ -791,11 +785,9 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
       .WillOnce(Return(detail_zero));
 
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
-              add_checksum_for_chunk(_, _))
-      .Times(1);
+              add_checksum_for_chunk(_, _)).Times(1);
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
-              add_last_checksum_for_chunk(_, _))
-      .Times(1);
+              add_last_checksum_for_chunk(_, _)).Times(1);
 
   action_under_test->send_chunk_details_if_any();
 
@@ -805,8 +797,7 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, WriteObject) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
 
   action_under_test->write_object(async_buffer_factory->get_mock_buffer());
   EXPECT_TRUE(action_under_test->clovis_write_in_progress);
@@ -826,17 +817,14 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false));
-  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail())
-      .Times(1)
-      .WillOnce(Return(detail));
+  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail()).Times(1).WillOnce(
+      Return(detail));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
 
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
-              add_checksum_for_chunk(_, _))
-      .Times(1);
+              add_checksum_for_chunk(_, _)).Times(1);
 
   action_under_test->write_object(async_buffer_factory->get_mock_buffer());
 
@@ -888,8 +876,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(1024));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -908,11 +895,10 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   // S3_READ_AHEAD_MULTIPLE: 1
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
+           S3Option::get_instance()->get_clovis_write_payload_size(layout_id)));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(1);
+              write_content(_, _, _)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -931,13 +917,13 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillRepeatedly(Return(0));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(0);
+              write_content(_, _, _)).Times(0);
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutMultipartObjectActionTest::func_callback_one,
+                         this);
 
   action_under_test->write_object_successful();
 
@@ -958,12 +944,11 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillRepeatedly(Return(false));
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
       .WillRepeatedly(Return(
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id) -
-          1024));
+           S3Option::get_instance()->get_clovis_write_payload_size(layout_id) -
+           1024));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              write_content(_, _, _))
-      .Times(0);
+              write_content(_, _, _)).Times(0);
 
   EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
 
@@ -979,27 +964,23 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMetadata) {
 
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
 
-  EXPECT_CALL(*ptr_mock_request, get_data_length_str())
-      .Times(1)
-      .WillOnce(Return("1024"));
+  EXPECT_CALL(*ptr_mock_request, get_data_length_str()).Times(1).WillOnce(
+      Return("1024"));
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
-              set_content_length(Eq("1024")))
-      .Times(AtLeast(1));
+              set_content_length(Eq("1024"))).Times(AtLeast(1));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
-              set_md5(Eq("abcd1234abcd")))
-      .Times(AtLeast(1));
+              set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
 
   std::map<std::string, std::string> input_headers;
   input_headers["x-amz-meta-item-1"] = "1024";
   input_headers["x-amz-meta-item-2"] = "s3.seagate.com";
 
-  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy())
-      .Times(1)
-      .WillOnce(ReturnRef(input_headers));
+  EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
+      ReturnRef(input_headers));
 
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata),
               add_user_defined_attribute(Eq("x-amz-meta-item-1"), Eq("1024")))
@@ -1040,13 +1021,11 @@ TEST_F(S3PutMultipartObjectActionTestWithMockAuth,
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false));
-  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail())
-      .Times(1)
-      .WillOnce(Return(detail));
+  EXPECT_CALL(*ptr_mock_request, pop_chunk_detail()).Times(1).WillOnce(
+      Return(detail));
 
   EXPECT_CALL(*(mock_auth_factory->mock_auth_client),
-              add_checksum_for_chunk(_, _))
-      .Times(1);
+              add_checksum_for_chunk(_, _)).Times(1);
 
   action_under_test->write_object_successful();
 

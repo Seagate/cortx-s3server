@@ -66,9 +66,9 @@ S3GetBucketAction::S3GetBucketAction(
 
 void S3GetBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetBucketAction::validate_request, this));
-  add_task(std::bind(&S3GetBucketAction::get_next_objects, this));
-  add_task(std::bind(&S3GetBucketAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetBucketAction::validate_request, this);
+  ACTION_TASK_ADD(S3GetBucketAction::get_next_objects, this);
+  ACTION_TASK_ADD(S3GetBucketAction::send_response_to_s3_client, this);
   // ...
 }
 void S3GetBucketAction::fetch_bucket_info_failed() {

@@ -88,11 +88,11 @@ S3DeleteMultipleObjectsAction::S3DeleteMultipleObjectsAction(
 
 void S3DeleteMultipleObjectsAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3DeleteMultipleObjectsAction::validate_request, this));
-  add_task(std::bind(&S3DeleteMultipleObjectsAction::fetch_objects_info, this));
+  ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::validate_request, this);
+  ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::fetch_objects_info, this);
   // Delete will be cycling between delete_objects_metadata and delete_objects
-  add_task(std::bind(&S3DeleteMultipleObjectsAction::send_response_to_s3_client,
-                     this));
+  ACTION_TASK_ADD(S3DeleteMultipleObjectsAction::send_response_to_s3_client,
+                  this);
   // ...
 }
 
@@ -481,4 +481,3 @@ void S3DeleteMultipleObjectsAction::cleanup_oid_from_probable_dead_oid_list() {
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
-

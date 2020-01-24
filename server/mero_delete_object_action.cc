@@ -39,10 +39,9 @@ MeroDeleteObjectAction::MeroDeleteObjectAction(
 
 void MeroDeleteObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&MeroDeleteObjectAction::validate_request, this));
-  add_task(std::bind(&MeroDeleteObjectAction::delete_object, this));
-  add_task(
-      std::bind(&MeroDeleteObjectAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(MeroDeleteObjectAction::validate_request, this);
+  ACTION_TASK_ADD(MeroDeleteObjectAction::delete_object, this);
+  ACTION_TASK_ADD(MeroDeleteObjectAction::send_response_to_s3_client, this);
   // ...
 }
 

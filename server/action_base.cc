@@ -24,6 +24,21 @@
 #include "s3_option.h"
 #include "s3_stats.h"
 
+std::map<std::string, uint64_t> Action::s3_task_name_to_addb_task_id_map;
+
+void Action::s3_task_name_to_addb_task_id_map_init() {
+  if (s3_task_name_to_addb_task_id_map.size() ==
+      g_s3_to_addb_idx_func_name_map_size) {
+    return;
+  }
+
+  uint64_t idx = 0;
+  for (; idx < g_s3_to_addb_idx_func_name_map_size; ++idx) {
+    s3_task_name_to_addb_task_id_map[g_s3_to_addb_idx_func_name_map[idx]] =
+        idx + ADDB_TASK_LIST_OFFSET;
+  }
+}
+
 Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
                std::shared_ptr<S3AuthClientFactory> auth_factory,
                bool skip_auth)
@@ -34,6 +49,8 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
       invalid_request(false),
       skip_auth(skip_auth) {
 
+  s3_task_name_to_addb_task_id_map_init();
+
   addb_action_type_id = S3_ADDB_ACTION_BASE_ID;
   request_id = base_request->get_request_id();
   addb_request_id = base_request->addb_request_id;
@@ -42,8 +59,8 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
   task_iteration_index = 0;
   rollback_index = 0;
 
-  state = ActionState::start;
-  rollback_state = ActionState::start;
+  state = ACTS_START;
+  rollback_state = ACTS_START;
   ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 
   mem_profile.reset(new S3MemoryProfile());
@@ -62,7 +79,7 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
 Action::~Action() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
 
 void Action::set_s3_error(std::string code) {
-  state = ActionState::error;
+  state = ACTS_ERROR;
   s3_error_code = code;
 }
 
@@ -73,7 +90,7 @@ void Action::set_s3_error_message(std::string message) {
 
 void Action::client_read_timeout_callback() {
   set_s3_error("RequestTimeout");
-  if (rollback_state == ActionState::start) {
+  if (rollback_state == ACTS_START) {
     rollback_start();
   } else {
     send_response_to_s3_client();
@@ -85,7 +102,7 @@ std::string& Action::get_s3_error_code() { return s3_error_code; }
 
 std::string& Action::get_s3_error_message() { return s3_error_message; }
 
-bool Action::is_error_state() { return state == ActionState::error; }
+bool Action::is_error_state() { return state == ACTS_ERROR; }
 
 void Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
@@ -99,7 +116,7 @@ void Action::setup_steps() {
   if (!S3Option::get_instance()->is_auth_disabled() && !skip_auth &&
       (is_authorizationheader_present)) {
 
-    add_task(std::bind(&Action::check_authentication, this));
+    ACTION_TASK_ADD(Action::check_authentication, this);
   }
 }
 
@@ -121,11 +138,11 @@ void Action::start() {
 
   task_iteration_index = 0;
   if (task_list.size() > 0) {
-    state = ActionState::running;
+    state = ACTS_RUNNING;
 
     ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
     ADDB(get_addb_action_type_id(), addb_request_id,
-         ADDB_TASK_LIST_OFFSET + task_iteration_index);
+         task_addb_id_list[task_iteration_index]);
 
     task_list[task_iteration_index++]();
   }
@@ -142,7 +159,7 @@ void Action::next() {
     if (base_request->client_connected()) {
 
       ADDB(get_addb_action_type_id(), addb_request_id,
-           ADDB_TASK_LIST_OFFSET + task_iteration_index);
+           task_addb_id_list[task_iteration_index]);
 
       task_list[task_iteration_index++]();
     } else {
@@ -155,27 +172,27 @@ void Action::next() {
 
 void Action::done() {
   task_iteration_index = 0;
-  state = ActionState::complete;
+  state = ACTS_COMPLETE;
   ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
   i_am_done();
 }
 
 void Action::pause() {
   // Set state as Paused.
-  state = ActionState::paused;
+  state = ACTS_PAUSED;
   ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 }
 
 void Action::resume() {
   // Resume only if paused.
-  state = ActionState::running;
+  state = ACTS_RUNNING;
   ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 }
 
 void Action::abort() {
   // Mark state as Aborted.
   task_iteration_index = 0;
-  state = ActionState::stopped;
+  state = ACTS_STOPPED;
   ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 }
 
@@ -183,7 +200,7 @@ void Action::abort() {
 void Action::rollback_start() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   rollback_index = 0;
-  rollback_state = ActionState::running;
+  rollback_state = ACTS_RUNNING;
   if (rollback_list.size())
     rollback_list[rollback_index++]();
   else {
@@ -208,7 +225,7 @@ void Action::rollback_next() {
 void Action::rollback_done() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   rollback_index = 0;
-  rollback_state = ActionState::complete;
+  rollback_state = ACTS_COMPLETE;
   rollback_exit();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -262,7 +279,7 @@ bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
       S3Option::get_instance()->get_is_s3_shutting_down();
   if (is_s3_shutting_down && check_auth_op_aborted &&
       get_auth_client()->is_chunk_auth_op_aborted()) {
-    if (get_rollback_state() == ActionState::start) {
+    if (get_rollback_state() == ACTS_START) {
       rollback_start();
     } else {
       send_response_to_s3_client();

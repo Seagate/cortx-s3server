@@ -51,9 +51,8 @@ MeroDeleteKeyValueAction::MeroDeleteKeyValueAction(
 
 void MeroDeleteKeyValueAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&MeroDeleteKeyValueAction::delete_key_value, this));
-  add_task(
-      std::bind(&MeroDeleteKeyValueAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(MeroDeleteKeyValueAction::delete_key_value, this);
+  ACTION_TASK_ADD(MeroDeleteKeyValueAction::send_response_to_s3_client, this);
   // ...
 }
 
@@ -66,14 +65,14 @@ void MeroDeleteKeyValueAction::delete_key_value() {
     set_s3_error("BadRequest");
     send_response_to_s3_client();
   } else {
-  if (!clovis_kv_writer) {
-    clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
-        request, mero_clovis_api);
-  }
-  clovis_kv_writer->delete_keyval(
-      index_id, request->get_key_name(),
-      std::bind(&MeroDeleteKeyValueAction::delete_key_value_successful, this),
-      std::bind(&MeroDeleteKeyValueAction::delete_key_value_failed, this));
+    if (!clovis_kv_writer) {
+      clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+          request, mero_clovis_api);
+    }
+    clovis_kv_writer->delete_keyval(
+        index_id, request->get_key_name(),
+        std::bind(&MeroDeleteKeyValueAction::delete_key_value_successful, this),
+        std::bind(&MeroDeleteKeyValueAction::delete_key_value_failed, this));
   }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

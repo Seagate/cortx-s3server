@@ -39,8 +39,7 @@ S3GetObjectTaggingAction::S3GetObjectTaggingAction(
 
 void S3GetObjectTaggingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(
-      std::bind(&S3GetObjectTaggingAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetObjectTaggingAction::send_response_to_s3_client, this);
   // ...
 }
 

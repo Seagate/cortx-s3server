@@ -35,10 +35,9 @@ S3GetBucketTaggingAction::S3GetBucketTaggingAction(
 
 void S3GetBucketTaggingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetBucketTaggingAction::check_metadata_missing_status,
-                     this));
-  add_task(
-      std::bind(&S3GetBucketTaggingAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetBucketTaggingAction::check_metadata_missing_status,
+                  this);
+  ACTION_TASK_ADD(S3GetBucketTaggingAction::send_response_to_s3_client, this);
   // ...
 }
 

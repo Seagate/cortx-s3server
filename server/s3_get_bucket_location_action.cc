@@ -34,9 +34,8 @@ S3GetBucketlocationAction::S3GetBucketlocationAction(
 
 void S3GetBucketlocationAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3GetBucketlocationAction::fetch_bucket_info, this));
-  add_task(
-      std::bind(&S3GetBucketlocationAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3GetBucketlocationAction::fetch_bucket_info, this);
+  ACTION_TASK_ADD(S3GetBucketlocationAction::send_response_to_s3_client, this);
 }
 
 void S3GetBucketlocationAction::fetch_bucket_info_failed() {

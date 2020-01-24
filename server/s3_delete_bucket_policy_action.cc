@@ -36,9 +36,8 @@ S3DeleteBucketPolicyAction::S3DeleteBucketPolicyAction(
 
 void S3DeleteBucketPolicyAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy, this));
-  add_task(
-      std::bind(&S3DeleteBucketPolicyAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3DeleteBucketPolicyAction::delete_bucket_policy, this);
+  ACTION_TASK_ADD(S3DeleteBucketPolicyAction::send_response_to_s3_client, this);
   // ...
 }
 
@@ -66,12 +65,13 @@ void S3DeleteBucketPolicyAction::delete_bucket_policy() {
       set_s3_error("NoSuchBucketPolicy");
       send_response_to_s3_client();
     } else {
-    bucket_metadata->deletepolicy();
-    bucket_metadata->save(
-        std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy_successful,
-                  this),
-        std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy_failed,
-                  this));
+      bucket_metadata->deletepolicy();
+      bucket_metadata->save(
+          std::bind(
+              &S3DeleteBucketPolicyAction::delete_bucket_policy_successful,
+              this),
+          std::bind(&S3DeleteBucketPolicyAction::delete_bucket_policy_failed,
+                    this));
     }
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

@@ -84,14 +84,14 @@ S3DeleteBucketAction::S3DeleteBucketAction(
 
 void S3DeleteBucketAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3DeleteBucketAction::fetch_first_object_metadata, this));
-  add_task(std::bind(&S3DeleteBucketAction::fetch_multipart_objects, this));
-  add_task(std::bind(&S3DeleteBucketAction::delete_multipart_objects, this));
-  add_task(std::bind(&S3DeleteBucketAction::remove_part_indexes, this));
-  add_task(std::bind(&S3DeleteBucketAction::remove_multipart_index, this));
-  add_task(std::bind(&S3DeleteBucketAction::remove_object_list_index, this));
-  add_task(std::bind(&S3DeleteBucketAction::delete_bucket, this));
-  add_task(std::bind(&S3DeleteBucketAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3DeleteBucketAction::fetch_first_object_metadata, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::fetch_multipart_objects, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::delete_multipart_objects, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::remove_part_indexes, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::remove_multipart_index, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::remove_object_list_index, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::delete_bucket, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::send_response_to_s3_client, this);
   // ...
 }
 

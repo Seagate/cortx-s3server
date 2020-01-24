@@ -76,8 +76,8 @@ TEST_F(S3PutBucketAclActionTest, ValidateOnAllDataShouldCallNext) {
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutBucketAclActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutBucketAclActionTest::func_callback_one, this);
 
   action_under_test->validate_request();
 
@@ -93,8 +93,8 @@ TEST_F(S3PutBucketAclActionTest, ValidateOnPartialDataShouldWaitForMore) {
 
   // Mock out the next calls on action.
   action_under_test->clear_tasks();
-  action_under_test->add_task(
-      std::bind(&S3PutBucketAclActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test,
+                         S3PutBucketAclActionTest::func_callback_one, this);
 
   action_under_test->validate_request();
 }

@@ -305,7 +305,7 @@ cc_library(
 
     name = "s3addbplugin",
 
-    srcs = glob(["addb/plugin/*.c", "addb/plugin/*.h", "server/s3_addb*.h"]),
+    srcs = glob(["addb/plugin/*.c", "addb/plugin/*.h", "server/s3_addb*.h", "server/s3_addb_map*.c"]),
 
     # In case of release mode we may have to remove option -ggdb3
     # In case of debug mode we may have to remove option -O3

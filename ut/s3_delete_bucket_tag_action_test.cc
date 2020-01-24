@@ -128,8 +128,9 @@ TEST_F(S3DeleteBucketTaggingActionTest,
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
 
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3DeleteBucketTaggingActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3DeleteBucketTaggingActionTest::func_callback_one,
+                         this);
   action_under_test_ptr->delete_bucket_tags_failed();
   EXPECT_EQ(1, call_count_one);
 }
@@ -145,8 +146,9 @@ TEST_F(S3DeleteBucketTaggingActionTest,
       .WillRepeatedly(Return(S3BucketMetadataState::failed_to_launch));
 
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3DeleteBucketTaggingActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3DeleteBucketTaggingActionTest::func_callback_one,
+                         this);
   action_under_test_ptr->delete_bucket_tags_failed();
   EXPECT_EQ(1, call_count_one);
 }

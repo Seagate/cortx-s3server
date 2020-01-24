@@ -93,8 +93,8 @@ TEST_F(S3PutBucketTaggingActionTest, ValidateRequest) {
       .WillRepeatedly(ReturnRef(MockBucketTags));
 
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketTaggingActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketTaggingActionTest::func_callback_one, this);
   action_under_test_ptr->validate_request();
   EXPECT_EQ(1, call_count_one);
 }
@@ -154,8 +154,8 @@ TEST_F(S3PutBucketTaggingActionTest, ValidateRequestXmlTags) {
       .WillOnce(Return(true));
 
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3PutBucketTaggingActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PutBucketTaggingActionTest::func_callback_one, this);
   action_under_test_ptr->validate_request_xml_tags();
   EXPECT_EQ(1, call_count_one);
 }

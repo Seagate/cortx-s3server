@@ -93,17 +93,14 @@ S3AbortMultipartAction::S3AbortMultipartAction(
 
 void S3AbortMultipartAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
-  add_task(std::bind(&S3AbortMultipartAction::get_multipart_metadata, this));
+  ACTION_TASK_ADD(S3AbortMultipartAction::get_multipart_metadata, this);
   if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-    add_task(std::bind(
-        &S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list,
-        this));
+    ACTION_TASK_ADD(
+        S3AbortMultipartAction::add_object_oid_to_probable_dead_oid_list, this);
   }
-  add_task(std::bind(&S3AbortMultipartAction::delete_multipart_metadata, this));
-  add_task(
-      std::bind(&S3AbortMultipartAction::delete_part_index_with_parts, this));
-  add_task(
-      std::bind(&S3AbortMultipartAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(S3AbortMultipartAction::delete_multipart_metadata, this);
+  ACTION_TASK_ADD(S3AbortMultipartAction::delete_part_index_with_parts, this);
+  ACTION_TASK_ADD(S3AbortMultipartAction::send_response_to_s3_client, this);
   // ...
 }
 

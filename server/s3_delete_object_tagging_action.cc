@@ -39,9 +39,9 @@ S3DeleteObjectTaggingAction::S3DeleteObjectTaggingAction(
 
 void S3DeleteObjectTaggingAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3DeleteObjectTaggingAction::delete_object_tags, this));
-  add_task(std::bind(&S3DeleteObjectTaggingAction::send_response_to_s3_client,
-                     this));
+  ACTION_TASK_ADD(S3DeleteObjectTaggingAction::delete_object_tags, this);
+  ACTION_TASK_ADD(S3DeleteObjectTaggingAction::send_response_to_s3_client,
+                  this);
 }
 
 void S3DeleteObjectTaggingAction::fetch_bucket_info_failed() {

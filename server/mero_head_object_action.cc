@@ -39,9 +39,9 @@ MeroHeadObjectAction::MeroHeadObjectAction(
 
 void MeroHeadObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&MeroHeadObjectAction::validate_request, this));
-  add_task(std::bind(&MeroHeadObjectAction::check_object_exist, this));
-  add_task(std::bind(&MeroHeadObjectAction::send_response_to_s3_client, this));
+  ACTION_TASK_ADD(MeroHeadObjectAction::validate_request, this);
+  ACTION_TASK_ADD(MeroHeadObjectAction::check_object_exist, this);
+  ACTION_TASK_ADD(MeroHeadObjectAction::send_response_to_s3_client, this);
   // ...
 }
 

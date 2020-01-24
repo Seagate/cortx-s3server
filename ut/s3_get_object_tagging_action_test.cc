@@ -138,8 +138,8 @@ TEST_F(S3GetObjectTaggingActionTest, SendResponseToClientEmptyTagSet) {
   EXPECT_CALL(*request_mock, send_response(200, tags_as_xml_str))
       .Times(AtLeast(1));
   action_under_test_ptr->clear_tasks();
-  action_under_test_ptr->add_task(
-      std::bind(&S3GetObjectTaggingActionTest::func_callback_one, this));
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3GetObjectTaggingActionTest::func_callback_one, this);
 
   action_under_test_ptr->fetch_object_info_success();
 

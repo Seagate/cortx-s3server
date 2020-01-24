@@ -50,11 +50,11 @@ S3AccountDeleteMetadataAction::S3AccountDeleteMetadataAction(
 
 void S3AccountDeleteMetadataAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
-  add_task(std::bind(&S3AccountDeleteMetadataAction::validate_request, this));
-  add_task(std::bind(
-      &S3AccountDeleteMetadataAction::fetch_first_bucket_metadata, this));
-  add_task(std::bind(&S3AccountDeleteMetadataAction::send_response_to_s3_client,
-                     this));
+  ACTION_TASK_ADD(S3AccountDeleteMetadataAction::validate_request, this);
+  ACTION_TASK_ADD(S3AccountDeleteMetadataAction::fetch_first_bucket_metadata,
+                  this);
+  ACTION_TASK_ADD(S3AccountDeleteMetadataAction::send_response_to_s3_client,
+                  this);
   // ...
 }
 
