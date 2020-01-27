@@ -28,7 +28,7 @@
   yum:
     name: s3cmd
     disablerepo: '*'
-    enablerepo: releases_s3server_uploads
+    enablerepo: releases_eos_s3deps
     state: present
 
 - name: Install tools for ST

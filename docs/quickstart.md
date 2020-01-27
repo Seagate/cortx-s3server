@@ -1,6 +1,8 @@
 * Note current steps are assumed to be run within VM to be configured.
 
 # Setup VM
+
+## Centos 7.5
 Import VM from (use latest or check with team)
 http://jenkins.mero.colo.seagate.com/share/bigstorage/sage_releases/vmdk_images/
 
@@ -10,6 +12,11 @@ http://jenkins.mero.colo.seagate.com/share/bigstorage/sage_releases/vmdk_images/
 
 Import VM into VMWare Fusion or VirtualBox
 
+## Centos 7.7
+Use the boot.iso ISO from following link to create a VM for Centos 7.7.1908 - kernel 3.10.0-1062 el7
+http://eos-poc-katello1.mero.colo.seagate.com/pulp/repos/EOS/Library/custom/CentOS-7/CentOS-7-OS/images/
+
+# Download source
 Clone source on the new VM.
   git clone http://gerrit.mero.colo.seagate.com:8080/s3server
 or to clone with your seagate gid follow the link given below.

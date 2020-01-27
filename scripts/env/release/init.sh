@@ -5,6 +5,8 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
+source ${S3_SRC_DIR}/scripts/env/common.sh
+
 # We are setting up new VM, so just attempt clean openldap
 systemctl stop slapd 2>/dev/null || /bin/true
 yum remove -y openldap-servers openldap-clients || /bin/true
@@ -33,16 +35,13 @@ yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
 yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 
 # Setup using ansible
-yum install -y ansible
+yum install -y ansible facter
 
 cd ${BASEDIR}/../../../ansible
 
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local
 sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
-
-# Setup necessary repos
-ansible-playbook -i ./hosts_local --connection local jenkins_yum_repos.yml -v  -k
 
 # Set up release node
 ansible-playbook -i ./hosts_local --connection local setup_release_node.yml -v  -k  --extra-vars "s3_src=${S3_SRC_DIR}"

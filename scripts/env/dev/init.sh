@@ -7,21 +7,19 @@ BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 hostnamectl set-hostname s3dev
-OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
-VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
-major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
+source ${S3_SRC_DIR}/scripts/env/common.sh
 
+yum install rpm-build -y
 rpm -q git || yum install -y git
 
 #It seems mero dependency script install s3cmd(2.0.0)
 #for s3 system test we need patched s3cmd(1.6.1), which s3 ansible installs
 rpm -q s3cmd && rpm -e s3cmd --nodeps
 
-if [ "$major_version" = "8" ]; then
+if [ "$os_major_version" = "8" ]; then
   yum install @development -y
-  yum install rpm-build
 fi
 
 cd $BASEDIR
@@ -54,16 +52,13 @@ yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
 yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 
 # Configure dev env
-yum install -y ansible
+yum install -y ansible facter
 
 cd ${BASEDIR}/../../../ansible
 
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local
 sed -i "s/^xx.xx.xx.xx/127.0.0.1/" ./hosts_local
-
-# Setup necessary repos
-ansible-playbook -i ./hosts_local --connection local jenkins_yum_repos.yml -v  -k
 
 # Setup dev env
 ansible-playbook -i ./hosts_local --connection local setup_s3dev_centos75_8.yml -v  -k --extra-vars "s3_src=${S3_SRC_DIR}"

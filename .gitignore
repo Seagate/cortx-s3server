@@ -48,3 +48,4 @@ s3backgrounddelete/dist/
 s3backgrounddelete/s3backgrounddelete.egg-info/
 st/clitests/jclient.properties
 st/clitests/jcloud.properties
+.vscode/*
