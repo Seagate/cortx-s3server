@@ -149,7 +149,10 @@ cp -f scripts/change_ldap_passwd.ldif $AUTH_INSTALL_LOCATION/scripts/
 cp -f s3-sanity-test.sh $S3_INSTALL_LOCATION/scripts/
 
 # Copy openldap_backup readme
-cp -f scripts/ldap/openldap_backup_readme $S3_INSTALL_LOCATION/docs
+cp -f scripts/ldap/openldap_backup_readme $S3_INSTALL_LOCATION/docs/
+
+# Copy s3_log_rotation guide
+cp -f s3_log_rotation_guide.txt $S3_INSTALL_LOCATION/docs/ 
 
 # Copy the auth service file for systemctl support.
 cp auth/server/s3authserver.service $SERVICE_FILE_LOCATION

@@ -8,6 +8,7 @@ import traceback
 import sched
 import time
 import logging
+from logging import handlers
 import datetime
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
@@ -99,10 +100,11 @@ class ObjectRecoveryScheduler(object):
         self.logger = logging.getLogger(
             self.config.get_scheduler_logger_name())
         self.logger.setLevel(self.config.get_file_log_level())
-        # create file handler which logs even debug messages
-        # Todo : Use a RotatingFileHandler
         # https://docs.python.org/3/library/logging.handlers.html#logging.handlers.RotatingFileHandler
-        fhandler = logging.FileHandler(self.config.get_scheduler_logger_file())
+        fhandler = logging.handlers.RotatingFileHandler(self.config.get_scheduler_logger_file(), mode='a',
+                                                        maxBytes = self.config.get_max_bytes(),
+                                                        backupCount = self.config.get_backup_count(), encoding=None,
+                                                        delay=False )
         fhandler.setLevel(self.config.get_file_log_level())
         # create console handler with a higher log level
         chandler = logging.StreamHandler()

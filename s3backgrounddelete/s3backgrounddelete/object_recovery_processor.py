@@ -7,6 +7,7 @@ the rabbitmq message queue.
 import traceback
 import logging
 import datetime
+from logging import handlers
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
@@ -51,7 +52,10 @@ class ObjectRecoveryProcessor(object):
             self.config.get_processor_logger_name())
         self.logger.setLevel(self.config.get_file_log_level())
         # create file handler which logs even debug messages
-        fhandler = logging.FileHandler(self.config.get_processor_logger_file())
+        fhandler = logging.handlers.RotatingFileHandler(self.config.get_processor_logger_file(), mode='a',
+                                                        maxBytes = self.config.get_max_bytes(),
+                                                        backupCount = self.config.get_backup_count(), encoding=None,
+                                                        delay=False )
         fhandler.setLevel(self.config.get_file_log_level())
         # create console handler with a higher log level
         chandler = logging.StreamHandler()

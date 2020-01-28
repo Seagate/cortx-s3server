@@ -269,3 +269,22 @@ class EOSCoreConfig(object):
             raise KeyError(
                 "Could not parse global instance index-id from config file " +
                 self._conf_file)
+
+    def get_max_bytes(self):
+        """Return maximum bytes for a log file"""
+        if 'logconfig' in self._config and self._config['logconfig']['max_bytes']:
+            return self._config['logconfig']['max_bytes']
+        else:
+            raise KeyError(
+                "Could not parse maxBytes from config file " +
+                self._conf_file)
+
+    def get_backup_count(self):
+        """Return count of log files"""
+        if 'logconfig' in self._config and self._config['logconfig']['backup_count']:
+            return self._config['logconfig']['backup_count']
+        else:
+            raise KeyError(
+                "Could not parse backupcount from config file " +
+                self._conf_file)
+
