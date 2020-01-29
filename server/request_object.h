@@ -270,8 +270,8 @@ class RequestObject {
   bool is_incoming_data_ignored() { return ignore_incoming_data; }
   void stop_processing_incoming_data() { ignore_incoming_data = true; }
 
-  bool client_connected() { return is_client_connected; }
-  bool is_s3_client_read_timedout() { return s3_client_read_timedout; }
+  bool client_connected() const { return is_client_connected; }
+  bool is_s3_client_read_timedout() const { return s3_client_read_timedout; }
 
   virtual bool is_chunked() { return is_chunked_upload; }
 
@@ -296,22 +296,12 @@ class RequestObject {
   // buffers
   // without a listener.
   virtual void listen_for_incoming_data(std::function<void()> callback,
-                                        size_t notify_on_size) {
-    notify_read_watermark = notify_on_size;
-    incoming_data_callback = callback;
-    resume();  // resume reading if it was paused
-  }
-
-  virtual void set_client_read_timeout_callback(
-      std::function<void()> callback) {
-    // Callback that will be called when read timeout event triggers
-    client_read_timeout_callback = callback;
-  }
+                                        size_t notify_on_size);
 
   void notify_incoming_data(evbuf_t* buf);
 
   // Check whether we already have (read) the entire body.
-  virtual bool has_all_body_content() { return (pending_in_flight == 0); }
+  virtual bool has_all_body_content() const { return !pending_in_flight; }
 
   std::shared_ptr<S3AsyncBufferOptContainer> get_buffered_input() {
     return buffered_input;

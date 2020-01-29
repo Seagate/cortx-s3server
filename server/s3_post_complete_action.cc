@@ -145,7 +145,9 @@ void S3PostCompleteAction::load_and_validate_request() {
 
 void S3PostCompleteAction::consume_incoming_content() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (request->has_all_body_content()) {
+  if (request->is_s3_client_read_timedout()) {
+    client_read_timeout();
+  } else if (request->has_all_body_content()) {
     if (validate_request_body(request->get_full_body_content_as_string())) {
       next();
     } else {

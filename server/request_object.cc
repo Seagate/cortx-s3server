@@ -56,19 +56,29 @@ extern "C" int consume_query_parameters(evhtp_kv_t* kvobj, void* arg) {
   return 0;
 }
 
-extern "C" void s3_client_read_timeout_cb(evutil_socket_t fd, short event,
-                                          void* arg) {
+void s3_client_read_timeout_cb(evutil_socket_t fd, short event, void* arg) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
+
   RequestObject* request = static_cast<RequestObject*>(arg);
-  if (request == NULL) {
+
+  if (!request) {
+    s3_log(S3_LOG_WARN, "", "RequestObject* == NULL\n");
     return;
   }
-  request->get_buffered_input()->freeze();
   s3_log(S3_LOG_WARN, request->get_request_id().c_str(),
          "Read timeout Occured\n");
-  request->free_client_read_timer();
   request->trigger_client_read_timeout_callback();
-  return;
+}
+
+void RequestObject::listen_for_incoming_data(std::function<void()> callback,
+                                             size_t notify_on_size) {
+  if (s3_client_read_timedout) {
+    callback();
+    return;
+  }
+  notify_read_watermark = notify_on_size;
+  incoming_data_callback = std::move(callback);
+  resume();  // resume reading if it was paused
 }
 
 RequestObject::RequestObject(
@@ -278,8 +288,12 @@ void RequestObject::free_client_read_timer() {
 
 void RequestObject::trigger_client_read_timeout_callback() {
   s3_client_read_timedout = true;
-  if (client_read_timeout_callback) {
-    client_read_timeout_callback();
+
+  free_client_read_timer();
+  buffered_input->freeze();
+
+  if (incoming_data_callback) {
+    incoming_data_callback();
   }
 }
 

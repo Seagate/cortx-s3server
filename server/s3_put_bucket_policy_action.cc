@@ -128,7 +128,9 @@ void S3PutBucketPolicyAction::set_policy_failed() {
 
 void S3PutBucketPolicyAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
-  if (request->has_all_body_content()) {
+  if (request->is_s3_client_read_timedout()) {
+    client_read_timeout();
+  } else if (request->has_all_body_content()) {
     new_bucket_policy = request->get_full_body_content_as_string();
     next();
     // validate_request_body(new_bucket_policy);

@@ -467,17 +467,3 @@ TEST_F(S3RequestObjectTest, FreeReadTimerNull) {
   EXPECT_CALL(*mock_event_obj_ptr, free_event(_)).Times(0);
   request_with_mock_http_event->free_client_read_timer();
 }
-
-TEST_F(S3RequestObjectTest, TriggerClientReadTimeoutNoCallback) {
-  request_with_mock_http_event->client_read_timeout_callback = nullptr;
-  request_with_mock_http_event->trigger_client_read_timeout_callback();
-  EXPECT_TRUE(request_with_mock_http_event->s3_client_read_timedout);
-}
-
-TEST_F(S3RequestObjectTest, TriggerClientReadTimeout) {
-  request_with_mock_http_event->client_read_timeout_callback =
-      std::bind(&S3RequestObjectTest::callback_func, this);
-  request_with_mock_http_event->trigger_client_read_timeout_callback();
-  EXPECT_TRUE(callback_called);
-  EXPECT_TRUE(request_with_mock_http_event->s3_client_read_timedout);
-}

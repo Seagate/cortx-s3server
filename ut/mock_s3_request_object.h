@@ -49,7 +49,7 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(get_request, evhtp_request_t *());
   MOCK_METHOD0(get_content_length, size_t());
   MOCK_METHOD0(get_content_length_str, std::string());
-  MOCK_METHOD0(has_all_body_content, bool());
+  MOCK_CONST_METHOD0(has_all_body_content, bool());
   MOCK_METHOD0(is_chunked, bool());
   MOCK_METHOD0(pause, void());
   MOCK_METHOD0(resume, void());

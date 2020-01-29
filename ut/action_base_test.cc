@@ -111,7 +111,7 @@ TEST_F(ActionTest, ClientReadTimeoutCallBackRollback) {
       std::bind(&ActionTest::func_callback_one, this));
   ptr_Actionobject->add_task_rollback(
       std::bind(&ActionTest::func_callback_two, this));
-  ptr_Actionobject->client_read_timeout_callback();
+  ptr_Actionobject->client_read_timeout();
   EXPECT_TRUE(call_count_two == 1);
   EXPECT_EQ("RequestTimeout", ptr_Actionobject->s3_error_code);
 }
@@ -121,9 +121,9 @@ TEST_F(ActionTest, ClientReadTimeoutCallBack) {
   ptr_Actionobject->add_task_rollback(
       std::bind(&ActionTest::func_callback_one, this));
   EXPECT_TRUE(call_count_one == 0);
-  ptr_Actionobject->client_read_timeout_callback();
+  ptr_Actionobject->client_read_timeout();
   EXPECT_TRUE(call_count_one == 0);
-  EXPECT_TRUE(ptr_Actionobject->response_called == 1);
+  EXPECT_TRUE(ptr_Actionobject->response_called == 0);
 }
 
 TEST_F(ActionTest, AddTask) {

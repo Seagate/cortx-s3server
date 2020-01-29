@@ -23,6 +23,7 @@
 #ifndef __S3_SERVER_ACTION_BASE_H__
 #define __S3_SERVER_ACTION_BASE_H__
 
+#include <utility>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -156,10 +157,10 @@ class Action {
 
   void set_s3_error(std::string code);
   void set_s3_error_message(std::string message);
-  std::string& get_s3_error_code();
-  std::string& get_s3_error_message();
-  bool is_error_state();
-  void client_read_timeout_callback();
+  const std::string& get_s3_error_code() const;
+  const std::string& get_s3_error_message() const;
+  bool is_error_state() const;
+  void client_read_timeout();
 
  protected:
   void add_task(std::function<void()> task, const char* func_name) {
@@ -172,8 +173,7 @@ class Action {
              "Regenerate code with addb-codegen.py",
              func_name);
     }
-
-    task_list.push_back(task);
+    task_list.push_back(std::move(task));
     task_addb_id_list.push_back(s3_task_name_to_addb_task_id_map[func_name]);
   }
 
@@ -192,21 +192,21 @@ class Action {
   // during any stage of operation.
   void add_task_rollback(std::function<void()> task) {
     // Insert task at start of list for rollback
-    rollback_list.push_front(task);
+    rollback_list.push_front(std::move(task));
   }
 
   void clear_tasks_rollback() { rollback_list.clear(); }
 
-  int number_of_rollback_tasks() { return rollback_list.size(); }
+  size_t number_of_rollback_tasks() const { return rollback_list.size(); }
 
-  ActionState get_rollback_state() { return rollback_state; }
+  ActionState get_rollback_state() const { return rollback_state; }
 
   // Checks whether S3 is shutting down. If yes then triggers rollback and
   // schedules a response.
   // Return value: true, in case of shutdown.
   virtual bool check_shutdown_and_rollback(bool check_auth_op_aborted = false);
 
-  bool reject_if_shutting_down() { return is_response_scheduled; }
+  bool reject_if_shutting_down() const { return is_response_scheduled; }
 
   // If param 'check_signal' is true then check_shutdown_and_rollback() method
   // will be invoked for next tasks in the queue.
@@ -242,9 +242,9 @@ class Action {
 
  public:
   // Self destructing object.
-  void manage_self(std::shared_ptr<Action> ref) { self_ref = ref; }
+  void manage_self(std::shared_ptr<Action> ref) { self_ref = std::move(ref); }
 
-  int number_of_tasks() { return task_list.size(); }
+  size_t number_of_tasks() const { return task_list.size(); }
 
   // This *MUST* be the last thing on object. Called @ end of dispatch.
   void i_am_done() { self_ref.reset(); }

@@ -70,7 +70,9 @@ void S3PutObjectTaggingAction::validate_request() {
 
 void S3PutObjectTaggingAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
-  if (request->has_all_body_content()) {
+  if (request->is_s3_client_read_timedout()) {
+    client_read_timeout();
+  } else if (request->has_all_body_content()) {
     new_object_tags = request->get_full_body_content_as_string();
     validate_request_body(new_object_tags);
   } else {

@@ -389,6 +389,12 @@ void S3PutMultiObjectAction::consume_incoming_content() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_multiobject_action_consume_incoming_content_shutdown_fail");
+  if (request->is_s3_client_read_timedout()) {
+    if (!clovis_write_in_progress) {
+      client_read_timeout();
+    }
+    return;
+  }
   log_timed_counter(put_timed_counter, "incoming_object_data_blocks");
   s3_perf_count_incoming_bytes(
       request->get_buffered_input()->get_content_length());
@@ -442,7 +448,6 @@ void S3PutMultiObjectAction::write_object(
     // Also send any ready chunk data for auth
     send_chunk_details_if_any();
   }
-
   clovis_write_in_progress = true;
 
   clovis_writer->write_content(
@@ -457,6 +462,10 @@ void S3PutMultiObjectAction::write_object_successful() {
   clovis_write_in_progress = false;
   if (check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    return;
+  }
+  if (request->is_s3_client_read_timedout()) {
+    client_read_timeout();
     return;
   }
   s3_log(S3_LOG_DEBUG, request_id, "Write successful\n");
@@ -496,8 +505,14 @@ void S3PutMultiObjectAction::write_object_successful() {
 
 void S3PutMultiObjectAction::write_object_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Write to clovis failed\n");
+
   clovis_write_in_progress = false;
   clovis_write_completed = true;
+
+  if (request->is_s3_client_read_timedout()) {
+    client_read_timeout();
+    return;
+  }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {

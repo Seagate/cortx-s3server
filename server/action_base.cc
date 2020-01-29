@@ -64,9 +64,7 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
   ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
 
   mem_profile.reset(new S3MemoryProfile());
-  // Set the callback that will be called, when read timeout happens
-  base_request->set_client_read_timeout_callback(
-      std::bind(&Action::client_read_timeout_callback, this));
+
   if (auth_factory) {
     auth_client_factory = std::move(auth_factory);
   } else {
@@ -80,29 +78,25 @@ Action::~Action() { s3_log(S3_LOG_DEBUG, request_id, "Destructor\n"); }
 
 void Action::set_s3_error(std::string code) {
   state = ACTS_ERROR;
-  s3_error_code = code;
+  s3_error_code = std::move(code);
 }
 
 void Action::set_s3_error_message(std::string message) {
-
-  s3_error_message = message;
+  s3_error_message = std::move(message);
 }
 
-void Action::client_read_timeout_callback() {
+void Action::client_read_timeout() {
   set_s3_error("RequestTimeout");
-  if (rollback_state == ACTS_START) {
-    rollback_start();
-  } else {
-    send_response_to_s3_client();
-  }
-  return;
+  rollback_start();
 }
 
-std::string& Action::get_s3_error_code() { return s3_error_code; }
+const std::string& Action::get_s3_error_code() const { return s3_error_code; }
 
-std::string& Action::get_s3_error_message() { return s3_error_message; }
+const std::string& Action::get_s3_error_message() const {
+  return s3_error_message;
+}
 
-bool Action::is_error_state() { return state == ACTS_ERROR; }
+bool Action::is_error_state() const { return state == ACTS_ERROR; }
 
 void Action::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setup the action\n");
@@ -150,9 +144,12 @@ void Action::start() {
 
 // Step to next async step.
 void Action::next() {
-  if ((check_shutdown_signal && check_shutdown_and_rollback()) ||
-      base_request->is_s3_client_read_timedout()) {
+  if (check_shutdown_signal && check_shutdown_and_rollback()) {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    return;
+  }
+  if (base_request->is_s3_client_read_timedout()) {
+    client_read_timeout();
     return;
   }
   if (task_iteration_index < task_list.size()) {
@@ -199,12 +196,17 @@ void Action::abort() {
 // rollback async steps
 void Action::rollback_start() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (rollback_state > ACTS_START) {
+    s3_log(S3_LOG_WARN, request_id,
+           "rollback_start() has been already invoked\n");
+    return;
+  }
   rollback_index = 0;
   rollback_state = ACTS_RUNNING;
   if (rollback_list.size())
     rollback_list[rollback_index++]();
   else {
-    s3_log(S3_LOG_ERROR, request_id, "Rollback triggered on empty list\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Rollback triggered on empty list\n");
     rollback_done();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
