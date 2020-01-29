@@ -468,7 +468,6 @@ public class UserImpl implements UserDAO {
      *                  arn:aws:iam::KO87b1p0TKWa184S6xrINQ:user/u1
      * @return the {@link User}
      */
-
     @Override public User findByArn(String arnToFind)
         throws DataAccessException {
       User user = new User();
@@ -513,7 +512,6 @@ public class UserImpl implements UserDAO {
           String createTime = DateUtil.toServerResponseFormat(
               entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP).getStringValue());
           user.setCreateDate(createTime);
-          user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
         }
 
         return user;

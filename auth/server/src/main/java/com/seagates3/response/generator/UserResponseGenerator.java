@@ -24,6 +24,7 @@ import com.seagates3.response.ServerResponse;
 import com.seagates3.response.formatter.xml.XMLResponseFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import com.seagates3.authorization.Authorizer;
 
 public class UserResponseGenerator extends AbstractResponseGenerator {
     public ServerResponse generateCreateResponse(User user) {
@@ -48,6 +49,7 @@ public class UserResponseGenerator extends AbstractResponseGenerator {
         ArrayList<LinkedHashMap<String, String>> userMemebers = new ArrayList<>();
         LinkedHashMap responseElements;
         for (User user : userList) {
+          if (!Authorizer.isRootUser(user)) {
             responseElements = new LinkedHashMap();
             responseElements.put("UserId", user.getId());
             responseElements.put("Path", user.getPath());
@@ -56,6 +58,7 @@ public class UserResponseGenerator extends AbstractResponseGenerator {
             responseElements.put("CreateDate", user.getCreateDate());
             // responseElements.put("PasswordLastUsed", "");
             userMemebers.add(responseElements);
+          }
         }
         return new XMLResponseFormatter().formatListResponse(
             "ListUsers", "Users", userMemebers, false,

@@ -1143,15 +1143,8 @@ abcdefghijklmnopqrstuvwxyzabcdefghijkjabcdefghijklmnopqrstuvwxyzabcdefghijkjabcd
 
     test_msg = 'List Users (default path)'
     user_args = {}
-    list_user_pattern = "UserId = [\w-]*, UserName = root, ARN = [\S]*, Path = /test/success/$"
     result = AuthTest(test_msg).list_users(**user_args).execute_test()
-    result.command_should_match_pattern(list_user_pattern)
-
-    test_msg = 'List Users (path prefix = /test/)'
-    user_args['PathPrefix'] = '/test/'
-    list_user_pattern = "UserId = [\w-]*, UserName = root, ARN = [\S]*, Path = /test/success/$"
-    result = AuthTest(test_msg).list_users(**user_args).execute_test()
-    result.command_should_match_pattern(list_user_pattern)
+    result == ""
 
     test_msg = 'Reset root user attributes (path and name)'
     user_args = {}
@@ -1534,11 +1527,6 @@ def get_federation_token_test():
 
 
     _use_root_credentials()
-    test_msg = 'List Users (default path)'
-    user_args = {}
-    list_user_pattern = "UserId = [\w-]*, UserName = root, ARN = [\S]*, Path = /$"
-    result = AuthTest(test_msg).list_users(**user_args).execute_test()
-    result.command_should_match_pattern(list_user_pattern)
 
     test_msg = 'Delete access key'
     access_key_args = {}
