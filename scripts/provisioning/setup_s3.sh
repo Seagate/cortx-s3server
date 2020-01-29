@@ -13,6 +13,9 @@ USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
                                     [--olcserverid <Value>]
                                     [--eesnode1 <Value>]
                                     [--eesnode2 <Value>]
+                                    [--s3backgrounddelete <Value>]
+                                    [--node1 <Value>]
+                                    [--node2 <Value>]
                                     [--help | -h]
 Install and configure release S3server setup.
 
@@ -26,6 +29,9 @@ where:
 --eesnode1            EES node 1 for LDAP replication
 --eesnode2            EES node 2 for LDAP replication
 --olcserverid         Host olcServerID (Unique for different nodes)
+--s3backgrounddelete  Configure s3backgrounddelete and its dependencies
+--node1               node 1 for rabbitmq setup
+--node2               node 2 for rabbitmq setup
 --help                Display this help and exit"
 
 set -e
@@ -46,6 +52,8 @@ post_dependency=false
 purge_config_ldap=false
 config_ldap=false
 setup_jenkins_yum_repo=false
+setup_s3backgrounddelete=false
+is_rabbitmq_clustered=false
 
 if [ $# -lt 1 ]
 then
@@ -82,6 +90,16 @@ do
         ;;
     --setupjenkinsyumrepo )
         setup_jenkins_yum_repo=true
+        ;;
+    --s3backgrounddelete )
+        setup_s3backgrounddelte=true
+        current_node=$2
+        ;;
+    --node1 ) shift;
+        node1=$1
+        ;;
+    --node2 ) shift;
+        node2=$1
         ;;
     --help | -h )
         echo "$USAGE"
@@ -191,6 +209,18 @@ then
     #yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
     yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
     yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
+
+    # Install rabbitmq requried for s3background delete on all s3 nodes
+    curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | sudo bash || exit 1
+
+    # Install python3 pika on all nodes requried for s3backgrounddelete (BSD 3-Clause license)
+    if [ "$major_version" = "7" ];
+    then
+        yum -y install  python36-pika
+    elif [ "$major_version" = "8" ];
+    then
+        yum -y localinstall https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/p/python3-pika
+    fi
 fi
 
 setup_ldap_replication()
@@ -276,4 +306,84 @@ then
     systemctl restart slapd
     systemctl restart rsyslog
 
+fi
+
+setup_s3backgrounddelete_rabbitmq()
+{
+    # Start rabbitmq
+    systemctl start rabbitmq-server
+    # Automatically start RabbitMQ at boot time
+    systemctl enable rabbitmq-server
+    # Enable RabbitMQ Web Management Console
+    rabbitmq-plugins enable rabbitmq_management
+
+    # Setup RabbitMQ Cluster
+    # Copy the '.erlang.cookie' file using scp commands from the node1 to node2.
+    if [[ $is_rabbitmq_clustered == true && $current_node == "node1" ]];
+    then
+        echo "Copying '.erlang.cookie' from node1 to node2"
+        if [[ ! -z $node2 ]];
+        then
+            sudo scp /var/lib/rabbitmq/.erlang.cookie root@$node2:/var/lib/rabbitmq/
+        else
+            echo "Required parameter is missing '--node2'"
+            exit 1
+        fi
+    fi
+
+    systemctl restart rabbitmq-server
+    rabbitmqctl stop_app
+
+    # Let RabbitMQ server on node2, join node1
+    if [[ $is_rabbitmq_clustered == true && $current_node == "node2" ]];
+    then
+        echo "Joining the cluster from node2 with node1"
+        if [[ ! -z $node1 ]];
+        then
+            rabbitmqctl join_cluster rabbit@$node1
+        else
+            echo "Required parameter is missing '--node1'"
+            exit 1
+        fi
+    fi
+
+    rabbitmqctl start_app
+    # Check the RabbitMQ cluster status on both nodes
+    cluster_result=`rabbitmqctl cluster_status`
+    if [[ $cluster_result == *ERROR* ]];
+    then
+        echo "Rabbitmq cluster status check failed with error message: $cluster_result"
+        exit 1
+    else
+        echo "Rabbitmq cluster status is okay"
+    fi
+
+    if [[ $is_rabbitmq_clustered == false || $current_node == "node1" ]];
+    then
+        # Create a user (In this case user is 's3-background-delete-rabbitmq' with password as 'password')
+        rabbitmqctl add_user s3-background-delete-rabbitmq password
+        # Setup this user as an administrator.
+        rabbitmqctl set_user_tags s3-background-delete-rabbitmq administrator
+        rabbitmqctl set_permissions -p / s3-background-delete-rabbitmq ".*" ".*" ".*"
+        # Setup queue mirroring
+        rabbitmqctl set_policy ha-all ".*" '{"ha-mode":"all"}'
+    fi
+
+    echo "Rabbitmq configuration for this node is completed..."
+}
+
+# Setup s3backgrounddelete and its dependencies
+if [[ $setup_s3backgrounddelte == true ]]
+then
+    echo "Setting up rabbitmq server.."
+    # 1. Setup rabbitmq server
+    if [[ ! -z "$current_node" && ! -z "$node1"  &&  ! -z "$node2" ]];
+    then
+        echo "Configuring Rabbitmq server in clustered mode.."
+        is_rabbitmq_clustered=true
+    else
+        echo "Configuring Rabbitmq server in non-clustered mode.."
+        is_rabbitmq_clustered=false
+    fi
+    setup_s3backgrounddelete_rabbitmq
 fi

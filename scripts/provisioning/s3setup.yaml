@@ -8,6 +8,9 @@ s3server:
       - --olcserverid 1
       - --eesnode1 <IP address of node 1>
       - --eesnode2 <IP address of node 2>
+      - --s3backgrounddelete <node1|node2 if rabbitmq is clustered>
+      - --node1 <IP address of node 1>
+      - --node2 <IP address of node 2>
   init:
     script: /opt/seagate/s3/install/setup_s3.sh
     args:
