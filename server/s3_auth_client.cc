@@ -987,7 +987,7 @@ void S3AuthClient::validate_acl(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, request_id,
          "Aclvalidation Data being send to Auth server:\n%s\n",
          auth_response_body);
-
+  free(auth_response_body);
   execute_authconnect_request(auth_ctx);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -1026,7 +1026,7 @@ void S3AuthClient::validate_policy(std::function<void(void)> on_success,
   s3_log(S3_LOG_DEBUG, request_id,
          "Policy validation Data being send to Auth server:\n%s\n",
          auth_response_body);
-
+  free(auth_response_body);
   execute_authconnect_request(auth_ctx);
 
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
