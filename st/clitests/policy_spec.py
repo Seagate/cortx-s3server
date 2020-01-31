@@ -744,6 +744,131 @@ AwsTest('AWS can put object to seagate bucket').put_object("seagate", "testObjec
 del os.environ["AWS_ACCESS_KEY_ID"]
 del os.environ["AWS_SECRET_ACCESS_KEY"]
 
+############################ policy authorization with condition DateNotEquals #####################
+
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_DateNotEquals_authorize_success.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put bucket policy on every Principal for 'PutObject' with condition DateNotEquals to '"aws:CurrentTime": "2020-01-01T00:00:00Z"'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+# put object testObject by secondary account
+AwsTest('Secondary account can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+
+############################ policy authorization with condition DateEquals_fail #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_DateEquals_authorize_fail.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put bucket policy on every Principal for 'PutObject' with condition DateEquals to '"aws:CurrentTime": "2020-01-01T00:00:00Z"'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+# put object testObject by secondary account
+AwsTest('Secondary account cannot put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+# TODO: Test this testcase
+'''
+############################ policy authorization with condition DateNotEqualsIfExists #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_DateNotEqualsIfExists_authorize_success.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put bucket policy on every Principal for 'PutObject' with condition DateNotEqualsIfExists to '"aws:CurrentTime": "2020-01-01T00:00:00Z"'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+# put object testObject by secondary account
+AwsTest('Secondary account cannot put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+'''
+
+############################ policy authorization with condition DateEquals_InvalidValue_fail #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_DateEquals_invalidValue_authorize_fail.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put bucket policy on every Principal for 'PutObject' with condition DateEquals to '"aws:CurrentTime": ""'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+# put object testObject by secondary account
+AwsTest('Secondary account cannot put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition DateGreaterThan #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_DateGreaterThan_authorize_success.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put bucket policy on every Principal for 'PutObject' with condition DateGreaterThan to '"aws:CurrentTime": "2020-01-01T00:00:00Z"'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+# put object testObject by secondary account
+AwsTest('Secondary account cannot put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+############################ policy authorization with condition DateGreaterThanEquals #####################
+policy_authorization_relative = os.path.join(os.path.dirname(__file__), 'policy_files', 'policy_condition_DateGreaterThanEquals_authorize_success.json')
+policy_authorization = "file://" + os.path.abspath(policy_authorization_relative)
+# put bucket policy on every Principal for 'PutObject' with condition DateGreaterThanEquals to '"aws:CurrentTime": "2020-01-01T00:00:00Z"'
+AwsTest("Aws can put policy on bucket").put_bucket_policy("seagate", policy_authorization).execute_test().command_is_successful()
+
+# put object testObject
+AwsTest('Bucket Owner can put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = secondary_secret_key
+
+# put object testObject by secondary account
+AwsTest('Secondary account cannot put object to seagate bucket').put_object("seagate", "testObject")\
+.execute_test().command_is_successful()
+
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+
 ################## clean up #####################
 
 os.environ["AWS_ACCESS_KEY_ID"] = secondary_access_key

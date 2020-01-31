@@ -96,6 +96,9 @@ $PythonV awss3api_spec.py
 echo "`date -u`: Running aclvalidation_spec.py..."
 $PythonV aclvalidation_spec.py
 
+echo "`date -u`: Running policy_spec.py..."
+$PythonV policy_spec.py
+
 echo "`date -u`: Running authpassencryptcli_spec.py..."
 $PythonV authpassencryptcli_spec.py
 

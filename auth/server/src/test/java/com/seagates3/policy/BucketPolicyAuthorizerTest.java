@@ -1,3 +1,22 @@
+/*
+ * COPYRIGHT 2019 SEAGATE LLC
+ *
+ * THIS DRAWING/DOCUMENT, ITS SPECIFICATIONS, AND THE DATA CONTAINED
+ * HEREIN, ARE THE EXCLUSIVE PROPERTY OF SEAGATE TECHNOLOGY
+ * LIMITED, ISSUED IN STRICT CONFIDENCE AND SHALL NOT, WITHOUT
+ * THE PRIOR WRITTEN PERMISSION OF SEAGATE TECHNOLOGY LIMITED,
+ * BE REPRODUCED, COPIED, OR DISCLOSED TO A THIRD PARTY, OR
+ * USED FOR ANY PURPOSE WHATSOEVER, OR STORED IN A RETRIEVAL SYSTEM
+ * EXCEPT AS ALLOWED BY THE TERMS OF SEAGATE LICENSES AND AGREEMENTS.
+ *
+ * YOU SHOULD HAVE RECEIVED A COPY OF SEAGATE'S LICENSE ALONG WITH
+ * THIS RELEASE. IF NOT PLEASE CONTACT A SEAGATE REPRESENTATIVE
+ * http://www.seagate.com/contact
+ *
+ * Original author:  Ajinkya Dhumal
+ * Original creation date: 20-January-2019
+ */
+
 package com.seagates3.policy;
 
 import static org.junit.Assert.assertFalse;
@@ -396,6 +415,22 @@ class BucketPolicyAuthorizerTest {
                                                    requestBody));
   }
 
+  @Test public void testAuthorizePolicy_NumericLessThan_NullHeader_fail()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "max-keys";
+    requestBody.put(key, null);
+    values.add("10");
+    Condition condition = new Condition();
+    condition.setType("NumericLessThan");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                    requestBody));
+  }
+
   @Test public void testAuthorizePolicy_Bool_true() throws Exception {
     requestBody = new HashMap<String, String>();
     key = "abc-keys";
@@ -455,198 +490,351 @@ class BucketPolicyAuthorizerTest {
                                                     requestBody));
   }
 
-  /*@Test
-  public void testAuthorizePolicy_DateEquals_true() throws Exception {
+  @Test public void testAuthorizePolicy_DateEquals_true() throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "10");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200125T175000Z");
+      values.add("2020-01-25T17:50:00Z");
       Condition condition = new Condition();
       condition.setType("DateEquals");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertTrue((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                     requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateNotEquals_true() throws Exception {
+  @Test public void testAuthorizePolicy_DateEquals_hhmmformat_true()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "CurrentTime";
+    requestBody.put("X-Amz-Date", "19970716T192000Z");
+    values.add("1997-07-16T19:20Z");
+    Condition condition = new Condition();
+    condition.setType("DateEquals");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateLessThan_hhmmformat_true()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "CurrentTime";
+    requestBody.put("X-Amz-Date", "19970715T192000Z");
+    values.add("1997-07-16T19:20Z");
+    Condition condition = new Condition();
+    condition.setType("DateLessThan");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateEquals_yyyymmddformat_true()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "CurrentTime";
+    requestBody.put("X-Amz-Date", "19970716T000000Z");
+    values.add("1997-07-16");
+    Condition condition = new Condition();
+    condition.setType("DateEquals");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateLessThan_yyyymmddformat_true()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "CurrentTime";
+    requestBody.put("X-Amz-Date", "19970715T192000Z");
+    values.add("1997-07-16");
+    Condition condition = new Condition();
+    condition.setType("DateLessThan");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateEquals_yyyymmdd_sformat_true()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "11");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "19970716T002030Z");
+      values.add("1997-07-16T00:20:30.45Z");
+      Condition condition = new Condition();
+      condition.setType("DateEquals");
+      condition.setConditionKey(key);
+      condition.setValues(values);
+      List<Condition> conditions = new ArrayList<>();
+      conditions.add(condition);
+      assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                     requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateLessThan_yyyymmdd_sformat_true()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "CurrentTime";
+    requestBody.put("X-Amz-Date", "19970715T192000Z");
+    values.add("1997-07-16T00:20:30.45Z");
+    Condition condition = new Condition();
+    condition.setType("DateLessThan");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateEquals_true_epoch_time()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "EpochTime";
+    requestBody.put("X-Amz-Date", "20200124T201010Z");
+    values.add("1579896610");
+    Condition condition = new Condition();
+    condition.setType("DateEquals");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateNotEquals_true() throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "CurrentTime";
+    requestBody.put("X-Amz-Date", "20200125T175002Z");
+    values.add("2020-01-30T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateNotEquals");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertTrue((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                     requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateEquals_false() throws Exception {
+  @Test public void testAuthorizePolicy_DateEquals_false() throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "10");
-      values.add("11");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200125T175002Z");
+      values.add("2020-01-20T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateEquals");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertFalse((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                      requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateGreaterThan_true() throws Exception {
+  @Test public void testAuthorizePolicy_DateGreaterThan_true()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "11");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200130T175002Z");
+      values.add("2020-01-20T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateGreaterThan");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertTrue((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                     requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateGreaterThan_false() throws Exception {
+  @Test public void testAuthorizePolicy_DateGreaterThan_false()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "9");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200120T175002Z");
+      values.add("2020-01-25T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateGreaterThan");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertFalse((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                      requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateGreaterThanEquals_true() throws Exception
-  {
+  @Test public void testAuthorizePolicy_DateGreaterThanEquals_true()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "10");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200125T175002Z");
+      values.add("2020-01-20T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateGreaterThanEquals");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertTrue((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                     requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateGreaterThanEquals_false()
-  throws Exception {
+  @Test public void testAuthorizePolicy_DateGreaterThanEquals_false()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "9");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200125T175002Z");
+      values.add("2020-01-26T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateGreaterThanEquals");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertFalse((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                      requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateLessThan_true() throws Exception {
+  @Test public void testAuthorizePolicy_DateGreaterThanEquals_NullHeader_false()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "CurrentTime";
+    requestBody.put("X-Amz-Date", null);
+    values.add("2020-01-26T17:50:02Z");
+    Condition condition = new Condition();
+    condition.setType("DateGreaterThanEquals");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                    requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateLessThan_true() throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "9");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200125T175002Z");
+      values.add("2020-01-26T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateLessThan");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertTrue((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                     requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateLessThan_false() throws Exception {
+  @Test public void testAuthorizePolicy_DateLessThan_false() throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "10");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200130T175002Z");
+      values.add("2020-01-26T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateLessThan");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertFalse((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                      requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateLessThanEquals_true() throws Exception {
+  @Test public void testAuthorizePolicy_DateLessThanEquals_true()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "10");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200125T175002Z");
+      values.add("2020-01-26T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateLessThanEquals");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertTrue((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                     requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateLessThanEquals_false() throws Exception {
+  @Test public void testAuthorizePolicy_DateLessThanEquals_false()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      requestBody.put(key, "11");
-      values.add("10");
+      key = "CurrentTime";
+      requestBody.put("X-Amz-Date", "20200130T175002Z");
+      values.add("2020-01-26T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateLessThanEquals");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertFalse((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
+      assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                      requestBody));
   }
 
-  @Test
-  public void testAuthorizePolicy_DateEqualsIfExists_true() throws Exception {
+  @Test public void testAuthorizePolicy_DateEqualsIfExists_nokey_true()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "InvalidKeyTime";
+    values.add("2020-01-25T17:50:02Z");
+    Condition condition = new Condition();
+    condition.setType("DateEqualsIfExists");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateEqualsIfExists_true()
+      throws Exception {
+    requestBody = new HashMap<String, String>();
+    key = "InvalidKeyTime";
+    requestBody.put(key, "20200125T175002Z");
+    values.add("2020-01-25T17:50:02Z");
+    Condition condition = new Condition();
+    condition.setType("DateEqualsIfExists");
+    condition.setConditionKey(key);
+    condition.setValues(values);
+    List<Condition> conditions = new ArrayList<>();
+    conditions.add(condition);
+    assertTrue((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                   requestBody));
+  }
+
+  @Test public void testAuthorizePolicy_DateEqualsIfExists_nullValue_false()
+      throws Exception {
       requestBody = new HashMap<String, String>();
-      key = "max-keys";
-      values.add("10");
+      key = "InvalidKeyTime";
+      requestBody.put(key, null);
+      values.add("2020-01-25T17:50:02Z");
       Condition condition = new Condition();
       condition.setType("DateEqualsIfExists");
       condition.setConditionKey(key);
       condition.setValues(values);
       List<Condition> conditions = new ArrayList<>();
       conditions.add(condition);
-      assertTrue((Boolean)isConditionMatching.invoke(
-          bpAuthorizer, conditions, requestBody));
-  }*/
+      assertFalse((Boolean)isConditionMatching.invoke(bpAuthorizer, conditions,
+                                                      requestBody));
+  }
 
   @Test public void testAuthorizePolicy_Null_true_success() throws Exception {
     requestBody = new HashMap<String, String>();
