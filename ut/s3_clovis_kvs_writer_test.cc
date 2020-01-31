@@ -54,7 +54,7 @@ int s3_test_clovis_idx_op(struct m0_clovis_idx *idx,
                           enum m0_clovis_idx_opcode opcode,
                           struct m0_bufvec *keys, struct m0_bufvec *vals,
                           int *rcs, unsigned int flags,
-                          struct m0_clovis_op **op) {
+                          struct m0_clovis_op **op, bool wait_for_sync) {
   *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
   return 0;
 }
@@ -391,7 +391,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyVal) {
   S3CallBack s3cloviskvscallbackobj;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
@@ -415,7 +415,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValEmpty) {
   S3CallBack s3cloviskvscallbackobj;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
@@ -460,7 +460,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailed) {
   S3CallBack s3cloviskvscallbackobj;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
@@ -531,7 +531,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyVal) {
   S3CallBack s3cloviskvscallbackobj;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
@@ -553,7 +553,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValEmpty) {
   S3CallBack s3cloviskvscallbackobj;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
@@ -574,7 +574,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccess) {
   S3CallBack s3cloviskvscallbackobj;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
@@ -598,7 +598,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValFailed) {
   S3CallBack s3cloviskvscallbackobj;
 
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
