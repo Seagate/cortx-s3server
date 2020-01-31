@@ -82,14 +82,18 @@ def load_classes():
   headers={}
   rex = re.compile(r'^class\s+(\w+)\s+:\s+public\s+(\w+)\b')
   for header in glob.glob("*.h"): # assumes we're in server/ folder
-    with open(header) as handle:
-      for line in handle:
-        match = rex.match(line)
-        if match:
-          cls=match.group(1)
-          parent=match.group(2)
-          parents[cls] = parent
-          headers[cls] = header
+    try:
+      with open(header, encoding='utf8') as handle:
+        for line in handle:
+          match = rex.match(line)
+          if match:
+            cls=match.group(1)
+            parent=match.group(2)
+            parents[cls] = parent
+            headers[cls] = header
+    except:
+      print("\nCannot process file {}\n".format(header))
+      raise
   return (parents, headers)
 
 def find_leaves(parents, parent_name):
@@ -159,21 +163,25 @@ def find_task_names():
   cc_list = glob.glob("*.cc") + glob.glob("../ut/*.cc")
   func_names = []
   for cc_file in cc_list:
-    task_line = ""
-    in_proc_line = False
-    with open(cc_file) as cur_file:
-      for cur_line in cur_file:
-        if in_proc_line:
-          task_line += cur_line.strip()
-        else:
-          in_proc_line = "ACTION_TASK_ADD" in cur_line
-          task_line = cur_line.strip()
-        if in_proc_line and task_line.endswith(";"):
-          extr_task_name = extract_task_name(task_line)
-          if extr_task_name is not None:
-            func_names.append(extr_task_name)
-          task_line = ""
-          in_proc_line = False
+    try:
+      task_line = ""
+      in_proc_line = False
+      with open(cc_file, encoding='utf8') as cur_file:
+        for cur_line in cur_file:
+          if in_proc_line:
+            task_line += cur_line.strip()
+          else:
+            in_proc_line = "ACTION_TASK_ADD" in cur_line
+            task_line = cur_line.strip()
+          if in_proc_line and task_line.endswith(";"):
+            extr_task_name = extract_task_name(task_line)
+            if extr_task_name is not None:
+              func_names.append(extr_task_name)
+            task_line = ""
+            in_proc_line = False
+    except:
+      print("\nCannot process file {}\n".format(cc_file))
+      raise
 
   return func_names
 
