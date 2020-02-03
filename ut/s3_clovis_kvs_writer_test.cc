@@ -172,12 +172,9 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndex) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_create(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
 
   action_under_test->create_index(
       "TestIndex", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -194,12 +191,9 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexIdxPresent) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_create(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
 
   action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(
       1, sizeof(struct s3_clovis_idx_context));
@@ -220,13 +214,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexIdxPresent) {
 
 TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessful) {
   S3CallBack s3cloviskvscallbackobj;
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
   action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(
       1, sizeof(struct s3_clovis_idx_context));
   action_under_test->idx_ctx->idx =
@@ -240,7 +228,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessful) {
 
   action_under_test->create_index_successful();
 
-  EXPECT_EQ(S3ClovisKVSWriterOpState::saved, action_under_test->get_state());
+  EXPECT_EQ(S3ClovisKVSWriterOpState::created, action_under_test->get_state());
   EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
   EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
 }
@@ -310,83 +298,6 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexFailExists) {
   EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
 }
 
-TEST_F(S3ClovisKvsWritterTest, SyncIndex) {
-  S3CallBack s3cloviskvscallbackobj;
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
-  action_under_test->writer_context.reset(new S3AsyncClovisKVSWriterContext(
-      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
-  action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(
-      1, sizeof(struct s3_clovis_idx_context));
-  action_under_test->idx_ctx->idx =
-      (struct m0_clovis_idx *)calloc(1, sizeof(struct m0_clovis_idx));
-  action_under_test->idx_ctx->idx_count = 1;
-
-  action_under_test->handler_on_success =
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
-  action_under_test->handler_on_failed =
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj);
-
-  action_under_test->sync_index(
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
-  EXPECT_EQ(S3ClovisKVSWriterOpState::saved, action_under_test->get_state());
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
-}
-
-TEST_F(S3ClovisKvsWritterTest, SyncIndexSuccessful) {
-  S3CallBack s3cloviskvscallbackobj;
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_)).WillRepeatedly(Return(0));
-  action_under_test->writer_context.reset(new S3AsyncClovisKVSWriterContext(
-      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
-  action_under_test->handler_on_success =
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
-  action_under_test->sync_index_successful();
-  EXPECT_EQ(S3ClovisKVSWriterOpState::saved, action_under_test->state);
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-}
-
-TEST_F(S3ClovisKvsWritterTest, SyncIndexFailedMissingMetadata) {
-  S3CallBack s3cloviskvscallbackobj;
-  action_under_test->sync_context.reset(new S3AsyncClovisKVSWriterContext(
-      ptr_mock_request, NULL, NULL, 1, ptr_mock_s3clovis));
-
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_rc(_))
-      .WillRepeatedly(Return(-ENOENT));
-  action_under_test->handler_on_success =
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
-  action_under_test->handler_on_failed =
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj);
-  action_under_test->sync_context->ops_response[0].error_code = -ENOENT;
-  action_under_test->sync_index_failed();
-
-  EXPECT_EQ(S3ClovisKVSWriterOpState::missing, action_under_test->state);
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
-}
-
-TEST_F(S3ClovisKvsWritterTest, SyncIndexFailedFailedMetadata) {
-  S3CallBack s3cloviskvscallbackobj;
-  action_under_test->sync_context.reset(
-      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
-
-  action_under_test->handler_on_failed =
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj);
-  action_under_test->sync_context->ops_response[0].error_code = -EACCES;
-  action_under_test->sync_index_failed();
-
-  EXPECT_EQ(S3ClovisKVSWriterOpState::failed, action_under_test->get_state());
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
-}
-
 TEST_F(S3ClovisKvsWritterTest, PutKeyVal) {
   S3CallBack s3cloviskvscallbackobj;
 
@@ -394,12 +305,9 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyVal) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
 
   action_under_test->put_keyval(
       oid, "3kfile",
@@ -418,12 +326,9 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValEmpty) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_idx_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
 
   action_under_test->put_keyval(
       oid, "", "", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -435,12 +340,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValEmpty) {
 
 TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessful) {
   S3CallBack s3cloviskvscallbackobj;
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
+
   action_under_test->writer_context.reset(
       new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
 
@@ -451,7 +351,7 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessful) {
 
   action_under_test->put_keyval_successful();
 
-  EXPECT_EQ(S3ClovisKVSWriterOpState::saved, action_under_test->get_state());
+  EXPECT_EQ(S3ClovisKVSWriterOpState::created, action_under_test->get_state());
   EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
   EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
 }
@@ -483,50 +383,6 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyValFailed) {
   EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
 }
 
-TEST_F(S3ClovisKvsWritterTest, SyncKeyVal) {
-  S3CallBack s3cloviskvscallbackobj;
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
-  action_under_test->writer_context.reset(
-      new S3AsyncClovisKVSWriterContext(ptr_mock_request, NULL, NULL));
-
-  action_under_test->handler_on_success =
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
-  action_under_test->handler_on_failed =
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj);
-
-  action_under_test->sync_keyval(
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
-  EXPECT_EQ(S3ClovisKVSWriterOpState::saved, action_under_test->get_state());
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
-}
-
-TEST_F(S3ClovisKvsWritterTest, SyncKeyvalSuccessful) {
-  S3CallBack s3cloviskvscallbackobj;
-  action_under_test->handler_on_success =
-      std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
-  action_under_test->sync_keyval_successful();
-  EXPECT_EQ(S3ClovisKVSWriterOpState::saved, action_under_test->state);
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-}
-
-TEST_F(S3ClovisKvsWritterTest, SyncKeyValFailed) {
-  S3CallBack s3cloviskvscallbackobj;
-  action_under_test->handler_on_failed =
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj);
-  action_under_test->sync_keyval_failed();
-
-  EXPECT_EQ(S3ClovisKVSWriterOpState::failed, action_under_test->state);
-  EXPECT_TRUE(s3cloviskvscallbackobj.fail_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.success_called);
-}
-
 TEST_F(S3ClovisKvsWritterTest, DelKeyVal) {
   S3CallBack s3cloviskvscallbackobj;
 
@@ -537,9 +393,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyVal) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
+
   action_under_test->delete_keyval(
       oid, "3kfile",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -559,9 +413,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValEmpty) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _));
+
   action_under_test->delete_keyval(
       oid, "", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
@@ -582,8 +434,7 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyValSuccess) {
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
       .WillRepeatedly(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_add(_, _)).Times(AtLeast(1));
-  ;
+
   action_under_test->delete_keyval(
       oid, "3kfile",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
@@ -624,12 +475,9 @@ TEST_F(S3ClovisKvsWritterTest, DelIndex) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_delete(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_open(_, _));
 
   action_under_test->delete_index(
@@ -646,12 +494,9 @@ TEST_F(S3ClovisKvsWritterTest, DelIndexIdxPresent) {
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_delete(_, _))
       .WillOnce(Invoke(s3_test_alloc_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(2);
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
       .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_op_init(_))
-      .WillOnce(Invoke(s3_test_alloc_sync_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_sync_entity_add(_, _));
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_entity_open(_, _));
 
   action_under_test->idx_ctx = (struct s3_clovis_idx_context *)calloc(

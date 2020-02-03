@@ -77,14 +77,10 @@ S3cmdTest('s3cmd can upload 18MB file').upload_test("seagatebucket", "18MBfile",
 S3cmdTest('s3cmd should not have objects after rollback').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 S3fiTest('s3cmd can disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
 # Set second rollback checkpoint in multipart upload
-S3fiTest('s3cmd enable FI create index fail').enable_fi_enablen("enable", "clovis_idx_create_fail", "2").execute_test().command_is_successful()
+S3fiTest('s3cmd enable FI create index fail').enable_fi_enablen("enable", "clovis_idx_create_fail", "1").execute_test().command_is_successful()
 S3cmdTest('s3cmd can upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail()
 S3cmdTest('s3cmd should not have objects after rollback').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('18MBfile')
 S3fiTest('s3cmd can disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
-
-S3fiTest('s3cmd enable FI create index fail').enable_fi_offnonm("enable", "clovis_idx_create_fail", "1", "99").execute_test().command_is_successful()
-S3cmdTest('s3cmd cannot upload 18MB file').upload_test("seagatebucket", "18MBfile", 18000000).execute_test(negative_case=True).command_should_fail().command_error_should_have("InternalError")
-S3fiTest('s3cmd disable Fault injection').disable_fi("clovis_idx_create_fail").execute_test().command_is_successful()
 
 is_object_leak_track_enabled=yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING"]
 fi_off="2"
@@ -277,8 +273,6 @@ S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test
 # *************** Unused FI APIs above *************
 # NOTE: Remove FI API if they are used in any test above in future
 S3fiTest('s3cmd enable FI random test').enable_fi_random("enable", "unused_fail", "10").execute_test().command_is_successful()
-S3fiTest('s3cmd disable Fault injection').disable_fi("unused_fail").execute_test().command_is_successful()
-S3fiTest('s3cmd enable FI offnonm test').enable_fi_offnonm("enable", "unused_fail", "3", "5").execute_test().command_is_successful()
 S3fiTest('s3cmd disable Fault injection').disable_fi("unused_fail").execute_test().command_is_successful()
 S3fiTest('s3cmd enable FI once test').enable_fi("enable", "once", "unused_fail").execute_test().command_is_successful()
 S3fiTest('s3cmd disable Fault injection').disable_fi("unused_fail").execute_test().command_is_successful()

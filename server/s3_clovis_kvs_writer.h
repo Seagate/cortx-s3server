@@ -113,7 +113,6 @@ enum class S3ClovisKVSWriterOpState {
   failed_to_launch,
   failed,
   created,
-  saved,
   deleted,
   exists,   // Key already exists
   missing,  // Key does not exists
@@ -169,15 +168,17 @@ class S3ClovisKVSWriter {
                                      std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed);
 
-  void sync_index(std::function<void(void)> on_success,
-                  std::function<void(void)> on_failed, int index_count = 1);
-  void sync_index_successful();
-  void sync_index_failed();
+  // Sync clovis is currently done using clovis_idx_op
 
-  void sync_keyval(std::function<void(void)> on_success,
-                   std::function<void(void)> on_failed);
-  void sync_keyval_successful();
-  void sync_keyval_failed();
+  // void sync_index(std::function<void(void)> on_success,
+  //                 std::function<void(void)> on_failed, int index_count = 1);
+  // void sync_index_successful();
+  // void sync_index_failed();
+
+  // void sync_keyval(std::function<void(void)> on_success,
+  //                  std::function<void(void)> on_failed);
+  // void sync_keyval_successful();
+  // void sync_keyval_failed();
 
   // async delete
   virtual void delete_index(struct m0_uint128 idx_oid,
