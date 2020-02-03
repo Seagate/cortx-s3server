@@ -4,6 +4,7 @@ the rabbitmq mesaage queue.
 """
 #!/usr/bin/python3.6
 
+import os
 import traceback
 import sched
 import time
@@ -23,6 +24,7 @@ class ObjectRecoveryScheduler(object):
         """Initialise logger and configuration."""
         self.data = None
         self.config = EOSCoreConfig()
+        self.create_logger_directory()
         self.create_logger()
         self.logger.info("Initialising the Object Recovery Scheduler")
 
@@ -116,6 +118,16 @@ class ObjectRecoveryScheduler(object):
         # add the handlers to the logger
         self.logger.addHandler(fhandler)
         self.logger.addHandler(chandler)
+
+    def create_logger_directory(self):
+        """Create log directory if not exsists."""
+        self._logger_directory = os.path.join(self.config.get_logger_directory())
+        if not os.path.isdir(self._logger_directory):
+            try:
+                os.mkdir(self._logger_directory)
+            except BaseException:
+                self.logger.error(
+                    "Unable to create log directory at " + self._logger_directory)
 
 if __name__ == "__main__":
     SCHEDULER = ObjectRecoveryScheduler()

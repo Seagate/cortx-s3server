@@ -13,6 +13,7 @@ logconfig:                                  # Section for scheduler & processor 
 
    scheduler_logger_name: "object_recovery_scheduler"                                         # Root logger name for scheduler
    processor_logger_name: "object_recovery_processor"                                         # Root logger name for processor
+   logger_directory: "/var/log/seagate/s3/s3backgrounddelete"                                 # Log directory location for background delete
    scheduler_log_file: "/var/log/seagate/s3/s3backgrounddelete/object_recovery_scheduler.log" # Log file path for background delete scheduler
    processor_log_file: "/var/log/seagate/s3/s3backgrounddelete/object_recovery_processor.log" # Log file path for background delete processor
    file_log_level: 10                                                                         # Sets the threshold for above file loggers to level specified. https://docs.python.org/3/library/logging.html#levels
@@ -24,15 +25,15 @@ rabbitmq:                                    # Section for RabbitMQ configs
 
    # RabbitMQ overview:  https://www.rabbitmq.com/getstarted.html
 
-    username: "admin"                 # Username used to communicate with RabbitMQ
-    password: "password"              # Password corresponding to username
-    host: "127.0.0.1"                 # Host on which RabbitMQ is runnning
-    queue: "s3_delete_obj_job_queue"  # Queue name used in RabbitMQ
-    exchange: ""                      # Exchanges control the routing of messages to queues.
-    exchange_type: "direct"           # Exchanges type includes direct, fanout, topic exchange, header exchange
-    mode: 2                           # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
-    durable: "True"                   # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 900       # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds)
+    username: "eos-s3"                                      # Username used to communicate with RabbitMQ
+    password: "password"                                    # Password corresponding to username
+    host: "127.0.0.1"                                       # Host on which RabbitMQ is runnning
+    queue: "s3_delete_obj_job_queue"                        # Queue name used in RabbitMQ
+    exchange: ""                                            # Exchanges control the routing of messages to queues.
+    exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
+    mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
+    durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
+    schedule_interval_secs: 900                             # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds)
 
 indexid:
 

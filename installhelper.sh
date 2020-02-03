@@ -50,6 +50,7 @@ mkdir -p $S3_INSTALL_LOCATION/install/ldap
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
 mkdir -p $S3_INSTALL_LOCATION/install/provisioning
 mkdir -p $S3_INSTALL_LOCATION/docs
+mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
 mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $S3_LOG_ROTATE_FILE_LOCATION
 mkdir -p $KEEPALIVED_CFG_DIR_LOCATION
@@ -109,6 +110,12 @@ cp ./system/s3server@.service $SERVICE_FILE_LOCATION
 
 # Copy the s3 log rotate script for retaining recent modified log files
 cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
+
+# Copy the s3 background producer binary file into rpm location.
+cp s3backgrounddelete/s3backgrounddelete/s3backgroundproducer $S3_INSTALL_LOCATION/s3backgrounddelete/
+
+# Copy the s3 background consumer binary file into rpm location.
+cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATION/s3backgrounddelete/
 
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION

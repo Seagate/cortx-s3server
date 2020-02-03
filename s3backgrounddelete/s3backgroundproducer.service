@@ -5,7 +5,7 @@ Requires=rabbitmq-server.service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/s3backgroundproducer
+ExecStart=/opt/seagate/s3/s3backgrounddelete/s3backgroundproducer
 ExecStop=/bin/kill -TERM $MAINPID
 TimeoutSec=300
 Restart=on-failure

@@ -47,6 +47,15 @@ class EOSCoreConfig(object):
         with open(self._conf_file, 'r') as file_config:
             self._config = yaml.safe_load(file_config)
 
+    def get_logger_directory(self):
+        """Return logger directory path for background delete from config file or KeyError."""
+        if 'logconfig' in self._config and self._config['logconfig']['logger_directory']:
+            return self._config['logconfig']['logger_directory']
+        else:
+            raise KeyError(
+                "Could not parse logger directory path from config file " +
+                self._conf_file)
+
     def get_scheduler_logger_name(self):
         """Return logger name for scheduler from config file or KeyError."""
         if 'logconfig' in self._config and self._config['logconfig']['scheduler_logger_name']:

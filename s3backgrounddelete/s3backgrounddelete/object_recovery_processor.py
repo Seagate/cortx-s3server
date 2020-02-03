@@ -4,6 +4,7 @@ the rabbitmq message queue.
 """
 #!/usr/bin/python3.6
 
+import os
 import traceback
 import logging
 import datetime
@@ -20,6 +21,7 @@ class ObjectRecoveryProcessor(object):
         """Initialise Server, config and create logger."""
         self.server = None
         self.config = EOSCoreConfig()
+        self.create_logger_directory()
         self.create_logger()
         self.logger.info("Initialising the Object Recovery Processor")
 
@@ -75,6 +77,15 @@ class ObjectRecoveryProcessor(object):
         # perform an orderly shutdown by flushing and closing all handlers
         logging.shutdown()
 
+    def create_logger_directory(self):
+        """Create log directory if not exsists."""
+        self._logger_directory = os.path.join(self.config.get_logger_directory())
+        if not os.path.isdir(self._logger_directory):
+            try:
+                os.mkdir(self._logger_directory)
+            except BaseException:
+                self.logger.error(
+                    "Unable to create log directory at " + self._logger_directory)
 
 if __name__ == "__main__":
     PROCESSOR = ObjectRecoveryProcessor()
