@@ -185,15 +185,24 @@ class BucketPolicyValidator extends PolicyValidator {
                                                    // as json parser setting the
               // default value when not present
               String effectValue = obj.get(objKey).toString();
-              if (effectValue != null &&
-                  !effectValue.equals(Statement.Effect.Allow.toString()) &&
-                  !effectValue.equals(Statement.Effect.Deny.toString())) {
-                response = responseGenerator.malformedPolicy(
-                    "Invalid effect : " + effectValue);
-                LOGGER.error("Effect value is invalid in bucket policy - " +
-                             effectValue);
+              if (effectValue != null) {
+                if (effectValue.isEmpty()) {
+
+                  response = responseGenerator.malformedPolicy(
+                      "Missing required field Effect cannot be empty!");
+                  LOGGER.error("Required field Effect is empty");
+
+                } else if (!effectValue.equals(
+                                Statement.Effect.Allow.toString()) &&
+                           !effectValue.equals(
+                                Statement.Effect.Deny.toString())) {
+                  response = responseGenerator.malformedPolicy(
+                      "Invalid effect : " + effectValue);
+                  LOGGER.error("Effect value is invalid in bucket policy - " +
+                               effectValue);
+                }
+                isEffectFieldPresent = true;
               }
-              isEffectFieldPresent = true;
             } else if ("Principal".equals(objKey)) {
               if (obj.get(objKey) != null &&
                   obj.get(objKey) instanceof String) {
