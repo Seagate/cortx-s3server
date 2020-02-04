@@ -26,6 +26,7 @@
 #include "s3_iem.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
+#include "s3_object_versioning_helper.h"
 #include "s3_uri_to_mero_oid.h"
 #include "s3_common_utilities.h"
 #include "s3_m0_uint128_helper.h"
@@ -80,7 +81,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
     system_defined_attribute["Upload-ID"] = upload_id;
     system_defined_attribute["Part-One-Size"] = "";
   } else {
-    index_name = get_bucket_index_name();
+    index_name = get_object_list_index_name();
   }
 
   index_oid = {0ULL, 0ULL};
@@ -174,6 +175,15 @@ std::string S3ObjectMetadata::get_object_name() { return object_name; }
 
 struct m0_uint128 S3ObjectMetadata::get_index_oid() {
   return index_oid;
+}
+
+void S3ObjectMetadata::regenerate_version_id() {
+  // generate new epoch time value for new object
+  rev_epoch_version_id_key = S3ObjectVersioingHelper::generate_new_epoch_time();
+  // set version id
+  object_version_id = S3ObjectVersioingHelper::get_versionid_from_epoch_time(
+      rev_epoch_version_id_key);
+  system_defined_attribute["x-amz-version-id"] = object_version_id;
 }
 
 std::string S3ObjectMetadata::get_user_id() { return user_id; }
@@ -541,6 +551,7 @@ std::string S3ObjectMetadata::to_json() {
   root["Object-Name"] = object_name;
   root["Object-URI"] = object_key_uri;
   root["layout_id"] = layout_id;
+
   if (is_multipart) {
     root["Upload-ID"] = upload_id;
     root["mero_part_oid"] = mero_part_oid_str;
@@ -639,6 +650,9 @@ int S3ObjectMetadata::from_json(std::string content) {
   user_id = system_defined_attribute["Owner-User-id"];
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];
+  object_version_id = system_defined_attribute["x-amz-version-id"];
+  rev_epoch_version_id_key =
+      S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
 
   members = newroot["User-Defined"].getMemberNames();
   for (auto it : members) {
@@ -729,6 +743,7 @@ std::string S3ObjectMetadata::create_probable_delete_record(
   root["object_metadata_path"] = get_object_name();
   root["object_layout_id"] = override_layout_id;
   root["global_instance_id"] = S3M0Uint128Helper::to_string(global_instance_id);
+  root["version_id"] = object_version_id;
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);

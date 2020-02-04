@@ -137,7 +137,6 @@ void S3GetObjectAction::validate_object_info() {
     for (auto it : object_metadata->get_user_attributes()) {
       request->set_out_header_value(it.first, it.second);
     }
-
     request->send_reply_start(S3HttpSuccess200);
     send_response_to_s3_client();
   } else {

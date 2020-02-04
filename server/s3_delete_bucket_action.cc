@@ -90,6 +90,8 @@ void S3DeleteBucketAction::setup_steps() {
   ACTION_TASK_ADD(S3DeleteBucketAction::remove_part_indexes, this);
   ACTION_TASK_ADD(S3DeleteBucketAction::remove_multipart_index, this);
   ACTION_TASK_ADD(S3DeleteBucketAction::remove_object_list_index, this);
+  ACTION_TASK_ADD(S3DeleteBucketAction::remove_objects_version_list_index,
+                  this);
   ACTION_TASK_ADD(S3DeleteBucketAction::delete_bucket, this);
   ACTION_TASK_ADD(S3DeleteBucketAction::send_response_to_s3_client, this);
   // ...
@@ -119,6 +121,8 @@ void S3DeleteBucketAction::fetch_first_object_metadata() {
         request, s3_clovis_api);
     // Try to fetch one object at least
     object_list_index_oid = bucket_metadata->get_object_list_index_oid();
+    objects_version_list_index_oid =
+        bucket_metadata->get_objects_version_list_index_oid();
     // If no object list index oid then it means bucket is empty
     if (object_list_index_oid.u_lo == 0ULL &&
         object_list_index_oid.u_hi == 0ULL) {
@@ -452,6 +456,45 @@ void S3DeleteBucketAction::remove_object_list_index_failed() {
          "Failed to delete index, this will be stale in Mero: %" SCNx64
          " : %" SCNx64 "\n",
          object_list_index_oid.u_hi, object_list_index_oid.u_lo);
+  s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
+         S3_IEM_DELETE_IDX_FAIL_JSON);
+  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+    set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3DeleteBucketAction::remove_objects_version_list_index() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (objects_version_list_index_oid.u_hi == 0ULL &&
+      objects_version_list_index_oid.u_lo == 0ULL) {
+    next();
+  } else {
+    // Can happen when only index is present, no objects in it
+    if (clovis_kv_writer == nullptr) {
+      clovis_kv_writer = clovis_kvs_writer_factory->create_clovis_kvs_writer(
+          request, s3_clovis_api);
+    }
+    clovis_kv_writer->delete_index(
+        objects_version_list_index_oid,
+        std::bind(&S3DeleteBucketAction::next, this),
+        std::bind(
+            &S3DeleteBucketAction::remove_objects_version_list_index_failed,
+            this));
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3DeleteBucketAction::remove_objects_version_list_index_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_ERROR, request_id,
+         "Failed to delete index, this will be stale in Mero: %" SCNx64
+         " : %" SCNx64 "\n",
+         objects_version_list_index_oid.u_hi,
+         objects_version_list_index_oid.u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
          S3_IEM_DELETE_IDX_FAIL_JSON);
   if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {

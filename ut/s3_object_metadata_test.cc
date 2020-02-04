@@ -228,7 +228,7 @@ TEST_F(S3ObjectMetadataTest, GetSet) {
 
   action_under_test->bucket_name = "seagatebucket";
   EXPECT_STREQ("BUCKET/seagatebucket",
-               action_under_test->get_bucket_index_name().c_str());
+               action_under_test->get_object_list_index_name().c_str());
 
   EXPECT_STREQ("BUCKET/seagatebucket/Multipart",
                action_under_test->get_multipart_index_name().c_str());

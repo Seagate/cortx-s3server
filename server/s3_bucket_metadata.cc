@@ -40,7 +40,6 @@ S3BucketMetadata::S3BucketMetadata(
   user_name = request->get_user_name();
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
-  salted_multipart_list_index_name = get_multipart_index_name();
   state = S3BucketMetadataState::empty;
   current_op = S3BucketMetadataCurrentOp::none;
   if (clovis_api) {
@@ -67,8 +66,12 @@ S3BucketMetadata::S3BucketMetadata(
 
   // name of the index which holds all objects key values within a bucket
   salted_object_list_index_name = get_object_list_index_name();
+  salted_multipart_list_index_name = get_multipart_index_name();
+  salted_objects_version_list_index_name = get_version_list_index_name();
+
   object_list_index_oid = {0ULL, 0ULL};  // Object List index default id
   multipart_index_oid = {0ULL, 0ULL};    // Multipart index default id
+  objects_version_list_index_oid = {0ULL, 0ULL};  // objects versions list id
 
   // Set the defaults
   S3DateTime current_time;
@@ -99,12 +102,16 @@ std::string S3BucketMetadata::get_owner_name() {
   return system_defined_attribute["Owner-User"];
 }
 
-struct m0_uint128 S3BucketMetadata::get_multipart_index_oid() {
+struct m0_uint128 const S3BucketMetadata::get_multipart_index_oid() {
   return multipart_index_oid;
 }
 
-struct m0_uint128 S3BucketMetadata::get_object_list_index_oid() {
+struct m0_uint128 const S3BucketMetadata::get_object_list_index_oid() {
   return object_list_index_oid;
+}
+
+struct m0_uint128 const S3BucketMetadata::get_objects_version_list_index_oid() {
+  return objects_version_list_index_oid;
 }
 
 void S3BucketMetadata::set_multipart_index_oid(struct m0_uint128 oid) {
@@ -113,6 +120,11 @@ void S3BucketMetadata::set_multipart_index_oid(struct m0_uint128 oid) {
 
 void S3BucketMetadata::set_object_list_index_oid(struct m0_uint128 oid) {
   object_list_index_oid = oid;
+}
+
+void S3BucketMetadata::set_objects_version_list_index_oid(
+    struct m0_uint128 oid) {
+  objects_version_list_index_oid = oid;
 }
 
 void S3BucketMetadata::set_location_constraint(std::string location) {
@@ -206,11 +218,14 @@ std::string S3BucketMetadata::to_json() {
     root["User-Defined-Tags"][tag.first] = tag.second;
   }
 
-  root["mero_object_list_index_oid"] = object_list_index_oid_str =
+  root["mero_object_list_index_oid"] =
       S3M0Uint128Helper::to_string(object_list_index_oid);
 
   root["mero_multipart_index_oid"] =
       S3M0Uint128Helper::to_string(multipart_index_oid);
+
+  root["mero_objects_version_list_index_oid"] =
+      S3M0Uint128Helper::to_string(objects_version_list_index_oid);
 
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
@@ -241,13 +256,15 @@ int S3BucketMetadata::from_json(std::string content) {
   user_id = system_defined_attribute["Owner-User-id"];
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];
-  object_list_index_oid_str = newroot["mero_object_list_index_oid"].asString();
 
-  object_list_index_oid =
-      S3M0Uint128Helper::to_m0_uint128(object_list_index_oid_str);
+  object_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
+      newroot["mero_object_list_index_oid"].asString());
 
   multipart_index_oid = S3M0Uint128Helper::to_m0_uint128(
       newroot["mero_multipart_index_oid"].asString());
+
+  objects_version_list_index_oid = S3M0Uint128Helper::to_m0_uint128(
+      newroot["mero_objects_version_list_index_oid"].asString());
 
   acl_from_json((newroot["ACL"]).asString());
   bucket_policy = base64_decode(newroot["Policy"].asString());

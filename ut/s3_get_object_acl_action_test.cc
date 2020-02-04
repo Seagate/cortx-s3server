@@ -128,23 +128,6 @@ TEST_F(S3GetObjectAclActionTest, FetchObjectInfoEmpty) {
   EXPECT_STREQ("NoSuchKey", action_under_test_ptr->get_s3_error_code().c_str());
 }
 
-TEST_F(S3GetObjectAclActionTest, FetchObjectInfo) {
-  CREATE_BUCKET_METADATA;
-  CREATE_OBJECT_METADATA;
-  action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(request_mock), http_verb()).WillOnce(Return(S3HttpVerb::GET));
-  EXPECT_CALL(*(request_mock), get_operation_code())
-      .WillOnce(Return(S3OperationCode::tagging));
-
-  action_under_test_ptr->fetch_object_info();
-
-  EXPECT_TRUE(action_under_test_ptr->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test_ptr->object_metadata != NULL);
-}
-
 TEST_F(S3GetObjectAclActionTest, FetchObjectInfoFailedMissing) {
   CREATE_OBJECT_METADATA;
 

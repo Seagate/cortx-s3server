@@ -477,6 +477,8 @@ void S3PostCompleteAction::save_metadata() {
   }
   object_metadata->set_oid(multipart_metadata->get_oid());
   object_metadata->set_layout_id(multipart_metadata->get_layout_id());
+  // Generate version id for the new obj as it will become live to s3 clients.
+  object_metadata->regenerate_version_id();
 
   if (is_abort_multipart()) {
     next();

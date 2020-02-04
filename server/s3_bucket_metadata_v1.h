@@ -65,6 +65,10 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   void create_multipart_list_index_successful();
   void create_multipart_list_index_failed();
 
+  void create_objects_version_list_index();
+  void create_objects_version_list_index_successful();
+  void create_objects_version_list_index_failed();
+
   void save_bucket_info();
   void save_bucket_info_successful();
   void save_bucket_info_failed();

@@ -42,16 +42,18 @@ using ::testing::DefaultValue;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                            \
-  do {                                                                    \
-    CREATE_BUCKET_METADATA;                                               \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid( \
-        object_list_indx_oid);                                            \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
-        .Times(AtLeast(1));                                               \
-    EXPECT_CALL(*(ptr_mock_request), http_verb())                         \
-        .WillOnce(Return(S3HttpVerb::PUT));                               \
-    action_under_test->fetch_object_info();                               \
+#define CREATE_OBJECT_METADATA                                                \
+  do {                                                                        \
+    CREATE_BUCKET_METADATA;                                                   \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
+        object_list_indx_oid);                                                \
+    bucket_meta_factory->mock_bucket_metadata                                 \
+        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
+        .Times(AtLeast(1));                                                   \
+    EXPECT_CALL(*(ptr_mock_request), http_verb())                             \
+        .WillOnce(Return(S3HttpVerb::PUT));                                   \
+    action_under_test->fetch_object_info();                                   \
   } while (0)
 
 class S3PutObjectActionTest : public testing::Test {
@@ -64,6 +66,7 @@ class S3PutObjectActionTest : public testing::Test {
 
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
+    objects_version_list_index_oid = {0x1ffff, 0x11fff};
     zero_oid_idx = {0ULL, 0ULL};
 
     layout_id =
@@ -120,6 +123,7 @@ class S3PutObjectActionTest : public testing::Test {
   std::shared_ptr<S3PutObjectAction> action_under_test;
 
   struct m0_uint128 object_list_indx_oid;
+  struct m0_uint128 objects_version_list_index_oid;
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
   int layout_id;
@@ -323,23 +327,6 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailedTolaunch) {
   EXPECT_TRUE(action_under_test->object_metadata == NULL);
 }
 
-TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
-  CREATE_BUCKET_METADATA;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(ptr_mock_request), http_verb())
-      .WillOnce(Return(S3HttpVerb::PUT));
-  action_under_test->fetch_object_info();
-
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata != NULL);
-}
 /*   TODO metadata fetch moved to s3_object_action class,
 //     so these test will be moved there
 TEST_F(S3PutObjectActionTest,

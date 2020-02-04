@@ -40,16 +40,18 @@ using ::testing::DefaultValue;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                            \
-  do {                                                                    \
-    CREATE_BUCKET_METADATA;                                               \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid( \
-        object_list_indx_oid);                                            \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
-        .Times(AtLeast(1));                                               \
-    EXPECT_CALL(*(mock_request), http_verb())                             \
-        .WillOnce(Return(S3HttpVerb::PUT));                               \
-    action_under_test->fetch_object_info();                               \
+#define CREATE_OBJECT_METADATA                                                \
+  do {                                                                        \
+    CREATE_BUCKET_METADATA;                                                   \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
+        object_list_indx_oid);                                                \
+    bucket_meta_factory->mock_bucket_metadata                                 \
+        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
+        .Times(AtLeast(1));                                                   \
+    EXPECT_CALL(*(mock_request), http_verb())                                 \
+        .WillOnce(Return(S3HttpVerb::PUT));                                   \
+    action_under_test->fetch_object_info();                                   \
   } while (0)
 
 class S3PutChunkUploadObjectActionTestBase : public testing::Test {
@@ -60,6 +62,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
 
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
+    objects_version_list_index_oid = {0x111fff, 0x1ffff};
     zero_oid_idx = {0ULL, 0ULL};
 
     layout_id =
@@ -104,6 +107,7 @@ class S3PutChunkUploadObjectActionTestBase : public testing::Test {
   std::shared_ptr<S3PutChunkUploadObjectAction> action_under_test;
 
   struct m0_uint128 object_list_indx_oid;
+  struct m0_uint128 objects_version_list_index_oid;
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
   int layout_id;

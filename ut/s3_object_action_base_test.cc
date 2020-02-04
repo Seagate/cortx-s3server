@@ -80,6 +80,7 @@ class S3ObjectActionTest : public testing::Test {
     zero_oid_idx = {0ULL, 0ULL};
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
     object_list_indx_oid = {0x11ffff, 0x1ffff};
+    objects_version_list_index_oid = {0x11ffff, 0x1ffff};
     mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(request_mock);
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
@@ -95,6 +96,7 @@ class S3ObjectActionTest : public testing::Test {
   }
 
   struct m0_uint128 object_list_indx_oid;
+  struct m0_uint128 objects_version_list_index_oid;
   struct m0_uint128 zero_oid_idx;
   std::shared_ptr<MockS3RequestObject> request_mock;
   std::shared_ptr<S3ObjectActionTestBase> action_under_test_ptr;
@@ -150,6 +152,8 @@ TEST_F(S3ObjectActionTest, FetchObjectInfoSuccess) {
   CREATE_OBJECT_METADATA;
   action_under_test_ptr->bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
+  action_under_test_ptr->bucket_metadata->set_objects_version_list_index_oid(
+      objects_version_list_index_oid);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
       .Times(AtLeast(1));
   EXPECT_CALL(*(request_mock), http_verb()).WillOnce(Return(S3HttpVerb::GET));

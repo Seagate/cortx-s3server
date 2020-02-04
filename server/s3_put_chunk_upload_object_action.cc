@@ -228,8 +228,12 @@ void S3PutChunkUploadObjectAction::fetch_object_info_failed() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   struct m0_uint128 object_list_oid =
       bucket_metadata->get_object_list_index_oid();
-  if (object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) {
-    // object_list_oid is null only when bucket metadata is corrupted.
+  if ((object_list_oid.u_hi == 0ULL && object_list_oid.u_lo == 0ULL) ||
+      (objects_version_list_oid.u_hi == 0ULL &&
+       objects_version_list_oid.u_lo == 0ULL)) {
+    // Rare/unlikely: Mero KVS data corruption:
+    // object_list_oid/objects_version_list_oid is null only when bucket
+    // metadata is corrupted.
     // user has to delete and recreate the bucket again to make it work.
     s3_log(S3_LOG_ERROR, request_id, "Bucket(%s) metadata is corrupted.\n",
            request->get_bucket_name().c_str());
@@ -612,6 +616,8 @@ void S3PutChunkUploadObjectAction::save_metadata() {
   // New Object or overwrite, create new metadata and release old.
   object_metadata = object_metadata_factory->create_object_metadata_obj(
       request, bucket_metadata->get_object_list_index_oid());
+  // Generate a version id for the new object.
+  object_metadata->regenerate_version_id();
 
   // to rest Date and Last-Modfied time object metadata
   object_metadata->reset_date_time_to_current();

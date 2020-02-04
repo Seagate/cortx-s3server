@@ -40,18 +40,20 @@ using ::testing::AtLeast;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                            \
-  do {                                                                    \
-    CREATE_BUCKET_METADATA;                                               \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid( \
-        object_list_indx_oid);                                            \
-    EXPECT_CALL(*(mock_request), http_verb())                             \
-        .WillOnce(Return(S3HttpVerb::GET));                               \
-    EXPECT_CALL(*(mock_request), get_operation_code())                    \
-        .WillOnce(Return(S3OperationCode::tagging));                      \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _)) \
-        .Times(AtLeast(1));                                               \
-    action_under_test->fetch_object_info();                               \
+#define CREATE_OBJECT_METADATA                                                \
+  do {                                                                        \
+    CREATE_BUCKET_METADATA;                                                   \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
+        object_list_indx_oid);                                                \
+    bucket_meta_factory->mock_bucket_metadata                                 \
+        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
+    EXPECT_CALL(*(mock_request), http_verb())                                 \
+        .WillOnce(Return(S3HttpVerb::GET));                                   \
+    EXPECT_CALL(*(mock_request), get_operation_code())                        \
+        .WillOnce(Return(S3OperationCode::tagging));                          \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
+        .Times(AtLeast(1));                                                   \
+    action_under_test->fetch_object_info();                                   \
   } while (0)
 
 class S3DeleteObjectActionTest : public testing::Test {
@@ -64,6 +66,7 @@ class S3DeleteObjectActionTest : public testing::Test {
 
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
+    objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
 
     call_count_one = 0;
 
@@ -111,6 +114,7 @@ class S3DeleteObjectActionTest : public testing::Test {
   std::shared_ptr<S3DeleteObjectAction> action_under_test;
 
   struct m0_uint128 object_list_indx_oid;
+  struct m0_uint128 objects_version_list_index_oid;
   struct m0_uint128 oid;
 
   int call_count_one;
@@ -176,26 +180,6 @@ TEST_F(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketFetchFailedToLaunch) {
                action_under_test->get_s3_error_code().c_str());
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
   EXPECT_TRUE(action_under_test->object_metadata == NULL);
-}
-
-TEST_F(S3DeleteObjectActionTest, FetchObjectInfoWhenBucketAndObjIndexPresent) {
-  CREATE_BUCKET_METADATA;
-
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
-      .WillRepeatedly(Return(S3BucketMetadataState::present));
-  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
-      object_list_indx_oid);
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
-  EXPECT_CALL(*(mock_request), get_operation_code())
-      .WillOnce(Return(S3OperationCode::tagging));
-
-  action_under_test->fetch_object_info();
-
-  EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
-  EXPECT_TRUE(action_under_test->object_metadata != NULL);
 }
 
 TEST_F(S3DeleteObjectActionTest,

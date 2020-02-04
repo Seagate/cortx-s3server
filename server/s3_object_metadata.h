@@ -64,6 +64,11 @@ class S3ObjectMetadata {
 
   std::string request_id;
 
+  // Reverse epoch time used as version id key in verion index
+  std::string rev_epoch_version_id_key;
+  // holds base64 encoding value of rev_epoch_version_id_key
+  std::string object_version_id;
+
   std::string upload_id;
   // Maximum retry count for collision resolution.
   unsigned short tried_count;
@@ -142,7 +147,7 @@ class S3ObjectMetadata {
       std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
   struct m0_uint128 get_index_oid();
-  std::string get_bucket_index_name() { return "BUCKET/" + bucket_name; }
+  std::string get_object_list_index_name() { return "BUCKET/" + bucket_name; }
 
   std::string get_multipart_index_name() {
     return "BUCKET/" + bucket_name + "/" + "Multipart";
@@ -172,6 +177,11 @@ class S3ObjectMetadata {
   struct m0_uint128 get_part_index_oid() {
     return part_index_oid;
   }
+
+  void regenerate_version_id();
+
+  std::string const get_obj_version_id() { return object_version_id; }
+  std::string const get_obj_version_key() { return rev_epoch_version_id_key; }
 
   std::string get_owner_name();
   std::string get_owner_id();

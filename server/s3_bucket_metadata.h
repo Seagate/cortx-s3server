@@ -55,6 +55,7 @@ class S3BucketMetadata {
   std::string user_id;
   std::string salted_object_list_index_name;
   std::string salted_multipart_list_index_name;
+  std::string salted_objects_version_list_index_name;
   std::string encoded_acl;
 
   enum class S3BucketMetadataCurrentOp {
@@ -78,7 +79,7 @@ class S3BucketMetadata {
 
   struct m0_uint128 multipart_index_oid;
   struct m0_uint128 object_list_index_oid;
-  std::string object_list_index_oid_str;
+  struct m0_uint128 objects_version_list_index_oid;
 
   std::shared_ptr<S3RequestObject> request;
 
@@ -129,13 +130,25 @@ class S3BucketMetadata {
   virtual std::string get_acl_as_xml();
   void acl_from_json(std::string acl_json_str);
 
-  virtual struct m0_uint128 get_multipart_index_oid();
-  virtual struct m0_uint128 get_object_list_index_oid();
+  virtual struct m0_uint128 const get_multipart_index_oid();
+  virtual struct m0_uint128 const get_object_list_index_oid();
+  virtual struct m0_uint128 const get_objects_version_list_index_oid();
+
   void set_multipart_index_oid(struct m0_uint128 id);
   void set_object_list_index_oid(struct m0_uint128 id);
-  std::string get_object_list_index_name() { return "BUCKET/" + bucket_name; }
-  std::string get_multipart_index_name() {
+  void set_objects_version_list_index_oid(struct m0_uint128 id);
+
+  // This index has keys as "object_name"
+  std::string get_object_list_index_name() const {
+    return "BUCKET/" + bucket_name;
+  }
+  // This index has keys as "object_name"
+  std::string get_multipart_index_name() const {
     return "BUCKET/" + bucket_name + "/" + "Multipart";
+  }
+  // This index has keys as "object_name/version_id"
+  std::string get_version_list_index_name() const {
+    return "BUCKET/" + bucket_name + "/objects/versions";
   }
 
   virtual void set_location_constraint(std::string location);
