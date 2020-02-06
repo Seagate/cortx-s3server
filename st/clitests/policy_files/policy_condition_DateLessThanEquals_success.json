@@ -10,7 +10,7 @@
       "Effect": "Allow",
       "Resource": "arn:aws:s3:::seagate/*",
       "Condition": {
-        "DateLessThan": {
+        "DateLessThanEquals": {
           "aws:CurrentTime": "2199-06-30T00:00:00Z"
         }
       },

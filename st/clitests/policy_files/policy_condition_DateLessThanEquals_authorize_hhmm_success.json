@@ -10,8 +10,8 @@
       "Effect": "Allow",
       "Resource": "arn:aws:s3:::seagate/*",
       "Condition": {
-        "DateLessThan": {
-          "aws:CurrentTime": "2199-06-30T00:00:00Z"
+        "DateLessThanEquals": {
+          "aws:CurrentTime": "2199-06-30T00:00Z"
         }
       },
       "Principal":"*"

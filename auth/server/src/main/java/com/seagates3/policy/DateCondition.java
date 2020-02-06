@@ -171,7 +171,8 @@ class DateCondition extends PolicyCondition {
 
       case DateGreaterThanEqualsIfExists:
         if (keyExsists)
-          result = !dateLessThan(requestDate);
+          if (requestDate != null)
+            result = !dateLessThan(requestDate);
         else
           result = true;
         break;
@@ -185,7 +186,8 @@ class DateCondition extends PolicyCondition {
 
       case DateLessThanEqualsIfExists:
         if (keyExsists)
-          result = !dateGreaterThan(requestDate);
+          if (requestDate != null)
+            result = !dateGreaterThan(requestDate);
         else
           result = true;
         break;
