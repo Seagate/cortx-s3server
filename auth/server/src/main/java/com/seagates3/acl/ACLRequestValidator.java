@@ -247,7 +247,7 @@ class ACLRequestValidator {
         }
         catch (Exception e) {
           isValid = false;
-          LOGGER.error("Exception occurred while validating grantee - ", e);
+          LOGGER.error("Exception occurred while validating grantee - ", e.getMessage());
         }
         return isValid;
   }

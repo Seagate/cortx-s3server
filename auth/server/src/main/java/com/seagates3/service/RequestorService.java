@@ -31,7 +31,6 @@ import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
-import java.util.Map;
 import com.seagates3.response.generator.ResponseGenerator;
 import com.seagates3.util.DateUtil;
 import org.joda.time.DateTime;
@@ -49,8 +48,7 @@ public class RequestorService {
             = new ResponseGenerator();
 
     public
-     static Requestor getRequestor(ClientRequestToken clientRequestToken,
-                                   Map<String, String> requestBody)
+     static Requestor getRequestor(ClientRequestToken clientRequestToken)
          throws InvalidAccessKeyException,
          InternalServerException, InvalidRequestorException {
 
@@ -92,16 +90,8 @@ public class RequestorService {
             serverResponse = responseGenerator.internalServerError();
             throw new InternalServerException(serverResponse);
         }
-        // validation of requestor not required in case of DeleteAccount
-        String clientAbsoluteUri = "/account/" + requestor.getAccount().getId();
-        if (!("DeleteAccount".equals(requestBody.get("Action")) ||
-              ("DELETE".equals(requestBody.get("Method")) &&
-               clientAbsoluteUri.equals(
-                   requestBody.get("ClientAbsoluteUri")))) &&
-            !("UpdateAccountLoginProfile").equals(requestBody.get("Action"))) {
-          LOGGER.debug("validating requestor");
-          validateRequestor(requestor, clientRequestToken);
-        }
+
+        validateRequestor(requestor, clientRequestToken);
         return requestor;
     }
 
@@ -164,7 +154,6 @@ public class RequestorService {
         AccessKey accessKey = requestor.getAccesskey();
         if (requestor.isFederatedUser()) {
             LOGGER.debug("Requestor is using federated credentials.");
-
             String sessionToken = clientRequestToken.getRequestHeaders()
                     .get("X-Amz-Security-Token");
             if (!accessKey.getToken().equals(sessionToken)) {
@@ -186,3 +175,5 @@ public class RequestorService {
         return true;
     }
 }
+
+

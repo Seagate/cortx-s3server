@@ -88,8 +88,8 @@ public class ClientRequestParser {
 
         } else {
             authorizationHeader = httpRequest.headers().get("authorization");
-            LOGGER.debug("authheader is" + authorizationHeader);
         }
+        LOGGER.debug("authheader is" + authorizationHeader);
 
         if (authorizationHeader == null ||
             authorizationHeader.replaceAll("\\s+", "").isEmpty()) {
@@ -210,3 +210,4 @@ public class ClientRequestParser {
 }
 
 }
+

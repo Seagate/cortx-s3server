@@ -302,9 +302,10 @@ public class AccountController extends AbstractController {
         if (!internalRequest) {
             LOGGER.debug("Sending delete account [" + account.getName() +
                                        "] notification to S3 Server");
-            ServerResponse resp = s3.notifyDeleteAccount(account.getId(),
-                                        requestor.getAccesskey().getId(),
-                                requestor.getAccesskey().getSecretKey());
+            ServerResponse resp = s3.notifyDeleteAccount(
+                account.getId(), requestor.getAccesskey().getId(),
+                requestor.getAccesskey().getSecretKey(),
+                requestor.getAccesskey().getToken());
             if(!resp.getResponseStatus().equals(HttpResponseStatus.OK)) {
                 LOGGER.error("Account [" + account.getName() + "] delete "
                     + "notification failed.");
@@ -388,3 +389,4 @@ public class AccountController extends AbstractController {
         // TODO
     }
 }
+

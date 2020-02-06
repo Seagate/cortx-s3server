@@ -174,7 +174,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
     when(exception.getServerResponse()).thenReturn(serverResponse);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenThrow(exception);
 
     ServerResponse response = controller.serve(httpRequest, requestBody);
@@ -189,7 +189,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
     when(exception.getServerResponse()).thenReturn(serverResponse);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenThrow(exception);
 
     ServerResponse response = controller.serve(httpRequest, requestBody);
@@ -204,7 +204,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
     when(exception.getServerResponse()).thenReturn(serverResponse);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenThrow(exception);
 
     ServerResponse response = controller.serve(httpRequest, requestBody);
@@ -265,7 +265,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(account.getId()).thenReturn("NS5144");
     when(account.getName()).thenReturn("jack");
     when(account.getCanonicalId()).thenReturn("MH12");
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", "/seagatebucket-aj01/dir-1/abc1");
@@ -283,7 +283,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     SignatureValidator signatureValidator = mock(SignatureValidator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
@@ -313,7 +313,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         mock(AuthenticationResponseGenerator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
@@ -392,7 +392,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     when(account.getId()).thenReturn("MH12");
     when(account.getName()).thenReturn("tylerdurden");
     when(account.getCanonicalId()).thenReturn("MH12");
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     PowerMockito.when(ACLValidation.class, "checkIdExists", "MH12",
                       "tylerdurden").thenReturn(true);
@@ -433,8 +433,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(AuthServerConfig.class);
     PowerMockito.doReturn(endpoints)
         .when(AuthServerConfig.class, "getEndpoints");
-    when(RequestorService.getRequestor(any(ClientRequestToken.class),
-                                       any(Map.class))).thenReturn(requestor);
+    when(RequestorService.getRequestor(any(ClientRequestToken.class)))
+        .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
     when(signatureValidator.validate(any(ClientRequestToken.class),
@@ -485,8 +485,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     PowerMockito.mockStatic(AuthServerConfig.class);
     PowerMockito.doReturn(endpoints)
         .when(AuthServerConfig.class, "getEndpoints");
-    when(RequestorService.getRequestor(any(ClientRequestToken.class),
-                                       any(Map.class))).thenReturn(requestor);
+    when(RequestorService.getRequestor(any(ClientRequestToken.class)))
+        .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
     when(signatureValidator.validate(any(ClientRequestToken.class),
@@ -732,7 +732,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     SignatureValidator signatureValidator = mock(SignatureValidator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
@@ -768,7 +768,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     SignatureValidator signatureValidator = mock(SignatureValidator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
@@ -808,7 +808,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     SignatureValidator signatureValidator = mock(SignatureValidator.class);
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
-    when(RequestorService.getRequestor(clientRequestToken, requestBody))
+    when(RequestorService.getRequestor(clientRequestToken))
         .thenReturn(requestor);
     whenNew(SignatureValidator.class).withNoArguments().thenReturn(
         signatureValidator);
@@ -940,4 +940,5 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertNull(result);
   }
 }
+
 

@@ -240,8 +240,9 @@ public class S3AccountNotifierTest {
         doReturn(s3Resp).when(s3Cli).deleteRequest();
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
-        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
+            "12345", "AKIAJTYX36YCKQSAJT7Q",
+            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
 
         assertEquals(HttpResponseStatus.OK, resp.getResponseStatus());
     }
@@ -265,8 +266,9 @@ public class S3AccountNotifierTest {
         doReturn(s3Resp).when(s3Cli).deleteRequest();
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
-        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
+            "12345", "AKIAJTYX36YCKQSAJT7Q",
+            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                               resp.getResponseStatus());
@@ -291,8 +293,9 @@ public class S3AccountNotifierTest {
         doReturn(s3Resp).when(s3Cli).deleteRequest();
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
-        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
+            "12345", "AKIAJTYX36YCKQSAJT7Q",
+            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
 
         assertEquals(HttpResponseStatus.CONFLICT, resp.getResponseStatus());
     }
@@ -316,8 +319,9 @@ public class S3AccountNotifierTest {
         doReturn(s3Resp).when(s3Cli).deleteRequest();
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
-        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
+            "12345", "AKIAJTYX36YCKQSAJT7Q",
+            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -342,8 +346,9 @@ public class S3AccountNotifierTest {
         when(s3Cli.deleteRequest()).thenThrow(e);
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
-        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
+            "12345", "AKIAJTYX36YCKQSAJT7Q",
+            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
@@ -369,10 +374,13 @@ public class S3AccountNotifierTest {
         when(s3Cli.deleteRequest()).thenThrow(e);
 
         S3AccountNotifier s3AccountNotifier = new S3AccountNotifier();
-        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount("12345",
-        "AKIAJTYX36YCKQSAJT7Q", "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt");
+        ServerResponse resp = s3AccountNotifier.notifyDeleteAccount(
+            "12345", "AKIAJTYX36YCKQSAJT7Q",
+            "A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt", null);
 
         assertEquals(HttpResponseStatus.INTERNAL_SERVER_ERROR,
                                     resp.getResponseStatus());
     }
 }
+
+

@@ -36,6 +36,9 @@ class AccountLoginProfile:
             url_parse_result.netloc, Config.service, Config.default_region);
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
 
+        if(self.cli_args.session_token is not None):
+            headers['X-Amz-Security-Token'] = self.cli_args.session_token;
+
         if(headers['Authorization'] is None):
             message = "Failed to generate v4 signature"
             CLIResponse.send_error_out(message)
@@ -134,6 +137,9 @@ class AccountLoginProfile:
         headers['Authorization'] = sign_request_v4('POST', '/', body, epoch_t, url_parse_result.netloc,
             Config.service, Config.default_region);
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
+        if(self.cli_args.session_token is not None):
+            headers['X-Amz-Security-Token'] = self.cli_args.session_token;
+
         if(headers['Authorization'] is None):
             message = "Failed to generate v4 signature"
             CLIResponse.send_error_out(message)
@@ -151,4 +157,5 @@ class AccountLoginProfile:
             error = ErrorResponse(result)
             message += error.get_error_message()
             CLIResponse.send_error_out(message)
+
 

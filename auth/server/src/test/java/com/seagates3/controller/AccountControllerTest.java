@@ -18,6 +18,23 @@
  */
 package com.seagates3.controller;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -34,28 +51,14 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.s3service.S3AccountNotifier;
 import com.seagates3.util.KeyGenUtil;
+
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import static org.mockito.Matchers.any;
-import org.mockito.Mockito;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({DAODispatcher.class, KeyGenUtil.class, AccountController.class})
-@PowerMockIgnore({"javax.management.*"})
-public class AccountControllerTest {
+    @PrepareForTest({DAODispatcher.class, KeyGenUtil.class,
+                     AccountController.class})
+    @PowerMockIgnore(
+        {"javax.management.*"}) public class AccountControllerTest {
 
     private final AccountController accountController;
     private final AccountDAO accountDAO;
@@ -79,22 +82,20 @@ public class AccountControllerTest {
         roleDAO = Mockito.mock(RoleDAO.class);
         s3 = Mockito.mock(S3AccountNotifier.class);
 
-        PowerMockito.whenNew(S3AccountNotifier.class).withNoArguments().thenReturn(s3);
-        PowerMockito.doReturn(accountDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.ACCOUNT
-        );
+        PowerMockito.whenNew(S3AccountNotifier.class)
+            .withNoArguments()
+            .thenReturn(s3);
+        PowerMockito.doReturn(accountDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.ACCOUNT);
 
-        PowerMockito.doReturn(userDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.USER
-        );
+        PowerMockito.doReturn(userDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.USER);
 
-        PowerMockito.doReturn(accessKeyDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.ACCESS_KEY
-        );
+        PowerMockito.doReturn(accessKeyDAO).when(
+            DAODispatcher.class, "getResourceDAO", DAOResource.ACCESS_KEY);
 
-        PowerMockito.doReturn(roleDAO).when(DAODispatcher.class,
-                "getResourceDAO", DAOResource.ROLE
-        );
+        PowerMockito.doReturn(roleDAO)
+            .when(DAODispatcher.class, "getResourceDAO", DAOResource.ROLE);
 
         accountController = new AccountController(requestor, requestBody);
     }
@@ -106,9 +107,7 @@ public class AccountControllerTest {
 
         PowerMockito.doReturn("987654352188")
             .when(KeyGenUtil.class, "createAccountId");
-        PowerMockito.doReturn("C1234").when(KeyGenUtil.class,
-                "createId"
-        );
+        PowerMockito.doReturn("C1234").when(KeyGenUtil.class, "createId");
         PowerMockito.doReturn("can1234")
             .when(KeyGenUtil.class, "createCanonicalId");
     }
@@ -119,14 +118,14 @@ public class AccountControllerTest {
         Mockito.when(accountDAO.findAll()).thenThrow(
                 new DataAccessException("Failed to fetch accounts.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -141,22 +140,20 @@ public class AccountControllerTest {
 
         Mockito.doReturn(expectedAccountList).when(accountDAO).findAll();
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ListAccountsResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<ListAccountsResult>"
-                + "<Accounts/>"
-                + "<IsTruncated>false</IsTruncated>"
-                + "</ListAccountsResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</ListAccountsResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<ListAccountsResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<ListAccountsResult>" + "<Accounts/>" +
+            "<IsTruncated>false</IsTruncated>" + "</ListAccountsResult>" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</ListAccountsResponse>";
 
         ServerResponse response = accountController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -188,7 +185,8 @@ public class AccountControllerTest {
 
         ServerResponse response = accountController.list();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -197,14 +195,14 @@ public class AccountControllerTest {
         Mockito.when(accountDAO.find("s3test")).thenThrow(
                 new DataAccessException("failed to search account.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -221,14 +219,14 @@ public class AccountControllerTest {
 
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>EntityAlreadyExists</Code>"
-                + "<Message>The request was rejected because it attempted to "
-                + "create an account that already exists.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>EntityAlreadyExists</Code>" +
+            "<Message>The request was rejected because it attempted to " +
+            "create an account that already exists.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -267,18 +265,19 @@ public class AccountControllerTest {
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doThrow(new DataAccessException("failed to add new account.\n"))
-                .when(accountDAO).save(account);
+            .when(accountDAO)
+            .save(account);
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -299,14 +298,14 @@ public class AccountControllerTest {
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -323,19 +322,21 @@ public class AccountControllerTest {
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
-        Mockito.doThrow(new DataAccessException("failed to save root access key.\n"))
-                .when(accessKeyDAO).save(any(AccessKey.class));
+        Mockito.doThrow(new DataAccessException(
+                            "failed to save root access key.\n"))
+            .when(accessKeyDAO)
+            .save(any(AccessKey.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.create();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -343,26 +344,25 @@ public class AccountControllerTest {
                 response.getResponseStatus());
     }
 
-    @Test
-    public void CreateAccount_Success_ReturnCreateResponse()
-            throws Exception {
+    @Test public void CreateAccount_Success_ReturnCreateResponse()
+        throws Exception {
         Account account = new Account();
         account.setName("s3test");
         ServerResponse resp = new ServerResponse();
         resp.setResponseStatus(HttpResponseStatus.OK);
 
-        PowerMockito.doReturn("AKIASIAS").when(KeyGenUtil.class,
-                "createUserAccessKeyId"
-        );
+        PowerMockito.doReturn("AKIASIAS")
+            .when(KeyGenUtil.class, "createUserAccessKeyId");
 
-        PowerMockito.doReturn("htuspscae/123").when(KeyGenUtil.class, "generateSecretKey");
+        PowerMockito.doReturn("htuspscae/123")
+            .when(KeyGenUtil.class, "generateSecretKey");
 
         Mockito.doReturn(account).when(accountDAO).find("s3test");
         Mockito.doNothing().when(accountDAO).save(any(Account.class));
         Mockito.doNothing().when(userDAO).save(any(User.class));
         Mockito.doNothing().when(accessKeyDAO).save(any(AccessKey.class));
-        Mockito.doReturn(resp).when(s3).notifyNewAccount(any(String.class),
-                                     any(String.class), any(String.class));
+        Mockito.doReturn(resp).when(s3).notifyNewAccount(
+            any(String.class), any(String.class), any(String.class));
         Mockito.doReturn(new Account()).when(accountDAO).findByCanonicalID(
             "can1234");
 
@@ -396,11 +396,15 @@ public class AccountControllerTest {
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.FALSE);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
-                " standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/" +
-                "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The request" +
-                " was rejected because it referenced an entity that does not exist. " +
-                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
+            " standalone=\"no\"?><ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/" +
+            "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The " +
+            "request" +
+            " was rejected because it referenced an entity that does not " +
+            "exist. " +
+            "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -416,16 +420,17 @@ public class AccountControllerTest {
         Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
         Mockito.when(account.getName()).thenReturn("root");
         Mockito.doThrow(new DataAccessException("failed to get root user"))
-                  .when(userDAO).find(any(String.class), any(String.class));
+            .when(userDAO)
+            .find(any(String.class), any(String.class));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -441,15 +446,19 @@ public class AccountControllerTest {
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.TRUE);
         Mockito.when(account.getName()).thenReturn("root");
-        Mockito.when(userDAO.find(any(String.class),
-                               any(String.class))).thenReturn(root);
+        Mockito.when(userDAO.find(any(String.class), any(String.class)))
+            .thenReturn(root);
         Mockito.when(root.exists()).thenReturn(Boolean.FALSE);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
-                " standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/" +
-                "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The request" +
-                " was rejected because it referenced an entity that does not exist. " +
-                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
+            " standalone=\"no\"?><ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/" +
+            "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The " +
+            "request" +
+            " was rejected because it referenced an entity that does not " +
+            "exist. " +
+            "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
         ServerResponse response = accountController.resetAccountAccessKey();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -457,9 +466,7 @@ public class AccountControllerTest {
                 response.getResponseStatus());
     }
 
-    @Test
-    public void ResetAccountAccessKey_Success_Return()
-            throws Exception {
+    @Test public void ResetAccountAccessKey_Success_Return() throws Exception {
         Account account = new Account();
         account.setName("s3test");
         account.setId("987654352188");
@@ -469,17 +476,16 @@ public class AccountControllerTest {
         root.setId("AKIASIAS");
         AccessKey[] accessKeys = new AccessKey[1];
 
-        PowerMockito.doReturn("AKIASIAS").when(KeyGenUtil.class,
-                "createUserAccessKeyId"
-        );
+        PowerMockito.doReturn("AKIASIAS")
+            .when(KeyGenUtil.class, "createUserAccessKeyId");
 
-        PowerMockito.doReturn("htuspscae/123").when(KeyGenUtil.class,
-                                                "generateSecretKey");
+        PowerMockito.doReturn("htuspscae/123")
+            .when(KeyGenUtil.class, "generateSecretKey");
 
         accessKeys[0] = mock(AccessKey.class);
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
-        Mockito.when(userDAO.find(any(String.class),
-                               any(String.class))).thenReturn(root);
+        Mockito.when(userDAO.find(any(String.class), any(String.class)))
+            .thenReturn(root);
 
         Mockito.when(accessKeyDAO.findAll(root)).thenReturn(accessKeys);
         Mockito.doNothing().when(accessKeyDAO).delete(accessKeys[0]);
@@ -515,14 +521,14 @@ public class AccountControllerTest {
         Mockito.when(accountDAO.find("s3test")).thenThrow(
                 new DataAccessException("Failed to fetch accounts.\n"));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<ErrorResponse xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<Error><Code>InternalFailure</Code>"
-                + "<Message>The request processing has failed because of an "
-                + "unknown error, exception or failure.</Message></Error>"
-                + "<RequestId>0000</RequestId>"
-                + "</ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" + "<ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<Error><Code>InternalFailure</Code>" +
+            "<Message>The request processing has failed because of an " +
+            "unknown error, exception or failure.</Message></Error>" +
+            "<RequestId>0000</RequestId>" + "</ErrorResponse>";
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
@@ -537,15 +543,20 @@ public class AccountControllerTest {
         Mockito.when(accountDAO.find("s3test")).thenReturn(account);
         Mockito.when(account.exists()).thenReturn(Boolean.FALSE);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
-                " standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/" +
-                "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The request" +
-                " was rejected because it referenced an entity that does not exist. " +
-                "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"" +
+            " standalone=\"no\"?><ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/" +
+            "doc/2010-05-08/\"><Error><Code>NoSuchEntity</Code><Message>The " +
+            "request" +
+            " was rejected because it referenced an entity that does not " +
+            "exist. " +
+            "</Message></Error><RequestId>0000</RequestId></ErrorResponse>";
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -567,16 +578,22 @@ public class AccountControllerTest {
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
-                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc" +
-                "/2010-05-08/\"><Error><Code>UnauthorizedOperation</Code><Message>You " +
-                "are not authorized to perform this operation. Check your IAM policies" +
-                ", and ensure that you are using the correct access keys. </Message>" +
-                "</Error><RequestId>0000</RequestId></ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+            "standalone=\"no\"?><ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc" +
+            "/2010-05-08/\"><Error><Code>UnauthorizedOperation</" +
+            "Code><Message>You " +
+            "are not authorized to perform this operation. Check your IAM " +
+            "policies" +
+            ", and ensure that you are using the correct access keys. " +
+            "</Message>" +
+            "</Error><RequestId>0000</RequestId></ErrorResponse>";
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.UNAUTHORIZED,
+                            response.getResponseStatus());
     }
 
     @Test
@@ -606,17 +623,21 @@ public class AccountControllerTest {
         Mockito.when(requestor.getAccesskey()).thenReturn(aKey);
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
-        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(any(String.class),
-                any(String.class), any(String.class));
+        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(
+            any(String.class), any(String.class), any(String.class),
+            any(String.class));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
-                "standalone=\"no\"?><DeleteAccountResponse xmlns=\"https://iam.seagate" +
-                ".com/doc/2010-05-08/\"><ResponseMetadata><RequestId>0000</RequestId><" +
-                "/ResponseMetadata></DeleteAccountResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+            "standalone=\"no\"?><DeleteAccountResponse " +
+            "xmlns=\"https://iam.seagate" +
+            ".com/doc/2010-05-08/\"><ResponseMetadata><RequestId>0000</" +
+            "RequestId><" + "/ResponseMetadata></DeleteAccountResponse>";
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
 
         Mockito.verify(accessKeyDAO).delete(accessKeys[0]);
         Mockito.verify(userDAO).delete(users[0]);
@@ -657,21 +678,30 @@ public class AccountControllerTest {
         Mockito.when(requestor.getId()).thenReturn("rootxyz");
         Mockito.when(requestor.getAccesskey()).thenReturn(aKey);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
-        Mockito.doThrow(new DataAccessException("subordinate objects must be deleted first"))
-                .when(accountDAO).deleteOu(account, LDAPUtils.USER_OU);
-        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(any(String.class),
-                any(String.class), any(String.class));
+        Mockito.doThrow(new DataAccessException(
+                            "subordinate objects must be deleted first"))
+            .when(accountDAO)
+            .deleteOu(account, LDAPUtils.USER_OU);
+        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(
+            any(String.class), any(String.class), any(String.class),
+            any(String.class));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
-                "standalone=\"no\"?><ErrorResponse xmlns=\"https://iam.seagate.com/doc" +
-                "/2010-05-08/\"><Error><Code>DeleteConflict</Code><Message>The request" +
-                " was rejected because it attempted to delete a resource that has attached " +
-                "subordinate entities. The error message describes these entities.</Message>" +
-                "</Error><RequestId>0000</RequestId></ErrorResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+            "standalone=\"no\"?><ErrorResponse " +
+            "xmlns=\"https://iam.seagate.com/doc" +
+            "/2010-05-08/\"><Error><Code>DeleteConflict</Code><Message>The " +
+            "request" +
+            " was rejected because it attempted to delete a resource that " +
+            "has " + "attached " +
+            "subordinate entities. The error message describes these " +
+            "entities.</Message>" +
+            "</Error><RequestId>0000</RequestId></ErrorResponse>";
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.CONFLICT, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.CONFLICT,
+                            response.getResponseStatus());
 
         Mockito.verify(accessKeyDAO, times(0)).delete(accessKeys[0]);
         Mockito.verify(userDAO, times(0)).delete(users[0]);
@@ -710,17 +740,21 @@ public class AccountControllerTest {
         Mockito.when(userDAO.findAll("s3test", "/")).thenReturn(users);
         Mockito.when(accessKeyDAO.findAll(users[0])).thenReturn(accessKeys);
         Mockito.when(roleDAO.findAll(account, "/")).thenReturn(roles);
-        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(any(String.class),
-                any(String.class), any(String.class));
+        Mockito.doReturn(resp).when(s3).notifyDeleteAccount(
+            any(String.class), any(String.class), any(String.class),
+            any(String.class));
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
-                "standalone=\"no\"?><DeleteAccountResponse xmlns=\"https://iam.seagate" +
-                ".com/doc/2010-05-08/\"><ResponseMetadata><RequestId>0000</RequestId><" +
-                "/ResponseMetadata></DeleteAccountResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" " +
+            "standalone=\"no\"?><DeleteAccountResponse " +
+            "xmlns=\"https://iam.seagate" +
+            ".com/doc/2010-05-08/\"><ResponseMetadata><RequestId>0000</" +
+            "RequestId><" + "/ResponseMetadata></DeleteAccountResponse>";
 
         ServerResponse response = accountController.delete();
         Assert.assertEquals(expectedResponseBody, response.getResponseBody());
-        Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+        Assert.assertEquals(HttpResponseStatus.OK,
+                            response.getResponseStatus());
 
         Mockito.verify(accessKeyDAO).delete(accessKeys[0]);
         Mockito.verify(userDAO).delete(users[0]);
@@ -732,3 +766,5 @@ public class AccountControllerTest {
         Mockito.verify(roleDAO).delete(roles[0]);
     }
 }
+
+

@@ -18,35 +18,6 @@
  */
 package com.seagates3.service;
 
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.spy;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
-import org.powermock.core.classloader.annotations.MockPolicy;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.internal.WhiteboxImpl;
-import org.slf4j.LoggerFactory;
-
 import com.seagates3.authentication.ClientRequestToken;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -57,9 +28,29 @@ import com.seagates3.exception.InternalServerException;
 import com.seagates3.exception.InvalidAccessKeyException;
 import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.model.AccessKey;
-import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.internal.WhiteboxImpl;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
     @PrepareForTest({RequestorService.class, DAODispatcher.class,
@@ -73,8 +64,6 @@ import com.seagates3.perf.S3Perf;
     private RequestorDAO requestorDAO;
     private S3Perf s3Perf;
     private AccessKey accessKey;
-     Map<String, String> requestBody = new HashMap<>();
-     Account mockAccount;
 
     private final String accessKeyID = "AKIAJTYX36YCKQSAJT7Q";
 
@@ -93,7 +82,6 @@ import com.seagates3.perf.S3Perf;
         accessKey = mock(AccessKey.class);
         requestorDAO = mock(RequestorDAO.class);
         requestor = mock(Requestor.class);
-        mockAccount = mock(Account.class);
     }
 
     @Test
@@ -107,10 +95,8 @@ import com.seagates3.perf.S3Perf;
         when(requestorDAO.find(accessKey)).thenReturn(requestor);
         doReturn(Boolean.TRUE).when(RequestorService.class, "validateRequestor",
                                     requestor, clientRequestToken);
-        Mockito.when(requestor.getAccount()).thenReturn(mockAccount);
-        Mockito.when(mockAccount.getId()).thenReturn("123");
-        Requestor result =
-            RequestorService.getRequestor(clientRequestToken, requestBody);
+
+        Requestor result = RequestorService.getRequestor(clientRequestToken);
 
         assertEquals(requestor, result);
         verify(accessKeyDAO).find(accessKeyID);
@@ -130,7 +116,7 @@ import com.seagates3.perf.S3Perf;
             .thenReturn(requestorDAO);
         when(requestorDAO.find(accessKey)).thenThrow(DataAccessException.class);
 
-        RequestorService.getRequestor(clientRequestToken, requestBody);
+        RequestorService.getRequestor(clientRequestToken);
     }
 
     @Test(
@@ -140,7 +126,7 @@ import com.seagates3.perf.S3Perf;
         throws Exception {
       when(accessKeyDAO.find(accessKeyID)).thenThrow(DataAccessException.class);
 
-      RequestorService.getRequestor(clientRequestToken, requestBody);
+      RequestorService.getRequestor(clientRequestToken);
     }
 
     @Test
@@ -272,4 +258,5 @@ import com.seagates3.perf.S3Perf;
         }
     }
 }
+
 

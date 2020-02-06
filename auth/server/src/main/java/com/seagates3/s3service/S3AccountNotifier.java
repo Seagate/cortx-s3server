@@ -108,8 +108,9 @@ public class S3AccountNotifier {
      * @param secretKey
      * @return ServerResponse
      */
-    public ServerResponse notifyDeleteAccount(String accountId, String accessKey,
-                                                             String secretKey) {
+   public
+    ServerResponse notifyDeleteAccount(String accountId, String accessKey,
+                                       String secretKey, String securityToken) {
         S3RestClient s3Client = new S3RestClient();
 
         String resourceUrl = "/account/" + accountId;
@@ -120,7 +121,9 @@ public class S3AccountNotifier {
         s3Client.setURL(getEndpointURL() + resourceUrl);
         //Set S3 Management API header
         s3Client.setHeader("x-seagate-mgmt-api", "true");
-
+        if (securityToken != null) {
+          s3Client.setHeader("x-amz-security-token", securityToken);
+        }
         S3HttpResponse resp = null;
         try {
             resp = s3Client.deleteRequest();
@@ -156,3 +159,4 @@ public class S3AccountNotifier {
     }
 
 }
+

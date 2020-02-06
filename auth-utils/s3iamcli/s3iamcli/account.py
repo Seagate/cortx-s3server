@@ -119,6 +119,8 @@ class Account:
             url_parse_result.netloc, Config.service, Config.default_region);
         headers['X-Amz-Date'] = get_timestamp(epoch_t);
 
+        if(self.cli_args.session_token is not None):
+            headers['X-Amz-Security-Token'] = self.cli_args.session_token;
         if(headers['Authorization'] is None):
             print("Failed to generate v4 signature")
             CLIResponse.send_error_out(message)
@@ -176,3 +178,4 @@ class Account:
             error = ErrorResponse(response)
             message += error.get_error_message()
             CLIResponse.send_error_out(message)
+

@@ -78,7 +78,6 @@ class IAMController {
                        Map<String, String> requestBody) {
     String requestAction = requestBody.get("Action");
     LOGGER.info("Requested action is  - " + requestAction);
-    LOGGER.info("Requested body is  - " + requestBody);
     ClientRequestToken clientRequestToken;
     Requestor requestor = null;
     ServerResponse serverResponse;
@@ -158,8 +157,7 @@ class IAMController {
       try {
         if (!requestAction.equals("ValidateACL") &&
             !requestAction.equals("ValidatePolicy")) {
-          requestor =
-              RequestorService.getRequestor(clientRequestToken, requestBody);
+          requestor = RequestorService.getRequestor(clientRequestToken);
       }
       }
       catch (InvalidAccessKeyException ex) {
@@ -352,4 +350,6 @@ class IAMController {
     return null;
   }
 }
+
+
 

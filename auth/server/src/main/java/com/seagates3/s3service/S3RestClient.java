@@ -117,8 +117,14 @@ public class S3RestClient {
      */
     private boolean prepareRequest(HttpRequestBase req) {
         final String d = DateUtil.getCurrentTimeGMT();
-        final String payload = method + "\n\n\n" + d + "\n" + resource;
-
+        final String payload;
+        LOGGER.debug("headers-- " + headers);
+        if (headers.containsKey("x-amz-security-token")) {
+          payload = method + "\n\n\n" + d + "\n" + "x-amz-security-token:" +
+                    headers.get("x-amz-security-token") + "\n" + resource;
+        } else {
+          payload = method + "\n\n\n" + d + "\n" + resource;
+        }
         String signature = AWSSignUtil.calculateSignatureAWSV2(payload, secretKey);
 
         if (signature == null) {
@@ -218,3 +224,4 @@ public class S3RestClient {
     }
 
 }
+
