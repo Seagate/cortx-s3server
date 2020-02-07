@@ -401,6 +401,8 @@ std::deque<evbuf_t *> S3ChunkPayloadParser::run(evbuf_t *buf) {
              evbuffer_get_length(spare));
       if (evbuffer_get_length(spare) > 0) {
         ready_buffers.push_back(spare);
+      } else {
+        evbuffer_free(spare);
       }
       spare_buffers.pop_front();
       s3_log(S3_LOG_DEBUG, "", "spare_buffers.size(%zu)\n",
