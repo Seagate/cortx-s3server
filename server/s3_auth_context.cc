@@ -44,25 +44,13 @@ struct s3_auth_op_context *create_basic_auth_op_ctx(
   }
 
   if (type == S3AuthClientOpType::authentication) {
-  ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
-  ctx->authorization_request = NULL;
-  ctx->aclvalidation_request = NULL;
-  ctx->policyvalidation_request = NULL;
+    ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
   } else if (type == S3AuthClientOpType::authorization) {
     ctx->authorization_request = evhtp_request_new(NULL, ctx->evbase);
-    ctx->authrequest = NULL;
-    ctx->aclvalidation_request = NULL;
-    ctx->policyvalidation_request = NULL;
   } else if (type == S3AuthClientOpType::aclvalidation) {
     ctx->aclvalidation_request = evhtp_request_new(NULL, ctx->evbase);
-    ctx->authorization_request = NULL;
-    ctx->authrequest = NULL;
-    ctx->policyvalidation_request = NULL;
   } else if (type == S3AuthClientOpType::policyvalidation) {
     ctx->policyvalidation_request = evhtp_request_new(NULL, ctx->evbase);
-    ctx->aclvalidation_request = NULL;
-    ctx->authorization_request = NULL;
-    ctx->authrequest = NULL;
   }
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

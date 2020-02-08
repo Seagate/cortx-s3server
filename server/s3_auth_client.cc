@@ -1128,7 +1128,6 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
   auth_context->init_auth_op_ctx(auth_request_type);
 
   struct s3_auth_op_context *auth_ctx = auth_context->get_auth_op_ctx();
-  auth_ctx->authorization_request = evhtp_request_new(NULL, auth_ctx->evbase);
   // Setup the auth callbacks
   evhtp_set_hook(&auth_ctx->authorization_request->hooks, evhtp_hook_on_read,
                  (evhtp_hook)on_authorization_response, auth_context.get());
