@@ -64,9 +64,6 @@ void S3PutBucketPolicyAction::validate_request() {
 
 void S3PutBucketPolicyAction::validate_policy() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (new_bucket_policy.empty()) {
-    next();
-  } else {
     auth_client->set_acl_and_policy(
         "", base64_encode((const unsigned char*)new_bucket_policy.c_str(),
                           new_bucket_policy.size()));
@@ -75,7 +72,6 @@ void S3PutBucketPolicyAction::validate_policy() {
         std::bind(&S3PutBucketPolicyAction::on_policy_validation_success, this),
         std::bind(&S3PutBucketPolicyAction::on_policy_validation_failure,
                   this));
-  }
 }
 
 void S3PutBucketPolicyAction::on_policy_validation_success() {

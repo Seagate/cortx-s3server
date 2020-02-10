@@ -42,7 +42,6 @@ import com.seagates3.model.User;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.AuthorizationResponseGenerator;
 
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 public
@@ -112,7 +111,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
 
     List<Statement> statementList =
         new ArrayList<Statement>(existingPolicy.getStatements());
-
+    if (requestor != null) {
     for (Statement stmt : statementList) {
       List<Principal> principalList = stmt.getPrincipals();
       List<Condition> conditions = stmt.getConditions();
@@ -134,8 +133,12 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         }
       }
     }
+    }
     // Below will handle Get/Put/Delete Bucket Policy
     if (PolicyUtil.isPolicyOperation(requestedOperation)) {
+      if (requestor == null) {
+        return responseGenerator.AccessDenied();
+      }
       if (response != null &&
           response.getResponseStatus() == HttpResponseStatus.OK) {
         Account ownerAccount =

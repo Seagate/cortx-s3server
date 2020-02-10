@@ -84,7 +84,12 @@ class Authorizer {
         String clientQueryParams = requestBody.get("ClientQueryParams");
         if ("policy".equals(clientQueryParams)) {
           String bucketOwner = new AccessControlList().getOwner(requestBody);
-          String requestorOwner = requestor.getAccount().getCanonicalId();
+          String requestorAccountCanonicalId = null;
+          if (requestor != null) {
+            requestorAccountCanonicalId =
+                requestor.getAccount().getCanonicalId();
+          }
+          String requestorOwner = requestorAccountCanonicalId;
           if (bucketOwner.equals(requestorOwner)) {
             serverResponse = responseGenerator.ok();
           } else {
@@ -97,7 +102,6 @@ class Authorizer {
         serverResponse = new BucketPolicyAuthorizer().authorizePolicy(
             requestor, requestBody);
       }
-
       if (serverResponse == null) {
         /// check for ACL Authorization if either policy is null or policy
         /// authorization
