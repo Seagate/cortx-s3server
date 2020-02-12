@@ -39,3 +39,8 @@ s3server:
     script: /opt/seagate/s3/install/setup_s3.sh
     args:
       - --purgeconfigldap
+  support_bundle:
+    script: /opt/seagate/s3/scripts/s3_bundle_generate.sh
+    args:
+      - <bundleid>
+      - <path>

@@ -111,6 +111,9 @@ cp ./system/s3server@.service $SERVICE_FILE_LOCATION
 # Copy the s3 log rotate script for retaining recent modified log files
 cp -f scripts/s3-logrotate/s3logfilerollover.sh $S3_LOG_ROTATE_FILE_LOCATION
 
+# Copy s3server support bundle script
+cp -f scripts/s3-support-bundles/s3_bundle_generate.sh $S3_INSTALL_LOCATION/scripts/
+
 # Copy the s3 background producer binary file into rpm location.
 cp s3backgrounddelete/s3backgrounddelete/s3backgroundproducer $S3_INSTALL_LOCATION/s3backgrounddelete/
 

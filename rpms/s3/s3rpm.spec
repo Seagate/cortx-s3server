@@ -173,6 +173,7 @@ rm -rf %{buildroot}
 /opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/auth/scripts/change_ldap_passwd.ldif
 /opt/seagate/s3/scripts/s3-sanity-test.sh
+/opt/seagate/s3/scripts/s3_bundle_generate.sh
 /opt/seagate/s3/docs/openldap_backup_readme
 /opt/seagate/s3/docs/s3_log_rotation_guide.txt
 /opt/seagate/s3/addb-plugin/libs3addbplugin.so
