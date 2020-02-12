@@ -47,8 +47,11 @@
 // see s3_user_account_index_metadata.h/cc
 #define S3_ROOT_ACC_USER_IDX_OFFSET 1
 
-// Part sizes for multipart operation
+// Part sizes in bytes for multipart operation
+// 5242880 -- 5MB
 #define MINIMUM_ALLOWED_PART_SIZE 5242880
+// 5368709120 -- 5GB
+#define MAXIMUM_ALLOWED_PART_SIZE 5368709120
 // Minmimum part number for multipart operations
 #define MINIMUM_PART_NUMBER 1
 // Maxmimum part number for multipart operations

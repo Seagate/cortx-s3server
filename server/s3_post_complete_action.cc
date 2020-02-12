@@ -358,6 +358,15 @@ bool S3PostCompleteAction::validate_parts() {
              part_metadata->get_part_number().c_str());
 
       current_parts_size = part_metadata->get_content_length();
+      if (current_parts_size > MAXIMUM_ALLOWED_PART_SIZE) {
+        s3_log(S3_LOG_ERROR, request_id,
+               "The part %s size(%zu) is larger than max "
+               "part size allowed:5GB\n",
+               store_kv->first.c_str(), current_parts_size);
+        set_s3_error("EntityTooLarge");
+        set_abort_multipart(true);
+        break;
+      }
       if (current_parts_size < MINIMUM_ALLOWED_PART_SIZE &&
           store_kv->first != total_parts) {
         s3_log(S3_LOG_ERROR, request_id,
