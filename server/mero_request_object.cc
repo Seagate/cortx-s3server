@@ -105,7 +105,8 @@ MeroOperationCode MeroRequestObject::get_operation_code() {
 void MeroRequestObject::populate_and_log_audit_info() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering");
   if (S3Option::get_instance()->get_audit_logger_policy() == "disabled") {
-    s3_log(S3_LOG_INFO, "", "Audit logger disabled by policy settings\n");
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Audit logger disabled by policy settings\n");
     return;
   }
 

@@ -107,7 +107,8 @@ const std::string& S3RequestObject::get_default_acl() { return default_acl; }
 void S3RequestObject::populate_and_log_audit_info() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering");
   if (S3Option::get_instance()->get_audit_logger_policy() == "disabled") {
-    s3_log(S3_LOG_INFO, "", "Audit logger disabled by policy settings\n");
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Audit logger disabled by policy settings\n");
     return;
   }
 

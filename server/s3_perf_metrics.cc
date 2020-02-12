@@ -80,7 +80,9 @@ static std::shared_ptr<S3ThroughputMetricsEvent> gs_throughput_event;
 int s3_perf_metrics_init(evbase_t *evbase) {
   int rc;
   struct timeval tv;
-
+  if (!g_option_instance->is_stats_enabled()) {
+    return 0;
+  }
   s3_log(S3_LOG_DEBUG, "", "Entering");
 
   AtExit call_fini([]() { s3_perf_metrics_fini(); });
@@ -115,6 +117,9 @@ int s3_perf_metrics_init(evbase_t *evbase) {
 }
 
 void s3_perf_metrics_fini() {
+  if (!g_option_instance->is_stats_enabled()) {
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "", "Entering");
   if (gs_throughput_event) {
     gs_throughput_event->del_evtimer();
@@ -126,6 +131,9 @@ void s3_perf_metrics_fini() {
 }
 
 void s3_perf_count_incoming_bytes(int byte_count) {
+  if (!g_option_instance->is_stats_enabled()) {
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "", "Entering with byte_count = %d", byte_count);
   if (gs_throughput_event) {
     gs_throughput_event->more_bytes_in(byte_count);
@@ -133,6 +141,9 @@ void s3_perf_count_incoming_bytes(int byte_count) {
 }
 
 void s3_perf_count_outcoming_bytes(int byte_count) {
+  if (!g_option_instance->is_stats_enabled()) {
+    return;
+  }
   s3_log(S3_LOG_DEBUG, "", "Entering with byte_count = %d", byte_count);
   if (gs_throughput_event) {
     gs_throughput_event->more_bytes_out(byte_count);

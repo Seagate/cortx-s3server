@@ -19,14 +19,22 @@
 
 #include "gmock/gmock.h"
 #include "s3_perf_metrics.h"
+#include "s3_option.h"
+
+extern S3Option* g_option_instance;
 
 class S3PerfMetricsTest : public testing::Test {
  protected:
   evbase_t *evbase;
 
  public:
-  virtual void SetUp() { evbase = event_base_new(); }
+  virtual void SetUp() {
+    evbase = event_base_new();
+    g_option_instance = S3Option::get_instance();
+    g_option_instance->set_stats_enable(true);
+  }
   void TearDown() {
+    g_option_instance->set_stats_enable(false);
     if (evbase) {
       event_base_free(evbase);
       evbase = nullptr;
@@ -37,7 +45,6 @@ class S3PerfMetricsTest : public testing::Test {
 TEST_F(S3PerfMetricsTest, TestInitSuccess) {
   int rc;
   int count_orig;
-
   // Make sure it is adding event on success.
   count_orig = event_base_get_num_events(evbase, EVENT_BASE_COUNT_ADDED);
   EXPECT_EQ(0, count_orig);
