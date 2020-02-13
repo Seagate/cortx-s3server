@@ -34,11 +34,10 @@ using ::testing::Return;
 class MockS3ObjectMetadata : public S3ObjectMetadata {
  public:
   MockS3ObjectMetadata(std::shared_ptr<S3RequestObject> req,
-                       struct m0_uint128 oid,
                        std::shared_ptr<MockS3Clovis> clovis_api = nullptr)
-      : S3ObjectMetadata(req, oid, false, "", nullptr, nullptr, nullptr,
-                         clovis_api) {}
+      : S3ObjectMetadata(req, false, "", nullptr, nullptr, clovis_api) {}
   MOCK_METHOD0(get_state, S3ObjectMetadataState());
+  MOCK_METHOD0(get_version_key_in_index, std::string());
   MOCK_METHOD0(get_oid, struct m0_uint128());
   MOCK_METHOD0(get_layout_id, int());
   MOCK_METHOD1(set_oid, void(struct m0_uint128));
@@ -76,3 +75,4 @@ class MockS3ObjectMetadata : public S3ObjectMetadata {
 };
 
 #endif
+

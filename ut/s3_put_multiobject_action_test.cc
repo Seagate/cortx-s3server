@@ -50,6 +50,8 @@ class S3PutMultipartObjectActionTest : public testing::Test {
     object_list_indx_oid = {0x11ffff, 0x1ffff};
     upload_id = "upload_id";
     call_count_one = 0;
+    bucket_name = "seagatebucket";
+    object_name = "objname";
 
     layout_id =
         S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
@@ -60,6 +62,10 @@ class S3PutMultipartObjectActionTest : public testing::Test {
 
     ptr_mock_request = std::make_shared<MockS3RequestObject>(
         req, evhtp_obj_ptr, async_buffer_factory);
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*ptr_mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
 
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
 
@@ -75,8 +81,8 @@ class S3PutMultipartObjectActionTest : public testing::Test {
         ptr_mock_request, ptr_mock_s3_clovis_api);
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
-            upload_id);
+            ptr_mock_request, ptr_mock_s3_clovis_api, upload_id);
+    object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
     part_meta_factory = std::make_shared<MockS3PartMetadataFactory>(
         ptr_mock_request, oid, upload_id, 0);
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
@@ -158,13 +164,13 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ConstructorTest) {
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        ChunkAuthSucessfulShuttingDown) {
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->chunk_auth_successful();
-  EXPECT_EQ(1, call_count_one);
   EXPECT_TRUE(action_under_test->auth_completed == true);
   action_under_test->check_shutdown_signal_for_next_task(false);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
@@ -202,26 +208,23 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthSucessful) {
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthSuccessShuttingDown) {
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   action_under_test->chunk_auth_successful();
-  EXPECT_EQ(1, call_count_one);
   EXPECT_TRUE(action_under_test->auth_completed);
   action_under_test->check_shutdown_signal_for_next_task(false);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ChunkAuthFailedShuttingDown) {
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
   action_under_test->check_shutdown_signal_for_next_task(true);
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(403, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->chunk_auth_failed();
-  EXPECT_EQ(1, call_count_one);
   action_under_test->check_shutdown_signal_for_next_task(false);
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 }
@@ -850,18 +853,15 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        WriteObjectSuccessfulWhileShuttingDownAndRollback) {
   S3Option::get_instance()->set_is_s3_shutting_down(true);
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-
-  // Mock out the rollback calls on action.
-  action_under_test->clear_tasks_rollback();
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutMultipartObjectActionTest::func_callback_one, this));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 
   EXPECT_FALSE(action_under_test->clovis_write_in_progress);
-  EXPECT_EQ(1, call_count_one);
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
@@ -1063,3 +1063,5 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendFailedResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
+
+

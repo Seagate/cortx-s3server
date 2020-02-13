@@ -43,7 +43,10 @@ class S3PutBucketAclActionTest : public testing::Test {
     call_count_one = 0;
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(mock_request);
     std::map<std::string, std::string> input_headers;
@@ -58,6 +61,7 @@ class S3PutBucketAclActionTest : public testing::Test {
   std::shared_ptr<MockS3RequestObject> mock_request;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   int call_count_one;
+  std::string bucket_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -179,3 +183,4 @@ TEST_F(S3PutBucketAclActionTest, SendAnyFailedResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
+

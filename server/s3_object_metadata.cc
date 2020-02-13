@@ -59,10 +59,12 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   system_defined_attribute["Content-Length"] = "";
   system_defined_attribute["Last-Modified"] = "";
   system_defined_attribute["Content-MD5"] = "";
-  system_defined_attribute["Owner-User"] = "";
-  system_defined_attribute["Owner-User-id"] = "";
-  system_defined_attribute["Owner-Account"] = "";
-  system_defined_attribute["Owner-Account-id"] = "";
+  // Initially set to requestor of API, but on load json can be overriden
+  system_defined_attribute["Owner-User"] = user_name;
+  system_defined_attribute["Owner-Canonical-id"] = canonical_id;
+  system_defined_attribute["Owner-User-id"] = user_id;
+  system_defined_attribute["Owner-Account"] = account_name;
+  system_defined_attribute["Owner-Account-id"] = account_id;
 
   system_defined_attribute["x-amz-server-side-encryption"] =
       "None";  // Valid values aws:kms, AES256
@@ -85,7 +87,8 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
     index_name = get_object_list_index_name();
   }
 
-  index_oid = {0ULL, 0ULL};
+  object_list_index_oid = {0ULL, 0ULL};
+  objects_version_list_index_oid = {0ULL, 0ULL};
 }
 
 S3ObjectMetadata::S3ObjectMetadata(
@@ -93,62 +96,17 @@ S3ObjectMetadata::S3ObjectMetadata(
     std::string uploadid,
     std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
     std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
-    std::shared_ptr<ClovisAPI> clovis_api)
-    : request(std::move(req)) {
-  request_id = request->get_request_id();
-  s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  initialize(ismultipart, uploadid);
-
-  if (clovis_api) {
-    s3_clovis_api = std::move(clovis_api);
-  } else {
-    s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
-  }
-
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = std::move(bucket_meta_factory);
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
-  }
-
-  if (kv_reader_factory) {
-    clovis_kv_reader_factory = std::move(kv_reader_factory);
-  } else {
-    clovis_kv_reader_factory = std::make_shared<S3ClovisKVSReaderFactory>();
-  }
-
-  if (kv_writer_factory) {
-    clovis_kv_writer_factory = std::move(kv_writer_factory);
-  } else {
-    clovis_kv_writer_factory = std::make_shared<S3ClovisKVSWriterFactory>();
-  }
-}
-
-S3ObjectMetadata::S3ObjectMetadata(
-    std::shared_ptr<S3RequestObject> req, m0_uint128 bucket_idx_oid,
-    bool ismultipart, std::string uploadid,
-    std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory,
-    std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory,
-    std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
     std::shared_ptr<ClovisAPI> clovis_api)
     : request(std::move(req)) {
   request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   initialize(ismultipart, uploadid);
-  index_oid.u_hi = bucket_idx_oid.u_hi;
-  index_oid.u_lo = bucket_idx_oid.u_lo;
 
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
-  }
-  if (bucket_meta_factory) {
-    bucket_metadata_factory = std::move(bucket_meta_factory);
-  } else {
-    bucket_metadata_factory = std::make_shared<S3BucketMetadataFactory>();
   }
 
   if (kv_reader_factory) {
@@ -174,8 +132,23 @@ std::string S3ObjectMetadata::get_owner_name() {
 
 std::string S3ObjectMetadata::get_object_name() { return object_name; }
 
-struct m0_uint128 S3ObjectMetadata::get_index_oid() {
-  return index_oid;
+void S3ObjectMetadata::set_object_list_index_oid(struct m0_uint128 id) {
+  object_list_index_oid.u_hi = id.u_hi;
+  object_list_index_oid.u_lo = id.u_lo;
+}
+
+void S3ObjectMetadata::set_objects_version_list_index_oid(
+    struct m0_uint128 id) {
+  objects_version_list_index_oid.u_hi = id.u_hi;
+  objects_version_list_index_oid.u_lo = id.u_lo;
+}
+
+struct m0_uint128 S3ObjectMetadata::get_object_list_index_oid() const {
+  return object_list_index_oid;
+}
+
+struct m0_uint128 S3ObjectMetadata::get_objects_version_list_index_oid() const {
+  return objects_version_list_index_oid;
 }
 
 void S3ObjectMetadata::regenerate_version_id() {
@@ -185,6 +158,13 @@ void S3ObjectMetadata::regenerate_version_id() {
   object_version_id = S3ObjectVersioingHelper::get_versionid_from_epoch_time(
       rev_epoch_version_id_key);
   system_defined_attribute["x-amz-version-id"] = object_version_id;
+}
+
+std::string S3ObjectMetadata::get_version_key_in_index() {
+  assert(!object_name.empty());
+  assert(!rev_epoch_version_id_key.empty());
+  // sample objectname/revversionkey
+  return object_name + "/" + rev_epoch_version_id_key;
 }
 
 std::string S3ObjectMetadata::get_user_id() { return user_id; }
@@ -265,9 +245,19 @@ void S3ObjectMetadata::set_oid(struct m0_uint128 id) {
   mero_oid_str = S3M0Uint128Helper::to_string(oid);
 }
 
+void S3ObjectMetadata::set_version_id(std::string ver_id) {
+  object_version_id = ver_id;
+  rev_epoch_version_id_key =
+      S3ObjectVersioingHelper::generate_keyid_from_versionid(object_version_id);
+}
+
 void S3ObjectMetadata::set_old_oid(struct m0_uint128 id) {
   old_oid = id;
   mero_old_oid_str = S3M0Uint128Helper::to_string(old_oid);
+}
+
+void S3ObjectMetadata::set_old_version_id(std::string old_obj_ver_id) {
+  mero_old_object_version_id = old_obj_ver_id;
 }
 
 void S3ObjectMetadata::set_part_index_oid(struct m0_uint128 id) {
@@ -291,6 +281,9 @@ void S3ObjectMetadata::validate() {
 void S3ObjectMetadata::load(std::function<void(void)> on_success,
                             std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  // object_list_index_oid should be set before using this method
+  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+
   s3_timer.start();
 
   this->handler_on_success = on_success;
@@ -299,7 +292,7 @@ void S3ObjectMetadata::load(std::function<void(void)> on_success,
   clovis_kv_reader = clovis_kv_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
   clovis_kv_reader->get_keyval(
-      index_oid, object_name,
+      object_list_index_oid, object_name,
       std::bind(&S3ObjectMetadata::load_successful, this),
       std::bind(&S3ObjectMetadata::load_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -311,8 +304,8 @@ void S3ObjectMetadata::load_successful() {
     s3_log(S3_LOG_ERROR, request_id,
            "Json Parsing failed. Index oid = "
            "%" SCNx64 " : %" SCNx64 ", Key = %s, Value = %s\n",
-           index_oid.u_hi, index_oid.u_lo, object_name.c_str(),
-           clovis_kv_reader->get_value().c_str());
+           object_list_index_oid.u_hi, object_list_index_oid.u_lo,
+           object_name.c_str(), clovis_kv_reader->get_value().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
 
@@ -354,58 +347,45 @@ void S3ObjectMetadata::save(std::function<void(void)> on_success,
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
-  if (index_oid.u_lo == 0 && index_oid.u_hi == 0) {
-    S3UriToMeroOID(s3_clovis_api, index_name.c_str(), request_id, &index_oid,
-                   S3ClovisEntityType::index);
-    // Index table doesn't exist so create it
-    create_bucket_index();
-  } else {
-    save_metadata();
-  }
-}
-
-void S3ObjectMetadata::create_bucket_index() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  // Mark missing as we initiate write, in case it fails to write.
-  state = S3ObjectMetadataState::missing;
-  if (tried_count == 0) {
-    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-        request, s3_clovis_api);
-  }
-  clovis_kv_writer->create_index_with_oid(
-      index_oid,
-      std::bind(&S3ObjectMetadata::create_bucket_index_successful, this),
-      std::bind(&S3ObjectMetadata::create_bucket_index_failed, this));
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3ObjectMetadata::create_bucket_index_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  s3_log(S3_LOG_DEBUG, request_id, "Object metadata bucket index created.\n");
-  bucket_metadata =
-      bucket_metadata_factory->create_bucket_metadata_obj(request);
   if (is_multipart) {
-    bucket_metadata->set_multipart_index_oid(index_oid);
+    // Write only to multpart object list and not real object list in a bucket.
+    save_metadata();
   } else {
-    bucket_metadata->set_object_list_index_oid(index_oid);
+    // First write metadata to objects version list index for a bucket.
+    // Next write metadata to object list index for a bucket.
+    save_version_metadata();
   }
-  bucket_metadata->save(
-      std::bind(&S3ObjectMetadata::save_object_list_index_oid_successful, this),
-      std::bind(&S3ObjectMetadata::save_object_list_index_oid_failed, this));
+}
+
+// Save to objects version list index
+void S3ObjectMetadata::save_version_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  // objects_version_list_index_oid should be set before using this method
+  assert(objects_version_list_index_oid.u_hi ||
+         objects_version_list_index_oid.u_lo);
+
+  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+      request, s3_clovis_api);
+  clovis_kv_writer->put_keyval(
+      objects_version_list_index_oid, get_version_key_in_index(),
+      this->version_entry_to_json(),
+      std::bind(&S3ObjectMetadata::save_version_metadata_successful, this),
+      std::bind(&S3ObjectMetadata::save_version_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3ObjectMetadata::save_object_list_index_oid_successful() {
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+void S3ObjectMetadata::save_version_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "Version metadata saved for Object [%s].\n",
+         object_name.c_str());
   save_metadata();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3ObjectMetadata::save_object_list_index_oid_failed() {
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Object metadata create bucket index failed.\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+void S3ObjectMetadata::save_version_metadata_failed() {
+  s3_log(S3_LOG_ERROR, request_id,
+         "Version metadata save failed for Object [%s].\n",
+         object_name.c_str());
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
     state = S3ObjectMetadataState::failed_to_launch;
   } else {
     state = S3ObjectMetadataState::failed;
@@ -413,77 +393,21 @@ void S3ObjectMetadata::save_object_list_index_oid_failed() {
   this->handler_on_failed();
 }
 
-void S3ObjectMetadata::create_bucket_index_failed() {
-  if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
-    s3_log(S3_LOG_DEBUG, request_id, "Object metadata bucket index present.\n");
-    // create_bucket_index gets called when bucket index is not there, hence if
-    // state is "exists" then it will be due to collision, resolve it.
-    collision_detected();
-  } else if (clovis_kv_writer->get_state() ==
-             S3ClovisKVSWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Object metadata create bucket index failed.\n");
-    state = S3ObjectMetadataState::failed_to_launch;  // todo Check error
-    this->handler_on_failed();
-  } else {
-    s3_log(S3_LOG_DEBUG, request_id,
-           "Object metadata create bucket index failed.\n");
-    state = S3ObjectMetadataState::failed;  // todo Check error
-    this->handler_on_failed();
-  }
-}
-
-void S3ObjectMetadata::collision_detected() {
-  if (tried_count < MAX_COLLISION_RETRY_COUNT) {
-    s3_log(S3_LOG_INFO, request_id,
-           "Object ID collision happened for index %s\n", index_name.c_str());
-    // Handle Collision
-    create_new_oid();
-    tried_count++;
-    if (tried_count > 5) {
-      s3_log(S3_LOG_INFO, request_id,
-             "Object ID collision happened %d times for index %s\n",
-             tried_count, index_name.c_str());
-    }
-    create_bucket_index();
-  } else {
-    if (tried_count >= MAX_COLLISION_RETRY_COUNT) {
-      s3_log(S3_LOG_ERROR, request_id,
-             "Failed to resolve object id collision %d times for index %s\n",
-             tried_count, index_name.c_str());
-      s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
-             S3_IEM_COLLISION_RES_FAIL_JSON);
-    }
-    state = S3ObjectMetadataState::failed;
-    this->handler_on_failed();
-  }
-}
-
-void S3ObjectMetadata::create_new_oid() {
-  std::string salted_index_name =
-      index_name + salt + std::to_string(tried_count);
-  S3UriToMeroOID(s3_clovis_api, salted_index_name.c_str(), request_id,
-                 &index_oid, S3ClovisEntityType::index);
-  return;
-}
-
 void S3ObjectMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  // Set up system attributes
-  system_defined_attribute["Owner-User"] = user_name;
-  system_defined_attribute["Owner-Canonical-id"] = canonical_id;
-  system_defined_attribute["Owner-User-id"] = user_id;
-  system_defined_attribute["Owner-Account"] = account_name;
-  system_defined_attribute["Owner-Account-id"] = account_id;
+  // object_list_index_oid should be set before using this method
+  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
+
   clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
       request, s3_clovis_api);
   clovis_kv_writer->put_keyval(
-      index_oid, object_name, this->to_json(),
+      object_list_index_oid, object_name, this->to_json(),
       std::bind(&S3ObjectMetadata::save_metadata_successful, this),
       std::bind(&S3ObjectMetadata::save_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+// Save to objects list index
 void S3ObjectMetadata::save_metadata(std::function<void(void)> on_success,
                                      std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
@@ -516,26 +440,39 @@ void S3ObjectMetadata::remove(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
   s3_log(S3_LOG_DEBUG, request_id,
          "Deleting Object metadata for Object [%s].\n", object_name.c_str());
-
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
+  // Remove Object metadata from object list followed by
+  // removing version entry from version list.
+  remove_object_metadata();
+}
+
+void S3ObjectMetadata::remove_object_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  // object_list_index_oid should be set before using this method
+  assert(object_list_index_oid.u_hi || object_list_index_oid.u_lo);
 
   clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
       request, s3_clovis_api);
   clovis_kv_writer->delete_keyval(
-      index_oid, object_name,
-      std::bind(&S3ObjectMetadata::remove_successful, this),
-      std::bind(&S3ObjectMetadata::remove_failed, this));
+      object_list_index_oid, object_name,
+      std::bind(&S3ObjectMetadata::remove_object_metadata_successful, this),
+      std::bind(&S3ObjectMetadata::remove_object_metadata_failed, this));
 }
 
-void S3ObjectMetadata::remove_successful() {
-  s3_log(S3_LOG_DEBUG, request_id, "Deleted Object metadata for Object [%s].\n",
+void S3ObjectMetadata::remove_object_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id, "Deleted metadata for Object [%s].\n",
          object_name.c_str());
-  state = S3ObjectMetadataState::deleted;
-  this->handler_on_success();
+  if (is_multipart) {
+    // In multipart, version entry is not yet created.
+    state = S3ObjectMetadataState::deleted;
+    this->handler_on_success();
+  } else {
+    remove_version_metadata();
+  }
 }
 
-void S3ObjectMetadata::remove_failed() {
+void S3ObjectMetadata::remove_object_metadata_failed() {
   s3_log(S3_LOG_DEBUG, request_id,
          "Delete Object metadata failed for Object [%s].\n",
          object_name.c_str());
@@ -548,6 +485,47 @@ void S3ObjectMetadata::remove_failed() {
   this->handler_on_failed();
 }
 
+void S3ObjectMetadata::remove_version_metadata(
+    std::function<void(void)> on_success, std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Deleting Object Version metadata for Object [%s].\n",
+         object_name.c_str());
+  this->handler_on_success = on_success;
+  this->handler_on_failed = on_failed;
+  remove_version_metadata();
+}
+
+void S3ObjectMetadata::remove_version_metadata() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  // objects_version_list_index_oid should be set before using this method
+  assert(objects_version_list_index_oid.u_hi ||
+         objects_version_list_index_oid.u_lo);
+
+  clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+      request, s3_clovis_api);
+  clovis_kv_writer->delete_keyval(
+      objects_version_list_index_oid, get_version_key_in_index(),
+      std::bind(&S3ObjectMetadata::remove_version_metadata_successful, this),
+      std::bind(&S3ObjectMetadata::remove_version_metadata_failed, this));
+}
+
+void S3ObjectMetadata::remove_version_metadata_successful() {
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Deleted [%s] Version metadata for Object [%s].\n",
+         object_version_id.c_str(), object_name.c_str());
+  state = S3ObjectMetadataState::deleted;
+  this->handler_on_success();
+}
+
+void S3ObjectMetadata::remove_version_metadata_failed() {
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Delete Version [%s] metadata failed for Object [%s].\n",
+         object_version_id.c_str(), object_name.c_str());
+  // We still treat remove object metadata as successful as from S3 client
+  // perspective object is gone. Version can be clean up by backgrounddelete
+  state = S3ObjectMetadataState::deleted;
+  this->handler_on_success();
+}
 
 // Streaming to json
 std::string S3ObjectMetadata::to_json() {
@@ -563,6 +541,7 @@ std::string S3ObjectMetadata::to_json() {
     root["mero_part_oid"] = mero_part_oid_str;
     root["mero_old_oid"] = mero_old_oid_str;
     root["old_layout_id"] = old_layout_id;
+    root["mero_old_object_version_id"] = mero_old_object_version_id;
   }
 
   root["mero_oid"] = mero_oid_str;
@@ -583,6 +562,32 @@ std::string S3ObjectMetadata::to_json() {
   } else {
     root["ACL"] = encoded_acl;
   }
+
+  S3DateTime current_time;
+  current_time.init_current_time();
+  root["create_timestamp"] = current_time.get_isoformat_string();
+
+  Json::FastWriter fastWriter;
+  return fastWriter.write(root);
+  ;
+}
+
+// Streaming to json
+std::string S3ObjectMetadata::version_entry_to_json() {
+  s3_log(S3_LOG_DEBUG, request_id, "Called\n");
+  Json::Value root;
+  // Processing version entry currently only needs minimal information
+  // In future when real S3 versioning is supported, this method will not be
+  // required and we can simply use to_json.
+
+  // root["Object-Name"] = object_name;
+  root["mero_oid"] = mero_oid_str;
+  root["layout_id"] = layout_id;
+
+  S3DateTime current_time;
+  current_time.init_current_time();
+  root["create_timestamp"] = current_time.get_isoformat_string();
+
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
   ;
@@ -643,6 +648,8 @@ int S3ObjectMetadata::from_json(std::string content) {
     mero_old_oid_str = newroot["mero_old_oid"].asString();
     old_oid = S3M0Uint128Helper::to_m0_uint128(mero_old_oid_str);
     old_layout_id = newroot["old_layout_id"].asInt();
+    mero_old_object_version_id =
+        newroot["mero_old_object_version_id"].asString();
   }
 
   part_index_oid = S3M0Uint128Helper::to_m0_uint128(mero_part_oid_str);
@@ -734,24 +741,3 @@ bool S3ObjectMetadata::check_object_tags_exists() {
 
 int S3ObjectMetadata::object_tags_count() { return object_tags.size(); }
 
-std::string S3ObjectMetadata::create_probable_delete_record(
-    int override_layout_id, struct m0_uint128 index_id) {
-  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  Json::Value root;
-
-  std::string index_oid_str;
-  if (index_id.u_lo == 0ULL && index_id.u_hi == 0ULL) {
-    index_oid_str = S3M0Uint128Helper::to_string(get_index_oid());
-  } else {
-    index_oid_str = S3M0Uint128Helper::to_string(index_id);
-  }
-
-  root["index_id"] = index_oid_str;
-  root["object_metadata_path"] = get_object_name();
-  root["object_layout_id"] = override_layout_id;
-  root["global_instance_id"] = S3M0Uint128Helper::to_string(global_instance_id);
-  root["version_id"] = object_version_id;
-
-  Json::FastWriter fastWriter;
-  return fastWriter.write(root);
-}

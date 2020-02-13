@@ -71,7 +71,9 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
 
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
-
+    objects_version_list_indx_oid = {0x11ffff, 0x1fff0};
+    bucket_name = "seagatebucket";
+    object_name = "obj_abc";
     call_count_one = 0;
 
     layout_id =
@@ -83,6 +85,10 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
 
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
+    EXPECT_CALL(*mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
 
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
 
@@ -96,7 +102,8 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
         mock_request, ptr_mock_s3_clovis_api);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
+        mock_request, ptr_mock_s3_clovis_api);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         mock_request, oid, ptr_mock_s3_clovis_api);
@@ -129,7 +136,9 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
   std::shared_ptr<S3DeleteMultipleObjectsAction> action_under_test;
 
   struct m0_uint128 object_list_indx_oid;
+  struct m0_uint128 objects_version_list_indx_oid;
   struct m0_uint128 oid;
+  std::string bucket_name, object_name;
 
   int call_count_one;
   int layout_id;
@@ -359,9 +368,13 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   result_keys_values.insert(std::make_pair(
       "testkey2", std::make_pair(-ENOENT, "dummyobjinfoplaceholder")));
 
-  bool is_s3server_objectleak_tracking_enabled =
-      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
+  CREATE_BUCKET_METADATA;
+
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_objects_version_list_index_oid(
+      objects_version_list_indx_oid);
+
   // mock kv reader/writer
   action_under_test->clovis_kv_reader =
       action_under_test->clovis_kvs_reader_factory->create_clovis_kvs_reader(
@@ -376,17 +389,23 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .Times(1)
       .WillRepeatedly(Return(0));
 
-  // Few expectations for delete_objects_metadata
+  // Few expectations for add_object_oid_to_probable_dead_oid_list
+  object_meta_factory->mock_object_metadata->regenerate_version_id();
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
+              put_keyval(_, _, _, _)).Times(1);
 
   action_under_test->fetch_objects_info_successful();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
-      is_s3server_objectleak_tracking_enabled);
+
   EXPECT_EQ(1, action_under_test->objects_metadata.size());
   EXPECT_EQ(2, action_under_test->delete_objects_response.get_success_count());
   EXPECT_EQ(0, action_under_test->delete_objects_response.get_failure_count());
@@ -401,9 +420,13 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(0, "dummyobjinfoplaceholder")));
 
-  bool is_s3server_objectleak_tracking_enabled =
-      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
+  CREATE_BUCKET_METADATA;
+
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_objects_version_list_index_oid(
+      objects_version_list_indx_oid);
+
   // mock kv reader/writer
   action_under_test->clovis_kv_reader =
       action_under_test->clovis_kvs_reader_factory->create_clovis_kvs_reader(
@@ -418,17 +441,23 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectsInfoSuccessful) {
       .Times(3)
       .WillRepeatedly(Return(0));
 
-  // Few expectations for delete_objects_metadata
+  // Few expectations for add_object_oid_to_probable_dead_oid_list
+  object_meta_factory->mock_object_metadata->regenerate_version_id();
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::present));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
+      .WillRepeatedly(Return(oid));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
+      .WillRepeatedly(Return(layout_id));
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              get_version_key_in_index()).WillRepeatedly(Return("objname/v1"));
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
+              put_keyval(_, _, _, _)).Times(1);
 
   action_under_test->fetch_objects_info_successful();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
-      is_s3server_objectleak_tracking_enabled);
+
   EXPECT_EQ(3, action_under_test->objects_metadata.size());
 }
 
@@ -441,6 +470,13 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       std::make_pair("testkey1", std::make_pair(0, "dummyobjinfoplaceholder")));
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(0, "dummyobjinfoplaceholder")));
+
+  CREATE_BUCKET_METADATA;
+
+  bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
+      object_list_indx_oid);
+  bucket_meta_factory->mock_bucket_metadata->set_objects_version_list_index_oid(
+      objects_version_list_indx_oid);
 
   // mock kv reader/writer
   action_under_test->clovis_kv_reader =
@@ -642,9 +678,20 @@ TEST_F(S3DeleteMultipleObjectsActionTest, SendSuccessResponse) {
 }
 
 TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataFailedToSaveTest1) {
-  action_under_test->probable_oid_list["oid_lo-oid_hi"] =
-      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
-      "layout_id\":9}";
+  std::string object_name = "abcd";
+  std::string version_key_in_index = "abcd/v1";
+  int layout_id = 9;
+  struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
+  struct m0_uint128 objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
+  struct m0_uint128 oid = {0x1ffff, 0x1ffff};
+  std::string oid_str = S3M0Uint128Helper::to_string(oid);
+
+  action_under_test->probable_oid_list[oid_str] =
+      std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
+          objects_version_list_index_oid, version_key_in_index,
+          false /* force_delete */));
+
   action_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
 
@@ -690,3 +737,4 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest2) {
 
   action_under_test->cleanup();
 }
+

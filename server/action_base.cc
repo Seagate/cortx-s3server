@@ -123,6 +123,7 @@ void Action::check_authorization_header() {
   }
   auth_client->set_is_authheader_present(is_authorizationheader_present);
 }
+
 void Action::start() {
 
   if (check_shutdown_signal && check_shutdown_and_rollback()) {
@@ -235,7 +236,7 @@ void Action::rollback_done() {
 
 void Action::rollback_exit() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  send_response_to_s3_client();
+  done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -285,11 +286,8 @@ bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
   }
   if (is_s3_shutting_down && check_auth_op_aborted &&
       get_auth_client()->is_chunk_auth_op_aborted()) {
-    if (get_rollback_state() == ACTS_START) {
-      rollback_start();
-    } else {
-      send_response_to_s3_client();
-    }
+    // Cleanup/rollback will be done after response.
+    send_response_to_s3_client();
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return is_s3_shutting_down;
   }
@@ -300,11 +298,9 @@ bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
     if (s3_error_code.empty()) {
       set_s3_error("ServiceUnavailable");
     }
-    if (number_of_rollback_tasks()) {
-      rollback_start();
-    } else {
-      send_response_to_s3_client();
-    }
+    // Cleanup/rollback will be done after response.
+    send_response_to_s3_client();
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return is_s3_shutting_down;
@@ -315,3 +311,4 @@ void Action::send_retry_error_to_s3_client(int retry_after_in_secs) {
   base_request->respond_retry_after(1);
   done();
 }
+

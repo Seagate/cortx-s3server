@@ -50,9 +50,11 @@ S3PutObjectAction::S3PutObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
+  s3_put_action_state = S3PutObjectActionState::empty;
   old_object_oid = {0ULL, 0ULL};
-  new_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
+  new_object_oid = {0ULL, 0ULL};
+
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
@@ -103,6 +105,7 @@ void S3PutObjectAction::setup_steps() {
 void S3PutObjectAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
+  s3_put_action_state = S3PutObjectActionState::validationFailed;
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     s3_log(S3_LOG_DEBUG, request_id, "Bucket not found\n");
     set_s3_error("NoSuchBucket");
@@ -127,6 +130,7 @@ void S3PutObjectAction::validate_x_amz_tagging_if_present() {
   if (!new_object_tags.empty()) {
     parse_x_amz_tagging_header(new_object_tags);
   } else {
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InvalidTagError");
     send_response_to_s3_client();
   }
@@ -149,6 +153,7 @@ void S3PutObjectAction::parse_x_amz_tagging_header(std::string content) {
     }
     validate_tags();
   } else {
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InvalidTagError");
     send_response_to_s3_client();
   }
@@ -165,6 +170,7 @@ void S3PutObjectAction::validate_tags() {
   if (put_object_tag_body->validate_object_xml_tags(new_object_tags_map)) {
     next();
   } else {
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InvalidTagError");
     send_response_to_s3_client();
   }
@@ -186,6 +192,7 @@ void S3PutObjectAction::fetch_object_info_failed() {
            request->get_bucket_name().c_str());
     s3_iem(LOG_ERR, S3_IEM_METADATA_CORRUPTED, S3_IEM_METADATA_CORRUPTED_STR,
            S3_IEM_METADATA_CORRUPTED_JSON);
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("MetaDataCorruption");
     send_response_to_s3_client();
   } else {
@@ -198,6 +205,7 @@ void S3PutObjectAction::fetch_object_info_success() {
   if (object_metadata->get_state() == S3ObjectMetadataState::present) {
     s3_log(S3_LOG_DEBUG, request_id, "S3ObjectMetadataState::present\n");
     old_object_oid = object_metadata->get_oid();
+    old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
     old_layout_id = object_metadata->get_layout_id();
     create_new_oid(old_object_oid);
     next();
@@ -208,10 +216,12 @@ void S3PutObjectAction::fetch_object_info_success() {
              S3ObjectMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Object metadata load operation failed due to pre launch failure\n");
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
     s3_log(S3_LOG_DEBUG, request_id, "Failed to look up metadata.\n");
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
@@ -243,13 +253,22 @@ void S3PutObjectAction::create_object() {
 
 void S3PutObjectAction::create_object_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  // mark rollback point
-  add_task_rollback(std::bind(&S3PutObjectAction::rollback_create, this));
-  if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-    add_object_oid_to_probable_dead_oid_list();
-  } else {
-    next();
-  }
+  s3_put_action_state = S3PutObjectActionState::newObjOidCreated;
+
+  // New Object or overwrite, create new metadata and release old.
+  new_object_metadata = object_metadata_factory->create_object_metadata_obj(
+      request, bucket_metadata->get_object_list_index_oid());
+  new_object_metadata->set_objects_version_list_index_oid(
+      bucket_metadata->get_objects_version_list_index_oid());
+
+  new_oid_str = S3M0Uint128Helper::to_string(new_object_oid);
+
+  // Generate a version id for the new object.
+  new_object_metadata->regenerate_version_id();
+  new_object_metadata->set_oid(clovis_writer->get_oid());
+  new_object_metadata->set_layout_id(layout_id);
+
+  add_object_oid_to_probable_dead_oid_list();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -266,6 +285,8 @@ void S3PutObjectAction::create_object_failed() {
     const auto mss = s3_timer.elapsed_time_in_millisec();
     LOG_PERF("create_object_failed_ms", request_id.c_str(), mss);
     s3_stats_timing("create_object_failed", mss);
+
+    s3_put_action_state = S3PutObjectActionState::newObjOidCreationFailed;
 
     if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {
       s3_log(S3_LOG_ERROR, request_id, "Create object failed.\n");
@@ -327,6 +348,7 @@ void S3PutObjectAction::collision_detected() {
            tried_count, request->get_object_uri().c_str());
     s3_iem(LOG_ERR, S3_IEM_COLLISION_RES_FAIL, S3_IEM_COLLISION_RES_FAIL_STR,
            S3_IEM_COLLISION_RES_FAIL_JSON);
+    s3_put_action_state = S3PutObjectActionState::newObjOidCreationFailed;
     set_s3_error("InternalError");
     send_response_to_s3_client();
   }
@@ -347,50 +369,6 @@ void S3PutObjectAction::create_new_oid(struct m0_uint128 current_oid) {
            (new_object_oid.u_lo == current_oid.u_lo));
 
   return;
-}
-
-void S3PutObjectAction::rollback_create() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  clovis_writer->set_oid(new_object_oid);
-  if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Save object metadata failed due to prelaunch failure\n");
-    set_s3_error("ServiceUnavailable");
-  }
-  clovis_writer->delete_object(
-      std::bind(&S3PutObjectAction::rollback_next, this),
-      std::bind(&S3PutObjectAction::rollback_create_failed, this), layout_id);
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3PutObjectAction::rollback_create_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (clovis_writer->get_state() == S3ClovisWriterOpState::missing) {
-    rollback_next();
-  } else if (clovis_writer->get_state() ==
-             S3ClovisWriterOpState::failed_to_launch) {
-    s3_log(S3_LOG_ERROR, request_id,
-           "Rollback: Deletion of object with oid "
-           "%" SCNx64 " : %" SCNx64 " failed, it may remain stale in Mero\n",
-           new_object_oid.u_hi, new_object_oid.u_lo);
-    set_s3_error("ServiceUnavailable");
-    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
-           S3_IEM_DELETE_OBJ_FAIL_JSON);
-    probable_oid_list.erase(S3M0Uint128Helper::to_string(new_object_oid));
-    send_response_to_s3_client();
-  } else {
-    // Log rollback failure.
-    s3_log(S3_LOG_ERROR, request_id,
-           "Rollback: Deletion of object with oid "
-           "%" SCNx64 " : %" SCNx64 " failed, it may remain stale in Mero\n",
-           new_object_oid.u_hi, new_object_oid.u_lo);
-    set_s3_error("InternalError");
-    s3_iem(LOG_ERR, S3_IEM_DELETE_OBJ_FAIL, S3_IEM_DELETE_OBJ_FAIL_STR,
-           S3_IEM_DELETE_OBJ_FAIL_JSON);
-    probable_oid_list.erase(S3M0Uint128Helper::to_string(new_object_oid));
-    rollback_done();
-  }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutObjectAction::initiate_data_streaming() {
@@ -432,6 +410,7 @@ void S3PutObjectAction::consume_incoming_content() {
     }
     return;
   }
+
   log_timed_counter(put_timed_counter, "incoming_object_data_blocks");
   s3_perf_count_incoming_bytes(
       request->get_buffered_input()->get_content_length());
@@ -507,10 +486,15 @@ void S3PutObjectAction::write_object_successful() {
     }
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
+    // All data written to object
+    s3_put_action_state = S3PutObjectActionState::writeComplete;
     next();
   } else if (!is_memory_enough) {
     set_s3_error("ServiceUnavailable");
-    rollback_start();
+    // Clean up will be done after response.
+    // Treat write abandoned as write failure for further cleanups
+    s3_put_action_state = S3PutObjectActionState::writeFailed;
+    send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -519,6 +503,7 @@ void S3PutObjectAction::write_object_failed() {
   s3_log(S3_LOG_WARN, request_id, "Failed writing to clovis.\n");
 
   write_in_progress = false;
+  s3_put_action_state = S3PutObjectActionState::writeFailed;
 
   if (request->is_s3_client_read_error()) {
     client_read_error();
@@ -530,8 +515,8 @@ void S3PutObjectAction::write_object_failed() {
   } else {
     set_s3_error("InternalError");
   }
-  // Trigger rollback to undo changes done and report error
-  rollback_start();
+  // Clean up will be done after response.
+  send_response_to_s3_client();
 }
 
 void S3PutObjectAction::save_metadata() {
@@ -545,66 +530,93 @@ void S3PutObjectAction::save_metadata() {
 
     if (s_md5_calc != s_md5_got) {
       s3_log(S3_LOG_INFO, request_id, "Content MD5 mismatch\n");
+      s3_put_action_state = S3PutObjectActionState::md5ValidationFailed;
+
       set_s3_error("BadDigest");
-      rollback_start();
+      // Clean up will be done after response.
+      send_response_to_s3_client();
       return;
     }
   }
   s3_timer.start();
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL("put_object_action_save_metadata_pass");
-  // New Object or overwrite, create new metadata and release old.
-  object_metadata = object_metadata_factory->create_object_metadata_obj(
-      request, bucket_metadata->get_object_list_index_oid());
 
-  // Generate a version id for the new object.
-  object_metadata->regenerate_version_id();
-  object_metadata->reset_date_time_to_current();
-  object_metadata->set_content_length(request->get_data_length_str());
-  object_metadata->set_md5(clovis_writer->get_content_md5());
-  object_metadata->set_oid(clovis_writer->get_oid());
-  object_metadata->set_layout_id(layout_id);
-  object_metadata->set_tags(new_object_tags_map);
+  new_object_metadata->reset_date_time_to_current();
+  new_object_metadata->set_content_length(request->get_data_length_str());
+  new_object_metadata->set_md5(clovis_writer->get_content_md5());
+  new_object_metadata->set_tags(new_object_tags_map);
 
   for (auto it : request->get_in_headers_copy()) {
     if (it.first.find("x-amz-meta-") != std::string::npos) {
       s3_log(S3_LOG_DEBUG, request_id,
              "Writing user metadata on object: [%s] -> [%s]\n",
              it.first.c_str(), it.second.c_str());
-      object_metadata->add_user_defined_attribute(it.first, it.second);
+      new_object_metadata->add_user_defined_attribute(it.first, it.second);
     }
   }
 
   // bypass shutdown signal check for next task
   check_shutdown_signal_for_next_task(false);
-  object_metadata->save(
-      std::bind(&S3PutObjectAction::next, this),
+  new_object_metadata->save(
+      std::bind(&S3PutObjectAction::save_object_metadata_success, this),
       std::bind(&S3PutObjectAction::save_object_metadata_failed, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PutObjectAction::save_object_metadata_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_put_action_state = S3PutObjectActionState::metadataSaved;
+  next();
+}
+
 void S3PutObjectAction::save_object_metadata_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (object_metadata->get_state() == S3ObjectMetadataState::failed_to_launch) {
+  s3_put_action_state = S3PutObjectActionState::metadataSaveFailed;
+  if (new_object_metadata->get_state() ==
+      S3ObjectMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   }
-  rollback_start();
+  // Clean up will be done after response.
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  probable_oid_list.clear();
+  std::map<std::string, std::string> probable_oid_list;
+  assert(!new_oid_str.empty());
+
   // store old object oid
-  if (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL) {
-    std::string old_oid_str = S3M0Uint128Helper::to_string(old_object_oid);
-    probable_oid_list[S3M0Uint128Helper::to_string(old_object_oid)] =
-        object_metadata->create_probable_delete_record(old_layout_id);
+  if (old_object_oid.u_hi || old_object_oid.u_lo) {
+    assert(!old_oid_str.empty());
+
+    // key = oldoid + "-" + newoid
+    std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Adding old_probable_del_rec with key [%s]\n",
+           old_oid_rec_key.c_str());
+    old_probable_del_rec.reset(new S3ProbableDeleteRecord(
+        old_oid_rec_key, {0ULL, 0ULL}, object_metadata->get_object_name(),
+        old_object_oid, old_layout_id,
+        bucket_metadata->get_object_list_index_oid(),
+        bucket_metadata->get_objects_version_list_index_oid(),
+        object_metadata->get_version_key_in_index(), false /* force_delete */));
+
+    probable_oid_list[old_oid_rec_key] = old_probable_del_rec->to_json();
   }
 
-  // store new oid
-  probable_oid_list[S3M0Uint128Helper::to_string(new_object_oid)] =
-      object_metadata->create_probable_delete_record(layout_id);
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Adding new_probable_del_rec with key [%s]\n", new_oid_str.c_str());
+  new_probable_del_rec.reset(new S3ProbableDeleteRecord(
+      new_oid_str, old_object_oid, new_object_metadata->get_object_name(),
+      new_object_oid, layout_id, bucket_metadata->get_object_list_index_oid(),
+      bucket_metadata->get_objects_version_list_index_oid(),
+      new_object_metadata->get_version_key_in_index(),
+      false /* force_delete */));
+
+  // store new oid, key = newoid
+  probable_oid_list[new_oid_str] = new_probable_del_rec->to_json();
 
   if (!clovis_kv_writer) {
     clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
@@ -621,14 +633,15 @@ void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list() {
 
 void S3PutObjectAction::add_object_oid_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_put_action_state = S3PutObjectActionState::probableEntryRecordFailed;
   if (clovis_kv_writer->get_state() ==
       S3ClovisKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
   } else {
     set_s3_error("InternalError");
   }
-  // Trigger rollback to undo changes done and report error
-  rollback_start();
+  // Clean up will be done after response.
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -644,6 +657,9 @@ void S3PutObjectAction::send_response_to_s3_client() {
 
   if (reject_if_shutting_down() ||
       (is_error_state() && !get_s3_error_code().empty())) {
+    // Metadata saved for object is always a success condition.
+    assert(s3_put_action_state != S3PutObjectActionState::metadataSaved);
+
     S3Error error(get_s3_error_code(), request->get_request_id(),
                   request->get_object_uri());
     std::string& response_xml = error.to_xml();
@@ -660,8 +676,12 @@ void S3PutObjectAction::send_response_to_s3_client() {
     }
 
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if (object_metadata &&
-             object_metadata->get_state() == S3ObjectMetadataState::saved) {
+  } else {
+    // Metadata saved implies its success.
+    assert(s3_put_action_state == S3PutObjectActionState::metadataSaved);
+
+    s3_put_action_state = S3PutObjectActionState::completed;
+
     s3_timer.stop();
     const auto mss = s3_timer.elapsed_time_in_millisec();
     LOG_PERF("put_object_save_metadata_ms", request_id.c_str(), mss);
@@ -673,89 +693,180 @@ void S3PutObjectAction::send_response_to_s3_client() {
     request->set_out_header_value("ETag", e_tag);
 
     request->send_response(S3HttpSuccess200);
-  } else {
-    S3Error error("InternalError", request->get_request_id(),
-                  request->get_object_uri());
-    std::string& response_xml = error.to_xml();
-    request->set_out_header_value("Connection", "close");
-    request->set_out_header_value("Content-Type", "application/xml");
-    request->set_out_header_value("Content-Length",
-                                  std::to_string(response_xml.length()));
-
-    request->send_response(error.get_http_status_code(), response_xml);
   }
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
   request->resume(false);
-  cleanup();
+  startcleanup();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
-void S3PutObjectAction::cleanup() {
+void S3PutObjectAction::startcleanup() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // TODO: Perf - all/some of below tasks can be done in parallel
+  // Any of the following steps fail, backgrounddelete will be able to perform
+  // cleanups.
+  // Clear task list and setup cleanup task list
+  clear_tasks();
 
-  if (object_metadata &&
-      (object_metadata->get_state() == S3ObjectMetadataState::saved)) {
-    // process to delete old object
-    if (clovis_writer &&
-        (old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL)) {
-      clovis_writer->set_oid(old_object_oid);
-      clovis_writer->delete_object(
-          std::bind(&S3PutObjectAction::cleanup_successful, this),
-          std::bind(&S3PutObjectAction::cleanup_failed, this), old_layout_id);
-    } else {
-      cleanup_oid_from_probable_dead_oid_list();
+  // Success conditions
+  if (s3_put_action_state == S3PutObjectActionState::completed) {
+    s3_log(S3_LOG_DEBUG, request_id, "Cleanup old Object\n");
+    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+      // mark old OID for deletion in overwrite case, this optimizes
+      // backgrounddelete decisions.
+      ACTION_TASK_ADD(S3PutObjectAction::mark_old_oid_for_deletion, this);
     }
-  } else {
-    // metadata failed to delete, so remove the entry from
-    // probable_dead_oid_list
-    cleanup_oid_from_probable_dead_oid_list();
-  }
-
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3PutObjectAction::cleanup_successful() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  cleanup_oid_from_probable_dead_oid_list();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3PutObjectAction::cleanup_failed() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  // new object oid and metadata saved but old object oid failed to delete
-  // so erase the old object oid from probable_oid_list and
-  // this old object oid will be retained in
-  // global_probable_dead_object_list_index_oid
-  probable_oid_list.erase(S3M0Uint128Helper::to_string(old_object_oid));
-  cleanup_oid_from_probable_dead_oid_list();
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
-}
-
-void S3PutObjectAction::cleanup_oid_from_probable_dead_oid_list() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  std::vector<std::string> clean_valid_oid_from_probable_dead_object_list_index;
-
-  // final probable_oid_list map will have valid object oids
-  // that needs to be cleanup from global_probable_dead_object_list_index_oid
-  for (auto& kv : probable_oid_list) {
-    clean_valid_oid_from_probable_dead_object_list_index.push_back(kv.first);
-  }
-
-  if (!clean_valid_oid_from_probable_dead_object_list_index.empty()) {
-    if (!clovis_kv_writer) {
-      clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
-          request, s3_clovis_api);
+    // remove new oid from probable delete list.
+    ACTION_TASK_ADD(S3PutObjectAction::remove_new_oid_probable_record, this);
+    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+      // Object overwrite case, old object exists, delete it.
+      ACTION_TASK_ADD(S3PutObjectAction::delete_old_object, this);
+      // If delete object is successful, attempt to delete old probable record
     }
-    clovis_kv_writer->delete_keyval(
-        global_probable_dead_object_list_index_oid,
-        clean_valid_oid_from_probable_dead_object_list_index,
-        std::bind(&Action::done, this), std::bind(&Action::done, this));
+  } else if (s3_put_action_state == S3PutObjectActionState::newObjOidCreated ||
+             s3_put_action_state == S3PutObjectActionState::writeFailed ||
+             s3_put_action_state ==
+                 S3PutObjectActionState::md5ValidationFailed ||
+             s3_put_action_state ==
+                 S3PutObjectActionState::metadataSaveFailed) {
+    // PUT is assumed to be failed with a need to rollback
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Cleanup new Object: s3_put_action_state[%d]\n",
+           s3_put_action_state);
+    // Mark new OID for deletion, this optimizes backgrounddelete decisionss.
+    ACTION_TASK_ADD(S3PutObjectAction::mark_new_oid_for_deletion, this);
+    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+      // remove old oid from probable delete list.
+      ACTION_TASK_ADD(S3PutObjectAction::remove_old_oid_probable_record, this);
+    }
+    ACTION_TASK_ADD(S3PutObjectAction::delete_new_object, this);
+    // If delete object is successful, attempt to delete new probable record
   } else {
-    done();
+    s3_log(S3_LOG_DEBUG, request_id,
+           "No Cleanup required: s3_put_action_state[%d]\n",
+           s3_put_action_state);
+    assert(s3_put_action_state == S3PutObjectActionState::empty ||
+           s3_put_action_state == S3PutObjectActionState::validationFailed ||
+           s3_put_action_state ==
+               S3PutObjectActionState::probableEntryRecordFailed ||
+           s3_put_action_state ==
+               S3PutObjectActionState::newObjOidCreationFailed);
+    // Nothing to undo
   }
+
+  // Start running the cleanup task list
+  start();
+}
+
+void S3PutObjectAction::mark_new_oid_for_deletion() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  assert(!new_oid_str.empty());
+
+  // update new oid, key = newoid, force_del = true
+  new_probable_del_rec->set_force_delete(true);
+
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+                               new_oid_str, new_probable_del_rec->to_json(),
+                               std::bind(&S3PutObjectAction::next, this),
+                               std::bind(&S3PutObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+
+void S3PutObjectAction::mark_old_oid_for_deletion() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  assert(!old_oid_str.empty());
+  assert(!new_oid_str.empty());
+
+  // key = oldoid + "-" + newoid
+  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+
+  // update old oid, force_del = true
+  old_probable_del_rec->set_force_delete(true);
+
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
+                               old_oid_str, old_probable_del_rec->to_json(),
+                               std::bind(&S3PutObjectAction::next, this),
+                               std::bind(&S3PutObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectAction::remove_old_oid_probable_record() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  assert(!old_oid_str.empty());
+  assert(!new_oid_str.empty());
+
+  // key = oldoid + "-" + newoid
+  std::string old_oid_rec_key = old_oid_str + '-' + new_oid_str;
+
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+                                  old_oid_rec_key,
+                                  std::bind(&S3PutObjectAction::next, this),
+                                  std::bind(&S3PutObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectAction::remove_new_oid_probable_record() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  assert(!new_oid_str.empty());
+
+  if (!clovis_kv_writer) {
+    clovis_kv_writer = clovis_kv_writer_factory->create_clovis_kvs_writer(
+        request, s3_clovis_api);
+  }
+  clovis_kv_writer->delete_keyval(global_probable_dead_object_list_index_oid,
+                                  new_oid_str,
+                                  std::bind(&S3PutObjectAction::next, this),
+                                  std::bind(&S3PutObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectAction::delete_old_object() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // If PUT is success, we delete old object if present
+  assert(old_object_oid.u_hi != 0ULL || old_object_oid.u_lo != 0ULL);
+
+  clovis_writer->set_oid(old_object_oid);
+  clovis_writer->delete_object(
+      std::bind(&S3PutObjectAction::remove_old_object_version_metadata, this),
+      std::bind(&S3PutObjectAction::next, this), old_layout_id);
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectAction::remove_old_object_version_metadata() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  object_metadata->remove_version_metadata(
+      std::bind(&S3PutObjectAction::remove_old_oid_probable_record, this),
+      std::bind(&S3PutObjectAction::next, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutObjectAction::delete_new_object() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // If PUT failed, then clean new object.
+  assert(s3_put_action_state != S3PutObjectActionState::completed);
+  assert(new_object_oid.u_hi != 0ULL || new_object_oid.u_lo != 0ULL);
+
+  clovis_writer->set_oid(new_object_oid);
+  clovis_writer->delete_object(
+      std::bind(&S3PutObjectAction::remove_new_oid_probable_record, this),
+      std::bind(&S3PutObjectAction::next, this), layout_id);
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3PutObjectAction::set_authorization_meta() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   auth_client->set_acl_and_policy(bucket_metadata->get_encoded_bucket_acl(),
@@ -763,3 +874,4 @@ void S3PutObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+

@@ -141,7 +141,7 @@ void S3GetMultipartPartAction::get_multipart_metadata() {
     } else {
       object_multipart_metadata =
           object_mp_metadata_factory->create_object_mp_metadata_obj(
-              request, multipart_oid, true, upload_id);
+              request, multipart_oid, upload_id);
 
       object_multipart_metadata->load(
           std::bind(&S3GetMultipartPartAction::next, this),

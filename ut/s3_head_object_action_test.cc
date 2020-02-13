@@ -59,6 +59,8 @@ class S3HeadObjectActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
 
+    bucket_name = "seagatebucket";
+    object_name = "objname";
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
     objects_version_list_index_oid = {0x11fff, 0x1fff};
@@ -68,13 +70,18 @@ class S3HeadObjectActionTest : public testing::Test {
 
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
-
+    EXPECT_CALL(*mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
     // Owned and deleted by shared_ptr in S3HeadObjectAction
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(mock_request);
 
-    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        mock_request, object_list_indx_oid);
+    object_meta_factory =
+        std::make_shared<MockS3ObjectMetadataFactory>(mock_request);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*mock_request, get_in_headers_copy()).Times(1).WillOnce(
@@ -93,6 +100,7 @@ class S3HeadObjectActionTest : public testing::Test {
   struct m0_uint128 object_list_indx_oid;
   struct m0_uint128 objects_version_list_index_oid;
   struct m0_uint128 oid;
+  std::string bucket_name, object_name;
 };
 
 TEST_F(S3HeadObjectActionTest, ConstructorTest) {
@@ -238,3 +246,4 @@ TEST_F(S3HeadObjectActionTest, SendSuccessResponse) {
 
   action_under_test->send_response_to_s3_client();
 }
+

@@ -48,18 +48,6 @@ using ::testing::_;
 
 #define CREATE_ACTION_UNDER_TEST_OBJ                                     \
   do {                                                                   \
-    EXPECT_CALL(*request_mock, get_query_string_value("prefix"))         \
-        .Times(AtLeast(1))                                               \
-        .WillRepeatedly(Return("prefix"));                               \
-    EXPECT_CALL(*request_mock, get_query_string_value("delimiter"))      \
-        .Times(AtLeast(1))                                               \
-        .WillRepeatedly(Return("delimiter"));                            \
-    EXPECT_CALL(*request_mock, get_query_string_value("marker"))         \
-        .Times(AtLeast(1))                                               \
-        .WillRepeatedly(Return("marker"));                               \
-    EXPECT_CALL(*request_mock, get_query_string_value("max-keys"))       \
-        .Times(AtLeast(1))                                               \
-        .WillRepeatedly(Return("1000"));                                 \
     EXPECT_CALL(*request_mock, get_query_string_value("encoding-type"))  \
         .Times(AtLeast(1))                                               \
         .WillRepeatedly(Return(""));                                     \
@@ -111,15 +99,22 @@ class S3GetBucketActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     object_list_indx_oid = {0x11ffff, 0x1ffff};
+    bucket_name = "seagatebucket";
+    object_name = "objname";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
-    s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
+    EXPECT_CALL(*request_mock, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*request_mock, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
 
+    s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
         request_mock, s3_clovis_api_mock);
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         request_mock, s3_clovis_api_mock);
-    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        request_mock, object_list_indx_oid);
+    object_meta_factory =
+        std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
   }
 
   std::shared_ptr<MockS3RequestObject> request_mock;
@@ -131,6 +126,7 @@ class S3GetBucketActionTest : public testing::Test {
 
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
+  std::string bucket_name, object_name;
 };
 
 TEST_F(S3GetBucketActionTest, Constructor) {
@@ -151,7 +147,6 @@ TEST_F(S3GetBucketActionTest, Constructor) {
 
 TEST_F(S3GetBucketActionTest, FetchBucketInfo) {
   CREATE_ACTION_UNDER_TEST_OBJ;
-  action_under_test_ptr->validate_request();
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _))
       .Times(AtLeast(1));
   action_under_test_ptr->fetch_bucket_info();
@@ -165,7 +160,6 @@ TEST_F(S3GetBucketActionTest, FetchBucketInfoFailedMissing) {
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(404, _)).Times(AtLeast(1));
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("NoSuchBucket",
                action_under_test_ptr->get_s3_error_code().c_str());
@@ -179,7 +173,6 @@ TEST_F(S3GetBucketActionTest, FetchBucketInfoFailedInternalError) {
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->fetch_bucket_info_failed();
   EXPECT_STREQ("InternalError",
                action_under_test_ptr->get_s3_error_code().c_str());
@@ -194,7 +187,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjects) {
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
               next_keyval(_, _, _, _, _, _))
       .Times(1);
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->get_next_objects();
 }
 
@@ -206,7 +198,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsWithZeroObjects) {
       .WillRepeatedly(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->get_next_objects();
 }
 
@@ -222,7 +213,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailedNoEntries) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->get_next_objects_failed();
 }
 
@@ -238,7 +228,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsFailed) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->get_next_objects_failed();
   EXPECT_STREQ("InternalError",
                action_under_test_ptr->get_s3_error_code().c_str());
@@ -256,7 +245,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessful) {
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(10, "keyval")));
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("");
 
@@ -296,7 +284,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError) {
   result_keys_values.insert(
       std::make_pair("testkey2", std::make_pair(10, "keyval")));
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->request_prefix.assign("");
   action_under_test_ptr->request_delimiter.assign("");
 
@@ -322,7 +309,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->request_prefix.assign("test");
   action_under_test_ptr->request_delimiter.assign("");
 
@@ -348,7 +334,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->request_delimiter.assign("key2");
   action_under_test_ptr->request_prefix.assign("");
 
@@ -375,7 +360,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->request_prefix.assign("test");
   action_under_test_ptr->request_delimiter.assign("key");
 
@@ -405,7 +389,6 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientServiceUnavailable) {
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(503, _)).Times(AtLeast(1));
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->check_shutdown_and_rollback();
 
   EXPECT_STREQ("ServiceUnavailable",
@@ -416,7 +399,6 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientServiceUnavailable) {
 TEST_F(S3GetBucketActionTest, SendResponseToClientNoSuchBucket) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->set_s3_error("NoSuchBucket");
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -428,7 +410,6 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientSuccess) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->fetch_successful = true;
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
@@ -439,7 +420,6 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientInternalError) {
   CREATE_ACTION_UNDER_TEST_OBJ;
   CREATE_BUCKET_METADATA_OBJ;
 
-  action_under_test_ptr->validate_request();
   action_under_test_ptr->fetch_successful = false;
 
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), get_state())
@@ -448,3 +428,4 @@ TEST_F(S3GetBucketActionTest, SendResponseToClientInternalError) {
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
+

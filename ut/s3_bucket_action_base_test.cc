@@ -65,7 +65,11 @@ class S3BucketActionTest : public testing::Test {
     call_count_one = 0;
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*request_mock, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+
     mock_auth_factory = std::make_shared<MockS3AuthClientFactory>(request_mock);
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
@@ -82,6 +86,7 @@ class S3BucketActionTest : public testing::Test {
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
   std::shared_ptr<MockS3AuthClientFactory> mock_auth_factory;
   int call_count_one;
+  std::string bucket_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -120,3 +125,4 @@ TEST_F(S3BucketActionTest, SetAuthorizationMeta) {
   action_under_test_ptr->set_authorization_meta();
   EXPECT_EQ(1, call_count_one);
 }
+

@@ -28,6 +28,7 @@
 #include "s3_clovis_writer.h"
 #include "s3_factory.h"
 #include "s3_part_metadata.h"
+#include "s3_probable_delete_record.h"
 #include "s3_aws_etag.h"
 #include "s3_uuid.h"
 
@@ -43,6 +44,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
+  std::shared_ptr<S3ObjectMetadata> new_object_metadata;
   std::string upload_id;
   std::string bucket_name;
   std::string object_name;
@@ -61,7 +63,17 @@ class S3PostCompleteAction : public S3ObjectAction {
   std::string last_key;
   S3AwsEtag awsetag;
 
-  std::map<std::string, std::string> probable_oid_list;
+  struct m0_uint128 old_object_oid;
+  int old_layout_id;
+  struct m0_uint128 new_object_oid;
+  int layout_id;
+
+  // Probable delete record for old object OID in case of overwrite
+  std::string old_oid_str;  // Key for old probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
+  // Probable delete record for new object OID in case of current req failure
+  std::string new_oid_str;  // Key for new probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
 
  public:
   S3PostCompleteAction(
@@ -86,6 +98,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   void fetch_bucket_info_failed();
   void fetch_object_info_failed();
   void fetch_multipart_info();
+  void fetch_multipart_info_success();
   void fetch_multipart_info_failed();
 
   void get_next_parts_info();
@@ -99,10 +112,8 @@ class S3PostCompleteAction : public S3ObjectAction {
   void save_object_metadata_failed();
   void delete_multipart_metadata();
   void delete_multipart_metadata_failed();
-  void delete_part_index();
-  void delete_part_index_failed();
-  void delete_parts();
-  void delete_parts_failed();
+  void delete_part_list_index();
+  void delete_part_list_index_failed();
   void set_abort_multipart(bool abortit);
   bool is_abort_multipart();
   void send_response_to_s3_client();
@@ -111,10 +122,14 @@ class S3PostCompleteAction : public S3ObjectAction {
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
-  void cleanup();
-  void cleanup_successful();
-  void cleanup_failed();
-  void cleanup_oid_from_probable_dead_oid_list();
+  void startcleanup();
+  void mark_old_oid_for_deletion();
+  void delete_old_object();
+  void remove_old_object_version_metadata();
+  void remove_old_oid_probable_record();
+  void mark_new_oid_for_deletion();
+  void delete_new_object();
+  void remove_new_oid_probable_record();
 
   std::string get_part_index_name() {
     return "BUCKET/" + bucket_name + "/" + object_name + "/" + upload_id;
@@ -150,21 +165,15 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulJsonError);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulAbortMultiPart);
-  FRIEND_TEST(S3PostCompleteActionTest, SaveMetadata);
-  FRIEND_TEST(S3PostCompleteActionTest, SaveMetadataAbortMultipart);
   FRIEND_TEST(S3PostCompleteActionTest, DeletePartIndex);
-  FRIEND_TEST(S3PostCompleteActionTest, DeleteParts);
-  FRIEND_TEST(S3PostCompleteActionTest, DeletePartsNext);
-  FRIEND_TEST(S3PostCompleteActionTest, DeletePartsFailed);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadata);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientInternalError);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientErrorSet);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientAbortMultipart);
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientSuccess);
-  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataFailedToSaveTest1);
-  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataFailedToSaveTest2);
-  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataSavedTest1);
-  FRIEND_TEST(S3PostCompleteActionTest, CleanupOnMetadataSavedTest2);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteNewObject);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObject);
 };
 
 #endif
+

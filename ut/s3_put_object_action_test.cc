@@ -21,6 +21,7 @@
 #include <string>
 #include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
+#include "mock_s3_probable_delete_record.h"
 #include "s3_clovis_layout.h"
 #include "s3_put_object_action.h"
 #include "s3_test_utils.h"
@@ -29,6 +30,7 @@
 
 using ::testing::Eq;
 using ::testing::Return;
+using ::testing::StrEq;
 using ::testing::Invoke;
 using ::testing::_;
 using ::testing::ReturnRef;
@@ -42,18 +44,18 @@ using ::testing::DefaultValue;
     action_under_test->fetch_bucket_info();                               \
   } while (0)
 
-#define CREATE_OBJECT_METADATA                                                \
-  do {                                                                        \
-    CREATE_BUCKET_METADATA;                                                   \
-    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(     \
-        object_list_indx_oid);                                                \
-    bucket_meta_factory->mock_bucket_metadata                                 \
-        ->set_objects_version_list_index_oid(objects_version_list_index_oid); \
-    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))     \
-        .Times(AtLeast(1));                                                   \
-    EXPECT_CALL(*(ptr_mock_request), http_verb())                             \
-        .WillOnce(Return(S3HttpVerb::PUT));                                   \
-    action_under_test->fetch_object_info();                                   \
+#define CREATE_OBJECT_METADATA                                              \
+  do {                                                                      \
+    CREATE_BUCKET_METADATA;                                                 \
+    bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(   \
+        object_list_indx_oid);                                              \
+    bucket_meta_factory->mock_bucket_metadata                               \
+        ->set_objects_version_list_index_oid(objects_version_list_idx_oid); \
+    EXPECT_CALL(*(object_meta_factory->mock_object_metadata), load(_, _))   \
+        .Times(AtLeast(1));                                                 \
+    EXPECT_CALL(*(ptr_mock_request), http_verb())                           \
+        .WillOnce(Return(S3HttpVerb::PUT));                                 \
+    action_under_test->fetch_object_info();                                 \
   } while (0)
 
 class S3PutObjectActionTest : public testing::Test {
@@ -64,9 +66,13 @@ class S3PutObjectActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
 
+    bucket_name = "seagatebucket";
+    object_name = "objname";
     oid = {0x1ffff, 0x1ffff};
+    old_object_oid = {0x1ffff, 0x1fff0};
+    old_layout_id = 2;
     object_list_indx_oid = {0x11ffff, 0x1ffff};
-    objects_version_list_index_oid = {0x1ffff, 0x11fff};
+    objects_version_list_idx_oid = {0x1ffff, 0x11fff};
     zero_oid_idx = {0ULL, 0ULL};
 
     layout_id =
@@ -84,13 +90,20 @@ class S3PutObjectActionTest : public testing::Test {
 
     ptr_mock_request = std::make_shared<MockS3RequestObject>(
         req, evhtp_obj_ptr, async_buffer_factory);
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*ptr_mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
+    EXPECT_CALL(*(ptr_mock_request), get_header_value(StrEq("x-amz-tagging")))
+        .WillOnce(Return(""));
 
     // Owned and deleted by shared_ptr in S3PutObjectAction
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_clovis_api);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         ptr_mock_request, oid, ptr_mock_s3_clovis_api);
@@ -123,15 +136,16 @@ class S3PutObjectActionTest : public testing::Test {
   std::shared_ptr<S3PutObjectAction> action_under_test;
 
   struct m0_uint128 object_list_indx_oid;
-  struct m0_uint128 objects_version_list_index_oid;
-  struct m0_uint128 oid;
+  struct m0_uint128 objects_version_list_idx_oid;
+  struct m0_uint128 oid, old_object_oid;
   struct m0_uint128 zero_oid_idx;
-  int layout_id;
+  int layout_id, old_layout_id;
   std::map<std::string, std::string> request_header_map;
 
   std::string MockObjectTagsStr;
   std::string MockRequestId;
   int call_count_one;
+  std::string bucket_name, object_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -543,56 +557,6 @@ TEST_F(S3PutObjectActionTest, CreateNewOidTest) {
   EXPECT_OID_NE(old_oid, action_under_test->new_object_oid);
 }
 
-TEST_F(S3PutObjectActionTest, RollbackTest) {
-  CREATE_OBJECT_METADATA;
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _)).Times(1);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
-      .Times(1);
-  action_under_test->rollback_create();
-}
-
-TEST_F(S3PutObjectActionTest, RollbackFailedTest1) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(1)
-      .WillOnce(Return(S3ClovisWriterOpState::missing));
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutObjectActionTest::func_callback_one, this));
-  action_under_test->rollback_create_failed();
-  EXPECT_EQ(1, call_count_one);
-}
-
-TEST_F(S3PutObjectActionTest, RollbackFailedTest2) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-
-  action_under_test->rollback_create_failed();
-  EXPECT_EQ(0, call_count_one);
-}
-
-TEST_F(S3PutObjectActionTest, RollbackFailedTest3) {
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
-      .WillRepeatedly(Return(S3ClovisWriterOpState::failed_to_launch));
-
-  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-
-  action_under_test->rollback_create_failed();
-}
-
 TEST_F(S3PutObjectActionTest, InitiateDataStreamingForZeroSizeObject) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
   EXPECT_CALL(*ptr_mock_request, get_content_length()).Times(1).WillOnce(
@@ -724,6 +688,11 @@ TEST_F(S3PutObjectActionTest,
   action_under_test->write_in_progress = true;
   EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
       .WillRepeatedly(Return(true));
+  EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), get_content_length())
+      .Times(1)
+      .WillOnce(Return(
+           S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
+           2));
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
@@ -751,21 +720,30 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedShouldUndoMarkProgress) {
 
   // mock mark progress
   action_under_test->write_in_progress = true;
-  // Mock out the rollback calls on action.
-  action_under_test->clear_tasks_rollback();
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutObjectActionTest::func_callback_one, this));
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      object_list_indx_oid, objects_version_list_idx_oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  // expectations for mark_new_oid_for_deletion()
+  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
+  EXPECT_CALL(*prob_rec, to_json()).Times(1);
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
 
-  EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
-      .WillRepeatedly(Return(true));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
       .WillOnce(Return(S3ClovisWriterOpState::failed));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_failed();
 
+  EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
   EXPECT_FALSE(action_under_test->write_in_progress);
-  EXPECT_EQ(1, call_count_one);
 }
 
 TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
@@ -774,21 +752,31 @@ TEST_F(S3PutObjectActionTest, WriteObjectFailedDuetoEntityOpenFailure) {
 
   // mock mark progress
   action_under_test->write_in_progress = true;
-  // Mock out the rollback calls on action.
-  action_under_test->clear_tasks_rollback();
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutObjectActionTest::func_callback_one, this));
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  MockS3ProbableDeleteRecord *prob_rec = new MockS3ProbableDeleteRecord(
+      action_under_test->new_oid_str, {0ULL, 0ULL}, "abc_obj", oid, layout_id,
+      object_list_indx_oid, objects_version_list_idx_oid,
+      "" /* Version does not exists yet */, false /* force_delete */,
+      false /* is_multipart */, {0ULL, 0ULL});
+  action_under_test->new_probable_del_rec.reset(prob_rec);
+  // expectations for mark_new_oid_for_deletion()
+  EXPECT_CALL(*prob_rec, set_force_delete(true)).Times(1);
+  EXPECT_CALL(*prob_rec, to_json()).Times(1);
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
 
-  EXPECT_CALL(*async_buffer_factory->get_mock_buffer(), is_freezed())
-      .WillRepeatedly(Return(true));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_state())
       .Times(1)
       .WillOnce(Return(S3ClovisWriterOpState::failed_to_launch));
+  EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_failed();
 
   EXPECT_FALSE(action_under_test->write_in_progress);
-  EXPECT_EQ(1, call_count_one);
+  EXPECT_STREQ("ServiceUnavailable",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
@@ -808,27 +796,6 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
   S3Option::get_instance()->set_is_s3_shutting_down(false);
 
   EXPECT_FALSE(action_under_test->write_in_progress);
-}
-
-TEST_F(S3PutObjectActionTest,
-       WriteObjectSuccessfulWhileShuttingDownAndRollback) {
-  S3Option::get_instance()->set_is_s3_shutting_down(true);
-  EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
-  action_under_test->_set_layout_id(layout_id);
-
-  // mock mark progress
-  action_under_test->write_in_progress = true;
-  // Mock out the rollback calls on action.
-  action_under_test->clear_tasks_rollback();
-  action_under_test->add_task_rollback(
-      std::bind(&S3PutObjectActionTest::func_callback_one, this));
-
-  action_under_test->write_object_successful();
-
-  S3Option::get_instance()->set_is_s3_shutting_down(false);
-
-  EXPECT_FALSE(action_under_test->write_in_progress);
-  EXPECT_EQ(1, call_count_one);
 }
 
 // We have all the data: Freezed
@@ -872,8 +839,7 @@ TEST_F(S3PutObjectActionTest,
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
-  // Logic of pause/resume has been complicated
-  // EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -900,8 +866,7 @@ TEST_F(S3PutObjectActionTest,
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
-  // Logic of pause/resume has been complicated
-  // EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -957,8 +922,6 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
 
-  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
-
   action_under_test->write_object_successful();
 
   EXPECT_FALSE(action_under_test->write_in_progress);
@@ -969,11 +932,20 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
   bucket_meta_factory->mock_bucket_metadata->set_object_list_index_oid(
       object_list_indx_oid);
 
+  action_under_test->new_object_metadata =
+      object_meta_factory->mock_object_metadata;
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  action_under_test->_set_layout_id(layout_id);
 
   EXPECT_CALL(*ptr_mock_request, get_data_length_str()).Times(1).WillOnce(
       Return("1024"));
+  EXPECT_CALL(*ptr_mock_request, get_header_value("content-md5"))
+      .Times(1)
+      .WillOnce(Return(""));
+
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
+              reset_date_time_to_current()).Times(AtLeast(1));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               set_content_length(Eq("1024"))).Times(AtLeast(1));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
@@ -981,13 +953,8 @@ TEST_F(S3PutObjectActionTest, SaveMetadata) {
       .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
               set_md5(Eq("abcd1234abcd"))).Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_oid())
-      .Times(AtLeast(1))
-      .WillOnce(Return(oid));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_oid(_))
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), set_tags(_))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata),
-              reset_date_time_to_current()).Times(AtLeast(1));
 
   std::map<std::string, std::string> input_headers;
   input_headers["x-amz-meta-item-1"] = "1024";
@@ -1039,13 +1006,15 @@ TEST_F(S3PutObjectActionTest, SendErrorResponse) {
 TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
   action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
 
-  action_under_test->object_metadata =
-      object_meta_factory->create_object_metadata_obj(ptr_mock_request,
-                                                      object_list_indx_oid);
+  // Simulate success
+  action_under_test->s3_put_action_state =
+      S3PutObjectActionState::metadataSaved;
 
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .Times(2)
-      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
+  // expectations for remove_new_oid_probable_record()
+  action_under_test->new_oid_str = S3M0Uint128Helper::to_string(oid);
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(1);
+
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), get_content_md5())
       .Times(AtLeast(1))
       .WillOnce(Return("abcd1234abcd"));
@@ -1058,13 +1027,9 @@ TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
 }
 
 TEST_F(S3PutObjectActionTest, SendFailedResponse) {
-  action_under_test->object_metadata =
-      object_meta_factory->create_object_metadata_obj(ptr_mock_request,
-                                                      object_list_indx_oid);
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .Times(2)
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
+  action_under_test->set_s3_error("InternalError");
+  action_under_test->s3_put_action_state =
+      S3PutObjectActionState::validationFailed;
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
@@ -1073,80 +1038,3 @@ TEST_F(S3PutObjectActionTest, SendFailedResponse) {
   action_under_test->send_response_to_s3_client();
 }
 
-TEST_F(S3PutObjectActionTest, CleanupOnMetadataFailedToSaveTest1) {
-  CREATE_OBJECT_METADATA;
-  action_under_test->probable_oid_list["oid_lo-oid_hi"] =
-      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
-      "layout_id\":9}";
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
-
-  action_under_test->cleanup();
-}
-
-TEST_F(S3PutObjectActionTest, CleanupOnMetadataFailedToSaveTest2) {
-  CREATE_OBJECT_METADATA;
-  action_under_test->probable_oid_list.clear();
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(0);
-
-  action_under_test->cleanup();
-}
-
-TEST_F(S3PutObjectActionTest, CleanupOnMetadataSavedTest1) {
-  CREATE_OBJECT_METADATA;
-
-  action_under_test->old_object_oid = {0x1ffff, 0x1ffff};
-  std::string oid_str =
-      S3M0Uint128Helper::to_string(action_under_test->old_object_oid);
-  action_under_test->probable_oid_list[oid_str] =
-      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
-      "layout_id\":9}";
-
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
-      .Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _)).Times(AtLeast(1));
-
-  action_under_test->cleanup();
-}
-
-TEST_F(S3PutObjectActionTest, CleanupOnMetadataSavedTest2) {
-  CREATE_OBJECT_METADATA;
-
-  action_under_test->old_object_oid = {0ULL, 0ULL};
-  std::string oid_str =
-      S3M0Uint128Helper::to_string(action_under_test->old_object_oid);
-  action_under_test->probable_oid_list[oid_str] =
-      "{\"index_id\":\"123-456\",\"object_metadata_path\":\"abcd\",\"object_"
-      "layout_id\":9}";
-
-  action_under_test->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  action_under_test->clovis_writer = clovis_writer_factory->mock_clovis_writer;
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .Times(1)
-      .WillRepeatedly(Return(S3ObjectMetadataState::saved));
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
-      .Times(0);
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _)).Times(0);
-
-  action_under_test->cleanup();
-}

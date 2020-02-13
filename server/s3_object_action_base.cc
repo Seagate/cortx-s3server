@@ -46,6 +46,7 @@ S3ObjectAction::S3ObjectAction(
   } else {
     object_metadata_factory = std::make_shared<S3ObjectMetadataFactory>();
   }
+  setup_fi_for_shutdown_tests();
 }
 
 S3ObjectAction::~S3ObjectAction() {
@@ -54,20 +55,12 @@ S3ObjectAction::~S3ObjectAction() {
 
 void S3ObjectAction::fetch_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Fetching bucket metadata\n");
+
   bucket_metadata =
       bucket_metadata_factory->create_bucket_metadata_obj(request);
   bucket_metadata->load(
       std::bind(&S3ObjectAction::fetch_bucket_info_success, this),
       std::bind(&S3ObjectAction::fetch_bucket_info_failed, this));
-  // for shutdown testcases, check FI and set shutdown signal
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "get_object_action_fetch_bucket_info_shutdown_fail");
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_object_action_fetch_bucket_info_shutdown_fail");
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_multiobject_action_fetch_bucket_info_shutdown_fail");
-  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
-      "put_object_acl_action_fetch_bucket_info_shutdown_fail");
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -95,6 +88,8 @@ void S3ObjectAction::fetch_object_info() {
   } else {
     object_metadata = object_metadata_factory->create_object_metadata_obj(
         request, object_list_oid);
+    object_metadata->set_objects_version_list_index_oid(
+        bucket_metadata->get_objects_version_list_index_oid());
 
     object_metadata->load(
         std::bind(&S3ObjectAction::fetch_object_info_success, this),
@@ -113,4 +108,16 @@ void S3ObjectAction::set_authorization_meta() {
                                   bucket_metadata->get_policy_as_json());
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3ObjectAction::setup_fi_for_shutdown_tests() {
+  // Sets appropriate Fault points for any shutdown tests.
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "get_object_action_fetch_bucket_info_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_object_action_fetch_bucket_info_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_multiobject_action_fetch_bucket_info_shutdown_fail");
+  S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
+      "put_object_acl_action_fetch_bucket_info_shutdown_fail");
 }

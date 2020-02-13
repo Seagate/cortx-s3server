@@ -67,7 +67,8 @@ class S3ObjectMetadata {
 
   // Reverse epoch time used as version id key in verion index
   std::string rev_epoch_version_id_key;
-  // holds base64 encoding value of rev_epoch_version_id_key
+  // holds base64 encoding value of rev_epoch_version_id_key, this is used
+  // in S3 REST APIs as http header x-amz-version-id or query param "VersionId"
   std::string object_version_id;
 
   std::string upload_id;
@@ -85,11 +86,15 @@ class S3ObjectMetadata {
 
   struct m0_uint128 oid;
   struct m0_uint128 old_oid;
-  struct m0_uint128 index_oid;
+  // Will be object list index oid when simple object upload.
+  // Will be multipart object list index oid when multipart object upload.
+  struct m0_uint128 object_list_index_oid;
+  struct m0_uint128 objects_version_list_index_oid;
   struct m0_uint128 part_index_oid;
 
   std::string mero_oid_str;
   std::string mero_old_oid_str;
+  std::string mero_old_object_version_id;
 
   std::string mero_part_oid_str;
   std::string encoded_acl;
@@ -122,14 +127,24 @@ class S3ObjectMetadata {
   bool json_parsing_error;
 
   void initialize(bool is_multipart, std::string uploadid);
-  void collision_detected();
-  void create_new_oid();
 
   // Any validations we want to do on metadata.
   void validate();
   std::string index_name;
-  void save_object_list_index_oid_successful();
-  void save_object_list_index_oid_failed();
+
+  // TODO Eventually move these to s3_common as duplicated in s3_bucket_metadata
+  // This index has keys as "object_name"
+  std::string get_object_list_index_name() const {
+    return "BUCKET/" + bucket_name;
+  }
+  // This index has keys as "object_name"
+  std::string get_multipart_index_name() const {
+    return "BUCKET/" + bucket_name + "/" + "Multipart";
+  }
+  // This index has keys as "object_name/version_id"
+  std::string get_version_list_index_name() const {
+    return "BUCKET/" + bucket_name + "/objects/versions";
+  }
 
  public:
   S3ObjectMetadata(
@@ -137,22 +152,17 @@ class S3ObjectMetadata {
       std::string uploadid = "",
       std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr);
-  S3ObjectMetadata(
-      std::shared_ptr<S3RequestObject> req, struct m0_uint128 bucket_idx_id,
-      bool ismultipart = false, std::string uploadid = "",
-      std::shared_ptr<S3ClovisKVSReaderFactory> kv_reader_factory = nullptr,
-      std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr,
-      std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory = nullptr,
       std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
-  struct m0_uint128 get_index_oid();
-  std::string get_object_list_index_name() { return "BUCKET/" + bucket_name; }
+  // Call these when Object metadata save/remove needs to be called.
+  // id can be object list index OID or
+  // id can be multipart upload list index OID
+  void set_object_list_index_oid(struct m0_uint128 id);
+  void set_objects_version_list_index_oid(struct m0_uint128 id);
 
-  std::string get_multipart_index_name() {
-    return "BUCKET/" + bucket_name + "/" + "Multipart";
-  }
+  virtual std::string get_version_key_in_index();
+  virtual struct m0_uint128 get_object_list_index_oid() const;
+  virtual struct m0_uint128 get_objects_version_list_index_oid() const;
 
   virtual void set_content_length(std::string length);
   virtual size_t get_content_length();
@@ -175,14 +185,17 @@ class S3ObjectMetadata {
 
   virtual struct m0_uint128 get_old_oid() { return old_oid; }
 
-  struct m0_uint128 get_part_index_oid() {
-    return part_index_oid;
-  }
+  struct m0_uint128 get_part_index_oid() const { return part_index_oid; }
 
   void regenerate_version_id();
 
   std::string const get_obj_version_id() { return object_version_id; }
   std::string const get_obj_version_key() { return rev_epoch_version_id_key; }
+
+  void set_version_id(std::string ver_id);
+
+  std::string get_old_obj_version_id() { return mero_old_object_version_id; }
+  void set_old_version_id(std::string old_obj_ver_id);
 
   std::string get_owner_name();
   std::string get_owner_id();
@@ -210,33 +223,33 @@ class S3ObjectMetadata {
     return user_defined_attribute;
   }
 
+  // Load object metadata from object list index
   virtual void load(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
-  void load_successful();
-  void load_failed();
 
+  // Save object metadata to versions list index & object list index
   virtual void save(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
-  void create_bucket_index();
-  void create_bucket_index_successful();
-  void create_bucket_index_failed();
-  void save_metadata();
-  void save_metadata_successful();
-  void save_metadata_failed();
+
+  // Save object metadata ONLY object list index
   virtual void save_metadata(std::function<void(void)> on_success,
                              std::function<void(void)> on_failed);
 
+  // Remove object metadata from object list index & versions list index
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
-  void remove_successful();
-  void remove_failed();
+  void remove_version_metadata(std::function<void(void)> on_success,
+                               std::function<void(void)> on_failed);
 
   virtual S3ObjectMetadataState get_state() { return state; }
 
   // placeholder state, so as to not perform any operation on this.
   void mark_invalid() { state = S3ObjectMetadataState::invalid; }
 
+  // For object metadata in object listing
   std::string to_json();
+  // For storing minimal version entry in version listing
+  std::string version_entry_to_json();
 
   // returns 0 on success, -1 on parsing error.
   virtual int from_json(std::string content);
@@ -248,12 +261,37 @@ class S3ObjectMetadata {
   virtual bool check_object_tags_exists();
   virtual int object_tags_count();
 
-  virtual std::string create_probable_delete_record(
-      int override_layout_id, struct m0_uint128 index_id = {0ULL, 0ULL});
-
   // Virtual Destructor
   virtual ~S3ObjectMetadata(){};
 
+ private:
+  // Methods used internally within
+
+  // Load object metadata from object list index
+  void load_successful();
+  void load_failed();
+
+  // save_metadata saves to object list index
+  void save_metadata();
+  void save_metadata_successful();
+  void save_metadata_failed();
+
+  // save_version_metadata saves to objects "version" list index
+  void save_version_metadata();
+  void save_version_metadata_successful();
+  void save_version_metadata_failed();
+
+  // Remove entry from object list index
+  void remove_object_metadata();
+  void remove_object_metadata_successful();
+  void remove_object_metadata_failed();
+
+  // Remove entry from objects version list index
+  void remove_version_metadata();
+  void remove_version_metadata_successful();
+  void remove_version_metadata_failed();
+
+ public:
   // Google tests.
   FRIEND_TEST(S3ObjectMetadataTest, ConstructorTest);
   FRIEND_TEST(S3MultipartObjectMetadataTest, ConstructorTest);
@@ -273,28 +311,17 @@ class S3ObjectMetadata {
   FRIEND_TEST(S3ObjectMetadataTest, LoadObjectInfoFailedMetadataFailedToLaunch);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMeatdataMissingIndexOID);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMeatdataIndexOIDPresent);
-  FRIEND_TEST(S3ObjectMetadataTest, CreateBucketIndex);
-  FRIEND_TEST(S3MultipartObjectMetadataTest, CreateBucketIndexSuccessful);
-  FRIEND_TEST(S3ObjectMetadataTest, CreateBucketIndexSuccessful);
-  FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexSuccessful);
-  FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexFailed);
-  FRIEND_TEST(S3ObjectMetadataTest, SaveObjectListIndexFailedToLaunch);
-  FRIEND_TEST(S3ObjectMetadataTest,
-              CreateBucketListIndexFailedCollisionHappened);
-  FRIEND_TEST(S3ObjectMetadataTest, CreateBucketListIndexFailed);
-  FRIEND_TEST(S3ObjectMetadataTest, CreateBucketListIndexFailedToLaunch);
-  FRIEND_TEST(S3ObjectMetadataTest, CollisionDetected);
-  FRIEND_TEST(S3ObjectMetadataTest, CollisionDetectedMaxAttemptExceeded);
-  FRIEND_TEST(S3ObjectMetadataTest, CreateNewOid);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataWithoutParam);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataWithParam);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataSuccess);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataFailed);
   FRIEND_TEST(S3ObjectMetadataTest, SaveMetadataFailedToLaunch);
   FRIEND_TEST(S3ObjectMetadataTest, Remove);
-  FRIEND_TEST(S3ObjectMetadataTest, RemoveSuccessful);
-  FRIEND_TEST(S3ObjectMetadataTest, RemoveFailed);
-  FRIEND_TEST(S3ObjectMetadataTest, RemoveFailedToLaunch);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveObjectMetadataSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveVersionMetadataSuccessful);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveObjectMetadataFailed);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveObjectMetadataFailedToLaunch);
+  FRIEND_TEST(S3ObjectMetadataTest, RemoveVersionMetadataFailed);
   FRIEND_TEST(S3ObjectMetadataTest, ToJson);
   FRIEND_TEST(S3ObjectMetadataTest, FromJson);
   FRIEND_TEST(S3MultipartObjectMetadataTest, FromJson);
@@ -302,3 +329,4 @@ class S3ObjectMetadata {
 };
 
 #endif
+

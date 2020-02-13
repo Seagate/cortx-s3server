@@ -40,8 +40,14 @@ class S3PartMetadataTest : public testing::Test {
   S3PartMetadataTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
+    object_name = "objname";
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*ptr_mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
 
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
@@ -68,6 +74,7 @@ class S3PartMetadataTest : public testing::Test {
   std::shared_ptr<S3PartMetadata> metadata_under_test;
   std::shared_ptr<S3PartMetadata> metadata_under_test_with_oid;
   struct m0_uint128 part_indx_oid;
+  std::string bucket_name, object_name;
 };
 
 TEST_F(S3PartMetadataTest, ConstructorTest) {
@@ -487,3 +494,4 @@ TEST_F(S3PartMetadataTest, FromJsonFailure) {
   std::string json_str = "This is invalid Json String";
   EXPECT_EQ(-1, metadata_under_test->from_json(json_str));
 }
+

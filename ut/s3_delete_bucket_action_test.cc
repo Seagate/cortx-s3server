@@ -44,8 +44,14 @@ class S3DeleteBucketActionTest : public testing::Test {
     object_list_indx_oid = {0x11ffff, 0x1ffff};
     upload_id = "upload_id";
     call_count_one = 0;
+    bucket_name = "seagatebucket";
+    object_name = "objname";
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*ptr_mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
 
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
 
@@ -66,10 +72,13 @@ class S3DeleteBucketActionTest : public testing::Test {
 
     object_mp_meta_factory =
         std::make_shared<MockS3ObjectMultipartMetadataFactory>(
-            ptr_mock_request, ptr_mock_s3_clovis_api, mp_indx_oid, true,
-            upload_id);
+            ptr_mock_request, ptr_mock_s3_clovis_api, upload_id);
+    object_mp_meta_factory->set_object_list_index_oid(mp_indx_oid);
+
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
+        ptr_mock_request, ptr_mock_s3_clovis_api);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+
     std::map<std::string, std::string> input_headers;
     input_headers["Authorization"] = "1";
     EXPECT_CALL(*ptr_mock_request, get_in_headers_copy()).Times(1).WillOnce(
@@ -95,6 +104,7 @@ class S3DeleteBucketActionTest : public testing::Test {
   struct m0_uint128 zero_oid;
   std::string upload_id;
   int call_count_one;
+  std::string bucket_name, object_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -681,3 +691,4 @@ TEST_F(S3DeleteBucketActionTest, SendInternalErrorRetry) {
 
   action_under_test->send_response_to_s3_client();
 }
+

@@ -54,5 +54,11 @@ class MockS3ClovisKVSWriter : public S3ClovisKVSWriter {
                void(struct m0_uint128 oid, std::string key, std::string val,
                     std::function<void(void)> on_success,
                     std::function<void(void)> on_failed));
+  MOCK_METHOD4(put_keyval,
+               void(struct m0_uint128 oid,
+                    const std::map<std::string, std::string>& kv_list,
+                    std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed));
 };
 #endif
+

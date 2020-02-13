@@ -27,6 +27,7 @@
 
 using ::testing::Eq;
 using ::testing::Return;
+using ::testing::ReturnRef;
 using ::testing::HasSubstr;
 
 #define CHECK_XML_RESPONSE                        \
@@ -58,6 +59,8 @@ class S3ObjectListResponseTest : public testing::Test {
   S3ObjectListResponseTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
+    object_name = "objname";
 
     object_list_indx_oid = {0x11ffff, 0x1ffff};
 
@@ -67,6 +70,10 @@ class S3ObjectListResponseTest : public testing::Test {
 
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
+    EXPECT_CALL(*mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
     mock_request->set_user_id("1");
     mock_request->set_user_name("s3user");
     mock_request->set_account_id("1");
@@ -87,6 +94,7 @@ class S3ObjectListResponseTest : public testing::Test {
   std::shared_ptr<MockS3RequestObject> mock_request;
   std::shared_ptr<MockS3AsyncBufferOptContainerFactory> async_buffer_factory;
   struct m0_uint128 object_list_indx_oid;
+  std::string bucket_name, object_name;
 };
 
 // Test fields are initialized to empty.
@@ -168,8 +176,8 @@ TEST_F(S3ObjectListResponseTest, ObjectListResponseWithValidObjectsTruncated) {
   response_under_test->add_common_prefix("prefix1");
 
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
-      std::make_shared<MockS3ObjectMetadata>(mock_request,
-                                             object_list_indx_oid);
+      std::make_shared<MockS3ObjectMetadata>(mock_request);
+  mock_obj->set_object_list_index_oid(object_list_indx_oid);
 
   response_under_test->add_object(mock_obj);
 
@@ -193,8 +201,9 @@ TEST_F(S3ObjectListResponseTest,
   response_under_test->add_common_prefix("prefix1");
   response_under_test->set_response_is_truncated(false);
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
-      std::make_shared<MockS3ObjectMetadata>(mock_request,
-                                             object_list_indx_oid);
+      std::make_shared<MockS3ObjectMetadata>(mock_request);
+  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+
   response_under_test->add_object(mock_obj);
 
   EXPECT_CALL(*mock_obj, get_object_name()).WillOnce(Return("obj1"));
@@ -223,8 +232,9 @@ TEST_F(S3ObjectListResponseTest,
   response_under_test->add_common_prefix("prefix1");
 
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
-      std::make_shared<MockS3ObjectMetadata>(mock_request,
-                                             object_list_indx_oid);
+      std::make_shared<MockS3ObjectMetadata>(mock_request);
+  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+
   response_under_test->add_object(mock_obj);
 
   EXPECT_CALL(*mock_obj, get_object_name()).WillOnce(Return("object_name"));
@@ -253,8 +263,9 @@ TEST_F(S3ObjectListResponseTest,
   response_under_test->add_common_prefix("prefix1");
 
   std::shared_ptr<MockS3ObjectMetadata> mock_obj =
-      std::make_shared<MockS3ObjectMetadata>(mock_request,
-                                             object_list_indx_oid);
+      std::make_shared<MockS3ObjectMetadata>(mock_request);
+  mock_obj->set_object_list_index_oid(object_list_indx_oid);
+
   response_under_test->add_object(mock_obj);
 
   EXPECT_CALL(*mock_obj, get_object_name()).WillOnce(Return("object_name"));
@@ -317,3 +328,4 @@ TEST_F(S3ObjectListResponseTest,
 
   CHECK_MULTIPART_XML_RESPONSE;
 }
+

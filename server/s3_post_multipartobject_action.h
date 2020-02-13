@@ -28,6 +28,7 @@
 #include "s3_clovis_writer.h"
 #include "s3_factory.h"
 #include "s3_part_metadata.h"
+#include "s3_probable_delete_record.h"
 #include "s3_timer.h"
 #include "s3_uuid.h"
 #include "evhtp_wrapper.h"
@@ -48,7 +49,6 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
 
   S3Timer create_object_timer;
 
-  std::map<std::string, std::string> probable_oid_list;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
@@ -97,29 +97,27 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   void create_part_meta_index();
   void create_part_meta_index_successful();
   void create_part_meta_index_failed();
-  void save_multipart_metadata();
-  void save_multipart_metadata_failed();
   void send_response_to_s3_client();
 
   void set_authorization_meta();
 
   // rollback functions
+  void startcleanup();
   void rollback_create();
   void rollback_create_failed();
-  void rollback_upload_metadata();
-  void rollback_upload_metadata_failed();
   void rollback_create_part_meta_index();
   void rollback_create_part_meta_index_failed();
 
-  void add_object_oid_to_probable_dead_oid_list();
-  void add_object_oid_to_probable_dead_oid_list_failed();
-  void cleanup_oid_from_probable_dead_oid_list();
+  // TODO - clean up empty objects, low risk due to no storage occupied
+  // void add_object_oid_to_probable_dead_oid_list();
+  // void add_object_oid_to_probable_dead_oid_list_failed();
 
   std::shared_ptr<S3RequestObject> get_request() { return request; }
 
   FRIEND_TEST(S3PostMultipartObjectTest, ConstructorTest);
   FRIEND_TEST(S3PostMultipartObjectTest, FetchBucketInfo);
   FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgress);
+  FRIEND_TEST(S3PostMultipartObjectTest, UploadInProgressMetadataCorrupt);
   FRIEND_TEST(S3PostMultipartObjectTest, ValidateRequestTags);
   FRIEND_TEST(S3PostMultipartObjectTest, VaidateEmptyTags);
   FRIEND_TEST(S3PostMultipartObjectTest, CreateObject);
@@ -137,25 +135,16 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataMissing);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackCreateFailedMetadataFailed1);
-  FRIEND_TEST(S3PostMultipartObjectTest,
-              RollbackUploadMetadataFailMetadataPresent);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndex);
   FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadata);
   FRIEND_TEST(S3PostMultipartObjectTest, RollbackPartMetadataIndexFailed);
   FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataFailed);
   FRIEND_TEST(S3PostMultipartObjectTest, SaveUploadMetadataFailedToLaunch);
-  FRIEND_TEST(S3PostMultipartObjectTest, RollbackUploadMetadata);
-  FRIEND_TEST(S3PostMultipartObjectTest,
-              RollbackUploadMetadataFailMetadataMissing);
   FRIEND_TEST(S3PostMultipartObjectTest, CreatePartMetadataIndex);
-  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadata);
-  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataFailed);
-  FRIEND_TEST(S3PostMultipartObjectTest, SaveMultipartMetadataFailedToLaunch);
   FRIEND_TEST(S3PostMultipartObjectTest, Send500ResponseToClient);
   FRIEND_TEST(S3PostMultipartObjectTest, Send404ResponseToClient);
   FRIEND_TEST(S3PostMultipartObjectTest, Send200ResponseToClient);
-  FRIEND_TEST(S3PostMultipartObjectTest, CleanupOnMetadataFailedToSaveTest1);
-  FRIEND_TEST(S3PostMultipartObjectTest, CleanupOnMetadataFailedToSaveTest2);
 };
 
 #endif
+

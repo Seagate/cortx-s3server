@@ -54,7 +54,7 @@ class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
   }
 
   std::shared_ptr<S3BucketMetadata> create_bucket_metadata_obj(
-      std::shared_ptr<S3RequestObject> req) {
+      std::shared_ptr<S3RequestObject> req) override {
     return mock_bucket_metadata;
   }
 
@@ -65,17 +65,21 @@ class MockS3BucketMetadataFactory : public S3BucketMetadataFactory {
 class MockS3ObjectMetadataFactory : public S3ObjectMetadataFactory {
  public:
   MockS3ObjectMetadataFactory(std::shared_ptr<S3RequestObject> req,
-                              m0_uint128 object_list_indx_oid,
                               std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr =
                                   nullptr)
       : S3ObjectMetadataFactory() {
-    mock_object_metadata = std::make_shared<MockS3ObjectMetadata>(
-        req, object_list_indx_oid, s3_clovis_mock_ptr);
+    mock_object_metadata =
+        std::make_shared<MockS3ObjectMetadata>(req, s3_clovis_mock_ptr);
+  }
+
+  void set_object_list_index_oid(struct m0_uint128 id) {
+    mock_object_metadata->set_object_list_index_oid(id);
   }
 
   std::shared_ptr<S3ObjectMetadata> create_object_metadata_obj(
       std::shared_ptr<S3RequestObject> req,
-      struct m0_uint128 indx_oid = {0ULL, 0ULL}) {
+      struct m0_uint128 indx_oid = {0ULL, 0ULL}) override {
+    mock_object_metadata->set_object_list_index_oid(indx_oid);
     return mock_object_metadata;
   }
 
@@ -94,13 +98,13 @@ class MockS3PartMetadataFactory : public S3PartMetadataFactory {
 
   std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
       std::shared_ptr<S3RequestObject> req, struct m0_uint128 indx_oid,
-      std::string upload_id, int part_num) {
+      std::string upload_id, int part_num) override {
     return mock_part_metadata;
   }
 
   std::shared_ptr<S3PartMetadata> create_part_metadata_obj(
       std::shared_ptr<S3RequestObject> req, std::string upload_id,
-      int part_num) {
+      int part_num) override {
     return mock_part_metadata;
   }
 
@@ -112,18 +116,22 @@ class MockS3ObjectMultipartMetadataFactory
  public:
   MockS3ObjectMultipartMetadataFactory(
       std::shared_ptr<S3RequestObject> req,
-      std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr, m0_uint128 mp_indx_oid,
-      bool is_mp, std::string upload_id)
+      std::shared_ptr<MockS3Clovis> s3_clovis_mock_ptr, std::string upload_id)
       : S3ObjectMultipartMetadataFactory() {
     //  We create object here since we want to set some expectations
     // Before create_bucket_metadata_obj() is called
     mock_object_mp_metadata = std::make_shared<MockS3ObjectMultipartMetadata>(
-        req, mp_indx_oid, s3_clovis_mock_ptr, is_mp, upload_id);
+        req, s3_clovis_mock_ptr, upload_id);
+  }
+
+  void set_object_list_index_oid(struct m0_uint128 id) {
+    mock_object_mp_metadata->set_object_list_index_oid(id);
   }
 
   std::shared_ptr<S3ObjectMetadata> create_object_mp_metadata_obj(
       std::shared_ptr<S3RequestObject> req, struct m0_uint128 mp_indx_oid,
-      bool is_mp, std::string upload_id) {
+      std::string upload_id) override {
+    mock_object_mp_metadata->set_object_list_index_oid(mp_indx_oid);
     return mock_object_mp_metadata;
   }
 
@@ -150,18 +158,18 @@ class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
   }
 
   std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<RequestObject> req, struct m0_uint128 oid) {
+      std::shared_ptr<RequestObject> req, struct m0_uint128 oid) override {
     return mock_clovis_writer;
   }
 
   std::shared_ptr<S3ClovisWriter> create_clovis_writer(
-      std::shared_ptr<RequestObject> req) {
+      std::shared_ptr<RequestObject> req) override {
     return mock_clovis_writer;
   }
 
   std::shared_ptr<S3ClovisWriter> create_clovis_writer(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid,
-      uint64_t offset) {
+      uint64_t offset) override {
     return mock_clovis_writer;
   }
 
@@ -181,7 +189,7 @@ class MockS3ClovisReaderFactory : public S3ClovisReaderFactory {
 
   std::shared_ptr<S3ClovisReader> create_clovis_reader(
       std::shared_ptr<RequestObject> req, struct m0_uint128 oid, int layout_id,
-      std::shared_ptr<ClovisAPI> clovis_api = nullptr) {
+      std::shared_ptr<ClovisAPI> clovis_api = nullptr) override {
     return mock_clovis_reader;
   }
 
@@ -199,7 +207,7 @@ class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
 
   std::shared_ptr<S3ClovisKVSReader> create_clovis_kvs_reader(
       std::shared_ptr<RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) override {
     return mock_clovis_kvs_reader;
   }
 
@@ -218,7 +226,7 @@ class MockS3ClovisKVSWriterFactory : public S3ClovisKVSWriterFactory {
 
   std::shared_ptr<S3ClovisKVSWriter> create_clovis_kvs_writer(
       std::shared_ptr<RequestObject> req,
-      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) {
+      std::shared_ptr<ClovisAPI> s3_clovis_api = nullptr) override {
     return mock_clovis_kvs_writer;
   }
 
@@ -235,7 +243,7 @@ class MockS3AsyncBufferOptContainerFactory
   }
 
   std::shared_ptr<S3AsyncBufferOptContainer> create_async_buffer(
-      size_t size_of_each_buf) {
+      size_t size_of_each_buf) override {
     return mock_async_buffer;
   }
 
@@ -252,7 +260,8 @@ class MockS3PutBucketBodyFactory : public S3PutBucketBodyFactory {
     mock_put_bucket_body = std::make_shared<MockS3PutBucketBody>(xml);
   }
 
-  std::shared_ptr<S3PutBucketBody> create_put_bucket_body(std::string& xml) {
+  std::shared_ptr<S3PutBucketBody> create_put_bucket_body(std::string& xml)
+      override {
     return mock_put_bucket_body;
   }
 
@@ -269,7 +278,7 @@ class MockS3PutTagBodyFactory : public S3PutTagsBodyFactory {
   }
 
   std::shared_ptr<S3PutTagBody> create_put_resource_tags_body(
-      std::string& xml, std::string& request_id) {
+      std::string& xml, std::string& request_id) override {
     return mock_put_bucket_tag_body;
   }
 
@@ -285,7 +294,8 @@ class MockS3AuthClientFactory : public S3AuthClientFactory {
   }
 
   std::shared_ptr<S3AuthClient> create_auth_client(
-      std::shared_ptr<RequestObject> req, bool skip_authorization = false) {
+      std::shared_ptr<RequestObject> req,
+      bool skip_authorization = false) override {
     return mock_auth_client;
   }
 
@@ -302,7 +312,8 @@ class MockS3GlobalBucketIndexMetadataFactory
   }
 
   std::shared_ptr<S3GlobalBucketIndexMetadata>
-  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req) {
+  create_s3_global_bucket_index_metadata(std::shared_ptr<S3RequestObject> req)
+      override {
     return mock_global_bucket_index_metadata;
   }
 

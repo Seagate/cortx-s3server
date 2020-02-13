@@ -48,11 +48,19 @@ class S3PutObjectTaggingActionTest : public testing::Test {
   S3PutObjectTaggingActionTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
+    object_name = "objname";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*request_mock, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*request_mock, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
 
     object_list_indx_oid = {0x11ffff, 0x1ffff};
-    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        request_mock, object_list_indx_oid);
+    object_meta_factory =
+        std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     bucket_tag_body_factory_mock = std::make_shared<MockS3PutTagBodyFactory>(
@@ -78,6 +86,7 @@ class S3PutObjectTaggingActionTest : public testing::Test {
   std::string MockObjectTagsStr;
   std::string MockRequestId;
   int call_count_one;
+  std::string bucket_name, object_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -267,3 +276,4 @@ TEST_F(S3PutObjectTaggingActionTest, SendResponseToClientSuccess) {
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
+

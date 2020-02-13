@@ -189,7 +189,7 @@ void S3PutMultiObjectAction::fetch_multipart_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   object_multipart_metadata =
       object_mp_metadata_factory->create_object_mp_metadata_obj(
-          request, bucket_metadata->get_multipart_index_oid(), true, upload_id);
+          request, bucket_metadata->get_multipart_index_oid(), upload_id);
 
   object_multipart_metadata->load(
       std::bind(&S3PutMultiObjectAction::next, this),
@@ -395,6 +395,7 @@ void S3PutMultiObjectAction::consume_incoming_content() {
     }
     return;
   }
+
   log_timed_counter(put_timed_counter, "incoming_object_data_blocks");
   s3_perf_count_incoming_bytes(
       request->get_buffered_input()->get_content_length());
@@ -635,3 +636,4 @@ void S3PutMultiObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+

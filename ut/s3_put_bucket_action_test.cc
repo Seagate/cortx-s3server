@@ -43,9 +43,12 @@ class S3PutBucketActionTest : public testing::Test {
   S3PutBucketActionTest() {
 
     call_count_one = 0;
+    bucket_name = "seagatebucket";
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*request_mock, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
 
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
@@ -68,6 +71,7 @@ class S3PutBucketActionTest : public testing::Test {
   std::shared_ptr<ClovisAPI> s3_clovis_api_mock;
   std::string MockBucketBody;
   int call_count_one;
+  std::string bucket_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -137,7 +141,10 @@ TEST_F(S3PutBucketActionTest, ValidateRequestMoreContent) {
   action_under_test_ptr->validate_request();
 }
 TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest1) {
-  request_mock->bucket_name = "seagatebucket";
+  bucket_name = "seagatebucket";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
+
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
   ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
@@ -148,7 +155,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest1) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest2) {
-  request_mock->bucket_name = "1234.0.0.1";
+  bucket_name = "1234.0.0.1";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
@@ -160,7 +169,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest2) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest3) {
-  request_mock->bucket_name = "123.0.1";
+  bucket_name = "123.0.1";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
@@ -172,7 +183,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest3) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest4) {
-  request_mock->bucket_name = "123.0.1.0.0";
+  bucket_name = "123.0.1.0.0";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
@@ -184,7 +197,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest4) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest5) {
-  request_mock->bucket_name = "sea-gate-pune";
+  bucket_name = "sea-gate-pune";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
@@ -196,7 +211,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest5) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest6) {
-  request_mock->bucket_name = "1sea-gate-pune2";
+  bucket_name = "1sea-gate-pune2";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   // Mock out the next calls on action.
   action_under_test_ptr->clear_tasks();
@@ -208,7 +225,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameValidNameTest6) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest1) {
-  request_mock->bucket_name = "Seagatebucket";
+  bucket_name = "Seagatebucket";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -217,7 +236,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest1) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest2) {
-  request_mock->bucket_name = "seagatebucket-";
+  bucket_name = "seagatebucket-";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -225,7 +246,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest2) {
   action_under_test_ptr->validate_bucket_name();
 }
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest3) {
-  request_mock->bucket_name = "seagatebucket.";
+  bucket_name = "seagatebucket.";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -234,7 +257,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest3) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest4) {
-  request_mock->bucket_name = "seagatebu.-cket";
+  bucket_name = "seagatebu.-cket";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -243,7 +268,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest4) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest5) {
-  request_mock->bucket_name = "seagatebu-.cket";
+  bucket_name = "seagatebu-.cket";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -251,7 +278,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest5) {
   action_under_test_ptr->validate_bucket_name();
 }
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest6) {
-  request_mock->bucket_name = "0.0.0.0";
+  bucket_name = "0.0.0.0";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -260,7 +289,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest6) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest7) {
-  request_mock->bucket_name = "192.168.192.145";
+  bucket_name = "192.168.192.145";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -269,7 +300,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest7) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest8) {
-  request_mock->bucket_name = "ab";
+  bucket_name = "ab";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -278,9 +311,11 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest8) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest9) {
-  request_mock->bucket_name =
+  bucket_name =
       "abcdfghjkloiuytrewasdfghjklmnhgtrfedsedrftgyhujikolmjnhbgvfcdsxzawsedrft"
       "gyhujikmjnhbgvfcdserfvfghdjh";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -289,7 +324,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest9) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest10) {
-  request_mock->bucket_name = "seaGate";
+  bucket_name = "seaGate";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -298,7 +335,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest10) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest11) {
-  request_mock->bucket_name = "*seagate";
+  bucket_name = "*seagate";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -307,7 +346,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest11) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest12) {
-  request_mock->bucket_name = "-seagate";
+  bucket_name = "-seagate";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -316,7 +357,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest12) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest13) {
-  request_mock->bucket_name = "sea#gate";
+  bucket_name = "sea#gate";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -325,7 +368,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest13) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest14) {
-  request_mock->bucket_name = "sea+gate";
+  bucket_name = "sea+gate";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -334,7 +379,9 @@ TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest14) {
 }
 
 TEST_F(S3PutBucketActionTest, ValidateBucketNameInvalidNameTest15) {
-  request_mock->bucket_name = "sea....gate";
+  bucket_name = "sea....gate";
+  EXPECT_CALL(*request_mock, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
 
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -424,3 +471,4 @@ TEST_F(S3PutBucketActionTest, SendResponseToClientInternalError) {
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
+

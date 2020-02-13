@@ -42,6 +42,7 @@ class S3GetServiceActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
 
+    bucket_name = "seagatebucket";
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
     zero_oid_idx = {0ULL, 0ULL};
@@ -52,6 +53,8 @@ class S3GetServiceActionTest : public testing::Test {
     // Mock objects.
     ptr_mock_request = std::make_shared<MockS3RequestObject>(
         req, evhtp_obj_ptr, async_buffer_factory);
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
 
     // Mock factories.
@@ -78,6 +81,7 @@ class S3GetServiceActionTest : public testing::Test {
   struct m0_uint128 oid;
   struct m0_uint128 zero_oid_idx;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
+  std::string bucket_name;
 };
 
 // Test that checks if fields of S3GetServiceAction object have been initialized
@@ -184,3 +188,4 @@ TEST_F(S3GetServiceActionTest, SendResponseToClientInternalError) {
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
   action_under_test->send_response_to_s3_client();
 }
+

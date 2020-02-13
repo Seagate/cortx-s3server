@@ -65,12 +65,15 @@ class S3GlobalBucketIndexMetadataTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     bucket_list_indx_oid = {0x11ffff, 0x1ffff};
+    bucket_name = "seagate";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*request_mock, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
 
     account_id.assign("12345");
     account_name.assign("s3_test");
-    bucket_name = "seagate";
     call_count_one = 0;
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         request_mock, s3_clovis_api_mock);
@@ -305,3 +308,4 @@ TEST_F(S3GlobalBucketIndexMetadataTest, Remove) {
       std::bind(&S3CallBack::on_success, &s3globalbucketindex_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3globalbucketindex_callbackobj));
 }
+

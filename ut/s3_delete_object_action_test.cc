@@ -63,6 +63,8 @@ class S3DeleteObjectActionTest : public testing::Test {
 
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
+    object_name = "objname";
 
     oid = {0x1ffff, 0x1ffff};
     object_list_indx_oid = {0x11ffff, 0x1ffff};
@@ -79,6 +81,10 @@ class S3DeleteObjectActionTest : public testing::Test {
 
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
+    EXPECT_CALL(*mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
 
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
 
@@ -90,7 +96,8 @@ class S3DeleteObjectActionTest : public testing::Test {
         mock_request, ptr_mock_s3_clovis_api);
 
     object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        mock_request, object_list_indx_oid, ptr_mock_s3_clovis_api);
+        mock_request, ptr_mock_s3_clovis_api);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     clovis_writer_factory = std::make_shared<MockS3ClovisWriterFactory>(
         mock_request, oid, ptr_mock_s3_clovis_api);
@@ -119,6 +126,7 @@ class S3DeleteObjectActionTest : public testing::Test {
 
   int call_count_one;
   int layout_id;
+  std::string bucket_name, object_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -215,26 +223,16 @@ TEST_F(S3DeleteObjectActionTest, DeleteMetadataWhenObjectPresent) {
 TEST_F(S3DeleteObjectActionTest, DeleteMetadataWhenObjectAbsent) {
   CREATE_OBJECT_METADATA;
 
-  bool is_s3server_objectleak_tracking_enabled =
-      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
-
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
 
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess204, _)).Times(1);
 
   action_under_test->fetch_object_info_failed();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
-      is_s3server_objectleak_tracking_enabled);
 }
 
 TEST_F(S3DeleteObjectActionTest, DeleteMetadataWhenObjectMetadataFetchFailed) {
   CREATE_OBJECT_METADATA;
-
-  bool is_s3server_objectleak_tracking_enabled =
-      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
@@ -243,18 +241,12 @@ TEST_F(S3DeleteObjectActionTest, DeleteMetadataWhenObjectMetadataFetchFailed) {
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
 
   action_under_test->fetch_object_info_failed();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
-      is_s3server_objectleak_tracking_enabled);
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteFailedToLaunch) {
   CREATE_OBJECT_METADATA;
-
-  bool is_s3server_objectleak_tracking_enabled =
-      S3Option::get_instance()->is_s3server_objectleak_tracking_enabled();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(false);
 
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
@@ -263,33 +255,15 @@ TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteFailedToLaunch) {
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed503, _)).Times(1);
 
   action_under_test->fetch_object_info_failed();
-  S3Option::get_instance()->set_s3server_objectleak_tracking_enabled(
-      is_s3server_objectleak_tracking_enabled);
 
   EXPECT_STREQ("ServiceUnavailable",
                action_under_test->get_s3_error_code().c_str());
 }
 
-TEST_F(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteSucceeded) {
-  CREATE_OBJECT_METADATA;
-
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
-      .WillRepeatedly(Return(S3ObjectMetadataState::deleted));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_oid())
-      .Times(1)
-      .WillOnce(Return(oid));
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_layout_id())
-      .WillOnce(Return(layout_id));
-
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
-              delete_object(_, _, _))
-      .Times(1);
-
-  action_under_test->cleanup();
-}
-
 TEST_F(S3DeleteObjectActionTest, SendErrorResponse) {
   action_under_test->set_s3_error("InternalError");
+  action_under_test->s3_del_obj_action_state =
+      S3DeleteObjectActionState::validationFailed;
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _))
@@ -299,7 +273,9 @@ TEST_F(S3DeleteObjectActionTest, SendErrorResponse) {
 }
 
 TEST_F(S3DeleteObjectActionTest, SendAnyFailedResponse) {
-  action_under_test->set_s3_error("NoSuchKey");
+  action_under_test->set_s3_error("NoSuchBucket");
+  action_under_test->s3_del_obj_action_state =
+      S3DeleteObjectActionState::validationFailed;
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed404, _))
@@ -309,9 +285,14 @@ TEST_F(S3DeleteObjectActionTest, SendAnyFailedResponse) {
 }
 
 TEST_F(S3DeleteObjectActionTest, SendSuccessResponse) {
+  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_state())
+      .WillRepeatedly(Return(S3ObjectMetadataState::missing));
+  action_under_test->s3_del_obj_action_state =
+      S3DeleteObjectActionState::validationFailed;
 
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess204, _))
       .Times(AtLeast(1));
 
   action_under_test->send_response_to_s3_client();
 }
+

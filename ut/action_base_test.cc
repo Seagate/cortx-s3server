@@ -168,7 +168,6 @@ TEST_F(ActionTest, RollbacklistRun) {
   ptr_Actionobject->rollback_next();
   EXPECT_TRUE(call_count_one == 1);
   ptr_Actionobject->rollback_next();
-  EXPECT_EQ(1, ptr_Actionobject->response_called);
 }
 
 TEST_F(ActionTest, SkipAuthTest) {

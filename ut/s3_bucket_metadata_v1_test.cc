@@ -59,8 +59,11 @@ class S3BucketMetadataV1Test : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     call_count_one = 0;
+    bucket_name = "seagatebucket";
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
 
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
     EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
@@ -95,6 +98,7 @@ class S3BucketMetadataV1Test : public testing::Test {
   S3CallBack s3bucketmetadata_callbackobj;
   std::shared_ptr<S3BucketMetadataV1> action_under_test;
   int call_count_one;
+  std::string bucket_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -678,3 +682,4 @@ TEST_F(S3BucketMetadataV1Test, GetEncodedBucketAcl) {
   action_under_test->from_json(json_str);
   EXPECT_STREQ("PD94bg==", action_under_test->get_encoded_bucket_acl().c_str());
 }
+

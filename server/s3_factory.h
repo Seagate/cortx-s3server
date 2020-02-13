@@ -56,7 +56,10 @@ class S3ObjectMetadataFactory {
       m0_uint128 indx_oid = {0ULL, 0ULL}) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ObjectMetadataFactory::create_object_metadata_obj\n");
-    return std::make_shared<S3ObjectMetadata>(req, indx_oid);
+    std::shared_ptr<S3ObjectMetadata> meta =
+        std::make_shared<S3ObjectMetadata>(req);
+    meta->set_object_list_index_oid(indx_oid);
+    return meta;
   }
 };
 
@@ -65,11 +68,13 @@ class S3ObjectMultipartMetadataFactory {
   virtual ~S3ObjectMultipartMetadataFactory() {}
   virtual std::shared_ptr<S3ObjectMetadata> create_object_mp_metadata_obj(
       std::shared_ptr<S3RequestObject> req, m0_uint128 mp_indx_oid,
-      bool is_multipart, std::string upload_id) {
+      std::string upload_id) {
     s3_log(S3_LOG_DEBUG, "",
            "S3ObjectMultipartMetadataFactory::create_object_mp_metadata_obj\n");
-    return std::make_shared<S3ObjectMetadata>(req, mp_indx_oid, is_multipart,
-                                              upload_id);
+    std::shared_ptr<S3ObjectMetadata> meta =
+        std::make_shared<S3ObjectMetadata>(req, true, upload_id);
+    meta->set_object_list_index_oid(mp_indx_oid);
+    return meta;
   }
 };
 

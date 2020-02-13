@@ -42,8 +42,8 @@ class MockS3RequestObject : public S3RequestObject {
   MOCK_METHOD0(get_operation_code, S3OperationCode());
   MOCK_METHOD0(http_verb, S3HttpVerb());
   MOCK_METHOD0(c_get_uri_query, const char *());
-  MOCK_CONST_METHOD0(get_object_name, const std::string &());
-  MOCK_CONST_METHOD0(get_bucket_name, const std::string &());
+  MOCK_METHOD0(get_object_name, const std::string &());
+  MOCK_METHOD0(get_bucket_name, const std::string &());
   MOCK_METHOD0(get_query_parameters,
                const std::map<std::string, std::string, compare> &());
   MOCK_METHOD0(get_request, evhtp_request_t *());
@@ -75,3 +75,4 @@ class MockS3RequestObject : public S3RequestObject {
 };
 
 #endif
+

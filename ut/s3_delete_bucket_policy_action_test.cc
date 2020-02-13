@@ -36,7 +36,10 @@ class S3DeleteBucketPolicyActionTest : public testing::Test {
   S3DeleteBucketPolicyActionTest() {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*request_mock, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
     ptr_mock_s3_clovis_api = std::make_shared<MockS3Clovis>();
     bucket_meta_factory = std::make_shared<MockS3BucketMetadataFactory>(
         request_mock, ptr_mock_s3_clovis_api);
@@ -52,6 +55,7 @@ class S3DeleteBucketPolicyActionTest : public testing::Test {
   std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api;
   std::shared_ptr<S3DeleteBucketPolicyAction> action_under_test_ptr;
   std::shared_ptr<MockS3BucketMetadataFactory> bucket_meta_factory;
+  std::string bucket_name;
 };
 
 TEST_F(S3DeleteBucketPolicyActionTest, Constructor) {
@@ -119,3 +123,4 @@ TEST_F(S3DeleteBucketPolicyActionTest, SendResponseToClientInternalError) {
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
+

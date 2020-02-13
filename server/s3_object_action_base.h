@@ -59,6 +59,9 @@ class S3ObjectAction : public S3Action {
   virtual void fetch_object_info_success();
   virtual void fetch_bucket_info_success();
 
+  // Sets appropriate Fault points for any shutdown tests.
+  void setup_fi_for_shutdown_tests();
+
  public:
   S3ObjectAction(std::shared_ptr<S3RequestObject> req,
                  std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory =
@@ -82,3 +85,4 @@ class S3ObjectAction : public S3Action {
 };
 
 #endif
+

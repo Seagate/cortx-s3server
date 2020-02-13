@@ -88,8 +88,8 @@ void S3PutBucketPolicyAction::on_policy_validation_failure() {
          error_code.c_str());
 
   set_s3_error(error_code);
+  // Override error message
   set_s3_error_message(error_messag);
-  request->respond_error(error_code, {}, error_messag);
   send_response_to_s3_client();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -194,16 +194,25 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable" ||
+        get_s3_error_code() == "InternalError") {
+      request->set_out_header_value("Connection", "close");
+    }
+
     request->set_out_header_value("Retry-After", "1");
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (is_error_state() && !get_s3_error_code().empty()) {
     S3Error error(get_s3_error_code(), request->get_request_id(),
-                  request->get_object_uri());
+                  request->get_object_uri(), get_s3_error_message());
     std::string& response_xml = error.to_xml();
     request->set_out_header_value("Content-Type", "application/xml");
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
+    if (get_s3_error_code() == "ServiceUnavailable" ||
+        get_s3_error_code() == "InternalError") {
+      request->set_out_header_value("Connection", "close");
+    }
     if (get_s3_error_code() == "ServiceUnavailable") {
       request->set_out_header_value("Retry-After", "1");
     }
@@ -217,3 +226,4 @@ void S3PutBucketPolicyAction::send_response_to_s3_client() {
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
+

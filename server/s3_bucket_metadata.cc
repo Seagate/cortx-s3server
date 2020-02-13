@@ -227,6 +227,10 @@ std::string S3BucketMetadata::to_json() {
   root["mero_objects_version_list_index_oid"] =
       S3M0Uint128Helper::to_string(objects_version_list_index_oid);
 
+  S3DateTime current_time;
+  current_time.init_current_time();
+  root["create_timestamp"] = current_time.get_isoformat_string();
+
   Json::FastWriter fastWriter;
   return fastWriter.write(root);
 }

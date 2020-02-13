@@ -275,8 +275,7 @@ void RequestObject::stop_client_read_timer() {
 }
 
 void RequestObject::restart_client_read_timer() {
-  s3_log(S3_LOG_DEBUG, request_id.c_str(),
-         "Calling restart_client_read_timer\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Calling restart_client_read_timer\n");
   // delete any pending timer
   stop_client_read_timer();
   // Set new timer
@@ -291,7 +290,7 @@ void RequestObject::free_client_read_timer(bool s3_client_read_timedout) {
       s3_log(S3_LOG_DEBUG, request_id, "Deleting client read timer\n");
       event_obj->del_event(client_read_timer_event);
     }
-    s3_log(S3_LOG_DEBUG, request_id.c_str(), "Calling event free\n");
+    s3_log(S3_LOG_DEBUG, request_id, "Calling event free\n");
     event_obj->free_event(client_read_timer_event);
     client_read_timer_event = NULL;
   }
@@ -826,3 +825,4 @@ void RequestObject::respond_retry_after(int retry_after_in_secs) {
 
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
+

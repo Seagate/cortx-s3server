@@ -53,6 +53,8 @@ class S3ObjectAPIHandlerTest : public testing::Test {
 
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
+    bucket_name = "seagatebucket";
+    object_name = "objname";
 
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
@@ -60,6 +62,10 @@ class S3ObjectAPIHandlerTest : public testing::Test {
 
     mock_request = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr,
                                                          async_buffer_factory);
+    EXPECT_CALL(*mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
   }
 
   std::shared_ptr<MockS3RequestObject> mock_request;
@@ -67,6 +73,7 @@ class S3ObjectAPIHandlerTest : public testing::Test {
 
   std::shared_ptr<S3ObjectAPIHandler> handler_under_test;
   S3Option *instance = NULL;
+  std::string bucket_name, object_name;
 };
 
 TEST_F(S3ObjectAPIHandlerTest, ConstructorTest) {
@@ -390,3 +397,4 @@ TEST_F(S3ObjectAPIHandlerTest, NoAction) {
 
   EXPECT_TRUE(handler_under_test->_get_action() == nullptr);
 }
+

@@ -26,7 +26,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
-extern S3Option *g_option_instance;
+extern S3Option* g_option_instance;
 
 // Note:
 // 1. Logs IEM message into syslog as well as to glog.

@@ -35,6 +35,7 @@
 #include "s3_factory.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
+#include "s3_probable_delete_record.h"
 
 class S3DeleteMultipleObjectsAction : public S3BucketAction {
   std::vector<std::shared_ptr<S3ObjectMetadata>> objects_metadata;
@@ -58,7 +59,8 @@ class S3DeleteMultipleObjectsAction : public S3BucketAction {
 
   S3DeleteMultipleObjectsResponseBody delete_objects_response;
 
-  std::map<std::string, std::string> probable_oid_list;
+  std::map<std::string, std::unique_ptr<S3ProbableDeleteRecord>>
+      probable_oid_list;
 
   std::string get_bucket_index_name() {
     return "BUCKET/" + request->get_bucket_name();

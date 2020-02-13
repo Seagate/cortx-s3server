@@ -114,15 +114,23 @@ class S3GetMultipartBucketActionTest : public testing::Test {
     evhtp_request_t *req = NULL;
     EvhtpInterface *evhtp_obj_ptr = new EvhtpWrapper();
     object_list_indx_oid = {0x11ffff, 0x1ffff};
+    bucket_name = "seagatebucket";
+    object_name = "objname";
     request_mock = std::make_shared<MockS3RequestObject>(req, evhtp_obj_ptr);
+    EXPECT_CALL(*request_mock, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*request_mock, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
     s3_clovis_api_mock = std::make_shared<MockS3Clovis>();
 
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(request_mock);
     clovis_kvs_reader_factory = std::make_shared<MockS3ClovisKVSReaderFactory>(
         request_mock, s3_clovis_api_mock);
-    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        request_mock, object_list_indx_oid);
+    object_meta_factory =
+        std::make_shared<MockS3ObjectMetadataFactory>(request_mock);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
+
     CREATE_ACTION_UNDER_TEST_OBJ;
   }
 
@@ -135,6 +143,7 @@ class S3GetMultipartBucketActionTest : public testing::Test {
 
   struct m0_uint128 object_list_indx_oid;
   std::map<std::string, std::pair<int, std::string>> result_keys_values;
+  std::string bucket_name, object_name;
 };
 
 TEST_F(S3GetMultipartBucketActionTest, Constructor) {
@@ -408,3 +417,4 @@ TEST_F(S3GetMultipartBucketActionTest, SendResponseToClientInternalError) {
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
+

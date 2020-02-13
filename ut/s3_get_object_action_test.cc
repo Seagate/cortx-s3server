@@ -77,6 +77,8 @@ class S3GetObjectActionTest : public testing::Test {
     zero_oid_idx = {0ULL, 0ULL};
 
     call_count_one = 0;
+    bucket_name = "seagatebucket";
+    object_name = "objname";
 
     async_buffer_factory =
         std::make_shared<MockS3AsyncBufferOptContainerFactory>(
@@ -84,13 +86,18 @@ class S3GetObjectActionTest : public testing::Test {
 
     ptr_mock_request = std::make_shared<MockS3RequestObject>(
         req, evhtp_obj_ptr, async_buffer_factory);
+    EXPECT_CALL(*ptr_mock_request, get_bucket_name())
+        .WillRepeatedly(ReturnRef(bucket_name));
+    EXPECT_CALL(*ptr_mock_request, get_object_name())
+        .WillRepeatedly(ReturnRef(object_name));
 
     // Owned and deleted by shared_ptr in S3GetObjectAction
     bucket_meta_factory =
         std::make_shared<MockS3BucketMetadataFactory>(ptr_mock_request);
 
-    object_meta_factory = std::make_shared<MockS3ObjectMetadataFactory>(
-        ptr_mock_request, object_list_indx_oid);
+    object_meta_factory =
+        std::make_shared<MockS3ObjectMetadataFactory>(ptr_mock_request);
+    object_meta_factory->set_object_list_index_oid(object_list_indx_oid);
 
     layout_id =
         S3ClovisLayoutMap::get_instance()->get_best_layout_for_object_size();
@@ -121,6 +128,7 @@ class S3GetObjectActionTest : public testing::Test {
   struct m0_uint128 zero_oid_idx;
 
   int call_count_one;
+  std::string bucket_name, object_name;
 
  public:
   void func_callback_one() { call_count_one += 1; }
@@ -1195,3 +1203,4 @@ TEST_F(S3GetObjectActionTest, RangeHeaderContainsSpacesOnly) {
   EXPECT_TRUE(action_under_test->validate_range_header_and_set_read_options(
       range_value));
 }
+

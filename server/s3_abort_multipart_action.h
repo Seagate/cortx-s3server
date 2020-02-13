@@ -27,6 +27,18 @@
 
 #include "s3_bucket_action_base.h"
 #include "s3_clovis_writer.h"
+#include "s3_probable_delete_record.h"
+
+enum class S3AbortMultipartActionState {
+  empty,             // Initial state
+  validationFailed,  // Any validations failed for request, including metadata
+  probableEntryRecordFailed,
+  uploadMetadataDeleted,
+  uploadMetadataDeleteFailed,
+  partsListIndexDeleted,
+  partsListIndexDeleteFailed,
+  completed,  // All stages done completely
+};
 
 class S3AbortMultipartAction : public S3BucketAction {
   std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
@@ -41,13 +53,17 @@ class S3AbortMultipartAction : public S3BucketAction {
   m0_uint128 multipart_oid;
   m0_uint128 part_index_oid;
 
-  std::map<std::string, std::string> probable_oid_list;
+  // Probable delete record for object OID to be deleted
+  std::string oid_str;  // Key for probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> probable_delete_rec;
 
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSReaderFactory> clovis_kvs_reader_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+
+  S3AbortMultipartActionState s3_abort_mp_action_state;
 
  public:
   S3AbortMultipartAction(
@@ -66,19 +82,21 @@ class S3AbortMultipartAction : public S3BucketAction {
   void fetch_bucket_info_failed();
   void get_multipart_metadata();
   void get_multipart_metadata_status();
-  void delete_part_index_with_parts();
-  void delete_part_index_with_parts_failed();
   void delete_multipart_metadata();
+  void delete_multipart_metadata_successful();
   void delete_multipart_metadata_failed();
+  void delete_part_index_with_parts();
+  void delete_part_index_with_parts_successful();
+  void delete_part_index_with_parts_failed();
   void send_response_to_s3_client();
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
-  void cleanup();
-  void cleanup_successful();
-  void cleanup_failed();
-  void cleanup_oid_from_probable_dead_oid_list();
+  void startcleanup();
+  void mark_oid_for_deletion();
+  void delete_object();
+  void remove_probable_record();
 
   // Google tests
   FRIEND_TEST(S3AbortMultipartActionTest, ConstructorTest);
@@ -95,17 +113,14 @@ class S3AbortMultipartAction : public S3BucketAction {
   FRIEND_TEST(S3AbortMultipartActionTest, DeleteMultipartMetadataFailedTest);
   FRIEND_TEST(S3AbortMultipartActionTest,
               DeleteMultipartMetadataFailedToLaunchTest);
-  FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest1);
-  FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest2);
+  FRIEND_TEST(S3AbortMultipartActionTest,
+              DeletePartIndexWithPartsMissingIndexTest);
+  FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsTest);
   FRIEND_TEST(S3AbortMultipartActionTest, DeletePartIndexWithPartsFailed);
   FRIEND_TEST(S3AbortMultipartActionTest,
               DeletePartIndexWithPartsFailedToLaunch);
   FRIEND_TEST(S3AbortMultipartActionTest, Send200SuccessToS3Client);
   FRIEND_TEST(S3AbortMultipartActionTest, Send503InternalErrorToS3Client);
-  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataFailedToRemoveTest1);
-  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataFailedToRemoveTest2);
-  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataRemoveTest1);
-  FRIEND_TEST(S3AbortMultipartActionTest, CleanupOnMetadataRemoveTest2);
 };
 
 #endif

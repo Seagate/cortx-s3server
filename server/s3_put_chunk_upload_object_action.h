@@ -31,9 +31,25 @@
 #include "s3_clovis_writer.h"
 #include "s3_factory.h"
 #include "s3_object_metadata.h"
+#include "s3_probable_delete_record.h"
 #include "s3_timer.h"
 
+enum class S3PutChunkUploadObjectActionState {
+  empty,             // Initial state
+  validationFailed,  // Any validations failed for request, including metadata
+  newObjOidCreated,  // New object created
+  newObjOidCreationFailed,  // New object create failed
+  probableEntryRecordFailed,
+  dataSignatureCheckFailed,
+  writeComplete,       // data write to object completed successfully
+  writeFailed,         // data write to object failed
+  metadataSaved,       // metadata saved for new object
+  metadataSaveFailed,  // metadata saved for new object
+  completed,           // All stages done completely
+};
+
 class S3PutChunkUploadObjectAction : public S3ObjectAction {
+  S3PutChunkUploadObjectActionState s3_put_chunk_action_state;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
   int layout_id;
@@ -57,11 +73,17 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   bool auth_in_progress;
   bool auth_completed;  // all chunk auth
 
-  std::map<std::string, std::string> probable_oid_list;
+  // Probable delete record for old object OID in case of overwrite
+  std::string old_oid_str;  // Key for old probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> old_probable_del_rec;
+  // Probable delete record for new object OID in case of current req failure
+  std::string new_oid_str;  // Key for new probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> new_probable_del_rec;
 
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
+  std::shared_ptr<S3ObjectMetadata> new_object_metadata;
   std::shared_ptr<S3PutTagsBodyFactory> put_object_tag_body_factory;
   std::map<std::string, std::string> new_object_tags_map;
 
@@ -105,20 +127,22 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void write_object_successful();
   void write_object_failed();
   void save_metadata();
+  void save_object_metadata_success();
   void save_object_metadata_failed();
   void send_response_to_s3_client();
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
-  void cleanup();
-  void cleanup_successful();
-  void cleanup_failed();
-  void cleanup_oid_from_probable_dead_oid_list();
-
-  // rollback functions
-  void rollback_create();
-  void rollback_create_failed();
+  // Rollback tasks
+  void startcleanup();
+  void mark_new_oid_for_deletion();
+  void mark_old_oid_for_deletion();
+  void remove_old_oid_probable_record();
+  void remove_new_oid_probable_record();
+  void delete_old_object();
+  void remove_old_object_version_metadata();
+  void delete_new_object();
 
   void set_authorization_meta();
 
@@ -152,11 +176,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedTest);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               CreateObjectFailedToLaunchTest);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackTest);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, CreateNewOidTest);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest1);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest2);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest3);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
               InitiateDataStreamingForZeroSizeObject);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth,
@@ -233,14 +253,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase1);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase2);
   FRIEND_TEST(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
-              CleanupOnMetadataFailedToSaveTest1);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
-              CleanupOnMetadataFailedToSaveTest2);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
-              CleanupOnMetadataSavedTest1);
-  FRIEND_TEST(S3PutChunkUploadObjectActionTestWithAuth,
-              CleanupOnMetadataSavedTest2);
 };
 
 #endif
+

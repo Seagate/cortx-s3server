@@ -30,15 +30,29 @@
 #include "s3_factory.h"
 #include "s3_log.h"
 #include "s3_object_metadata.h"
+#include "s3_probable_delete_record.h"
+
+enum class S3DeleteObjectActionState {
+  empty,             // Initial state
+  validationFailed,  // Any validations failed for request, including missing
+                     // metadata
+  probableEntryRecordFailed,
+  metadataDeleted,
+  metadataDeleteFailed,
+};
 
 class S3DeleteObjectAction : public S3ObjectAction {
-  m0_uint128 probable_dead_object_oid;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<ClovisAPI> s3_clovis_api;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
   std::shared_ptr<S3ClovisWriterFactory> clovis_writer_factory;
   std::shared_ptr<S3ClovisKVSWriterFactory> clovis_kv_writer_factory;
+
+  // Probable delete record for object OID to be deleted
+  std::string oid_str;  // Key for probable delete rec
+  std::unique_ptr<S3ProbableDeleteRecord> probable_delete_rec;
+  S3DeleteObjectActionState s3_del_obj_action_state;
 
  public:
   S3DeleteObjectAction(
@@ -55,15 +69,16 @@ class S3DeleteObjectAction : public S3ObjectAction {
   void fetch_object_info_failed();
   void delete_metadata();
   void delete_metadata_failed();
+  void delete_metadata_successful();
   void set_authorization_meta();
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
-  void cleanup();
-  void cleanup_successful();
-  void cleanup_failed();
-  void cleanup_oid_from_probable_dead_oid_list();
+  void startcleanup();
+  void mark_oid_for_deletion();
+  void delete_object();
+  void remove_probable_record();
 
   void send_response_to_s3_client();
 
@@ -85,8 +100,6 @@ class S3DeleteObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3DeleteObjectActionTest,
               DeleteMetadataWhenObjectMetadataFetchFailed);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectWhenMetadataDeleteFailed);
-  FRIEND_TEST(S3DeleteObjectActionTest,
-              DeleteObjectWhenMetadataDeleteSucceeded);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectMissingShouldReportDeleted);
   FRIEND_TEST(S3DeleteObjectActionTest, DeleteObjectFailedShouldReportDeleted);
   FRIEND_TEST(S3DeleteObjectActionTest, SendErrorResponse);
@@ -95,3 +108,4 @@ class S3DeleteObjectAction : public S3ObjectAction {
 };
 
 #endif
+

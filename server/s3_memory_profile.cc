@@ -33,6 +33,9 @@ size_t S3MemoryProfile::memory_per_put_request(int layout_id) {
 }
 
 bool S3MemoryProfile::we_have_enough_memory_for_put_obj(int layout_id) {
+#ifdef S3_GOOGLE_TEST
+  return true;
+#endif
   size_t free_space_in_libevent_mempool = 0;
   event_mempool_free_space(&free_space_in_libevent_mempool);
   s3_log(S3_LOG_DEBUG, "", "free_space_in_libevent_mempool = %zu\n",
@@ -107,3 +110,4 @@ bool S3MemoryProfile::free_memory_in_pool_above_threshold_limits() {
   }
   return true;
 }
+

@@ -233,6 +233,9 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
              kv.first.c_str());
       auto object =
           object_metadata_factory->create_object_metadata_obj(request);
+      object->set_objects_version_list_index_oid(
+          bucket_metadata->get_objects_version_list_index_oid());
+
       if (object->from_json(kv.second.second) != 0) {
         atleast_one_json_error = true;
         s3_log(S3_LOG_ERROR, request_id,
@@ -268,30 +271,31 @@ void S3DeleteMultipleObjectsAction::fetch_objects_info_successful() {
       send_response_to_s3_client();
     }
   } else {
-    if (S3Option::get_instance()->is_s3server_objectleak_tracking_enabled()) {
-      add_object_oid_to_probable_dead_oid_list();
-    } else {
-      delete_objects_metadata();
-    }
+    add_object_oid_to_probable_dead_oid_list();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  probable_oid_list.clear();
+  std::map<std::string, std::string> delete_list;
 
   for (const auto& obj : objects_metadata) {
     if (obj->get_state() != S3ObjectMetadataState::invalid) {
-      probable_oid_list[S3M0Uint128Helper::to_string(obj->get_oid())] =
-          obj->create_probable_delete_record(
+      std::string oid_str = S3M0Uint128Helper::to_string(obj->get_oid());
+      probable_oid_list[oid_str] =
+          std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
+              oid_str, {0ULL, 0ULL}, obj->get_object_name(), obj->get_oid(),
               obj->get_layout_id(),
-              bucket_metadata->get_object_list_index_oid());
+              bucket_metadata->get_object_list_index_oid(),
+              bucket_metadata->get_objects_version_list_index_oid(),
+              obj->get_version_key_in_index(), false /* force_delete */));
+      delete_list[oid_str] = probable_oid_list[oid_str]->to_json();
     }
   }
 
   clovis_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, probable_oid_list,
+      global_probable_dead_object_list_index_oid, delete_list,
       std::bind(&S3DeleteMultipleObjectsAction::delete_objects_metadata, this),
       std::bind(&S3DeleteMultipleObjectsAction::
                      add_object_oid_to_probable_dead_oid_list_failed,
