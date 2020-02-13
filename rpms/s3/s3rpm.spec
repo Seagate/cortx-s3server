@@ -137,6 +137,7 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/s3/conf/s3stats-whitelist.yaml
 %config(noreplace) /opt/seagate/auth/resources/defaultAclTemplate.xml
 %config(noreplace) /opt/seagate/auth/resources/AmazonS3.xsd
+%config(noreplace) /opt/seagate/s3/s3backgrounddelete/config.yaml
 
 %attr(4600, root, root) /opt/seagate/auth/resources/authserver.properties
 %attr(4600, root, root) /opt/seagate/auth/resources/authserver-log4j2.xml
