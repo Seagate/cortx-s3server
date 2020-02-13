@@ -91,6 +91,14 @@ class BucketPolicyValidator extends PolicyValidator {
   ServerResponse validatePolicy(String inputBucket, String jsonPolicy) {
     ServerResponse response = null;
     Policy policy = null;
+    if (jsonPolicy.length() > 20480) {
+      LOGGER.error(
+          "policy exceeding max allowed size 20480 bytes.Current policy size " +
+          "- " + jsonPolicy.length());
+      return responseGenerator.malformedPolicy(
+          "Normalized policy document exceeds the maximum allowed size of " +
+          "20480 bytes");
+    }
     try {
       JSONObject obj =
           new JSONObject(BinaryUtil.base64DecodeString(jsonPolicy));

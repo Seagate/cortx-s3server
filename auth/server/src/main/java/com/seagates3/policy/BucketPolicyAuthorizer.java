@@ -184,7 +184,8 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         case "AWS":
           if (new PrincipalArnParser().isArnFormatValid(principalId)) {
             User user = new UserImpl().findByArn(principalId);
-            if (user != null && user.exists()) {
+            if (user != null && user.exists() &&
+                user.getId().equals(requestor.getId())) {
               isMatching = true;
             }
           } else {
