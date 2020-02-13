@@ -190,7 +190,7 @@ TEST_F(S3PostCompleteActionTest, LoadValidateRequestMalformed) {
   EXPECT_CALL(*request_mock, get_full_body_content_as_string())
       .WillOnce(ReturnRef(mock_xml));
 
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
   action_under_test_ptr->load_and_validate_request();
@@ -227,7 +227,7 @@ TEST_F(S3PostCompleteActionTest, LoadValidateRequest) {
 
 TEST_F(S3PostCompleteActionTest, LoadValidateRequestNoContent) {
   EXPECT_CALL(*request_mock, get_data_length()).Times(1).WillOnce(Return(0));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
 
@@ -240,7 +240,7 @@ TEST_F(S3PostCompleteActionTest, ConsumeIncomingContentMoreContent) {
   EXPECT_CALL(*request_mock, has_all_body_content())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(false));
-  EXPECT_CALL(*request_mock, resume()).Times(1);
+  EXPECT_CALL(*request_mock, resume(_)).Times(1);
 
   action_under_test_ptr->consume_incoming_content();
 }
@@ -308,7 +308,7 @@ TEST_F(S3PostCompleteActionTest, FetchMultipartInfoFailedInvalidObject) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));
   action_under_test_ptr->fetch_multipart_info_failed();
@@ -322,7 +322,7 @@ TEST_F(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->fetch_multipart_info_failed();
@@ -477,7 +477,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
   action_under_test_ptr->total_parts = action_under_test_ptr->parts.size();
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(-1));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
   action_under_test_ptr->validate_parts();
@@ -491,7 +491,7 @@ TEST_F(S3PostCompleteActionTest, GetPartsInfoFailed) {
   EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ClovisKVSReaderOpState::failed));
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
 
@@ -599,7 +599,7 @@ TEST_F(S3PostCompleteActionTest, DeletePartsFailed) {
         .Times(AtLeast(2))
         .WillRepeatedly(Return(oid));
   }
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));
   action_under_test_ptr->delete_parts_failed();
@@ -615,7 +615,7 @@ TEST_F(S3PostCompleteActionTest, DeleteMultipartMetadata) {
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientInternalError) {
   action_under_test_ptr->obj_metadata_updated = false;
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
@@ -623,7 +623,7 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientInternalError) {
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientErrorSet) {
   action_under_test_ptr->set_s3_error("MalformedXML");
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
@@ -633,7 +633,7 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientErrorSet) {
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
   action_under_test_ptr->set_abort_multipart(true);
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
@@ -641,7 +641,7 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
   action_under_test_ptr->obj_metadata_updated = true;
-  EXPECT_CALL(*request_mock, resume()).Times(AtLeast(1));
+  EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }

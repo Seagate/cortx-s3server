@@ -52,6 +52,7 @@ class S3RequestObjectTest : public testing::Test {
   }
 
   ~S3RequestObjectTest() {
+    printf("Calling delete request\n");
     delete request;
 
     mock_evhtp_obj_ptr = NULL;
@@ -449,9 +450,9 @@ TEST_F(S3RequestObjectTest, StopClientReadTimer) {
   request_with_mock_http_event->client_read_timer_event =
       (struct event *)0xffff;
   EXPECT_CALL(*mock_event_obj_ptr, pending_event(_, _, _))
-      .Times(1)
+      .Times(2)
       .WillRepeatedly(Return(true));
-  EXPECT_CALL(*mock_event_obj_ptr, del_event(_)).Times(1);
+  EXPECT_CALL(*mock_event_obj_ptr, del_event(_)).Times(2);
   request_with_mock_http_event->stop_client_read_timer();
 }
 

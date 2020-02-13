@@ -35,7 +35,7 @@ using ::testing::ReturnRef;
     EXPECT_CALL(*(request_mock), get_header_value("x-seagate-faultinjection")) \
         .Times(AtLeast(1))                                                     \
         .WillRepeatedly(Return(MockHeaderKeyVal));                             \
-    EXPECT_CALL(*request_mock, resume()).Times(1);                             \
+    EXPECT_CALL(*request_mock, resume(_)).Times(1);                            \
     EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));       \
   } while (0)
 
@@ -45,7 +45,7 @@ using ::testing::ReturnRef;
     EXPECT_CALL(*(request_mock), get_header_value("x-seagate-faultinjection")) \
         .Times(AtLeast(1))                                                     \
         .WillRepeatedly(Return(MockHeaderKeyVal));                             \
-    EXPECT_CALL(*request_mock, resume()).Times(1);                             \
+    EXPECT_CALL(*request_mock, resume(_)).Times(1);                            \
     EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));  \
     EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));       \
   } while (0)
@@ -125,14 +125,14 @@ TEST_F(S3PutFiActionTest, SetFaultInjectionTest) {
 }
 
 TEST_F(S3PutFiActionTest, SendResponseToClientSuccess) {
-  EXPECT_CALL(*request_mock, resume()).Times(1);
+  EXPECT_CALL(*request_mock, resume(_)).Times(1);
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();
 }
 
 TEST_F(S3PutFiActionTest, SendResponseToClientMalformedFICmd) {
   action_under_test_ptr->set_s3_error("MalformedFICmd");
-  EXPECT_CALL(*request_mock, resume()).Times(1);
+  EXPECT_CALL(*request_mock, resume(_)).Times(1);
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();

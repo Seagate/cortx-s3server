@@ -196,6 +196,7 @@ void Action::abort() {
 // rollback async steps
 void Action::rollback_start() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  base_request->stop_processing_incoming_data();
   if (rollback_state > ACTS_START) {
     s3_log(S3_LOG_WARN, request_id,
            "rollback_start() has been already invoked\n");
@@ -279,6 +280,9 @@ bool Action::check_shutdown_and_rollback(bool check_auth_op_aborted) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   bool is_s3_shutting_down =
       S3Option::get_instance()->get_is_s3_shutting_down();
+  if (is_s3_shutting_down) {
+    base_request->stop_processing_incoming_data();
+  }
   if (is_s3_shutting_down && check_auth_op_aborted &&
       get_auth_client()->is_chunk_auth_op_aborted()) {
     if (get_rollback_state() == ACTS_START) {

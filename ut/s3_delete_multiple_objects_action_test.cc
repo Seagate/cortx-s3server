@@ -175,7 +175,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed400, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->validate_request();
 
@@ -229,7 +229,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
       .WillRepeatedly(Return(S3BucketMetadataState::missing));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed404, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_bucket_info_failed();
 
@@ -243,7 +243,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchBucketInfoFailedWithError) {
       .WillRepeatedly(Return(S3BucketMetadataState::failed));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_bucket_info_failed();
 
@@ -256,7 +256,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->fetch_objects_info();
 }
 
@@ -289,7 +289,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, FetchObjectInfoFailed) {
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->fetch_objects_info_failed();
 
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
@@ -345,7 +345,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->fetch_objects_info_failed();
 }
 
@@ -461,7 +461,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
       .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_objects_info_successful();
 
@@ -501,7 +501,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, DeleteObjectMetadataFailedToLaunch) {
       .WillRepeatedly(Return(S3ClovisKVSWriterOpState::failed));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->delete_objects_metadata_failed();
 
@@ -527,7 +527,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
       .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
 
@@ -555,7 +555,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest,
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _))
       .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
       .WillRepeatedly(Return("objname"));
 
@@ -616,7 +616,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, SendErrorResponse) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed500, _))
       .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -627,7 +627,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, SendAnyFailedResponse) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpFailed404, _))
       .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -636,7 +636,7 @@ TEST_F(S3DeleteMultipleObjectsActionTest, SendSuccessResponse) {
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(S3HttpSuccess200, _))
       .Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }

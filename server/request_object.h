@@ -137,7 +137,7 @@ class RequestObject {
   virtual void set_start_client_request_read_timeout();
   virtual void stop_client_read_timer();
   virtual void restart_client_read_timer();
-  virtual void free_client_read_timer();
+  virtual void free_client_read_timer(bool s3_client_read_timedout = false);
   virtual void trigger_client_read_timeout_callback();
 
  protected:
@@ -239,7 +239,7 @@ class RequestObject {
     }
   }
 
-  virtual void resume() {
+  virtual void resume(bool set_read_timer = true) {
     if (!client_connected()) {
       s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
       return;
@@ -247,8 +247,10 @@ class RequestObject {
     if (is_paused) {
       // delete timer event, if its pending.
       stop_client_read_timer();
-      // Set read timeout
-      set_start_client_request_read_timeout();
+      if (set_read_timer) {
+        // Set read timeout
+        set_start_client_request_read_timeout();
+      }
       s3_log(S3_LOG_DEBUG, "", "Resuming the request for sock %d...\n",
              ev_req->conn->sock);
       evhtp_obj->http_request_resume(ev_req);
@@ -260,6 +262,7 @@ class RequestObject {
   bool is_request_paused() { return is_paused; }
 
   void client_has_disconnected() {
+    stop_client_read_timer();
     is_client_connected = false;
     if (ev_req) {
       ev_req->cbarg = NULL;
@@ -268,7 +271,10 @@ class RequestObject {
   }
 
   bool is_incoming_data_ignored() { return ignore_incoming_data; }
-  void stop_processing_incoming_data() { ignore_incoming_data = true; }
+  void stop_processing_incoming_data() {
+    stop_client_read_timer();
+    ignore_incoming_data = true;
+  }
 
   bool client_connected() const { return is_client_connected; }
   bool is_s3_client_read_timedout() const { return s3_client_read_timedout; }

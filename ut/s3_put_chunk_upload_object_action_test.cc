@@ -189,7 +189,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateEmptyTags) {
   EXPECT_CALL(*mock_request, get_header_value(_)).WillOnce(Return(""));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -203,7 +203,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase1) {
   EXPECT_CALL(*mock_request, get_header_value(_)).WillOnce(Return("key1="));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -218,7 +218,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase2) {
       .WillOnce(Return("key1=value1&=value2"));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -238,7 +238,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, VaidateInvalidTagsCase3) {
       "key7=value7&key8=value8&key9=value9&key10=value10&key11=value11"));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -267,7 +267,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   action_under_test->old_object_oid = {0xff1f, 0xffff};
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   action_under_test->auth_in_progress = false;
   action_under_test->fetch_bucket_info_failed();
 
@@ -296,7 +296,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_bucket_info_failed();
 
@@ -314,7 +314,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_bucket_info_failed();
 
@@ -394,7 +394,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_object_info_success();
 
@@ -433,7 +433,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->create_object_failed();
   EXPECT_TRUE(action_under_test->clovis_writer == NULL);
@@ -449,7 +449,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(500, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->tried_count = MAX_COLLISION_RETRY_COUNT + 1;
   action_under_test->create_object_failed();
@@ -487,7 +487,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedTest) {
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->create_object_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
@@ -506,7 +506,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, CreateObjectFailedToLaunchTest) {
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->create_object_failed();
   EXPECT_STREQ("ServiceUnavailable",
@@ -552,7 +552,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest2) {
       .WillRepeatedly(Return(S3ClovisWriterOpState::failed));
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(500, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->rollback_create_failed();
   EXPECT_EQ(0, call_count_one);
@@ -565,7 +565,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, RollbackFailedTest3) {
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->rollback_create_failed();
   EXPECT_EQ(0, call_count_one);
@@ -795,7 +795,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -858,7 +858,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   action_under_test->write_object_successful();
@@ -883,7 +883,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
   EXPECT_CALL(*mock_request, is_chunk_detail_ready()).WillOnce(Return(false));
 
   action_under_test->write_object_successful();
@@ -937,7 +937,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth,
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
 
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -1002,7 +1002,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendResponseWhenShuttingDown) {
   EXPECT_CALL(*mock_request, set_out_header_value(Eq("Retry-After"), Eq("1")))
       .Times(1);
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   // send_response_to_s3_client is called in check_shutdown_and_rollback
   action_under_test->check_shutdown_and_rollback();
@@ -1015,7 +1015,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendErrorResponse) {
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(false)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -1036,7 +1036,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendSuccessResponse) {
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(200, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -1052,7 +1052,7 @@ TEST_F(S3PutChunkUploadObjectActionTestNoAuth, SendFailedResponse) {
 
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -1245,7 +1245,7 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->chunk_auth_successful();
 
@@ -1260,7 +1260,7 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
   EXPECT_CALL(*mock_request, pause()).Times(1);
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(403, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->chunk_auth_failed();
 
@@ -1332,7 +1332,7 @@ TEST_F(S3PutChunkUploadObjectActionTestWithAuth,
   action_under_test->write_failed = false;
   EXPECT_CALL(*mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*mock_request, resume()).Times(1);
+  EXPECT_CALL(*mock_request, resume(_)).Times(1);
 
   action_under_test->chunk_auth_failed();
 

@@ -169,7 +169,7 @@ TEST_F(S3PutObjectActionTest, VaidateEmptyTags) {
   EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return(""));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -183,7 +183,7 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase1) {
   EXPECT_CALL(*ptr_mock_request, get_header_value(_)).WillOnce(Return("key1="));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -198,7 +198,7 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase2) {
       .WillOnce(Return("key1=value1&=value2"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -218,7 +218,7 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase3) {
       "key7=value7&key8=value8&key9=value9&key10=value10&key11=value11"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->clear_tasks();
 
   action_under_test->validate_x_amz_tagging_if_present();
@@ -233,7 +233,7 @@ TEST_F(S3PutObjectActionTest, VaidateInvalidTagsCase4) {
       .WillOnce(Return("Key=seag`ate&Value=marketing"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->clear_tasks();
   action_under_test->validate_x_amz_tagging_if_present();
@@ -283,7 +283,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketNotPresent) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_bucket_info_failed();
 
@@ -300,7 +300,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailed) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_bucket_info_failed();
 
@@ -317,7 +317,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoWhenBucketFailedTolaunch) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_bucket_info_failed();
 
@@ -418,7 +418,7 @@ TEST_F(S3PutObjectActionTest, FetchObjectInfoReturnedInvalidStateReportsError) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->fetch_object_info_success();
 
@@ -456,7 +456,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTestWhileShutdown) {
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->create_object_failed();
   EXPECT_TRUE(action_under_test->clovis_writer == NULL);
@@ -471,7 +471,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedWithCollisionExceededRetry) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->tried_count = MAX_COLLISION_RETRY_COUNT + 1;
   action_under_test->create_object_failed();
@@ -509,7 +509,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedTest) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->create_object_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
@@ -528,7 +528,7 @@ TEST_F(S3PutObjectActionTest, CreateObjectFailedToLaunchTest) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->create_object_failed();
   EXPECT_STREQ("ServiceUnavailable",
@@ -575,7 +575,7 @@ TEST_F(S3PutObjectActionTest, RollbackFailedTest2) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->rollback_create_failed();
   EXPECT_EQ(0, call_count_one);
@@ -588,7 +588,7 @@ TEST_F(S3PutObjectActionTest, RollbackFailedTest3) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->rollback_create_failed();
 }
@@ -796,7 +796,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulWhileShuttingDown) {
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->_set_layout_id(layout_id);
 
@@ -872,7 +872,7 @@ TEST_F(S3PutObjectActionTest,
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -899,7 +899,7 @@ TEST_F(S3PutObjectActionTest,
 
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -955,7 +955,7 @@ TEST_F(S3PutObjectActionTest, WriteObjectSuccessfulShouldRestartReadingData) {
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
 
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -1016,7 +1016,7 @@ TEST_F(S3PutObjectActionTest, SendResponseWhenShuttingDown) {
   EXPECT_CALL(*ptr_mock_request,
               set_out_header_value(Eq("Retry-After"), Eq("1"))).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   // send_response_to_s3_client is called in check_shutdown_and_rollback
   action_under_test->check_shutdown_and_rollback();
@@ -1029,7 +1029,7 @@ TEST_F(S3PutObjectActionTest, SendErrorResponse) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(false)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -1050,7 +1050,7 @@ TEST_F(S3PutObjectActionTest, SendSuccessResponse) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -1066,7 +1066,7 @@ TEST_F(S3PutObjectActionTest, SendFailedResponse) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }

@@ -239,7 +239,7 @@ void RequestObject::set_full_path(const char* full_path) {
 }
 
 void RequestObject::set_start_client_request_read_timeout() {
-  // Set the timer event, so that if data doesn't arrive within a
+  // Set the timer event, so that if data doesn't arrive from client within a
   // configured timeframe, then send error to client.
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (s3_client_read_timedout) {
@@ -254,6 +254,7 @@ void RequestObject::set_start_client_request_read_timeout() {
         event_obj->new_event(g_option_instance->get_eventbase(), -1, 0,
                              s3_client_read_timeout_cb, (void*)this);
   }
+
   s3_log(S3_LOG_DEBUG, request_id,
          "Setting client read timeout to %ld seconds\n", tv.tv_sec);
   event_obj->add_event(client_read_timer_event, &tv);
@@ -261,6 +262,7 @@ void RequestObject::set_start_client_request_read_timeout() {
 }
 
 void RequestObject::stop_client_read_timer() {
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   if (client_read_timer_event != NULL) {
     if (event_obj->pending_event(client_read_timer_event, EV_TIMEOUT)) {
       s3_log(S3_LOG_DEBUG, request_id, "Deleting client read timer\n");
@@ -271,6 +273,8 @@ void RequestObject::stop_client_read_timer() {
 }
 
 void RequestObject::restart_client_read_timer() {
+  s3_log(S3_LOG_DEBUG, request_id.c_str(),
+         "Calling restart_client_read_timer\n");
   // delete any pending timer
   stop_client_read_timer();
   // Set new timer
@@ -278,8 +282,13 @@ void RequestObject::restart_client_read_timer() {
   return;
 }
 
-void RequestObject::free_client_read_timer() {
+void RequestObject::free_client_read_timer(bool s3_client_read_timedout) {
   if (client_read_timer_event != NULL) {
+    if (!s3_client_read_timedout &&
+        event_obj->pending_event(client_read_timer_event, EV_TIMEOUT)) {
+      s3_log(S3_LOG_DEBUG, request_id, "Deleting client read timer\n");
+      event_obj->del_event(client_read_timer_event);
+    }
     s3_log(S3_LOG_DEBUG, request_id.c_str(), "Calling event free\n");
     event_obj->free_event(client_read_timer_event);
     client_read_timer_event = NULL;
@@ -288,8 +297,7 @@ void RequestObject::free_client_read_timer() {
 
 void RequestObject::trigger_client_read_timeout_callback() {
   s3_client_read_timedout = true;
-
-  free_client_read_timer();
+  free_client_read_timer(s3_client_read_timedout);
   buffered_input->freeze();
 
   if (incoming_data_callback) {
@@ -632,7 +640,7 @@ void RequestObject::send_response(int code, std::string body) {
   set_out_header_value("x-amzn-RequestId", request_id);
   evhtp_obj->http_send_reply(ev_req, code);
   stop_processing_incoming_data();
-  resume();  // attempt resume just in case some one forgot
+  resume(false);  // attempt resume just in case some one forgot
 
   auto mss = paused_timer.elapsed_time_in_millisec();
   const char* creq_id = request_id.c_str();

@@ -749,7 +749,7 @@ void S3PutChunkUploadObjectAction::send_response_to_s3_client() {
     request->send_response(error.get_http_status_code(), response_xml);
   }
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
-  request->resume();
+  request->resume(false);
 
   cleanup();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

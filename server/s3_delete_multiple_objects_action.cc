@@ -412,7 +412,7 @@ void S3DeleteMultipleObjectsAction::send_response_to_s3_client() {
 
     request->send_response(S3HttpSuccess200, response_xml);
   }
-  request->resume();
+  request->resume(false);
 
   cleanup();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

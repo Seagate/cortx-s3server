@@ -191,7 +191,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillOnce(Return("abcd1234abcd"));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->chunk_auth_successful();
 }
@@ -242,7 +242,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   action_under_test->clovis_write_in_progress = false;
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->chunk_auth_failed();
 
   EXPECT_STREQ("SignatureDoesNotMatch",
@@ -259,7 +259,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(404, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->fetch_bucket_info_failed();
   EXPECT_STREQ("NoSuchBucket", action_under_test->get_s3_error_code().c_str());
 }
@@ -311,7 +311,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   action_under_test->fetch_bucket_info_failed();
   EXPECT_STREQ("InternalError", action_under_test->get_s3_error_code().c_str());
 }
@@ -334,7 +334,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .WillOnce(Return(S3ObjectMetadataState::missing));
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
   action_under_test->fetch_multipart_failed();
@@ -350,7 +350,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
       .WillOnce(Return(S3ObjectMetadataState::failed));
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
 
   action_under_test->fetch_multipart_failed();
@@ -390,7 +390,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SaveMultipartMetadataError) {
               get_part_one_size()).WillRepeatedly(Return(unit_size));
   EXPECT_CALL(*ptr_mock_request, get_data_length())
       .WillRepeatedly(Return(unit_size - 2));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), save(_, _))
       .Times(AtLeast(0));
@@ -409,7 +409,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed_to_launch));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
@@ -426,7 +426,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
 
   EXPECT_CALL(*object_mp_meta_factory->mock_object_mp_metadata, get_state())
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(1);
@@ -463,7 +463,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        FetchFirstPartInfoServiceUnavailableFailed) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
       .WillOnce(Return(S3PartMetadataState::missing));
@@ -478,7 +478,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
        FetchFirstPartInfoInternalErrorFailed) {
   action_under_test->part_metadata = part_meta_factory->mock_part_metadata;
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
   EXPECT_CALL(*ptr_mock_request, send_response(_, _)).Times(1);
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_state())
       .WillRepeatedly(Return(S3PartMetadataState::failed));
@@ -510,7 +510,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, ComputePartOffsetPart1) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(400, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->compute_part_offset();
   EXPECT_TRUE(action_under_test->clovis_writer != nullptr);
@@ -837,7 +837,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*ptr_mock_request, pause()).Times(1);
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(503, _)).Times(1);
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -950,7 +950,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               write_content(_, _, _)).Times(0);
 
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->write_object_successful();
 
@@ -1037,7 +1037,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendErrorResponse) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(false)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -1050,7 +1050,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendSuccessResponse) {
 
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(200, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }
@@ -1059,7 +1059,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth, SendFailedResponse) {
   action_under_test->set_s3_error("InternalError");
   EXPECT_CALL(*ptr_mock_request, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*ptr_mock_request, send_response(500, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_request, resume()).Times(1);
+  EXPECT_CALL(*ptr_mock_request, resume(_)).Times(1);
 
   action_under_test->send_response_to_s3_client();
 }

@@ -60,7 +60,7 @@ class MockMeroRequestObject : public MeroRequestObject {
   MOCK_METHOD0(has_all_body_content, bool());
   MOCK_METHOD0(is_chunked, bool());
   MOCK_METHOD0(pause, void());
-  MOCK_METHOD0(resume, void());
+  MOCK_METHOD1(resume, void(bool set_read_timeout_timer));
   MOCK_METHOD1(has_query_param_key, bool(std::string key));
   MOCK_METHOD1(set_api_type, void(MeroApiType));
   MOCK_METHOD1(get_query_string_value, std::string(std::string key));

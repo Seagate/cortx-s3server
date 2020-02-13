@@ -613,7 +613,7 @@ void S3PutMultiObjectAction::send_response_to_s3_client() {
   }
 
   S3_RESET_SHUTDOWN_SIGNAL;  // for shutdown testcases
-  request->resume();
+  request->resume(false);
 
   done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
