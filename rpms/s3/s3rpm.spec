@@ -226,8 +226,8 @@ rm -rf %{buildroot}
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
-/opt/seagate/s3/s3backgrounddelete/s3backgroundconsumer
-/opt/seagate/s3/s3backgrounddelete/s3backgroundproducer
+%attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundconsumer
+%attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundproducer
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/keepalived/keepalived.conf.master
 %{_bindir}/s3backgroundconsumer
