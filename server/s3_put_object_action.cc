@@ -426,9 +426,9 @@ void S3PutObjectAction::consume_incoming_content() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_object_action_consume_incoming_content_shutdown_fail");
-  if (request->is_s3_client_read_timedout()) {
+  if (request->is_s3_client_read_error()) {
     if (!write_in_progress) {
-      client_read_timeout();
+      client_read_error();
     }
     return;
   }
@@ -462,7 +462,8 @@ void S3PutObjectAction::write_object(
 
   clovis_writer->write_content(
       std::bind(&S3PutObjectAction::write_object_successful, this),
-      std::bind(&S3PutObjectAction::write_object_failed, this), buffer);
+      std::bind(&S3PutObjectAction::write_object_failed, this),
+      std::move(buffer));
 
   write_in_progress = true;
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -477,9 +478,15 @@ void S3PutObjectAction::write_object_successful() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (request->is_s3_client_read_timedout()) {
-    client_read_timeout();
+  if (request->is_s3_client_read_error()) {
+    client_read_error();
     return;
+  }
+  const bool is_memory_enough =
+      mem_profile->we_have_enough_memory_for_put_obj(layout_id);
+
+  if (!is_memory_enough) {
+    s3_log(S3_LOG_ERROR, request_id, "Memory pool seems to be exhausted\n");
   }
   if (/* buffered data len is at least equal to max we can write to clovis in
          one write */
@@ -489,14 +496,21 @@ void S3PutObjectAction::write_object_successful() {
                                write */
       (request->get_buffered_input()->is_freezed() &&
        request->get_buffered_input()->get_content_length() > 0)) {
+
     write_object(request->get_buffered_input());
+
+    if (!is_memory_enough) {
+      request->pause();
+    } else if (!request->get_buffered_input()->is_freezed()) {
+      // else we wait for more incoming data
+      request->resume();
+    }
   } else if (request->get_buffered_input()->is_freezed() &&
              request->get_buffered_input()->get_content_length() == 0) {
     next();
-  }
-  if (!request->get_buffered_input()->is_freezed()) {
-    // else we wait for more incoming data
-    request->resume();
+  } else if (!is_memory_enough) {
+    set_s3_error("ServiceUnavailable");
+    rollback_start();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -506,8 +520,8 @@ void S3PutObjectAction::write_object_failed() {
 
   write_in_progress = false;
 
-  if (request->is_s3_client_read_timedout()) {
-    client_read_timeout();
+  if (request->is_s3_client_read_error()) {
+    client_read_error();
     return;
   }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {

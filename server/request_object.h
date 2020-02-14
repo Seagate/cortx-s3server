@@ -104,7 +104,8 @@ class RequestObject {
 
   bool is_client_connected;
   bool ignore_incoming_data;
-  bool s3_client_read_timedout;
+
+  std::string s3_client_read_error;
 
   bool is_chunked_upload;
   S3ChunkPayloadParser chunk_parser;
@@ -224,7 +225,7 @@ class RequestObject {
       s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
       return;
     }
-    if (s3_client_read_timedout) {
+    if (is_s3_client_read_error()) {
       s3_log(S3_LOG_WARN, request_id, "Read timeout has triggered.\n");
       return;
     }
@@ -271,13 +272,18 @@ class RequestObject {
   }
 
   bool is_incoming_data_ignored() { return ignore_incoming_data; }
+
   void stop_processing_incoming_data() {
     stop_client_read_timer();
     ignore_incoming_data = true;
   }
 
   bool client_connected() const { return is_client_connected; }
-  bool is_s3_client_read_timedout() const { return s3_client_read_timedout; }
+
+  bool is_s3_client_read_error() const { return !s3_client_read_error.empty(); }
+  const std::string& get_s3_client_read_error() const {
+    return s3_client_read_error;
+  }
 
   virtual bool is_chunked() { return is_chunked_upload; }
 

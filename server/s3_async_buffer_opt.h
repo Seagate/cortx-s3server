@@ -64,7 +64,7 @@ class S3AsyncBufferOptContainer {
 
   virtual size_t get_content_length();
 
-  void add_content(evbuf_t *buf, bool is_last_buf = false);
+  bool add_content(evbuf_t *buf, bool is_last_buf = false);
 
   // Call this to get at least expected_content_size of data buffers.
   // Anything less is returned only if there is no more data to be filled in.

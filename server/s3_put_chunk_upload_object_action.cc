@@ -465,9 +465,9 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_chunk_upload_object_action_consume_incoming_content_shutdown_fail");
-  if (request->is_s3_client_read_timedout()) {
+  if (request->is_s3_client_read_error()) {
     if (!clovis_write_in_progress) {
-      client_read_timeout();
+      client_read_error();
     }
     return;
   }
@@ -540,8 +540,8 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (request->is_s3_client_read_timedout()) {
-    client_read_timeout();
+  if (request->is_s3_client_read_error()) {
+    client_read_error();
     return;
   }
   if (auth_failed) {
@@ -586,8 +586,8 @@ void S3PutChunkUploadObjectAction::write_object_failed() {
   request->pause();  // pause any further reading from client
   get_auth_client()->abort_chunk_auth_op();
 
-  if (request->is_s3_client_read_timedout()) {
-    client_read_timeout();
+  if (request->is_s3_client_read_error()) {
+    client_read_error();
     return;
   }
   if (clovis_writer->get_state() == S3ClovisWriterOpState::failed_to_launch) {

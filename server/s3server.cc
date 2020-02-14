@@ -185,12 +185,14 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     int layout_id =
         S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
             s3_request->get_data_length());
-    S3MemoryProfile mem_profile;
-    if (!mem_profile.we_have_enough_memory_for_put_obj(layout_id)) {
+    if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id)) {
       s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
              "Limited memory: Rejecting PUT object/part request with retry.\n");
       s3_request->respond_retry_after(1);
       return EVHTP_RES_OK;
+    } else if (req->buffer_out) {
+      // Reserve memory for an error response
+      evbuffer_expand(req->buffer_out, 4096);
     }
   }
 
@@ -202,7 +204,10 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
                  (evhtp_hook)on_client_request_fini, NULL);
 
   router->dispatch(s3_request);
-  if (!s3_request->get_buffered_input()->is_freezed()) {
+
+  auto buffered_input = s3_request->get_buffered_input();
+
+  if (buffered_input && !buffered_input->is_freezed()) {
     s3_request->set_start_client_request_read_timeout();
   }
 
@@ -313,6 +318,9 @@ extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
   } else {
     if (request) {
       request->stop_client_read_timer();
+    }
+    if (buf) {
+      evbuffer_drain(buf, -1);
     }
     evhtp_unset_all_hooks(&req->conn->hooks);
     evhtp_unset_all_hooks(&req->hooks);

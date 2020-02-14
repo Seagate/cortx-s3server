@@ -66,8 +66,8 @@ void S3PutBucketTaggingAction::validate_request() {
 
 void S3PutBucketTaggingAction::consume_incoming_content() {
   s3_log(S3_LOG_INFO, request_id, "Consume data\n");
-  if (request->is_s3_client_read_timedout()) {
-    client_read_timeout();
+  if (request->is_s3_client_read_error()) {
+    client_read_error();
   } else if (request->has_all_body_content()) {
     new_bucket_tags = request->get_full_body_content_as_string();
     validate_request_body(new_bucket_tags);

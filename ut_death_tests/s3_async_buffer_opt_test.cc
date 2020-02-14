@@ -56,13 +56,6 @@ class S3AsyncBufferOptContainerTest : public testing::Test {
 
 // Non std buf size = non multiple of size_of_each_buf
 // (libevent_pool_buffer_size)
-TEST_F(S3AsyncBufferOptContainerTest, AddContentWithNonStdbufSizeDeathTest) {
-  EXPECT_DEATH(buffer->add_content(get_evbuf_t_with_data("Hello World")),
-               "Assertion `size_of_each_evbuf == len' failed");
-}
-
-// Non std buf size = non multiple of size_of_each_buf
-// (libevent_pool_buffer_size)
 TEST_F(S3AsyncBufferOptContainerTest, GetBufferWithoutAddDeathTest) {
   buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
   buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));

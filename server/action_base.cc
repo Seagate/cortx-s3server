@@ -85,8 +85,8 @@ void Action::set_s3_error_message(std::string message) {
   s3_error_message = std::move(message);
 }
 
-void Action::client_read_timeout() {
-  set_s3_error("RequestTimeout");
+void Action::client_read_error() {
+  set_s3_error(base_request->get_s3_client_read_error());
   rollback_start();
 }
 
@@ -148,8 +148,8 @@ void Action::next() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (base_request->is_s3_client_read_timedout()) {
-    client_read_timeout();
+  if (base_request->is_s3_client_read_error()) {
+    client_read_error();
     return;
   }
   if (task_iteration_index < task_list.size()) {

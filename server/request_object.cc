@@ -72,7 +72,7 @@ void s3_client_read_timeout_cb(evutil_socket_t fd, short event, void* arg) {
 
 void RequestObject::listen_for_incoming_data(std::function<void()> callback,
                                              size_t notify_on_size) {
-  if (s3_client_read_timedout) {
+  if (is_s3_client_read_error()) {
     callback();
     return;
   }
@@ -93,7 +93,6 @@ RequestObject::RequestObject(
       bytes_sent(0),
       is_client_connected(true),
       ignore_incoming_data(false),
-      s3_client_read_timedout(false),
       is_chunked_upload(false),
       in_headers_copied(false),
       in_query_params_copied(false),
@@ -242,7 +241,7 @@ void RequestObject::set_start_client_request_read_timeout() {
   // Set the timer event, so that if data doesn't arrive from client within a
   // configured timeframe, then send error to client.
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (s3_client_read_timedout) {
+  if (is_s3_client_read_error()) {
     return;
   }
   struct timeval tv;
@@ -296,7 +295,7 @@ void RequestObject::free_client_read_timer(bool s3_client_read_timedout) {
 }
 
 void RequestObject::trigger_client_read_timeout_callback() {
-  s3_client_read_timedout = true;
+  s3_client_read_error = "RequestTimeout";
   free_client_read_timer(true);
   buffered_input->freeze();
 
@@ -548,41 +547,69 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     s3_log(S3_LOG_WARN, request_id, "Exiting due to buf(NULL)\n");
     return;
   }
-  if (s3_client_read_timedout) {
+  if (is_s3_client_read_error()) {
     s3_log(S3_LOG_WARN, request_id, "Exiting due to read timeout\n");
+    evbuffer_drain(buf, -1);
+    evbuffer_free(buf);
     return;
   }
   // Keep buffering till someone starts listening.
+  bool error_adding_to_buffered_input = false;
   size_t data_bytes_received = 0;
   buffering_timer.resume();
 
   if (is_chunked_upload) {
-    auto bufs = chunk_parser.run(buf);
+    auto chunk_bufs = chunk_parser.run(buf);
     if (chunk_parser.get_state() == ChunkParserState::c_error) {
       s3_log(S3_LOG_DEBUG, request_id, "ChunkParserState::c_error\n");
       set_request_error(S3RequestError::InvalidChunkFormat);
-    } else if (!bufs.empty()) {
-      for (auto b : bufs) {
-        s3_log(S3_LOG_DEBUG, request_id,
-               "Adding data length to async buffer: %zu\n",
-               evhtp_obj->evbuffer_get_length(b));
-        data_bytes_received += evhtp_obj->evbuffer_get_length(b);
-        buffered_input->add_content(
-            b, (pending_in_flight - data_bytes_received) == 0);
+    } else {
+      error_adding_to_buffered_input =
+          std::any_of(chunk_bufs.begin(), chunk_bufs.end(),
+                      [](evbuf_t* chunk_buf) { return !chunk_buf; });
+
+      while (!chunk_bufs.empty()) {
+        auto chunk_buf = chunk_bufs.front();
+        chunk_bufs.pop_front();
+
+        if (!chunk_buf) continue;
+        const auto buf_len = evhtp_obj->evbuffer_get_length(chunk_buf);
+
+        if (!error_adding_to_buffered_input) {
+          s3_log(S3_LOG_DEBUG, request_id,
+                 "Adding data length to async buffer: %zu\n", buf_len);
+
+          data_bytes_received += buf_len;
+          error_adding_to_buffered_input =
+              !buffered_input->add_content(
+                   chunk_buf, pending_in_flight == data_bytes_received);
+        }
+        if (error_adding_to_buffered_input) {
+          evbuffer_drain(chunk_buf, buf_len);
+          evbuffer_free(chunk_buf);
+        }
       }
     }
   } else {
     data_bytes_received = evhtp_obj->evbuffer_get_length(buf);
-    buffered_input->add_content(buf,
-                                (pending_in_flight - data_bytes_received) == 0);
+
+    if (!buffered_input->add_content(
+             buf, pending_in_flight == data_bytes_received)) {
+      error_adding_to_buffered_input = true;
+      evbuffer_drain(buf, data_bytes_received);
+      evbuffer_free(buf);
+    }
   }
   s3_log(S3_LOG_DEBUG, request_id, "Buffering data to be consumed: %zu\n",
          data_bytes_received);
 
   if (data_bytes_received > pending_in_flight) {
     s3_log(S3_LOG_ERROR, request_id, "Received too much unexpected data\n");
+    pending_in_flight = 0;
+    error_adding_to_buffered_input = true;
+  } else {
+    pending_in_flight -= data_bytes_received;
   }
-  pending_in_flight -= data_bytes_received;
   s3_log(S3_LOG_DEBUG, request_id, "pending_in_flight (after): %zu\n",
          pending_in_flight);
   if (pending_in_flight == 0) {
@@ -592,18 +619,23 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
   }
   buffering_timer.stop();
 
-  if (incoming_data_callback &&
-      ((buffered_input->get_content_length() >= notify_read_watermark) ||
-       (pending_in_flight == 0))) {
-    s3_log(S3_LOG_DEBUG, request_id, "Sending data to be consumed...\n");
-    incoming_data_callback();
+  if (error_adding_to_buffered_input) {
+    ignore_incoming_data = true;
+    s3_client_read_error = "ServiceUnavailable";
+  }
+  if (incoming_data_callback) {
+    if (buffered_input->get_content_length() >= notify_read_watermark ||
+        !pending_in_flight || error_adding_to_buffered_input) {
+      s3_log(S3_LOG_DEBUG, request_id, "Sending data to be consumed...\n");
+      incoming_data_callback();
+    }
   }
   // Pause if we have read enough in buffers for this request,
   // and let the handlers resume when required.
-  if (!incoming_data_callback && !buffered_input->is_freezed() &&
-      buffered_input->get_content_length() >=
-          (notify_read_watermark *
-           g_option_instance->get_read_ahead_multiple())) {
+  else if (!buffered_input->is_freezed() &&
+           buffered_input->get_content_length() >=
+               (notify_read_watermark *
+                g_option_instance->get_read_ahead_multiple())) {
     pause();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -619,6 +651,9 @@ void RequestObject::send_response(int code, std::string body) {
   if (code == S3HttpFailed500) {
     s3_stats_inc("internal_error_count");
   }
+  buffered_input.reset();
+  s3_log(S3_LOG_DEBUG, request_id, "buffered_input's count is equal %ld\n",
+         buffered_input.use_count());
 
   if (!client_connected()) {
     s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");

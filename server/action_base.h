@@ -160,7 +160,7 @@ class Action {
   const std::string& get_s3_error_code() const;
   const std::string& get_s3_error_message() const;
   bool is_error_state() const;
-  void client_read_timeout();
+  void client_read_error();
 
  protected:
   void add_task(std::function<void()> task, const char* func_name) {

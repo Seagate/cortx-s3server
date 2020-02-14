@@ -39,19 +39,21 @@ extern S3Option *g_option_instance;
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
                                uint64_t offset,
                                std::shared_ptr<ClovisAPI> clovis_api)
-    : request(req),
+    : request(std::move(req)),
       state(S3ClovisWriterOpState::start),
       last_index(offset),
       size_in_current_write(0),
       total_written(0),
       is_object_opened(false),
       obj_ctx(nullptr) {
+
+  request_id = request->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   struct m0_uint128 oid = {0ULL, 0ULL};
 
   if (clovis_api) {
-    s3_clovis_api = clovis_api;
+    s3_clovis_api = std::move(clovis_api);
   } else {
     s3_clovis_api = std::make_shared<ConcreteClovisAPI>();
   }
@@ -76,8 +78,8 @@ S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
 S3ClovisWriter::S3ClovisWriter(std::shared_ptr<RequestObject> req,
                                struct m0_uint128 object_id, uint64_t offset,
                                std::shared_ptr<ClovisAPI> clovis_api)
-    : S3ClovisWriter(req, offset, clovis_api) {
-  request_id = request->get_request_id();
+    : S3ClovisWriter(std::move(req), offset, std::move(clovis_api)) {
+
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   oid_list.clear();
@@ -314,9 +316,9 @@ void S3ClovisWriter::write_content(
   s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
          layout_ids[0]);
 
-  this->handler_on_success = on_success;
-  this->handler_on_failed = on_failed;
-  this->write_async_buffer = buffer;
+  handler_on_success = std::move(on_success);
+  handler_on_failed = std::move(on_failed);
+  write_async_buffer = std::move(buffer);
 
   state = S3ClovisWriterOpState::writing;
 
@@ -439,6 +441,7 @@ void S3ClovisWriter::write_content_successful() {
 
   // We have copied data to clovis buffers.
   write_async_buffer->flush_used_buffers();
+  write_async_buffer.reset();
 
   state = S3ClovisWriterOpState::saved;
   this->handler_on_success();
@@ -451,6 +454,7 @@ void S3ClovisWriter::write_content_failed() {
          total_written);
   // We have failed coping data to clovis buffers.
   write_async_buffer->flush_used_buffers();
+  write_async_buffer.reset();
 
   state = S3ClovisWriterOpState::failed;
   this->handler_on_failed();

@@ -84,8 +84,8 @@ void S3PutBucketAction::validate_request() {
 
 void S3PutBucketAction::consume_incoming_content() {
   s3_log(S3_LOG_DEBUG, request_id, "Consume data\n");
-  if (request->is_s3_client_read_timedout()) {
-    client_read_timeout();
+  if (request->is_s3_client_read_error()) {
+    client_read_error();
   } else if (request->has_all_body_content()) {
     validate_request_body(request->get_full_body_content_as_string());
   } else {

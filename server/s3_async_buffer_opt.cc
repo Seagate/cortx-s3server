@@ -60,18 +60,33 @@ size_t S3AsyncBufferOptContainer::get_content_length() {
   return content_length;
 }
 
-void S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_last_buf) {
+bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_last_buf) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
+  if (!buf) {
+    s3_log(S3_LOG_ERROR, "", "buf == NULL");
+    return false;
+  }
   size_t len = evbuffer_get_length(buf);
   s3_log(S3_LOG_DEBUG, "", "buf with len %zu\n", len);
   if (is_last_buf) {
     freeze();
-  } else {
-    assert(size_of_each_evbuf == len);
+  } else if (size_of_each_evbuf != len) {
+    // Write content with zero data happens because pool is fully utilized, and
+    // libevent buffers fail to allocate memory from pool.  For some reason,
+    // libevent *does not* check for memory allocation failures, and silently
+    // continues working with empty buffers.  All data is skipped, but no error
+    // is raised.  So in the end all these empty buffers are sent to consume
+    // data, and then down here.
+    s3_log(S3_LOG_ERROR, "",
+           "Wrong data size in buffer. Should be %zu. Actual - %zu\n",
+           size_of_each_evbuf, len);
+    return false;
   }
   ready_q.push_back(buf);
   content_length += len;
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+
+  return true;
 }
 
 // Call this to get at least expected_content_size of data buffers.
