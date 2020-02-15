@@ -3,7 +3,7 @@ Unit Test for ObjectRecoveryValidator.
 """
 import logging
 import json
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 import pytest
 
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
@@ -24,16 +24,22 @@ def test_list_instance_index_fail():
     index_api_mock.list.return_value = False, {}
 
     config = EOSCoreConfig()
-    probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=',
-                     'Value': '{"global_instance_id":"TAcGAQAAAAA=-AAAAAAAAhEs=", \
-                     "index_id":"TAcGAQAAAHg=-AQAAAAAAhEs=","object_layout_id":9, \
-                     "object_metadata_path":"object_1"}\n'}
+    probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
+        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
+        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
+        "version_key_in_index":"object_1/18446742489333709430"}'}
+
     validator = ObjectRecoveryValidator(
-                          config, probable_delete_records, objectapi = object_api_mock, indexapi = index_api_mock)
-    validator.process_results()
+                    config, probable_delete_records, objectapi = object_api_mock, indexapi = index_api_mock)
+    inst_id = json.loads(probable_delete_records['Value'])
+
+    ret = validator.check_instance_is_nonactive(inst_id['global_instance_id'])
 
     # Assert that object oid delete is skipped if instance id listing fails.
     object_api_mock.assert_not_called
+    assert ret == False, "value was True, should be False"
 
 
 def test_object_metadata_not_exists():
@@ -42,8 +48,11 @@ def test_object_metadata_not_exists():
     kv_api_mock = Mock(spec=EOSCoreKVApi)
     object_api_mock = Mock(spec=EOSCoreObjectApi)
 
+    ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'mero_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
-                    'IsTruncated': 'false', 'Keys': [{'Key': '<0x7200000000000000:0>', 'Value': 'TAchAQAAAAA=-AAAAAAAAJlM='}], \
+                    'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
                     'Marker': '', 'MaxKeys': '1000', 'NextMarker': '', 'Prefix': ''}
     index_response = EOSCoreListIndexResponse(json.dumps(index_content).encode())
     error_response = EOSCoreErrorResponse(404, "Not found", "Not found")
@@ -54,33 +63,42 @@ def test_object_metadata_not_exists():
 
 
     config = EOSCoreConfig()
-    probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=',
-                     'Value': '{"global_instance_id":"TAcGAQAAAAA=-AAAAAAAAhEs=", \
-                     "index_id":"TAcGAQAAAHg=-AQAAAAAAhEs=","object_layout_id":9, \
-                     "object_metadata_path":"object_1"}\n'}
+    probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=', \
+        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
+        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"Tgj8AgAAAAA=-kwAAAAAABCY=", \
+        "version_key_in_index":"object_1/18446742489333709430"}\n'}
+
     validator = ObjectRecoveryValidator(
                           config, probable_delete_records, objectapi = object_api_mock, kvapi = kv_api_mock, indexapi = index_api_mock)
+    #Mock call to 'process_probable_delete_record'
+    validator.process_probable_delete_record = MagicMock(return_value=True)
+
     validator.process_results()
 
-    # Assert that object oid delete is called if metadata doesn't exists.
-    object_api_mock.assert_called_once
+    # Assert that object oid delete and leak index entry delete
+    # is triggered if metadata doesn't exists.
+    validator.process_probable_delete_record.assert_called_with(True, True)
 
 
 def test_object_metadata_exists_and_matches():
-    """Test if ObjectRecoveryValidator should attempt delete for object oid """
+    """Test if ObjectRecoveryValidator should attempt delete for old object oid """
     index_api_mock = Mock(spec=EOSCoreIndexApi)
     kv_api_mock = Mock(spec=EOSCoreKVApi)
     object_api_mock = Mock(spec=EOSCoreObjectApi)
 
+    ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'mero_oid':'Tgj8AgAAAAA=-dQAAAAAABCY='}
+
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
-                    'IsTruncated': 'false', 'Keys': [{'Key': '<0x7200000000000000:0>', 'Value': 'TAchAQAAAAA=-AAAAAAAAJlM='}], \
+                    'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
                     'Marker': '', 'MaxKeys': '1000', 'NextMarker': '', 'Prefix': ''}
+
     index_response = EOSCoreListIndexResponse(json.dumps(index_content).encode())
-    object_key = '<0x7200000000000000:0>'
+    object_key = ol_res_val["Object-Name"]
     # oid mismatches in object metadata
-    object_metadata = {"Object-Name":"bucket_1/obj_1", \
-                           "x-amz-meta-s3cmd": "true", \
-                           "mero_oid" : "DNchAQAAAAA=-AAAAAAAAJlM="}
+    object_metadata = ol_res_val
 
     kv_response = EOSCoreGetKVResponse(object_key, json.dumps(object_metadata).encode())
 
@@ -90,16 +108,25 @@ def test_object_metadata_exists_and_matches():
 
 
     config = EOSCoreConfig()
-    probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=',
-                     'Value': '{"global_instance_id":"TAcGAQAAAAA=-AAAAAAAAhEs=", \
-                     "index_id":"TAcGAQAAAHg=-AQAAAAAAhEs=","object_layout_id":9, \
-                     "object_metadata_path":"object_1"}\n'}
+    probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
+        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
+        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
+        "version_key_in_index":"object_1/18446742489333709430"}\n'}
     validator = ObjectRecoveryValidator(
                           config, probable_delete_records, objectapi = object_api_mock, kvapi = kv_api_mock, indexapi = index_api_mock)
+
+    #Mock 'process_probable_delete_record'
+    validator.process_probable_delete_record = MagicMock(return_value=True)
+    validator.check_instance_is_nonactive = MagicMock(return_value=False)
+
     validator.process_results()
 
-    # Assert that object oid delete is not called if metadata exists and matches entries in probable delete index.
-    object_api_mock.assert_not_called
+    # Assert following:
+    kv_api_mock.assert_called_once
+    validator.process_probable_delete_record.assert_called == False
+
 
 def test_object_metadata_exists_mismatches():
     """Test if ObjectRecoveryValidator should attempt delete for object oid """
@@ -107,14 +134,18 @@ def test_object_metadata_exists_mismatches():
     kv_api_mock = Mock(spec=EOSCoreKVApi)
     object_api_mock = Mock(spec=EOSCoreObjectApi)
 
+    ol_res_val = {'ACL':'','Bucket-Name':'mybucket','Object-Name':'test_object','Object-URI':'mybucket\\test_object',
+        'create_timestamp':'2020-03-17T11:02:13.000Z','layout_id':9,'mero_oid':'TAifBwAAAHg=-AQAAAAAA2lk='}
+
     index_content = {'Delimiter': '', 'Index-Id': 'AAAAAAAAAHg=-BAAQAAAAAAA=',
-                    'IsTruncated': 'false', 'Keys': [{'Key': '<0x7200000000000000:0>', 'Value': 'TAchAQAAAAA=-AAAAAAAAJlM='}], \
+                    'IsTruncated': 'false', 'Keys': [{'Key': 'test_object', 'Value': ol_res_val}],
                     'Marker': '', 'MaxKeys': '1000', 'NextMarker': '', 'Prefix': ''}
+
     index_response = EOSCoreListIndexResponse(json.dumps(index_content).encode())
-    object_key = '<0x7200000000000000:0>'
-    object_metadata = {"Object-Name":"bucket_1/obj_1", \
-                           "x-amz-meta-s3cmd": "true", \
-                           "mero_oid" : "TAchAQAAAAA=-AAAAAAAAJlM="}
+    object_key = ol_res_val["Object-Name"]
+    # oid mismatches in object metadata
+    object_metadata = ol_res_val
+
 
     kv_response = EOSCoreGetKVResponse(object_key, json.dumps(object_metadata).encode())
 
@@ -124,13 +155,21 @@ def test_object_metadata_exists_mismatches():
 
 
     config = EOSCoreConfig()
-    probable_delete_records = {'Key': 'TAcGAQAAAAA=-AwAAAAAAhEs=',
-                     'Value': '{"global_instance_id":"TAcGAQAAAAA=-AAAAAAAAhEs=", \
-                     "index_id":"TAcGAQAAAHg=-AQAAAAAAhEs=","object_layout_id":9, \
-                     "object_metadata_path":"object_1"}\n'}
+    probable_delete_records = {'Key': 'Tgj8AgAAAAA=-dQAAAAAABCY=', \
+        'Value':'{"clovis_process_fid":"<0x7200000000000000:0>","create_timestamp":"2020-03-16T16:24:04.000Z", \
+        "force_delete":"false","global_instance_id":"TAifBwAAAAA=-AAAAAAAA2lk=","is_multipart":"false", \
+        "object_key_in_index":"object_1","object_layout_id":9,"object_list_index_oid":"TAifBwAAAHg=-AQAAAAAA2lk=", \
+        "objects_version_list_index_oid":"TAifBwAAAHg=-AwAAAAAA2lk=","old_oid":"AAAAAAAAAAA=-AAAAAAAAAAA=", \
+        "version_key_in_index":"object_1/18446742489333709430"}\n'}
+
     validator = ObjectRecoveryValidator(
                           config, probable_delete_records, objectapi = object_api_mock, kvapi = kv_api_mock, indexapi = index_api_mock)
+
+    #Mock 'process_probable_delete_record'
+    validator.process_probable_delete_record = MagicMock(return_value=True)
+
     validator.process_results()
 
-    # Assert that object oid delete is called once metadata exists and matches entries in probable delete index.
-    object_api_mock.assert_called_once
+    # Assert that object oid delete and leak index entry delete
+    # is triggered if metadata doesn't exists.
+    validator.process_probable_delete_record.assert_called == True

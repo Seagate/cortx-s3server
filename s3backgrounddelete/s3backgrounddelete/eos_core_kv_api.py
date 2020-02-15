@@ -44,7 +44,7 @@ class EOSCoreKVApi(EOSCoreClient):
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
         # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' and object_key_name is "testobject+"
-        # urllib.parse.quote(index_id) and urllib.parse.quote(object_key_name) yields 'testobject%2B' respectively
+        # urllib.parse.quote(index_id, safe='') and urllib.parse.quote(object_key_name) yields 'testobject%2B' respectively
         # And request_uri is
         # '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D/testobject%2B'
 
@@ -88,7 +88,7 @@ class EOSCoreKVApi(EOSCoreClient):
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
         # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' and object_key_name is "testobject+"
-        # urllib.parse.quote(index_id) and urllib.parse.quote(object_key_name) yields 'testobject%2B' respectively
+        # urllib.parse.quote(index_id, safe='') and urllib.parse.quote(object_key_name) yields 'testobject%2B' respectively
         # And request_uri is
         # '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D/testobject%2B'
 
@@ -135,7 +135,7 @@ class EOSCoreKVApi(EOSCoreClient):
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
         # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' and object_key_name is "testobject+"
-        # urllib.parse.quote(index_id) and urllib.parse.quote(object_key_name) yields 'testobject%2B' respectively
+        # urllib.parse.quote(index_id, safe='') and urllib.parse.quote(object_key_name) yields 'testobject%2B' respectively
         # And request_uri is
         # '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D/testobject%2B'
 

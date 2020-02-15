@@ -30,7 +30,7 @@ class EOSCoreIndexApi(EOSCoreClient):
             super(EOSCoreIndexApi, self).__init__(self.config, logger = self._logger, connection=connection)
 
 
-    def list(self, index_id, max_keys=1000, next_marker=None):
+    def list(self, index_id, max_keys=1000, next_marker=None, additional_Query_params=None):
         """Perform LIST request and generate response."""
         if index_id is None:
             self._logger.error("Index Id is required.")
@@ -40,18 +40,30 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
-        # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id) yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+        # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id, safe='') yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
         # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
 
         request_uri = '/indexes/' + urllib.parse.quote(index_id, safe='')
         query_params = ""
-
+        inputQueryParams = {}
+        inputQueryParams["keys"] = max_keys
         if (next_marker is not None):
-            query_params = urllib.parse.urlencode({'max-keys': max_keys,'marker': next_marker})
-            absolute_request_uri = request_uri + '?' + query_params
-        else:
-            query_params = urllib.parse.urlencode({'max-keys': max_keys})
-            absolute_request_uri = request_uri + '?' + query_params
+            inputQueryParams["marker"] = next_marker
+
+        if (additional_Query_params is not None and isinstance(additional_Query_params, dict)):
+            # Add addtional query params
+            inputQueryParams.update(additional_Query_params)
+
+        #Generate sorted urlencoded query params into query_params
+        for key in sorted(inputQueryParams.keys()):
+            d = {}
+            d[key] = inputQueryParams[key]
+            if (query_params == ""):
+                query_params += urllib.parse.urlencode(d)
+            else:
+                query_params += "&" + urllib.parse.urlencode(d)
+
+        absolute_request_uri = request_uri + '?' + query_params
 
         body = ""
         headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
@@ -85,7 +97,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
-        # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id) yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+        # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id, safe='') yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
         # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
 
         request_uri = '/indexes/' + urllib.parse.quote(index_id, safe='')

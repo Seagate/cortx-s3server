@@ -205,7 +205,7 @@ S3fiTest('Enable FI clovis entity delete fail')\
 result = AwsTest('Upload Object "object2" to bucket "seagatebucket"')\
     .put_object("seagatebucket", "object2", 3000, debug_flag="True")\
     .execute_test(ignore_err=True, negative_case=True)\
-    .command_should_fail().command_error_should_have("ServiceUnavailable")
+    .command_should_fail().command_error_should_have("InternalError")
 
 # wait till cleanup process completes and s3server sends response to client
 time.sleep(1)
@@ -268,7 +268,7 @@ S3fiTest('Enable FI clovis entity delete fail')\
 result = AwsTest('Upload Object "object3" to bucket "seagatebucket"')\
     .put_object("seagatebucket", "object3", 3000, debug_flag="True")\
     .execute_test(ignore_err=True, negative_case=True).command_should_fail()\
-    .command_error_should_have("ServiceUnavailable")
+    .command_error_should_have("InternalError")
 
 # wait till cleanup process completes and s3server sends response to client
 time.sleep(1)

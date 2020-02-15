@@ -11,6 +11,8 @@ import time
 import logging
 from logging import handlers
 import datetime
+import math
+import json
 
 from s3backgrounddelete.object_recovery_queue import ObjectRecoveryRabbitMq
 from s3backgrounddelete.eos_core_config import EOSCoreConfig
@@ -27,6 +29,15 @@ class ObjectRecoveryScheduler(object):
         self.create_logger_directory()
         self.create_logger()
         self.logger.info("Initialising the Object Recovery Scheduler")
+
+    @staticmethod
+    def isObjectLeakEntryOlderThan(leakRecord, OlderInMins = 15):
+        object_leak_time = leakRecord["create_timestamp"]
+        now = datetime.datetime.utcnow()
+        date_time_obj = datetime.datetime.strptime(object_leak_time, "%Y-%m-%dT%H:%M:%S.000Z")
+        timeDelta = now - date_time_obj
+        timeDeltaInMns = math.floor(timeDelta.total_seconds()/60)
+        return (timeDeltaInMns >= OlderInMins)
 
     def add_kv_to_queue(self, marker = None):
         """Add object key value to object recovery queue."""
@@ -53,6 +64,26 @@ class ObjectRecoveryScheduler(object):
                 is_truncated = probable_delete_json["IsTruncated"]
                 if (probable_delete_oid_list is not None):
                     for record in probable_delete_oid_list:
+                        # Check if record is older than the pre-configured 'time to process' delay
+                        leak_processing_delay = self.config.get_leak_processing_delay_in_mins()
+                        try:
+                            objLeakVal = json.loads(record["Value"])
+                        except ValueError as error:
+                            self.logger.error(
+                            "Failed to parse JSON data for: " + str(record) + " due to: " + error)
+                            continue
+
+                        if (objLeakVal is None):
+                            self.logger.error("No value associated with " + str(record) + ". Skipping entry")
+                            continue
+
+                        # Check if object leak entry is older than 15mins or a preconfigured duration
+                        if (not ObjectRecoveryScheduler.isObjectLeakEntryOlderThan(objLeakVal, leak_processing_delay)):
+                            self.logger.info("Object leak entry " + record["Key"] +
+                                              " is NOT older than " + str(leak_processing_delay) +
+                                              "mins. Skipping entry")
+                            continue
+
                         self.logger.info(
                             "Object recovery queue sending data :" +
                             str(record))

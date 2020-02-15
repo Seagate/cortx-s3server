@@ -38,7 +38,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
-        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid) yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
+        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid, safe='') yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
 
         request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
@@ -80,7 +80,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
-        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid) yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
+        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid, safe='') yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
 
         headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
@@ -119,7 +119,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # urllib.parse.urlencode converts a mapping object or a sequence of two-element tuples, which may contain str or bytes objects, to a percent-encoded ASCII text string.
         # https://docs.python.org/3/library/urllib.parse.html
-        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid) yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' and layout_id is 1
+        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid, safe='') yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' and layout_id is 1
         # urllib.parse.urlencode({'layout-id': layout_id}) yields layout-id=1
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' ,
         # absolute_request_uri is layout-id is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D?layout-id=1'
@@ -167,7 +167,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # urllib.parse.urlencode converts a mapping object or a sequence of two-element tuples, which may contain str or bytes objects, to a percent-encoded ASCII text string.
         # https://docs.python.org/3/library/urllib.parse.html
-        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid) yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' and layout_id is 1
+        # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid, safe='') yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' and layout_id is 1
         # urllib.parse.urlencode({'layout-id': layout_id}) yields layout-id=1
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D' ,
         # absolute_request_uri is layout-id is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D?layout-id=1'

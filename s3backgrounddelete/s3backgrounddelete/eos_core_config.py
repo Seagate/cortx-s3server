@@ -297,3 +297,19 @@ class EOSCoreConfig(object):
                 "Could not parse backupcount from config file " +
                 self._conf_file)
 
+    def get_leak_processing_delay_in_mins(self):
+        """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
+        if 'leakconfig' in self._config and self._config['leakconfig']['leak_processing_delay_in_mins']:
+            return self._config['leakconfig']['leak_processing_delay_in_mins']
+        else:
+            # default delay is 15mins
+            return 15
+
+    def get_version_processing_delay_in_mins(self):
+        """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
+        if 'leakconfig' in self._config and self._config['leakconfig']['version_processing_delay_in_mins']:
+            return self._config['leakconfig']['version_processing_delay_in_mins']
+        else:
+            # default delay is 15mins
+            return 15
+
