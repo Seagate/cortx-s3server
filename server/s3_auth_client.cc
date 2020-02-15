@@ -642,17 +642,35 @@ bool S3AuthClient::setup_auth_request_body() {
   // iterate through the each query parameter
   // and url-encode the values (abc%26def)
   // then form the query (prefix=abc%26def&delimiter=%2F)
+  bool f_evhttp_encode_uri_succ = true;
+
   for (auto it : query_map) {
     if (it.second == "") {
       query += query.empty() ? it.first : "&" + it.first;
     } else {
+
       char *encoded_value = evhttp_encode_uri(it.second.c_str());
+      if (!encoded_value) {
+        s3_log(S3_LOG_ERROR, request_id, "Failed to URI encode value = %s",
+               it.second.c_str());
+        f_evhttp_encode_uri_succ = false;
+        break;
+      }
+
       std::string encoded_value_str = encoded_value;
       query += query.empty() ? it.first + "=" + encoded_value_str
                              : "&" + it.first + "=" + encoded_value_str;
       free(encoded_value);
     }
   }
+
+  if (!f_evhttp_encode_uri_succ) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "evhttp_encode_uri() returned NULL for client query params");
+    auth_request_body.clear();
+    return false;
+  }
+
   add_key_val_to_body("ClientQueryParams", query);
 
   // May need to take it from config
@@ -731,7 +749,6 @@ bool S3AuthClient::setup_auth_request_body() {
     add_key_val_to_body("Policy", policy_str);
     auth_request_body = "Action=ValidatePolicy";
   }
-  bool f_evhttp_encode_uri_succ = true;
 
   for (auto &it : data_key_val) {
 
