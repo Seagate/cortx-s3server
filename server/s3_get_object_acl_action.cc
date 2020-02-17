@@ -109,8 +109,7 @@ void S3GetObjectACLAction::send_response_to_s3_client() {
                                   std::to_string(response_xml.length()));
     request->send_response(error.get_http_status_code(), response_xml);
   }
-
-  done();
   S3_RESET_SHUTDOWN_SIGNAL;
+  done();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

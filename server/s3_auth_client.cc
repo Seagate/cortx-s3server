@@ -191,7 +191,7 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
   memset(auth_response_body, 0, buffer_len);
   evbuffer_copyout(buf, auth_response_body, buffer_len);
   s3_log(S3_LOG_DEBUG, request_id,
-         "Response data received from Auth service = [[%s]]\n\n\n",
+         "Response data received from Auth service = [[%s]]\n",
          auth_response_body);
 
   if (auth_resp_status == S3HttpSuccess200) {
@@ -1138,21 +1138,24 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
   setup_auth_request_body();
   setup_auth_request_headers();
 
-  char mybuff[2000] = {0};
-  evbuffer_copyout(req_body_buffer, mybuff, sizeof(mybuff));
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Authorization Data being send to Auth server:\n%s\n", mybuff);
+  size_t buffer_len = evbuffer_get_length(req_body_buffer) + 1;
+  char *auth_body = (char *)malloc(buffer_len * sizeof(char));
+  memset(auth_body, 0, buffer_len);
 
+  evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
+  s3_log(S3_LOG_DEBUG, request_id,
+         "Authorization Data being send to Auth server: %s\n", auth_body);
+  free(auth_body);
   execute_authconnect_request(auth_ctx);
 
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AuthClient::check_authorization_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   state = S3AuthClientOpState::authorized;
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 /*
@@ -1205,7 +1208,7 @@ void S3AuthClient::check_authorization_failed() {
   }
 
   // this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AuthClient::check_authentication() {
@@ -1237,7 +1240,7 @@ void S3AuthClient::check_authentication_successful() {
   remember_auth_details_in_request();
   prev_chunk_signature_from_auth = get_signature_from_response();
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AuthClient::check_aclvalidation_successful() {
@@ -1246,7 +1249,7 @@ void S3AuthClient::check_aclvalidation_successful() {
   remember_auth_details_in_request();
   prev_chunk_signature_from_auth = get_signature_from_response();
   this->handler_on_success();
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AuthClient::check_authentication_failed() {
@@ -1272,7 +1275,7 @@ void S3AuthClient::check_authentication_failed() {
     state = S3AuthClientOpState::unauthenticated;
     this->handler_on_failed();
   }
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AuthClient::check_aclvalidation_failed() {
@@ -1298,7 +1301,7 @@ void S3AuthClient::check_aclvalidation_failed() {
 
     this->handler_on_failed();
   }
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 // This is same as above but will cycle through with the

@@ -614,6 +614,8 @@ int main(int argc, char **argv) {
   rc = init_log(argv[0]);
   if (rc < 0) {
     fprintf(stderr, "%s:%d:init_log failed\n", __FILE__, __LINE__);
+    // To satisfy valgrind
+    finalize_cli_options();
     exit(1);
   }
 
@@ -649,6 +651,7 @@ int main(int argc, char **argv) {
   if (rc < 0) {
     s3_log(S3_LOG_FATAL, "", "Stats Init failed!!\n");
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -663,6 +666,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Memory pool creation for libevent failed!\n");
     s3daemon.delete_pidfile();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
   event_set_max_read(g_option_instance->get_libevent_max_read_size());
@@ -680,12 +684,14 @@ int main(int argc, char **argv) {
 
   if (evthread_make_base_notifiable(global_evbase_handle) < 0) {
     s3_log(S3_LOG_ERROR, "", "Couldn't make base notifiable!");
+    finalize_cli_options();
     return 1;
   }
 
   if (S3AuditInfoLogger::init() != 0) {
     s3_log(S3_LOG_FATAL, "", "Couldn't init audit logger!");
     fini_log();
+    finalize_cli_options();
     return 1;
   }
 
@@ -695,6 +701,7 @@ int main(int argc, char **argv) {
       s3_log(S3_LOG_FATAL, "",
              "SSL initialization for communication with Auth server failed!\n");
       fini_log();
+      finalize_cli_options();
       return 1;
     }
   }
@@ -723,6 +730,8 @@ int main(int argc, char **argv) {
   if (!ipv4_bind_addr.empty()) {
     htp_ipv4 = create_evhtp_handle(global_evbase_handle, s3_router, NULL);
     if (htp_ipv4 == NULL) {
+      fini_log();
+      finalize_cli_options();
       return 1;
     }
   }
@@ -730,6 +739,8 @@ int main(int argc, char **argv) {
   if (!ipv6_bind_addr.empty()) {
     htp_ipv6 = create_evhtp_handle(global_evbase_handle, s3_router, NULL);
     if (htp_ipv6 == NULL) {
+      fini_log();
+      finalize_cli_options();
       return 1;
     }
   }
@@ -738,6 +749,8 @@ int main(int argc, char **argv) {
     htp_mero =
         create_evhtp_handle_for_mero(global_evbase_handle, mero_router, NULL);
     if (htp_mero == NULL) {
+      fini_log();
+      finalize_cli_options();
       return 1;
     }
   }
@@ -748,6 +761,7 @@ int main(int argc, char **argv) {
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV4!\n");
         fini_log();
+        finalize_cli_options();
         return 1;
       }
     }
@@ -756,6 +770,7 @@ int main(int argc, char **argv) {
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV6!\n");
         fini_log();
+        finalize_cli_options();
         return 1;
       }
     }
@@ -774,6 +789,7 @@ int main(int argc, char **argv) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -786,6 +802,7 @@ int main(int argc, char **argv) {
     s3daemon.delete_pidfile();
     fini_auth_ssl();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -795,6 +812,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "S3 ADDB Init failed!\n");
     fini_auth_ssl();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -817,6 +835,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
     fini_auth_ssl();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -828,6 +847,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
     fini_auth_ssl();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -839,6 +859,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
     fini_auth_ssl();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -853,6 +874,7 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Failed to create unique instance id\n");
     fini_auth_ssl();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 
@@ -880,6 +902,7 @@ int main(int argc, char **argv) {
              "Failed to add unique instance id to global index\n");
       fini_auth_ssl();
       fini_log();
+      finalize_cli_options();
       return rc;
     }
   }
@@ -907,6 +930,7 @@ int main(int argc, char **argv) {
       evhtp_free(htp_ipv4);
       fini_clovis();
       fini_log();
+      finalize_cli_options();
       return rc;
     }
   }
@@ -924,6 +948,7 @@ int main(int argc, char **argv) {
       evhtp_free(htp_ipv6);
       fini_clovis();
       fini_log();
+      finalize_cli_options();
       return rc;
     }
   }
@@ -941,6 +966,7 @@ int main(int argc, char **argv) {
       evhtp_free(htp_mero);
       fini_clovis();
       fini_log();
+      finalize_cli_options();
       return rc;
     }
   }
@@ -953,6 +979,7 @@ int main(int argc, char **argv) {
     evhtp_free(htp_mero);
     fini_clovis();
     fini_log();
+    finalize_cli_options();
     return rc;
   }
 

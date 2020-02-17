@@ -297,7 +297,7 @@ void RequestObject::free_client_read_timer(bool s3_client_read_timedout) {
 
 void RequestObject::trigger_client_read_timeout_callback() {
   s3_client_read_timedout = true;
-  free_client_read_timer(s3_client_read_timedout);
+  free_client_read_timer(true);
   buffered_input->freeze();
 
   if (incoming_data_callback) {
