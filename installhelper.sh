@@ -117,6 +117,9 @@ cp s3backgrounddelete/s3backgrounddelete/s3backgroundproducer $S3_INSTALL_LOCATI
 # Copy the s3 background consumer binary file into rpm location.
 cp s3backgrounddelete/s3backgrounddelete/s3backgroundconsumer $S3_INSTALL_LOCATION/s3backgrounddelete/
 
+# Copy the s3 background configuration file.
+cp s3backgrounddelete/s3backgrounddelete/config/s3_background_delete_config.yaml $S3_INSTALL_LOCATION/s3backgrounddelete/config.yaml
+
 # Copy the s3 background producer file for systemctl support.
 cp s3backgrounddelete/s3backgroundproducer.service $SERVICE_FILE_LOCATION
 
