@@ -6,7 +6,6 @@ SCRIPT_PATH=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT_PATH")
 S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
-hostnamectl set-hostname s3dev
 
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
 source ${S3_SRC_DIR}/scripts/env/common.sh

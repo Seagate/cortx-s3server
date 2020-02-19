@@ -81,7 +81,7 @@ do
   fi
 done
 
-#To add s3 hostname "s3dev" entry to /etc/hosts
+#To add s3 hostname entry to /etc/hosts
 if [ $s3_host_ip = $loopback_ip ]
 then
   # Append s3 hostname to end of loopback_ip

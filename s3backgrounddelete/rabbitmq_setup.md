@@ -21,8 +21,8 @@
     cat /etc/hosts
     127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
     ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-    192.168.64.168 s3dev-client
-    192.168.64.170 s3dev
+    192.168.64.168 <hostname_1>
+    192.168.64.170 <hostname_2>
 ----
 
 4) Start rabbitmq (On all nodes)
@@ -58,27 +58,27 @@
 
    >rabbitmq-plugins enable rabbitmq_management
 
-8) Setup RabbitMQ Cluster (Assuming there are 2 nodes s3dev and s3dev-client)
+8) Setup RabbitMQ Cluster (Assuming there are 2 nodes 'hostname_1' and 'hostname_2')
 
     In order to setup the RabbitMQ cluster, we need to make sure the '.erlang.cookie' file is same on all nodes.
 
-    We will copy the '.erlang.cookie' file in the '/var/lib/rabbitmq' directory from 's3dev' to other node
-    's3dev-client'.
+    We will copy the '.erlang.cookie' file in the '/var/lib/rabbitmq' directory from 'hostname_1' to other node
+    'hostname_2'.
 
 
-    Copy the '.erlang.cookie' file using scp commands from the 's3dev' node.
+    Copy the '.erlang.cookie' file using scp commands from the 'hostname_1' node.
 
-   >scp /var/lib/rabbitmq/.erlang.cookie root@s3dev-client:/var/lib/rabbitmq/
+   >scp /var/lib/rabbitmq/.erlang.cookie root@'hostname_2':/var/lib/rabbitmq/
 
 
-9) Run below commands from 's3dev-client' node (node that will join s3dev node)
+9) Run below commands from 'hostname_2' node (node that will join 'hostname_1' node)
 
    >systemctl restart rabbitmq-server
    >rabbitmqctl stop_app
 
-    Let RabbitMQ server on s3dev-client node, join s3dev node
+    Let RabbitMQ server on 'hostname_2' node, join 'hostname_1' node
 
-   >rabbitmqctl join_cluster rabbit@s3dev
+   >rabbitmqctl join_cluster rabbit@'hostname_1'
    >rabbitmqctl start_app
 
     check the RabbitMQ cluster status on both nodes
