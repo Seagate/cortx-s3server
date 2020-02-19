@@ -185,15 +185,19 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
     s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
     return EVHTP_RES_OK;
   }
-
-  size_t buffer_len = evbuffer_get_length(buf) + 1;
-  char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
-  memset(auth_response_body, 0, buffer_len);
-  evbuffer_copyout(buf, auth_response_body, buffer_len);
+  size_t buffer_len = evbuffer_get_length(buf);
+  char *auth_response_body = (char *)malloc(buffer_len + 1);
+  if (auth_response_body == NULL) {
+    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+  }
+  const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
+  if (nread > 0) {
+    auth_response_body[nread] = '\0';
+  } else {
+    auth_response_body[0] = '\0';
+  }
   s3_log(S3_LOG_DEBUG, request_id,
-         "Response data received from Auth service = [[%s]]\n",
-         auth_response_body);
-
+         "Response data received from Auth service = %s\n", auth_response_body);
   if (auth_resp_status == S3HttpSuccess200) {
     s3_log(S3_LOG_DEBUG, request_id, "Authorization successful\n");
     context->set_op_status_for(0, S3AsyncOpStatus::success,
@@ -227,7 +231,6 @@ extern "C" evhtp_res on_authorization_response(evhtp_request_t *req,
     context->set_authorization_response("", false);
   }
   free(auth_response_body);
-
   if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
     s3_auth_op_success(context, 0);  // Invoke the handler.
   } else {
@@ -265,13 +268,19 @@ extern "C" evhtp_res on_aclvalidation_response(evhtp_request_t *req,
     context->on_failed_handler()();  // Invoke the handler.
     return EVHTP_RES_OK;
   }
-  size_t buffer_len = evbuffer_get_length(buf) + 1;
-  char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
-  memset(auth_response_body, 0, buffer_len);
-  evbuffer_copyout(buf, auth_response_body, buffer_len);
+  size_t buffer_len = evbuffer_get_length(buf);
+  char *auth_response_body = (char *)malloc(buffer_len + 1);
+  if (auth_response_body == NULL) {
+    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+  }
+  const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
+  if (nread > 0) {
+    auth_response_body[nread] = '\0';
+  } else {
+    auth_response_body[0] = '\0';
+  }
   s3_log(S3_LOG_DEBUG, request_id,
-         "Response data received from Auth service = [[%s]]\n\n\n",
-         auth_response_body);
+         "Response data received from Auth service = %s\n", auth_response_body);
 
   if (auth_resp_status == S3HttpSuccess200) {
     s3_log(S3_LOG_DEBUG, request_id, "AclValidation successful\n");
@@ -297,8 +306,8 @@ extern "C" evhtp_res on_aclvalidation_response(evhtp_request_t *req,
                                "Something is wrong with Auth server");
     context->set_aclvalidation_response_xml(auth_response_body, false);
   }
-  free(auth_response_body);
 
+  free(auth_response_body);
   if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
     s3_auth_op_success(context, 0);  // Invoke the handler.
   } else {
@@ -335,13 +344,19 @@ extern "C" evhtp_res on_policy_validation_response(evhtp_request_t *req,
     context->on_failed_handler()();  // Invoke the handler.
     return EVHTP_RES_OK;
   }
-  size_t buffer_len = evbuffer_get_length(buf) + 1;
-  char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
-  memset(auth_response_body, 0, buffer_len);
-  evbuffer_copyout(buf, auth_response_body, buffer_len);
+  size_t buffer_len = evbuffer_get_length(buf);
+  char *auth_response_body = (char *)malloc(buffer_len + 1);
+  if (auth_response_body == NULL) {
+    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+  }
+  const auto nread = evbuffer_copyout(buf, auth_response_body, buffer_len);
+  if (nread > 0) {
+    auth_response_body[nread] = '\0';
+  } else {
+    auth_response_body[0] = '\0';
+  }
   s3_log(S3_LOG_DEBUG, request_id,
-         "Response data received from Auth service = [[%s]]\n\n\n",
-         auth_response_body);
+         "Response data received from Auth service = %s\n", auth_response_body);
 
   if (auth_resp_status == S3HttpSuccess200) {
     s3_log(S3_LOG_DEBUG, request_id, "Policy validation successful\n");
@@ -368,7 +383,6 @@ extern "C" evhtp_res on_policy_validation_response(evhtp_request_t *req,
     context->set_policyvalidation_response_xml(auth_response_body, false);
   }
   free(auth_response_body);
-
   if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
     s3_auth_op_success(context, 0);  // Invoke the handler.
   } else {
@@ -458,7 +472,7 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t *req, evbuf_t *buf,
     }
     free(auth_response_body);
   } else {
-    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL");
+    s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
   }
   if (context->get_op_status_for(0) == S3AsyncOpStatus::success) {
     s3_auth_op_success(context, 0);  // Invoke the handler.
@@ -939,11 +953,24 @@ void S3AuthClient::trigger_authentication() {
     return;
   }
   setup_auth_request_headers();
-
-  char mybuff[2000] = {0};
-  evbuffer_copyout(req_body_buffer, mybuff, sizeof(mybuff));
-  s3_log(S3_LOG_DEBUG, request_id, "Data being send to Auth server:\n%s\n",
-         mybuff);
+  S3Option *option_instance = S3Option::get_instance();
+  if (option_instance->get_log_level() == "DEBUG") {
+    size_t buffer_len = evbuffer_get_length(req_body_buffer);
+    char *auth_response_body = (char *)malloc(buffer_len + 1);
+    if (auth_response_body == NULL) {
+      s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+    }
+    const auto nread =
+        evbuffer_copyout(req_body_buffer, auth_response_body, buffer_len);
+    if (nread > 0) {
+      auth_response_body[nread] = '\0';
+    } else {
+      auth_response_body[0] = '\0';
+    }
+    s3_log(S3_LOG_DEBUG, request_id, "Data being send to Auth server: = %s\n",
+           auth_response_body);
+    free(auth_response_body);
+  }
 
   execute_authconnect_request(auth_ctx);
 
@@ -996,15 +1023,23 @@ void S3AuthClient::validate_acl(std::function<void(void)> on_success,
   setup_auth_request_body();
 
   setup_auth_request_headers();
-
-  size_t buffer_len = evbuffer_get_length(req_body_buffer) + 1;
-  char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
-  memset(auth_response_body, 0, buffer_len);
-  evbuffer_copyout(req_body_buffer, auth_response_body, buffer_len);
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Aclvalidation Data being send to Auth server:\n%s\n",
-         auth_response_body);
-  free(auth_response_body);
+  S3Option *option_instance = S3Option::get_instance();
+  if (option_instance->get_log_level() == "DEBUG") {
+    size_t buffer_len = evbuffer_get_length(req_body_buffer);
+    char *auth_body = (char *)malloc(buffer_len + 1);
+    if (auth_body == NULL) {
+      s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+    }
+    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
+    if (nread > 0) {
+      auth_body[nread] = '\0';
+    } else {
+      auth_body[0] = '\0';
+    }
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Aclvalidation Data being send to Auth server: %s\n", auth_body);
+    free(auth_body);
+  }
   execute_authconnect_request(auth_ctx);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -1035,15 +1070,23 @@ void S3AuthClient::validate_policy(std::function<void(void)> on_success,
   setup_auth_request_body();
 
   setup_auth_request_headers();
-
-  size_t buffer_len = evbuffer_get_length(req_body_buffer) + 1;
-  char *auth_response_body = (char *)malloc(buffer_len * sizeof(char));
-  memset(auth_response_body, 0, buffer_len);
-  evbuffer_copyout(req_body_buffer, auth_response_body, buffer_len);
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Policy validation Data being send to Auth server:\n%s\n",
-         auth_response_body);
-  free(auth_response_body);
+  S3Option *option_instance = S3Option::get_instance();
+  if (option_instance->get_log_level() == "DEBUG") {
+    size_t buffer_len = evbuffer_get_length(req_body_buffer);
+    char *auth_body = (char *)malloc(buffer_len + 1);
+    if (auth_body == NULL) {
+      s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+    }
+    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
+    if (nread > 0) {
+      auth_body[nread] = '\0';
+    } else {
+      auth_body[0] = '\0';
+    }
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Policy validation Data being send to Auth server: %s\n", auth_body);
+    free(auth_body);
+  }
   execute_authconnect_request(auth_ctx);
 
   s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
@@ -1103,11 +1146,23 @@ void S3AuthClient::check_authorization() {
   // Setup the Authorization body to be sent to auth service
   setup_auth_request_body();
   setup_auth_request_headers();
-
-  char mybuff[2000] = {0};
-  evbuffer_copyout(req_body_buffer, mybuff, sizeof(mybuff));
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Authorization Data being send to Auth server:\n%s\n", mybuff);
+  S3Option *option_instance = S3Option::get_instance();
+  if (option_instance->get_log_level() == "DEBUG") {
+    size_t buffer_len = evbuffer_get_length(req_body_buffer);
+    char *auth_body = (char *)malloc(buffer_len + 1);
+    if (auth_body == NULL) {
+      s3_log(S3_LOG_FATAL, request_id, "malloc() returned NULL\n");
+    }
+    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
+    if (nread > 0) {
+      auth_body[nread] = '\0';
+    } else {
+      auth_body[0] = '\0';
+    }
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Authorization Data being send to Auth server: %s\n", auth_body);
+    free(auth_body);
+  }
 
   execute_authconnect_request(auth_ctx);
 
@@ -1154,15 +1209,23 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
   // Setup the Authorization body to be sent to auth service
   setup_auth_request_body();
   setup_auth_request_headers();
-
-  size_t buffer_len = evbuffer_get_length(req_body_buffer) + 1;
-  char *auth_body = (char *)malloc(buffer_len * sizeof(char));
-  memset(auth_body, 0, buffer_len);
-
-  evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
-  s3_log(S3_LOG_DEBUG, request_id,
-         "Authorization Data being send to Auth server: %s\n", auth_body);
-  free(auth_body);
+  S3Option *option_instance = S3Option::get_instance();
+  if (option_instance->get_log_level() == "DEBUG") {
+    size_t buffer_len = evbuffer_get_length(req_body_buffer);
+    char *auth_body = (char *)malloc(buffer_len + 1);
+    if (auth_body == NULL) {
+      s3_log(S3_LOG_FATAL, request_id, "malloc failed to allocate memory\n");
+    }
+    const auto nread = evbuffer_copyout(req_body_buffer, auth_body, buffer_len);
+    if (nread > 0) {
+      auth_body[nread] = '\0';
+    } else {
+      auth_body[0] = '\0';
+    }
+    s3_log(S3_LOG_DEBUG, request_id,
+           "Authorization Data being send to Auth server: %s\n", auth_body);
+    free(auth_body);
+  }
   execute_authconnect_request(auth_ctx);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");

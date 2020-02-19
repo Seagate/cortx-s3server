@@ -36,6 +36,8 @@
 
 extern evbase_t *global_evbase_handle;
 
+static void s3_handle_glog_fatal_failure() { exit(1); }
+
 void s3_terminate_sig_handler(int signum) {
   // When a daemon has been told to shutdown, there is a possibility of OS
   // sending SIGTERM when s3server runs as service hence ignore subsequent
@@ -150,18 +152,16 @@ void S3Daemonize::daemonize() {
   // Remove the surrounding angle brackets <>
   process_fid.erase(0, 1);
   process_fid.erase(process_fid.size() - 1);
-
+  google::InstallFailureFunction(&s3_handle_glog_fatal_failure);
   daemon_wd = option_instance->get_daemon_dir() + "/s3server-" + process_fid;
   if (access(daemon_wd.c_str(), F_OK) != 0) {
     s3_log(S3_LOG_FATAL, "", "The directory %s doesn't exist, errno = %d\n",
            daemon_wd.c_str(), errno);
-    exit(1);
   }
 
   if (::chdir(daemon_wd.c_str())) {
     s3_log(S3_LOG_FATAL, "", "Failed to chdir to %s, errno = %d\n",
            daemon_wd.c_str(), errno);
-    exit(1);
   }
   s3_log(S3_LOG_INFO, "", "Working directory for S3 server = [%s]\n",
          daemon_wd.c_str());
