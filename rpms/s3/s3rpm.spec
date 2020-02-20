@@ -223,6 +223,8 @@ rm -rf %{buildroot}
 /opt/seagate/s3/install/ldap/syncprov_mod.ldif
 /opt/seagate/s3/install/ldap/syncprov.ldif
 /opt/seagate/s3/install/ldap/replicate.ldif
+/opt/seagate/s3/install/ldap/slapdlog.ldif
+/opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh

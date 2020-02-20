@@ -250,7 +250,7 @@ elif [[ $config_ldap == true ]]
 then
     $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --skipssl
     $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
-          -p /opt/seagate/auth/resources/authserver.propertie
+          -p /opt/seagate/auth/resources/authserver.properties
 fi
 
 # Setup Openldap replication for EES setup.
@@ -282,6 +282,9 @@ then
     fi
 
     cp /opt/seagate/s3/install/haproxy/logrotate/logrotate /etc/cron.hourly/logrotate
+
+    # Enable slapd logging in rsyslog config
+    cp /opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
 
     if [ "$selinux_status" = "enabled" ];
     then

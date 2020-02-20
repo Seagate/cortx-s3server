@@ -132,6 +132,13 @@ ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicyo
 
 ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f /tmp/s3ldap/ppolicy-default.ldif
 
+# Enable slapd log with logLevel as "none"
+# for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f slapdlog.ldif
+
+# Rstart slapd
+systemctl restart slapd
+
 if [[ $usessl == true ]]
 then
 #Deploy SSL certificates and enable OpenLDAP SSL port

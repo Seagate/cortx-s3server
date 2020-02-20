@@ -59,6 +59,7 @@
   with_items:
     - { src: './files/haproxy/rsyslog.d/haproxy.conf', dest: '/etc/rsyslog.d/haproxy.conf'}
     - { src: './files/rsyslog-tcp-audit.conf', dest: '/etc/rsyslog.d/rsyslog-tcp-audit.conf'}
+    - { src: './files/ldap/rsyslog.d/slapdlog.conf', dest: '/etc/rsyslog.d/slapdlog.conf'}
   notify: restart rsyslog
 
 - name: Clean existing logrotate configuration
