@@ -166,5 +166,9 @@
  "MalformedPolicy": {
     "Description": "The policy you provided is not valid",
     "httpcode": 400
-  }
+  },
+ "UnresolvableGrantByEmailAddress": {
+    "Description": "The email address you provided does not match any account on record.",
+    "httpcode": 400
+   }
 }

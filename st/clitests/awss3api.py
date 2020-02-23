@@ -233,6 +233,11 @@ class AwsTest(S3PyCliTest):
         self.with_cli(cmd)
         return self
 
+    def put_bucket_acl_with_acp_file(self, bucket_name, acp):
+        cmd = "aws s3api " + "put-bucket-acl " + "--bucket " + bucket_name + " --access-control-policy " + acp
+        self.with_cli(cmd)
+        return self
+
     def get_object(self, bucket_name, object_name):
         self.bucket_name = bucket_name
         self.object_name = object_name

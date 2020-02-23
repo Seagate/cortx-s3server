@@ -200,6 +200,25 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
 
+  // test for invalid ACL XML consisting of email address of account which does
+  // not exists
+  @Test public void
+  testValidate_invalidACL_AccountwithEmailAddressDoesNotExsists()
+      throws Exception {
+    aclValidation = new ACLValidation(acpXmlString_Full);
+    PowerMockito.mockStatic(ACLValidation.class);
+    PowerMockito.when(ACLValidation.class, "checkIdExists", "id", "owner")
+        .thenReturn(true);
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockAccountImpl);
+    Mockito.when(mockAccountImpl.findByEmailAddress("xyz@seagate.com"))
+        .thenReturn(mockAccount);
+    // if account does not exists...
+    Mockito.when(mockAccount.exists()).thenReturn(false);
+    ServerResponse response = aclValidation.validate(null);
+    assertEquals(HttpResponseStatus.BAD_REQUEST, response.getResponseStatus());
+  }
+
   // test for valid ACL XML consisting of Canonical user / group / email id
   @Test public void testValidate_invalidACL_invalidGroup() throws Exception {
 

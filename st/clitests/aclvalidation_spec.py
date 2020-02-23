@@ -41,6 +41,9 @@ invalid_acl_incorrect_ownerid = "file://" + os.path.abspath(invalid_acl_incorrec
 invalid_acl_incorrect_ownername_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_incorrect_ownername.json')
 invalid_acl_incorrect_ownername = "file://" + os.path.abspath(invalid_acl_incorrect_ownername_relative)
 
+invalid_acl_incorrect_granteeemail_relative = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_incorrect_granteeemail.json')
+invalid_acl_incorrect_granteeemail = "file://" + os.path.abspath(invalid_acl_incorrect_granteeemail_relative)
+
 invalid_acl_owner_id = os.path.join(os.path.dirname(__file__), 'acp_files', 'invalid_acl_owner_id.json')
 invalid_acl_owner_id = "file://" + os.path.abspath(invalid_acl_owner_id)
 
@@ -93,6 +96,11 @@ print("ACL validation Completed..")
 AwsTest('Aws can create object').put_object(bucket, "testObject").execute_test().command_is_successful()
 
 result=AwsTest('Aws can get object acl').get_object_acl(bucket, "testObject").execute_test().command_is_successful()
+
+#******** Validate put-bucket-acl with email which does not exists ********
+AwsTest('AWS can not put bucket acl with ganteee does not exists')\
+.put_bucket_acl_with_acp_file(bucket, invalid_acl_incorrect_granteeemail)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("UnresolvableGrantByEmailAddress")
 
 print("Object ACL validation started..")
 AclTest('aws command has valid response').check_response_status(result)

@@ -170,10 +170,10 @@ class ACLValidation {
                        Grantee.Types.AmazonCustomerByEmail)) {
           String email = grantList.get(counter).grantee.emailAddress;
           try {
-            if (new AccountImpl().findByEmailAddress(email) == null) {
+            if (!new AccountImpl().findByEmailAddress(email).exists()) {
               LOGGER.error("ACL validation failed. Email Address " + email +
                            " is not linked to any of the existing accounts.");
-              return responseGenerator.invalidArgument("Invalid email address");
+              return responseGenerator.unresolvableGrantByEmailAddress();
             }
           }
           catch (DataAccessException e) {
