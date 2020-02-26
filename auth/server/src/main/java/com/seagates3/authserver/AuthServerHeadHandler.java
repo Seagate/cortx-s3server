@@ -61,8 +61,8 @@ class AuthServerHeadHandler {
       FullHttpResponse response;
       response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                                              HttpResponseStatus.OK);
-      LOGGER.info("Sending Auth server health check response with status [" +
-                  response.getStatus() + "]");
+      LOGGER.debug("Sending Auth server health check response with status [" +
+                   response.getStatus() + "]");
 
       response.headers().set(CONTENT_TYPE, "text/xml");
       response.headers().set(CONTENT_LENGTH,

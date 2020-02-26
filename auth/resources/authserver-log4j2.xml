@@ -8,7 +8,9 @@
         <Console name="STDOUT">
             <PatternLayout pattern="%d [%p] %m%n"/>
             <filters>
-                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY" />
+                <!--Disable sending all info level log to rsyslog messages -->
+                <!--<ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY" /-->
+                <RegexFilter regex=".*ERROR.*" onMatch="ACCEPT" onMismatch="DENY" />
             </filters>
         </Console>
 
