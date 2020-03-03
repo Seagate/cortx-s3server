@@ -105,7 +105,7 @@ const std::string S3AuditInfo::to_string() {
     audit["request_id"] = request_id;
     audit["operation"] = operation;
     audit["key"] = object_key;
-    audit["request-uri"] = request_uri;
+    audit["request_uri"] = request_uri;
     audit["http_status"] = http_status;
     audit["error_code"] = error_code;
     audit["bytes_sent"] = convert_to_unsigned(bytes_sent);
