@@ -113,6 +113,13 @@
           name: /tmp/s3ldap/cfg_ldap.ldif
           state: absent
 
+      - name: Setup non-ssl config for ldap client tools
+        copy:
+          src: files/ldap/ldap.conf
+          dest: /etc/openldap/ldap.conf
+          backup: yes
+          force: yes
+
       - name: restart slapd
         service:
           name: slapd
@@ -176,11 +183,6 @@
         command: sed -i "s/^SLAPD_URLS=.*/SLAPD_URLS={{ldap_url}}/" /etc/sysconfig/slapd
         no_log: true
 
-      - name: Setup ssl config for ldap client tools
-        copy:
-          src: files/ldap/ssl/ldap.conf
-          dest: /etc/openldap/ldap.conf
-          backup: yes
 
       - name: Delete temp directory
         file:

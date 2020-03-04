@@ -26,19 +26,33 @@
 
 - name: Install patched s3cmd
   yum:
-    name: s3cmd
-    disablerepo: '*'
+    name: s3cmd-1.6.1-1.el7.centos.noarch
     enablerepo: releases_eos_s3deps
     state: present
 
 - name: Install tools for ST
   yum: pkg={{item}} state=installed
   with_items:
-    - awscli
     - ossperf
     - parallel
     - bc
     - coreutils
+
+- name: Install awscli on CentOS
+  when: ansible_distribution != "RedHat"
+  yum:
+    name: awscli
+    state: present
+
+- name: Install and configure awscli on RHEL
+  when: ansible_distribution == "RedHat"
+  command: "{{ item }}"
+  with_items:
+  - curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+  - unzip awscli-bundle.zip
+  - ./awscli-bundle/install -b ~/bin/aws
+  - rm -rf awscli*
+  no_log: true
 
 - name: Install scripttest for system testing
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
