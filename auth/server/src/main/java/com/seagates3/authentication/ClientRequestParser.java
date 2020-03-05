@@ -116,14 +116,19 @@ public class ClientRequestParser {
         if (requestAction.equals("AuthenticateUser")
                 || requestAction.equals("AuthorizeUser")) {
             try {
+              if (awsRequestParser != null) {
                 clientrequesttoken = awsRequestParser.parse(requestBody);
-            } catch (InvalidTokenException ex) {
+              }
+            }
+            catch (InvalidTokenException ex) {
                 LOGGER.error("Error while parsing request : "+ ex.getMessage());
             }
         } else {
 
             try {
+              if (awsRequestParser != null) {
                 clientrequesttoken = awsRequestParser.parse(httpRequest);
+              }
             } catch (InvalidTokenException ex) {
                     LOGGER.error("Error while parsing request : "+ ex.getMessage());
             }

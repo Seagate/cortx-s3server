@@ -116,9 +116,7 @@ public class KeyGenUtil {
      * @return random character in the range A..Z
      */
     private static char getRandomChar() {
-        Random random = new Random();
-        char c = (char)(random.nextInt(26) + 65);
-
+       char c = (char)(new Random().nextInt(26) + 65);
         return c;
     }
 

@@ -59,11 +59,10 @@ public class SSLContextProvider {
                     .toCharArray();
             char[] keyPassword = AuthServerConfig.getKeyPassword().toCharArray();
 
-            FileInputStream fin;
             KeyStore s3Keystore;
             KeyManagerFactory kmf;
-            try {
-                fin = new FileInputStream(s3KeystoreFile.toFile());
+            try(FileInputStream fin =
+                    new FileInputStream(s3KeystoreFile.toFile())) {
                 s3Keystore = KeyStore.getInstance("JKS");
                 s3Keystore.load(fin, keystorePassword);
 

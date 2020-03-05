@@ -185,6 +185,7 @@ class NumericCondition extends PolicyCondition {
    */
  private
   boolean numericGreaterThan(String headerVal) {
+    if (headerVal == null) return false;
     Long longHeader = null;
     try {
       longHeader = Long.parseLong(headerVal.trim());
@@ -209,6 +210,7 @@ class NumericCondition extends PolicyCondition {
    */
  private
   boolean numericGreaterThanEquals(String headerVal) {
+    if (headerVal == null) return false;
     Long longHeader = null;
     try {
       longHeader = Long.parseLong(headerVal.trim());

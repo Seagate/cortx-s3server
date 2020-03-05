@@ -68,7 +68,8 @@ public class BinaryUtil {
     public static String hexEncodedHash(String text) {
         try {
             byte[] hashedText = hashSHA256(text.getBytes("UTF-8"));
-            return toString(encodeToHex(hashedText));
+            return (hashedText != null) ? toString(encodeToHex(hashedText))
+                                        : null;
         } catch (UnsupportedEncodingException ex) {
             IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
                     "UTF-8 encoding is not supported", null);
@@ -83,7 +84,7 @@ public class BinaryUtil {
      */
     public static String hexEncodedHash(byte[] text) {
         byte[] hashedText = hashSHA256(text);
-        return toString(encodeToHex(hashedText));
+        return (hashedText != null) ? toString(encodeToHex(hashedText)) : null;
     }
 
     /*

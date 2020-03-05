@@ -60,11 +60,14 @@ public class SignatureValidator {
           return dateValidationResponse;
         }
 
-        Boolean isRequestorAuthenticated;
+        Boolean isRequestorAuthenticated = false;
         try {
+          if (awsSign != null) {
             isRequestorAuthenticated = awsSign.authenticate(
                                          clientRequestToken, requestor);
-        } catch (InvalidTokenException e) {
+          }
+        }
+        catch (InvalidTokenException e) {
             return responseGenerator.invalidToken();
         }
         if (!isRequestorAuthenticated) {

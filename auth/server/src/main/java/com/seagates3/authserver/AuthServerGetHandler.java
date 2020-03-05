@@ -140,7 +140,7 @@ public class AuthServerGetHandler {
                     "UTF-8 encoding is not supported", null);
             response = null;
         }
-
+        if (response != null) {
         response.headers().set(CONTENT_TYPE, "text/xml");
         response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
 
@@ -155,6 +155,7 @@ public class AuthServerGetHandler {
             LOGGER.debug("Connection kept alive.");
         }
     }
+     }
 
     /**
      * Send the first line and the header before transferring the rest of the
@@ -223,7 +224,7 @@ public class AuthServerGetHandler {
                     "UTF-8 encoding is not supported", null);
             response = null;
         }
-
+        if (response != null) {
         response.headers().set(CONTENT_TYPE, "text/xml");
         response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
 
@@ -238,7 +239,7 @@ public class AuthServerGetHandler {
             LOGGER.debug("Connection kept alive.");
         }
     }
-
+     }
     private void setContentTypeHeader(HttpResponse response, File file) {
         MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
         response.headers().set(CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));

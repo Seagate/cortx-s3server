@@ -101,7 +101,9 @@ public class AWSV4Sign implements AWSSign {
         LOGGER.debug("Request signature- " + clientRequestToken.getSignature());
         LOGGER.debug("Calculated signature- " + signature);
 
-        return signature.equals(clientRequestToken.getSignature());
+        return (signature != null)
+                   ? signature.equals(clientRequestToken.getSignature())
+                   : false;
     }
 
     /**
@@ -133,7 +135,9 @@ public class AWSV4Sign implements AWSSign {
         LOGGER.debug("Request signature- " + clientRequestToken.getSignature());
         LOGGER.debug("Calculated signature- " + signature);
 
-        return signature.equals(clientRequestToken.getSignature());
+        return (signature != null)
+                   ? signature.equals(clientRequestToken.getSignature())
+                   : false;
     }
 
     /**
@@ -163,7 +167,7 @@ public class AWSV4Sign implements AWSSign {
                 .get("current-signature-sha256");
 
         clientRequestToken.setSignature(currentSign);
-        return signature.equals(currentSign);
+        return (signature != null) ? signature.equals(currentSign) : false;
     }
 
     /**

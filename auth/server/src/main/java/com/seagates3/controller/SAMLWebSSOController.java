@@ -231,10 +231,10 @@ public class SAMLWebSSOController {
                     "UTF-8 encoding is not supported", null);
             response = null;
         }
-
+        if (response != null) {
         response.headers().set(CONTENT_TYPE, "text/xml");
         response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
-
+        }
         return response;
     }
 
