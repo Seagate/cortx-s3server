@@ -51,24 +51,24 @@ set -xe
 
 mkdir -p ~/rpmbuild/SOURCES/
 cd ~/rpmbuild/SOURCES/
-rm -rf s3server*
+rm -rf eos-s3server*
 
 if ! [ -z "${GIT_VER}" ]; then
     # Setup the source tar for rpm build
-    git clone http://gerrit.mero.colo.seagate.com:8080/s3server s3server-${S3_VERSION}-git${GIT_VER}
-    cd s3server-${S3_VERSION}-git${GIT_VER}
+    git clone http://gerrit.mero.colo.seagate.com:8080/s3server eos-s3server-${S3_VERSION}-git${GIT_VER}
+    cd eos-s3server-${S3_VERSION}-git${GIT_VER}
     # For sake of test, attempt checkout of version
     git checkout ${GIT_VER}
 elif ! [ -z "${PATH_SRC}" ]; then
     GIT_VER=$(git --git-dir "${PATH_SRC}"/.git rev-parse --short HEAD)
-    mkdir -p s3server-${S3_VERSION}-git${GIT_VER}
-    cp -ar "${PATH_SRC}"/. ./s3server-${S3_VERSION}-git${GIT_VER}
-    find ./s3server-${S3_VERSION}-git${GIT_VER} -type f -name CMakeCache.txt -delete;
+    mkdir -p eos-s3server-${S3_VERSION}-git${GIT_VER}
+    cp -ar "${PATH_SRC}"/. ./eos-s3server-${S3_VERSION}-git${GIT_VER}
+    find ./eos-s3server-${S3_VERSION}-git${GIT_VER} -type f -name CMakeCache.txt -delete;
 fi
 
 cd ~/rpmbuild/SOURCES/
-tar -zcvf s3server-${S3_VERSION}-git${GIT_VER}.tar.gz s3server-${S3_VERSION}-git${GIT_VER}
-rm -rf s3server-${S3_VERSION}-git${GIT_VER}
+tar -zcvf eos-s3server-${S3_VERSION}-git${GIT_VER}.tar.gz eos-s3server-${S3_VERSION}-git${GIT_VER}
+rm -rf eos-s3server-${S3_VERSION}-git${GIT_VER}
 
 cd ~/rpmbuild/SOURCES/
 
@@ -83,7 +83,7 @@ if [ $INSTALL_AFTER_BUILD == 1 ]; then
     RPM_ARCH=$(rpm --eval "%{_arch}")
     RPM_DIST=$(rpm --eval "%{?dist:el7}")
     RPM_BUILD_VER=$(test -n "$build_number" && echo "$build_number" || echo 1 )
-    RPM_PATH=~/rpmbuild/RPMS/${RPM_ARCH}/s3server-${S3_VERSION}-${RPM_BUILD_VER}_git${GIT_VER}_${RPM_DIST}.${RPM_ARCH}.rpm
+    RPM_PATH=~/rpmbuild/RPMS/${RPM_ARCH}/eos-s3server-${S3_VERSION}-${RPM_BUILD_VER}_git${GIT_VER}_${RPM_DIST}.${RPM_ARCH}.rpm
     echo "Installing $RPM_PATH..."
     rpm -i $RPM_PATH
 fi

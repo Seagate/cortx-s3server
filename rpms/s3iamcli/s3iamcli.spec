@@ -18,7 +18,7 @@
 #%global py36_sitelib %{_libdir}/python%{py_ver}
 %global py36_sitelib /usr/lib/python%{py_ver}/site-packages
 
-Name:       s3iamcli
+Name:       eos-s3iamcli
 Version:    %{_s3iamcli_version}
 Release:    %{build_num}_%{_s3iamcli_git_ver}
 Summary:    Seagate S3 IAM CLI.
@@ -75,10 +75,10 @@ This package contains development files for %{name}.
 %setup -n %{name}-%{version}-%{_s3iamcli_git_ver}
 
 %build
-mkdir -p %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}/build/lib/%{name}
-cd %{name}
+mkdir -p %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}/build/lib/s3iamcli
+cd s3iamcli
 python%{py_ver} -m compileall -b *.py
-cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}/build/lib/%{name}
+cp  *.pyc %{_builddir}/%{name}-%{version}-%{_s3iamcli_git_ver}/build/lib/s3iamcli
 echo "build complete"
 
 %install
@@ -89,21 +89,21 @@ python%{py_ver} setup.py install --no-compile --single-version-externally-manage
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%{_bindir}/%{name}
-%{py36_sitelib}/%{name}/config/*.yaml
-%{py36_sitelib}/%{name}-%{version}-py?.?.egg-info
-%{py36_sitelib}/%{name}/*.pyc
-%exclude %{py36_sitelib}/%{name}/__pycache__/*
-%exclude %{py36_sitelib}/%{name}/*.py
-%exclude %{py36_sitelib}/%{name}/%{name}
+%{_bindir}/s3iamcli
+%{py36_sitelib}/s3iamcli/config/*.yaml
+%{py36_sitelib}/s3iamcli-%{version}-py?.?.egg-info
+%{py36_sitelib}/s3iamcli/*.pyc
+%exclude %{py36_sitelib}/s3iamcli/__pycache__/*
+%exclude %{py36_sitelib}/s3iamcli/*.py
+%exclude %{py36_sitelib}/s3iamcli/s3iamcli
 %defattr(-,root,root)
 
 %files devel
-%{_bindir}/%{name}
-%{py36_sitelib}/%{name}/*.py
-%{py36_sitelib}/%{name}/config/*.yaml
-%{py36_sitelib}/%{name}-%{version}-py?.?.egg-info
-%exclude %{py36_sitelib}/%{name}/*.pyc
-%exclude %{py36_sitelib}/%{name}/__pycache__/*
-%exclude %{py36_sitelib}/%{name}/%{name}
+%{_bindir}/s3iamcli
+%{py36_sitelib}/s3iamcli/*.py
+%{py36_sitelib}/s3iamcli/config/*.yaml
+%{py36_sitelib}/s3iamcli-%{version}-py?.?.egg-info
+%exclude %{py36_sitelib}/s3iamcli/*.pyc
+%exclude %{py36_sitelib}/s3iamcli/__pycache__/*
+%exclude %{py36_sitelib}/s3iamcli/s3iamcli
 %defattr(-,root,root)

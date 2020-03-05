@@ -27,10 +27,10 @@
 #%global py36_sitelib %{_libdir}/python%{py_ver}
 %global py36_sitelib /usr/lib/python%{py_ver}/site-packages
 
-Name:       s3server
+Name:       eos-s3server
 Version:    %{_s3_version}
 Release:    %{build_num}_%{_s3_git_ver}_%{?dist:el7}
-Summary:    s3server for Mero
+Summary:    EOS s3server
 
 Group:      Development/Tools
 License:    Seagate
