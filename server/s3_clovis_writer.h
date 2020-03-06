@@ -35,50 +35,25 @@
 
 class S3ClovisWriterContext : public S3AsyncOpContextBase {
   // Basic Operation context.
-  struct s3_clovis_op_context* clovis_op_context;
-  bool has_clovis_op_context;
+  struct s3_clovis_op_context* clovis_op_context = NULL;
 
   // Read/Write Operation context.
-  struct s3_clovis_rw_op_context* clovis_rw_op_context;
-  bool has_clovis_rw_op_context;
-  std::string request_id;
+  struct s3_clovis_rw_op_context* clovis_rw_op_context = NULL;
 
  public:
   S3ClovisWriterContext(std::shared_ptr<RequestObject> req,
                         std::function<void()> success_callback,
                         std::function<void()> failed_callback,
                         int ops_count = 1,
-                        std::shared_ptr<ClovisAPI> clovis_api = nullptr)
-      : S3AsyncOpContextBase(req, success_callback, failed_callback, ops_count,
-                             clovis_api) {
-    request_id = request->get_request_id();
-    s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-    // Create or write, we need op context
-    clovis_op_context = create_basic_op_ctx(ops_count);
-    has_clovis_op_context = true;
+                        std::shared_ptr<ClovisAPI> clovis_api = nullptr);
 
-    clovis_rw_op_context = NULL;
-    has_clovis_rw_op_context = false;
-  }
+  ~S3ClovisWriterContext();
 
-  ~S3ClovisWriterContext() {
-    s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
-    if (has_clovis_op_context) {
-      free_basic_op_ctx(clovis_op_context);
-    }
-    if (has_clovis_rw_op_context) {
-      free_basic_rw_op_ctx(clovis_rw_op_context);
-    }
-  }
-
-  struct s3_clovis_op_context* get_clovis_op_ctx() {
-    return clovis_op_context;
-  }
+  struct s3_clovis_op_context* get_clovis_op_ctx();
 
   // Call this when you want to do write op.
   void init_write_op_ctx(size_t clovis_buf_count) {
     clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, 0, false);
-    has_clovis_rw_op_context = true;
   }
 
   struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
@@ -102,7 +77,7 @@ enum class S3ClovisWriterOpState {
 };
 
 class S3ClovisWriter {
- private:
+
   std::shared_ptr<RequestObject> request;
   std::unique_ptr<S3ClovisWriterContext> open_context;
   std::unique_ptr<S3ClovisWriterContext> create_context;
@@ -128,6 +103,7 @@ class S3ClovisWriter {
   // maintain state for debugging.
   size_t size_in_current_write;
   size_t total_written;
+  size_t n_initialized_contexts = 0;
 
   bool is_object_opened;
   struct s3_clovis_obj_context* obj_ctx;
