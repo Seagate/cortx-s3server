@@ -17,6 +17,7 @@
  * Original creation date: 6-Jan-2016
  */
 
+#include <sstream>
 #include "s3_post_multipartobject_action.h"
 #include "s3_clovis_layout.h"
 #include "s3_error_codes.h"
@@ -662,23 +663,27 @@ void S3PostMultipartObjectAction::send_response_to_s3_client() {
       request->set_out_header_value("Retry-After", "1");
     }
     request->send_response(error.get_http_status_code(), response_xml);
-  } else if ((object_multipart_metadata->get_state() ==
-              S3ObjectMetadataState::saved) &&
-             ((part_metadata->get_state() ==
-               S3PartMetadataState::store_created) ||
-              (part_metadata->get_state() == S3PartMetadataState::present))) {
-    std::string response;
-    std::string object_name = request->get_object_name();
-    std::string bucket_name = request->get_bucket_name();
-    response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    response += "<InitiateMultipartUploadResult xmlns=\"http://s3\">\n";
-    response += "<Bucket>" + bucket_name + "</Bucket>\n";
-    response += "<Key>" + object_name + "</Key>\n";
-    response += "<UploadId>" + upload_id + "</UploadId>";
-    response += "</InitiateMultipartUploadResult>";
+  } else if ((object_multipart_metadata &&
+              object_multipart_metadata->get_state() ==
+                  S3ObjectMetadataState::saved) &&
+             (part_metadata &&
+              (part_metadata->get_state() ==
+                   S3PartMetadataState::store_created ||
+               part_metadata->get_state() == S3PartMetadataState::present))) {
     request->set_out_header_value("UploadId", upload_id);
 
-    request->send_response(S3HttpSuccess200, response);
+    std::ostringstream oss;
+    oss << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        << "<InitiateMultipartUploadResult xmlns=\"http://s3\">"
+        << "<Bucket>" << request->get_bucket_name() << "</Bucket>"
+        << "<Key>" << request->get_object_name() << "</Key>"
+        << "<UploadId>" << upload_id << "</UploadId>"
+        << "</InitiateMultipartUploadResult>";
+
+    std::string response = oss.str();
+    oss.clear();
+
+    request->send_response(S3HttpSuccess200, std::move(response));
   } else {
     S3Error error("InternalError", request->get_request_id(),
                   request->get_object_uri());
