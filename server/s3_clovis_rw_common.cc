@@ -148,7 +148,7 @@ void s3_clovis_op_failed(struct m0_clovis_op *op) {
   std::string request_id = app_ctx->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   int clovis_rc = app_ctx->get_clovis_api()->clovis_op_rc(op);
-  s3_log(S3_LOG_DEBUG, request_id, "Error code = %d\n", clovis_rc);
+  s3_log(S3_LOG_ERROR, request_id, "Error code = %d\n", clovis_rc);
 
   s3_log(S3_LOG_DEBUG, request_id, "op_index_in_launch = %d\n",
          ctx->op_index_in_launch);
