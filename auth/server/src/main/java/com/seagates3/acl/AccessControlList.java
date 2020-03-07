@@ -116,14 +116,17 @@ class AccessControlList {
    */
  public
   boolean isPermissionAvailable(Account account, String requiredPermission,
-                                String ownerId, boolean isUserAuthenticated)
-      throws DataAccessException {
+                                String ownerId, boolean isUserAuthenticated,
+                                String s3Action) throws DataAccessException {
     boolean isPermissionAvailable = false;
     if (account != null) {
-      if (account.getCanonicalId().equals(ownerId) &&
-          ("READ_ACP".equals(requiredPermission) ||
-           "WRITE_ACP".equals(requiredPermission))) {
+      if (account.getCanonicalId().equals(ownerId)) {
+        if (("READ_ACP".equals(requiredPermission) ||
+             "WRITE_ACP".equals(requiredPermission))) {
         isPermissionAvailable = true;
+        } else if (s3Action.equals("DeleteBucket")) {
+          isPermissionAvailable = true;
+        }
       }
     }
 

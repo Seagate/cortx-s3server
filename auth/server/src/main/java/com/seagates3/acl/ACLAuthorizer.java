@@ -90,7 +90,7 @@ class ACLAuthorizer {
     if (requestor != null) {
       boolean isAuthorized = acp.getAccessControlList().isPermissionAvailable(
           requestor.getAccount(), requiredPermission,
-          acp.getOwner().getCanonicalId(), true);
+          acp.getOwner().getCanonicalId(), true, requestBody.get("S3Action"));
       if (!isAuthorized) {
         LOGGER.debug("No Grants found in ACL for requested account");
         return false;
@@ -100,7 +100,7 @@ class ACLAuthorizer {
     } else {
       // AllUsers Group.
       boolean isAuthorized = acp.getAccessControlList().isPermissionAvailable(
-          null, requiredPermission, acp.getOwner().getCanonicalId(), false);
+          null, requiredPermission, acp.getOwner().getCanonicalId(), false, "");
       return isAuthorized;
     }
   }

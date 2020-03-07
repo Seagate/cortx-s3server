@@ -921,6 +921,8 @@ class ACLAuthorizerTest {
     acl = acp.getAccessControlList();
     requestBody.put("Method", "GET");
     requestBody.put("ClientAbsoluteUri", requestUri);
+    requestBody.put("S3Action", "");
+
     Account acc = new Account();
     acc.setCanonicalId("id6");
     requestor.setAccount(acc);
