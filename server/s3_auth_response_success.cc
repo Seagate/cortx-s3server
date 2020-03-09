@@ -18,9 +18,6 @@
  * Original creation date: 10-Mar-2016
  */
 
-#include <libxml/parser.h>
-#include <libxml/xmlmemory.h>
-
 #include "s3_auth_response_success.h"
 #include "s3_log.h"
 
@@ -55,6 +52,43 @@ const std::string &S3AuthResponseSuccess::get_request_id() {
 
 const std::string &S3AuthResponseSuccess::get_acl() { return acl; }
 
+void S3AuthResponseSuccess::set_auth_parameters(xmlNode *child_node) {
+  xmlChar *key;
+  if (child_node == NULL) {
+    s3_log(S3_LOG_DEBUG, "", "child_node is NULL\n");
+    return;
+  }
+  key = xmlNodeGetContent(child_node);
+  if (key != NULL) {
+    if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
+      s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
+      user_id = (const char *)key;
+    } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserName"))) {
+      s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
+      user_name = (const char *)key;
+    } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountName"))) {
+      s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
+      account_name = (const char *)key;
+    } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"AccountId"))) {
+      s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
+      account_id = (const char *)key;
+    } else if ((!xmlStrcmp(child_node->name,
+                           (const xmlChar *)"SignatureSHA256"))) {
+      s3_log(S3_LOG_DEBUG, "", "SignatureSHA256 =%s\n", (const char *)key);
+      signature_SHA256 = (const char *)key;
+    } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"ACL"))) {
+      s3_log(S3_LOG_DEBUG, "", "ACL =%s\n", (const char *)key);
+      acl = (const char *)key;
+    } else if ((!xmlStrcmp(child_node->name,
+                           (const xmlChar *)"AllUserRequest"))) {
+      //<Alluserrequest> true/false </Alluserrequest>
+      s3_log(S3_LOG_DEBUG, "", "Alluserrequest =%s\n", (const char *)key);
+      alluserrequest = (const char *)key;
+    }
+    xmlFree(key);
+  }
+}
+
 bool S3AuthResponseSuccess::parse_and_validate() {
   s3_log(S3_LOG_DEBUG, "", "Parsing Auth server response\n");
 
@@ -84,88 +118,32 @@ bool S3AuthResponseSuccess::parse_and_validate() {
     return is_valid;
   }
 
-  xmlChar *key = NULL;
   xmlNodePtr child = root_node->xmlChildrenNode;
 
   while (child != NULL) {
     if ((!xmlStrcmp(child->name, (const xmlChar *)"AuthenticateUserResult"))) {
       for (xmlNode *child_node = child->children; child_node != NULL;
            child_node = child_node->next) {
-        key = xmlNodeGetContent(child_node);
-        if (key != NULL) {
-          if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
-            s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
-            user_id = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"UserName"))) {
-            s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
-            user_name = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"AccountName"))) {
-            s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
-            account_name = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"AccountId"))) {
-            s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
-            account_id = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"SignatureSHA256"))) {
-            s3_log(S3_LOG_DEBUG, "", "SignatureSHA256 =%s\n",
-                   (const char *)key);
-            signature_SHA256 = (const char *)key;
-          }
-          xmlFree(key);
-          key = NULL;
-        }
+        set_auth_parameters(child_node);
       }  // for
     } else if ((!xmlStrcmp(child->name, (const xmlChar *)"ResponseMetadata"))) {
       for (xmlNode *child_node = child->children; child_node != NULL;
            child_node = child_node->next) {
-        key = xmlNodeGetContent(child_node);
+        xmlChar *key = xmlNodeGetContent(child_node);
         if (key != NULL) {
           if ((!xmlStrcmp(child_node->name, (const xmlChar *)"RequestId"))) {
             s3_log(S3_LOG_DEBUG, "", "RequestId = %s\n", (const char *)key);
             request_id = (const char *)key;
           }
           xmlFree(key);
-          key = NULL;
         }
       }  // for
     } else if ((!xmlStrcmp(child->name,
                            (const xmlChar *)"AuthorizeUserResult"))) {
       for (xmlNode *child_node = child->children; child_node != NULL;
            child_node = child_node->next) {
-        key = xmlNodeGetContent(child_node);
-        if (key != NULL) {
-          if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserId"))) {
-            s3_log(S3_LOG_DEBUG, "", "UserId = %s\n", (const char *)key);
-            user_id = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"UserName"))) {
-            s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
-            user_name = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"AccountName"))) {
-            s3_log(S3_LOG_DEBUG, "", "AccountName = %s\n", (const char *)key);
-            account_name = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"AccountId"))) {
-            s3_log(S3_LOG_DEBUG, "", "AccountId =%s\n", (const char *)key);
-            account_id = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"ACL"))) {
-            s3_log(S3_LOG_DEBUG, "", "ACL =%s\n", (const char *)key);
-            acl = (const char *)key;
-          } else if ((!xmlStrcmp(child_node->name,
-                                 (const xmlChar *)"AllUserRequest"))) {
-            //<Alluserrequest> true/false </Alluserrequest>
-            s3_log(S3_LOG_DEBUG, "", "Alluserrequest =%s\n", (const char *)key);
-            alluserrequest = (const char *)key;
-          }
-
-          xmlFree(key);
-          key = NULL;
+        set_auth_parameters(child_node);
         }
-      }
     }
     child = child->next;
   }

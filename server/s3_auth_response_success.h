@@ -23,6 +23,8 @@
 #ifndef __S3_SERVER_S3_AUTH_RESPONSE_SUCCESS_H__
 #define __S3_SERVER_S3_AUTH_RESPONSE_SUCCESS_H__
 
+#include <libxml/parser.h>
+#include <libxml/xmlmemory.h>
 #include <gtest/gtest_prod.h>
 #include <string>
 
@@ -40,6 +42,7 @@ class S3AuthResponseSuccess {
   bool alluserrequest;
 
   bool parse_and_validate();
+  void set_auth_parameters(xmlNode* child_node);
 
  public:
   S3AuthResponseSuccess(std::string& xml);
