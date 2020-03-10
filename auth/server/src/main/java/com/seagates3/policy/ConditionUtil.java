@@ -125,7 +125,7 @@ class ConditionUtil {
    * The condition keys could be one of - AWS global keys / custom keys
    * or S3 specific keys
    * e.g. - AWS wide keys - aws:CurrentTime, aws:SourceIp, aws:SourceArn, etc.
-   * S3 specific keys - s3:x-amz-acl, s3:x-amz-copy-source, etc.
+   * S3 specific keys - s3:x-amz-acl, s3:prefix, etc.
    * Custom Keys can also be used which should be in format - aws:<key>
    * @param condition
    * @return - true if the Condition key is one of the above specified keys
