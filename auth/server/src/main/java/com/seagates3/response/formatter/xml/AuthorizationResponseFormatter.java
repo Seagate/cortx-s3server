@@ -18,17 +18,21 @@
  */
 package com.seagates3.response.formatter.xml;
 
-import com.seagates3.response.ServerResponse;
-import com.seagates3.util.BinaryUtil;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.seagates3.response.ServerResponse;
+import com.seagates3.util.BinaryUtil;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 public class AuthorizationResponseFormatter extends XMLResponseFormatter {
 
@@ -36,70 +40,74 @@ public class AuthorizationResponseFormatter extends XMLResponseFormatter {
     public ServerResponse formatCreateResponse(String operation,
             String returnObject, LinkedHashMap<String, String> responseElements,
             String requestId) {
-        throw new UnsupportedOperationException("Not supported yet.");
+      throw new UnsupportedOperationException(
+          "create operation not supported yet.");
     }
 
     @Override
     public ServerResponse formatDeleteResponse(String operation) {
-        throw new UnsupportedOperationException("Not supported yet.");
+      throw new UnsupportedOperationException(
+          "delete operation not supported yet.");
     }
 
     @Override
     public ServerResponse formatUpdateResponse(String operation) {
-        throw new UnsupportedOperationException("Not supported yet.");
+      throw new UnsupportedOperationException(
+          "update operation not supported yet.");
     }
 
     @Override
     public ServerResponse formatListResponse(String operation, String returnObject,
             ArrayList<LinkedHashMap<String, String>> responseElements,
             Boolean isTruncated, String requestId) {
-        throw new UnsupportedOperationException("Not supported yet.");
+      throw new UnsupportedOperationException(
+          "list operation not supported yet.");
     }
 
    public
     ServerResponse authorized(LinkedHashMap<String, String> responseElements,
                               String requestId, String acp) {
 
-        Document doc;
+      Document dcmt;
         try {
-            doc = createNewDoc();
+          dcmt = createNewDoc();
         } catch (ParserConfigurationException ex) {
             return null;
         }
 
-        Element responseElement = doc.createElement("AuthorizeUserResponse");
-        Attr attr = doc.createAttribute("xmlns");
+        Element resp_element = dcmt.createElement("AuthorizeUserResponse");
+        Attr attr = dcmt.createAttribute("xmlns");
         attr.setValue(IAM_XMLNS);
-        responseElement.setAttributeNode(attr);
-        doc.appendChild(responseElement);
+        resp_element.setAttributeNode(attr);
+        dcmt.appendChild(resp_element);
 
-        Element resultElement = doc.createElement("AuthorizeUserResult");
-        responseElement.appendChild(resultElement);
+        Element resultingElement = dcmt.createElement("AuthorizeUserResult");
+        resp_element.appendChild(resultingElement);
 
         for (Map.Entry<String, String> entry : responseElements.entrySet()) {
-            Element element = doc.createElement(entry.getKey());
-            element.appendChild(doc.createTextNode(entry.getValue()));
-            resultElement.appendChild(element);
+          Element element = dcmt.createElement(entry.getKey());
+          element.appendChild(dcmt.createTextNode(entry.getValue()));
+          resultingElement.appendChild(element);
         }
 
         // Construct a default ACL and append as a child to resultElement
         if (acp != null)
-          resultElement.appendChild(constructDefaultACLElement(doc, acp));
+          resultingElement.appendChild(constructDefaultACLElement(dcmt, acp));
 
-        Element responseMetadataElement = doc.createElement("ResponseMetadata");
-        responseElement.appendChild(responseMetadataElement);
+        Element respMetaElement = dcmt.createElement("ResponseMetadata");
+        resp_element.appendChild(respMetaElement);
 
-        Element requestIdElement = doc.createElement("RequestId");
-        requestIdElement.appendChild(doc.createTextNode(requestId));
-        responseMetadataElement.appendChild(requestIdElement);
+        Element requestIdElement = dcmt.createElement("RequestId");
+        requestIdElement.appendChild(dcmt.createTextNode(requestId));
+        respMetaElement.appendChild(requestIdElement);
 
         String responseBody;
         try {
-            responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.OK,
-                    responseBody);
+          responseBody = docToString(dcmt);
+          ServerResponse finalServerResponse =
+              new ServerResponse(HttpResponseStatus.OK, responseBody);
 
-            return serverResponse;
+          return finalServerResponse;
         } catch (TransformerException ex) {
         }
 
@@ -126,3 +134,4 @@ public class AuthorizationResponseFormatter extends XMLResponseFormatter {
       return aclElement;
     }
 }
+

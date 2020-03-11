@@ -18,54 +18,60 @@
  */
 package com.seagates3.response.formatter.xml;
 
-import com.seagates3.response.ServerResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.LinkedHashMap;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.seagates3.response.ServerResponse;
+
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 public class SAMLProviderResponseFormatter extends XMLResponseFormatter {
 
     @Override
     public ServerResponse formatCreateResponse(String operation, String returnObject,
             LinkedHashMap<String, String> responseElements, String requestId) {
-        Document doc;
+      Document samlDoc;
         try {
-            doc = createNewDoc();
+          samlDoc = createNewDoc();
         } catch (ParserConfigurationException ex) {
             return null;
         }
 
-        Element rootElement = doc.createElement(operation + "Response");
-        Attr attr = doc.createAttribute("xmlns");
+        Element samlRootElement = samlDoc.createElement(operation + "Response");
+        Attr attr = samlDoc.createAttribute("xmlns");
         attr.setValue(IAM_XMLNS);
-        rootElement.setAttributeNode(attr);
-        doc.appendChild(rootElement);
+        samlRootElement.setAttributeNode(attr);
+        samlDoc.appendChild(samlRootElement);
 
-        Element createUserResponse = doc.createElement(operation + "Result");
-        rootElement.appendChild(createUserResponse);
+        Element samlCreateUserResponse =
+            samlDoc.createElement(operation + "Result");
+        samlRootElement.appendChild(samlCreateUserResponse);
 
-        Element arn = doc.createElement("SAMLProviderArn");
-        arn.appendChild(doc.createTextNode(responseElements.get("Arn")));
-        createUserResponse.appendChild(arn);
+        Element arn = samlDoc.createElement("SAMLProviderArn");
+        arn.appendChild(samlDoc.createTextNode(responseElements.get("Arn")));
+        samlCreateUserResponse.appendChild(arn);
 
-        Element responseMetaData = doc.createElement("ResponseMetadata");
-        rootElement.appendChild(responseMetaData);
+        Element samlResponseMetaData =
+            samlDoc.createElement("ResponseMetadata");
+        samlRootElement.appendChild(samlResponseMetaData);
 
-        Element requestIdElement = doc.createElement("RequestId");
-        requestIdElement.appendChild(doc.createTextNode(requestId));
-        responseMetaData.appendChild(requestIdElement);
+        Element requestIdElement = samlDoc.createElement("RequestId");
+        requestIdElement.appendChild(samlDoc.createTextNode(requestId));
+        samlResponseMetaData.appendChild(requestIdElement);
 
         String responseBody;
         try {
-            responseBody = docToString(doc);
-            ServerResponse serverResponse = new ServerResponse(HttpResponseStatus.CREATED,
-                    responseBody);
+          responseBody = docToString(samlDoc);
+          ServerResponse samlServerResponse =
+              new ServerResponse(HttpResponseStatus.CREATED, responseBody);
 
-            return serverResponse;
+          return samlServerResponse;
         } catch (TransformerException ex) {
         }
 
@@ -120,3 +126,4 @@ public class SAMLProviderResponseFormatter extends XMLResponseFormatter {
     }
 
 }
+

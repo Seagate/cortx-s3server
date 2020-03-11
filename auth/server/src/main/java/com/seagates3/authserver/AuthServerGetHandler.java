@@ -18,10 +18,30 @@
  */
 package com.seagates3.authserver;
 
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import javax.activation.MimetypesFileTypeMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.util.BinaryUtil;
 import com.seagates3.util.IEMUtil;
+
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -33,27 +53,12 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpChunkedInput;
 import io.netty.handler.codec.http.HttpHeaders;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import io.netty.handler.codec.http.HttpVersion;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import javax.activation.MimetypesFileTypeMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AuthServerGetHandler {
 
@@ -211,30 +216,31 @@ public class AuthServerGetHandler {
 
     private void sendErrorResponse(HttpResponseStatus status,
             String responseBody) {
-        FullHttpResponse response;
+       FullHttpResponse httpResponse;
 
         try {
-            response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
-                    status, Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8"))
-            );
+          httpResponse = new DefaultFullHttpResponse(
+              HttpVersion.HTTP_1_1, status,
+              Unpooled.wrappedBuffer(responseBody.getBytes("UTF-8")));
 
             LOGGER.debug("Error response sent.");
         } catch (UnsupportedEncodingException ex) {
             IEMUtil.log(IEMUtil.Level.ERROR, IEMUtil.UTF8_UNAVAILABLE,
                     "UTF-8 encoding is not supported", null);
-            response = null;
+            httpResponse = null;
         }
-        if (response != null) {
-        response.headers().set(CONTENT_TYPE, "text/xml");
-        response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+        if (httpResponse != null) {
+          httpResponse.headers().set(CONTENT_TYPE, "text/xml");
+          httpResponse.headers().set(CONTENT_LENGTH,
+                                     httpResponse.content().readableBytes());
 
         if (!keepAlive) {
-            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+          ctx.write(httpResponse).addListener(ChannelFutureListener.CLOSE);
 
             LOGGER.debug("Connection closed.");
         } else {
-            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
-            ctx.writeAndFlush(response);
+          httpResponse.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+          ctx.writeAndFlush(httpResponse);
 
             LOGGER.debug("Connection kept alive.");
         }
@@ -246,3 +252,4 @@ public class AuthServerGetHandler {
     }
 
 }
+

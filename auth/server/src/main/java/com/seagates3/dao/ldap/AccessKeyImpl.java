@@ -116,74 +116,71 @@ public class AccessKeyImpl implements AccessKeyDAO {
         return accessKey;
     }
 
-    @Override
-    public AccessKey findFromToken(String secretToken)
-            throws DataAccessException {
-        AccessKey accessKey = new AccessKey();
-        accessKey.setToken(secretToken);
+    @Override public AccessKey findFromToken(String secretToken)
+        throws DataAccessException {
+      AccessKey accKey = new AccessKey();
+      accKey.setToken(secretToken);
 
-        String[] attrs = {LDAPUtils.USER_ID, LDAPUtils.SECRET_KEY,
-            LDAPUtils.EXPIRY, LDAPUtils.ACCESS_KEY_ID, LDAPUtils.STATUS,
-            LDAPUtils.CREATE_TIMESTAMP, LDAPUtils.OBJECT_CLASS};
+      String[] dnattrs = {LDAPUtils.USER_ID,     LDAPUtils.SECRET_KEY,
+                          LDAPUtils.EXPIRY,      LDAPUtils.ACCESS_KEY_ID,
+                          LDAPUtils.STATUS,      LDAPUtils.CREATE_TIMESTAMP,
+                          LDAPUtils.OBJECT_CLASS};
 
-        String accessKeyBaseDN = String.format("%s=accesskeys,%s",
-                LDAPUtils.ORGANIZATIONAL_UNIT_NAME, LDAPUtils.BASE_DN
-        );
+      String accKeyBaseDN =
+          String.format("%s=accesskeys,%s", LDAPUtils.ORGANIZATIONAL_UNIT_NAME,
+                        LDAPUtils.BASE_DN);
 
-        String filter = String.format("%s=%s", LDAPUtils.TOKEN,
-                secretToken);
+      String dnfilter = String.format("%s=%s", LDAPUtils.TOKEN, secretToken);
 
-        LDAPSearchResults ldapResults;
+      LDAPSearchResults ldapResultsForToken;
 
         try {
-            ldapResults = LDAPUtils.search(accessKeyBaseDN,
-                    LDAPConnection.SCOPE_SUB, filter, attrs);
+          ldapResultsForToken = LDAPUtils.search(
+              accKeyBaseDN, LDAPConnection.SCOPE_SUB, dnfilter, dnattrs);
         } catch (LDAPException ex) {
             LOGGER.error("Failed to find Access Key.");
             throw new DataAccessException("Access key find failed.\n" + ex);
         }
 
-        if (ldapResults.hasMore()) {
-            LDAPEntry entry;
+        if (ldapResultsForToken.hasMore()) {
+          LDAPEntry ldapEntry;
             try {
-                entry = ldapResults.next();
+              ldapEntry = ldapResultsForToken.next();
             } catch (LDAPException ex) {
                 LOGGER.error("Failed to update AccessKey.");
                 throw new DataAccessException("Failed to update AccessKey.\n"
                         + ex);
             }
 
-            accessKey.setUserId(entry.getAttribute(LDAPUtils.USER_ID)
+            accKey.setUserId(
+                ldapEntry.getAttribute(LDAPUtils.USER_ID).getStringValue());
+            accKey.setSecretKey(
+                ldapEntry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue());
+            AccessKeyStatus status =
+                AccessKeyStatus.valueOf(ldapEntry.getAttribute(LDAPUtils.STATUS)
+                                            .getStringValue()
+                                            .toUpperCase());
+            accKey.setStatus(status);
+
+            String keyCreateTime = DateUtil.toServerResponseFormat(
+                ldapEntry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
                     .getStringValue());
-            accessKey.setSecretKey(entry.getAttribute(LDAPUtils.SECRET_KEY)
-                    .getStringValue());
-            AccessKeyStatus status = AccessKeyStatus.valueOf(
-                    entry.getAttribute(LDAPUtils.STATUS).getStringValue()
-                    .toUpperCase());
-            accessKey.setStatus(status);
+            accKey.setCreateDate(keyCreateTime);
 
-            String createTime = DateUtil.toServerResponseFormat(
-                    entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
-                    .getStringValue()
-            );
-            accessKey.setCreateDate(createTime);
+            String keyObjectClass =
+                ldapEntry.getAttribute(LDAPUtils.OBJECT_CLASS).getStringValue();
 
-            String objectClass = entry.getAttribute(LDAPUtils.OBJECT_CLASS)
-                    .getStringValue();
+            if (keyObjectClass.equalsIgnoreCase("fedaccesskey")) {
+              String expiry = DateUtil.toServerResponseFormat(
+                  ldapEntry.getAttribute(LDAPUtils.EXPIRY).getStringValue());
 
-            if (objectClass.equalsIgnoreCase("fedaccesskey")) {
-                String expiry = DateUtil.toServerResponseFormat(
-                        entry.getAttribute(LDAPUtils.EXPIRY)
-                        .getStringValue());
-
-                accessKey.setExpiry(expiry);
-                accessKey.setId(entry.getAttribute(LDAPUtils.ACCESS_KEY_ID)
-                        .getStringValue()
-                );
+              accKey.setExpiry(expiry);
+              accKey.setId(ldapEntry.getAttribute(LDAPUtils.ACCESS_KEY_ID)
+                               .getStringValue());
             }
         }
 
-        return accessKey;
+        return accKey;
     }
 
     /**

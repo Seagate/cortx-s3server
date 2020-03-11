@@ -22,7 +22,7 @@ import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.seagates3.model.Account;
+
 import com.novell.ldap.LDAPAttribute;
 import com.novell.ldap.LDAPAttributeSet;
 import com.novell.ldap.LDAPConnection;
@@ -165,7 +165,7 @@ public class UserImpl implements UserDAO {
         User user = new User();
         user.setAccountName(accountName);
 
-        LDAPSearchResults ldapResults;
+        LDAPSearchResults ldapResult;
 
         String[] attrs = {LDAPUtils.COMMON_NAME,  LDAPUtils.PATH,
                           LDAPUtils.ARN,          LDAPUtils.ROLE_NAME,
@@ -180,19 +180,19 @@ public class UserImpl implements UserDAO {
         LOGGER.debug("Searching user base dn: " + userBaseDN);
 
         try {
-          ldapResults = LDAPUtils.search(userBaseDN, LDAPConnection.SCOPE_SUB,
-                                         filter, attrs);
-        } catch (LDAPException ex) {
+          ldapResult = LDAPUtils.search(userBaseDN, LDAPConnection.SCOPE_SUB,
+                                        filter, attrs);
+        }
+        catch (LDAPException e) {
             LOGGER.error("Failed to find details of user: " + userId
                     + " account: " + accountName);
-            throw new DataAccessException("Failed to find user details.\n" +
-                                          ex);
+            throw new DataAccessException("Failed to find user details.\n" + e);
         }
 
-        if (ldapResults.hasMore()) {
-            LDAPEntry entry;
+        if (ldapResult.hasMore()) {
+          LDAPEntry ldapEntry;
             try {
-                entry = ldapResults.next();
+              ldapEntry = ldapResult.next();
                 user.setId(userId);
             } catch (LDAPException ex) {
                 LOGGER.error("Failed to find details of user: " + userId
@@ -202,20 +202,21 @@ public class UserImpl implements UserDAO {
             }
 
             user.setName(
-                entry.getAttribute(LDAPUtils.COMMON_NAME).getStringValue());
-            user.setUserType(
-                entry.getAttribute(LDAPUtils.OBJECT_CLASS).getStringValue());
+                ldapEntry.getAttribute(LDAPUtils.COMMON_NAME).getStringValue());
+            user.setUserType(ldapEntry.getAttribute(LDAPUtils.OBJECT_CLASS)
+                                 .getStringValue());
             if (user.getUserType() == User.UserType.IAM_USER) {
-              user.setPath(entry.getAttribute(LDAPUtils.PATH).getStringValue());
+              user.setPath(
+                  ldapEntry.getAttribute(LDAPUtils.PATH).getStringValue());
             } else if (user.getUserType() == User.UserType.ROLE_USER) {
               user.setRoleName(
-                  entry.getAttribute(LDAPUtils.ROLE_NAME).getStringValue());
+                  ldapEntry.getAttribute(LDAPUtils.ROLE_NAME).getStringValue());
             }
             String createTime = DateUtil.toServerResponseFormat(
-                entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
+                ldapEntry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
                     .getStringValue());
             user.setCreateDate(createTime);
-            user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
+            user.setArn(ldapEntry.getAttribute(LDAPUtils.ARN).getStringValue());
         }
 
         return user;
@@ -517,3 +518,4 @@ public class UserImpl implements UserDAO {
         return user;
     }
  }
+
