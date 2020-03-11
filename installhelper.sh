@@ -34,6 +34,7 @@ LOG_DIR_LOCATION=$INSTALL_PREFIX/var/log/seagate
 NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/nodejs
 RSYSLOG_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/rsyslog.d
 KEEPALIVED_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/keepalived
+S3_PROVISIONER_LOCATION=$INSTALL_PREFIX/opt/seagate/eos/s3server
 
 rm -rf $AUTH_INSTALL_LOCATION
 rm -rf $S3_INSTALL_LOCATION
@@ -48,9 +49,10 @@ mkdir -p $S3_INSTALL_LOCATION/resources
 mkdir -p $S3_INSTALL_LOCATION/scripts
 mkdir -p $S3_INSTALL_LOCATION/install/ldap/rsyslog.d
 mkdir -p $S3_INSTALL_LOCATION/install/haproxy
-mkdir -p $S3_INSTALL_LOCATION/install/provisioning
 mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
+mkdir -p $S3_PROVISIONER_LOCATION/conf
+mkdir -p $S3_PROVISIONER_LOCATION/bin
 mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $S3_LOG_ROTATE_FILE_LOCATION
 mkdir -p $KEEPALIVED_CFG_DIR_LOCATION
@@ -65,8 +67,11 @@ mkdir -p $RSYSLOG_CFG_DIR_LOCATION
 # Copy the haproxy dependencies
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
 
+# Copy the provisioning config
+cp scripts/provisioning/setup.yaml $S3_PROVISIONER_LOCATION/conf
+
 # Copy the provisioning script
-cp -R scripts/provisioning/* $S3_INSTALL_LOCATION/install/provisioning
+cp scripts/provisioning/s3_setup $S3_PROVISIONER_LOCATION/bin
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/

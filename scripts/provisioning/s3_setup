@@ -30,8 +30,7 @@ where:
 --eesnode2            EES node 2 for LDAP replication
 --olcserverid         Host olcServerID (Unique for different nodes)
 --s3backgrounddelete  Configure s3backgrounddelete and its dependencies
---node1               node 1 for rabbitmq setup
---node2               node 2 for rabbitmq setup
+--poststartup         Configure S3 dependencies post startup.
 --help                Display this help and exit"
 
 set -e
@@ -54,6 +53,7 @@ config_ldap=false
 setup_jenkins_yum_repo=false
 setup_s3backgrounddelete=false
 is_rabbitmq_clustered=false
+post_startup=false
 
 if [ $# -lt 1 ]
 then
@@ -93,13 +93,9 @@ do
         ;;
     --s3backgrounddelete )
         setup_s3backgrounddelte=true
-        current_node=$2
         ;;
-    --node1 ) shift;
-        node1=$1
-        ;;
-    --node2 ) shift;
-        node2=$1
+    --poststartup)
+        post_startup=true;
         ;;
     --help | -h )
         echo "$USAGE"
@@ -311,82 +307,49 @@ then
 
 fi
 
-setup_s3backgrounddelete_rabbitmq()
+add_s3backgrounddelete_rabbitmq_user()
 {
-    # Start rabbitmq
-    systemctl start rabbitmq-server
-    # Automatically start RabbitMQ at boot time
-    systemctl enable rabbitmq-server
-    # Enable RabbitMQ Web Management Console
-    rabbitmq-plugins enable rabbitmq_management
-
-    # Setup RabbitMQ Cluster
-    # Copy the '.erlang.cookie' file using scp commands from the node1 to node2.
-    if [[ $is_rabbitmq_clustered == true && $current_node == "node1" ]];
-    then
-        echo "Copying '.erlang.cookie' from node1 to node2"
-        if [[ ! -z $node2 ]];
-        then
-            sudo scp /var/lib/rabbitmq/.erlang.cookie root@$node2:/var/lib/rabbitmq/
-        else
-            echo "Required parameter is missing '--node2'"
-            exit 1
-        fi
-    fi
-
-    systemctl restart rabbitmq-server
-    rabbitmqctl stop_app
-
-    # Let RabbitMQ server on node2, join node1
-    if [[ $is_rabbitmq_clustered == true && $current_node == "node2" ]];
-    then
-        echo "Joining the cluster from node2 with node1"
-        if [[ ! -z $node1 ]];
-        then
-            rabbitmqctl join_cluster rabbit@$node1
-        else
-            echo "Required parameter is missing '--node1'"
-            exit 1
-        fi
-    fi
-
-    rabbitmqctl start_app
-    # Check the RabbitMQ cluster status on both nodes
-    cluster_result=`rabbitmqctl cluster_status`
-    if [[ $cluster_result == *ERROR* ]];
-    then
-        echo "Rabbitmq cluster status check failed with error message: $cluster_result"
-        exit 1
-    else
-        echo "Rabbitmq cluster status is okay"
-    fi
-
-    if [[ $is_rabbitmq_clustered == false || $current_node == "node1" ]];
-    then
-        # Create a user (In this case user is 's3-background-delete-rabbitmq' with password as 'password')
-        rabbitmqctl add_user s3-background-delete-rabbitmq password
-        # Setup this user as an administrator.
-        rabbitmqctl set_user_tags s3-background-delete-rabbitmq administrator
-        rabbitmqctl set_permissions -p / s3-background-delete-rabbitmq ".*" ".*" ".*"
-        # Setup queue mirroring
-        rabbitmqctl set_policy ha-all ".*" '{"ha-mode":"all"}'
-    fi
+    # Create a user (In this case user is 's3-background-delete-rabbitmq' with password as 'password')
+    rabbitmqctl add_user s3-background-delete-rabbitmq password
+    # Setup this user as an administrator.
+    rabbitmqctl set_user_tags s3-background-delete-rabbitmq administrator
+    rabbitmqctl set_permissions -p / s3-background-delete-rabbitmq ".*" ".*" ".*"
+    # Setup queue mirroring
+    rabbitmqctl set_policy ha-all ".*" '{"ha-mode":"all"}'
 
     echo "Rabbitmq configuration for this node is completed..."
 }
 
-# Setup s3backgrounddelete and its dependencies
+# Setup rabbitmq and its dependencies
 if [[ $setup_s3backgrounddelte == true ]]
 then
-    echo "Setting up rabbitmq server.."
-    # 1. Setup rabbitmq server
-    if [[ ! -z "$current_node" && ! -z "$node1"  &&  ! -z "$node2" ]];
+    echo "Setting up rabbitmq server for S3backgroundelete"
+    add_s3backgrounddelete_rabbitmq_user
+fi
+
+post_startup()
+{
+    s3_account=`echo s3iamcli createaccount -n s3-background-delete-svc -e s3-background-delete-svc@gmail.com --ldapuser sgiamadmin --ldappasswd ldapadmin`
+
+    if [[ $s3_account =~ "AccountId" ]];
     then
-        echo "Configuring Rabbitmq server in clustered mode.."
-        is_rabbitmq_clustered=true
+        access_key=`echo $s3_account | awk  '{ print $12 }' | sed 's/.$//'`
+        secret_key=`echo $s3_account | awk  '{ print $15 }'`
+
+        sed -i "/access_key:/s/.*/   access_key: \"$access_key\"/" /opt/seagate/s3/s3backgrounddelete/config.yaml
+        sed -i "/secret_key:/s/.*/   secret_key: \"$secret_key\"/" /opt/seagate/s3/s3backgrounddelete/config.yaml
+
+        systemctl restart s3backgroundproducer
+        systemctl restart s3backgroundconsumer
     else
-        echo "Configuring Rabbitmq server in non-clustered mode.."
-        is_rabbitmq_clustered=false
+        echo "Error setting up S3backgroundelete account"
+        exit 1
     fi
-    setup_s3backgrounddelete_rabbitmq
+}
+
+# Setup s3backgrounddelete and its dependencies
+if [[ $post_startup == true ]]
+then
+    echo "Setting up S3backgroundelete"
+    post_startup
 fi

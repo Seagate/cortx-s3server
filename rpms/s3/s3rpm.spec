@@ -218,8 +218,6 @@ rm -rf %{buildroot}
 /opt/seagate/s3/install/haproxy/ssl/s3.seagate.com.crt
 /opt/seagate/s3/install/haproxy/ssl/s3.seagate.com.pem
 /opt/seagate/s3/install/haproxy/503.http
-/opt/seagate/s3/install/provisioning/s3setup.yaml
-/opt/seagate/s3/install/provisioning/setup_s3.sh
 /opt/seagate/s3/install/ldap/syncprov_mod.ldif
 /opt/seagate/s3/install/ldap/syncprov.ldif
 /opt/seagate/s3/install/ldap/replicate.ldif
@@ -228,6 +226,8 @@ rm -rf %{buildroot}
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
+/opt/seagate/eos/s3server/conf/setup.yaml
+%attr(755, root, root) /opt/seagate/eos/s3server/bin/s3_setup
 %attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundproducer
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
