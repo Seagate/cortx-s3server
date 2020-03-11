@@ -113,28 +113,21 @@
           name: /tmp/s3ldap/cfg_ldap.ldif
           state: absent
 
-      - name: Setup non-ssl config for ldap client tools
-        copy:
-          src: files/ldap/ldap.conf
-          dest: /etc/openldap/ldap.conf
-          backup: yes
-          force: yes
-
       - name: restart slapd
         service:
           name: slapd
           state: restarted
 
       - name: Configure OpenLDAP - Schema
-        command: ldapadd -x -D "cn=admin,cn=config" -w {{ openldappasswd }} -f /tmp/s3ldap/cn={1}s3user.ldif
+        command: ldapadd -x -D "cn=admin,cn=config" -w {{ openldappasswd }} -f /tmp/s3ldap/cn={1}s3user.ldif -H ldapi:///
         no_log: true
 
       - name: Configure OpenLDAP - Base data
-        command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/ldap-init.ldif
+        command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/ldap-init.ldif -H ldapi:///
         no_log: true
 
       - name: Configure OpenLDAP - Add IAM admin
-        command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/iam-admin.ldif
+        command: ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w {{ openldappasswd }} -f /tmp/s3ldap/iam-admin.ldif -H ldapi:///
         no_log: true
 
       - name: Configure OpenLDAP - Setup permissions for IAM admin
@@ -146,28 +139,19 @@
         no_log: true
 
       - name: Configure OpenLDAP - Load ppolicy schema
-        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /etc/openldap/schema/ppolicy.ldif
+        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /etc/openldap/schema/ppolicy.ldif -H ldapi:///
         no_log: true
 
       - name: Configure OpenLDAP - Load ppolicy module
-        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /tmp/s3ldap/ppolicymodule.ldif
+        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /tmp/s3ldap/ppolicymodule.ldif -H ldapi:///
         no_log: true
 
       - name: Configure OpenLDAP - Load ppolicy overlay
-        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /tmp/s3ldap/ppolicyoverlay.ldif
+        command: ldapmodify -D "cn=admin,cn=config" -w {{ openldappasswd }} -a -f /tmp/s3ldap/ppolicyoverlay.ldif -H ldapi:///
         no_log: true
 
       - name: Configure OpenLDAP - Configure password policy
         command: ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w {{ openldappasswd }} -f /tmp/s3ldap/ppolicy-default.ldif
-        no_log: true
-
-      - name: Copy SSL config file for openldap
-        copy:
-          src: files/ldap/ssl/ssl_certs.ldif
-          dest: /tmp/s3ldap/ssl_certs.ldif
-
-      - name: Update openldap configuration
-        command: ldapmodify -Y EXTERNAL  -H ldapi:/// -f /tmp/s3ldap/ssl_certs.ldif
         no_log: true
 
       - name: Backup original slapd file
@@ -177,12 +161,6 @@
           dest: /etc/sysconfig/slapd.bak
           backup: yes
           remote_src: yes
-
-      - name: Add ssl & non-ssl ldap URIs
-        when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
-        command: sed -i "s/^SLAPD_URLS=.*/SLAPD_URLS={{ldap_url}}/" /etc/sysconfig/slapd
-        no_log: true
-
 
       - name: Delete temp directory
         file:

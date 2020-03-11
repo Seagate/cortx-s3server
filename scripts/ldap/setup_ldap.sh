@@ -108,13 +108,13 @@ systemctl start slapd
 rm -f /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{1\}s3user.ldif
 
 # add S3 schema
-ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f cn\=\{1\}s3user.ldif
+ldapadd -x -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -f cn\=\{1\}s3user.ldif -H ldapi:///
 
 # initialize ldap
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f ldap-init.ldif
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f ldap-init.ldif -H ldapi:///
 
 # Setup iam admin and necessary permissions
-ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE
+ldapadd -x -D "cn=admin,dc=seagate,dc=com" -w $ROOTDNPASSWORD -f $ADMIN_USERS_FILE -H ldapi:///
 rm -f $ADMIN_USERS_FILE
 
 ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
@@ -123,12 +123,12 @@ ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-admin-access.ldif
 ldapadd -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f iam-constraints.ldif
 
 #Enable ppolicy schema
-ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /etc/openldap/schema/ppolicy.ldif
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /etc/openldap/schema/ppolicy.ldif -H ldapi:///
 
 # Enable password policy and configure
-ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicymodule.ldif
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicymodule.ldif -H ldapi:///
 
-ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicyoverlay.ldif
+ldapmodify -D "cn=admin,cn=config" -w $ROOTDNPASSWORD -a -f /tmp/s3ldap/ppolicyoverlay.ldif -H ldapi:///
 
 ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -f /tmp/s3ldap/ppolicy-default.ldif
 
