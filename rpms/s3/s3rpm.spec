@@ -131,6 +131,7 @@ rm -rf %{buildroot}
 %config(noreplace) /opt/seagate/auth/resources/authencryptcli-log4j2.xml
 %config(noreplace) /opt/seagate/auth/resources/keystore.properties
 %config(noreplace) /opt/seagate/auth/resources/static/saml-metadata.xml
+%config(noreplace) /opt/seagate/auth/resources/s3authserver.jks
 %config(noreplace) /opt/seagate/s3/conf/s3config.yaml
 %config(noreplace) /opt/seagate/s3/conf/s3server_audit_log.properties
 %config(noreplace) /opt/seagate/s3/conf/s3_obj_layout_mapping.yaml
@@ -145,6 +146,7 @@ rm -rf %{buildroot}
 %attr(4600, root, root) /opt/seagate/auth/resources/keystore.properties
 %attr(4600, root, root) /opt/seagate/auth/resources/defaultAclTemplate.xml
 %attr(4600, root, root) /opt/seagate/auth/resources/AmazonS3.xsd
+%attr(4600, root, root) /opt/seagate/auth/resources/s3authserver.jks
 
 %dir /opt/seagate/
 %dir /opt/seagate/auth
@@ -172,6 +174,7 @@ rm -rf %{buildroot}
 /opt/seagate/auth/startauth.sh
 /opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh
 /opt/seagate/auth/scripts/change_ldap_passwd.ldif
+/opt/seagate/auth/resources/s3authserver.jks
 /opt/seagate/s3/scripts/s3-sanity-test.sh
 /opt/seagate/s3/scripts/s3_bundle_generate.sh
 /opt/seagate/s3/docs/openldap_backup_readme

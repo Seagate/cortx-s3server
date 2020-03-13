@@ -148,6 +148,7 @@ cp -f auth/resources/authserver.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/keystore.properties $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/defaultAclTemplate.xml $AUTH_INSTALL_LOCATION/resources/
 cp -f auth/resources/AmazonS3.xsd $AUTH_INSTALL_LOCATION/resources/
+cp -f auth/resources/s3authserver.jks $AUTH_INSTALL_LOCATION/resources/
 
 # Copy LDAP replication to install location
 cp -f scripts/ldap/syncprov_mod.ldif $S3_INSTALL_LOCATION/install/ldap/
