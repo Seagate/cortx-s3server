@@ -1124,7 +1124,7 @@ void S3AuthClient::policy_validation_failed() {
 
     this->handler_on_failed();
   }
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AuthClient::check_authorization() {
