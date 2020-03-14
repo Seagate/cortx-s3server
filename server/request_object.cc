@@ -413,9 +413,8 @@ std::string RequestObject::get_host_name() {
 }
 
 void RequestObject::set_out_header_value(std::string key, std::string value) {
-  if (!client_connected() || ev_req == NULL) {
-    s3_log(S3_LOG_WARN, request_id,
-           "s3 client disconnected state or ev_req(NULL).\n");
+  if (!client_connected() || !ev_req) {
+    s3_log(S3_LOG_DEBUG, request_id, "S3 client disconnected.\n");
     return;
   }
   if (out_headers_copy.find(key) == out_headers_copy.end()) {
@@ -428,7 +427,12 @@ void RequestObject::set_out_header_value(std::string key, std::string value) {
     // more then once, which can also point to a code problem.
     // Example: set_out_header_value("Content-Length", "50"); <some more code>;
     // set_out_header_value("Content-Length", "5"); is usually error prone.
-    assert(out_headers_copy.find(key) == out_headers_copy.end());
+
+    // It's no time to catch such errors now.
+    // assert(out_headers_copy.find(key) == out_headers_copy.end());
+    s3_log(S3_LOG_INFO, request_id,
+           "HTTP response header\n%s: %s\nhas been added twice or more.\n",
+           key.c_str(), value.c_str());
   }
 }
 
@@ -548,8 +552,7 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     return;
   }
   if (is_s3_client_read_error()) {
-    s3_log(S3_LOG_WARN, request_id, "Exiting due to read timeout\n");
-    evbuffer_drain(buf, -1);
+    s3_log(S3_LOG_DEBUG, request_id, "Exiting due to read timeout\n");
     evbuffer_free(buf);
     return;
   }
@@ -585,7 +588,6 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
                    chunk_buf, pending_in_flight == data_bytes_received);
         }
         if (error_adding_to_buffered_input) {
-          evbuffer_drain(chunk_buf, buf_len);
           evbuffer_free(chunk_buf);
         }
       }
@@ -596,7 +598,6 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     if (!buffered_input->add_content(
              buf, pending_in_flight == data_bytes_received)) {
       error_adding_to_buffered_input = true;
-      evbuffer_drain(buf, data_bytes_received);
       evbuffer_free(buf);
     }
   }

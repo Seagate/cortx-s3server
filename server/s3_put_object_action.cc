@@ -422,7 +422,7 @@ void S3PutObjectAction::initiate_data_streaming() {
 }
 
 void S3PutObjectAction::consume_incoming_content() {
-  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // for shutdown testcases, check FI and set shutdown signal
   S3_CHECK_FI_AND_SET_SHUTDOWN_SIGNAL(
       "put_object_action_consume_incoming_content_shutdown_fail");

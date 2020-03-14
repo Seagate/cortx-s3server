@@ -260,9 +260,10 @@ class RequestObject {
     }
   }
 
-  bool is_request_paused() { return is_paused; }
+  bool is_request_paused() const { return is_paused; }
 
   void client_has_disconnected() {
+    s3_log(S3_LOG_INFO, request_id, "S3 Client disconnected.\n");
     stop_client_read_timer();
     is_client_connected = false;
     if (ev_req) {
@@ -271,7 +272,7 @@ class RequestObject {
     }
   }
 
-  bool is_incoming_data_ignored() { return ignore_incoming_data; }
+  bool is_incoming_data_ignored() const { return ignore_incoming_data; }
 
   void stop_processing_incoming_data() {
     stop_client_read_timer();

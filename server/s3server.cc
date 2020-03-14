@@ -80,21 +80,16 @@ extern "C" void s3_handler(evhtp_request_t *req, void *a) {
   s3_log(S3_LOG_DEBUG, "", "Request Completed.\n");
 }
 
-extern "C" void on_client_conn_err_callback(evhtp_request_t *ev_req,
-                                            evhtp_error_flags errtype,
-                                            void *arg) {
-  s3_log(S3_LOG_INFO, "", "S3 Client disconnected.\n");
-  if (ev_req) {
-    S3RequestObject *s3_request = static_cast<S3RequestObject *>(ev_req->cbarg);
-    if (s3_request) {
-      s3_request->client_has_disconnected();
+static void on_client_request_error(evhtp_request_t *p_evhtp_req,
+                                    evhtp_error_flags errtype, void *arg) {
+  s3_log(S3_LOG_DEBUG, nullptr, "errtype 0x%X.\n", (int)errtype);
+  if (p_evhtp_req) {
+    RequestObject *p_s3_req = static_cast<RequestObject *>(p_evhtp_req->cbarg);
+    if (p_s3_req) {
+      p_s3_req->client_has_disconnected();
+      p_evhtp_req->cbarg = nullptr;
     }
-    if (ev_req->conn) {
-      evhtp_unset_all_hooks(&ev_req->conn->hooks);
-    }
-    evhtp_unset_all_hooks(&ev_req->hooks);
   }
-  return;
 }
 
 extern "C" int log_http_header(evhtp_header_t *header, void *arg) {
@@ -103,17 +98,18 @@ extern "C" int log_http_header(evhtp_header_t *header, void *arg) {
   return 0;
 }
 
-static evhtp_res on_client_request_fini(evhtp_request_t *ev_req, void *arg) {
-  s3_log(S3_LOG_DEBUG, "", "Finalize s3 client request(%p)\n", ev_req);
+static evhtp_res on_client_request_fini(evhtp_request_t *p_evhtp_req,
+                                        void *arg) {
+  s3_log(S3_LOG_DEBUG, "", "Finalize s3 client request(%p)\n", p_evhtp_req);
   // Around this event libevhtp will free request, so we
   // protect S3 code from accessing freed request
-  if (ev_req) {
-    S3RequestObject *s3_req = static_cast<S3RequestObject *>(ev_req->cbarg);
-    s3_log(S3_LOG_DEBUG, "", "S3RequestObject(%p)\n", s3_req);
-    if (s3_req) {
-      s3_req->client_has_disconnected();
+  if (p_evhtp_req) {
+    RequestObject *p_s3_rq = static_cast<RequestObject *>(p_evhtp_req->cbarg);
+    s3_log(S3_LOG_DEBUG, "", "RequestObject(%p)\n", p_s3_rq);
+    if (p_s3_rq) {
+      p_s3_rq->client_has_disconnected();
+      p_evhtp_req->cbarg = nullptr;
     }
-    evhtp_unset_all_hooks(&ev_req->hooks);
   }
   return EVHTP_RES_OK;
 }
@@ -210,11 +206,10 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
       evbuffer_expand(req->buffer_out, 4096);
     }
   }
-
-  req->cbarg = s3_request.get();
+  req->cbarg = static_cast<RequestObject *>(s3_request.get());
 
   evhtp_set_hook(&req->hooks, evhtp_hook_on_error,
-                 (evhtp_hook)on_client_conn_err_callback, NULL);
+                 (evhtp_hook)on_client_request_error, NULL);
   evhtp_set_hook(&req->hooks, evhtp_hook_on_request_fini,
                  (evhtp_hook)on_client_request_fini, NULL);
 
@@ -292,10 +287,10 @@ extern "C" evhtp_res dispatch_mero_api_request(evhtp_request_t *req,
     return EVHTP_RES_OK;
   }
 
-  req->cbarg = mero_request.get();
+  req->cbarg = static_cast<RequestObject *>(mero_request.get());
 
   evhtp_set_hook(&req->hooks, evhtp_hook_on_error,
-                 (evhtp_hook)on_client_conn_err_callback, NULL);
+                 (evhtp_hook)on_client_request_error, NULL);
   evhtp_set_hook(&req->hooks, evhtp_hook_on_request_fini,
                  (evhtp_hook)on_client_request_fini, NULL);
 
@@ -307,48 +302,49 @@ extern "C" evhtp_res dispatch_mero_api_request(evhtp_request_t *req,
   return EVHTP_RES_OK;
 }
 
-extern "C" evhtp_res process_request_data(evhtp_request_t *req, evbuf_t *buf,
-                                          void *arg) {
-  S3RequestObject *request = static_cast<S3RequestObject *>(req->cbarg);
-  s3_log(S3_LOG_DEBUG, "", "S3RequestObject(%p)\n", request);
-  if (request && !request->is_incoming_data_ignored()) {
-    s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
+static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
+                                      evbuf_t *buf, void *arg) {
+  RequestObject *p_s3_req = static_cast<RequestObject *>(p_evhtp_req->cbarg);
+  const char *psz_request_id =
+      p_s3_req ? p_s3_req->get_request_id().c_str() : nullptr;
+
+  s3_log(S3_LOG_DEBUG, psz_request_id, "RequestObject(%p)\n", p_s3_req);
+
+  if (p_s3_req) {
+    p_s3_req->stop_client_read_timer();
+
+    s3_log(S3_LOG_DEBUG, psz_request_id,
            "Received Request body %zu bytes for sock = %d\n",
-           evbuffer_get_length(buf), req->conn->sock);
-    // Data has arrived so disable read timeout
-    request->stop_client_read_timer();
-    evbuf_t *s3_buf = evbuffer_new();
-    evbuffer_add_buffer(s3_buf, buf);
+           evbuffer_get_length(buf), p_evhtp_req->conn->sock);
 
-    request->notify_incoming_data(s3_buf);
-    if (!request->get_buffered_input()->is_freezed() &&
-        !request->is_request_paused()) {
-      // Set the read timeout event, in case if more data
-      // is expected.
-      s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
-             "Setting Read timeout for s3 client\n");
-      request->set_start_client_request_read_timeout();
-    }
+    if (!p_s3_req->is_incoming_data_ignored()) {
+      // Data has arrived so disable read timeout
+      evbuf_t *s3_buf = evbuffer_new();
+      evbuffer_add_buffer(s3_buf, buf);
 
-  } else {
-    if (request) {
-      request->stop_client_read_timer();
+      p_s3_req->notify_incoming_data(s3_buf);
+
+      if (!p_s3_req->get_buffered_input()->is_freezed() &&
+          !p_s3_req->is_request_paused()) {
+        // Set the read timeout event, in case if more data
+        // is expected.
+        s3_log(S3_LOG_DEBUG, psz_request_id,
+               "Setting Read timeout for s3 client\n");
+        p_s3_req->set_start_client_request_read_timeout();
+      }
+      return EVHTP_RES_OK;
     }
-    if (buf) {
-      evbuffer_drain(buf, -1);
-    }
-    evhtp_unset_all_hooks(&req->conn->hooks);
-    evhtp_unset_all_hooks(&req->hooks);
-    s3_log(S3_LOG_DEBUG, "",
-           "S3 request failed, Ignoring data for this request \n");
   }
-
+  if (buf) {
+    s3_log(S3_LOG_DEBUG, psz_request_id, "Drain incoming data\n");
+    evbuffer_drain(buf, -1);
+  }
   return EVHTP_RES_OK;
 }
 
 extern "C" evhtp_res process_mero_api_request_data(evhtp_request_t *req,
                                                    evbuf_t *buf, void *arg) {
-  MeroRequestObject *request = static_cast<MeroRequestObject *>(req->cbarg);
+  RequestObject *request = static_cast<RequestObject *>(req->cbarg);
   s3_log(S3_LOG_DEBUG, "", "MeroRequestObject(%p)\n", request);
   if (request && !request->is_incoming_data_ignored()) {
     s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
