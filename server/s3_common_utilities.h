@@ -22,6 +22,7 @@
 #define __S3_COMMON_UTILITIES_h__
 
 #include <string>
+#include <evhtp.h>
 
 class S3CommonUtilities {
  public:
@@ -73,5 +74,7 @@ class S3CommonUtilities {
                                   const std::string &to_search,
                                   const std::string &replace_str);
   static bool is_yaml_value_null(const std::string &value);
+  static std::string evhtp_error_flags_description(
+      const evhtp_error_flags errtype);
 };
 #endif

@@ -95,8 +95,30 @@ extern "C" evhtp_res on_auth_conn_err_callback(evhtp_connection_t *connection,
                                                evhtp_error_flags errtype,
                                                void *arg) {
   S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
+  if (context == NULL) {
+    s3_log(S3_LOG_ERROR, "", "input arg is NULL\n");
+    return EVHTP_RES_OK;
+  }
   const auto request_id = context->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+  if (connection == NULL) {
+    s3_log(S3_LOG_ERROR, request_id, "input connection is NULL\n");
+    return EVHTP_RES_OK;
+  }
+  if (connection != context->get_auth_op_ctx()->conn) {
+    s3_log(S3_LOG_ERROR, request_id,
+           "Mismatch between input connection and auth context connection\n");
+  }
+  std::string errtype_str =
+      S3CommonUtilities::evhtp_error_flags_description(errtype);
+  if (connection->request) {
+    s3_log(S3_LOG_INFO, request_id, "Connection status = %d\n",
+           connection->request->status);
+  }
+  s3_log(
+      S3_LOG_WARN, request_id, "Socket error: %s, errno: %d, set errtype: %s\n",
+      evutil_socket_error_to_string(evutil_socket_geterror(connection->sock)),
+      evutil_socket_geterror(connection->sock), errtype_str.c_str());
   // Note: Do not remove this, else you will have s3 crashes as the
   // callbacks are invoked after request/connection is freed.
   evhtp_unset_all_hooks(&context->get_auth_op_ctx()->conn->hooks);
@@ -536,6 +558,7 @@ void S3AuthClient::add_key_val_to_body(std::string key, std::string val) {
 void S3AuthClient::set_event_with_retry_interval() {
   S3Option *option_instance = S3Option::get_instance();
   short interval = option_instance->get_retry_interval_in_millisec();
+  interval = interval * retry_count;
   struct timeval s_tv;
   s_tv.tv_sec = interval / 1000;
   s_tv.tv_usec = (interval % 1000) * 1000;
@@ -1109,8 +1132,8 @@ void S3AuthClient::policy_validation_failed() {
     s3_log(S3_LOG_WARN, request_id,
            "Policy validation failure, not able to connect to Auth server\n");
     if (retry_count < option_instance->get_max_retry_count()) {
-      set_event_with_retry_interval();
       retry_count++;
+      set_event_with_retry_interval();
     } else {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
@@ -1191,7 +1214,6 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
   }
 
   state = S3AuthClientOpState::started;
-  retry_count = 0;
 
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
@@ -1234,6 +1256,7 @@ void S3AuthClient::check_authorization(std::function<void(void)> on_success,
 void S3AuthClient::check_authorization_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   state = S3AuthClientOpState::authorized;
+  retry_count = 0;
   this->handler_on_success();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -1271,8 +1294,8 @@ void S3AuthClient::check_authorization_failed() {
     s3_log(S3_LOG_WARN, request_id,
            "Authorization failure, not able to connect to Auth server\n");
     if (retry_count < option_instance->get_max_retry_count()) {
-      set_event_with_retry_interval();
       retry_count++;
+      set_event_with_retry_interval();
     } else {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
@@ -1317,6 +1340,7 @@ void S3AuthClient::check_authentication(std::function<void(void)> on_success,
 void S3AuthClient::check_authentication_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   state = S3AuthClientOpState::authenticated;
+  retry_count = 0;
   remember_auth_details_in_request();
   prev_chunk_signature_from_auth = get_signature_from_response();
   this->handler_on_success();
@@ -1326,6 +1350,7 @@ void S3AuthClient::check_authentication_successful() {
 void S3AuthClient::check_aclvalidation_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   state = S3AuthClientOpState::authenticated;
+  retry_count = 0;
   remember_auth_details_in_request();
   prev_chunk_signature_from_auth = get_signature_from_response();
   this->handler_on_success();
@@ -1340,8 +1365,8 @@ void S3AuthClient::check_authentication_failed() {
     s3_log(S3_LOG_WARN, request_id,
            "Authentication failure, not able to connect to Auth server\n");
     if (retry_count < option_instance->get_max_retry_count()) {
-      set_event_with_retry_interval();
       retry_count++;
+      set_event_with_retry_interval();
     } else {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
@@ -1366,8 +1391,8 @@ void S3AuthClient::check_aclvalidation_failed() {
     s3_log(S3_LOG_WARN, request_id,
            "Aclvalidation failure, not able to connect to Auth server\n");
     if (retry_count < option_instance->get_max_retry_count()) {
-      set_event_with_retry_interval();
       retry_count++;
+      set_event_with_retry_interval();
     } else {
       s3_log(S3_LOG_ERROR, request_id,
              "Cannot connect to Auth server (Retry count = %d).\n",
@@ -1430,7 +1455,7 @@ void S3AuthClient::add_last_checksum_for_chunk(std::string current_sign,
 void S3AuthClient::chunk_auth_successful() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   state = S3AuthClientOpState::authenticated;
-
+  retry_count = 0;
   remember_auth_details_in_request();
   prev_chunk_signature_from_auth = get_signature_from_response();
 

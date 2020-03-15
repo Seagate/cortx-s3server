@@ -122,3 +122,27 @@ bool S3CommonUtilities::is_yaml_value_null(const std::string &value) {
   return ((value == "null") || (value == "Null") || (value == "NULL") ||
           (value == "~"));
 }
+
+std::string S3CommonUtilities::evhtp_error_flags_description(
+    const evhtp_error_flags errtype) {
+  std::string errtype_str;
+  if (errtype & BEV_EVENT_READING) {
+    errtype_str = "Reading";
+  }
+  if (errtype & BEV_EVENT_WRITING) {
+    errtype_str += " Writing";
+  }
+  if (errtype & BEV_EVENT_EOF) {
+    errtype_str += " EOF";
+  }
+  if (errtype & BEV_EVENT_ERROR) {
+    errtype_str += " Error";
+  }
+  if (errtype & BEV_EVENT_TIMEOUT) {
+    errtype_str += " Timeout";
+  }
+  if (errtype & BEV_EVENT_CONNECTED) {
+    errtype_str += " Connected";
+  }
+  return errtype_str;
+}
