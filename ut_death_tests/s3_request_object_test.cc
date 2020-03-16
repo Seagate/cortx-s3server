@@ -50,11 +50,10 @@ class S3RequestObjectTest : public testing::Test {
   evbase_t *evbase;
   MockEvhtpWrapper *mock_evhtp_obj_ptr;
 };
-/* No time to catch such errors
+
 TEST_F(S3RequestObjectTest, SettingContentLengthTwice) {
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_header_new(_, _, _, _)).Times(1);
   EXPECT_CALL(*mock_evhtp_obj_ptr, http_headers_add_header(_, _)).Times(1);
   request->set_out_header_value("Content-Length", "0");
   ASSERT_DEATH(request->set_out_header_value("Content-Length", "0"), ".*");
 }
-*/

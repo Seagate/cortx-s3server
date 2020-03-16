@@ -430,9 +430,10 @@ void RequestObject::set_out_header_value(std::string key, std::string value) {
 
     // It's no time to catch such errors now.
     // assert(out_headers_copy.find(key) == out_headers_copy.end());
-    s3_log(S3_LOG_INFO, request_id,
+    s3_log(S3_LOG_ERROR, request_id,
            "HTTP response header\n%s: %s\nhas been added twice or more.\n",
            key.c_str(), value.c_str());
+    assert(0);
   }
 }
 
@@ -552,7 +553,7 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     return;
   }
   if (is_s3_client_read_error()) {
-    s3_log(S3_LOG_DEBUG, request_id, "Exiting due to read timeout\n");
+    s3_log(S3_LOG_INFO, request_id, "Exiting due to some read error\n");
     evbuffer_free(buf);
     return;
   }

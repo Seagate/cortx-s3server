@@ -17,35 +17,38 @@
  * Original creation date: 16-August-2018
  */
 
-#include "s3_common_utilities.h"
-#include <algorithm>
 #include <cctype>
+#include <sstream>
+#include <algorithm>
 #include <libxml/parser.h>
+#include <evhtp.h>
+#include "s3_common_utilities.h"
 
-bool S3CommonUtilities::string_has_only_digits(const std::string &str) {
+namespace S3CommonUtilities {
+
+bool string_has_only_digits(const std::string &str) {
   return str.find_first_not_of("0123456789") == std::string::npos;
 }
 
-std::string &S3CommonUtilities::ltrim(std::string &str) {
+std::string &ltrim(std::string &str) {
   str.erase(str.begin(), find_if_not(str.begin(), str.end(),
                                      [](int c) { return std::isspace(c); }));
   return str;
 }
 
-std::string &S3CommonUtilities::rtrim(std::string &str) {
+std::string &rtrim(std::string &str) {
   str.erase(find_if_not(str.rbegin(), str.rend(),
                         [](int c) { return std::isspace(c); }).base(),
             str.end());
   return str;
 }
 
-std::string S3CommonUtilities::trim(const std::string &str) {
+std::string trim(const std::string &str) {
   std::string tempstr = str;
   return ltrim(rtrim(tempstr));
 }
 
-std::string S3CommonUtilities::s3xmlEncodeSpecialChars(
-    const std::string &input) {
+std::string s3xmlEncodeSpecialChars(const std::string &input) {
   xmlChar *output = xmlEncodeSpecialChars(NULL, BAD_CAST input.c_str());
   std::string data;
   if (output) {
@@ -55,9 +58,8 @@ std::string S3CommonUtilities::s3xmlEncodeSpecialChars(
   return data;
 }
 
-std::string S3CommonUtilities::format_xml_string(std::string tag,
-                                                 const std::string &value,
-                                                 bool append_quotes) {
+std::string format_xml_string(std::string tag, const std::string &value,
+                              bool append_quotes) {
 
   std::string format_string = s3xmlEncodeSpecialChars(value);
   if (format_string.empty()) {
@@ -69,7 +71,7 @@ std::string S3CommonUtilities::format_xml_string(std::string tag,
   return "<" + tag + ">" + format_string + "</" + tag + ">";
 }
 
-bool S3CommonUtilities::stoul(const std::string &str, unsigned long &value) {
+bool stoul(const std::string &str, unsigned long &value) {
   bool isvalid = true;
   try {
     value = std::stoul(str);
@@ -83,7 +85,7 @@ bool S3CommonUtilities::stoul(const std::string &str, unsigned long &value) {
   return isvalid;
 }
 
-bool S3CommonUtilities::stoi(const std::string &str, int &value) {
+bool stoi(const std::string &str, int &value) {
   bool isvalid = true;
   try {
     value = std::stoi(str);
@@ -97,9 +99,8 @@ bool S3CommonUtilities::stoi(const std::string &str, int &value) {
   return isvalid;
 }
 
-void S3CommonUtilities::find_and_replaceall(std::string &data,
-                                            const std::string &to_search,
-                                            const std::string &replace_str) {
+void find_and_replaceall(std::string &data, const std::string &to_search,
+                         const std::string &replace_str) {
   // return, if search string is empty
   if (to_search.empty()) return;
   // nothing to match
@@ -116,33 +117,41 @@ void S3CommonUtilities::find_and_replaceall(std::string &data,
   }
 }
 
-bool S3CommonUtilities::is_yaml_value_null(const std::string &value) {
+bool is_yaml_value_null(const std::string &value) {
   // 'null | Null | NULL | ~ ' represents empty string in value
   // https://yaml.org/spec/1.2/spec.html#id2805071
   return ((value == "null") || (value == "Null") || (value == "NULL") ||
           (value == "~"));
 }
 
-std::string S3CommonUtilities::evhtp_error_flags_description(
-    const evhtp_error_flags errtype) {
-  std::string errtype_str;
+std::string evhtp_error_flags_description(uint8_t errtype) {
+  std::ostringstream oss;
+
   if (errtype & BEV_EVENT_READING) {
-    errtype_str = "Reading";
+    oss << "Reading ";
   }
   if (errtype & BEV_EVENT_WRITING) {
-    errtype_str += " Writing";
+    oss << "Writing ";
   }
   if (errtype & BEV_EVENT_EOF) {
-    errtype_str += " EOF";
+    oss << "EOF ";
   }
   if (errtype & BEV_EVENT_ERROR) {
-    errtype_str += " Error";
+    oss << "Error ";
   }
   if (errtype & BEV_EVENT_TIMEOUT) {
-    errtype_str += " Timeout";
+    oss << "Timeout ";
   }
   if (errtype & BEV_EVENT_CONNECTED) {
-    errtype_str += " Connected";
+    oss << "Connected ";
+  }
+  std::string errtype_str = oss.str();
+  oss.clear();
+
+  if (!errtype_str.empty()) {
+    errtype_str.resize(errtype_str.size() - 1);
   }
   return errtype_str;
 }
+
+}  // namespace S3CommonUtilities

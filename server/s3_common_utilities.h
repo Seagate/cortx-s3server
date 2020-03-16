@@ -21,60 +21,57 @@
 #ifndef __S3_COMMON_UTILITIES_h__
 #define __S3_COMMON_UTILITIES_h__
 
+#include <cstdint>
 #include <string>
-#include <evhtp.h>
 
-class S3CommonUtilities {
- public:
-  S3CommonUtilities() = delete;
-  S3CommonUtilities(const S3CommonUtilities &) = delete;
-  S3CommonUtilities &operator=(const S3CommonUtilities &) = delete;
+namespace S3CommonUtilities {
 
-  // return true, if passed string has only digits
-  static bool string_has_only_digits(const std::string &str);
-  // trims below leading charactors of given string
-  // space (0x20, ' ')
-  // form feed (0x0c, '\f')
-  // line feed (0x0a, '\n')
-  // carriage return (0x0d, '\r')
-  // horizontal tab (0x09, '\t')
-  // vertical tab (0x0b, '\v')
-  static std::string &ltrim(std::string &str);
-  // trims below trailing charactors of given string
-  // space (0x20, ' ')
-  // form feed (0x0c, '\f')
-  // line feed (0x0a, '\n')
-  // carriage return (0x0d, '\r')
-  // horizontal tab (0x09, '\t')
-  // vertical tab (0x0b, '\v')
-  static std::string &rtrim(std::string &str);
-  // trims below leading and trialing charactors of given string
-  // space (0x20, ' ')
-  // form feed (0x0c, '\f')
-  // line feed (0x0a, '\n')
-  // carriage return (0x0d, '\r')
-  // horizontal tab (0x09, '\t')
-  // vertical tab (0x0b, '\v')
-  static std::string trim(const std::string &str);
-  // wrapper method for std::stoul
-  // return true, when string is valid to convert
-  // else return false
-  static bool stoul(const std::string &str, unsigned long &value);
-  // wrapper method for std::stoi
-  // return true, when string is valid to convert
-  // else return false
-  static bool stoi(const std::string &str, int &value);
-  // input: A string to convert to XML.
-  // returns new string with the substitution done
-  static std::string s3xmlEncodeSpecialChars(const std::string &input);
-  static std::string format_xml_string(std::string tag,
-                                       const std::string &value,
-                                       bool append_quotes = false);
-  static void find_and_replaceall(std::string &data,
-                                  const std::string &to_search,
-                                  const std::string &replace_str);
-  static bool is_yaml_value_null(const std::string &value);
-  static std::string evhtp_error_flags_description(
-      const evhtp_error_flags errtype);
-};
+// return true, if passed string has only digits
+bool string_has_only_digits(const std::string &str);
+// trims below leading charactors of given string
+// space (0x20, ' ')
+// form feed (0x0c, '\f')
+// line feed (0x0a, '\n')
+// carriage return (0x0d, '\r')
+// horizontal tab (0x09, '\t')
+// vertical tab (0x0b, '\v')
+std::string &ltrim(std::string &str);
+// trims below trailing charactors of given string
+// space (0x20, ' ')
+// form feed (0x0c, '\f')
+// line feed (0x0a, '\n')
+// carriage return (0x0d, '\r')
+// horizontal tab (0x09, '\t')
+// vertical tab (0x0b, '\v')
+std::string &rtrim(std::string &str);
+// trims below leading and trialing charactors of given string
+// space (0x20, ' ')
+// form feed (0x0c, '\f')
+// line feed (0x0a, '\n')
+// carriage return (0x0d, '\r')
+// horizontal tab (0x09, '\t')
+// vertical tab (0x0b, '\v')
+std::string trim(const std::string &str);
+// wrapper method for std::stoul
+// return true, when string is valid to convert
+// else return false
+bool stoul(const std::string &str, unsigned long &value);
+// wrapper method for std::stoi
+// return true, when string is valid to convert
+// else return false
+bool stoi(const std::string &str, int &value);
+// input: A string to convert to XML.
+// returns new string with the substitution done
+std::string s3xmlEncodeSpecialChars(const std::string &input);
+
+std::string format_xml_string(std::string tag, const std::string &value,
+                              bool append_quotes = false);
+void find_and_replaceall(std::string &data, const std::string &to_search,
+                         const std::string &replace_str);
+bool is_yaml_value_null(const std::string &value);
+
+std::string evhtp_error_flags_description(uint8_t errtype);
+
+}  // namespace S3CommonUtilities
+
 #endif

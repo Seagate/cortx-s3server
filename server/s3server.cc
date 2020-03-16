@@ -18,9 +18,11 @@
  * Original creation date: 9-Nov-2015
  */
 
-#include <openssl/md5.h>
 #include <tuple>
 #include <vector>
+#include <sstream>
+
+#include <openssl/md5.h>
 #include <event2/thread.h>
 #include <sys/resource.h>
 
@@ -29,6 +31,7 @@
 #include "fid/fid.h"
 #include "murmur3_hash.h"
 #include "s3_clovis_layout.h"
+#include "s3_common_utilities.h"
 #include "s3_daemonize_server.h"
 #include "s3_error_codes.h"
 #include "s3_fi_common.h"
@@ -82,7 +85,8 @@ extern "C" void s3_handler(evhtp_request_t *req, void *a) {
 
 static void on_client_request_error(evhtp_request_t *p_evhtp_req,
                                     evhtp_error_flags errtype, void *arg) {
-  s3_log(S3_LOG_DEBUG, nullptr, "errtype 0x%X.\n", (int)errtype);
+  s3_log(S3_LOG_INFO, nullptr, "S3 Client disconnected: %s\n",
+         S3CommonUtilities::evhtp_error_flags_description(errtype).c_str());
   if (p_evhtp_req) {
     RequestObject *p_s3_req = static_cast<RequestObject *>(p_evhtp_req->cbarg);
     if (p_s3_req) {
@@ -311,6 +315,7 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
   s3_log(S3_LOG_DEBUG, psz_request_id, "RequestObject(%p)\n", p_s3_req);
 
   if (p_s3_req) {
+    // Data has arrived so disable read timeout
     p_s3_req->stop_client_read_timer();
 
     s3_log(S3_LOG_DEBUG, psz_request_id,
@@ -318,7 +323,6 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
            evbuffer_get_length(buf), p_evhtp_req->conn->sock);
 
     if (!p_s3_req->is_incoming_data_ignored()) {
-      // Data has arrived so disable read timeout
       evbuf_t *s3_buf = evbuffer_new();
       evbuffer_add_buffer(s3_buf, buf);
 
