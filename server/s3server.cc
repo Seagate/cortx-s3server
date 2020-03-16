@@ -52,6 +52,8 @@
 #include "s3_perf_metrics.h"
 
 #define FOUR_KB 4096
+// 32MB
+#define MIN_RESERVE_SIZE 32768
 
 #define WEBSTORE "/home/seagate/webstore"
 
@@ -184,7 +186,7 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
   if (rc != 0) {
     s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
   } else {
-    s3_log(S3_LOG_INFO, "",
+    s3_log(S3_LOG_DEBUG, "",
            "mempool info: mempool_item_size = %zu "
            "free_bufs_in_pool = %d "
            "number_of_bufs_shared = %d "
@@ -200,7 +202,8 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     int layout_id =
         S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
             s3_request->get_data_length());
-    if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id)) {
+    if (!S3MemoryProfile().we_have_enough_memory_for_put_obj(layout_id) ||
+        !S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
       s3_log(S3_LOG_DEBUG, s3_request->get_request_id().c_str(),
              "Limited memory: Rejecting PUT object/part request with retry.\n");
       s3_request->respond_retry_after(1);
@@ -328,8 +331,9 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
 
       p_s3_req->notify_incoming_data(s3_buf);
 
-      if (!p_s3_req->get_buffered_input()->is_freezed() &&
-          !p_s3_req->is_request_paused()) {
+      if ((p_s3_req->get_buffered_input() != NULL) &&
+          (!p_s3_req->get_buffered_input()->is_freezed() &&
+           !p_s3_req->is_request_paused())) {
         // Set the read timeout event, in case if more data
         // is expected.
         s3_log(S3_LOG_DEBUG, psz_request_id,
@@ -665,6 +669,14 @@ int main(int argc, char **argv) {
 
   // dump the config
   g_option_instance->dump_options();
+
+  if (g_option_instance->get_libevent_pool_max_threshold() < MIN_RESERVE_SIZE) {
+    // https://jts.seagate.com/browse/EOS-5876
+    s3_log(
+        S3_LOG_FATAL, "",
+        "S3_LIBEVENT_POOL_RESERVE_SIZE in s3config.yaml cannot be less than %d",
+        MIN_RESERVE_SIZE);
+  }
 
   S3ClovisLayoutMap::get_instance()->load_layout_recommendations(
       g_option_instance->get_layout_recommendation_file());

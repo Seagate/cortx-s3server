@@ -31,6 +31,7 @@ class S3MemoryProfile {
   // out of memory, memory pool manager is dynamic and free space
   // blocked by less used unit_size, so we cannot get accurate estimate
   virtual bool we_have_enough_memory_for_put_obj(int layout_id);
+  virtual bool free_memory_in_pool_above_threshold_limits();
 };
 
 #endif

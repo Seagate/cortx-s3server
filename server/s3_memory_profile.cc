@@ -38,15 +38,44 @@ bool S3MemoryProfile::we_have_enough_memory_for_put_obj(int layout_id) {
   s3_log(S3_LOG_DEBUG, "", "free_space_in_libevent_mempool = %zu\n",
          free_space_in_libevent_mempool);
 
+  size_t min_mem_for_put_obj = memory_per_put_request(layout_id);
+
+  s3_log(S3_LOG_DEBUG, "", "min_mem_for_put_obj = %zu\n", min_mem_for_put_obj);
+
+  return (free_space_in_libevent_mempool > min_mem_for_put_obj);
+}
+
+bool S3MemoryProfile::free_memory_in_pool_above_threshold_limits() {
+#ifdef S3_GOOGLE_TEST
+  return true;
+#endif
+  size_t free_space_in_libevent_mempool = 0;
   // libevent uses ev_buffers for some internal tasks so
   // memory pool can be exhausted under high load
   const auto libevent_pool_reserve_size =
       g_option_instance->get_libevent_pool_reserve_size();
+  event_mempool_free_space(&free_space_in_libevent_mempool);
+  s3_log(S3_LOG_DEBUG, "", "free_space_in_libevent_mempool = %zu\n",
+         free_space_in_libevent_mempool);
   if (free_space_in_libevent_mempool < libevent_pool_reserve_size) {
     s3_log(
         S3_LOG_WARN, "",
         "Free space in libevent mempool is less than "
         "S3_LIBEVENT_POOL_RESERVE_SIZE defined in config file (s3config.yaml)");
+    struct pool_info poolinfo;
+    int rc = event_mempool_getinfo(&poolinfo);
+    if (rc != 0) {
+      s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
+    } else {
+      s3_log(S3_LOG_WARN, "",
+             "mempool info: mempool_item_size = %zu "
+             "free_bufs_in_pool = %d "
+             "number_of_bufs_shared = %d "
+             "total_bufs_allocated_by_pool = %d\n",
+             poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+             poolinfo.number_of_bufs_shared,
+             poolinfo.total_bufs_allocated_by_pool);
+    }
     return false;
   }
   const auto libevent_pool_max_threshold =
@@ -59,11 +88,22 @@ bool S3MemoryProfile::we_have_enough_memory_for_put_obj(int layout_id) {
            "Free space (in percent) in libevent mempool is less than "
            "S3_LIBEVENT_POOL_RESERVE_PERCENT defined in config file "
            "(s3config.yaml)");
+
+    struct pool_info poolinfo;
+    int rc = event_mempool_getinfo(&poolinfo);
+    if (rc != 0) {
+      s3_log(S3_LOG_FATAL, "", "Issue with memory pool!\n");
+    } else {
+      s3_log(S3_LOG_WARN, "",
+             "mempool info: mempool_item_size = %zu "
+             "free_bufs_in_pool = %d "
+             "number_of_bufs_shared = %d "
+             "total_bufs_allocated_by_pool = %d\n",
+             poolinfo.mempool_item_size, poolinfo.free_bufs_in_pool,
+             poolinfo.number_of_bufs_shared,
+             poolinfo.total_bufs_allocated_by_pool);
+    }
     return false;
   }
-  size_t min_mem_for_put_obj = memory_per_put_request(layout_id);
-
-  s3_log(S3_LOG_DEBUG, "", "min_mem_for_put_obj = %zu\n", min_mem_for_put_obj);
-
-  return (free_space_in_libevent_mempool > min_mem_for_put_obj);
+  return true;
 }

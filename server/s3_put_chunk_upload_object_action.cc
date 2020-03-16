@@ -471,6 +471,19 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
     }
     return;
   }
+
+  //++
+  // We are about to consume already buffered data, check whether the remaining
+  // memory in mempool is above threshold or not, if its below
+  // threshold value then bail out this request
+  // https://jts.seagate.com/browse/EOS-5876
+  //--
+  if (!S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
+    set_s3_error("ServiceUnavailable");
+    rollback_start();
+    return;
+  }
+
   if (!clovis_write_in_progress) {
     if (request->get_buffered_input()->is_freezed() ||
         request->get_buffered_input()->get_content_length() >=
