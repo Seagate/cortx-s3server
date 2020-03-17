@@ -22,7 +22,7 @@ import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.seagates3.authserver.AuthServerConfig;
 import com.novell.ldap.LDAPConnection;
 import com.novell.ldap.LDAPEntry;
 import com.novell.ldap.LDAPException;
@@ -31,7 +31,8 @@ import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.fi.FaultPoints;
 import com.seagates3.util.IEMUtil;
 
-public class LDAPUtils {
+public
+class LDAPUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LDAPUtils.class.getName());
 
@@ -303,8 +304,10 @@ public class LDAPUtils {
      */
    public
     static void bind(String dn, String password) throws LDAPException {
-      LDAPConnection lc;
-      lc = LdapConnectionManager.getConnection(dn, password);
+      LDAPConnection lc = new LDAPConnection(1000);
+      lc.connect(AuthServerConfig.getLdapHost(),
+                 AuthServerConfig.getLdapPort());
+      lc.bind(dn, password);
       if (lc != null && lc.isConnected()) {
         try {
           if (FaultPoints.fiEnabled() &&
@@ -323,7 +326,7 @@ public class LDAPUtils {
               String.format("\"cause\": \"%s\"", ldapException.getCause()));
           throw ldapException;
         }
-        finally { LdapConnectionManager.releaseConnection(lc); }
+        finally { lc.disconnect(); }
       }
     }
 }
