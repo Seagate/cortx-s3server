@@ -96,8 +96,8 @@ void MeroDeleteObjectAction::delete_object_failed() {
            oid.u_lo);
   } else {
     set_s3_error("InternalError");
-    send_response_to_s3_client();
   }
+  send_response_to_s3_client();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
