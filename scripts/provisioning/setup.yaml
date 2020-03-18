@@ -5,25 +5,13 @@ s3server:
       - --s3backgrounddelete
   init:
     script: /opt/seagate/eos/s3server/bin/s3_setup
-    args:
-      - --setupjenkinsyumrepo
-      - --installdependency
-      - --purgeconfigldap
-      - --ldapreplication
-      - --olcserverid 1
-      - --eesnode1 <IP address of node 1>
-      - --eesnode2 <IP address of node 2>
+    args: null
   config:
     script: /opt/seagate/eos/s3server/bin/s3_setup
-    args:
-      - --configldap
-      - --ldapreplication
-      - --olcserverid 1
-      - --eesnode1 <IP address of node 1>
-      - --eesnode2 <IP address of node 2>
+    args: null
   reset:
     script: /opt/seagate/eos/s3server/bin/s3_setup
-    args:
+    args: null
   post_startup:
     script: /opt/seagate/eos/s3server/bin/s3_setup
     args:

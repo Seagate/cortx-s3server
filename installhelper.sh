@@ -186,6 +186,9 @@ cp auth/server/s3authserver.service $SERVICE_FILE_LOCATION
 # Copy rsyslog config
 cp ./scripts/rsyslog-tcp-audit.conf $RSYSLOG_CFG_DIR_LOCATION
 
+# Copy elasticsearch config
+cp ./scripts/elasticsearch/elasticsearch.conf $RSYSLOG_CFG_DIR_LOCATION
+
 # Copy the keepalived config
 cp ./scripts/keepalived/keepalived.conf.master $KEEPALIVED_CFG_DIR_LOCATION
 

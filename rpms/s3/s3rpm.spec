@@ -234,6 +234,7 @@ rm -rf %{buildroot}
 %attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundconsumer
 %attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundproducer
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
+/etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.master
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer

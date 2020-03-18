@@ -309,6 +309,12 @@ fi
 
 add_s3backgrounddelete_rabbitmq_user()
 {
+    users=`rabbitmqctl list_users`
+    if [[ $users =~ "s3-background-delete-rabbitmq" ]]
+    then
+    echo "Rabbitmq s3user already exists. Cleaning existing s3user."
+    rabbitmqctl delete_user s3-background-delete-rabbitmq
+    fi
     # Create a user (In this case user is 's3-background-delete-rabbitmq' with password as 'password')
     rabbitmqctl add_user s3-background-delete-rabbitmq password
     # Setup this user as an administrator.
