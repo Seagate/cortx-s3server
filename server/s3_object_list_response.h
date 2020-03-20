@@ -37,7 +37,7 @@ class S3ObjectListResponse {
 
   std::string bucket_name;
   std::string object_name, user_name, user_id, storage_class, upload_id;
-  std::string account_name, account_id;
+  std::string account_name, account_id, canonical_id;
   std::vector<std::shared_ptr<S3ObjectMetadata>> object_list;
   std::map<int, std::shared_ptr<S3PartMetadata>> part_list;
 
@@ -68,6 +68,7 @@ class S3ObjectListResponse {
   void set_object_name(std::string name);
   void set_user_id(std::string);
   void set_user_name(std::string);
+  void set_canonical_id(std::string);
   void set_account_id(std::string);
   void set_account_name(std::string);
   void set_storage_class(std::string);
@@ -95,6 +96,7 @@ class S3ObjectListResponse {
   std::string& get_multiupload_xml();
   std::string& get_user_id();
   std::string& get_user_name();
+  std::string& get_canonical_id();
   std::string& get_account_id();
   std::string& get_account_name();
   std::string& get_storage_class();

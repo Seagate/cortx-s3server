@@ -137,13 +137,14 @@ RequestObject::RequestObject(
   buffering_timer.start();
   buffering_timer.stop();
 
-  user_name = user_id = account_name = account_id = "";
+  user_name = user_id = account_name = account_id = canonical_id = "";
   // For auth disabled, use some dummy user.
   if (g_option_instance->is_auth_disabled()) {
     account_name = "s3_test";
     account_id = "12345";
     user_name = "tester";
     user_id = "123";
+    canonical_id = "123456789dummyCANONICALID";
   }
 
   request_error = S3RequestError::None;
@@ -528,6 +529,12 @@ bool RequestObject::has_query_param_key(std::string key) {
 void RequestObject::set_user_name(const std::string& name) { user_name = name; }
 
 const std::string& RequestObject::get_user_name() { return user_name; }
+
+void RequestObject::set_canonical_id(const std::string& id) {
+  canonical_id = id;
+}
+
+const std::string& RequestObject::get_canonical_id() { return canonical_id; }
 
 void RequestObject::set_user_id(const std::string& id) { user_id = id; }
 

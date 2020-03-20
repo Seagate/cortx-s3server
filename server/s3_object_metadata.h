@@ -58,6 +58,7 @@ class S3ObjectMetadata {
   std::string account_name;
   std::string account_id;
   std::string user_name;
+  std::string canonical_id;
   std::string user_id;
   std::string bucket_name;
   std::string object_name;
@@ -188,6 +189,8 @@ class S3ObjectMetadata {
   virtual std::string get_object_name();
   virtual std::string get_user_id();
   virtual std::string get_user_name();
+  virtual std::string get_canonical_id();
+  virtual std::string get_account_name();
   std::string get_creation_date();
   std::string get_last_modified();
   virtual std::string get_last_modified_gmt();

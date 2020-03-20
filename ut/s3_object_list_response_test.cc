@@ -71,6 +71,7 @@ class S3ObjectListResponseTest : public testing::Test {
     mock_request->set_user_name("s3user");
     mock_request->set_account_id("1");
     mock_request->set_account_name("s3user");
+    mock_request->set_canonical_id("qWwZGnGYTga8gbpcuY79SA");
 
     response_under_test = std::make_shared<S3ObjectListResponse>();
   }
@@ -178,8 +179,9 @@ TEST_F(S3ObjectListResponseTest, ObjectListResponseWithValidObjectsTruncated) {
   EXPECT_CALL(*mock_obj, get_md5()).WillOnce(Return("abcd"));
   EXPECT_CALL(*mock_obj, get_content_length_str()).WillOnce(Return("1024"));
   EXPECT_CALL(*mock_obj, get_storage_class()).WillOnce(Return("STANDARD"));
-  EXPECT_CALL(*mock_obj, get_user_id()).WillOnce(Return("1"));
-  EXPECT_CALL(*mock_obj, get_user_name()).WillOnce(Return("s3user"));
+  EXPECT_CALL(*mock_obj, get_canonical_id())
+      .WillOnce(Return("qWwZGnGYTga8gbpcuY79SA"));
+  EXPECT_CALL(*mock_obj, get_account_name()).WillOnce(Return("s3user"));
 
   std::string response = response_under_test->get_xml();
   CHECK_XML_RESPONSE;
@@ -201,8 +203,9 @@ TEST_F(S3ObjectListResponseTest,
   EXPECT_CALL(*mock_obj, get_md5()).WillOnce(Return("abcd"));
   EXPECT_CALL(*mock_obj, get_content_length_str()).WillOnce(Return("1024"));
   EXPECT_CALL(*mock_obj, get_storage_class()).WillOnce(Return("STANDARD"));
-  EXPECT_CALL(*mock_obj, get_user_id()).WillOnce(Return("1"));
-  EXPECT_CALL(*mock_obj, get_user_name()).WillOnce(Return("s3user"));
+  EXPECT_CALL(*mock_obj, get_canonical_id())
+      .WillOnce(Return("qWwZGnGYTga8gbpcuY79SA"));
+  EXPECT_CALL(*mock_obj, get_account_name()).WillOnce(Return("s3user"));
 
   std::string response = response_under_test->get_xml();
   CHECK_XML_RESPONSE;

@@ -107,7 +107,10 @@ class Authorizer {
         /// authorization
         /// is None
         LOGGER.debug("inside acl authorization....");
-        serverResponse = checkAclAuthorization(requestor, requestBody);
+        serverResponse = checkAclAuthorization(requestor, requestBody, true);
+      } else if (serverResponse.getResponseStatus() == HttpResponseStatus.OK) {
+        LOGGER.debug("inside acl validation w.o. authorization....");
+        serverResponse = checkAclAuthorization(requestor, requestBody, false);
       }
     }
     catch (Exception e) {
@@ -122,7 +125,8 @@ class Authorizer {
 
  private
   ServerResponse checkAclAuthorization(Requestor requestor,
-                                       Map<String, String> requestBody) {
+                                       Map<String, String> requestBody,
+                                       boolean isAclAuthorizationRequired) {
     AuthorizationResponseGenerator responseGenerator =
         new AuthorizationResponseGenerator();
     Map<String, List<Account>> accountPermissionMap = new HashMap<>();
@@ -142,29 +146,12 @@ class Authorizer {
       return serverResponse;
     }
     LOGGER.info("ACL authorization request is validated successfully");
-    // Authorize the request
-    try {
-      if (requestBody.get("Auth-ACL") == null) {
-        LOGGER.debug("ACL not present. Skipping ACL authorization.");
-      } else if (!new ACLAuthorizer().isAuthorized(requestor, requestBody)) {
-        LOGGER.info("Resource ACL denies access to the requestor for this " +
-                    "operation.");
-        return responseGenerator.AccessDenied();
+
+    if (isAclAuthorizationRequired) {
+      serverResponse = isAclAuthorized(requestor, requestBody);
+      if (serverResponse != null) {
+        return serverResponse;
       }
-    }
-    catch (ParserConfigurationException | SAXException | IOException |
-           GrantListFullException e1) {
-      LOGGER.error("Error while initializing authorization ACL");
-      return responseGenerator.invalidACL();
-    }
-    catch (BadRequestException e2) {
-      LOGGER.error("Request does not contain the mandatory - " +
-                   "ACL, Method or ClientAbsoluteUri");
-      return responseGenerator.badRequest();
-    }
-    catch (DataAccessException e3) {
-      LOGGER.error("Exception while authorizing ", e3);
-      responseGenerator.internalServerError();
     }
 
     // After ALLUser Requested Permission is Authorized.
@@ -214,6 +201,40 @@ class Authorizer {
       }
     }
     return responseGenerator.generateAuthorizationResponse(requestor, null);
+  }
+
+  /**
+   * Below method will handle acl authorization
+   */
+ private
+  ServerResponse isAclAuthorized(Requestor requestor,
+                                 Map<String, String> requestBody) {
+    AuthorizationResponseGenerator responseGenerator =
+        new AuthorizationResponseGenerator();
+    try {
+      if (requestBody.get("Auth-ACL") == null) {
+        LOGGER.debug("ACL not present. Skipping ACL authorization.");
+      } else if (!new ACLAuthorizer().isAuthorized(requestor, requestBody)) {
+        LOGGER.info("Resource ACL denies access to the requestor for this " +
+                    "operation.");
+        return responseGenerator.AccessDenied();
+      }
+    }
+    catch (ParserConfigurationException | SAXException | IOException |
+           GrantListFullException e1) {
+      LOGGER.error("Error while initializing authorization ACL");
+      return responseGenerator.invalidACL();
+    }
+    catch (BadRequestException e2) {
+      LOGGER.error("Request does not contain the mandatory - " +
+                   "ACL, Method or ClientAbsoluteUri");
+      return responseGenerator.badRequest();
+    }
+    catch (DataAccessException e3) {
+      LOGGER.error("Exception while authorizing ", e3);
+      responseGenerator.internalServerError();
+    }
+    return null;
   }
 
   /**
@@ -268,52 +289,55 @@ class Authorizer {
     try {
 
       aclValidation = new ACLValidation(requestBody.get("ACL"));
-    }
-    catch (ParserConfigurationException | SAXException | IOException e) {
-      LOGGER.debug("Error while Parsing ACL XML");
-      return responseGenerator.invalidACL();
-    }
-    catch (GrantListFullException e) {
-      LOGGER.debug("Error while Parsing ACL XML. Number of grants exceeds " +
-                   AuthServerConfig.MAX_GRANT_SIZE);
-      return responseGenerator.invalidACL();
-    }
-    AccessControlPolicy existingAcp = null;
-    try {
-      if (requestBody.get("Auth-ACL") != null) {
-        existingAcp = new AccessControlPolicy(
-            BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")));
-        LOGGER.debug(
-            "Sending Auth-ACL for validating new owner against existing " +
-            "owner");
       }
+      catch (ParserConfigurationException | SAXException | IOException e) {
+        LOGGER.debug("Error while Parsing ACL XML");
+        return responseGenerator.invalidACL();
+      }
+      catch (GrantListFullException e) {
+        LOGGER.debug("Error while Parsing ACL XML. Number of grants exceeds " +
+                     AuthServerConfig.MAX_GRANT_SIZE);
+        return responseGenerator.invalidACL();
+      }
+      AccessControlPolicy existingAcp = null;
+      try {
+        if (requestBody.get("Auth-ACL") != null) {
+          existingAcp = new AccessControlPolicy(
+              BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")));
+          LOGGER.debug(
+              "Sending Auth-ACL for validating new owner against existing " +
+              "owner");
+        }
+      }
+      catch (ParserConfigurationException | SAXException | IOException |
+             GrantListFullException e1) {
+        LOGGER.error("Error while validating authorization ACL");
+        return responseGenerator.invalidACL();
+      }
+      return aclValidation.validate(existingAcp);
     }
-    catch (ParserConfigurationException | SAXException | IOException |
-           GrantListFullException e1) {
-      LOGGER.error("Error while validating authorization ACL");
-      return responseGenerator.invalidACL();
-    }
-    return aclValidation.validate(existingAcp);
-  }
 
-  /**
-   * Validate the policy
-   *
-   * @param requestBody
-   * @return
-   */
- public
-  ServerResponse validatePolicy(Map<String, String> requestBody) {
-    LOGGER.debug("request body : " + requestBody.toString());
-    ServerResponse serverResponse = null;
-    serverResponse = new BucketPolicyValidator().validatePolicy(
-        PolicyUtil.getBucketFromUri(requestBody.get("ClientAbsoluteUri")),
-        requestBody.get("Policy"));
-    if (serverResponse != null && serverResponse.getResponseStatus() != null &&
-        !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
-      LOGGER.error("Invalid Bucket Policy");
-      return serverResponse;
+    /**
+     * Validate the policy
+     *
+     * @param requestBody
+     * @return
+     */
+   public
+    ServerResponse validatePolicy(Map<String, String> requestBody) {
+      LOGGER.debug("request body : " + requestBody.toString());
+      ServerResponse serverResponse = null;
+      serverResponse = new BucketPolicyValidator().validatePolicy(
+          PolicyUtil.getBucketFromUri(requestBody.get("ClientAbsoluteUri")),
+          requestBody.get("Policy"));
+      if (serverResponse != null &&
+          serverResponse.getResponseStatus() != null &&
+          !serverResponse.getResponseStatus().equals(HttpResponseStatus.OK)) {
+        LOGGER.error("Invalid Bucket Policy");
+        return serverResponse;
+      }
+      return new AuthorizationResponseGenerator().ok();
     }
-    return new AuthorizationResponseGenerator().ok();
-  }
 }
+
+

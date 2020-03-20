@@ -233,9 +233,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         "\"no\"?><AuthorizeUserResponse " +
         "xmlns=\"https://iam.seagate.com/doc/2010-05-08/" +
         "\"><AuthorizeUserResult><UserId>MH12</UserId><UserName>tylerdurden</" +
-        "UserName>" +
-        "<AccountId>NS5144</AccountId><AccountName>jack</AccountName></" +
-        "AuthorizeUser" +
+        "UserName>" + "<AccountId>NS5144</AccountId><AccountName>jack</" +
+        "AccountName><CanonicalId>MH12</CanonicalId></" + "AuthorizeUser" +
         "Result><ResponseMetadata><RequestId>0000</RequestId></" +
         "ResponseMetadata>" + "</AuthorizeUserResponse>";
 
@@ -940,5 +939,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertNull(result);
   }
 }
+
 
 

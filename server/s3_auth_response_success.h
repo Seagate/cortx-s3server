@@ -33,6 +33,7 @@ class S3AuthResponseSuccess {
   bool is_valid;
 
   std::string user_name;
+  std::string canonical_id;
   std::string user_id;
   std::string account_name;
   std::string account_id;
@@ -49,6 +50,7 @@ class S3AuthResponseSuccess {
   bool isOK();
 
   const std::string& get_user_name();
+  const std::string& get_canonical_id();
   const std::string& get_user_id();
   const std::string& get_account_name();
   const std::string& get_account_id();

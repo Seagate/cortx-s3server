@@ -90,6 +90,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
       success_obj.reset(new S3AuthResponseSuccess(auth_response_xml));
       if (success_obj->isOK()) {
         get_request()->set_user_name(success_obj->get_user_name());
+        get_request()->set_canonical_id(success_obj->get_canonical_id());
         get_request()->set_user_id(success_obj->get_user_id());
         get_request()->set_account_name(success_obj->get_account_name());
         get_request()->set_account_id(success_obj->get_account_id());
@@ -133,6 +134,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
             std::dynamic_pointer_cast<S3RequestObject>(request);
         if (s3_request != nullptr) {
           s3_request->set_user_name(success_obj->get_user_name());
+          s3_request->set_canonical_id(success_obj->get_canonical_id());
           s3_request->set_user_id(success_obj->get_user_id());
           s3_request->set_account_name(success_obj->get_account_name());
           s3_request->set_account_id(success_obj->get_account_id());
@@ -166,6 +168,13 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   std::string get_user_name() {
     if (is_auth_successful) {
       return success_obj->get_user_name();
+    }
+    return "";
+  }
+
+  std::string get_canonical_id() {
+    if (is_auth_successful) {
+      return success_obj->get_canonical_id();
     }
     return "";
   }

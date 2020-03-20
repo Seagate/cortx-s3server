@@ -39,6 +39,7 @@ void S3ObjectMetadata::initialize(bool ismultipart, std::string uploadid) {
   account_name = request->get_account_name();
   account_id = request->get_account_id();
   user_name = request->get_user_name();
+  canonical_id = request->get_canonical_id();
   user_id = request->get_user_id();
   bucket_name = request->get_bucket_name();
   object_name = request->get_object_name();
@@ -191,6 +192,10 @@ std::string S3ObjectMetadata::get_user_id() { return user_id; }
 std::string S3ObjectMetadata::get_upload_id() { return upload_id; }
 
 std::string S3ObjectMetadata::get_user_name() { return user_name; }
+
+std::string S3ObjectMetadata::get_canonical_id() { return canonical_id; }
+
+std::string S3ObjectMetadata::get_account_name() { return account_name; }
 
 std::string S3ObjectMetadata::get_creation_date() {
   return system_defined_attribute["Date"];
@@ -466,6 +471,7 @@ void S3ObjectMetadata::save_metadata() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
+  system_defined_attribute["Owner-Canonical-id"] = canonical_id;
   system_defined_attribute["Owner-User-id"] = user_id;
   system_defined_attribute["Owner-Account"] = account_name;
   system_defined_attribute["Owner-Account-id"] = account_id;
@@ -647,6 +653,7 @@ int S3ObjectMetadata::from_json(std::string content) {
         newroot["System-Defined"][it].asString().c_str();
   }
   user_name = system_defined_attribute["Owner-User"];
+  canonical_id = system_defined_attribute["Owner-Canonical-id"];
   user_id = system_defined_attribute["Owner-User-id"];
   account_name = system_defined_attribute["Owner-Account"];
   account_id = system_defined_attribute["Owner-Account-id"];

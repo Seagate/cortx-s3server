@@ -71,6 +71,7 @@ class RequestObject {
   S3HttpVerb http_method;
   // This info is fetched from auth service.
   std::string user_name;
+  std::string canonical_id;  // Unique
   std::string user_id;  // Unique
   std::string account_name;
   std::string account_id;  // Unique
@@ -189,6 +190,10 @@ class RequestObject {
 
   void set_user_name(const std::string& name);
   const std::string& get_user_name();
+
+  void set_canonical_id(const std::string& id);
+  const std::string& get_canonical_id();
+
   void set_user_id(const std::string& id);
   const std::string& get_user_id();
 

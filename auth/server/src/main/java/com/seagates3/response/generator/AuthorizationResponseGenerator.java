@@ -35,6 +35,8 @@ public class AuthorizationResponseGenerator extends AbstractResponseGenerator {
           responseElements.put("UserName", requestor.getName());
           responseElements.put("AccountId", requestor.getAccount().getId());
           responseElements.put("AccountName", requestor.getAccount().getName());
+          responseElements.put("CanonicalId",
+                               requestor.getAccount().getCanonicalId());
         } else {
           responseElements.put("AllUserRequest", "true");
         }

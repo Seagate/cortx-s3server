@@ -585,6 +585,7 @@ void S3AuthClient::remember_auth_details_in_request() {
   if (auth_context->auth_successful()) {
     request->set_user_id(auth_context->get_user_id());
     request->set_user_name(auth_context->get_user_name());
+    request->set_canonical_id(auth_context->get_canonical_id());
     request->set_account_id(auth_context->get_account_id());
     request->set_account_name(auth_context->get_account_name());
   }

@@ -173,13 +173,16 @@ TEST_F(S3AuthClientOpContextTest, CanParseAuthorizationSuccessResponse) {
       "xmlns=\"https://iam.seagate.com/doc/2010-05-08/"
       "\"><AuthorizeUserResult><UserId>123</UserId><UserName>tester</"
       "UserName><AccountId>12345</AccountId><AccountName>s3_test</"
-      "AccountName></AuthorizeUserResult><ResponseMetadata><RequestId>0000</"
+      "AccountName><CanonicalId>507e9f946afa4a18b0ac54e869c5fc6b6eb518c22e3a90<"
+      "/CanonicalId></AuthorizeUserResult><ResponseMetadata><RequestId>0000</"
       "RequestId></ResponseMetadata></AuthorizeUserResponse>";
 
   p_authopctx->set_auth_response_xml(sample_response.c_str(), true);
 
   EXPECT_TRUE(p_authopctx->is_auth_successful);
   EXPECT_STREQ("tester", p_authopctx->get_request()->get_user_name().c_str());
+  EXPECT_STREQ("507e9f946afa4a18b0ac54e869c5fc6b6eb518c22e3a90",
+               p_authopctx->get_request()->get_canonical_id().c_str());
   EXPECT_STREQ("123", p_authopctx->get_request()->get_user_id().c_str());
   EXPECT_STREQ("s3_test",
                p_authopctx->get_request()->get_account_name().c_str());

@@ -65,9 +65,11 @@ import io.netty.handler.codec.http.HttpResponseStatus;
       "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
       "<AuthorizeUserResult>" + "<UserId>456</UserId>" +
       "<UserName>tester</UserName>" + "<AccountId>12345</AccountId>" +
-      "<AccountName>testAccount</AccountName>" + "</AuthorizeUserResult>" +
-      "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
-      "</ResponseMetadata>" + "</AuthorizeUserResponse>";
+      "<AccountName>testAccount</AccountName>" +
+      "<CanonicalId>qWwZGnGYTga8gbpcuY79SA</CanonicalId>" +
+      "</AuthorizeUserResult>" + "<ResponseMetadata>" +
+      "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+      "</AuthorizeUserResponse>";
 
   @BeforeClass public static void setUpBeforeClass() {
     Account account = new Account();
@@ -916,5 +918,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                  actualServerResponse.getResponseStatus());
   }
 }
+
 
 

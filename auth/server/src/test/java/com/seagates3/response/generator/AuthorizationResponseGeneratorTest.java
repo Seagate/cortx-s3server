@@ -10,7 +10,6 @@ import org.junit.Test;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.response.generator.AuthorizationResponseGenerator;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -30,9 +29,11 @@ class AuthorizationResponseGeneratorTest {
       "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
       "<AuthorizeUserResult>" + "<UserId>456</UserId>" +
       "<UserName>tester</UserName>" + "<AccountId>12345</AccountId>" +
-      "<AccountName>testAccount</AccountName>" + "</AuthorizeUserResult>" +
-      "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
-      "</ResponseMetadata>" + "</AuthorizeUserResponse>";
+      "<AccountName>testAccount</AccountName>" +
+      "<CanonicalId>qWwZGnGYTga8gbpcuY79SA</CanonicalId>" +
+      "</AuthorizeUserResult>" + "<ResponseMetadata>" +
+      "<RequestId>0000</RequestId>" + "</ResponseMetadata>" +
+      "</AuthorizeUserResponse>";
 
  private
   static String defaultACL =

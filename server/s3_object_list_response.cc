@@ -129,6 +129,10 @@ void S3ObjectListResponse::set_user_name(std::string username) {
   user_name = username;
 }
 
+void S3ObjectListResponse::set_canonical_id(std::string canonicalid) {
+  canonical_id = canonicalid;
+}
+
 void S3ObjectListResponse::set_account_id(std::string accountid) {
   account_id = accountid;
 }
@@ -148,6 +152,8 @@ void S3ObjectListResponse::set_storage_class(std::string stor_class) {
 std::string& S3ObjectListResponse::get_user_id() { return user_id; }
 
 std::string& S3ObjectListResponse::get_user_name() { return user_name; }
+
+std::string& S3ObjectListResponse::get_canonical_id() { return canonical_id; }
 
 std::string& S3ObjectListResponse::get_storage_class() { return storage_class; }
 
@@ -192,9 +198,9 @@ std::string& S3ObjectListResponse::get_xml() {
         "StorageClass", object->get_storage_class());
     response_xml += "<Owner>";
     response_xml +=
-        S3CommonUtilities::format_xml_string("ID", object->get_user_id());
+        S3CommonUtilities::format_xml_string("ID", object->get_canonical_id());
     response_xml += S3CommonUtilities::format_xml_string(
-        "DisplayName", object->get_user_name());
+        "DisplayName", object->get_account_name());
     response_xml += "</Owner>";
     response_xml += "</Contents>";
   }
