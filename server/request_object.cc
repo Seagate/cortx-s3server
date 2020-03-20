@@ -18,12 +18,14 @@
  * Original creation date: 1-Oct-2019
  */
 
-#include <evhttp.h>
 #include <string>
 #include <algorithm>
 
+#include <evhttp.h>
+
 #include "s3_error_codes.h"
 #include "s3_factory.h"
+#include "s3_memory_profile.h"
 #include "s3_option.h"
 #include "s3_common_utilities.h"
 #include "request_object.h"
@@ -557,6 +559,24 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
   if (buf == NULL) {
     // Very unlikely
     s3_log(S3_LOG_WARN, request_id, "Exiting due to buf(NULL)\n");
+    return;
+  }
+  if (!S3MemoryProfile().free_memory_in_pool_above_threshold_limits()) {
+    //++
+    // We are about to consume already buffered data, check whether the
+    // remaining memory in mempool is above threshold or not, if its below
+    // threshold value then bail out this request
+    //--
+    evbuffer_free(buf);
+    ignore_incoming_data = true;
+    s3_client_read_error = "ServiceUnavailable";
+
+    if (incoming_data_callback) {
+      incoming_data_callback();
+    } else {
+      s3_log(S3_LOG_WARN, request_id,
+             "Memory in pool is above threshold limits\n");
+    }
     return;
   }
   if (is_s3_client_read_error()) {
