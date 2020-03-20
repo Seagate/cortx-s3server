@@ -26,7 +26,6 @@ import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.fi.FaultPoints;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.times;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
@@ -55,28 +54,14 @@ import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 public class LDAPUtilsTest {
 
     private LDAPConnection ldapConnection;
-    private
-     final String LDAP_HOST = "127.0.0.1";
-    private
-     final int LDAP_PORT = 389;
-    private
-     final int socket_timeout = 1000;
 
     @Before
     public void setUp() throws Exception {
         mockStatic(AuthServerConfig.class);
         ldapConnection = mock(LDAPConnection.class);
-        PowerMockito.doReturn(LDAP_HOST)
-            .when(AuthServerConfig.class, "getLdapHost");
-        PowerMockito.doReturn(LDAP_PORT)
-            .when(AuthServerConfig.class, "getLdapPort");
-
         when(ldapConnection.isConnected()).thenReturn(Boolean.TRUE);
         PowerMockito.mockStatic(LdapConnectionManager.class);
         doReturn(ldapConnection).when(LdapConnectionManager.class, "getConnection");
-        PowerMockito.whenNew(LDAPConnection.class)
-            .withArguments(socket_timeout)
-            .thenReturn(ldapConnection);
     }
 
     @Test
@@ -384,11 +369,11 @@ public class LDAPUtilsTest {
         * Below will check success scenario for bind call
         * @throws LDAPException
         */
-    @Test public void bindTest_success() throws LDAPException, Exception {
+    @Test public void bindTest_success() throws LDAPException {
       String dn = "";
       String password = "";
-      PowerMockito.verifyNew(LDAPConnection.class, times(0))
-          .withArguments(socket_timeout);
+      PowerMockito.when(LdapConnectionManager.getConnection(dn, password))
+          .thenReturn(ldapConnection);
       LDAPUtils.bind(dn, password);
     }
 
