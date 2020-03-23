@@ -92,8 +92,7 @@ class ClovisAPI {
                             enum m0_clovis_idx_opcode opcode,
                             struct m0_bufvec *keys, struct m0_bufvec *vals,
                             int *rcs, unsigned int flags,
-                            struct m0_clovis_op **op,
-                            bool wait_for_sync = false) = 0;
+                            struct m0_clovis_op **op) = 0;
 
   virtual void clovis_obj_op(struct m0_clovis_obj *obj,
                              enum m0_clovis_obj_opcode opcode,
@@ -248,13 +247,11 @@ class ConcreteClovisAPI : public ClovisAPI {
 
   int clovis_idx_op(struct m0_clovis_idx *idx, enum m0_clovis_idx_opcode opcode,
                     struct m0_bufvec *keys, struct m0_bufvec *vals, int *rcs,
-                    unsigned int flags, struct m0_clovis_op **op,
-                    bool wait_for_sync = false) {
+                    unsigned int flags, struct m0_clovis_op **op) {
     if (s3_fi_is_enabled("clovis_idx_op_fail")) {
       return -1;
     } else {
-      return m0_clovis_idx_op(idx, opcode, keys, vals, rcs, flags,
-                              wait_for_sync, op);
+      return m0_clovis_idx_op(idx, opcode, keys, vals, rcs, flags, op);
     }
   }
 

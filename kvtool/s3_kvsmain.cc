@@ -236,7 +236,7 @@ static int execute_kv_query(struct m0_uint128 id, struct m0_bufvec *keys,
   ops[0] = NULL;
 
   m0_clovis_idx_init(&idx, &clovis_uber_realm, &id);
-  m0_clovis_idx_op(&idx, opcode, keys, vals, rc_keys, flags, false, &ops[0]);
+  m0_clovis_idx_op(&idx, opcode, keys, vals, rc_keys, flags, &ops[0]);
 
   m0_clovis_op_launch(ops, 1);
   rc = m0_clovis_op_wait(

@@ -519,7 +519,7 @@ int S3ClovisKVSWriter::put_keyval_impl(
 
   rc = s3_clovis_api->clovis_idx_op(
       &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
-      kvs_ctx->rcs, M0_OIF_OVERWRITE, &(idx_op_ctx->ops[0]), true);
+      kvs_ctx->rcs, M0_OIF_OVERWRITE | M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
@@ -641,7 +641,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 
   rc = s3_clovis_api->clovis_idx_op(
       &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
-      kvs_ctx->rcs, M0_OIF_OVERWRITE, &(idx_op_ctx->ops[0]), true);
+      kvs_ctx->rcs, M0_OIF_OVERWRITE, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
@@ -838,8 +838,8 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
   s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
                                  &oid_list[0]);
   rc = s3_clovis_api->clovis_idx_op(&(idx_ctx->idx[0]), M0_CLOVIS_IC_DEL,
-                                    kvs_ctx->keys, NULL, kvs_ctx->rcs, 0,
-                                    &(idx_op_ctx->ops[0]), true);
+                                    kvs_ctx->keys, NULL, kvs_ctx->rcs,
+                                    M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));
   if (rc != 0) {
     s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
     state = S3ClovisKVSWriterOpState::failed_to_launch;
