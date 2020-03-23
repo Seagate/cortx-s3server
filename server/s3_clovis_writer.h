@@ -196,13 +196,8 @@ class S3ClovisWriter {
                               std::function<void(void)> on_success,
                               std::function<void(void)> on_failed);
 
-  virtual int get_op_ret_code_for(int index) {
-    return writer_context->get_errno_for(index);
-  }
-
-  virtual int get_op_ret_code_for_delete_op(int index) {
-    return delete_context->get_errno_for(index);
-  }
+  virtual int get_op_ret_code_for(int index);
+  virtual int get_op_ret_code_for_delete_op(int index);
 
   void set_up_clovis_data_buffers(struct s3_clovis_rw_op_context* rw_ctx,
                                   std::deque<evbuffer*>& data_items,

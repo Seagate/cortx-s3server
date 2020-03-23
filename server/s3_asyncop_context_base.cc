@@ -17,9 +17,11 @@
  * Original creation date: 1-Oct-2015
  */
 
+#include <cerrno>
 #include "s3_asyncop_context_base.h"
 #include "s3_perf_logger.h"
 #include "s3_stats.h"
+#include "s3_log.h"
 
 S3AsyncOpContextBase::S3AsyncOpContextBase(
     std::shared_ptr<RequestObject> req, std::function<void(void)> success,
@@ -76,6 +78,10 @@ void S3AsyncOpContextBase::set_op_status_for(int op_idx,
 }
 
 int S3AsyncOpContextBase::get_errno_for(int op_idx) {
+  if (op_idx < 0 || op_idx >= ops_count) {
+    s3_log(S3_LOG_ERROR, request_id, "op_idx %d is out of range\n", op_idx);
+    return -ENOENT;
+  }
   return ops_response[op_idx].error_code;
 }
 

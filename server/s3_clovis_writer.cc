@@ -624,6 +624,22 @@ void S3ClovisWriter::delete_objects(std::vector<struct m0_uint128> oids,
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+int S3ClovisWriter::get_op_ret_code_for(int index) {
+  if (writer_context) {
+    return writer_context->get_errno_for(index);
+  }
+  s3_log(S3_LOG_ERROR, request_id, "writer_context is NULL");
+  return -ENOENT;
+}
+
+int S3ClovisWriter::get_op_ret_code_for_delete_op(int index) {
+  if (delete_context) {
+    return delete_context->get_errno_for(index);
+  }
+  s3_log(S3_LOG_ERROR, request_id, "delete_context is NULL");
+  return -ENOENT;
+}
+
 void S3ClovisWriter::set_up_clovis_data_buffers(
     struct s3_clovis_rw_op_context *rw_ctx, std::deque<evbuffer *> &data_items,
     size_t clovis_buf_count) {
