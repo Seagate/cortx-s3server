@@ -36,6 +36,7 @@ using ::testing::Return;
 using ::testing::Mock;
 using ::testing::InvokeWithoutArgs;
 using ::testing::ReturnRef;
+
 static void dummy_request_cb(evhtp_request_t *req, void *arg) {}
 
 void dummy_function() { return; }
@@ -92,7 +93,9 @@ class S3AuthClientTest : public testing::Test {
     ev_req = evhtp_request_new(NULL, evbase);
     ptr_mock_request =
         std::make_shared<MockS3RequestObject>(ev_req, new EvhtpWrapper());
+
     p_authclienttest = new S3AuthClient(ptr_mock_request);
+
     auth_client_op_context = (struct s3_auth_op_context *)calloc(
         1, sizeof(struct s3_auth_op_context));
     auth_client_op_context->evbase = event_base_new();
@@ -325,7 +328,7 @@ TEST_F(S3AuthClientTest, Constructor) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "GET&Version=2010-05-08";
+      "GET&Request_id=123&Version=2010-05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -334,6 +337,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
       .WillRepeatedly(Return(S3HttpVerb::GET));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
+  p_authclienttest->request_id = "123";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -348,7 +352,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "PUT&Version=2010-05-08";
+      "PUT&Request_id=123&Version=2010-05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -357,6 +361,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
       .WillRepeatedly(Return(S3HttpVerb::PUT));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
+  p_authclienttest->request_id = "123";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -371,7 +376,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "HEAD&Version=2010-05-08";
+      "HEAD&Request_id=123&Version=2010-05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -380,6 +385,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
       .WillRepeatedly(Return(S3HttpVerb::HEAD));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
+  p_authclienttest->request_id = "123";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -394,7 +400,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "DELETE&Version=2010-05-08";
+      "DELETE&Request_id=123&Version=2010-05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -403,6 +409,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
       .WillRepeatedly(Return(S3HttpVerb::DELETE));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
+  p_authclienttest->request_id = "123";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -417,7 +424,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "POST&Version=2010-05-08";
+      "POST&Request_id=123&Version=2010-05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -426,6 +433,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
       .WillRepeatedly(Return(S3HttpVerb::POST));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
+  p_authclienttest->request_id = "123";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -440,7 +448,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
+      "2010-05-08";
   std::map<std::string, std::string, compare> query_params;
   query_params["delimiter"] = "/";
   query_params["prefix"] = "test";
@@ -451,6 +460,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
       .WillRepeatedly(Return(S3HttpVerb::GET));
   EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/"));
+  p_authclienttest->request_id = "123";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
   p_authclienttest->setup_auth_request_body();
   int len = evbuffer_get_length(p_authclienttest->req_body_buffer);
@@ -465,7 +475,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
+      "2010-05-08";
   std::map<std::string, std::string, compare> query_params;
   query_params["delimiter"] = "/";
   query_params["prefix"] = "test";
@@ -478,6 +489,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
       .WillRepeatedly(Return("/"));
 
   p_authclienttest->is_chunked_auth = true;
+  p_authclienttest->request_id = "123";
   p_authclienttest->prev_chunk_signature_from_auth = "";
   p_authclienttest->current_chunk_signature_from_auth = "ABCD";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -494,7 +506,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Version=2010-05-08";
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
+      "2010-05-08";
   std::map<std::string, std::string, compare> query_params;
   query_params["delimiter"] = "/";
   query_params["prefix"] = "test";
@@ -507,6 +520,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
       .WillRepeatedly(Return("/"));
 
   p_authclienttest->is_chunked_auth = true;
+  p_authclienttest->request_id = "123";
   p_authclienttest->prev_chunk_signature_from_auth = "ABCD";
   p_authclienttest->current_chunk_signature_from_auth = "";
   p_authclienttest->set_op_type(S3AuthClientOpType::authentication);
@@ -523,7 +537,8 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Version=2010-05-08&current-"
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
+      "2010-05-08&current-"
       "signature-sha256=cur-XYZ&previous-signature-sha256=prev-ABCD&x-amz-"
       "content-sha256=sha256-abcd";
   std::map<std::string, std::string, compare> query_params;
@@ -538,6 +553,7 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
       .WillRepeatedly(Return("/"));
 
   p_authclienttest->is_chunked_auth = true;
+  p_authclienttest->request_id = "123";
   p_authclienttest->prev_chunk_signature_from_auth = "prev-ABCD";
   p_authclienttest->current_chunk_signature_from_auth = "cur-XYZ";
   p_authclienttest->hash_sha256_current_chunk = "sha256-abcd";

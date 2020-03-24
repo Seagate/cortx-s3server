@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.seagates3.util.BinaryUtil;
 
 public class AuthServerPostHandler {
 
@@ -63,7 +64,12 @@ public class AuthServerPostHandler {
         Map<String, String> requestBody = getHttpRequestBodyAsMap();
 
         // Generate request Id per request
-        AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
+        if (!(requestBody.get("Request_id") == null ||
+              (requestBody.get("Request_id")).isEmpty())) {
+          AuthServerConfig.setReqId(requestBody.get("Request_id"));
+        } else {
+          AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
+        }
 
         if (httpRequest.getUri().startsWith("/saml")) {
             LOGGER.debug("Calling SAML WebSSOControler.");

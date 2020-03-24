@@ -713,6 +713,7 @@ bool S3AuthClient::setup_auth_request_body() {
 
   // May need to take it from config
   add_key_val_to_body("Version", "2010-05-08");
+  add_key_val_to_body("Request_id", request_id);
   if (auth_request_type == S3AuthClientOpType::authorization) {
 
     std::shared_ptr<S3RequestObject> s3_request =

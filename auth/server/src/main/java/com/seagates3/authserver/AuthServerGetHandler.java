@@ -33,14 +33,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import javax.activation.MimetypesFileTypeMap;
+import com.seagates3.util.BinaryUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.seagates3.controller.SAMLWebSSOController;
 import com.seagates3.response.ServerResponse;
-import com.seagates3.util.BinaryUtil;
 import com.seagates3.util.IEMUtil;
+import java.util.Map;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -79,7 +80,14 @@ public class AuthServerGetHandler {
     public void run() {
         LOGGER.debug("Get handler called.");
         // Set Request ID
-        AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
+        Map<String, String> requestBody = getHttpRequestBodyAsMap();
+        if (!(requestBody.get("Request_id") == null ||
+              (requestBody.get("Request_id")).isEmpty())) {
+          AuthServerConfig.setReqId(requestBody.get("Request_id"));
+        } else {
+          AuthServerConfig.setReqId(BinaryUtil.getAlphaNumericUUID());
+        }
+
         if (httpRequest.getUri().startsWith("/static")) {
             Path staticFilePath = Paths.get(AuthServerConstants.RESOURCE_DIR,
                                                                      httpRequest.getUri());
@@ -250,6 +258,10 @@ public class AuthServerGetHandler {
         MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
         response.headers().set(CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
     }
-
+   private
+    Map<String, String> getHttpRequestBodyAsMap() {
+      AuthRequestDecoder decoder = new AuthRequestDecoder(httpRequest);
+      return decoder.getRequestBodyAsMap();
+    }
 }
 

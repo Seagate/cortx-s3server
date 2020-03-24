@@ -27,6 +27,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelProgressivePromise;
 import io.netty.channel.DefaultFileRegion;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpChunkedInput;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -34,6 +38,9 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,15 +78,17 @@ public class AuthServerGetHandlerTest {
     @Before
     public void setUp() throws Exception {
         mockStatic(HttpHeaders.class);
-        fullHttpRequest = mock(FullHttpRequest.class);
         ctx = mock(ChannelHandlerContext.class);
+        fullHttpRequest =
+            new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
+                                       "/", getRequestBodyAsByteBuf());
         when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.FALSE);
     }
 
     @Test
     public void runTest() {
         ChannelFuture channelFuture = mock(ChannelFuture.class);
-        when(fullHttpRequest.getUri()).thenReturn("/");
+        fullHttpRequest.setUri("/");
         when(ctx.write(any(ServerResponse.class))).thenReturn(channelFuture);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
 
@@ -93,7 +102,7 @@ public class AuthServerGetHandlerTest {
     public void runTest_KeepAlive() {
         ChannelFuture channelFuture = mock(ChannelFuture.class);
         when(HttpHeaders.isKeepAlive(fullHttpRequest)).thenReturn(Boolean.TRUE);
-        when(fullHttpRequest.getUri()).thenReturn("/");
+        fullHttpRequest.setUri("/");
         when(ctx.write(any(ServerResponse.class))).thenReturn(channelFuture);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
 
@@ -106,7 +115,7 @@ public class AuthServerGetHandlerTest {
     @Test
     public void runTest_Static() throws Exception {
         RandomAccessFile rf = mock(RandomAccessFile.class);
-        when(fullHttpRequest.getUri()).thenReturn("/static");
+        fullHttpRequest.setUri("/static");
         whenNew(RandomAccessFile.class).withAnyArguments().thenReturn(rf);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
         AuthServerGetHandler getHandlerSpy = spy(handler);
@@ -123,7 +132,7 @@ public class AuthServerGetHandlerTest {
     @Test
     public void runTest_Static_IOException() throws Exception {
         RandomAccessFile rf = mock(RandomAccessFile.class);
-        when(fullHttpRequest.getUri()).thenReturn("/static");
+        fullHttpRequest.setUri("/static");
         whenNew(RandomAccessFile.class).withAnyArguments().thenReturn(rf);
         when(rf.length()).thenThrow(IOException.class);
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
@@ -142,7 +151,7 @@ public class AuthServerGetHandlerTest {
 
     @Test
     public void runTest_Static_FileNotFoundException() throws Exception {
-        when(fullHttpRequest.getUri()).thenReturn("/static");
+      fullHttpRequest.setUri("/static");
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
         AuthServerGetHandler getHandlerSpy = spy(handler);
         doNothing().when(getHandlerSpy, "sendErrorResponse", HttpResponseStatus.NOT_FOUND,
@@ -157,7 +166,7 @@ public class AuthServerGetHandlerTest {
     @Test
     public void runTest_SAML_FileNotFoundException() throws Exception {
         SAMLWebSSOController controller = mock(SAMLWebSSOController.class);
-        when(fullHttpRequest.getUri()).thenReturn("/saml/session/xyz");
+        fullHttpRequest.setUri("/saml/session/xyz");
         handler = new AuthServerGetHandler(ctx, fullHttpRequest);
         AuthServerGetHandler getHandlerSpy = spy(handler);
         whenNew(SAMLWebSSOController.class).withAnyArguments().thenReturn(controller);
@@ -320,5 +329,15 @@ public class AuthServerGetHandlerTest {
                 "Resource not found.");
 
         verify(ctx).writeAndFlush(any(ServerResponse.class));
+    }
+   private
+    ByteBuf getRequestBodyAsByteBuf() {
+      String params =
+          "Action=AuthenticateUser&" + "x-amz-meta-ics.meta-version=1&" +
+          "x-amz-meta-ics.meta-version=2&" + "samlAssertion=assertion";
+      ByteBuf byteBuf = Unpooled.buffer(params.length());
+      ByteBufUtil.writeUtf8(byteBuf, params);
+
+      return byteBuf;
     }
 }
