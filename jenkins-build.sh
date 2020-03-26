@@ -152,8 +152,8 @@ ulimit -c unlimited
 
 # Few assertions - prerun checks
 rpm -q haproxy
-rpm -q stx-s3-certs
-rpm -q stx-s3-client-certs
+#rpm -q stx-s3-certs
+#rpm -q stx-s3-client-certs
 systemctl status haproxy
 
 cd $S3_BUILD_DIR

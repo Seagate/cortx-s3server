@@ -37,18 +37,24 @@ yum install -y openssl java-1.8.0-openjdk-headless
 
 # Generate the certificates rpms for dev setup
 # clean up
-rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
-rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
+#rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
+#rm -f ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
 
-cd ${BASEDIR}/../../../rpms/s3certs
+#cd ${BASEDIR}/../../../rpms/s3certs
 # Needs openssl and jre which are installed with rpm_build_env
-./buildrpm.sh -T s3dev
+#./buildrpm.sh -T s3dev
 
 # install the built certs
-rpm -e stx-s3-certs stx-s3-client-certs || /bin/true
-yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
-yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
-yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
+#rpm -e stx-s3-certs stx-s3-client-certs || /bin/true
+#yum install openldap-servers haproxy -y # so we have "ldap" and "haproxy" users.
+#yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-certs*
+#yum localinstall -y ~/rpmbuild/RPMS/x86_64/stx-s3-client-certs*
+# Coping the certificates
+
+mkdir -p /etc/ssl
+
+cp -R  ${BASEDIR}/../../../ansible/files/certs/* /etc/ssl/
+
 
 # Configure dev env
 yum install -y ansible facter

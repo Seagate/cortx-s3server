@@ -317,6 +317,10 @@ then
   if [ $no_s3iamcli_build -eq 0 ]
   then
     cd auth-utils/s3iamcli/
+
+    # Remove the s3iamcli config file if present in root directory
+    rm -f /root/.sgs3iamcli/config.yaml
+
     if [ $no_clean_build -eq 0 ]
     then
       python36 setup.py install --force
@@ -324,7 +328,7 @@ then
       python36 setup.py install
     fi
     # Assert to check if the certificates are installed.
-    rpm -q stx-s3-client-certs
+    #rpm -q stx-s3-client-certs
     cd -
   fi
 fi

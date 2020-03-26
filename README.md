@@ -87,7 +87,12 @@ are present in $HOME/.seagate_src_cache and will be used in current build.
 ./rebuildall.sh --no-mero-rpm --use-build-cache
 ```
 
-Build SSL certificates and install (use defaults)
+## Build SSL certificates and install (use defaults)
+
+# For single certificate with multidomain dns please refer,
+# multidomain_ssl_certificate.md file from <s3 src>/docs folder
+
+# By default we are using this multidomain certificate for s3 server and authserver
 
 # For dev vm setup, check whether following line exists
 `s3_ip_address=127.0.0.1` in <s3 src>/scripts/ssl/domain_input.conf
