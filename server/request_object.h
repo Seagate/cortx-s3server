@@ -231,7 +231,8 @@ class RequestObject {
       return;
     }
     if (is_s3_client_read_error()) {
-      s3_log(S3_LOG_WARN, request_id, "Read timeout has triggered.\n");
+      s3_log(S3_LOG_WARN, request_id, "%s error.\n",
+             get_s3_client_read_error().c_str());
       return;
     }
     if (!is_paused) {

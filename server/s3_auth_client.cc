@@ -1478,7 +1478,7 @@ void S3AuthClient::chunk_auth_successful() {
       trigger_authentication(this->handler_on_success, this->handler_on_failed);
     }
   }
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3AuthClient::chunk_auth_failed() {
@@ -1486,5 +1486,5 @@ void S3AuthClient::chunk_auth_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Authentication failure\n");
   state = S3AuthClientOpState::unauthenticated;
   this->handler_on_failed();
-  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

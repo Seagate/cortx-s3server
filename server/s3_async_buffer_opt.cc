@@ -60,7 +60,9 @@ size_t S3AsyncBufferOptContainer::get_content_length() {
   return content_length;
 }
 
-bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_last_buf) {
+bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_first_buf,
+                                            bool is_last_buf,
+                                            bool is_put_request) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   if (!buf) {
     s3_log(S3_LOG_ERROR, "", "buf == NULL");
@@ -71,16 +73,26 @@ bool S3AsyncBufferOptContainer::add_content(evbuf_t* buf, bool is_last_buf) {
   if (is_last_buf) {
     freeze();
   } else if (size_of_each_evbuf != len) {
-    // Write content with zero data happens because pool is fully utilized, and
-    // libevent buffers fail to allocate memory from pool.  For some reason,
-    // libevent *does not* check for memory allocation failures, and silently
-    // continues working with empty buffers.  All data is skipped, but no error
-    // is raised.  So in the end all these empty buffers are sent to consume
-    // data, and then down here.
-    s3_log(S3_LOG_ERROR, "",
-           "Wrong data size in buffer. Should be %zu. Actual - %zu\n",
-           size_of_each_evbuf, len);
-    return false;
+    // In case of PUT request wherein we seggregate header from data,
+    // the size of data will be same as that of buffer
+    // length other than last buffer. However in case of say POST request
+    // wherein we dont seggregate header from data, initial data length
+    // may not be same as buffer length (as read contained even header)
+    // hence if its not a PUT request and first buffer then its fine
+    if (is_put_request || (!is_put_request && !is_first_buf)) {
+      // Write content with zero data happens because pool is fully utilized,
+      // and
+      // libevent buffers fail to allocate memory from pool.  For some reason,
+      // libevent *does not* check for memory allocation failures, and silently
+      // continues working with empty buffers.  All data is skipped, but no
+      // error
+      // is raised.  So in the end all these empty buffers are sent to consume
+      // data, and then down here.
+      s3_log(S3_LOG_ERROR, "",
+             "Wrong data size in buffer. Should be %zu. Actual - %zu\n",
+             size_of_each_evbuf, len);
+      return false;
+    }
   }
   ready_q.push_back(buf);
   content_length += len;

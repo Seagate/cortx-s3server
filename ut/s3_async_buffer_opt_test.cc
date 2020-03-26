@@ -75,7 +75,8 @@ TEST_F(S3AsyncBufferOptContainerTest, IsProperlyLockedWithFreeze) {
 
 TEST_F(S3AsyncBufferOptContainerTest, DataBufferAddedToQueueAndCanBeRetrieved) {
   bool is_last_buf = true;
-  buffer->add_content(get_evbuf_t_with_data("Hello World"), is_last_buf);
+  buffer->add_content(get_evbuf_t_with_data("Hello World"), true, is_last_buf,
+                      true);
   buffer->freeze();
   EXPECT_TRUE(buffer->is_freezed());
   EXPECT_STREQ("Hello World", buffer->get_content_as_string().c_str());
@@ -84,7 +85,8 @@ TEST_F(S3AsyncBufferOptContainerTest, DataBufferAddedToQueueAndCanBeRetrieved) {
 TEST_F(S3AsyncBufferOptContainerTest,
        DataBufferAddedToQueueAndCanBeRetrieved1) {
   bool is_last_buf = true;
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), is_last_buf);
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), true, is_last_buf,
+                      true);
   buffer->freeze();
   EXPECT_TRUE(buffer->is_freezed());
   EXPECT_EQ(nfourk_buffer, buffer->get_content_as_string().c_str());
@@ -92,9 +94,9 @@ TEST_F(S3AsyncBufferOptContainerTest,
 
 TEST_F(S3AsyncBufferOptContainerTest,
        MultipleDataBufferAddedToQueueAndCanBeRetrieved) {
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
   bool is_last_buf = true;
-  buffer->add_content(get_evbuf_t_with_data("ABCD"), is_last_buf);
+  buffer->add_content(get_evbuf_t_with_data("ABCD"), true, is_last_buf, true);
   buffer->freeze();
   EXPECT_TRUE(buffer->is_freezed());
   EXPECT_EQ(nfourk_buffer.length() + 4,
@@ -103,7 +105,7 @@ TEST_F(S3AsyncBufferOptContainerTest,
 
 TEST_F(S3AsyncBufferOptContainerTest,
        DataInTransitAndAskingForMoreReturnsEmptyQ) {
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
 
   EXPECT_EQ(nfourk_buffer.length(), buffer->get_content_length());
   EXPECT_FALSE(buffer->is_freezed());
@@ -118,8 +120,8 @@ TEST_F(S3AsyncBufferOptContainerTest,
 TEST_F(S3AsyncBufferOptContainerTest,
        DataInTransitAndAskingForLessReturnsValidData) {
   // Add 2 buffers and fetch 1
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
 
   EXPECT_EQ(nfourk_buffer.length() * 2, buffer->get_content_length());
   EXPECT_FALSE(buffer->is_freezed());
@@ -143,8 +145,9 @@ TEST_F(S3AsyncBufferOptContainerTest,
 TEST_F(S3AsyncBufferOptContainerTest,
        AllDataReceivedAndAskingForMoreReturnsAllAvailable) {
   bool is_last_buf = true;
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
-  buffer->add_content(get_evbuf_t_with_data("Seagate"), is_last_buf);
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
+  buffer->add_content(get_evbuf_t_with_data("Seagate"), false, is_last_buf,
+                      true);
 
   EXPECT_EQ(nfourk_buffer.length() + 7, buffer->get_content_length());
   EXPECT_TRUE(buffer->is_freezed());

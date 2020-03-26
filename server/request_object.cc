@@ -612,7 +612,9 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
           data_bytes_received += buf_len;
           error_adding_to_buffered_input =
               !buffered_input->add_content(
-                   chunk_buf, pending_in_flight == data_bytes_received);
+                   chunk_buf, pending_in_flight == get_data_length(),
+                   pending_in_flight == data_bytes_received,
+                   http_verb() == S3HttpVerb::PUT);
         }
         if (error_adding_to_buffered_input) {
           evbuffer_free(chunk_buf);
@@ -621,9 +623,10 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     }
   } else {
     data_bytes_received = evhtp_obj->evbuffer_get_length(buf);
-
-    if (!buffered_input->add_content(
-             buf, pending_in_flight == data_bytes_received)) {
+    if (!buffered_input->add_content(buf,
+                                     pending_in_flight == get_data_length(),
+                                     pending_in_flight == data_bytes_received,
+                                     http_verb() == S3HttpVerb::PUT)) {
       error_adding_to_buffered_input = true;
       evbuffer_free(buf);
     }

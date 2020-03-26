@@ -522,8 +522,9 @@ TEST_F(S3ClovisWriterTest, WriteContentSuccessfulTest) {
 
   S3Option::get_instance()->set_eventbase(evbase);
 
-  buffer->add_content(get_evbuf_t_with_data(fourk_buffer));
-  buffer->add_content(get_evbuf_t_with_data(sdata.c_str()), is_last_buf);
+  buffer->add_content(get_evbuf_t_with_data(fourk_buffer), false, false, true);
+  buffer->add_content(get_evbuf_t_with_data(sdata.c_str()), false, is_last_buf,
+                      true);
   buffer->freeze();
   clovis_writer_ptr->write_content(
       std::bind(&S3CallBack::on_success, &s3cloviswriter_callbackobj),

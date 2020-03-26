@@ -57,8 +57,8 @@ class S3AsyncBufferOptContainerTest : public testing::Test {
 // Non std buf size = non multiple of size_of_each_buf
 // (libevent_pool_buffer_size)
 TEST_F(S3AsyncBufferOptContainerTest, GetBufferWithoutAddDeathTest) {
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
-  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer));
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
+  buffer->add_content(get_evbuf_t_with_data(nfourk_buffer), false, false, true);
 
   // Ask for first part
   auto ret = buffer->get_buffers(nfourk_buffer.length());
