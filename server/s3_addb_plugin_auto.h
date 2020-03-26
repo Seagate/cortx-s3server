@@ -35,9 +35,6 @@
  * needed to distinguish different kinds of log entries from each other.
  */
 enum S3AddbActionTypeId {
-
-  /* See comment on ext_id_ranges.h above; had to use magic number here,
-   * as mero headers are not yet merged to master. */
   S3_ADDB_RANGE_START = M0_ADDB2__EXT_RANGE_1,
 
   /* helper IDs e.g. for linking requests */
@@ -53,10 +50,13 @@ enum S3AddbActionTypeId {
   /* Action classes identifiers: */
   S3_ADDB_FIRST_REQUEST_ID,
 
+  /* Auth related routine */
+  S3_ADDB_AUTH_ID = S3_ADDB_FIRST_REQUEST_ID,
+
   /* S3_ADDB_ACTION_BASE_ID is to be used in constructors, while action class
    * is still being constructed and it is not possible to identify what is the
    * class name of the instance (derived class name). */
-  S3_ADDB_ACTION_BASE_ID = S3_ADDB_FIRST_REQUEST_ID,
+  S3_ADDB_ACTION_BASE_ID,
 
   /* Auto-generated IDs are listed below. Sorry for strange format, it had to
    * be done this way to pass git-clang-format check. */

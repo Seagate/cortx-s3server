@@ -99,7 +99,7 @@ class S3AuthClientTest : public testing::Test {
     auth_client_op_context = (struct s3_auth_op_context *)calloc(
         1, sizeof(struct s3_auth_op_context));
     auth_client_op_context->evbase = event_base_new();
-    auth_client_op_context->authrequest =
+    auth_client_op_context->auth_request =
         evhtp_request_new(dummy_request_cb, auth_client_op_context->evbase);
   }
 
@@ -122,7 +122,6 @@ class S3AuthClientTest : public testing::Test {
 
 TEST_F(S3AuthClientOpContextTest, Constructor) {
   EXPECT_EQ(NULL, p_authopctx->auth_op_context);
-  EXPECT_FALSE(p_authopctx->has_auth_op_context);
 }
 
 TEST_F(S3AuthClientOpContextTest, InitAuthCtxNull) {

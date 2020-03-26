@@ -27,7 +27,7 @@
 extern evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 
 struct s3_auth_op_context *create_basic_auth_op_ctx(
-    struct event_base *eventbase, S3AuthClientOpType type) {
+    struct event_base *eventbase) {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   S3Option *option_instance = S3Option::get_instance();
   struct s3_auth_op_context *ctx =
@@ -43,15 +43,7 @@ struct s3_auth_op_context *create_basic_auth_op_ctx(
         option_instance->get_auth_port());
   }
 
-  if (type == S3AuthClientOpType::authentication) {
-    ctx->authrequest = evhtp_request_new(NULL, ctx->evbase);
-  } else if (type == S3AuthClientOpType::authorization) {
-    ctx->authorization_request = evhtp_request_new(NULL, ctx->evbase);
-  } else if (type == S3AuthClientOpType::aclvalidation) {
-    ctx->aclvalidation_request = evhtp_request_new(NULL, ctx->evbase);
-  } else if (type == S3AuthClientOpType::policyvalidation) {
-    ctx->policyvalidation_request = evhtp_request_new(NULL, ctx->evbase);
-  }
+  ctx->auth_request = evhtp_request_new(NULL, ctx->evbase);
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   return ctx;

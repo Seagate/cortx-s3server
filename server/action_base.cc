@@ -139,9 +139,6 @@ void Action::start() {
 
   task_iteration_index = 0;
   if (task_list.size() > 0) {
-    state = ACTS_RUNNING;
-
-    ADDB(get_addb_action_type_id(), addb_request_id, (uint64_t)state);
     ADDB(get_addb_action_type_id(), addb_request_id,
          task_addb_id_list[task_iteration_index]);
 

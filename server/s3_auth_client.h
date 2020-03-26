@@ -36,13 +36,23 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "request_object.h"
+#include "s3_addb.h"
+
+// Should be used inside S3AuthClientOpContext and S3AuthClient only
+#define ADDB_AUTH(req_state) \
+  ADDB(S3_ADDB_AUTH_ID, request->addb_request_id, (req_state))
 
 extern "C" evhtp_res on_auth_response(evhtp_request_t* req, evbuf_t* buf,
                                       void* arg);
+extern "C" void on_event_hook(evhtp_connection_t* conn, short events,
+                              void* arg);
+extern "C" void on_write_hook(evhtp_connection_t* conn, void* arg);
+extern "C" evhtp_res on_request_headers(evhtp_request_t* r, void* arg);
+extern "C" evhtp_res on_conn_err_callback(evhtp_connection_t* connection,
+                                          evhtp_error_flags errtype, void* arg);
 
 class S3AuthClientOpContext : public S3AsyncOpContextBase {
   struct s3_auth_op_context* auth_op_context;
-  bool has_auth_op_context;
 
   bool is_auth_successful;
   bool is_authorization_successful;
@@ -61,21 +71,19 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
                         std::function<void()> failed_callback)
       : S3AsyncOpContextBase(req, success_callback, failed_callback),
         auth_op_context(NULL),
-        has_auth_op_context(false),
         is_auth_successful(false),
         is_authorization_successful(false),
         is_aclvalidation_successful(false),
         is_policyvalidation_successful(false),
         auth_response_xml("") {
     s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
+    ADDB_AUTH(ACTS_AUTH_OP_CTX_CONSTRUCT);
   }
 
   ~S3AuthClientOpContext() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
-    if (has_auth_op_context) {
-      free_basic_auth_client_op_ctx(auth_op_context);
-      auth_op_context = NULL;
-    }
+    ADDB_AUTH(ACTS_AUTH_OP_CTX_DESTRUCT);
+    clear_op_context();
   }
 
   void set_auth_response_error(std::string error_code,
@@ -219,22 +227,46 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
     if (eventbase == NULL) {
       return false;
     }
-    if (has_auth_op_context) {
-      free_basic_auth_client_op_ctx(auth_op_context);
-      auth_op_context = NULL;
-      has_auth_op_context = false;
-    }
-    auth_op_context = create_basic_auth_op_ctx(eventbase, type);
+
+    ADDB_AUTH(ACTS_AUTH_OP_CTX_NEW_CONN);
+    clear_op_context();
+
+    auth_op_context = create_basic_auth_op_ctx(eventbase);
     if (auth_op_context == NULL) {
       return false;
     }
-    has_auth_op_context = true;
+
+    evhtp_set_hook(&auth_op_context->conn->hooks, evhtp_hook_on_event,
+                   (evhtp_hook)on_event_hook, (void*)this);
+    evhtp_set_hook(&auth_op_context->conn->hooks, evhtp_hook_on_write,
+                   (evhtp_hook)on_write_hook, (void*)this);
+    evhtp_set_hook(&auth_op_context->auth_request->hooks,
+                   evhtp_hook_on_headers_start, (evhtp_hook)on_request_headers,
+                   (void*)this);
+    evhtp_set_hook(&auth_op_context->conn->hooks, evhtp_hook_on_conn_error,
+                   (evhtp_hook)on_conn_err_callback, (void*)this);
+
     return true;
   }
 
-  struct s3_auth_op_context* get_auth_op_ctx() {
-    return auth_op_context;
+  void unset_hooks() {
+    if (auth_op_context == NULL) {
+      return;
+    }
+    if ((auth_op_context->conn != NULL)) {
+      evhtp_unset_all_hooks(&auth_op_context->conn->hooks);
+    }
+    if (auth_op_context->auth_request != NULL) {
+      evhtp_unset_all_hooks(&auth_op_context->auth_request->hooks);
+    }
   }
+
+  void clear_op_context() {
+    free_basic_auth_client_op_ctx(auth_op_context);
+    auth_op_context = NULL;
+  }
+
+  struct s3_auth_op_context* get_auth_op_ctx() { return auth_op_context; }
 
   void set_auth_callbacks(std::function<void(void)> success,
                           std::function<void(void)> failed) {
@@ -326,43 +358,16 @@ class S3AuthClient {
  public:
   S3AuthClient(std::shared_ptr<RequestObject> req,
                bool skip_authorization = false);
+
   virtual ~S3AuthClient() {
     s3_log(S3_LOG_DEBUG, request_id, "Destructor\n");
-    if (state == S3AuthClientOpState::started) {
-      unset_hooks();
+    ADDB_AUTH(ACTS_AUTH_CLNT_DESTRUCT);
+    if (state == S3AuthClientOpState::started && auth_context) {
+      auth_context->unset_hooks();
     }
   }
 
-  void unset_hooks() {
-    s3_log(S3_LOG_DEBUG, request_id, "Unsetting various auth related hooks\n");
-    if (auth_context != NULL) {
-      struct s3_auth_op_context* auth_op_ctx = auth_context->get_auth_op_ctx();
-      if (auth_op_ctx != NULL) {
-        if ((auth_op_ctx->conn != NULL)) {
-          s3_log(S3_LOG_DEBUG, request_id, "Unsetting auth connection hooks\n");
-          evhtp_unset_all_hooks(&auth_op_ctx->conn->hooks);
-        }
-        if (auth_op_ctx->authrequest != NULL) {
-          s3_log(S3_LOG_DEBUG, "", "Unsetting auth hooks\n");
-          evhtp_unset_all_hooks(&auth_op_ctx->authrequest->hooks);
-        }
-        if (auth_op_ctx->authorization_request != NULL) {
-          s3_log(S3_LOG_DEBUG, "", "Unsetting authorization hooks\n");
-          evhtp_unset_all_hooks(&auth_op_ctx->authorization_request->hooks);
-        }
-        if (auth_op_ctx->aclvalidation_request != NULL) {
-          s3_log(S3_LOG_DEBUG, "", "Unsetting acl validation hooks\n");
-          evhtp_unset_all_hooks(&auth_op_ctx->aclvalidation_request->hooks);
-        }
-        if (auth_op_ctx->policyvalidation_request != NULL) {
-          s3_log(S3_LOG_DEBUG, "", "Unsetting policy validation hooks\n");
-          evhtp_unset_all_hooks(&auth_op_ctx->policyvalidation_request->hooks);
-        }
-      }
-    }
-    s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
-  }
-
+  std::shared_ptr<RequestObject> get_request() { return request; }
   std::string get_request_id() { return request_id; }
 
   S3AuthClientOpState get_state() { return state; }
