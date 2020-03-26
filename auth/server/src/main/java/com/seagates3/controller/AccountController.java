@@ -159,6 +159,14 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.internalServerError();
         }
 
+        try {
+          // Added delay so that newly created keys are replicated in ldap
+          Thread.sleep(500);
+        }
+        catch (InterruptedException e) {
+          LOGGER.error("Create account delay failing - ", e);
+        }
+
         return accountResponseGenerator.generateCreateResponse(account, root,
                 rootAccessKey);
     }
@@ -225,7 +233,13 @@ public class AccountController extends AbstractController {
         } catch (DataAccessException ex) {
             return accountResponseGenerator.internalServerError();
         }
-
+        try {
+          // Added delay so that newly created keys are replicated in ldap
+          Thread.sleep(500);
+        }
+        catch (InterruptedException e) {
+          LOGGER.error("Reset key  delay failing - ", e);
+        }
         return accountResponseGenerator.generateResetAccountAccessKeyResponse(
                                           account, root, rootAccessKey);
     }

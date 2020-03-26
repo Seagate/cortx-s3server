@@ -331,6 +331,13 @@ public class AccessKeyImpl implements AccessKeyDAO {
         } else {
             saveAccessKey(accessKey);
         }
+        try {
+          // Added delay so that newly created keys are replicated in ldap
+          Thread.sleep(500);
+        }
+        catch (InterruptedException e) {
+          LOGGER.error("Exception occurred while saving access key", e);
+        }
     }
 
     /**
