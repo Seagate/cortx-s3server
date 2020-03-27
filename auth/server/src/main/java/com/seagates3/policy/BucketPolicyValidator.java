@@ -106,7 +106,11 @@ class BucketPolicyValidator extends PolicyValidator {
       if (response != null) {
         return response;
       }
-      policy = Policy.fromJson(obj.toString());
+      String policyString = obj.toString();
+      policyString = policyString.replace(
+          "CanonicalUser",
+          "Service");  // TODO:temporary solution till we implement parser
+      policy = Policy.fromJson(policyString);
     }
     catch (JSONException e) {
       response = responseGenerator.malformedPolicy(
@@ -311,18 +315,18 @@ class BucketPolicyValidator extends PolicyValidator {
             !action.getActionName().isEmpty()) {
           matchingActionsList =
               PolicyUtil.getAllMatchingActions(action.getActionName());
-        if (matchingActionsList == null || matchingActionsList.isEmpty()) {
-          response =
-              responseGenerator.malformedPolicy("Policy has invalid action");
-          LOGGER.error("Policy has invalid action");
-          break;
-        } else {
-          response = validateResource(resourceValues, inputBucket,
-                                      matchingActionsList);
-          if (response != null) {
+          if (matchingActionsList == null || matchingActionsList.isEmpty()) {
+            response =
+                responseGenerator.malformedPolicy("Policy has invalid action");
+            LOGGER.error("Policy has invalid action");
             break;
+          } else {
+            response = validateResource(resourceValues, inputBucket,
+                                        matchingActionsList);
+            if (response != null) {
+              break;
+            }
           }
-        }
         } else {
           response = responseGenerator.malformedPolicy(
               "Missing required field Action cannot be empty!");

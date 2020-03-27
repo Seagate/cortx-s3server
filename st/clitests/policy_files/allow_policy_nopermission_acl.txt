@@ -9,8 +9,8 @@
       "Action": "s3:PutObject*",
       "Effect": "Allow",
        "Principal": {
-        "AWS": [
-          "12345"
+        "CanonicalUser": [
+          "C12345"
         ]
       }
     }

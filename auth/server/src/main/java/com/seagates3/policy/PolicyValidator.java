@@ -138,7 +138,7 @@ abstract class PolicyValidator {
     if (principals != null && !principals.isEmpty()) {
       for (Principal principal : principals) {
         if (!principal.getProvider().equals("AWS") &&
-            !principal.getProvider().equals("CanonicalUser") &&
+            !principal.getProvider().equals("Service") &&
             !principal.getProvider().equals("Federated") &&
             !principal.getProvider().equals("*")) {
 
@@ -195,7 +195,7 @@ abstract class PolicyValidator {
           isValid = false;
         }
         break;
-      case "CanonicalUser":
+      case "Service":
         account = null;
         try {
           account = accountImpl.findByCanonicalID(id);

@@ -104,7 +104,11 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
         new AuthorizationResponseGenerator();
 
     JSONObject obj = new JSONObject(requestBody.get("Policy"));
-    Policy existingPolicy = Policy.fromJson(obj.toString());
+    String policyString = obj.toString();
+    policyString = policyString.replace(
+        "CanonicalUser",
+        "Service");  // TODO:temporary solution till we implement parser
+    Policy existingPolicy = Policy.fromJson(policyString);
     String requestedResource =
         PolicyUtil.getResourceFromUri(requestBody.get("ClientAbsoluteUri"));
     String resourceOwner = new AccessControlList().getOwner(requestBody);
@@ -196,7 +200,7 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
             }
           }
           break;
-        case "CanonicalUser":
+        case "Service":
           if (principalId.equals(requestor.getAccount().getCanonicalId())) {
             isMatching = true;
           }
@@ -300,3 +304,4 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     return result;
   }
 }
+

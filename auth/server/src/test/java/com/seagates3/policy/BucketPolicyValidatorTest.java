@@ -3,13 +3,15 @@ package com.seagates3.policy;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
-
+import org.junit.Before;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
-
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.actions.S3Actions;
@@ -17,16 +19,27 @@ import com.seagates3.authorization.Authorizer;
 import com.seagates3.response.ServerResponse;
 import com.seagates3.response.generator.BucketPolicyResponseGenerator;
 import com.seagates3.util.BinaryUtil;
+import com.seagates3.dao.ldap.AccountImpl;
+import com.seagates3.model.Account;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-@RunWith(PowerMockRunner.class) @PowerMockIgnore(
-    {"javax.management.*"}) public class BucketPolicyValidatorTest {
+@RunWith(PowerMockRunner.class) @PrepareForTest({BucketPolicyValidator.class})
+    @PowerMockIgnore(
+        {"javax.management.*"}) public class BucketPolicyValidatorTest {
 
   String positiveJsonInput = null;
   String negativeJsonInput = null;
   Map<String, String> requestBody = new TreeMap<>();
   PolicyValidator validator = new BucketPolicyValidator();
+  AccountImpl mockaccountImpl = null;
+  Account account;
+
+  @Before public void setup() {
+    mockaccountImpl = Mockito.mock(AccountImpl.class);
+    account = new Account();
+    account.setId("1234");
+  }
 
   /**
    * Test to validate json- Positive test with correct json
@@ -443,5 +456,71 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     actionList.add(acton);
     ServerResponse response = validator.validateCondition(list, actionList);
     Assert.assertNotNull(response);
+  }
+
+  /**
+   *    * validateBucketPolicy_with_CanonicalUser
+   *       * @throws Exception
+   *          */
+
+  @Test public void validateBucketPolicy_CanonicalUser_Positive()
+      throws Exception {
+    String positiveJsonInput =
+        "{\r\n" + "  \"Id\": \"Policy1572590142744\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1572590138556\",\r\n" +
+        "      \"Action\": [\r\n" + "        \r\n" +
+        "\"s3:GetBucketPolicy\",\"s3:PutBucketPolicy\",\"s3:" +
+        "PutBucketAcl\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Allow\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::MyBucket\",\r\n" +
+        "      \"Principal\": " + "{\"CanonicalUser\":" +
+        "\"c73bfd36bc80701b1fbf1205498dc34625830069a8bff\"}" + "\r\n" +
+        "    }\r\n" + "  ]\r\n" + "}";
+    requestBody.put("ClientAbsoluteUri", "/MyBucket");
+    requestBody.put("Policy",
+                    BinaryUtil.encodeToBase64String(positiveJsonInput));
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockaccountImpl);
+    Mockito.when(mockaccountImpl.findByCanonicalID(
+                     "c73bfd36bc80701b1fbf1205498dc34625830069a8bff"))
+        .thenReturn(account);
+    Authorizer authorizer = new Authorizer();
+    ServerResponse response = authorizer.validatePolicy(requestBody);
+    Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
+  }
+
+  /**
+ *    * validatePolicy with canonicalUser word in Action
+ *       * @throws Exception
+ *          */
+  @Test public void validateBucketPolicy_CanonicalUser_atWrongPlace()
+      throws Exception {
+    String positiveJsonInput =
+        "{\r\n" + "  \"Id\": \"Policy1572590142744\",\r\n" +
+        "  \"Version\": \"2012-10-17\",\r\n" + "  \"Statement\": [\r\n" +
+        "    {\r\n" + "      \"Sid\": \"Stmt1572590138556\",\r\n" +
+        "      \"Action\": [\r\n" + "        \r\n" +
+        "\"s3:CanonicalUserGetBucketPolicy\",\"s3:PutBucketPolicy\",\"s3:" +
+        "PutBucketAcl\"\r\n" + "      ],\r\n" +
+        "      \"Effect\": \"Allow\",\r\n" +
+        "      \"Resource\": \"arn:aws:s3:::MyBucket\",\r\n" +
+        "      \"Principal\": " + "{\"CanonicalUser\":" +
+        "\"c73bfd36bc80701b1fbf1205498dc34625830069a8bff\"}" + "\r\n" +
+        "    }\r\n" + "  ]\r\n" + "}";
+    requestBody.put("ClientAbsoluteUri", "/MyBucket");
+    requestBody.put("Policy",
+                    BinaryUtil.encodeToBase64String(positiveJsonInput));
+    PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
+        mockaccountImpl);
+    Mockito.when(mockaccountImpl.findByCanonicalID(
+                     "c73bfd36bc80701b1fbf1205498dc34625830069a8bff"))
+        .thenReturn(account);
+    Authorizer authorizer = new Authorizer();
+    ServerResponse response = authorizer.validatePolicy(requestBody);
+    Assert.assertEquals(new BucketPolicyResponseGenerator()
+                            .malformedPolicy("Policy has invalid action")
+                            .getResponseBody(),
+                        response.getResponseBody());
   }
 }
