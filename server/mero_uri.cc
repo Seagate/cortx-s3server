@@ -97,6 +97,11 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
         } else {
           // get index id and key
           key_name = full_uri.substr(pos + 1);
+          char* dec_key = evhttp_uridecode(key_name.c_str(), 1, NULL);
+          if (dec_key) {
+            key_name = dec_key;
+            free(dec_key);
+          }
           std::string index_str =
               full_uri.substr(index_match.length(), pos - index_match.length());
           // Find position of '-' delimeter in index string
