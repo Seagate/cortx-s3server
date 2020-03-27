@@ -159,6 +159,11 @@ cp -f scripts/ldap/replicate.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/slapdlog.ldif $S3_INSTALL_LOCATION/install/ldap/
 cp -f scripts/ldap/rsyslog.d/slapdlog.conf $S3_INSTALL_LOCATION/install/ldap/rsyslog.d/
 
+# Copy backgrounddelete account creation script to install location
+cp -f scripts/ldap/background_delete_account.ldif $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/create_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
+cp -f scripts/ldap/delete_background_delete_account.sh $S3_INSTALL_LOCATION/install/ldap/
+
 # Copy the auth server startup script.
 cp startauth.sh $AUTH_INSTALL_LOCATION/
 

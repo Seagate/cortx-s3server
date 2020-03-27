@@ -14,8 +14,10 @@ ou: roles
 objectclass: organizationalunit
 
 dn: s3userid=123,ou=users,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+path: /
+cn: root
 s3userid: 123
-cn: tester
+arn: arn:aws:iam::12345:root
 objectclass: iamUser
 
 dn: ak=AKIAJPINPFRBTPAYOGNA,ou=accesskeys,dc=s3,dc=seagate,dc=com
@@ -31,3 +33,11 @@ s3userid: 123
 sk: A6k2z84BqwXmee4WUUS2oWwM/tha7Wrd4Hc/8yRt
 status: Active
 objectclass: accessKey
+
+dn: ou=groups,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: groups
+objectClass: organizationalUnit
+
+dn: ou=policies,o=s3_test,ou=accounts,dc=s3,dc=seagate,dc=com
+ou: policies
+objectClass: organizationalUnit
