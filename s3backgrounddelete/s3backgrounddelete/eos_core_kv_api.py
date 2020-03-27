@@ -49,7 +49,7 @@ class EOSCoreKVApi(EOSCoreClient):
         # '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D/testobject%2B'
 
         request_uri = '/indexes/' + \
-            urllib.parse.quote(index_id) + '/' + \
+            urllib.parse.quote(index_id, safe='') + '/' + \
             urllib.parse.quote(object_key_name)
         headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
@@ -93,7 +93,7 @@ class EOSCoreKVApi(EOSCoreClient):
         # '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D/testobject%2B'
 
         request_uri = '/indexes/' + \
-            urllib.parse.quote(index_id) + '/' + \
+            urllib.parse.quote(index_id, safe='') + '/' + \
             urllib.parse.quote(object_key_name)
 
         query_params = ""
@@ -140,7 +140,7 @@ class EOSCoreKVApi(EOSCoreClient):
         # '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D/testobject%2B'
 
         request_uri = '/indexes/' + \
-            urllib.parse.quote(index_id) + '/' + \
+            urllib.parse.quote(index_id, safe='') + '/' + \
             urllib.parse.quote(object_key_name)
 
         body = ""

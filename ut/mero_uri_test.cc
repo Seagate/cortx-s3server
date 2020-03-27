@@ -57,7 +57,7 @@ TEST_F(MeroPathStyleURITEST, KeyNameTest) {
   std::shared_ptr<MockMeroRequestObject> ptr_mock_request =
       std::make_shared<MockMeroRequestObject>(req, evhtp_obj_ptr);
 
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillOnce(Return("/indexes/123-456/Object-key1"))
       .WillOnce(Return("/indexes/454-999/Object-key2"));
 
@@ -76,7 +76,7 @@ TEST_F(MeroPathStyleURITEST, KeyNameTest) {
 
 TEST_F(MeroPathStyleURITEST, ObjectOidTest) {
 
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillOnce(Return("/objects/123-456"))
       .WillOnce(Return("/objects/454-999/"));
 
@@ -93,7 +93,7 @@ TEST_F(MeroPathStyleURITEST, ObjectOidTest) {
 
 TEST_F(MeroPathStyleURITEST, IndexListTest) {
 
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillOnce(Return("/indexes/123-456"))
       .WillOnce(Return("/indexes/454-999/"));
 
@@ -110,7 +110,7 @@ TEST_F(MeroPathStyleURITEST, IndexListTest) {
 
 TEST_F(MeroPathStyleURITEST, UnsupportedURITest) {
 
-  EXPECT_CALL(*ptr_mock_request, c_get_full_path())
+  EXPECT_CALL(*ptr_mock_request, c_get_full_encoded_path())
       .WillOnce(Return("/indexes123/123-456"))
       .WillOnce(Return("/objects123/"));
 

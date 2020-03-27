@@ -43,7 +43,7 @@ class EOSCoreIndexApi(EOSCoreClient):
         # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id) yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
         # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
 
-        request_uri = '/indexes/' + urllib.parse.quote(index_id)
+        request_uri = '/indexes/' + urllib.parse.quote(index_id, safe='')
         query_params = ""
 
         if (next_marker is not None):
@@ -88,7 +88,7 @@ class EOSCoreIndexApi(EOSCoreClient):
         # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id) yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
         # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
 
-        request_uri = '/indexes/' + urllib.parse.quote(index_id)
+        request_uri = '/indexes/' + urllib.parse.quote(index_id, safe='')
 
         query_params = ""
         body = ""

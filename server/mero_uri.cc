@@ -18,10 +18,12 @@
  */
 
 #include <string>
+#include <evhttp.h>
 
 #include "s3_log.h"
 #include "s3_option.h"
 #include "mero_uri.h"
+#include "base64.h"
 
 MeroURI::MeroURI(std::shared_ptr<MeroRequestObject> req)
     : request(req),
@@ -50,7 +52,9 @@ void MeroURI::setup_operation_code() {
 MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
     : MeroURI(req) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
-  std::string full_uri(request->c_get_full_path());
+  std::string full_uri(request->c_get_full_encoded_path());
+  s3_log(S3_LOG_DEBUG, request_id, "Encoded request URI = %s\n",
+         request->c_get_full_encoded_path());
   // Regex is better, but lets live with raw parsing. regex = >gcc 4.9.0
   if (full_uri.compare("/") == 0) {
     // FaultInjection request check
@@ -73,8 +77,18 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
         // Find position of '-' delimeter in index string
         std::size_t delim_pos = index_str.find("-");
         if (delim_pos != std::string::npos) {
-          index_id_hi = index_str.substr(0, delim_pos);
-          index_id_lo = index_str.substr(delim_pos + 1);
+          char* decoded_index_id_hi =
+              evhttp_uridecode(index_str.substr(0, delim_pos).c_str(), 1, NULL);
+          index_id_hi = decoded_index_id_hi;
+          s3_log(S3_LOG_DEBUG, request_id, "index_id_hi %s\n",
+                 index_id_hi.c_str());
+          free(decoded_index_id_hi);
+          char* decoded_index_id_lo = evhttp_uridecode(
+              index_str.substr(delim_pos + 1).c_str(), 1, NULL);
+          index_id_lo = decoded_index_id_lo;
+          s3_log(S3_LOG_DEBUG, request_id, "index_id_lo %s\n",
+                 index_id_lo.c_str());
+          free(decoded_index_id_lo);
           mero_api_type = MeroApiType::index;
         }
       } else {
@@ -85,8 +99,18 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
         // Find position of '-' delimeter in index string
         std::size_t delim_pos = index_str.find("-");
         if (delim_pos != std::string::npos) {
-          index_id_hi = index_str.substr(0, delim_pos);
-          index_id_lo = index_str.substr(delim_pos + 1);
+          char* decoded_index_id_hi =
+              evhttp_uridecode(index_str.substr(0, delim_pos).c_str(), 1, NULL);
+          index_id_hi = decoded_index_id_hi;
+          s3_log(S3_LOG_DEBUG, request_id, "index_id_hi %s\n",
+                 index_id_hi.c_str());
+          free(decoded_index_id_hi);
+          char* decoded_index_id_lo = evhttp_uridecode(
+              index_str.substr(delim_pos + 1).c_str(), 1, NULL);
+          index_id_lo = decoded_index_id_lo;
+          s3_log(S3_LOG_DEBUG, request_id, "index_id_lo %s\n",
+                 index_id_lo.c_str());
+          free(decoded_index_id_lo);
           mero_api_type = MeroApiType::keyval;
         }
       }
@@ -97,12 +121,24 @@ MeroPathStyleURI::MeroPathStyleURI(std::shared_ptr<MeroRequestObject> req)
       std::size_t pos = full_uri.find("/", object_match.length());
       if ((pos == std::string::npos) || (pos == full_uri.length() - 1)) {
         std::string object_oid_str =
-            full_uri.substr(index_match.length(), pos - index_match.length());
+            full_uri.substr(object_match.length(), pos - object_match.length());
         // Find position of '-' delimeter in object string
         std::size_t delim_pos = object_oid_str.find("-");
         if (delim_pos != std::string::npos) {
-          object_oid_hi = object_oid_str.substr(0, delim_pos);
-          object_oid_lo = object_oid_str.substr(delim_pos + 1);
+
+          char* decoded_object_oid_hi = evhttp_uridecode(
+              object_oid_str.substr(0, delim_pos).c_str(), 1, NULL);
+          object_oid_hi = decoded_object_oid_hi;
+          s3_log(S3_LOG_DEBUG, request_id, "object_oid_hi %s\n",
+                 object_oid_hi.c_str());
+          free(decoded_object_oid_hi);
+          char* decoded_object_oid_lo = evhttp_uridecode(
+              object_oid_str.substr(delim_pos + 1).c_str(), 1, NULL);
+          object_oid_lo = decoded_object_oid_lo;
+          s3_log(S3_LOG_DEBUG, request_id, "object_oid_lo %s\n",
+                 object_oid_lo.c_str());
+          free(decoded_object_oid_lo);
+
           mero_api_type = MeroApiType::object;
         }
       }

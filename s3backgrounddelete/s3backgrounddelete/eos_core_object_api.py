@@ -41,7 +41,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid) yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
 
-        request_uri = '/objects/' + urllib.parse.quote(oid)
+        request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
 
         headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
@@ -73,7 +73,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         if oid is None:
             self._logger.error("Object Id is required.")
             return
-        request_uri = '/objects/' + urllib.parse.quote(oid)
+        request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
 
         query_params = ""
         body = ""
@@ -125,7 +125,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # absolute_request_uri is layout-id is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D?layout-id=1'
 
         query_params = urllib.parse.urlencode({'layout-id': layout_id})
-        request_uri = '/objects/' + urllib.parse.quote(oid)
+        request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ''
@@ -173,7 +173,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # absolute_request_uri is layout-id is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D?layout-id=1'
 
         query_params = urllib.parse.urlencode({'layout-id': layout_id})
-        request_uri = '/objects/' + urllib.parse.quote(oid)
+        request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ''

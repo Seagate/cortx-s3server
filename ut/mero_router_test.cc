@@ -66,7 +66,7 @@ TEST_F(MeroRouterDispatchTest, InvokesKeyValueApiWithPathStyle) {
       .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
-  EXPECT_CALL(*mock_request, c_get_full_path())
+  EXPECT_CALL(*mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/indexes/123-456/Object-key1"));
   EXPECT_CALL(*mock_request, set_key_name(StrEq("Object-key1"))).Times(1);
   EXPECT_CALL(*mock_request, set_object_oid_lo(StrEq(""))).Times(1);
@@ -101,7 +101,7 @@ TEST_F(MeroRouterDispatchTest, InvokesIndexApiWithPathStyle) {
       .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
-  EXPECT_CALL(*mock_request, c_get_full_path())
+  EXPECT_CALL(*mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/indexes/123-456"));
   EXPECT_CALL(*mock_request, set_key_name(StrEq(""))).Times(1);
   EXPECT_CALL(*mock_request, set_object_oid_lo(StrEq(""))).Times(1);
@@ -134,7 +134,7 @@ TEST_F(MeroRouterDispatchTest, InvokesObjectOidApiWithPathStyle) {
       .WillRepeatedly(ReturnRef(query_params));
   EXPECT_CALL(*mock_request, get_host_header())
       .WillRepeatedly(Return("s3.seagate.com"));
-  EXPECT_CALL(*mock_request, c_get_full_path())
+  EXPECT_CALL(*mock_request, c_get_full_encoded_path())
       .WillRepeatedly(Return("/objects/123-456"));
   EXPECT_CALL(*mock_request, set_key_name(StrEq(""))).Times(1);
   EXPECT_CALL(*mock_request, set_object_oid_lo(StrEq("456"))).Times(1);
