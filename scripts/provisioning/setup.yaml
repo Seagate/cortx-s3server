@@ -9,7 +9,7 @@ s3server:
   config:
     script: /opt/seagate/eos/s3server/bin/s3_setup
     args:
-      - --configldap ldapadmin
+      - --configldap
   reset:
     script: /opt/seagate/eos/s3server/bin/s3_setup
     args:

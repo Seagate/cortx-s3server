@@ -34,7 +34,6 @@ setup(
 
     # Dependent packages (distributions)
     install_requires=[
-    'pika',
     'httplib2'
   ]
 )

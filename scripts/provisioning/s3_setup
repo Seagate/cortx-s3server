@@ -73,8 +73,6 @@ do
         ;;
     --configldap )
         config_ldap=true
-        shift;
-        ldappasswd=$1
         ;;
     --purgeconfigldap )
         purge_config_ldap=true
@@ -239,6 +237,15 @@ setup_ldap_replication()
 }
 
 # Install and Configure Openldap over Non-SSL.
+ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret)
+ldappasswd=$(echo $ldappasswd | tr -d ' ')
+ldappasswd=${ldappasswd/*:/}
+
+if [[ -z "$ldappasswd" ]]
+then
+    ldappasswd=ldapadmin
+fi
+
 if [[ $config_ldap == true ]]
 then
     /opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
