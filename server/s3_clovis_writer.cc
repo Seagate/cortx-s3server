@@ -372,6 +372,7 @@ void S3ClovisWriter::write_content(
 }
 
 void S3ClovisWriter::write_content() {
+  int rc;
   s3_log(S3_LOG_INFO, request_id, "Entering with layout_id = %d\n",
          layout_ids[0]);
 
@@ -451,9 +452,16 @@ void S3ClovisWriter::write_content() {
   set_up_clovis_data_buffers(rw_ctx, data_items, clovis_buf_count);
 
   /* Create the write request */
-  s3_clovis_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_WRITE,
-                               rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
-                               &ctx->ops[0]);
+  rc = s3_clovis_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_WRITE,
+                                    rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
+                                    &ctx->ops[0]);
+  if (rc != 0) {
+    s3_log(S3_LOG_WARN, request_id,
+           "Clovis API: clovis_obj_op failed with error code %d\n", rc);
+    state = S3ClovisWriterOpState::failed_to_launch;
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
+    return;
+  }
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);

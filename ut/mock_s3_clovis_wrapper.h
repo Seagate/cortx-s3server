@@ -55,10 +55,10 @@ class MockS3Clovis : public ClovisAPI {
                    struct m0_bufvec *keys, struct m0_bufvec *vals, int *rcs,
                    unsigned int flags, struct m0_clovis_op **op));
   MOCK_METHOD7(clovis_obj_op,
-               void(struct m0_clovis_obj *obj, enum m0_clovis_obj_opcode opcode,
-                    struct m0_indexvec *ext, struct m0_bufvec *data,
-                    struct m0_bufvec *attr, uint64_t mask,
-                    struct m0_clovis_op **op));
+               int(struct m0_clovis_obj *obj, enum m0_clovis_obj_opcode opcode,
+                   struct m0_indexvec *ext, struct m0_bufvec *data,
+                   struct m0_bufvec *attr, uint64_t mask,
+                   struct m0_clovis_op **op));
   MOCK_METHOD4(clovis_op_launch,
                void(uint64_t, struct m0_clovis_op **, uint32_t, ClovisOpType));
   MOCK_METHOD3(clovis_op_wait,

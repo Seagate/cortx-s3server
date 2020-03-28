@@ -191,12 +191,9 @@ void S3ClovisReader::open_object_successful() {
   if (state == S3ClovisReaderOpState::reading) {
     if (!read_object()) {
       // read cannot be launched, out-of-memory
-      state = S3ClovisReaderOpState::ooo;
-      s3_log(S3_LOG_ERROR, request_id,
-             "Clovis API failed: openobj(oid: ("
-             "%" SCNx64 " : %" SCNx64 "), out-of-memory)\n",
-             oid.u_hi, oid.u_lo);
-      this->handler_on_failed();
+      if (state != S3ClovisReaderOpState::failed_to_launch) {
+        this->handler_on_failed();
+      }
     }
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
   } else {
@@ -224,6 +221,7 @@ void S3ClovisReader::open_object_failed() {
 }
 
 bool S3ClovisReader::read_object() {
+  int rc;
   s3_log(S3_LOG_INFO, request_id,
          "Entering with num_of_blocks_to_read = %zu from last_index = %zu\n",
          num_of_blocks_to_read, last_index);
@@ -237,6 +235,11 @@ bool S3ClovisReader::read_object() {
   /* Read the requisite number of blocks from the entity */
   if (!reader_context->init_read_op_ctx(num_of_blocks_to_read, &last_index)) {
     // out-of-memory
+    state = S3ClovisReaderOpState::ooo;
+    s3_log(S3_LOG_ERROR, request_id,
+           "Clovis API failed: openobj(oid: ("
+           "%" SCNx64 " : %" SCNx64 "), out-of-memory)\n",
+           oid.u_hi, oid.u_lo);
     return false;
   }
 
@@ -259,9 +262,16 @@ bool S3ClovisReader::read_object() {
   ctx->cbs[0].oop_failed = s3_clovis_op_failed;
 
   /* Create the read request */
-  s3_clovis_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_READ,
-                               rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
-                               &ctx->ops[0]);
+  rc = s3_clovis_api->clovis_obj_op(&obj_ctx->objs[0], M0_CLOVIS_OC_READ,
+                                    rw_ctx->ext, rw_ctx->data, rw_ctx->attr, 0,
+                                    &ctx->ops[0]);
+  if (rc != 0) {
+    s3_log(S3_LOG_WARN, request_id,
+           "Clovis API: clovis_obj_op failed with error code %d\n", rc);
+    state = S3ClovisReaderOpState::failed_to_launch;
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
+    return false;
+  }
 
   ctx->ops[0]->op_datum = (void *)op_ctx;
   s3_clovis_api->clovis_op_setup(ctx->ops[0], &ctx->cbs[0], 0);

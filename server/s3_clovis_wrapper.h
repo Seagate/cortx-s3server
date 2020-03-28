@@ -94,11 +94,11 @@ class ClovisAPI {
                             int *rcs, unsigned int flags,
                             struct m0_clovis_op **op) = 0;
 
-  virtual void clovis_obj_op(struct m0_clovis_obj *obj,
-                             enum m0_clovis_obj_opcode opcode,
-                             struct m0_indexvec *ext, struct m0_bufvec *data,
-                             struct m0_bufvec *attr, uint64_t mask,
-                             struct m0_clovis_op **op) = 0;
+  virtual int clovis_obj_op(struct m0_clovis_obj *obj,
+                            enum m0_clovis_obj_opcode opcode,
+                            struct m0_indexvec *ext, struct m0_bufvec *data,
+                            struct m0_bufvec *attr, uint64_t mask,
+                            struct m0_clovis_op **op) = 0;
 
   virtual void clovis_op_launch(uint64_t addb_request_id,
                                 struct m0_clovis_op **op, uint32_t nr,
@@ -257,10 +257,10 @@ class ConcreteClovisAPI : public ClovisAPI {
 
   void clovis_idx_fini(struct m0_clovis_idx *idx) { m0_clovis_idx_fini(idx); }
 
-  void clovis_obj_op(struct m0_clovis_obj *obj,
-                     enum m0_clovis_obj_opcode opcode, struct m0_indexvec *ext,
-                     struct m0_bufvec *data, struct m0_bufvec *attr,
-                     uint64_t mask, struct m0_clovis_op **op) {
+  int clovis_obj_op(struct m0_clovis_obj *obj, enum m0_clovis_obj_opcode opcode,
+                    struct m0_indexvec *ext, struct m0_bufvec *data,
+                    struct m0_bufvec *attr, uint64_t mask,
+                    struct m0_clovis_op **op) {
     return m0_clovis_obj_op(obj, opcode, ext, data, attr, mask, op);
   }
 

@@ -41,13 +41,13 @@ static int s3_test_clovis_entity(struct m0_clovis_entity *entity,
   return 0;
 }
 
-static void s3_test_clovis_obj_op(struct m0_clovis_obj *obj,
-                                  enum m0_clovis_obj_opcode opcode,
-                                  struct m0_indexvec *ext,
-                                  struct m0_bufvec *data,
-                                  struct m0_bufvec *attr, uint64_t mask,
-                                  struct m0_clovis_op **op) {
+static int s3_test_clovis_obj_op(struct m0_clovis_obj *obj,
+                                 enum m0_clovis_obj_opcode opcode,
+                                 struct m0_indexvec *ext,
+                                 struct m0_bufvec *data, struct m0_bufvec *attr,
+                                 uint64_t mask, struct m0_clovis_op **op) {
   *op = (struct m0_clovis_op *)calloc(1, sizeof(struct m0_clovis_op));
+  return 0;
 }
 
 static int s3_test_allocate_op(struct m0_clovis_entity *entity,
