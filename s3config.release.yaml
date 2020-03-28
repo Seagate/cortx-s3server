@@ -78,8 +78,8 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                  # Pool buffer size, in case of S3_CLOVIS_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
    S3_LIBEVENT_MAX_READ_SIZE: 16384                     # Maximum read in a single read operation, as per libevent documentation in code, user should not try to read more than this value
-   S3_LIBEVENT_POOL_INITIAL_SIZE: 10737418240           # 10GB, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
-   S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 104857600          # 100mb, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
-   S3_LIBEVENT_POOL_MAX_THRESHOLD: 10737418240          # 10GB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
-   S3_LIBEVENT_POOL_RESERVE_SIZE: 1073741824            # Deny PUT request if mempool free space is less than the mentioned size in bytes
-   S3_LIBEVENT_POOL_RESERVE_PERCENT: 5                  # Deny PUT request if mempool free space in percent is less than the mentioned percent
+   S3_LIBEVENT_POOL_INITIAL_SIZE: 3221225472            # 3GB, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 134217728          # 128mb, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_LIBEVENT_POOL_MAX_THRESHOLD: 3221225472           # 3GB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_LIBEVENT_POOL_RESERVE_SIZE: 134217728             # 128MB, deny PUT request if mempool free space is less than the mentioned size in bytes
+   S3_LIBEVENT_POOL_RESERVE_PERCENT: 5                  # 5%, deny PUT request if mempool free space in percent is less than the mentioned percent
