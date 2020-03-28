@@ -13,9 +13,10 @@ USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
                                     [--olcserverid <Value>]
                                     [--eesnode1 <Value>]
                                     [--eesnode2 <Value>]
-                                    [--s3backgrounddelete <Value>]
+                                    [--s3backgrounddelete]
                                     [--node1 <Value>]
                                     [--node2 <Value>]
+                                    [--cleanup]
                                     [--help | -h]
 Install and configure release S3server setup.
 
@@ -30,7 +31,7 @@ where:
 --eesnode2            EES node 2 for LDAP replication
 --olcserverid         Host olcServerID (Unique for different nodes)
 --s3backgrounddelete  Configure s3backgrounddelete and its dependencies
---poststartup         Configure S3 dependencies post startup.
+--cleanup             Cleanup S3 accounts created for backgroundelete.
 --help                Display this help and exit"
 
 set -e
@@ -53,7 +54,7 @@ config_ldap=false
 setup_jenkins_yum_repo=false
 setup_s3backgrounddelete=false
 is_rabbitmq_clustered=false
-post_startup=false
+cleanup_accounts=false
 
 if [ $# -lt 1 ]
 then
@@ -72,6 +73,8 @@ do
         ;;
     --configldap )
         config_ldap=true
+        shift;
+        ldappasswd=$1
         ;;
     --purgeconfigldap )
         purge_config_ldap=true
@@ -94,8 +97,8 @@ do
     --s3backgrounddelete )
         setup_s3backgrounddelte=true
         ;;
-    --poststartup)
-        post_startup=true;
+    --cleanup )
+        cleanup_accounts=true
         ;;
     --help | -h )
         echo "$USAGE"
@@ -236,16 +239,23 @@ setup_ldap_replication()
 }
 
 # Install and Configure Openldap over Non-SSL.
-if [[ $purge_config_ldap == true ]]
+if [[ $config_ldap == true ]]
+then
+    /opt/seagate/auth/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
+          -p /opt/seagate/auth/resources/authserver.properties
+    if [[ -f /opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf ]]
+    then
+        # Enable slapd logging in rsyslog config
+        mkdir -p /etc/rsyslog.d
+        cp /opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf /etc/rsyslog.d/slapdlog.conf
+    fi
+    systemctl restart s3authserver
+    systemctl restart rsyslog
+
+elif [[ $purge_config_ldap == true ]]
 then
     $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --forceclean --skipssl
-    $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
-          -p /opt/seagate/auth/resources/authserver.properties
-
-elif [[ $config_ldap == true ]]
-then
-    $S3_DIR/scripts/ldap/setup_ldap.sh --defaultpasswd --skipssl
-    $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l ldapadmin \
+    $S3_DIR/scripts/enc_ldap_passwd_in_cfg.sh -l $ldappasswd \
           -p /opt/seagate/auth/resources/authserver.properties
 fi
 
@@ -310,20 +320,40 @@ fi
 add_s3backgrounddelete_rabbitmq_user()
 {
     users=`rabbitmqctl list_users`
-    if [[ $users =~ "s3-background-delete-rabbitmq" ]]
+    if [[ $users =~ "eos-s3" ]]
     then
     echo "Rabbitmq s3user already exists. Cleaning existing s3user."
-    rabbitmqctl delete_user s3-background-delete-rabbitmq
+    rabbitmqctl delete_user eos-s3
     fi
-    # Create a user (In this case user is 's3-background-delete-rabbitmq' with password as 'password')
-    rabbitmqctl add_user s3-background-delete-rabbitmq password
+    # Create a user (In this case user is 'eos-s3' with password as 'password')
+    rabbitmqctl add_user eos-s3 password
     # Setup this user as an administrator.
-    rabbitmqctl set_user_tags s3-background-delete-rabbitmq administrator
-    rabbitmqctl set_permissions -p / s3-background-delete-rabbitmq ".*" ".*" ".*"
+    rabbitmqctl set_user_tags eos-s3 administrator
+    rabbitmqctl set_permissions -p / eos-s3 ".*" ".*" ".*"
     # Setup queue mirroring
     rabbitmqctl set_policy ha-all ".*" '{"ha-mode":"all"}'
 
     echo "Rabbitmq configuration for this node is completed..."
+}
+
+# Create s3 account for s3 backgrounddelete
+create_background_delete_account()
+{
+    # Create s3background delete account
+    sh /opt/seagate/s3/install/ldap/create_background_delete_account.sh
+    # Restart producer and consumer
+    systemctl restart s3backgroundproducer
+    systemctl restart s3backgroundconsumer
+
+    echo "Created s3backgrounddelete account successfully..."
+}
+
+# Delete s3 account which was used by s3background delete
+delete_background_delete_account()
+{
+   # Delete s3background delete account
+   sh /opt/seagate/s3/install/ldap/delete_background_delete_account.sh
+   echo "Deleted s3backgrounddelete account successfully..."
 }
 
 # Setup rabbitmq and its dependencies
@@ -331,31 +361,13 @@ if [[ $setup_s3backgrounddelte == true ]]
 then
     echo "Setting up rabbitmq server for S3backgroundelete"
     add_s3backgrounddelete_rabbitmq_user
+    echo "Creating the s3backgrounddelete account"
+    create_background_delete_account
 fi
 
-post_startup()
-{
-    s3_account=`echo s3iamcli createaccount -n s3-background-delete-svc -e s3-background-delete-svc@gmail.com --ldapuser sgiamadmin --ldappasswd ldapadmin`
-
-    if [[ $s3_account =~ "AccountId" ]];
-    then
-        access_key=`echo $s3_account | awk  '{ print $12 }' | sed 's/.$//'`
-        secret_key=`echo $s3_account | awk  '{ print $15 }'`
-
-        sed -i "/access_key:/s/.*/   access_key: \"$access_key\"/" /opt/seagate/s3/s3backgrounddelete/config.yaml
-        sed -i "/secret_key:/s/.*/   secret_key: \"$secret_key\"/" /opt/seagate/s3/s3backgrounddelete/config.yaml
-
-        systemctl restart s3backgroundproducer
-        systemctl restart s3backgroundconsumer
-    else
-        echo "Error setting up S3backgroundelete account"
-        exit 1
-    fi
-}
-
-# Setup s3backgrounddelete and its dependencies
-if [[ $post_startup == true ]]
+# Clean up backgrounddelete account
+if [[ $cleanup_accounts == true ]]
 then
-    echo "Setting up S3backgroundelete"
-    post_startup
+    echo "Deleting the s3background delete account"
+    delete_background_delete_account
 fi

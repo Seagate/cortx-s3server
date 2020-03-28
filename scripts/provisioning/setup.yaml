@@ -8,14 +8,12 @@ s3server:
     args: null
   config:
     script: /opt/seagate/eos/s3server/bin/s3_setup
-    args: null
+    args:
+      - --configldap ldapadmin
   reset:
     script: /opt/seagate/eos/s3server/bin/s3_setup
-    args: null
-  post_startup:
-    script: /opt/seagate/eos/s3server/bin/s3_setup
     args:
-      - --poststartup
+      - --cleanup
 # Script path used by CSM to generate s3 support bundle
 support_bundle:
   - sh /opt/seagate/s3/scripts/s3_bundle_generate.sh
