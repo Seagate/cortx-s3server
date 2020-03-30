@@ -367,8 +367,10 @@ void S3DeleteBucketAction::remove_part_indexes_successful() {
 }
 
 void S3DeleteBucketAction::remove_part_indexes_failed() {
-  s3_log(S3_LOG_WARN, request_id, "Failed to delete multipart part metadata\n");
-  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+  s3_log(S3_LOG_WARN, request_id,
+         "Failed to delete multipart part metadata index\n");
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
     send_response_to_s3_client();
   } else {
@@ -400,8 +402,13 @@ void S3DeleteBucketAction::remove_multipart_index_failed() {
          "Failed to delete multipart index oid "
          "%" SCNx64 " : %" SCNx64 "\n",
          multipart_index.u_hi, multipart_index.u_lo);
-  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed) {
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   } else {
     next();
@@ -458,8 +465,13 @@ void S3DeleteBucketAction::remove_object_list_index_failed() {
          object_list_index_oid.u_hi, object_list_index_oid.u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
          S3_IEM_DELETE_IDX_FAIL_JSON);
-  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed) {
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   } else {
     next();
@@ -497,8 +509,13 @@ void S3DeleteBucketAction::remove_objects_version_list_index_failed() {
          objects_version_list_index_oid.u_lo);
   s3_iem(LOG_ERR, S3_IEM_DELETE_IDX_FAIL, S3_IEM_DELETE_IDX_FAIL_STR,
          S3_IEM_DELETE_IDX_FAIL_JSON);
-  if (bucket_metadata->get_state() == S3BucketMetadataState::failed_to_launch) {
+  if (clovis_kv_writer->get_state() ==
+      S3ClovisKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
+    send_response_to_s3_client();
+  } else if (clovis_kv_writer->get_state() ==
+             S3ClovisKVSWriterOpState::failed) {
+    set_s3_error("InternalError");
     send_response_to_s3_client();
   } else {
     next();

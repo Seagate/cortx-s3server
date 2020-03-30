@@ -47,11 +47,11 @@ class MockMeroRequestObject : public MeroRequestObject {
   MOCK_METHOD0(get_request, evhtp_request_t *());
   MOCK_METHOD0(get_content_length, size_t());
   MOCK_METHOD0(get_content_length_str, std::string());
-  MOCK_CONST_METHOD0(get_key_name, const std::string &());
-  MOCK_CONST_METHOD0(get_object_oid_lo, const std::string &());
-  MOCK_CONST_METHOD0(get_object_oid_hi, const std::string &());
-  MOCK_CONST_METHOD0(get_index_id_lo, const std::string &());
-  MOCK_CONST_METHOD0(get_index_id_hi, const std::string &());
+  MOCK_METHOD0(get_key_name, const std::string &());
+  MOCK_METHOD0(get_object_oid_lo, const std::string &());
+  MOCK_METHOD0(get_object_oid_hi, const std::string &());
+  MOCK_METHOD0(get_index_id_lo, const std::string &());
+  MOCK_METHOD0(get_index_id_hi, const std::string &());
   MOCK_METHOD1(set_key_name, void(const std::string &key));
   MOCK_METHOD1(set_object_oid_lo, void(const std::string &oid_lo));
   MOCK_METHOD1(set_object_oid_hi, void(const std::string &oid_hi));
@@ -81,3 +81,4 @@ class MockMeroRequestObject : public MeroRequestObject {
 };
 
 #endif
+

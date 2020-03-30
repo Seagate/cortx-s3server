@@ -142,7 +142,7 @@ class MockS3ObjectMultipartMetadataFactory
 class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
  public:
   MockS3ClovisWriterFactory(
-      std::shared_ptr<S3RequestObject> req, m0_uint128 oid,
+      std::shared_ptr<RequestObject> req, m0_uint128 oid,
       std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api = nullptr)
       : S3ClovisWriterFactory() {
     mock_clovis_writer =
@@ -150,7 +150,7 @@ class MockS3ClovisWriterFactory : public S3ClovisWriterFactory {
   }
 
   MockS3ClovisWriterFactory(
-      std::shared_ptr<S3RequestObject> req,
+      std::shared_ptr<RequestObject> req,
       std::shared_ptr<MockS3Clovis> ptr_mock_s3_clovis_api)
       : S3ClovisWriterFactory() {
     mock_clovis_writer =
@@ -198,7 +198,7 @@ class MockS3ClovisReaderFactory : public S3ClovisReaderFactory {
 
 class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
  public:
-  MockS3ClovisKVSReaderFactory(std::shared_ptr<S3RequestObject> req,
+  MockS3ClovisKVSReaderFactory(std::shared_ptr<RequestObject> req,
                                std::shared_ptr<MockS3Clovis> s3_clovis_mock_api)
       : S3ClovisKVSReaderFactory() {
     mock_clovis_kvs_reader =
@@ -216,7 +216,7 @@ class MockS3ClovisKVSReaderFactory : public S3ClovisKVSReaderFactory {
 
 class MockS3ClovisKVSWriterFactory : public S3ClovisKVSWriterFactory {
  public:
-  MockS3ClovisKVSWriterFactory(std::shared_ptr<S3RequestObject> req,
+  MockS3ClovisKVSWriterFactory(std::shared_ptr<RequestObject> req,
                                std::shared_ptr<MockS3Clovis> s3_clovis_api =
                                    nullptr)
       : S3ClovisKVSWriterFactory() {
@@ -322,3 +322,4 @@ class MockS3GlobalBucketIndexMetadataFactory
 };
 
 #endif
+

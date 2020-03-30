@@ -61,6 +61,8 @@ enum S3AddbActionTypeId {
   /* Auto-generated IDs are listed below. Sorry for strange format, it had to
    * be done this way to pass git-clang-format check. */
 
+  /* MeroDeleteIndexAction: */
+  S3_ADDB_MERO_DELETE_INDEX_ACTION_ID,
   /* MeroDeleteKeyValueAction: */
   S3_ADDB_MERO_DELETE_KEY_VALUE_ACTION_ID,
   /* MeroDeleteObjectAction: */

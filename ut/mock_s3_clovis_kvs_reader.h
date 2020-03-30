@@ -32,7 +32,7 @@ using ::testing::Return;
 
 class MockS3ClovisKVSReader : public S3ClovisKVSReader {
  public:
-  MockS3ClovisKVSReader(std::shared_ptr<S3RequestObject> req,
+  MockS3ClovisKVSReader(std::shared_ptr<RequestObject> req,
                         std::shared_ptr<ClovisAPI> s3clovis_api)
       : S3ClovisKVSReader(req, s3clovis_api) {}
   MOCK_METHOD0(get_state, S3ClovisKVSReaderOpState());

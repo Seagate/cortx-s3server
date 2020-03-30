@@ -34,6 +34,7 @@
 // function initializes that map, lookup function searches through it.
 
 // Include all action classes' headers:
+#include "mero_delete_index_action.h"
 #include "mero_delete_key_value_action.h"
 #include "mero_delete_object_action.h"
 #include "mero_get_key_value_action.h"
@@ -80,6 +81,8 @@ int s3_addb_init() {
   s3_log(S3_LOG_DEBUG, "", "Entering\n");
   // Sorry for the format, this had to be done this way to pass
   // git-clang-format check.
+  gs_addb_map[std::type_index(typeid(MeroDeleteIndexAction))] =
+      S3_ADDB_MERO_DELETE_INDEX_ACTION_ID;
   gs_addb_map[std::type_index(typeid(MeroDeleteKeyValueAction))] =
       S3_ADDB_MERO_DELETE_KEY_VALUE_ACTION_ID;
   gs_addb_map[std::type_index(typeid(MeroDeleteObjectAction))] =
@@ -158,6 +161,12 @@ int s3_addb_init() {
       S3_ADDB_S3_PUT_OBJECT_ACTION_ID;
   gs_addb_map[std::type_index(typeid(S3PutObjectTaggingAction))] =
       S3_ADDB_S3_PUT_OBJECT_TAGGING_ACTION_ID;
+
+  s3_log(S3_LOG_DEBUG, "",
+         "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
+         ": class MeroDeleteIndexAction\n",
+         (uint64_t)S3_ADDB_MERO_DELETE_INDEX_ACTION_ID,
+         (int64_t)S3_ADDB_MERO_DELETE_INDEX_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
