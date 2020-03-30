@@ -5,6 +5,26 @@ import base64
 import re
 from s3kvstool import S3kvTest, S3OID
 
+class S3LeakRecord(object):
+    """
+    Represents S3 Probable delete record
+    """
+    def __init__(self, key=None, jsonLeakRec=None):
+        self.key = key
+        if (jsonLeakRec):
+            self.leak_info = json.loads(jsonLeakRec)
+        else:
+            self.leak_info = {}
+
+    def get_leak_info(self):
+        return self.leak_info
+
+    def get_part_index_oid(self):
+        if (self.leak_info):
+            return self.leak_info["part_list_idx_oid"]
+        else:
+            return None
+
 # Find record in record list, return empty string otherwise
 def _find_record(fkey, record_list):
     for entry in record_list:
@@ -46,6 +66,28 @@ def _extract_oid(json_keyval, bucket=True):
     int_oid_lo = int.from_bytes(dec_string_oid_lo,byteorder=sbyteorder)
     oid_val.set_oid(hex(int_oid_hi), hex(int_oid_lo))
     return oid_val
+
+
+# Fetch leak record from probable delete index corresponding to key 'rec_key'
+def _fetch_leak_record(rec_key):
+    if (rec_key is None):
+        return None
+
+    probable_delete_index_oid = S3kvTest('Kvtest fetch probable delete index').root_probable_dead_object_list_index()
+    result = S3kvTest('Get key-value from probable delete index').get_keyval(probable_delete_index_oid, rec_key)\
+            .execute_test(ignore_err=True)
+    leak_index_records = result.status.stdout.split('----------------------------------------------')
+    found_leak_value = _find_record(rec_key, leak_index_records)
+    if (found_leak_value is None):
+        return None
+
+    found_leak_jsonval = _find_keyval_json(found_leak_value)
+    if (found_leak_jsonval is None):
+        return None
+
+    s3_leak_obj = S3LeakRecord(rec_key, found_leak_jsonval)
+    return s3_leak_obj
+
 
 # Helper to fetch System Test user record from kvs
 def _fetch_test_bucket_account_info(bucket_name):

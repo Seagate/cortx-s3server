@@ -127,3 +127,42 @@ class EOSCoreIndexApi(EOSCoreClient):
             self._logger.info('Failed to add Index.')
             return False, EOSCoreErrorResponse(
                 response['status'], response['reason'], response['body'])
+
+    def delete(self, index_id):
+        """Perform DELETE request and generate response."""
+        if index_id is None:
+            self._logger.info("Index Id is required.")
+            return None
+
+        # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
+        # https://docs.python.org/3/library/urllib.parse.html
+        # For example if index_id is 'AAAAAAAAAHg=-AwAQAAAAAAA=' urllib.parse.quote(index_id, safe='') yields 'AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+        # And request_uri is '/indexes/AAAAAAAAAHg%3D-AwAQAAAAAAA%3D'
+
+        request_uri = '/indexes/' + urllib.parse.quote(index_id, safe='')
+
+        query_params = ""
+        body = ""
+        headers = EOSCoreUtil.prepare_signed_header('DELETE', request_uri, query_params, body)
+
+        if(headers['Authorization'] is None):
+            self._logger.error("Failed to generate v4 signature")
+            return None
+
+        try:
+            response = super(
+                EOSCoreIndexApi,
+                self).delete(
+                request_uri,
+                headers=headers)
+        except Exception as ex:
+            self._logger.error(str(ex))
+            return None
+
+        if response['status'] == 204:
+            self._logger.info('Successfully deleted Index.')
+            return True, EOSCoreSuccessResponse(response['body'])
+        else:
+            self._logger.info('Failed to delete Index.')
+            return False, EOSCoreErrorResponse(
+                response['status'], response['reason'], response['body'])

@@ -64,6 +64,19 @@ class ObjectRecoveryValidator:
             self.logAPIResponse("VERSION DEL", "", obj_oid, response)
         return status
 
+    def delete_index(self, index_id):
+        ret, response = self._indexapi.delete(index_id)
+        if (ret):
+            self._logger.info("Deleted index: " + index_id)
+        elif (response.get_error_status() == 404):
+            # Index not found
+            self._logger.info("Index " + index_id + " does not exist")
+            ret = True
+        else:
+            self._logger.info("Failed to delete index " + index_id)
+            self.logAPIResponse("DEL INDEX", index_id, "", response)
+        return ret
+
     def delete_key_from_index(self, index_id, key_id, api_prefix):
         ret, response = self._kvapi.delete(index_id, key_id)
         if (ret):
@@ -112,9 +125,9 @@ class ObjectRecoveryValidator:
     def get_object_metadata(self, index_id, key):
         obj_metadata = None
         status, response = self.get_key_from_index(index_id, key)
-        if (response is not None):
+        if (status and response is not None):
             obj_metadata = json.loads(response.get_value())
-        return obj_metadata
+        return status, obj_metadata
 
     def logAPIResponse(self, resAPI, oid, key, response):
         if (response.get_error_status() != 200):
@@ -351,7 +364,8 @@ class ObjectRecoveryValidator:
                     self._logger.error("Failed to process leak oid " + self.object_leak_id)
             else:
                 # This is a multipart request(Post complete OR Multipart Abort).
-                # Delete object and then delete only entry from probable record
+                # Delete only object(no versions, as version does not exist yet) and then
+                # delete entry from probable delete index.
                 oid = self.object_leak_id
                 self._logger.info("Object " + self.object_leak_id + " is for multipart request")
                 layout = self.object_leak_info["object_layout_id"]
@@ -364,7 +378,17 @@ class ObjectRecoveryValidator:
                     else:
                         self._logger.error("Failed to process leak oid " + self.object_leak_id + " Failed to delete entry from leak index")
                 else:
-                    self._logger.error("Failed to process leak oid " + self.object_leak_id + " Failed to delete object")
+                    self._logger.error("Failed to process leak oid, failed to delete object  " +
+                        self.object_leak_id + " Skipping entry for next run")
+
+                # Delete part list index, if any
+                part_list_index_id = self.object_leak_info["part_list_idx_oid"]
+                if (part_list_index_id):
+                    status = self.delete_index(part_list_index_id)
+                    if (status):
+                        self._logger.info("Deleted part list index " + str(part_list_index_id) + " successfully")
+                    else:
+                        self._logger.info("Failed to delete part list index " + str(part_list_index_id))
             return
 
         obj_key = self.object_leak_info["object_key_in_index"]
@@ -381,7 +405,9 @@ class ObjectRecoveryValidator:
                 if (status):
                     if (response is None):
                         self._logger.info("Leak entry " + self.object_leak_id + " does not exist in multipart index")
-                        # Delete object and then delete only entry from probable record
+                        # This is a multipart request(Post complete OR Multipart Abort).
+                        # Delete only object(no versions, as version does not exist yet) and then
+                        # delete entry from probable delete index.
                         oid = self.object_leak_id
                         layout = self.object_leak_info["object_layout_id"]
                         status = self.delete_object_from_storage(oid, layout)
@@ -391,25 +417,47 @@ class ObjectRecoveryValidator:
                             if (status):
                                 self._logger.info("Leak entry " + self.object_leak_id + " processed successfully and deleted")
                             else:
-                                self._logger.error("Failed to process leak oid " + self.object_leak_id + " Failed to delete entry from leak index")
+                                self._logger.error("Failed to process leak oid " + self.object_leak_id +
+                                    " Failed to delete entry from leak index")
                         else:
-                            self._logger.error("Failed to process leak oid " + self.object_leak_id + "Skipping entry for next run. Failed to delete object")
+                            self._logger.error("Failed to process leak oid, failed to delete object " +
+                                self.object_leak_id + " Skipping entry for next run")
+
+                        # Delete part list index, if any exists
+                        part_list_index_id = self.object_leak_info["part_list_idx_oid"]
+                        if (part_list_index_id):
+                            status = self.delete_index(part_list_index_id)
+                            if (status):
+                                self._logger.info("Deleted part list index " +  str(part_list_index_id) + " successfully")
+                            else:
+                                self._logger.info("Failed to delete part list index " + str(part_list_index_id))
                     else:
                         self._logger.info("Skipping leak entry " + self.object_leak_id + " as it exists in multipart index")
                 else:
-                    self._logger.error("Failed to process leak oid " + self.object_leak_id + "Skipping entry. Failed to search multipart index")
+                    self._logger.error("Failed to process leak oid " + self.object_leak_id +
+                        "Skipping entry. Failed to search multipart index")
                 return
 
-        current_object_md = self.get_object_metadata(obj_list_id, obj_key)
+        status, current_object_md = self.get_object_metadata(obj_list_id, obj_key)
 
-        if (current_object_md is None):
-            self._logger.info("Object key " + obj_key + " does not exist in object list index" +
-                "Delete mero oid and the leak entry")
-            status = self.process_probable_delete_record(True, True)
-            if (status):
-                self._logger.info("Leak oid " + self.object_leak_id + " processed successfully and deleted")
+        if (status):
+            # Either object exists or object does not exist.
+            if (current_object_md is None):
+                # Object does not exist.
+                self._logger.info("Object key " + obj_key + " does not exist in object list index. " +
+                    "Delete mero oid and the leak entry")
+                status = self.process_probable_delete_record(True, True)
+                if (status):
+                    self._logger.info("Leak oid " + self.object_leak_id + " processed successfully and deleted")
+                else:
+                    self._logger.error("Failed to process leak oid " + self.object_leak_id)
+                return
             else:
-                self._logger.error("Failed to discard leak oid " + self.object_leak_id)
+                # Object exists. Contine further with leak algorithm.
+                pass
+        else:
+            self._logger.error("Failed to process leak oid " + self.object_leak_id +
+                        " Skipping entry for next run")
             return
 
         # Object leak detection algo: Step #3 - For old object
