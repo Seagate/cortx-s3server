@@ -969,3 +969,30 @@ Commands 2-7 could be combined
 ```
 this command will update repos, remove pkgs, install pkgs, update s3server config,
 run cluster and print statuses of all installed pkgs
+
+### Enable debug logs for openldap
+# by default slapd log level is set 0
+Log level '0' will generate only slapd service start log messages
+Use other log levels mentioned in openldap documentation,
+https://www.openldap.org/doc/admin24/slapdconfig.html see "6.2.1.5. loglevel <level>" section
+
+# How to change log level
+1. Update <s3 src>/scripts/ldap/slapdlog.ldif file and change the log level
+as mentioned in the openldap documentation
+
+2. modify ldap by running below script
+```
+ldapmodify -Y EXTERNAL -H ldapi:/// -w ldapadmin -f <s3 src>/scripts/ldap/slapdlog.ldif
+```
+3. verify log level is been set properly
+```
+ldapsearch -w seagate -x -D cn=admin,cn=config -b cn=config | grep olcLogLevel
+```
+4. restart slapd service
+```
+systemctl restart slapd
+```
+5. check slapd log file
+```
+vim /var/log/slapdlog.log
+```
