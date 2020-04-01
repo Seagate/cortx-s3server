@@ -153,7 +153,6 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Type", "application/xml");
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
-    s3_request->set_out_header_value("Retry-After", "1");
 
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
@@ -175,7 +174,11 @@ extern "C" evhtp_res dispatch_s3_api_request(evhtp_request_t *req,
     s3_request->set_out_header_value("Content-Type", "application/xml");
     s3_request->set_out_header_value("Content-Length",
                                      std::to_string(response_xml.length()));
-    s3_request->set_out_header_value("Retry-After", "1");
+    s3_request->set_out_header_value("Connection", "close");
+    int shutdown_grace_period =
+        S3Option::get_instance()->get_s3_grace_period_sec();
+    s3_request->set_out_header_value("Retry-After",
+                                     std::to_string(shutdown_grace_period));
 
     s3_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
@@ -266,7 +269,6 @@ extern "C" evhtp_res dispatch_mero_api_request(evhtp_request_t *req,
     mero_request->set_out_header_value("Content-Type", "application/xml");
     mero_request->set_out_header_value("Content-Length",
                                        std::to_string(response_xml.length()));
-    mero_request->set_out_header_value("Retry-After", "1");
 
     mero_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
@@ -288,8 +290,11 @@ extern "C" evhtp_res dispatch_mero_api_request(evhtp_request_t *req,
     mero_request->set_out_header_value("Content-Type", "application/xml");
     mero_request->set_out_header_value("Content-Length",
                                        std::to_string(response_xml.length()));
-    mero_request->set_out_header_value("Retry-After", "1");
-
+    mero_request->set_out_header_value("Connection", "close");
+    int shutdown_grace_period =
+        S3Option::get_instance()->get_s3_grace_period_sec();
+    mero_request->set_out_header_value("Retry-After",
+                                       std::to_string(shutdown_grace_period));
     mero_request->send_response(error.get_http_status_code(), response_xml);
     return EVHTP_RES_OK;
   }
