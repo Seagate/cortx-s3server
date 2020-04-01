@@ -31,7 +31,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 
-#define S3_BACKTRACE_DEPTH_MAX 256
+#define S3_BACKTRACE_DEPTH_MAX 2048
 #define S3_ARRAY_SIZE(a) ((sizeof(a)) / (sizeof(a)[0]))
 
 extern evbase_t *global_evbase_handle;
@@ -101,22 +101,25 @@ void s3_terminate_sig_handler(int signum) {
  */
 
 void s3_terminate_fatal_handler(int signum) {
-  s3_log(S3_LOG_INFO, "", "Recieved signal %d\n", signum);
+  s3_log(S3_LOG_INFO, "", "Received signal %d\n", signum);
   s3_iem(LOG_ALERT, S3_IEM_FATAL_HANDLER, S3_IEM_FATAL_HANDLER_STR,
          S3_IEM_FATAL_HANDLER_JSON, signum);
 
   void *trace[S3_BACKTRACE_DEPTH_MAX];
-  std::string bt_str = "";
-  std::string newline_str("\n");
-  char **buf;
+  std::stringstream bt_ss;
+  char **buf = nullptr;
   int rc;
   rc = backtrace(trace, S3_ARRAY_SIZE(trace));
   buf = backtrace_symbols(trace, rc);
-  for (int i = 0; i < rc; i++) {
-    bt_str += buf[i] + newline_str;
+  if (buf) {
+    for (int i = 0; i < rc; i++) {
+      bt_ss << buf[i] << "\n";
+    }
+    s3_log(S3_LOG_ERROR, "", "Signal:[%d], Backtrace:\n%s\n", signum,
+           bt_ss.str().c_str());
+    free(buf);
   }
-  s3_log(S3_LOG_ERROR, "", "Backtrace:\n%s\n", bt_str.c_str());
-  free(buf);
+
   S3Daemonize s3daemon;
   s3daemon.delete_pidfile();
   // dafault handler for core dumping
