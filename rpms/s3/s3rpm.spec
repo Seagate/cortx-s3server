@@ -5,7 +5,7 @@
 %endif
 
 # mero version
-%define h_mero_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' mero)
+%define h_mero_version %(rpm -q --whatprovides mero | xargs rpm -q --queryformat '%{VERSION}-%{RELEASE}')
 
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
