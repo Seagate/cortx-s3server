@@ -138,11 +138,12 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
       }
     }
     }
-    // Below will handle Get/Put/Delete Bucket Policy
-    if (PolicyUtil.isPolicyOperation(requestedOperation)) {
-      if (requestor == null) {
+    if (requestor == null) {
         return responseGenerator.AccessDenied();
       }
+
+      // Below will handle Get/Put/Delete Bucket Policy
+      if (PolicyUtil.isPolicyOperation(requestedOperation)) {
       if (response != null &&
           response.getResponseStatus() == HttpResponseStatus.OK) {
         Account ownerAccount =
@@ -161,7 +162,19 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
           response = responseGenerator.AccessDenied();
         }
       }
-    }
+      } else {
+        if (response != null &&
+            response.getResponseStatus() == HttpResponseStatus.OK) {
+          boolean isRootUser = Authorizer.isRootUser(
+              new UserImpl().findByUserId(requestor.getId()));
+          if (isRootUser ||
+              requestor.getAccount().getCanonicalId().equals(resourceOwner)) {
+            response = responseGenerator.ok();
+          } else {
+            response = responseGenerator.AccessDenied();
+          }
+        }
+      }
     return response;
   }
 
@@ -304,4 +317,5 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
     return result;
   }
 }
+
 

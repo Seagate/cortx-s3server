@@ -17,7 +17,7 @@ test1:
     req-headers:
         Content-type: application/x-www-form-urlencoded
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><AuthenticateUserResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName><SignatureSHA256>GHDa6voSj9LfLhDNNCUrrkMSwgg=</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><AuthenticateUserResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><AuthenticateUserResult><UserId>123</UserId><UserName>root</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName><SignatureSHA256>GHDa6voSj9LfLhDNNCUrrkMSwgg=</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>'
 
 test2:
     test-title: Authenticate user using AWS Signature Version 2 fails if Content-MD5 is wrong
@@ -213,7 +213,7 @@ test10:
         x-amz-content-sha256: 6037f3afb1c1fd1cbeea92ee144fef50b852a56fa81a946eda91852610fc1a8a
     req-headers:
         Accept: text/plain
-    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><AuthenticateUserResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName><SignatureSHA256>36fc0a941ed4f92e6cd20b97fe4a7dd18ab4960fdcf4ca8266d01f1f4a2003bf</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>'
+    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><AuthenticateUserResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><AuthenticateUserResult><UserId>123</UserId><UserName>root</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName><SignatureSHA256>36fc0a941ed4f92e6cd20b97fe4a7dd18ab4960fdcf4ca8266d01f1f4a2003bf</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>'
 
 # TODO Implement chunked, chunked seed signature generation for v4
 #test11:
@@ -286,3 +286,4 @@ test10:
 #        Content-type: application/x-www-form-urlencoded
 #        Accept: text/plain
 #    output: '<?xml version="1.0" encoding="UTF-8" standalone="no"?><AuthenticateUserResponse xmlns="https://iam.seagate.com/doc/2010-05-08/"><AuthenticateUserResult><UserId>123</UserId><UserName>tester</UserName><AccountId>12345</AccountId><AccountName>s3_test</AccountName><SignatureSHA256>d41dd2347a03bb161176580372beb38de4c4dfd2f68590cf0104a4e1cb051e04</SignatureSHA256></AuthenticateUserResult><ResponseMetadata><RequestId>0000</RequestId></ResponseMetadata></AuthenticateUserResponse>'
+

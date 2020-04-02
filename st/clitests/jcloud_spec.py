@@ -213,7 +213,7 @@ for i, val in enumerate(pathstyle_values):
         .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
 
     JCloudTest('Jcloud can not grant READ permission on bucket with InvalidId').set_acl("seagatebucket",
-        action="acl-grant", permission="READ:123:tester")\
+        action="acl-grant", permission="READ:123:root")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
     JCloudTest('Jcloud can not grant WRITE permission on bucket with InvalidId').set_acl("seagatebucket",
@@ -550,3 +550,4 @@ S3ClientConfig.pathstyle = True
 JCloudTest('Jcloud can create bucket nondnsbucket').create_bucket("nondnsbucket").execute_test().command_is_successful()
 JCloudTest('Jcloud can delete bucket nondnsbucket').delete_bucket("nondnsbucket").execute_test().command_is_successful()
 JCloudTest('Jcloud should not list deleted buckets').list_buckets().execute_test().command_is_successful().command_response_should_not_have('nondnsbucket')
+

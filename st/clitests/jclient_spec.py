@@ -221,7 +221,7 @@ for i, val in enumerate(pathstyle_values):
         .execute_test().command_is_successful().command_response_should_not_have("*anon*: READ")
 
     JClientTest('Jclient can not grant READ permission on bucket with InvalidId').set_acl("seagatebucket",
-        action="acl-grant", permission="READ:123:tester")\
+        action="acl-grant", permission="READ:123:root")\
         .execute_test(negative_case=True).command_should_fail().command_error_should_have("InvalidArgument")
 
 
@@ -275,7 +275,7 @@ for i, val in enumerate(pathstyle_values):
         .command_response_should_not_have("WRITE")
 
     JClientTest('Jclient can grant READ_ACP permission on object').set_acl("seagatebucket", "3kfile",
-        action="acl-grant", permission="READ_ACP:" + s3secondaccountId + ":tester")\
+        action="acl-grant", permission="READ_ACP:" + s3secondaccountId + ":root")\
         .execute_test().command_is_successful().command_response_should_have("Grant ACL successful")
 
     JClientTest('Jclient can verify READ ACL on object').get_acl("seagatebucket", "3kfile")\
@@ -745,3 +745,4 @@ S3ClientConfig.pathstyle = True
 # /etc/hosts should not contains nondnsbucket. This is to test the path style APIs.
 JClientTest('Jclient can create bucket nondnsbucket').create_bucket("nondnsbucket").execute_test().command_is_successful()
 JClientTest('Jclient can delete bucket nondnsbucket').delete_bucket("nondnsbucket").execute_test().command_is_successful()
+

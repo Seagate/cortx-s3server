@@ -409,6 +409,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("S3Action", "PutBucketPolicy");
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
         .thenReturn(mockAccount);
     Mockito.when(mockAccount.getName()).thenReturn("testAccount");
@@ -556,6 +559,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1");
     requestBody.put("S3Action", "PutBucketPolicy");
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
     Mockito.when(mockAccountImpl.findByCanonicalID("qWwZGnGYTga8gbpcuY79SA"))
@@ -964,6 +970,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Method", "PUT");
     requestBody.put("ClientAbsoluteUri", "/try1/a.txt");
     requestBody.put("S3Action", "PutObject");
+    PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
+        mockUserImpl);
+    Mockito.when(mockUserImpl.findByUserId("456")).thenReturn(user);
     PowerMockito.whenNew(AccountImpl.class).withNoArguments().thenReturn(
         mockAccountImpl);
     PowerMockito.whenNew(UserImpl.class).withNoArguments().thenReturn(
@@ -1034,6 +1043,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
                  actualServerResponse.getResponseStatus());
   }
 }
+
 
 
 
