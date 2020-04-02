@@ -37,6 +37,23 @@ using ::testing::ReturnRef;
 using ::testing::AtLeast;
 using ::testing::DefaultValue;
 
+#define OBJECT_KEY_LENGTH_MORE_THAN_1_KB                                       \
+  "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexvpi" \
+  "aqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbagijtg" \
+  "emhhfudggqdwpowidypjvxwwjayhghicnwupyritzpoobtwsbhihvzxnqlycpdwomlswvsvvvv" \
+  "puhlfvhckzyazsvqvrubobhlrajnytsvhnboykzzdjtvzxsacdjawgztgqgesyxgyugmfwwoxi" \
+  "aksrdtbiudlppssyoylbtazbsfvaxcysnetayhkpbtegvdxyowxfofnrkigayqtateseujcngr" \
+  "rpfkqypqehvezuoxaqxonlxagmvbbaujjgvnhzvcgasuetslydhvxgttepjmxszczjcvsgrgjk" \
+  "hedysupjtrcvtwhhgudpjgtmtrsmusucjtmzqejpfvmzsvjshkzzhtmdowgowvzwiqdhthsdbs" \
+  "nxyhapevigrtvhbzpylibfxpfoxiwoyqfyzxskefjththojqgglhmhbzhluyoycxjuwbnkdhms" \
+  "stycomxqzvvpvvkzoxhwvmpbwldqcrpsbpwrozymppbnnewmmmrxdxjqthetmfvjpeldndmomd" \
+  "udinwjiixsidcxpbacrtlwmgaljzaglsjcbfnsfqyiawieycdvdhatwzcbypcyfsnpeuxmiugs" \
+  "desnxhwywgtopqfbkxbpewohuecyneojfeksgukhsxalqxwzitszilqchkdokgaakogpswctds" \
+  "uybydalwzznotdvmynxlkomxfeplorgzkvveuslhmmnyeufsjqkzoomzdfvaaaxzykmgcmqdqx" \
+  "itjtmpkriwtihthlewlebaiekhzjctlnlwqrgwwhjulqkjfdsxhkxjyrahmmnqvyslxcbcuzob" \
+  "mbwxopritmxzjtvnqbszdhfftmfedpxrkiktorpvibtcoatvkvpqvevyhsscoxshpbwjhzfwmv" \
+  "ccvbjrnjfkchbrvgctwxhfaqoqhm"
+
 #define CREATE_BUCKET_METADATA                                            \
   do {                                                                    \
     EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), load(_, _)) \
@@ -93,7 +110,8 @@ class S3PutObjectActionTest : public testing::Test {
     EXPECT_CALL(*ptr_mock_request, get_bucket_name())
         .WillRepeatedly(ReturnRef(bucket_name));
     EXPECT_CALL(*ptr_mock_request, get_object_name())
-        .WillRepeatedly(ReturnRef(object_name));
+        .Times(AtLeast(1))
+        .WillOnce(ReturnRef(object_name));
     EXPECT_CALL(*(ptr_mock_request), get_header_value(StrEq("x-amz-tagging")))
         .WillOnce(Return(""));
 
@@ -160,6 +178,26 @@ TEST_F(S3PutObjectActionTest, ConstructorTest) {
 TEST_F(S3PutObjectActionTest, FetchBucketInfo) {
   CREATE_BUCKET_METADATA;
   EXPECT_TRUE(action_under_test->bucket_metadata != NULL);
+}
+
+TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase) {
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .WillOnce(ReturnRef(object_name));
+
+  action_under_test->validate_object_key_len();
+
+  EXPECT_STRNE("KeyTooLongError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .WillOnce(ReturnRef(OBJECT_KEY_LENGTH_MORE_THAN_1_KB));
+
+  action_under_test->validate_object_key_len();
+
+  EXPECT_STREQ("KeyTooLongError",
+               action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, ValidateRequestTags) {

@@ -33,6 +33,8 @@
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
+#define MAX_OBJECT_KEY_LENGTH 1024
+
 S3PutObjectAction::S3PutObjectAction(
     std::shared_ptr<S3RequestObject> req, std::shared_ptr<ClovisAPI> clovis_api,
     std::shared_ptr<S3BucketMetadataFactory> bucket_meta_factory,
@@ -95,6 +97,7 @@ void S3PutObjectAction::setup_steps() {
   if (!request->get_header_value("x-amz-tagging").empty()) {
     ACTION_TASK_ADD(S3PutObjectAction::validate_x_amz_tagging_if_present, this);
   }
+  ACTION_TASK_ADD(S3PutObjectAction::validate_object_key_len, this);
   ACTION_TASK_ADD(S3PutObjectAction::create_object, this);
   ACTION_TASK_ADD(S3PutObjectAction::initiate_data_streaming, this);
   ACTION_TASK_ADD(S3PutObjectAction::save_metadata, this);
@@ -133,6 +136,18 @@ void S3PutObjectAction::validate_x_amz_tagging_if_present() {
     s3_put_action_state = S3PutObjectActionState::validationFailed;
     set_s3_error("InvalidTagError");
     send_response_to_s3_client();
+  }
+}
+
+void S3PutObjectAction::validate_object_key_len() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
+    s3_put_action_state = S3PutObjectActionState::validationFailed;
+    set_s3_error("KeyTooLongError");
+    send_response_to_s3_client();
+  } else {
+    next();
   }
 }
 

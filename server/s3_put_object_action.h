@@ -102,6 +102,7 @@ class S3PutObjectAction : public S3ObjectAction {
   void validate_x_amz_tagging_if_present();
   void parse_x_amz_tagging_header(std::string content);
   void validate_tags();
+  void validate_object_key_len();
   void set_authorization_meta();
   void fetch_bucket_info_failed();
   void fetch_object_info_success();

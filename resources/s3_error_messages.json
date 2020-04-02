@@ -155,6 +155,10 @@
     "Description": "The XML you provided was not well-formed or did not validate against our published schema.",
     "httpcode": 400
   },
+  "KeyTooLongError" : {
+    "Description": "Your key is too long.",
+    "httpcode": 400
+  },
   "InvalidRange": {
     "Description": "The requested range cannot be satisfied.",
     "httpcode": 416
