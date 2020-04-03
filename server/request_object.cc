@@ -812,8 +812,16 @@ void RequestObject::respond_error(
 
 void RequestObject::respond_unsupported_api() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  respond_error("NotImplemented");
-
+  // For S3 request, if method is PUT and no bucket specified
+  // then return NotImplemented, with http code 405
+  S3RequestObject* s3_request = dynamic_cast<S3RequestObject*>(this);
+  if ((s3_request != nullptr) && (S3HttpVerb::PUT == this->http_verb())) {
+    if ("" == s3_request->get_bucket_name()) {
+      respond_error("MethodNotAllowed");
+    }
+  } else {
+    respond_error("NotImplemented");
+  }
   s3_stats_inc("unsupported_api_count");
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
