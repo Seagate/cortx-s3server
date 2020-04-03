@@ -433,8 +433,7 @@ public class AWSV4Sign implements AWSSign {
                  * Hence the content type is hard coded.
                  */
                 if (headerValue.isEmpty()) {
-                    canonicalHeader += "content-type:application/x-www-form-urlencoded;"
-                            + " charset=utf-8\n";
+                  canonicalHeader += "content-type:\n";
                 } else {
                     canonicalHeader += String.format("%s:%s\n", s, headerValue);
                 }
