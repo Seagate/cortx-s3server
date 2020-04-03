@@ -63,7 +63,9 @@ fi
 
 ## Add file/directory locations for bundling
 # Collect s3 core files from mero location
-if [ -d "$s3_core_dir" ];
+# S3server name is generated with random name e.g s3server-0x7200000000000001:0x22
+# check if s3server name with compgen globpat is available
+if compgen -G $s3_core_dir > /dev/null;
 then
     args=$args" "$s3_core_dir
 fi
