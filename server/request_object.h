@@ -266,8 +266,6 @@ class RequestObject {
     }
   }
 
-  bool is_request_paused() const { return is_paused; }
-
   void client_has_disconnected() {
     s3_log(S3_LOG_INFO, request_id, "S3 Client disconnected.\n");
     stop_client_read_timer();

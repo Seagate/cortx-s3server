@@ -576,6 +576,7 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
       s3_log(S3_LOG_WARN, request_id,
              "Memory in pool is above threshold limits\n");
     }
+    s3_log(S3_LOG_DEBUG, nullptr, "Exiting\n");
     return;
   }
   if (is_s3_client_read_error()) {
@@ -655,21 +656,31 @@ void RequestObject::notify_incoming_data(evbuf_t* buf) {
     s3_client_read_error = "ServiceUnavailable";
   }
   if (incoming_data_callback) {
+    const bool f_s3_client_read_error = is_s3_client_read_error();
     if (buffered_input->get_content_length() >= notify_read_watermark ||
-        !pending_in_flight || error_adding_to_buffered_input) {
+        !pending_in_flight || f_s3_client_read_error) {
       s3_log(S3_LOG_DEBUG, request_id, "Sending data to be consumed...\n");
       incoming_data_callback();
+      // The class instance can be destroyed at this point!
     }
-  }
-  // Pause if we have read enough in buffers for this request,
-  // and let the handlers resume when required.
-  else if (!buffered_input->is_freezed() &&
-           buffered_input->get_content_length() >=
-               (notify_read_watermark *
-                g_option_instance->get_read_ahead_multiple())) {
+    if (f_s3_client_read_error) {
+      s3_log(S3_LOG_DEBUG, nullptr, "Exiting\n");
+      return;
+    }
+  } else if (!buffered_input->is_freezed() &&
+             buffered_input->get_content_length() >=
+                 notify_read_watermark *
+                     g_option_instance->get_read_ahead_multiple()) {
+    // Pause if we have read enough in buffers for this request,
+    // and let the handlers resume when required.
     pause();
   }
-  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  if (!is_paused && !buffered_input->is_freezed()) {
+    // Set the read timeout event, in case if more data is expected.
+    s3_log(S3_LOG_DEBUG, request_id, "Setting Read timeout for s3 client\n");
+    set_start_client_request_read_timeout();
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "Exiting\n");
 }
 
 void RequestObject::send_response(int code, std::string body) {
@@ -682,16 +693,11 @@ void RequestObject::send_response(int code, std::string body) {
   if (code == S3HttpFailed500) {
     s3_stats_inc("internal_error_count");
   }
-  buffered_input.reset();
-  s3_log(S3_LOG_DEBUG, request_id, "buffered_input's count is equal %ld\n",
-         buffered_input.use_count());
-
   if (!client_connected()) {
     s3_log(S3_LOG_WARN, request_id, "s3 client disconnected state.\n");
     request_timer.stop();
     return;
   }
-
   // If body not empty, write to response body.
   if (!body.empty()) {
     evbuffer_add(ev_req->buffer_out, body.c_str(), body.length());

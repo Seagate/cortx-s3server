@@ -336,15 +336,6 @@ static evhtp_res process_request_data(evhtp_request_t *p_evhtp_req,
 
       p_s3_req->notify_incoming_data(s3_buf);
 
-      if ((p_s3_req->get_buffered_input() != NULL) &&
-          (!p_s3_req->get_buffered_input()->is_freezed() &&
-           !p_s3_req->is_request_paused())) {
-        // Set the read timeout event, in case if more data
-        // is expected.
-        s3_log(S3_LOG_DEBUG, psz_request_id,
-               "Setting Read timeout for s3 client\n");
-        p_s3_req->set_start_client_request_read_timeout();
-      }
       return EVHTP_RES_OK;
     }
   }
@@ -369,14 +360,6 @@ extern "C" evhtp_res process_mero_api_request_data(evhtp_request_t *req,
     evbuffer_add_buffer(s3_buf, buf);
 
     request->notify_incoming_data(s3_buf);
-    if (!request->get_buffered_input()->is_freezed() &&
-        !request->is_request_paused()) {
-      // Set the read timeout event, in case if more data
-      // is expected.
-      s3_log(S3_LOG_DEBUG, request->get_request_id().c_str(),
-             "Setting Read timeout for mero client\n");
-      request->set_start_client_request_read_timeout();
-    }
 
   } else {
     if (request) {
