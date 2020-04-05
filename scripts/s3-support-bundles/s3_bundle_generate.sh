@@ -33,15 +33,24 @@ s3server_config="/opt/seagate/s3/conf/s3config.yaml"
 authserver_config="/opt/seagate/auth/resources/authserver.properties"
 backgrounddelete_config="/opt/seagate/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/s3/s3startsystem.sh"
-
 s3_core_dir="/var/mero/s3server-*"
-tmp_dir="/tmp/s3_support_bundle"
+
+# Create tmp folder with pid value to allow parallel execution
+pid_value=$$
+tmp_dir="/tmp/s3_support_bundle_$pid_value"
 disk_usage="$tmp_dir/disk_usage.txt"
 cpu_info="$tmp_dir/cpuinfo.txt"
 ram_usage="$tmp_dir/ram_usage.txt"
 s3server_pids="$tmp_dir/s3server_pids.txt"
 haproxy_pids="$tmp_dir/haproxy_pids.txt"
 m0d_pids="$tmp_dir/m0d_pids.txt"
+
+# LDAP data
+ldap_dir="$tmp_dir/ldap"
+ldap_config="$ldap_dir/ldap_config_search.txt"
+ldap_subschema="$ldap_dir/ldap_subschema_search.txt"
+ldap_accounts="$ldap_dir/ldap_accounts_search.txt"
+ldap_users="$ldap_dir/ldap_users_search.txt"
 
 if [[ -z "$bundle_id" || -z "$bundle_path" ]];
 then
@@ -177,9 +186,48 @@ then
    args=$args" "$m0d_pids
 fi
 
+## Collect LDAP data
+mkdir -p $ldap_dir
+
+# Fetch ldap root DN password and ldap password
+if rpm -q "salt"  > /dev/null;
+then
+    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret)
+    rootdnpasswd=$(echo $rootdnpasswd | tr -d ' ')
+    rootdnpasswd=${rootdnpasswd/*:/}
+else
+    rootdnpasswd="seagate"
+fi
+
+# Run ldap commands
+ldapsearch -b "cn=config" -x -w $rootdnpasswd -D "cn=admin,cn=config" > $ldap_config  2>&1
+ldapsearch -s base -b "cn=subschema" objectclasses -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" > $ldap_subschema  2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -LLL ldapentrycount > $ldap_accounts 2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -LLL ldapentrycount > $ldap_users  2>&1
+
+if [ -f "$ldap_config" ];
+then
+    args=$args" "$ldap_config
+fi
+
+if [ -f "$ldap_subschema" ];
+then
+    args=$args" "$ldap_subschema
+fi
+
+if [ -f "$ldap_accounts" ];
+then
+    args=$args" "$ldap_accounts
+fi
+
+if [ -f "$ldap_users" ];
+then
+    args=$args" "$ldap_users
+fi
+
 # Clean up temp files
 cleanup_tmp_files(){
-rm -rf /tmp/s3_support_bundle
+rm -rf /tmp/s3_support_bundle_$pid_value
 }
 
 ## 2. Build tar.gz file with bundleid at bundle_path location
