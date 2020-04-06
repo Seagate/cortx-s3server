@@ -165,6 +165,7 @@ public class AccountController extends AbstractController {
         }
         catch (InterruptedException e) {
           LOGGER.error("Create account delay failing - ", e);
+          Thread.currentThread().interrupt();
         }
 
         return accountResponseGenerator.generateCreateResponse(account, root,
@@ -239,6 +240,7 @@ public class AccountController extends AbstractController {
         }
         catch (InterruptedException e) {
           LOGGER.error("Reset key  delay failing - ", e);
+          Thread.currentThread().interrupt();
         }
         return accountResponseGenerator.generateResetAccountAccessKeyResponse(
                                           account, root, rootAccessKey);

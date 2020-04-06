@@ -337,6 +337,7 @@ public class AccessKeyImpl implements AccessKeyDAO {
         }
         catch (InterruptedException e) {
           LOGGER.error("Exception occurred while saving access key", e);
+          Thread.currentThread().interrupt();
         }
     }
 
