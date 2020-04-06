@@ -156,6 +156,89 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
   return;
 }
 
+void S3ClovisKVSReader::lookup_index(struct m0_uint128 oid,
+                                     std::function<void(void)> on_success,
+                                     std::function<void(void)> on_failed) {
+  int rc = 0;
+  s3_log(S3_LOG_INFO, request_id,
+         "Entering with oid %" SCNx64 " : %" SCNx64 "\n", oid.u_hi, oid.u_lo);
+
+  id = oid;
+
+  if (idx_ctx) {
+    // clean up any old allocations
+    clean_up_contexts();
+  }
+  idx_ctx = create_idx_context(1);
+
+  this->handler_on_success = std::move(on_success);
+  this->handler_on_failed = std::move(on_failed);
+
+  reader_context.reset(new S3ClovisKVSReaderContext(
+      request, std::bind(&S3ClovisKVSReader::lookup_index_successful, this),
+      std::bind(&S3ClovisKVSReader::lookup_index_failed, this), s3_clovis_api));
+
+  struct s3_clovis_idx_op_context *idx_op_ctx =
+      reader_context->get_clovis_idx_op_ctx();
+
+  struct s3_clovis_context_obj *op_ctx = (struct s3_clovis_context_obj *)calloc(
+      1, sizeof(struct s3_clovis_context_obj));
+
+  // op_ctx->op_index_in_launch = 0;
+  op_ctx->application_context = (void *)reader_context.get();
+
+  if (idx_op_ctx && idx_op_ctx->cbs) {
+    idx_op_ctx->cbs->oop_executed = NULL;
+    idx_op_ctx->cbs->oop_stable = s3_clovis_op_stable;
+    idx_op_ctx->cbs->oop_failed = s3_clovis_op_failed;
+  }
+
+  s3_clovis_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
+                                 &id);
+
+  rc = s3_clovis_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_LOOKUP, NULL,
+                                    NULL, NULL, 0, &(idx_op_ctx->ops[0]));
+  if (rc != 0) {
+    s3_log(S3_LOG_ERROR, request_id, "m0_clovis_idx_op failed\n");
+    state = S3ClovisKVSReaderOpState::failed_to_launch;
+    s3_clovis_op_pre_launch_failure(op_ctx->application_context, rc);
+    return;
+  } else {
+    s3_log(S3_LOG_DEBUG, request_id, "m0_clovis_idx_op suceeded\n");
+  }
+
+  idx_op_ctx->ops[0]->op_datum = (void *)op_ctx;
+  s3_clovis_api->clovis_op_setup(idx_op_ctx->ops[0], idx_op_ctx->cbs, 0);
+
+  reader_context->start_timer_for("lookup_index");
+
+  s3_clovis_api->clovis_op_launch(request->addb_request_id, idx_op_ctx->ops, 1,
+                                  ClovisOpType::headidx);
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+  return;
+}
+
+void S3ClovisKVSReader::lookup_index_successful() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  state = S3ClovisKVSReaderOpState::present;
+  this->handler_on_success();
+}
+
+void S3ClovisKVSReader::lookup_index_failed() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (state != S3ClovisKVSReaderOpState::failed_to_launch) {
+    if (reader_context->get_errno_for(0) == -ENOENT) {
+      s3_log(S3_LOG_DEBUG, request_id, "The index id doesn't exist\n");
+      state = S3ClovisKVSReaderOpState::missing;
+    } else {
+      s3_log(S3_LOG_ERROR, request_id, "index lookup failed\n");
+      state = S3ClovisKVSReaderOpState::failed;
+    }
+  }
+  this->handler_on_failed();
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
 void S3ClovisKVSReader::get_keyval_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   s3_stats_inc("get_keyval_success_count");

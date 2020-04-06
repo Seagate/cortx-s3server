@@ -69,6 +69,8 @@ enum S3AddbActionTypeId {
   S3_ADDB_MERO_DELETE_OBJECT_ACTION_ID,
   /* MeroGetKeyValueAction: */
   S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID,
+  /* MeroHeadIndexAction: */
+  S3_ADDB_MERO_HEAD_INDEX_ACTION_ID,
   /* MeroHeadObjectAction: */
   S3_ADDB_MERO_HEAD_OBJECT_ACTION_ID,
   /* MeroKVSListingAction: */

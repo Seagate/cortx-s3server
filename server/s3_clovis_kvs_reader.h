@@ -171,6 +171,13 @@ class S3ClovisKVSReader {
   void next_keyval_successful();
   void next_keyval_failed();
 
+  virtual void lookup_index(struct m0_uint128 idx_oid,
+                            std::function<void(void)> on_success,
+                            std::function<void(void)> on_failed);
+
+  void lookup_index_successful();
+  void lookup_index_failed();
+
   // returns the fetched kv pairs
   virtual std::map<std::string, std::pair<int, std::string>>& get_key_values() {
     return last_result_keys_values;

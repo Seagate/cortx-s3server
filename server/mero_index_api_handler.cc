@@ -19,6 +19,7 @@
 
 #include "mero_api_handler.h"
 #include "mero_delete_index_action.h"
+#include "mero_head_index_action.h"
 #include "mero_kvs_listing_action.h"
 #include "s3_log.h"
 #include "s3_stats.h"
@@ -38,10 +39,17 @@ void MeroIndexAPIHandler::create_action() {
         case S3HttpVerb::DELETE:
           if (!request->get_index_id_lo().empty() ||
               !request->get_index_id_hi().empty()) {
-            // If index id is present in request /indexes/123-456
+            // Index id must be present in request /indexes/123-456
             action = std::make_shared<MeroDeleteIndexAction>(request);
             s3_stats_inc("mero_http_index_delete_count");
           }  // else we dont support delete all indexes DEL /indexes/
+          break;
+        case S3HttpVerb::HEAD:
+          if (!request->get_index_id_lo().empty() ||
+              !request->get_index_id_hi().empty()) {
+            action = std::make_shared<MeroHeadIndexAction>(request);
+            s3_stats_inc("mero_http_index_head_count");
+          }
           break;
         default:
           // should never be here.

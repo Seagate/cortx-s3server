@@ -47,6 +47,7 @@ enum class ClovisOpType {
   deleteobj,
   createidx,
   deleteidx,
+  headidx,
   getkv,
   putkv,
   deletekv,

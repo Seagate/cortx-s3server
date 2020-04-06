@@ -39,6 +39,9 @@ class MockS3ClovisKVSReader : public S3ClovisKVSReader {
   MOCK_METHOD0(get_value, std::string());
   MOCK_METHOD0(get_key_values,
                std::map<std::string, std::pair<int, std::string>> &());
+  MOCK_METHOD3(lookup_index,
+               void(struct m0_uint128, std::function<void(void)> on_success,
+                    std::function<void(void)> on_failed));
   MOCK_METHOD4(get_keyval,
                void(struct m0_uint128 oid, std::vector<std::string> keys,
                     std::function<void(void)> on_success,

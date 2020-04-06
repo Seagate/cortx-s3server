@@ -38,6 +38,7 @@
 #include "mero_delete_key_value_action.h"
 #include "mero_delete_object_action.h"
 #include "mero_get_key_value_action.h"
+#include "mero_head_index_action.h"
 #include "mero_head_object_action.h"
 #include "mero_kvs_listing_action.h"
 #include "s3_abort_multipart_action.h"
@@ -89,6 +90,8 @@ int s3_addb_init() {
       S3_ADDB_MERO_DELETE_OBJECT_ACTION_ID;
   gs_addb_map[std::type_index(typeid(MeroGetKeyValueAction))] =
       S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID;
+  gs_addb_map[std::type_index(typeid(MeroHeadIndexAction))] =
+      S3_ADDB_MERO_HEAD_INDEX_ACTION_ID;
   gs_addb_map[std::type_index(typeid(MeroHeadObjectAction))] =
       S3_ADDB_MERO_HEAD_OBJECT_ACTION_ID;
   gs_addb_map[std::type_index(typeid(MeroKVSListingAction))] =
@@ -185,6 +188,12 @@ int s3_addb_init() {
          ": class MeroGetKeyValueAction\n",
          (uint64_t)S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID,
          (int64_t)S3_ADDB_MERO_GET_KEY_VALUE_ACTION_ID);
+
+  s3_log(S3_LOG_DEBUG, "",
+         "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning
+         ": class MeroHeadIndexAction\n",
+         (uint64_t)S3_ADDB_MERO_HEAD_INDEX_ACTION_ID,
+         (int64_t)S3_ADDB_MERO_HEAD_INDEX_ACTION_ID);
 
   s3_log(S3_LOG_DEBUG, "",
          "  * id 0x%" PRIx64 "/%" PRId64  // suppress clang warning

@@ -87,6 +87,10 @@
     "Description": "The specified key does not exist.",
     "httpcode": 404
   },
+  "NoSuchIndex": {
+    "Description": "The specified index does not exist.",
+    "httpcode": 404
+  },
   "EntityTooSmall": {
     "Description": "Your proposed upload is smaller than the minimum allowed object size. Each part must be at least 5 MB in size, except the last part.",
     "httpcode": 400
