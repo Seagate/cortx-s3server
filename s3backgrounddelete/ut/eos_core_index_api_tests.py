@@ -12,7 +12,9 @@ def test_list_no_index_id():
     """Test List api without index_id should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreIndexApi(config).list(None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 
 def test_list_success():
@@ -30,7 +32,9 @@ def test_list_success():
 
     config = EOSCoreConfig()
     response = EOSCoreIndexApi(config, connection=httpconnection).list("test_index1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
+        assert response[1] is not None
 
 
 def test_list_failure():
@@ -46,7 +50,9 @@ def test_list_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreIndexApi(config, connection=httpconnection).list("test_index2")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is not None
 
 
 def test_put_success():
@@ -62,7 +68,8 @@ def test_put_success():
 
     config = EOSCoreConfig()
     response = EOSCoreIndexApi(config, connection=httpconnection).put("test_index1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 
 def test_put_failure():
@@ -78,11 +85,13 @@ def test_put_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreIndexApi(config, connection=httpconnection).put("test_index1")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
 
 
 def test_put_no_index_id():
     """Test PUT request without index_id, it should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreIndexApi(config).put(None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False

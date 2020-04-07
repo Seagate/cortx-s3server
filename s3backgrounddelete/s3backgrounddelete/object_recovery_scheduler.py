@@ -103,6 +103,8 @@ class ObjectRecoveryScheduler(object):
                     self.logger.info(
                         "Index listing result empty. Ignoring adding entry to object recovery queue")
                     pass
+            else:
+                self.logger.error("Failed to retrive Index listing:")
         except BaseException:
             self.logger.error(
                 "Object recovery queue send data exception:" + traceback.format_exc())

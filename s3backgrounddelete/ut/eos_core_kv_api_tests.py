@@ -12,14 +12,17 @@ def test_get_no_index_id():
     """Test GET api without index_id should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config).get(None, "test_key1")
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 
 def test_get_no_object_key_name():
     """Test GET api without object_key_name should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config).get("test_index1", None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
 
 
 def test_get_success():
@@ -36,7 +39,8 @@ def test_get_success():
 
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config, connection=httpconnection).get("test_index1", "test_key1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 
 def test_get_failure():
@@ -55,21 +59,26 @@ def test_get_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config, connection=httpconnection).get("test_index2", "test_key2")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
 
 
 def test_delete_no_index_id():
     """Test DELETE api without index should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config).delete(None, "test_key1")
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 
 def test_delete_no_object_key_name():
     """Test DELETE api without object key name should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config).delete("test_index1", None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 
 def test_delete_success():
@@ -85,7 +94,8 @@ def test_delete_success():
 
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config, connection=httpconnection).delete("test_index1", "test_key1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 
 def test_delete_failure():
@@ -104,20 +114,25 @@ def test_delete_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config, connection=httpconnection).delete("test_index1", "test_key1")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
 
 
 def test_put_no_index_id():
     """Test PUT api without index_id should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config).put(None, "test_key1")
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 def test_put_no_object_key_name():
     """Test PUT api without key should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config).put("test_index1", None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 
 def test_put_success():
@@ -133,7 +148,8 @@ def test_put_success():
 
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config, connection=httpconnection).put("test_index1", "test_key1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 
 def test_put_failure():
@@ -152,4 +168,5 @@ def test_put_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreKVApi(config, connection=httpconnection).put("test_index2", "test_key2")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False

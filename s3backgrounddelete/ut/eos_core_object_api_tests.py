@@ -12,7 +12,9 @@ def test_get_no_oid():
     """Test GET api without oid should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config).get(None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 def test_get_success():
     """Test GET api, it should return success response."""
@@ -29,7 +31,8 @@ def test_get_success():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).get("test_object1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 def test_get_failure():
     """Test if GET api fails it should return error response"""
@@ -44,7 +47,8 @@ def test_get_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).get("test_index2")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
 
 def test_put_success():
     """Test PUT api, it should send success response."""
@@ -59,7 +63,8 @@ def test_put_success():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).put("test_index1", "test_value1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 def test_put_failure():
     """Test if PUT fails it should return error response."""
@@ -74,13 +79,15 @@ def test_put_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).put("test_index2", "test_value2")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
 
 def test_put_no_index():
     """Test PUT api with no index should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config).put(None, "test_value2")
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
 
 def test_delete_success():
     """Test DELETE api, it should send success response."""
@@ -95,7 +102,8 @@ def test_delete_success():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).delete("test_oid1", "test_layout_id1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 def test_delete_failure():
     """Test if DELETE api fails, it should return error response."""
@@ -110,19 +118,24 @@ def test_delete_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).delete("test_oid2", "test_layout_id2")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
 
 def test_delete_no_oid():
     """Test DELETE api without index, it should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config).delete(None, "test_layot_id2")
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 def test_delete_no_layout_id():
     """Test DELETE api without layout id, it should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config).delete("test_oid1", None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 def test_head_success():
     """Test HEAD api, it should send success response."""
@@ -137,7 +150,8 @@ def test_head_success():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).head("test_oid1", "test_layout_id1")
-    assert response[0] is True
+    if (response is not None):
+        assert response[0] is True
 
 def test_head_failure():
     """Test if HEAD api fails, it should return error response."""
@@ -152,17 +166,22 @@ def test_head_failure():
 
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config, connection=httpconnection).head("test_oid2", "test_layout_id2")
-    assert response[0] is False
+    if (response is not None):
+        assert response[0] is False
 
 def test_head_no_oid():
     """Test HEAD api without index, it should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config).head(None, "test_layot_id2")
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 
 def test_head_no_layout_id():
     """Test HEAD api without layout id, it should return response as "None"."""
     config = EOSCoreConfig()
     response = EOSCoreObjectApi(config).head("test_oid1", None)
-    assert response is None
+    if (response is not None):
+        assert response[0] is False
+        assert response[1] is None
 

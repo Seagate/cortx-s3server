@@ -33,10 +33,10 @@ class EOSCoreKVApi(EOSCoreClient):
         """Perform PUT request and generate response."""
         if index_id is None:
             self._logger.error("Index Id is required.")
-            return None
+            return False, None
         if object_key_name is None:
             self._logger.error("Key is required")
-            return None
+            return False, None
 
         query_params = ""
         request_body = value
@@ -55,7 +55,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
-            return None
+            return False, None
 
         try:
             response = super(
@@ -65,8 +65,12 @@ class EOSCoreKVApi(EOSCoreClient):
                 request_body,
                 headers=headers)
         except Exception as ex:
-            self._logger.error(str(ex))
-            return None
+            ex_msg = str(ex)
+            if (ex_msg != ""):
+                self._logger.error(ex_msg)
+            else:
+                self._logger.error(repr(ex))
+            return False, None
 
         if response['status'] == 201:
             self._logger.info("Key value details added successfully.")
@@ -80,10 +84,10 @@ class EOSCoreKVApi(EOSCoreClient):
         """Perform GET request and generate response."""
         if index_id is None:
             self._logger.error("Index Id is required.")
-            return None
+            return False, None
         if object_key_name is None:
             self._logger.error("Key is required")
-            return None
+            return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
@@ -102,7 +106,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
-            return None
+            return False, None
 
         try:
             response = super(
@@ -111,8 +115,12 @@ class EOSCoreKVApi(EOSCoreClient):
                 request_uri,
                 headers=headers)
         except Exception as ex:
-            self._logger.error(str(ex))
-            return None
+            ex_msg = str(ex)
+            if (ex_msg != ""):
+                self._logger.error(ex_msg)
+            else:
+                self._logger.error(repr(ex))
+            return False, None
 
         if response['status'] == 200:
             self._logger.info("Get kv operation successfully.")
@@ -127,10 +135,10 @@ class EOSCoreKVApi(EOSCoreClient):
         """Perform DELETE request and generate response."""
         if index_id is None:
             self._logger.error("Index Id is required.")
-            return None
+            return False, None
         if object_key_name is None:
             self._logger.error("Key is required")
-            return None
+            return False, None
 
         # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
         # https://docs.python.org/3/library/urllib.parse.html
@@ -149,7 +157,7 @@ class EOSCoreKVApi(EOSCoreClient):
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
-            return None
+            return False, None
 
         try:
             response = super(
@@ -158,8 +166,12 @@ class EOSCoreKVApi(EOSCoreClient):
                 request_uri,
                 headers=headers)
         except Exception as ex:
-            self._logger.error(str(ex))
-            return None
+            ex_msg = str(ex)
+            if (ex_msg != ""):
+                self._logger.error(ex_msg)
+            else:
+                self._logger.error(repr(ex))
+            return False, None
 
         if response['status'] == 204:
             self._logger.info('Key value deleted.')
