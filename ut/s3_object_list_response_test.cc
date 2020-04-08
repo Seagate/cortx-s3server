@@ -191,7 +191,8 @@ TEST_F(S3ObjectListResponseTest, ObjectListResponseWithValidObjectsTruncated) {
       .WillOnce(Return("qWwZGnGYTga8gbpcuY79SA"));
   EXPECT_CALL(*mock_obj, get_account_name()).WillOnce(Return("s3user"));
 
-  std::string response = response_under_test->get_xml();
+  std::string response =
+      response_under_test->get_xml("qWwZGnGYTga8gbpcuY79SA", "1", "1");
   CHECK_XML_RESPONSE;
 }
 
@@ -216,7 +217,8 @@ TEST_F(S3ObjectListResponseTest,
       .WillOnce(Return("qWwZGnGYTga8gbpcuY79SA"));
   EXPECT_CALL(*mock_obj, get_account_name()).WillOnce(Return("s3user"));
 
-  std::string response = response_under_test->get_xml();
+  std::string response =
+      response_under_test->get_xml("qWwZGnGYTga8gbpcuY79SA", "1", "1");
   CHECK_XML_RESPONSE;
 }
 

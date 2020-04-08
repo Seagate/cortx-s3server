@@ -163,7 +163,10 @@ void S3ObjectListResponse::set_upload_id(std::string uploadid) {
 
 std::string& S3ObjectListResponse::get_upload_id() { return upload_id; }
 
-std::string& S3ObjectListResponse::get_xml() {
+std::string& S3ObjectListResponse::get_xml(
+    const std::string requestor_canonical_id,
+    const std::string bucket_owner_user_id,
+    const std::string requestor_user_id) {
   // clang-format off
   response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   response_xml +=
@@ -196,12 +199,15 @@ std::string& S3ObjectListResponse::get_xml() {
         "Size", object->get_content_length_str());
     response_xml += S3CommonUtilities::format_xml_string(
         "StorageClass", object->get_storage_class());
+    if (requestor_canonical_id == object->get_canonical_id() ||
+        bucket_owner_user_id == requestor_user_id) {
     response_xml += "<Owner>";
     response_xml +=
         S3CommonUtilities::format_xml_string("ID", object->get_canonical_id());
     response_xml += S3CommonUtilities::format_xml_string(
         "DisplayName", object->get_account_name());
     response_xml += "</Owner>";
+    }
     response_xml += "</Contents>";
   }
 

@@ -317,8 +317,9 @@ void S3GetBucketAction::send_response_to_s3_client() {
     }
     request->send_response(error.get_http_status_code(), response_xml);
   } else if (fetch_successful) {
-    std::string& response_xml = object_list.get_xml();
-
+    std::string& response_xml = object_list.get_xml(
+        request->get_canonical_id(), bucket_metadata->get_owner_id(),
+        request->get_user_id());
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
     request->set_out_header_value("Content-Type", "application/xml");

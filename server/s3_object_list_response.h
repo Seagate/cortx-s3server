@@ -91,7 +91,9 @@ class S3ObjectListResponse {
   unsigned int size();
   unsigned int common_prefixes_size();
 
-  std::string& get_xml();
+  std::string& get_xml(const std::string requestor_canonical_id,
+                       const std::string bucket_owner_user_id,
+                       const std::string requestor_user_id);
   std::string& get_multipart_xml();
   std::string& get_multiupload_xml();
   std::string& get_user_id();
