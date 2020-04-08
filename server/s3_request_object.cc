@@ -57,6 +57,8 @@ S3RequestObject::~S3RequestObject() {
   populate_and_log_audit_info();
 }
 
+S3AuditInfo& S3RequestObject::get_audit_info() { return audit_log_obj; }
+
 // Operation params.
 std::string S3RequestObject::get_object_uri() {
   return bucket_name + "/" + object_name;
@@ -120,12 +122,17 @@ void S3RequestObject::populate_and_log_audit_info() {
     s3_operation_str.clear();
   }
 
+  const char* http_entry = get_http_verb_str(http_verb());
+  if (!http_entry) {
+    http_entry = "UNKNOWN";
+  }
+
   std::string audit_operation_str =
-      std::string("REST.") + get_http_verb_str(http_verb()) + std::string(".") +
+      std::string("REST.") + http_entry + std::string(".") +
       api_type_to_str(get_api_type()) + s3_operation_str;
 
   std::string request_uri =
-      get_http_verb_str(http_verb()) + std::string(" ") + full_path_decoded_uri;
+      http_entry + std::string(" ") + full_path_decoded_uri;
 
   if (!query_raw_decoded_uri.empty()) {
     request_uri = request_uri + std::string("?") + query_raw_decoded_uri;
@@ -164,9 +171,12 @@ void S3RequestObject::populate_and_log_audit_info() {
   }
   audit_log_obj.set_host_header(get_header_value("Host"));
 
+  // Skip audit logs for health checks.
+  if (audit_log_obj.get_publish_flag()) {
   if (S3AuditInfoLogger::save_msg(request_id, audit_log_obj.to_string()) < 0) {
     s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server");
     exit(1);
+  }
   }
   s3_log(S3_LOG_DEBUG, request_id, "Exiting");
 }

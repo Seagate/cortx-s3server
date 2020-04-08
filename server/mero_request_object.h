@@ -56,8 +56,6 @@ class MeroRequestObject : public RequestObject {
   std::string index_id_hi;
   std::string key_name;
 
-  S3AuditInfo audit_log_obj;
-
   MeroApiType mero_api_type;
   MeroOperationCode mero_operation_code;
 
@@ -73,7 +71,6 @@ class MeroRequestObject : public RequestObject {
   virtual MeroApiType get_api_type();
   void set_operation_code(MeroOperationCode operation_code);
   virtual MeroOperationCode get_operation_code();
-  virtual void populate_and_log_audit_info();
 
  public:
   virtual void set_key_name(const std::string& key);

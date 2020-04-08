@@ -82,6 +82,8 @@ class S3AuditInfo {
                                     // QueryString for query string.
   std::string host_header;          // The endpoint used to connect to S3
 
+  bool publish_log = true;  // Flag to disable audit log for healthchecks.
+
  public:
   S3AuditInfo();
   // Setter methods for Audit Logger
@@ -109,6 +111,8 @@ class S3AuditInfo {
   void set_cipher_suite(const std::string& cipher_suite_str);
   void set_authentication_type(const std::string& authentication_type_str);
   void set_host_header(const std::string& host_header_str);
+  void set_publish_flag(bool publish_flag);
+  bool get_publish_flag();
   const std::string to_string();
   UInt64 convert_to_unsigned(size_t audit_member);
 };

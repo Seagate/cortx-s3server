@@ -123,7 +123,6 @@ class RequestObject {
           nullptr,
       EventInterface* event_obj_ptr = nullptr);
   virtual ~RequestObject();
-  virtual void populate_and_log_audit_info() = 0;
   // Broken into helper function primarily to allow initialisations after faking
   // data.
   void initialise();

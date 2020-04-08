@@ -38,6 +38,15 @@ void S3HeadServiceAction::setup_steps() {
 
 void S3HeadServiceAction::send_response_to_s3_client() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
+
+  // Disable Audit logs for Haproxy healthchecks
+  const char* full_path_uri = request->c_get_full_path();
+
+  if (full_path_uri) {
+    if (std::strcmp(full_path_uri, "/") == 0) {
+      request->get_audit_info().set_publish_flag(false);
+    }
+  }
   if (reject_if_shutting_down()) {
     request->send_response(S3HttpFailed503);
   } else {

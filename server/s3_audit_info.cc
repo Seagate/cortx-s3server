@@ -224,6 +224,10 @@ void S3AuditInfo::set_host_id(const std::string& host_id_str) {
   host_id = host_id_str;
 }
 
+void S3AuditInfo::set_publish_flag(bool publish_flag) {
+  publish_log = publish_flag;
+}
+
 void S3AuditInfo::set_signature_version(const std::string& authorization) {
   if (!authorization.empty()) {
     std::regex auth_v2("(AWS )(.*)");
@@ -250,3 +254,5 @@ void S3AuditInfo::set_authentication_type(
 void S3AuditInfo::set_host_header(const std::string& host_header_str) {
   host_header = host_header_str;
 }
+
+bool S3AuditInfo::get_publish_flag() { return publish_log; }

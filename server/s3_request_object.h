@@ -76,6 +76,7 @@ class S3RequestObject : public RequestObject {
   // Operation params.
   std::string get_object_uri();
   std::string get_action_str();
+  S3AuditInfo& get_audit_info();
 
   virtual void set_bucket_name(const std::string& name);
   virtual const std::string& get_bucket_name();
