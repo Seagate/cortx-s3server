@@ -111,6 +111,7 @@ TEST_F(S3APIHandlerTest, DispatchUnSupportedAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::none));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
 
@@ -122,6 +123,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketAnalyticsAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::analytics));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -131,6 +133,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketInventoryAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::inventory));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -140,6 +143,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketMetricsAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::metrics));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -149,6 +153,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketTaggingAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::tagging));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -158,6 +163,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketWebsiteAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::website));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -167,6 +173,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketReplicationAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::replication));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -176,6 +183,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketLoggingAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::logging));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -185,6 +193,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketVersioningAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::versioning));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -194,6 +203,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketNotificationAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::notification));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -203,6 +213,7 @@ TEST_F(S3APIHandlerTest, DispatchObjectTorrentAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::torrent));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -212,6 +223,7 @@ TEST_F(S3APIHandlerTest, DispatchObjectRequestPaymentAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::requestPayment));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -221,6 +233,7 @@ TEST_F(S3APIHandlerTest, DispatchBucketEncryptionAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::encryption));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -230,6 +243,7 @@ TEST_F(S3APIHandlerTest, DispatchSelectObjectContentAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::selectcontent));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
   handler_under_test->dispatch();
@@ -239,7 +253,20 @@ TEST_F(S3APIHandlerTest, DispatchSelectObjectRestoreAction) {
   handler_under_test.reset(
       new S3ServiceAPIHandler(mock_request, S3OperationCode::restore));
 
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::GET));
   EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*(mock_request), send_response(501, _)).Times(1);
+  handler_under_test->dispatch();
+}
+
+TEST_F(S3APIHandlerTest, DispatchBucketCreateEmptyNameAction) {
+  handler_under_test.reset(
+      new S3ServiceAPIHandler(mock_request, S3OperationCode::metrics));
+  std::string bucket_name = "";
+  EXPECT_CALL(*mock_request, get_bucket_name())
+      .WillRepeatedly(ReturnRef(bucket_name));
+  EXPECT_CALL(*(mock_request), http_verb()).WillOnce(Return(S3HttpVerb::PUT));
+  EXPECT_CALL(*(mock_request), set_out_header_value(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(mock_request), send_response(405, _)).Times(1);
   handler_under_test->dispatch();
 }
