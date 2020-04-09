@@ -36,6 +36,9 @@ public class AuthenticationResponseGenerator extends AbstractResponseGenerator {
         responseElements.put("AccountId", requestor.getAccount().getId());
         responseElements.put("AccountName", requestor.getAccount().getName());
         responseElements.put("SignatureSHA256", requestToken.getSignature());
+        responseElements.put("CanonicalId",
+                             requestor.getAccount().getCanonicalId());
+        responseElements.put("Email", requestor.getAccount().getEmail());
 
         return (ServerResponse) new AuthenticationResponseFormatter()
             .formatAuthenticatedResponse(responseElements,

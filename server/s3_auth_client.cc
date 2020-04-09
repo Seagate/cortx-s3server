@@ -588,6 +588,7 @@ void S3AuthClient::remember_auth_details_in_request() {
     request->set_canonical_id(auth_context->get_canonical_id());
     request->set_account_id(auth_context->get_account_id());
     request->set_account_name(auth_context->get_account_name());
+    request->set_email(auth_context->get_email());
   }
 }
 
@@ -658,6 +659,12 @@ bool S3AuthClient::setup_auth_request_body() {
     method = "POST";
   }
   add_key_val_to_body("Method", method);
+  add_key_val_to_body("RequestorAccountId", request->get_account_id());
+  add_key_val_to_body("RequestorAccountName", request->get_account_name());
+  add_key_val_to_body("RequestorUserId", request->get_user_id());
+  add_key_val_to_body("RequestorUserName", request->get_user_name());
+  add_key_val_to_body("RequestorEmail", request->get_email());
+  add_key_val_to_body("RequestorCanonicalId", request->get_canonical_id());
 
   const char *full_path = request->c_get_full_encoded_path();
   if (full_path != NULL) {

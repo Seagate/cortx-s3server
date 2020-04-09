@@ -139,7 +139,7 @@ RequestObject::RequestObject(
   buffering_timer.start();
   buffering_timer.stop();
 
-  user_name = user_id = account_name = account_id = canonical_id = "";
+  user_name = user_id = account_name = account_id = canonical_id = email = "";
   // For auth disabled, use some dummy user.
   if (g_option_instance->is_auth_disabled()) {
     account_name = "s3_test";
@@ -147,6 +147,7 @@ RequestObject::RequestObject(
     user_name = "tester";
     user_id = "123";
     canonical_id = "123456789dummyCANONICALID";
+    email = "abc@dummy.com";
   }
 
   request_error = S3RequestError::None;
@@ -550,6 +551,10 @@ void RequestObject::set_account_name(const std::string& name) {
 }
 
 const std::string& RequestObject::get_account_name() { return account_name; }
+
+void RequestObject::set_email(const std::string& email_id) { email = email_id; }
+
+const std::string& RequestObject::get_email() { return email; }
 
 void RequestObject::notify_incoming_data(evbuf_t* buf) {
   s3_log(S3_LOG_DEBUG, request_id, "Entering with buf(%p)\n", buf);

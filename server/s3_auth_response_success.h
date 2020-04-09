@@ -40,6 +40,7 @@ class S3AuthResponseSuccess {
   std::string signature_SHA256;
   std::string request_id;
   std::string acl;
+  std::string email;
   bool alluserrequest;
 
   bool parse_and_validate();
@@ -50,6 +51,7 @@ class S3AuthResponseSuccess {
   bool isOK();
 
   const std::string& get_user_name();
+  const std::string& get_email();
   const std::string& get_canonical_id();
   const std::string& get_user_id();
   const std::string& get_account_name();

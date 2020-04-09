@@ -254,6 +254,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     requestBody.put("Authorization", "abc");
     ClientRequestToken clientRequestToken = mock(ClientRequestToken.class);
     Account account = mock(Account.class);
+    whenNew(Requestor.class).withNoArguments().thenReturn(requestor);
     when(AuthServerConfig.getReqId()).thenReturn("0000");
     when(ClientRequestParser.parse(httpRequest, requestBody))
         .thenReturn(clientRequestToken);
@@ -332,8 +333,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
   }
 
-  @Test public void serveTest_UnAuthorized() throws Exception {
-    requestBody.put("Action", "AuthorizeUser");
+  @Test public void serveTest_UnAuthenticatedUser() throws Exception {
+    requestBody.put("Action", "AuthenticateUser");
     requestBody.put("authorization", "AWS AKIAIOSFODN&EXAMPL*#" +
                                          "frJIUN8DYpKDtOLCwo//yllqDzg=");
     when(AuthServerConfig.getReqId()).thenReturn("0000");
@@ -350,7 +351,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
   }
 
   @Test public void serveTest_AccessKeyWithSpace() throws Exception {
-    requestBody.put("Action", "AuthorizeUser");
+    requestBody.put("Action", "AuthenticateUser");
     requestBody.put("authorization", "AWS AKIA IOSFODN&EXAMPL$#:" +
                                          "frJIUN8DYpKDtOLCwo//yllqDzg=");
     when(AuthServerConfig.getReqId()).thenReturn("0000");
@@ -939,6 +940,4 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     assertNull(result);
   }
 }
-
-
 

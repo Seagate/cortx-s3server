@@ -36,6 +36,8 @@ const std::string &S3AuthResponseSuccess::get_canonical_id() {
   return canonical_id;
 }
 
+const std::string &S3AuthResponseSuccess::get_email() { return email; }
+
 const std::string &S3AuthResponseSuccess::get_user_id() { return user_id; }
 
 const std::string &S3AuthResponseSuccess::get_account_name() {
@@ -70,6 +72,9 @@ void S3AuthResponseSuccess::set_auth_parameters(xmlNode *child_node) {
     } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"UserName"))) {
       s3_log(S3_LOG_DEBUG, "", "UserName = %s\n", (const char *)key);
       user_name = (const char *)key;
+    } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"Email"))) {
+      s3_log(S3_LOG_DEBUG, "", "Email = %s\n", (const char *)key);
+      email = (const char *)key;
     } else if ((!xmlStrcmp(child_node->name, (const xmlChar *)"CanonicalId"))) {
       s3_log(S3_LOG_DEBUG, "", "CanonicalId = %s\n", (const char *)key);
       canonical_id = (const char *)key;

@@ -35,6 +35,7 @@ import com.seagates3.exception.InvalidArgumentException;
 import com.seagates3.exception.InvalidRequestorException;
 import com.seagates3.exception.InvalidUserException;
 import com.seagates3.model.AccessKey;
+import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
 import com.seagates3.perf.S3Perf;
 import com.seagates3.response.ServerResponse;
@@ -78,7 +79,7 @@ class IAMController {
                        Map<String, String> requestBody) {
     String requestAction = requestBody.get("Action");
     LOGGER.info("Requested action is  - " + requestAction);
-    ClientRequestToken clientRequestToken;
+    ClientRequestToken clientRequestToken = null;
     Requestor requestor = null;
     ServerResponse serverResponse;
     // CreateAccount needs to be authenticated with Ldap credentials
@@ -137,8 +138,16 @@ class IAMController {
                !requestAction.equals("GetTempAuthCredentials")) {
       LOGGER.debug("Parsing Client Request");
       try {
-        clientRequestToken =
-            ClientRequestParser.parse(httpRequest, requestBody);
+        if (!"AuthorizeUser".equals(requestAction)) {
+          clientRequestToken =
+              ClientRequestParser.parse(httpRequest, requestBody);
+          /*
+           * Client Request Token will be null if the request is incorrect.
+         */
+          if (clientRequestToken == null) {
+            return responseGenerator.AccessDenied();
+          }
+        }
       }
       catch (InvalidAccessKeyException ex) {
         LOGGER.debug(ex.getServerResponse().getResponseBody());
@@ -148,15 +157,11 @@ class IAMController {
         LOGGER.debug(ex.getServerResponse().getResponseBody());
         return ex.getServerResponse();
       }
-      /*
-        * Client Request Token will be null if the request is incorrect.
-      */
-      if (clientRequestToken == null) {
-        return responseGenerator.AccessDenied();
-      }
+
       try {
         if (!requestAction.equals("ValidateACL") &&
-            !requestAction.equals("ValidatePolicy")) {
+            !requestAction.equals("ValidatePolicy") &&
+            !"AuthorizeUser".equals(requestAction)) {
           requestor = RequestorService.getRequestor(clientRequestToken);
       }
       }
@@ -173,8 +178,19 @@ class IAMController {
         return ex.getServerResponse();
       }
 
-      LOGGER.debug("Requestor is valid.");
+      LOGGER.debug("Requestor is valid." + requestor);
       if (requestAction.equals("AuthorizeUser")) {
+
+        Account account = new Account();
+        account.setId(requestBody.get("RequestorAccountId"));
+        account.setName(requestBody.get("RequestorAccountName"));
+        account.setCanonicalId(requestBody.get("RequestorCanonicalId"));
+        account.setEmail(requestBody.get("RequestorEmail"));
+        requestor = new Requestor();
+        requestor.setId(requestBody.get("RequestorUserId"));
+        requestor.setName(requestBody.get("RequestorUserName"));
+        requestor.setAccount(account);
+
         LOGGER.info("Authorizing user: " + requestor.getName() + " account: " +
                     requestor.getAccount().getName());
         serverResponse = new Authorizer().authorize(requestor, requestBody);
@@ -350,6 +366,5 @@ class IAMController {
     return null;
   }
 }
-
 
 

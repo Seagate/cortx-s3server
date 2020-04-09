@@ -94,6 +94,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
         get_request()->set_user_id(success_obj->get_user_id());
         get_request()->set_account_name(success_obj->get_account_name());
         get_request()->set_account_id(success_obj->get_account_id());
+        get_request()->set_email(success_obj->get_email());
       } else {
         is_auth_successful = false;  // since auth response details are bad
       }
@@ -139,6 +140,7 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
           s3_request->set_account_name(success_obj->get_account_name());
           s3_request->set_account_id(success_obj->get_account_id());
           s3_request->set_default_acl(success_obj->get_acl());
+          s3_request->set_email(success_obj->get_email());
         }
       } else {
         // Invalid authorisation response xml
@@ -175,6 +177,13 @@ class S3AuthClientOpContext : public S3AsyncOpContextBase {
   std::string get_canonical_id() {
     if (is_auth_successful) {
       return success_obj->get_canonical_id();
+    }
+    return "";
+  }
+
+  std::string get_email() {
+    if (is_auth_successful) {
+      return success_obj->get_email();
     }
     return "";
   }

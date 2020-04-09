@@ -36,27 +36,27 @@ public class AuthenticationResponseGeneratorTest {
         Account account = new Account();
         account.setId("12345");
         account.setName("s3test");
+        account.setCanonicalId("dsfhgsjhsdgfQW23cdjbjb");
+        account.setEmail("abc@sjsj.com");
 
         Requestor requestor = new Requestor();
         requestor.setId("123");
         requestor.setName("s3test");
         requestor.setAccount(account);
 
-        final String expectedResponseBody = "<?xml version=\"1.0\" "
-                + "encoding=\"UTF-8\" standalone=\"no\"?>"
-                + "<AuthenticateUserResponse "
-                + "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">"
-                + "<AuthenticateUserResult>"
-                + "<UserId>123</UserId>"
-                + "<UserName>s3test</UserName>"
-                + "<AccountId>12345</AccountId>"
-                + "<AccountName>s3test</AccountName>"
-                + "<SignatureSHA256>testsign</SignatureSHA256>"
-                + "</AuthenticateUserResult>"
-                + "<ResponseMetadata>"
-                + "<RequestId>0000</RequestId>"
-                + "</ResponseMetadata>"
-                + "</AuthenticateUserResponse>";
+        final String expectedResponseBody =
+            "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"no\"?>" +
+            "<AuthenticateUserResponse " +
+            "xmlns=\"https://iam.seagate.com/doc/2010-05-08/\">" +
+            "<AuthenticateUserResult>" + "<UserId>123</UserId>" +
+            "<UserName>s3test</UserName>" + "<AccountId>12345</AccountId>" +
+            "<AccountName>s3test</AccountName>" +
+            "<SignatureSHA256>testsign</SignatureSHA256>" +
+            "<CanonicalId>dsfhgsjhsdgfQW23cdjbjb</CanonicalId>" +
+            "<Email>abc@sjsj.com</Email>" + "</AuthenticateUserResult>" +
+            "<ResponseMetadata>" + "<RequestId>0000</RequestId>" +
+            "</ResponseMetadata>" + "</AuthenticateUserResponse>";
 
         AuthenticationResponseGenerator responseGenerator
                 = new AuthenticationResponseGenerator();
@@ -67,3 +67,4 @@ public class AuthenticationResponseGeneratorTest {
         Assert.assertEquals(HttpResponseStatus.OK, response.getResponseStatus());
     }
 }
+
