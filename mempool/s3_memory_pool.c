@@ -420,8 +420,11 @@ int mempool_destroy(MemoryPoolHandle *handle) {
   while (pool_item != NULL) {
     pool->free_list = pool_item->next;
     free(pool_item);
+#if 0
+    /* Need this if below asserts are there */
     pool->total_bufs_allocated_by_pool--;
     pool->free_bufs_in_pool--;
+#endif
     pool_item = pool->free_list;
   }
   pool->free_list = NULL;
