@@ -237,9 +237,8 @@ setup_ldap_replication()
 }
 
 # Install and Configure Openldap over Non-SSL.
-ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret)
-ldappasswd=$(echo $ldappasswd | tr -d ' ')
-ldappasswd=${ldappasswd/*:/}
+ldappasswd=$(salt-call pillar.get openldap:iam_admin:secret --output=newline_values_only)
+ldappasswd=$(salt-call lyveutil.decrypt ${ldappasswd} openldap --output=newline_values_only)
 
 if [[ -z "$ldappasswd" ]]
 then
