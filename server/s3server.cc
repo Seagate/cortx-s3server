@@ -1035,12 +1035,11 @@ int main(int argc, char **argv) {
   s3_stats_fini();
   // https://stackoverflow.com/questions/6704522/log4cxx-is-throwing-exception-on-logger
   S3AuditInfoLogger::finalize();
-  fini_log();
   finalize_cli_options();
 
   S3MempoolManager::destroy_instance();
   S3ClovisLayoutMap::destroy_instance();
   S3Option::destroy_instance();
-
+  fini_log();
   return 0;
 }
