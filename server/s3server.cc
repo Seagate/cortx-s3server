@@ -647,7 +647,6 @@ int main(int argc, char **argv) {
     if (!S3PerfLogger::is_enabled()) {
       s3_log(S3_LOG_FATAL, "",
              "An initialization of a performance logger failed!\n");
-      return 1;
     }
   }
 
@@ -672,10 +671,9 @@ int main(int argc, char **argv) {
   // Init stats
   rc = s3_stats_init();
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "Stats Init failed!!\n");
-    fini_log();
+    s3daemon.delete_pidfile();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "Stats Init failed!!\n");
   }
 
   // Call this function at starting as we need to make use of our own
@@ -686,11 +684,9 @@ int main(int argc, char **argv) {
                          g_option_instance->get_libevent_pool_max_threshold(),
                          CREATE_ALIGNED_MEMORY);
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "", "Memory pool creation for libevent failed!\n");
     s3daemon.delete_pidfile();
-    fini_log();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "Memory pool creation for libevent failed!\n");
   }
   event_set_max_read(g_option_instance->get_libevent_max_read_size());
   evhtp_set_low_watermark(g_option_instance->get_libevent_max_read_size());
@@ -706,26 +702,25 @@ int main(int argc, char **argv) {
   g_option_instance->set_eventbase(global_evbase_handle);
 
   if (evthread_make_base_notifiable(global_evbase_handle) < 0) {
+    s3daemon.delete_pidfile();
     s3_log(S3_LOG_ERROR, "", "Couldn't make base notifiable!");
     finalize_cli_options();
     return 1;
   }
 
   if (S3AuditInfoLogger::init() != 0) {
-    s3_log(S3_LOG_FATAL, "", "Couldn't init audit logger!");
-    fini_log();
+    s3daemon.delete_pidfile();
     finalize_cli_options();
-    return 1;
+    s3_log(S3_LOG_FATAL, "", "Couldn't init audit logger!");
   }
 
   event_set_fatal_callback(fatal_libevent);
   if (g_option_instance->is_s3_ssl_auth_enabled()) {
     if (!init_auth_ssl()) {
+      s3daemon.delete_pidfile();
+      finalize_cli_options();
       s3_log(S3_LOG_FATAL, "",
              "SSL initialization for communication with Auth server failed!\n");
-      fini_log();
-      finalize_cli_options();
-      return 1;
     }
   }
 
@@ -753,6 +748,7 @@ int main(int argc, char **argv) {
   if (!ipv4_bind_addr.empty()) {
     htp_ipv4 = create_evhtp_handle(global_evbase_handle, s3_router, NULL);
     if (htp_ipv4 == NULL) {
+      s3daemon.delete_pidfile();
       fini_log();
       finalize_cli_options();
       return 1;
@@ -762,6 +758,7 @@ int main(int argc, char **argv) {
   if (!ipv6_bind_addr.empty()) {
     htp_ipv6 = create_evhtp_handle(global_evbase_handle, s3_router, NULL);
     if (htp_ipv6 == NULL) {
+      s3daemon.delete_pidfile();
       fini_log();
       finalize_cli_options();
       return 1;
@@ -772,6 +769,7 @@ int main(int argc, char **argv) {
     htp_mero =
         create_evhtp_handle_for_mero(global_evbase_handle, mero_router, NULL);
     if (htp_mero == NULL) {
+      s3daemon.delete_pidfile();
       fini_log();
       finalize_cli_options();
       return 1;
@@ -781,20 +779,18 @@ int main(int argc, char **argv) {
   if (g_option_instance->is_s3server_ssl_enabled()) {
     if (htp_ipv4 != NULL) {
       if (!init_ssl(htp_ipv4)) {
+        s3daemon.delete_pidfile();
+        finalize_cli_options();
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV4!\n");
-        fini_log();
-        finalize_cli_options();
-        return 1;
       }
     }
     if (htp_ipv6 != NULL) {
       if (!init_ssl(htp_ipv6)) {
+        s3daemon.delete_pidfile();
+        finalize_cli_options();
         s3_log(S3_LOG_FATAL, "",
                "SSL initialization failed for s3server for IPV6!\n");
-        fini_log();
-        finalize_cli_options();
-        return 1;
       }
     }
   }
@@ -807,13 +803,11 @@ int main(int argc, char **argv) {
       g_option_instance->get_clovis_read_pool_expandable_count());
 
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "",
-           "Memory pool creation for clovis read buffers failed!\n");
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "",
+           "Memory pool creation for clovis read buffers failed!\n");
   }
 
   log_resource_limits();
@@ -821,22 +815,20 @@ int main(int argc, char **argv) {
   /* Initialise mero and Clovis */
   rc = init_clovis();
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "clovis_init failed!\n");
     s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "clovis_init failed!\n");
   }
 
   // Init addb
   rc = s3_addb_init();
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "S3 ADDB Init failed!\n");
+    s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
+    fini_clovis();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "S3 ADDB Init failed!\n");
   }
 
   // global_bucket_list_index_oid - will hold bucket name as key, its owner
@@ -844,10 +836,11 @@ int main(int argc, char **argv) {
   rc = create_global_index(global_bucket_list_index_oid,
                            GLOBAL_BUCKET_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
+    s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
-    return rc;
+    fini_clovis();
+    // fatal message will call exit
+    s3_log(S3_LOG_FATAL, "", "Failed to create a global bucket KVS index\n");
   }
 
   // bucket_metadata_list_index_oid - will hold accountid/bucket_name as key,
@@ -855,11 +848,11 @@ int main(int argc, char **argv) {
   rc = create_global_index(bucket_metadata_list_index_oid,
                            BUCKET_METADATA_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
+    s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
+    fini_clovis();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "Failed to create a bucket metadata KVS index\n");
   }
 
   // global_probable_dead_object_list_index_oid - will have stale object oid
@@ -867,11 +860,11 @@ int main(int argc, char **argv) {
   rc = create_global_index(global_probable_dead_object_list_index_oid,
                            OBJECT_PROBABLE_DEAD_OID_LIST_INDEX_OID_U_LO);
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
+    s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
+    fini_clovis();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "Failed to global object leak list KVS index\n");
   }
 
   // global_instance_list_index - will hold s3server fid as key,
@@ -879,11 +872,11 @@ int main(int argc, char **argv) {
   rc = create_global_index(global_instance_list_index,
                            GLOBAL_INSTANCE_INDEX_U_LO);
   if (rc < 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
+    s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
+    fini_clovis();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "Failed to create global instance index\n");
   }
 
   extern struct m0_clovis_config clovis_conf;
@@ -894,11 +887,11 @@ int main(int argc, char **argv) {
   rc = create_new_instance_id(&global_instance_id);
 
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "", "Failed to create unique instance id\n");
+    s3daemon.delete_pidfile();
     fini_auth_ssl();
-    fini_log();
+    fini_clovis();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "Failed to create unique instance id\n");
   }
 
   if (S3Option::get_instance()->is_sync_kvs_allowed()) {
@@ -921,12 +914,12 @@ int main(int argc, char **argv) {
     rc = clovis_kv_writer->put_keyval_sync(global_instance_list_index,
                                            s3server_instance_id);
     if (rc != 0) {
+      s3daemon.delete_pidfile();
+      fini_auth_ssl();
+      fini_clovis();
+      finalize_cli_options();
       s3_log(S3_LOG_FATAL, "",
              "Failed to add unique instance id to global index\n");
-      fini_auth_ssl();
-      fini_log();
-      finalize_cli_options();
-      return rc;
     }
   }
 
@@ -948,13 +941,12 @@ int main(int argc, char **argv) {
            ipv4_bind_addr.c_str(), bind_port);
     if ((rc = evhtp_bind_socket(htp_ipv4, ipv4_bind_addr.c_str(), bind_port,
                                 1024)) < 0) {
-      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
+      s3daemon.delete_pidfile();
       fini_auth_ssl();
       evhtp_free(htp_ipv4);
       fini_clovis();
-      fini_log();
       finalize_cli_options();
-      return rc;
+      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
     }
   }
 
@@ -966,13 +958,12 @@ int main(int argc, char **argv) {
            ipv6_bind_addr.c_str(), bind_port);
     if ((rc = evhtp_bind_socket(htp_ipv6, ipv6_bind_addr.c_str(), bind_port,
                                 1024)) < 0) {
-      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
+      s3daemon.delete_pidfile();
       fini_auth_ssl();
       evhtp_free(htp_ipv6);
       fini_clovis();
-      fini_log();
       finalize_cli_options();
-      return rc;
+      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
     }
   }
 
@@ -984,26 +975,24 @@ int main(int argc, char **argv) {
            mero_addr.c_str(), mero_http_bind_port);
     if ((rc = evhtp_bind_socket(htp_mero, mero_addr.c_str(),
                                 mero_http_bind_port, 1024)) < 0) {
-      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
+      s3daemon.delete_pidfile();
       fini_auth_ssl();
       evhtp_free(htp_mero);
       fini_clovis();
-      fini_log();
       finalize_cli_options();
-      return rc;
+      s3_log(S3_LOG_FATAL, "", "Could not bind socket: %s\n", strerror(errno));
     }
   }
 
   rc = s3_perf_metrics_init(global_evbase_handle);
   if (rc != 0) {
-    s3_log(S3_LOG_FATAL, "", "Could not init perf metrics: %s\n",
-           strerror(-rc));
+    s3daemon.delete_pidfile();
     fini_auth_ssl();
     evhtp_free(htp_mero);
     fini_clovis();
-    fini_log();
     finalize_cli_options();
-    return rc;
+    s3_log(S3_LOG_FATAL, "", "Could not init perf metrics: %s\n",
+           strerror(-rc));
   }
 
   // new flag in Libevent 2.1

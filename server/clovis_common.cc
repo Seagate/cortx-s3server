@@ -131,6 +131,7 @@ void fini_clovis(void) {
   s3_log(S3_LOG_INFO, "", "Entering!\n");
   m0_ufid_fini(&s3_ufid_generator);
   m0_clovis_fini(clovis_instance, true);
+  s3_log(S3_LOG_INFO, "", "Exiting\n");
 }
 
 int create_new_instance_id(struct m0_uint128 *ufid) {
