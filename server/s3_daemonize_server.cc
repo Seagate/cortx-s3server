@@ -35,6 +35,7 @@
 #define S3_ARRAY_SIZE(a) ((sizeof(a)) / (sizeof(a)[0]))
 
 extern evbase_t *global_evbase_handle;
+extern int global_shutdown_in_progress;
 
 static void s3_handle_glog_fatal_failure() { exit(1); }
 
@@ -46,7 +47,7 @@ void s3_terminate_sig_handler(int signum) {
   sigterm_action.sa_handler = SIG_IGN;
   sigterm_action.sa_flags = 0;
   sigaction(SIGTERM, &sigterm_action, NULL);
-
+  global_shutdown_in_progress = 1;
   s3_log(S3_LOG_INFO, "",
          "Recieved signal %d, shutting down s3 server daemon\n", signum);
 
@@ -72,7 +73,6 @@ void s3_terminate_sig_handler(int signum) {
   } else {
     s3_log(S3_LOG_ERROR, "", "event_base_loopexit returns FAILURE\n");
   }
-
   return;
 }
 
@@ -102,6 +102,9 @@ void s3_terminate_sig_handler(int signum) {
 
 void s3_terminate_fatal_handler(int signum) {
   s3_log(S3_LOG_INFO, "", "Received signal %d\n", signum);
+  if (global_shutdown_in_progress) {
+    return;
+  }
   s3_iem(LOG_ALERT, S3_IEM_FATAL_HANDLER, S3_IEM_FATAL_HANDLER_STR,
          S3_IEM_FATAL_HANDLER_JSON, signum);
 

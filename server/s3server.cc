@@ -78,6 +78,8 @@ struct m0_uint128 global_instance_list_index;
 // objects listed in this index are probable delete candidates and not absolute.
 struct m0_uint128 global_probable_dead_object_list_index_oid;
 
+int global_shutdown_in_progress;
+
 struct m0_uint128 global_instance_id;
 
 extern "C" void s3_handler(evhtp_request_t *req, void *a) {
