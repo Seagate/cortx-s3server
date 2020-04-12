@@ -43,6 +43,7 @@ S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx = NULL;
 extern S3Stats *g_stats_instance;
 evbase_t *global_evbase_handle = nullptr;
+int global_shutdown_in_progress;
 
 static void _init_log() {
   s3log_level = S3_LOG_FATAL;
