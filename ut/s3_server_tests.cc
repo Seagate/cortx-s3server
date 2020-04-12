@@ -51,6 +51,8 @@ S3Option *g_option_instance = NULL;
 evhtp_ssl_ctx_t *g_ssl_auth_ctx;
 extern S3Stats *g_stats_instance;
 
+int global_shutdown_in_progress;
+
 struct m0 instance;
 
 static void _init_log() {
