@@ -48,8 +48,9 @@ void s3_terminate_sig_handler(int signum) {
   sigterm_action.sa_flags = 0;
   sigaction(SIGTERM, &sigterm_action, NULL);
   global_shutdown_in_progress = 1;
-  s3_log(S3_LOG_INFO, "",
-         "Recieved signal %d, shutting down s3 server daemon\n", signum);
+  // glog does dynamic allocation, its not safe to call many functions within
+  // signal handler
+  // https://stackoverflow.com/questions/40049751/malloc-inside-linux-signal-handler-cause-deadlock
 
   S3Option *option_instance = S3Option::get_instance();
   int grace_period_sec = option_instance->get_s3_grace_period_sec();
@@ -58,21 +59,13 @@ void s3_terminate_sig_handler(int signum) {
   // trigger rollbacks & stop handling new requests
   option_instance->set_is_s3_shutting_down(true);
 
-  // Reserve some time (3 sec) of grace period to serve active events
-  // after the event_base_loopexit() timeout.
-  if (grace_period_sec > 3) {
-    loopexit_timeout.tv_sec = grace_period_sec - 3;
+  if (grace_period_sec > 5) {
+    loopexit_timeout.tv_sec = grace_period_sec - 5;
   }
-
   // event_base_loopexit() will let event loop serve all events as usual
-  // till loopexit_timeout. After the timeout, all active events will be
+  // till loopexit_timeout (2 sec). After the timeout, all active events will be
   // served and then the event loop breaks.
-  int rc = event_base_loopexit(global_evbase_handle, &loopexit_timeout);
-  if (rc == 0) {
-    s3_log(S3_LOG_DEBUG, "", "event_base_loopexit returns SUCCESS\n");
-  } else {
-    s3_log(S3_LOG_ERROR, "", "event_base_loopexit returns FAILURE\n");
-  }
+  event_base_loopexit(global_evbase_handle, &loopexit_timeout);
   return;
 }
 
@@ -101,32 +94,25 @@ void s3_terminate_sig_handler(int signum) {
  */
 
 void s3_terminate_fatal_handler(int signum) {
-  s3_log(S3_LOG_INFO, "", "Received signal %d\n", signum);
-  if (global_shutdown_in_progress) {
-    return;
-  }
-  s3_iem(LOG_ALERT, S3_IEM_FATAL_HANDLER, S3_IEM_FATAL_HANDLER_STR,
-         S3_IEM_FATAL_HANDLER_JSON, signum);
+  // https://stackoverflow.com/questions/40049751/malloc-inside-linux-signal-handler-cause-deadlock
+  // https://github.com/google/glog/releases (see google-glog 0.3.4)
+  // ie reduce dynamic allocation from 3 to 1 per log message
 
-  void *trace[S3_BACKTRACE_DEPTH_MAX];
-  std::stringstream bt_ss;
-  char **buf = nullptr;
-  int rc;
-  rc = backtrace(trace, S3_ARRAY_SIZE(trace));
-  buf = backtrace_symbols(trace, rc);
-  if (buf) {
-    for (int i = 0; i < rc; i++) {
-      bt_ss << buf[i] << "\n";
-    }
-    s3_log(S3_LOG_ERROR, "", "Signal:[%d], Backtrace:\n%s\n", signum,
-           bt_ss.str().c_str());
-    free(buf);
+  if (S3Option::get_instance()->do_redirection() == 0) {
+    void *trace[S3_BACKTRACE_DEPTH_MAX];
+    // https://stackoverflow.com/questions/46863569/receiving-signal-during-malloc
+    int rc = backtrace(trace, S3_ARRAY_SIZE(trace));
+    backtrace_symbols_fd(trace, rc, STDERR_FILENO);
   }
+  s3_syslog(LOG_ALERT,
+            "IEC:AS" S3_IEM_FATAL_HANDLER ":" S3_IEM_FATAL_HANDLER_STR);
 
   S3Daemonize s3daemon;
   s3daemon.delete_pidfile();
-  // dafault handler for core dumping
-  raise(signum);
+  if (!global_shutdown_in_progress) {
+    // dafault handler for core dumping
+    raise(signum);
+  }
 }
 
 S3Daemonize::S3Daemonize() : noclose(0) {

@@ -9,7 +9,8 @@ PIDFile=/run/s3server.pid
 ExecStartPre=/usr/bin/rm -f /run/s3server.pid
 ExecStart=/opt/seagate/s3/s3startsystem.sh
 ExecStop=/bin/kill -s TERM $MAINPID
-TimeoutStopSec=300
+TimeoutStopSec=7
+TimeoutAbortSec=3
 
 [Install]
 WantedBy=multi-user.target

@@ -8,7 +8,8 @@ Type=forking
 Restart=no
 ExecStart=/opt/seagate/s3/s3startsystem.sh %i
 ExecStop=/opt/seagate/s3/s3stopsystem.sh %i
-TimeoutStopSec=300
+TimeoutStopSec=7
+TimeoutAbortSec=3
 
 [Install]
 WantedBy=multi-user.target

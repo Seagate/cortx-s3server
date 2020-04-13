@@ -1002,7 +1002,8 @@ int main(int argc, char **argv) {
   // to keep looping even when there are no pending events
   rc = event_base_loop(global_evbase_handle, EVLOOP_NO_EXIT_ON_EMPTY);
   if (rc == 0) {
-    s3_log(S3_LOG_DEBUG, "", "Event base loop exited normally\n");
+    s3_log(S3_LOG_INFO, "",
+           "Event base loop exited normally, Shutting down s3server\n");
   } else {
     s3_log(S3_LOG_ERROR, "",
            "Event base loop exited due to unhandled exception in libevent's "

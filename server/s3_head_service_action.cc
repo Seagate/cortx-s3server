@@ -24,7 +24,7 @@
 #include "s3_log.h"
 
 S3HeadServiceAction::S3HeadServiceAction(std::shared_ptr<S3RequestObject> req)
-    : S3Action(req, true, nullptr, true) {
+    : S3Action(req, true, nullptr, true, true) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
   setup_steps();
@@ -48,6 +48,11 @@ void S3HeadServiceAction::send_response_to_s3_client() {
     }
   }
   if (reject_if_shutting_down()) {
+    int shutdown_grace_period =
+        S3Option::get_instance()->get_s3_grace_period_sec();
+    request->set_out_header_value("Retry-After",
+                                   std::to_string(shutdown_grace_period));
+    request->set_out_header_value("Connection", "close");
     request->send_response(S3HttpFailed503);
   } else {
     request->send_response(S3HttpSuccess200);
