@@ -1,11 +1,11 @@
-%if 0%{?disable_mero_dependencies:1}
-%bcond_with mero
+%if 0%{?disable_eoscore_dependencies:1}
+%bcond_with eos_core
 %else
-%bcond_without mero
+%bcond_without eos_core
 %endif
 
-# mero version
-%define h_mero_version %(rpm -q --whatprovides mero | xargs rpm -q --queryformat '%{VERSION}-%{RELEASE}')
+# eos-core version
+%define h_eoscore_version %(rpm -q --whatprovides eos-core | xargs rpm -q --queryformat '%{VERSION}-%{RELEASE}')
 
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
@@ -41,8 +41,8 @@ BuildRequires: automake
 BuildRequires: bazel
 BuildRequires: cmake >= 2.8.12
 BuildRequires: libtool
-%if %{with mero}
-BuildRequires: mero mero-devel
+%if %{with eos_core}
+BuildRequires: eos-core eos-core-devel
 %endif
 BuildRequires: openssl openssl-devel
 BuildRequires: java-1.8.0-openjdk
@@ -72,7 +72,7 @@ BuildRequires: python-keyring python-futures
 %endif
 # TODO for rhel 8
 
-Requires: mero = %{h_mero_version}
+Requires: eos-core = %{h_eoscore_version}
 Requires: libxml2
 Requires: libyaml
 #Supported openssl versions -- CentOS 7 its 1.0.2k, RHEL8 its 1.1.1

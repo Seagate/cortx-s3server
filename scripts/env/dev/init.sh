@@ -8,7 +8,9 @@ S3_SRC_DIR="$BASEDIR/../../../"
 CURRENT_DIR=`pwd`
 
 OS=$(cat /etc/os-release | grep -w ID | cut -d '=' -f 2)
-source ${S3_SRC_DIR}/scripts/env/common.sh
+VERSION=`cat /etc/os-release | sed -n 's/VERSION_ID=\"\([0-9].*\)\"/\1/p'`
+major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
+
 
 yum install rpm-build -y
 rpm -q git || yum install -y git
@@ -59,7 +61,18 @@ cp -R  ${BASEDIR}/../../../ansible/files/certs/* /etc/ssl/
 # Configure dev env
 yum install -y ansible facter
 
+
 cd ${BASEDIR}/../../../ansible
+
+#Install mero build dependencies
+
+# TODO Currently mero is not supported for CentOS 8, when support is there remove below check
+if [ "$major_version" = "7" ];
+then
+  ./s3mero-build-depencies.sh
+fi
+
+source ${S3_SRC_DIR}/scripts/env/common.sh
 
 # Update ansible/hosts file with local ip
 cp -f ./hosts ./hosts_local

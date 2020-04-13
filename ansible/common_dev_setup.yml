@@ -3,14 +3,6 @@
 # Sets up the S3 development environment.
 # Prerequisites: common_build_env.yml and jenkins_yum_repos.yml
 
-- name: Install lustre rpms
-  # TODO - Once lustre mirror repo available for RHEL 8, remove below check
-  when: ansible_distribution != "RedHat"
-  yum: pkg={{item}} state=present
-  with_items:
-    - lustre-client
-    - lustre-client-devel
-    - kmod-lustre-client
 
 - name: Install patched s3cmd deps on CentOS/RHEL 7
   when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and (ansible_distribution_major_version == '7')
