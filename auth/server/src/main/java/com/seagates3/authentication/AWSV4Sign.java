@@ -339,6 +339,12 @@ public class AWSV4Sign implements AWSSign {
         hashCurrentChunk = clientRequestToken.getRequestHeaders()
                 .get("x-amz-content-sha256");
 
+        if (hashCurrentChunk.startsWith("STREAMING-AWS4-HMAC-SHA256-PAYLOAD")) {
+          String tokens[] = hashCurrentChunk.split(",");
+          hashCurrentChunk = "";
+          hashCurrentChunk = tokens[1];
+        }
+
         stringToSign = String.format("AWS4-HMAC-SHA256-PAYLOAD\n%s\n%s\n%s\n%s\n%s",
                 requestDate, clientRequestToken.getCredentialScope(), prevSign,
                 hashEmptyInput, hashCurrentChunk

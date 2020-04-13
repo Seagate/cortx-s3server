@@ -88,7 +88,6 @@ bool S3DeleteMultipleObjectsBody::parse_and_validate() {
       if (key != NULL) {
         xmlFree(key);
       }
-      break;
     } else if ((!xmlStrcmp(child->name, (const xmlChar *)"Object"))) {
       s3_log(S3_LOG_DEBUG, "", "Found child in xml = Object\n");
       // Read delete object details
