@@ -166,7 +166,13 @@ void teardown_clovis_op(struct m0_clovis_op *op) {
     if (op->op_sm.sm_state == M0_CLOVIS_OS_LAUNCHED) {
       m0_clovis_op_cancel(&op, 1);
     }
-    m0_clovis_op_fini(op);
-    m0_clovis_op_free(op);
+    if (op->op_sm.sm_state == M0_CLOVIS_OS_INITIALISED ||
+        op->op_sm.sm_state == M0_CLOVIS_OS_STABLE ||
+        op->op_sm.sm_state == M0_CLOVIS_OS_FAILED) {
+      m0_clovis_op_fini(op);
+    }
+    if (op->op_sm.sm_state == M0_CLOVIS_OS_UNINITIALISED) {
+      m0_clovis_op_free(op);
+    }
   }
 }
