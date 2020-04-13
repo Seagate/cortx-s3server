@@ -46,8 +46,6 @@
             "s3:x-amz-grant-write-acp"
         ],
 
-        "s3:HeadBucket": [],
-
         "s3:GetBucketTagging": [
             "s3:authtype",
             "s3:signatureage",
@@ -63,8 +61,6 @@
             "s3:signatureversion",
             "s3:x-amz-content-sha256"
         ],
-
-        "s3:DeleteBucketTagging": [],
 
         "s3:DeleteBucketPolicy": [
             "s3:authtype",
@@ -163,10 +159,6 @@
             "s3:x-amz-grant-write-acp",
             "s3:x-amz-storage-class"
         ],
-        "s3:HeadObject": [
-            "s3:x-amz-server-side-encryption",
-            "s3:x-amz-server-side-encryption-aws-kms-key-id"
-        ],
         "s3:GetObjectTagging": [
             "s3:DataAccessPointAccount",
             "s3:DataAccessPointArn",
@@ -185,6 +177,7 @@
             "s3:signatureversion",
             "s3:x-amz-content-sha256"
         ],
+        "s3:DeleteObjectTagging": [],
         "s3:ListMultipartUploadParts": [
             "s3:DataAccessPointAccount",
             "s3:DataAccessPointArn",
@@ -192,7 +185,7 @@
             "s3:authtype",
             "s3:signatureage",
             "s3:signatureversion",
-			"s3:x-amz-content-sha256"
-		]
-	}
+            "s3:x-amz-content-sha256"
+            ]
+        }
 }

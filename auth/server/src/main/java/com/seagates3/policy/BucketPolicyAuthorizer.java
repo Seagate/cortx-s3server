@@ -77,7 +77,22 @@ class BucketPolicyAuthorizer extends PolicyAuthorizer {
    */
  private
   String identifyOperationToAuthorize(Map<String, String> requestBody) {
-    return "s3:" + requestBody.get("S3Action");
+    String s3Action = requestBody.get("S3Action");
+    switch (s3Action) {
+      case "HeadBucket":
+        s3Action = "ListBucket";
+        break;
+      case "HeadObject":
+        s3Action = "GetObject";
+        break;
+      case "DeleteBucketTagging":
+        s3Action = "PutBucketTagging";
+        break;
+    }
+    s3Action = "s3:" + s3Action;
+    LOGGER.debug("identifyOperationToAuthorize has returned action as - " +
+                 s3Action);
+    return s3Action;
   }
 
   /**
