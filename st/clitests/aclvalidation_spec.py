@@ -1113,6 +1113,119 @@ del os.environ["AWS_SECRET_ACCESS_KEY"]
 AwsTest('Aws can delete object').delete_object("testbucket","3kfile").execute_test().command_is_successful()
 AwsTest('Aws can delete bucket').delete_bucket("testbucket").execute_test().command_is_successful()
 
+
+##**************** Test Case 17 ************
+bucket="testbucket1"
+cannonical_id = "id=" + testAccount_cannonicalid
+AwsTest('Aws can create bucket').create_bucket(bucket).execute_test().command_is_successful()
+AwsTest('Aws can put bucket acl').put_bucket_acl(bucket, "grant-write-acp" , cannonical_id)\
+.execute_test().command_is_successful()
+#Check if second account has WRITE_ACP permission
+result=AwsTest('Aws can get bucket acl').get_bucket_acl(bucket).execute_test().command_is_successful()
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test",\
+ testAccount_cannonicalid, "testAccount", "WRITE_ACP")
+
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+AwsTest('Aws can put bucket acl with canned input i.e. public-read from second account')\
+.put_bucket_acl_with_canned_input(bucket, "public-read").execute_test().command_is_successful()
+result=AwsTest('Aws can get bucket acl from second account').get_bucket_acl(bucket)\
+.execute_test().command_is_successful()
+AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test",\
+ testAccount_cannonicalid, "testAccount", "FULL_CONTROL", "http://acs.amazonaws.com/groups/global/AllUsers", "READ")
+AwsTest('Aws can delete bucket from second account').delete_bucket(bucket).execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+##**************** Test Case 18 ************
+bucket="testbucket1"
+cannonical_id = "id=" + testAccount_cannonicalid
+AwsTest('Aws can create bucket').create_bucket(bucket).execute_test().command_is_successful()
+AwsTest('Aws can create object with grant-write-acp to second account')\
+.put_object_with_permission_headers(bucket, "testObject", "grant-write-acp", cannonical_id)\
+.execute_test().command_is_successful()
+#Check if second account has WRITE_ACP permission
+result=AwsTest('Aws can get object acl from first account').get_object_acl(bucket, "testObject")\
+.execute_test().command_is_successful()
+AclTest('validate complete acl').validate_acl(result, "C12345", "s3_test",\
+ testAccount_cannonicalid, "testAccount", "WRITE_ACP")
+
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+AwsTest('Validate the object acl from second account').get_object_acl(bucket, "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+# Put object with canned acl - public-read
+AwsTest('Aws can create put object acl with \'public-read\' canned acl input from second account')\
+.put_object_acl_with_canned_input(bucket, "testObject", "public-read").execute_test().command_is_successful()
+#.put_object(bucket, "testObject", canned_acl="public-read").execute_test().command_is_successful()
+result=AwsTest('Validate the object acl from second account should fail').get_object_acl(bucket, "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+
+result=AwsTest('Aws can get object acl from first account').get_object_acl(bucket, "testObject")\
+.execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('validate complete acl').validate_acl_single_group_grant(result, "C12345", "s3_test",\
+ "C12345", "s3_test", "FULL_CONTROL", "http://acs.amazonaws.com/groups/global/AllUsers", "READ")
+print("ACL validation Completed..")
+AwsTest('Aws can delete object').delete_object(bucket,"testObject").execute_test().command_is_successful()
+AwsTest('Aws can delete bucket').delete_bucket(bucket).execute_test().command_is_successful()
+
+##**************** Test Case 19 ************
+bucket="testbucket3"
+cannonical_id = "id=" + testAccount_cannonicalid
+AwsTest('Aws can create bucket from first account').create_bucket(bucket).execute_test().command_is_successful()
+AwsTest('Aws can upload test object from first account').put_object(bucket, "testObject").execute_test().command_is_successful()
+AwsTest('Aws can put bucket acl with WRITE permission to second account')\
+.put_bucket_acl(bucket, "grant-write" , cannonical_id ).execute_test().command_is_successful()
+#Check if second account has WRITE permission
+result=AwsTest('Aws can get bucket acl from first account').get_bucket_acl(bucket).execute_test().command_is_successful()
+AclTest('validate complete bucket acl').validate_acl(result, "C12345", "s3_test",\
+ testAccount_cannonicalid, "testAccount", "WRITE")
+result=AwsTest('Aws can get object acl from first account').get_object_acl(bucket, "testObject")\
+.execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('Object acl has valid Owner').validate_owner(result, "C12345", "s3_test")
+AclTest('validate complete Object acl').validate_acl(result, "C12345", "s3_test",\
+ "C12345", "s3_test", "FULL_CONTROL")
+print("ACL validation Completed..")
+
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+AwsTest('Aws can create object with \'public-read\' canned acl input from second account')\
+.put_object(bucket, "testObject", canned_acl="public-read").execute_test().command_is_successful()
+result=AwsTest('Aws can get object acl from second account').get_object_acl(bucket, "testObject")\
+.execute_test().command_is_successful()
+print("Object Canned ACL validation started..")
+AclTest('aws command has valid response').check_response_status(result)
+AclTest('Object acl has valid Owner').validate_owner(result, testAccount_cannonicalid, "testAccount")
+AclTest('validate complete object acl').validate_acl_single_group_grant(result, testAccount_cannonicalid,\
+ "testAccount", testAccount_cannonicalid, "testAccount", "FULL_CONTROL",\
+"http://acs.amazonaws.com/groups/global/AllUsers", "READ")
+AwsTest('Second AWS account can not get bucket acl').get_bucket_acl(bucket)\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+print("ACL validation Completed..")
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Validate the object acl from first account should fail').get_object_acl(bucket, "testObject")\
+.execute_test(negative_case=True).command_should_fail().command_error_should_have("AccessDenied")
+
+os.environ["AWS_ACCESS_KEY_ID"] = testAccount_access_key
+os.environ["AWS_SECRET_ACCESS_KEY"] = testAccount_secret_key
+AwsTest('Aws can delete object from second account').delete_object(bucket,"testObject")\
+.execute_test().command_is_successful()
+del os.environ["AWS_ACCESS_KEY_ID"]
+del os.environ["AWS_SECRET_ACCESS_KEY"]
+AwsTest('Aws can delete bucket from first account').delete_bucket(bucket)\
+.execute_test().command_is_successful()
+
+
+
+
 #******************Group Tests***********************#
 #************** Group Test 1 *************
 group_uri = "URI=http://acs.amazonaws.com/groups/global/AuthenticatedUsers"

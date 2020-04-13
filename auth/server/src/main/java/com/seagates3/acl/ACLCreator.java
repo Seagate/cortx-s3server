@@ -137,16 +137,15 @@ class ACLCreator {
     acp = new AccessControlPolicy(checkAndCreateDefaultAcp());
     updateAclFromAccountMap(accountPermissionMap, newAcl);
     updateAclFromGroupMap(groupPermissionMap, newAcl);
-    if ((requestBody.get("Bucket-ACL") != null &&
-         requestBody.get("Auth-ACL") != null) ||
-        requestor == null) {
-      acp.setOwner(new AccessControlPolicy(
-          BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")))
-                       .getOwner());
-    } else {
-      acp.setOwner(new Owner(requestor.getAccount().getCanonicalId(),
-                             requestor.getAccount().getName()));
+
+    // Update the owner detils of resource
+    AccessControlPolicy existingAcp = null;
+    if (requestBody.get("Auth-ACL") != null) {
+      existingAcp = new AccessControlPolicy(
+          BinaryUtil.base64DecodeString(requestBody.get("Auth-ACL")));
     }
+    Owner owner = getOwner(requestor, existingAcp, requestBody);
+    acp.setOwner(owner);
     acp.setAccessControlList(newAcl);
     return acp.getXml();
   }
@@ -340,10 +339,13 @@ class ACLCreator {
                    Map<String, String> requestBody)
         throws TransformerException {
       Owner grant;
-      // Bucket-Acl will be present in request body only if the request is a
-      // put-acl. For put-acl call get the existing resource owner details
+      // For put-acl call get the existing resource owner details
 
-      if ((acp != null && requestBody.get("Bucket-ACL") != null) ||
+      String uri = requestBody.get("ClientAbsoluteUri");
+      String queryParam = requestBody.get("ClientQueryParams");
+      if (acp != null && ((uri != null || queryParam != null) &&
+                          ACLPermissionUtil.isACLReadWrite(uri, queryParam) &&
+                          requestBody.get("Method").equalsIgnoreCase("PUT")) ||
           requestor == null) {
         grant = acp.owner;
       } else {

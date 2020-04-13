@@ -555,6 +555,7 @@ import com.seagates3.util.BinaryUtil;
     requestBody = new TreeMap<>();
     requestBody.put("ClientAbsoluteUri", "/bucket/object");
     requestBody.put("ClientQueryParams", "acl");
+    requestBody.put("Method", "PUT");
     requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(authAcl));
     requestBody.put("Bucket-ACL", BinaryUtil.encodeToBase64String(bucketAcl));
     requestBody.put("x-amz-acl", "bucket-owner-full-control");
@@ -608,6 +609,7 @@ import com.seagates3.util.BinaryUtil;
     requestBody = new TreeMap<>();
     requestBody.put("ClientAbsoluteUri", "/bucket/object?acl");
     requestBody.put("ClientQueryParams", "");
+    requestBody.put("Method", "PUT");
     requestBody.put("Auth-ACL", BinaryUtil.encodeToBase64String(authAcl));
     requestBody.put("x-amz-acl", "bucket-owner-read");
     String resultACL =
