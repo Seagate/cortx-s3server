@@ -64,13 +64,14 @@ class EOSCoreKVApi(EOSCoreClient):
                 request_uri,
                 request_body,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
+
+
 
         if response['status'] == 201:
             self._logger.info("Key value details added successfully.")
@@ -114,13 +115,12 @@ class EOSCoreKVApi(EOSCoreClient):
                 self).get(
                 request_uri,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info("Get kv operation successfully.")
@@ -165,13 +165,12 @@ class EOSCoreKVApi(EOSCoreClient):
                 self).delete(
                 request_uri,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
             self._logger.info('Key value deleted.')

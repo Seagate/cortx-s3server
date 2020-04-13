@@ -77,13 +77,12 @@ class EOSCoreIndexApi(EOSCoreClient):
                 self).get(
                 absolute_request_uri,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info('Successfully listed Index details.')
@@ -120,13 +119,12 @@ class EOSCoreIndexApi(EOSCoreClient):
                 self).put(
                 request_uri,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 201:
             self._logger.info('Successfully added Index.')
@@ -163,13 +161,12 @@ class EOSCoreIndexApi(EOSCoreClient):
                 self).delete(
                 request_uri,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
             self._logger.info('Successfully deleted Index.')

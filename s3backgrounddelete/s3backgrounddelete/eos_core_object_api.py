@@ -56,13 +56,12 @@ class EOSCoreObjectApi(EOSCoreClient):
                 request_uri,
                 request_body,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 201:
             self._logger.info("Object added successfully.")
@@ -99,13 +98,12 @@ class EOSCoreObjectApi(EOSCoreClient):
                 self).get(
                 request_uri,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info('Successfully fetched object details.')
@@ -150,13 +148,12 @@ class EOSCoreObjectApi(EOSCoreClient):
                 absolute_request_uri,
                 body,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 204:
             self._logger.info('Object deleted successfully.')
@@ -202,13 +199,12 @@ class EOSCoreObjectApi(EOSCoreClient):
                 absolute_request_uri,
                 body,
                 headers=headers)
+        except ConnectionRefusedError as ex:
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
-            ex_msg = str(ex)
-            if (ex_msg != ""):
-                self._logger.error(ex_msg)
-            else:
-                self._logger.error(repr(ex))
-            return False, None
+            self._logger.error(repr(ex))
+            return False, EOSCoreErrorResponse(500,"","InternalServerError")
 
         if response['status'] == 200:
             self._logger.info("HEAD Object called successfully with status code: "\
