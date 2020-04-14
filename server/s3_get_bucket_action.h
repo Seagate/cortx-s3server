@@ -78,7 +78,7 @@ class S3GetBucketAction : public S3BucketAction {
   FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfo);
   FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfoFailedMissing);
   FRIEND_TEST(S3GetBucketActionTest, FetchBucketInfoFailedInternalError);
-  FRIEND_TEST(S3GetBucketActionTest, GetNextObjects);
+  // FRIEND_TEST(S3GetBucketActionTest, GetNextObjects);
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsWithZeroObjects);
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessful);
   FRIEND_TEST(S3GetBucketActionTest, GetNextObjectsSuccessfulJsonError);

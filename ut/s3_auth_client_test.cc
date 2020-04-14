@@ -328,7 +328,10 @@ TEST_F(S3AuthClientTest, Constructor) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "GET&Request_id=123&Version=2010-05-08";
+      "GET&Request_id=123&RequestorAccountId=12345&RequestorAccountName=s3_"
+      "test&RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -352,7 +355,10 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyGet) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "PUT&Request_id=123&Version=2010-05-08";
+      "PUT&Request_id=123&RequestorAccountId=12345&RequestorAccountName=s3_"
+      "test&RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -376,7 +382,10 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPut) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "HEAD&Request_id=123&Version=2010-05-08";
+      "HEAD&Request_id=123&RequestorAccountId=12345&RequestorAccountName=s3_"
+      "test&RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -400,7 +409,10 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyHead) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "DELETE&Request_id=123&Version=2010-05-08";
+      "DELETE&Request_id=123&RequestorAccountId=12345&RequestorAccountName=s3_"
+      "test&RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -424,7 +436,10 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyDelete) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams=&Method="
-      "POST&Request_id=123&Version=2010-05-08";
+      "POST&Request_id=123&RequestorAccountId=12345&RequestorAccountName=s3_"
+      "test&RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
 
   EXPECT_CALL(*ptr_mock_request, get_query_parameters())
@@ -448,8 +463,11 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyPost) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
-      "2010-05-08";
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&"
+      "RequestorAccountId=12345&RequestorAccountName=s3_test&"
+      "RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
   query_params["delimiter"] = "/";
   query_params["prefix"] = "test";
@@ -475,8 +493,11 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyWithQueryParams) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
-      "2010-05-08";
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&"
+      "RequestorAccountId=12345&RequestorAccountName=s3_test&"
+      "RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
   query_params["delimiter"] = "/";
   query_params["prefix"] = "test";
@@ -506,8 +527,11 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
-      "2010-05-08";
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&"
+      "RequestorAccountId=12345&RequestorAccountName=s3_test&"
+      "RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08";
   std::map<std::string, std::string, compare> query_params;
   query_params["delimiter"] = "/";
   query_params["prefix"] = "test";
@@ -537,10 +561,12 @@ TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth1) {
 TEST_F(S3AuthClientTest, SetUpAuthRequestBodyForChunkedAuth2) {
   char expectedbody[] =
       "Action=AuthenticateUser&ClientAbsoluteUri=%2F&ClientQueryParams="
-      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&Version="
-      "2010-05-08&current-"
-      "signature-sha256=cur-XYZ&previous-signature-sha256=prev-ABCD&x-amz-"
-      "content-sha256=sha256-abcd";
+      "delimiter%3D%252F%26prefix%3Dtest&Method=GET&Request_id=123&"
+      "RequestorAccountId=12345&RequestorAccountName=s3_test&"
+      "RequestorCanonicalId=123456789dummyCANONICALID&RequestorEmail=abc%"
+      "40dummy.com&RequestorUserId=123&RequestorUserName=tester&Version=2010-"
+      "05-08&current-signature-sha256=cur-XYZ&previous-signature-sha256=prev-"
+      "ABCD&x-amz-content-sha256=sha256-abcd";
   std::map<std::string, std::string, compare> query_params;
   query_params["prefix"] = "test";
   query_params["delimiter"] = "/";
