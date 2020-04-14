@@ -92,7 +92,7 @@ def restore_configuration():
 
 # Call HEAD object api on oids
 def perform_head_object(oid_dict):
-    print("Validating non-existence of oids in probable dead list using HEAD object api")
+    print("Validating non-existence of oids using HEAD object api")
     print("Probable dead list should not contain :" + str(list(oid_dict.keys())))
     config = EOSCoreConfig()
     for oid,layout_id in oid_dict.items():
@@ -154,6 +154,7 @@ result = AwsTest('Upload Object "object1" to bucket "seagatebucket"')\
 
 object1_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
 
+
 # ********** Delete objects with fault injection enabled*******
 S3fiTest('Enable FI clovis entity delete fail')\
    .enable_fi("enable", "always", "clovis_entity_delete_fail")\
@@ -162,11 +163,11 @@ S3fiTest('Enable FI clovis entity delete fail')\
 AwsTest('Delete Object "object1" from bucket "seagatebucket"')\
    .delete_object("seagatebucket", "object1").execute_test().command_is_successful()
 
-# wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
-
 S3fiTest('Disable FI clovis entity delete').disable_fi("clovis_entity_delete_fail")\
    .execute_test().command_is_successful()
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -201,6 +202,7 @@ Scenario: New object oid leak test(PUT api test)
 S3fiTest('Enable FI clovis object write fail')\
    .enable_fi("enable", "always", "clovis_obj_write_fail").execute_test()\
    .command_is_successful()
+
 S3fiTest('Enable FI clovis entity delete fail')\
    .enable_fi("enable", "always", "clovis_entity_delete_fail").execute_test()\
    .command_is_successful()
@@ -210,15 +212,16 @@ result = AwsTest('Upload Object "object2" to bucket "seagatebucket"')\
     .execute_test(ignore_err=True, negative_case=True)\
     .command_should_fail().command_error_should_have("InternalError")
 
-# wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
-
 S3fiTest('Disable FI clovis obj write fail').disable_fi("clovis_obj_write_fail")\
    .execute_test().command_is_successful()
+
 S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
    .execute_test().command_is_successful()
 
 object2_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -510,38 +513,61 @@ AwsTest('Do head-object for "object7" on bucket "seagatebucket"')\
 
 
 """
-Test Scenario : 7
-Scenario: Create multipart upload objects leak test (Abort Multipart upload test)
-    1. enable fault points
-    2. create multipart upload and get oid, layout_id from response
-    3. disable fault point
-    4. run background delete schedular
-    5. run background delete processor
-    6. verify cleanup of multipart oid using HEAD api
-    7. verify cleanup of Object using aws s3api head-object api
+Test Scenario : 7 [Abort multipart upload and handle leak in the part list index]
+Scenario: Abort multipart upload after deleting multipart metadata to create leak in the part index.
+Along with object leak, Background delete should take care of deleting the leaked part index.
+    1. create multipart upload and get oid, layout_id from response
+    2. upload first part
+    3. enable fault point "clovis_idx_delete_fail" to leak part index
+    4. abort multipart upload
+    5. Read and save probable delete record for multipart oid
+    6. disable fault point
+    7. run background delete schedular
+    8. run background delete processor
+    9. verify cleanup of Object using aws s3api head-object api
+   10. verify cleanup of part index oid
 """
+CONFIG = EOSCoreConfig()
 # ************** Create a multipart upload *********
-S3fiTest('Enable FI post multipartobject action create object shutdown fail')\
-    .enable_fi("enable", "always", "post_multipartobject_action_create_object_shutdown_fail")\
+result=AwsTest('Aws can upload object8 10Mb file in multipart form')\
+    .create_multipart_upload("seagatebucket", "object8", 10485760, "domain=storage", debug_flag="True" )\
+    .execute_test(ignore_err=True).command_is_successful()
+
+multipart_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+if (multipart_oid_dict is not None):
+    obj_oid = list(multipart_oid_dict.keys())[0]
+
+# Get upload ID
+upload_id = get_upload_id(result.status.stdout)
+upload_id = upload_id.rstrip(os.linesep)
+
+# Upload Individual part
+result=AwsTest('Aws can upload 5Mb first part')\
+    .upload_part("seagatebucket", "firstpart", 5242880, "object8", "1" , upload_id)\
     .execute_test().command_is_successful()
+e_tag_1 = result.status.stdout
+
+# Enable fault point. Force failure in part list index deletion
 S3fiTest('Enable FI clovis entity delete fail').enable_fi("enable", "always", "clovis_entity_delete_fail")\
     .execute_test().command_is_successful()
 
-result=AwsTest('Aws can upload object8 10Mb file')\
-    .create_multipart_upload("seagatebucket", "object8", 10485760, "domain=storage", debug_flag="True" )\
-    .execute_test(ignore_err=True, negative_case=True).command_should_fail()\
-    .command_error_should_have("ServiceUnavailable")
-
-# wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
-
-S3fiTest('Disable FI  post multipartobject action create object shutdown fail')\
-    .disable_fi("post_multipartobject_action_create_object_shutdown_fail")\
+# Abort multipart upload
+result=AwsTest('Aws can abort multipart upload object8 10Mb file')\
+    .abort_multipart_upload("seagatebucket", "object8", upload_id)\
     .execute_test().command_is_successful()
+
+# Read probable delete record associated with 'obj_oid'
+leak_info = s3kvs._fetch_leak_record(obj_oid)
+assert leak_info, "Failed. No probable delete index record"
+
+part_index = leak_info.get_part_index_oid()
+
+# Disable fault point
 S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
     .execute_test().command_is_successful()
 
-multipart_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
+# wait till cleanup process completes and s3server sends response to client
+time.sleep(5)
 
 # ************ Start Schedular*****************************
 print("Running scheduler...")
@@ -560,107 +586,16 @@ AwsTest('Do head-object for "object8" on bucket "seagatebucket"')\
    .head_object("seagatebucket", "object8").execute_test(negative_case=True)\
    .command_should_fail().command_error_should_have("Not Found")
 
-
-
-"""
-Test Scenario : 8 [Handle part index leak]
-Scenario: Abort multipart upload after deleting multipart metadata to create leak in the part index.
-Along with object leak, Background delete should take care of deleting the leaked part index.
-    1. create multipart upload and get oid, layout_id from response
-    2. upload first part
-    3. enable fault point "clovis_idx_delete_fail" to leak part index
-    4. abort multipart upload
-    5. Read and save probable delete record for multipart oid
-    6. disable fault point
-    7. run background delete schedular
-    8. run background delete processor
-    9. verify cleanup of Object using aws s3api head-object api
-   10. verify cleanup of part index oid
-"""
-CONFIG = EOSCoreConfig()
-# ************** Create a multipart upload *********
-result=AwsTest('Aws can upload object9 10Mb file in multipart form')\
-    .create_multipart_upload("seagatebucket", "object9", 10485760, "domain=storage", debug_flag="True" )\
-    .execute_test(ignore_err=True).command_is_successful()
-
-multipart_oid_dict = s3kvs.extract_headers_from_response(result.status.stderr)
-if (multipart_oid_dict is not None):
-    obj_oid = list(multipart_oid_dict.keys())[0]
-
-# Get upload ID
-upload_id = get_upload_id(result.status.stdout)
-upload_id = upload_id.rstrip(os.linesep)
-
-# Upload Individual part
-result=AwsTest('Aws can upload 5Mb first part')\
-    .upload_part("seagatebucket", "firstpart", 5242880, "object9", "1" , upload_id)\
-    .execute_test().command_is_successful()
-e_tag_1 = result.status.stdout
-
-# Enable fault point. Force failure in part list index deletion
-S3fiTest('Enable FI clovis entity delete fail').enable_fi("enable", "always", "clovis_entity_delete_fail")\
-    .execute_test().command_is_successful()
-
-# Abort multipart upload
-result=AwsTest('Aws can abort multipart upload object9 10Mb file')\
-    .abort_multipart_upload("seagatebucket", "object9", upload_id)\
-    .execute_test().command_is_successful()
-
-# Read probable delete record associated with 'obj_oid'
-leak_info = s3kvs._fetch_leak_record(obj_oid)
-assert leak_info, "Failed. No probable delete index record"
-
-part_index = leak_info.get_part_index_oid()
-
-# Disable fault point
-S3fiTest('Disable FI clovis entity delete fail').disable_fi("clovis_entity_delete_fail")\
-    .execute_test().command_is_successful()
-
-# wait till cleanup process completes and s3server sends response to client
-time.sleep(1)
-
-# ************ Start Schedular*****************************
-print("Running scheduler...")
-scheduler.add_kv_to_queue()
-print("Schdeuler has stopped...")
-# ************* Start Processor****************************
-print("Running Processor...")
-processor.consume()
-print("Processor has stopped...")
-
-# ************* Verify clean up of OID's*****************
-perform_head_object(multipart_oid_dict)
-
-# ************* Verify cleanup of Object using aws s3api head-object api*****************
-AwsTest('Do head-object for "object9" on bucket "seagatebucket"')\
-   .head_object("seagatebucket", "object9").execute_test(negative_case=True)\
-   .command_should_fail().command_error_should_have("Not Found")
-
 # ************* Verify part list index is deleted *************
-# Currently, HEAD /indexes/<index oid> is not implemented
-# Until then, we'll check if any entry containing upload ID exist in part list index
-# to check for it's existence. Later, we can implement HEAD /indexes/<index oid> in s3 server.
-# Check if an entry with value of "upload_id" exists in part list index
-status, res = EOSCoreIndexApi(CONFIG).list(part_index)
-if (status):
+# Use HEAD /indexes/<index oid> API to ensure that
+# the part list index is deleted by the object leak task.
+status, res = EOSCoreIndexApi(CONFIG).head(part_index)
+if (not status):
     if (res):
-        part_indx_present = False
-        parts_record = res.get_index_content()
-        assert parts_record is not None, "Error. Part index listing is empty"
-        parts = parts_record["Keys"]
-        if (parts is None):
-            pass
-        else:
-            for rec in parts:
-                part_val = rec["Value"]
-                part_val_json = json.loads(part_val)
-                if (upload_id == part_val_json["Upload-ID"]):
-                    part_indx_present = True
-                    break
-                else:
-                    pass
-
-        assert not part_indx_present, "Error. Part index still exists"
+        assert isinstance(res, EOSCoreErrorResponse)
+        assert res.get_error_status() == 404
+        assert res.get_error_reason() == "Not Found"
+        print("Index id \"" + part_index + "\" does not exist")
         print("Part index deleted")
 else:
     assert False, "Error: Unable to verify part index leak"

@@ -299,7 +299,7 @@ class EOSCoreConfig(object):
 
     def get_leak_processing_delay_in_mins(self):
         """Return 'leak_processing_delay_in_mins' from 'leakconfig' section """
-        if 'leakconfig' in self._config and self._config['leakconfig']['leak_processing_delay_in_mins']:
+        if 'leakconfig' in self._config and 'leak_processing_delay_in_mins' in self._config['leakconfig']:
             return self._config['leakconfig']['leak_processing_delay_in_mins']
         else:
             # default delay is 15mins
@@ -307,7 +307,7 @@ class EOSCoreConfig(object):
 
     def get_version_processing_delay_in_mins(self):
         """Return 'version_processing_delay_in_mins' from 'leakconfig' section """
-        if 'leakconfig' in self._config and self._config['leakconfig']['version_processing_delay_in_mins']:
+        if 'leakconfig' in self._config and 'version_processing_delay_in_mins' in self._config['leakconfig']:
             return self._config['leakconfig']['version_processing_delay_in_mins']
         else:
             # default delay is 15mins

@@ -175,3 +175,50 @@ class EOSCoreIndexApi(EOSCoreClient):
             self._logger.info('Failed to delete Index.')
             return False, EOSCoreErrorResponse(
                 response['status'], response['reason'], response['body'])
+
+
+    def head(self, index_id):
+            """Perform HEAD request and generate response."""
+            if index_id is None:
+                self._logger.error("Index id is required.")
+                return False, None
+
+            # The URL quoting functions focus on taking program data and making it safe for use as URL components by quoting special characters and appropriately encoding non-ASCII text.
+            # urllib.parse.urlencode converts a mapping object or a sequence of two-element tuples, which may contain str or bytes objects, to a percent-encoded ASCII text string.
+            # https://docs.python.org/3/library/urllib.parse.html
+            # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid, safe='') yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
+            # And request_uri is '/indexes/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
+
+            request_uri = '/indexes/' + urllib.parse.quote(index_id, safe='')
+
+            query_params = ""
+            body = ""
+            headers = EOSCoreUtil.prepare_signed_header('HEAD', request_uri, query_params, body)
+
+            if headers['Authorization'] is None:
+                self._logger.error("Failed to generate v4 signature")
+                return False, None
+
+            try:
+                response = super(
+                    EOSCoreIndexApi,
+                    self).head(
+                    request_uri,
+                    body,
+                    headers=headers)
+            except ConnectionRefusedError as ex:
+                self._logger.error(repr(ex))
+                return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
+            except Exception as ex:
+                self._logger.error(repr(ex))
+                return False, EOSCoreErrorResponse(500,"","InternalServerError")
+
+            if response['status'] == 200:
+                self._logger.info("HEAD Index called successfully with status code: "\
+                    + str(response['status']) + " response body: " + str(response['body']))
+                return True, EOSCoreSuccessResponse(response['body'])
+            else:
+                self._logger.info("Failed to do HEAD Index with status code: "\
+                    + str(response['status']) + " response body: " + str(response['body']))
+                return False, EOSCoreErrorResponse(
+                    response['status'], response['reason'], response['body'])

@@ -250,6 +250,7 @@ def extract_headers_from_response(api_response):
     oid_dict = {}
     for response_line in response:
         response_line =  response_line.lstrip("DEBUG - Response headers: ").replace("\'", "\"")
+        response_line =  response_line.replace("\"\"", "\"")
         json_response = json.loads(response_line)
         oid = json_response["x-stx-oid"]
         layout_id = json_response["x-stx-layout-id"]
