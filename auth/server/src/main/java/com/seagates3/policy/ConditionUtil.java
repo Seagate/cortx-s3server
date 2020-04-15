@@ -162,8 +162,8 @@ class ConditionUtil {
 
     for (Entry<String, Set<String>> entry : s3ActionsMap.entrySet()) {
       if (action.equalsIgnoreCase(entry.getKey())) {
-        if (entry.getValue().contains(conditionKey)) {
-          return true;
+        for (String val : entry.getValue()) {
+          if (val.equalsIgnoreCase(conditionKey)) return true;
         }
       }
     }

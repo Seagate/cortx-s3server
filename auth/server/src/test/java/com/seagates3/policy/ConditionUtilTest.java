@@ -166,4 +166,44 @@ class ConditionUtilTest {
   @Test public void testRemoveKeyPrefix_null() {
     Assert.assertNull(ConditionUtil.removeKeyPrefix(null));
   }
+
+  /**
+   * Validate Condition combination
+   */
+  @Test public void isConditionCombinationValid_true() {
+    Assert.assertTrue(ConditionUtil.getInstance().isConditionCombinationValid(
+        "s3:x-amz-acl", "s3:PutObject"));
+  }
+
+  /**
+   * Validate Condition combination
+   */
+  @Test public void isConditionCombinationValid_false() {
+    Assert.assertFalse(ConditionUtil.getInstance().isConditionCombinationValid(
+        "s3:x-amz", "s3:PutObject"));
+  }
+
+  /**
+   * Validate Condition combination
+   */
+  @Test public void isConditionCombinationValid_nullKey() {
+    Assert.assertFalse(ConditionUtil.getInstance().isConditionCombinationValid(
+        null, "s3:PutObject"));
+  }
+
+  /**
+   * Validate Condition combination
+   */
+  @Test public void isConditionCombinationValid_nullVal() {
+    Assert.assertFalse(ConditionUtil.getInstance().isConditionCombinationValid(
+        "s3-x-amz-acl", null));
+  }
+
+  /**
+   * Validate Condition combination
+   */
+  @Test public void isConditionCombinationValid_caseInsensitive() {
+    Assert.assertTrue(ConditionUtil.getInstance().isConditionCombinationValid(
+        "s3:X-AMZ-acl", "s3:PutObject"));
+  }
 }
