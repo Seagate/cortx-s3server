@@ -1,30 +1,5 @@
 * Note current steps are assumed to be run within VM to be configured.
 
-# Setup VM
-
-## Centos 7.5
-Import VM from (use latest or check with team)
-http://jenkins.mero.colo.seagate.com/share/bigstorage/sage_releases/vmdk_images/
-
-- sage-CentOS-7.5.x86_64-7.5.0_3-k3.10.0.vmdk
--- source:
-http://jenkins.mero.colo.seagate.com/share/bigstorage/sage_releases/vmdk_images/sage-CentOS-7.5.x86_64-7.5.0_3-k3.10.0.vmdk
-
-Import VM into VMWare Fusion or VirtualBox
-
-## Centos 7.7
-Use the boot.iso ISO from following link to create a VM for Centos 7.7.1908 - kernel 3.10.0-1062 el7
-http://eos-poc-katello1.mero.colo.seagate.com/pulp/repos/EOS/Library/custom/CentOS-7/CentOS-7-OS/images/
-
-# Download source
-Clone source on the new VM.
-  git clone http://gerrit.mero.colo.seagate.com:8080/s3server
-or to clone with your seagate gid follow the link given below.
-https://docs.google.com/document/d/17ufHPsT62dFL-5VE8r6NeADSefUa0eGgkmPNTkv-k3o/
-
-Ensure you have at least 8GB RAM for dev VM and 4GB RAM for release/rpmbuild VM.
-For custom domain configuration see S3 readme for more details.
-
 # To setup dev vm
 
 In case of RHEL/CentOS 8 (Not needed for CentOS 7) Run
@@ -39,6 +14,12 @@ Run setup script to configure dev vm
 cd <s3 src>
 ./scripts/env/dev/init.sh
 ```
+
+* At password prompts during init script run, please give below input
+SSH password: <your SSH user password>
+Enter new password for openldap rootDN:: seagate
+Enter new password for openldap IAM admin:: ldapadmin
+
 * Do NOT use following script directly on Real cluster as it is configured with fully qualified DNS.
 For dev VM its safe to run following script to update host entries in /etc/hosts
 ```sh
@@ -55,6 +36,36 @@ Above will run all system test over HTTPS to run over HTTP specify `--use_http`
 ./jenkins-build.sh --use_http
 ```
 
+# To start s3server process
+```sh
+./dev-starts3.sh
+```
+
+* Make sure following processes/daemons are running before starting s3server
+haproxy
+s3authserver
+slapd
+eos-core
+
+# How to start, stop or check status of s3server dependent processes/daemons:
+```sh
+systemctl start|stop|status haproxy
+systemctl start|stop|status s3authserver
+systemctl start|stop|status slapd
+./third_party/mero/clovis/st/utils/mero_services.sh start|stop
+```
+
+# To stop s3server
+```sh
+./dev-stops3.sh
+```
+
+# To build s3 rpms on dev setup
+Install eos-core and eos-core-devel
+```sh
+yum install -y eos-core eos-core-devel
+```
+
 # To setup rpmbuild VM and Build S3 rpms
 Run setup script to configure rpmbuild vm
 ```sh
@@ -67,15 +78,13 @@ cd <s3 src>
 ./update-hosts.sh
 ```
 
-
-Install mero/halon
+Install eos-core and eos-core-devel
 ```sh
-yum install -y halon mero mero-devel
+yum install -y eos-core eos-core-devel
 ```
-* This installs latest from http://jenkins.mero.colo.seagate.com/share/bigstorage/releases/hermi/last_successful/)
-
 Obtain short git revision to be built.
 ```sh
+
 git rev-parse --short HEAD
 44a07d2
 ```
