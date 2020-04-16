@@ -13,7 +13,6 @@ major_version=`echo ${VERSION} | awk -F '.' '{ print $1 }'`
 
 
 yum install rpm-build -y
-rpm -q git || yum install -y git
 
 #It seems mero dependency script install s3cmd(2.0.0)
 #for s3 system test we need patched s3cmd(1.6.1), which s3 ansible installs

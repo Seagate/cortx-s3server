@@ -2,6 +2,10 @@
 
 # To setup dev vm
 
+Prerequisite
+
+* Install and configure git as recommended by the provisioner.
+
 In case of RHEL/CentOS 8 (Not needed for CentOS 7) Run
 script to upgrade packages and enable repos
 ```sh

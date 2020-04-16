@@ -5,7 +5,7 @@
 %endif
 
 # eos-core version
-%define h_eoscore_version %(rpm -q --whatprovides eos-core | xargs rpm -q --queryformat '%{VERSION}-%{RELEASE}')
+%define h_eoscore_version %(rpm -q --queryformat '%{VERSION}-%{RELEASE}' eos-core)
 
 # build number
 %define build_num  %( test -n "$build_number" && echo "$build_number" || echo 1 )
@@ -72,7 +72,9 @@ BuildRequires: python-keyring python-futures
 %endif
 # TODO for rhel 8
 
+%if %{with eos_core}
 Requires: eos-core = %{h_eoscore_version}
+%endif
 Requires: libxml2
 Requires: libyaml
 #Supported openssl versions -- CentOS 7 its 1.0.2k, RHEL8 its 1.1.1

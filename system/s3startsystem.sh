@@ -25,7 +25,7 @@ s3_working_dir=`python -c '
 import yaml;
 print yaml.load(open("/opt/seagate/s3/conf/s3config.yaml"))["S3_SERVER_CONFIG"]["S3_DAEMON_WORKING_DIR"];
 ' | tr -d '\r\n'
-`"/s3server-$1"
+`"s3server-$1"
 
 mkdir -p $s3_working_dir
 
