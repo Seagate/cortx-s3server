@@ -1018,17 +1018,10 @@ int main(int argc, char **argv) {
   free_evhtp_handle(htp_ipv6);
   free_evhtp_handle(htp_mero);
 
-  event_base_free(global_evbase_handle);
   fini_auth_ssl();
 
   /* Clean-up */
   fini_clovis();
-  // free all globally held resources
-  // so that leak-check tools dont complain
-  // Added in libevent 2.1
-  libevent_global_shutdown();
-
-  event_destroy_mempool();
 
   delete s3_router;
   delete mero_router;
@@ -1044,5 +1037,13 @@ int main(int argc, char **argv) {
   S3ClovisLayoutMap::destroy_instance();
   S3Option::destroy_instance();
   fini_log();
+
+  event_destroy_mempool();
+  event_base_free(global_evbase_handle);
+  // free all globally held resources
+  // so that leak-check tools dont complain
+  // Added in libevent 2.1
+  libevent_global_shutdown();
+
   return 0;
 }
