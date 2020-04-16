@@ -18,6 +18,7 @@
  */
 package com.seagates3.authserver;
 
+import java.io.IOException;
 import com.google.gson.Gson;
 import com.seagates3.exception.AuthResourceNotFoundException;
 import java.io.InputStream;
@@ -44,12 +45,15 @@ public class IAMResourceMapper {
      * @throws java.io.UnsupportedEncodingException
      */
     public static void init() throws UnsupportedEncodingException {
-        InputStream in = IAMResourceMapper.class.
-                getResourceAsStream(ROUTES_CONFIG_FILE);
-        InputStreamReader reader = new InputStreamReader(in, "UTF-8");
-
+       try(InputStream in =
+               IAMResourceMapper.class.getResourceAsStream(ROUTES_CONFIG_FILE);
+           InputStreamReader reader = new InputStreamReader(in, "UTF-8")) {
         Gson gson = new Gson();
         routeConfigs = gson.fromJson(reader, HashMap.class);
+       }
+       catch (IOException e) {
+         // Do nothing
+       }
     }
 
     /**

@@ -77,6 +77,8 @@ public class AuthServerConfig {
         authSecureConfig.load(inSecure);
         authServerConfig.putAll(authSecureConfig);
         AuthServerConfig.init(authServerConfig);
+        if (input != null) input.close();
+        if (inSecure != null) inSecure.close();
     }
 
     /**

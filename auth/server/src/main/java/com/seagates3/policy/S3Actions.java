@@ -19,6 +19,7 @@
 
 package com.seagates3.policy;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
@@ -72,6 +73,13 @@ class S3Actions {
       JsonElement setElem = entry.getValue();
       keys = gson.fromJson(setElem, setType);
       objectOperations.put(entry.getKey().toLowerCase(), keys);
+    }
+    try {
+      if (reader != null) reader.close();
+      if (in != null) in.close();
+    }
+    catch (IOException e) {
+      // Do nothing
     }
   }
 
