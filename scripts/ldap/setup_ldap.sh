@@ -134,7 +134,9 @@ ldapmodify -x -a -H ldapi:/// -D cn=admin,dc=seagate,dc=com -w $ROOTDNPASSWORD -
 
 # Enable slapd log with logLevel as "none"
 # for more info : http://www.openldap.org/doc/admin24/slapdconfig.html
-ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f /opt/seagate/s3/install/ldap/slapdlog.ldif
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f slapdlog.ldif
+# Apply indexing on keys for performance improvement
+ldapmodify -Y EXTERNAL -H ldapi:/// -w $ROOTDNPASSWORD -f s3slapdindex.ldif
 
 # Rstart slapd
 systemctl restart slapd

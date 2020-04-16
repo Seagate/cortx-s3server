@@ -80,6 +80,11 @@
           src: files/ldap/slapdlog.ldif
           dest: /tmp/s3ldap/slapdlog.ldif
 
+      - name: Copy s3 ldap index file
+        template:
+          src: files/ldap/s3slapdindex.ldif
+          dest: /tmp/s3ldap/s3slapdindex.ldif
+
       - name: Copy ldap schema, data, replication-config files
         copy: src={{ item.src }} dest={{ item.dest }}
         with_items:
@@ -161,6 +166,10 @@
 
       - name: Configure OpenLDAP - Enable openldap log
         command: ldapmodify -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/slapdlog.ldif
+        no_log: true
+
+      - name: Configure OpenLDAP - Enable openldap indexing
+        command: ldapmodify -Y EXTERNAL -H ldapi:/// -w {{ openldappasswd }} -f /tmp/s3ldap/s3slapdindex.ldif
         no_log: true
 
       - name: Backup original slapd file

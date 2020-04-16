@@ -1002,5 +1002,27 @@ systemctl restart slapd
 ```
 5. check slapd log file
 ```
-vim /var/log/slapdlog.log
+vim /var/log/slapd.log
 ```
+
+# How to apply indexing on keys
+1. Add new key attribute to <s3 src>/scripts/ldap/s3slapdindex.ldif file
+Append or prepend the attribute to list present inside
+
+2. modify ldap by running below script
+```
+ldapmodify -Y EXTERNAL -H ldapi:/// -w ldapadmin -f <s3 src>/scripts/ldap/s3slapdindex.ldif
+```
+3. verify updated attributes list with below -
+```
+ldapsearch -w seagate -x -D cn=admin,cn=config -b cn=config | grep olcDbIndex
+```
+4. restart slapd service
+```
+systemctl restart slapd
+```
+5. check slapd log file to verify no warnings for indexed attribute is present
+```
+vim /var/log/slapd.log
+```
+

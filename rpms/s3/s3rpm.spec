@@ -225,6 +225,7 @@ rm -rf %{buildroot}
 /opt/seagate/s3/install/ldap/syncprov.ldif
 /opt/seagate/s3/install/ldap/replicate.ldif
 /opt/seagate/s3/install/ldap/slapdlog.ldif
+/opt/seagate/s3/install/ldap/s3slapdindex.ldif
 /opt/seagate/s3/install/ldap/rsyslog.d/slapdlog.conf
 /opt/seagate/s3/install/ldap/background_delete_account.ldif
 /opt/seagate/s3/install/ldap/create_background_delete_account.sh
