@@ -44,6 +44,7 @@
 #define S3_OPTION_MERO_BIND_PORT 0x100000
 #define S3_OPTION_MERO_BIND_ADDR 0x200000
 #define S3_OPTION_MERO_HTTP_REUSEPORT 0x400000
+#define S3_OPTION_AUDIT_LOG_DIR 0x800000
 
 #define S3_OPTION_ASSERT_AND_RET(node, option)                              \
   do {                                                                      \
@@ -102,6 +103,7 @@ class S3Option {
 
   std::string option_file;
   std::string log_dir;
+  std::string audit_log_dir;
   std::string layout_recommendation_file;
   std::string s3_iam_cert_file;
   std::string audit_log_conf_file;
@@ -198,6 +200,7 @@ class S3Option {
     is_s3_shutting_down = false;
 
     log_dir = "/var/log/seagate/s3";
+    audit_log_dir = "/var/log/seagate/s3";
     log_level = FLAGS_s3loglevel;
     audit_log_conf_file = FLAGS_audit_config;
     log_file_max_size_mb = 100;  // 100 MB
@@ -335,6 +338,7 @@ class S3Option {
   void set_redirection(unsigned short redirect);
 
   std::string get_log_dir();
+  std::string get_audit_log_dir();
   std::string get_log_level();
   int get_log_file_max_size_in_mb();
   bool is_s3_ssl_auth_enabled();

@@ -37,6 +37,7 @@ DECLARE_string(s3pidfile);
 
 DECLARE_string(s3loglevel);
 DECLARE_string(audit_config);
+DECLARE_string(audit_log_dir);
 
 DECLARE_bool(perfenable);
 DECLARE_string(perflogfile);

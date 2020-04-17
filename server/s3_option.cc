@@ -69,6 +69,8 @@ bool S3Option::load_section(std::string section_name,
       log_dir = s3_option_node["S3_LOG_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_MODE");
       log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOG_DIR");
+      audit_log_dir = s3_option_node["S3_AUDIT_LOG_DIR"].as<std::string>();
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOG_CONFIG");
       audit_log_conf_file =
           s3_option_node["S3_AUDIT_LOG_CONFIG"].as<std::string>();
@@ -330,6 +332,10 @@ bool S3Option::load_section(std::string section_name,
       if (!(cmd_opt_flag & S3_OPTION_LOG_MODE)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LOG_MODE");
         log_level = s3_option_node["S3_LOG_MODE"].as<std::string>();
+      }
+      if (!(cmd_opt_flag & S3_OPTION_AUDIT_LOG_DIR)) {
+        S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOG_DIR");
+        audit_log_dir = s3_option_node["S3_AUDIT_LOG_DIR"].as<std::string>();
       }
       if (!(cmd_opt_flag & S3_OPTION_AUDIT_CONFIG)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUDIT_LOG_CONFIG");
@@ -656,6 +662,8 @@ void S3Option::set_cmdline_option(int option_flag, const char* optarg) {
     perf_log_file = optarg;
   } else if (option_flag & S3_OPTION_LOG_MODE) {
     log_level = optarg;
+  } else if (option_flag & S3_OPTION_AUDIT_LOG_DIR) {
+    audit_log_dir = optarg;
   } else if (option_flag & S3_OPTION_AUDIT_CONFIG) {
     audit_log_conf_file = optarg;
   } else if (option_flag & S3_OPTION_LOG_FILE_MAX_SIZE) {
@@ -703,6 +711,7 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_LOG_FILE_MAX_SIZE = %d\n", log_file_max_size_mb);
   s3_log(S3_LOG_INFO, "", "S3_LOG_ENABLE_BUFFERING = %s\n",
          (log_buffering_enable ? "true" : "false"));
+  s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOG_DIR = %s\n", audit_log_dir.c_str());
   s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOG_CONFIG = %s\n",
          audit_log_conf_file.c_str());
   s3_log(S3_LOG_INFO, "", "S3_AUDIT_LOG_FORMAT_TYPE = %s\n",
@@ -959,6 +968,8 @@ void S3Option::set_redirection(unsigned short redirect) {
 }
 
 std::string S3Option::get_log_dir() { return log_dir; }
+
+std::string S3Option::get_audit_log_dir() { return audit_log_dir; }
 
 std::string S3Option::get_log_level() { return log_level; }
 

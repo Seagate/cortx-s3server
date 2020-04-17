@@ -11,6 +11,7 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_MERO_HTTP_REUSEPORT: true                         # Enable reusing mero http server port
    S3_IAM_CERT_FILE: "/etc/ssl/stx-s3/s3/ca.crt"        # IAM Auth certificate file
    S3_LOG_FLUSH_FREQUENCY: 3                            # Time in seconds, after which logs will be flushed. Valid only if S3_LOG_ENABLE_BUFFERING is true. Default is 30 seconds.
+   S3_AUDIT_LOG_DIR: /var/log/seagate/s3"               # S3 Audit log directory
    S3_AUDIT_LOG_CONFIG: "/opt/seagate/s3/conf/s3server_audit_log.properties" # S3 Server Audit log configuration file.
    S3_AUDIT_LOG_FORMAT_TYPE: "JSON"                     # S3 Server Audit log format type. JSON logs in json format & S3_FORMAT logs in s3 format.
    S3_AUDIT_LOGGER_POLICY: "disabled"                   # Audit info logger policy: disabled - logger disabled; rsyslog-tcp - send logs to rsyslog via tcp socket; log4cxx - use log4cxx; syslog - send logs to rsyslog via syslog call;

@@ -36,6 +36,7 @@ DEFINE_string(s3pidfile, "/var/run/s3server.pid", "S3 server pid file");
 DEFINE_string(audit_config,
               "/opt/seagate/s3/conf/s3server_audit_log.properties",
               "S3 Audit log Config Path");
+DEFINE_string(audit_log_dir, "/var/log/seagate/s3", "S3 Audit log Directory");
 DEFINE_string(s3loglevel, "INFO",
               "options: DEBUG | INFO | WARN | ERROR | FATAL");
 
@@ -162,6 +163,12 @@ int parse_and_load_config_options(int argc, char **argv) {
   gflags::GetCommandLineFlagInfo("audit_config", &flag_info);
   if (!flag_info.is_default) {
     option_instance->set_cmdline_option(S3_OPTION_AUDIT_CONFIG,
+                                        flag_info.current_value.c_str());
+  }
+
+  gflags::GetCommandLineFlagInfo("audit_log_dir", &flag_info);
+  if (!flag_info.is_default) {
+    option_instance->set_cmdline_option(S3_OPTION_AUDIT_LOG_DIR,
                                         flag_info.current_value.c_str());
   }
 
