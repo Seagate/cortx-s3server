@@ -103,7 +103,6 @@ class S3ClovisWriter {
   // maintain state for debugging.
   size_t size_in_current_write;
   size_t total_written;
-  size_t n_initialized_contexts = 0;
 
   bool is_object_opened;
   struct s3_clovis_obj_context* obj_ctx;

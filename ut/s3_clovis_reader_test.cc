@@ -119,6 +119,7 @@ TEST_F(S3ClovisReaderTest, CleanupContexts) {
   clovis_reader_ptr->obj_ctx->objs =
       (struct m0_clovis_obj *)calloc(2, sizeof(struct m0_clovis_obj));
   clovis_reader_ptr->obj_ctx->obj_count = 2;
+  clovis_reader_ptr->obj_ctx->n_initialized_contexts = 2;
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(2);
   clovis_reader_ptr->clean_up_contexts();
   EXPECT_TRUE(clovis_reader_ptr->open_context == nullptr);
@@ -157,7 +158,7 @@ TEST_F(S3ClovisReaderTest, ReadObjectDataTest) {
   clovis_reader_ptr->obj_ctx->objs =
       (struct m0_clovis_obj *)calloc(1, sizeof(struct m0_clovis_obj));
   clovis_reader_ptr->obj_ctx->obj_count = 1;
-
+  clovis_reader_ptr->obj_ctx->n_initialized_contexts = 1;
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_op(_, _, _, _, _, _, _))
       .WillOnce(Invoke(s3_test_clovis_obj_op));
   EXPECT_CALL(*s3_clovis_api_mock, clovis_obj_fini(_)).Times(1);
@@ -323,6 +324,7 @@ TEST_F(S3ClovisReaderTest, OpenObjectSuccessTest) {
   clovis_reader_ptr->obj_ctx->objs =
       (struct m0_clovis_obj *)calloc(1, sizeof(struct m0_clovis_obj));
   clovis_reader_ptr->obj_ctx->obj_count = 1;
+  clovis_reader_ptr->obj_ctx->n_initialized_contexts = 1;
   EXPECT_CALL(*s3_clovis_api_mock, clovis_op_rc(_)).WillRepeatedly(Return(0));
   clovis_reader_ptr->open_context.reset(new S3ClovisReaderContext(
       request_mock, NULL, NULL, 1, s3_clovis_api_mock));

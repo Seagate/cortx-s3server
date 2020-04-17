@@ -38,6 +38,7 @@ EXTERN_C_BLOCK_END
 
 struct s3_clovis_obj_context {
   struct m0_clovis_obj *objs;
+  size_t n_initialized_contexts;
   size_t obj_count;
 };
 
@@ -58,6 +59,7 @@ struct s3_clovis_rw_op_context {
 
 struct s3_clovis_idx_context {
   struct m0_clovis_idx *idx;
+  size_t n_initialized_contexts;
   size_t idx_count;
 };
 

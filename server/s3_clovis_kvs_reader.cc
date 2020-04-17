@@ -55,7 +55,7 @@ S3ClovisKVSReader::~S3ClovisKVSReader() { clean_up_contexts(); }
 void S3ClovisKVSReader::clean_up_contexts() {
   reader_context = nullptr;
   if (idx_ctx) {
-    for (size_t i = 0; i < idx_ctx->idx_count; i++) {
+    for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
       s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
     }
     free_idx_context(idx_ctx);
@@ -132,6 +132,7 @@ void S3ClovisKVSReader::get_keyval(struct m0_uint128 oid,
 
   s3_clovis_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
                                  &id);
+  idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_clovis_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_GET,
                                     kvs_ctx->keys, kvs_ctx->values,
@@ -195,6 +196,7 @@ void S3ClovisKVSReader::lookup_index(struct m0_uint128 oid,
 
   s3_clovis_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
                                  &id);
+  idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_clovis_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_LOOKUP, NULL,
                                     NULL, NULL, 0, &(idx_op_ctx->ops[0]));

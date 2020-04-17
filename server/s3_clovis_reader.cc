@@ -61,7 +61,7 @@ void S3ClovisReader::clean_up_contexts() {
   open_context = nullptr;
   reader_context = nullptr;
   if (obj_ctx) {
-    for (size_t i = 0; i < obj_ctx->obj_count; i++) {
+    for (size_t i = 0; i < obj_ctx->n_initialized_contexts; i++) {
       s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
     }
     free_obj_context(obj_ctx);
@@ -155,6 +155,7 @@ int S3ClovisReader::open_object(std::function<void(void)> on_success,
 
   s3_clovis_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm, &oid,
                                  layout_id);
+  obj_ctx->n_initialized_contexts = 1;
 
   rc = s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[0].ob_entity),
                                          &(ctx->ops[0]));

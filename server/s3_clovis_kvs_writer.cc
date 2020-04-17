@@ -64,7 +64,7 @@ void S3ClovisKVSWriter::clean_up_contexts() {
   writer_context = nullptr;
   sync_context = nullptr;
   if (idx_ctx) {
-    for (size_t i = 0; i < idx_ctx->idx_count; i++) {
+    for (size_t i = 0; i < idx_ctx->n_initialized_contexts; i++) {
       s3_clovis_api->clovis_idx_fini(&idx_ctx->idx[i]);
     }
     free_idx_context(idx_ctx);
@@ -126,6 +126,7 @@ void S3ClovisKVSWriter::create_index_with_oid(
 
   s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_uber_realm,
                                  &idx_oid);
+  idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_clovis_api->clovis_entity_create(&(idx_ctx->idx[0].in_entity),
                                            &(idx_op_ctx->ops[0]));
@@ -290,6 +291,7 @@ void S3ClovisKVSWriter::delete_index(struct m0_uint128 idx_oid,
 
   s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_uber_realm,
                                  &idx_oid);
+  idx_ctx->n_initialized_contexts = 1;
   int rc = s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[0].in_entity),
                                              &(idx_op_ctx->ops[0]));
   if (rc != 0) {
@@ -390,6 +392,11 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
 
     s3_clovis_api->clovis_idx_init(&idx_ctx->idx[i], &clovis_uber_realm,
                                    &oid_list[i]);
+    if (i == 0) {
+      idx_ctx->n_initialized_contexts = 1;
+    } else {
+      idx_ctx->n_initialized_contexts += 1;
+    }
     int rc = s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[i].in_entity),
                                                &(idx_op_ctx->ops[i]));
     if (rc != 0) {
@@ -516,7 +523,7 @@ int S3ClovisKVSWriter::put_keyval_impl(
   }
   s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
                                  &oid_list[0]);
-
+  idx_ctx->n_initialized_contexts = 1;
   rc = s3_clovis_api->clovis_idx_op(
       &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
       kvs_ctx->rcs, M0_OIF_OVERWRITE | M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));
@@ -638,6 +645,7 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
 
   s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
                                  &oid_list[0]);
+  idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_clovis_api->clovis_idx_op(
       &(idx_ctx->idx[0]), M0_CLOVIS_IC_PUT, kvs_ctx->keys, kvs_ctx->values,
@@ -837,6 +845,7 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
 
   s3_clovis_api->clovis_idx_init(&(idx_ctx->idx[0]), &clovis_container.co_realm,
                                  &oid_list[0]);
+  idx_ctx->n_initialized_contexts = 1;
   rc = s3_clovis_api->clovis_idx_op(&(idx_ctx->idx[0]), M0_CLOVIS_IC_DEL,
                                     kvs_ctx->keys, NULL, kvs_ctx->rcs,
                                     M0_OIF_SYNC_WAIT, &(idx_op_ctx->ops[0]));

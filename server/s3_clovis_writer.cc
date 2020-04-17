@@ -133,13 +133,12 @@ void S3ClovisWriter::clean_up_contexts() {
   writer_context = nullptr;
   delete_context = nullptr;
   if (obj_ctx) {
-    for (size_t i = 0; i < n_initialized_contexts; ++i) {
+    for (size_t i = 0; i < obj_ctx->n_initialized_contexts; ++i) {
       s3_clovis_api->clovis_obj_fini(&obj_ctx->objs[i]);
     }
     free_obj_context(obj_ctx);
     obj_ctx = nullptr;
   }
-  n_initialized_contexts = 0;
 }
 
 int S3ClovisWriter::open_objects() {
@@ -179,7 +178,11 @@ int S3ClovisWriter::open_objects() {
                     << ") ";
     s3_clovis_api->clovis_obj_init(&obj_ctx->objs[i], &clovis_uber_realm,
                                    &oid_list[i], layout_ids[i]);
-    ++n_initialized_contexts;
+    if (i == 0) {
+      obj_ctx->n_initialized_contexts = 1;
+    } else {
+      obj_ctx->n_initialized_contexts += 1;
+    }
 
     int rc = s3_clovis_api->clovis_entity_open(&(obj_ctx->objs[i].ob_entity),
                                                &(ctx->ops[i]));
@@ -287,7 +290,7 @@ void S3ClovisWriter::create_object(std::function<void(void)> on_success,
 
   s3_clovis_api->clovis_obj_init(&obj_ctx->objs[0], &clovis_uber_realm,
                                  &oid_list[0], layout_ids[0]);
-  n_initialized_contexts = 1;
+  obj_ctx->n_initialized_contexts = 1;
 
   int rc = s3_clovis_api->clovis_entity_create(&(obj_ctx->objs[0].ob_entity),
                                                &(ctx->ops[0]));

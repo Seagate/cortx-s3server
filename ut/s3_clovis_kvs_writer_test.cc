@@ -158,7 +158,8 @@ TEST_F(S3ClovisKvsWritterTest, CleanupContexts) {
   action_under_test->idx_ctx->idx =
       (struct m0_clovis_idx *)calloc(2, sizeof(struct m0_clovis_idx));
   action_under_test->idx_ctx->idx_count = 2;
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(2);
+  action_under_test->idx_ctx->n_initialized_contexts = 1;
+  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
   action_under_test->clean_up_contexts();
   EXPECT_TRUE(action_under_test->sync_context == nullptr);
   EXPECT_TRUE(action_under_test->writer_context == nullptr);
@@ -200,6 +201,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexIdxPresent) {
   action_under_test->idx_ctx->idx =
       (struct m0_clovis_idx *)calloc(2, sizeof(struct m0_clovis_idx));
   action_under_test->idx_ctx->idx_count = 2;
+  action_under_test->idx_ctx->n_initialized_contexts = 2;
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(3);
 
   action_under_test->create_index(
@@ -220,6 +222,7 @@ TEST_F(S3ClovisKvsWritterTest, CreateIndexSuccessful) {
   action_under_test->idx_ctx->idx =
       (struct m0_clovis_idx *)calloc(1, sizeof(struct m0_clovis_idx));
   action_under_test->idx_ctx->idx_count = 1;
+  action_under_test->idx_ctx->n_initialized_contexts = 1;
 
   action_under_test->handler_on_success =
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj);
@@ -504,6 +507,7 @@ TEST_F(S3ClovisKvsWritterTest, DelIndexIdxPresent) {
   action_under_test->idx_ctx->idx =
       (struct m0_clovis_idx *)calloc(2, sizeof(struct m0_clovis_idx));
   action_under_test->idx_ctx->idx_count = 2;
+  action_under_test->idx_ctx->n_initialized_contexts = 2;
   EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(3);
 
   action_under_test->delete_index(
