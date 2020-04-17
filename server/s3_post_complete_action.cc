@@ -53,6 +53,7 @@ S3PostCompleteAction::S3PostCompleteAction(
          for UploadId[%s]\n",
          bucket_name.c_str(), object_name.c_str(), upload_id.c_str());
 
+  action_uses_cleanup = true;
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
@@ -752,6 +753,7 @@ void S3PostCompleteAction::startcleanup() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Clear task list and setup cleanup task list
   clear_tasks();
+  cleanup_started = true;
 
   if (multipart_metadata) {
     if (obj_metadata_updated) {
@@ -795,7 +797,7 @@ void S3PostCompleteAction::mark_old_oid_for_deletion() {
         request, s3_clovis_api);
   }
   clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
-                               old_oid_str, old_probable_del_rec->to_json(),
+                               old_oid_rec_key, old_probable_del_rec->to_json(),
                                std::bind(&S3PostCompleteAction::next, this),
                                std::bind(&S3PostCompleteAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -879,7 +881,12 @@ void S3PostCompleteAction::delete_new_object() {
   assert(new_object_oid.u_hi || new_object_oid.u_lo);
   assert(is_abort_multipart());
 
-  clovis_writer->set_oid(new_object_oid);
+  if (!clovis_writer) {
+    clovis_writer =
+        clovis_writer_factory->create_clovis_writer(request, new_object_oid);
+  } else {
+    clovis_writer->set_oid(new_object_oid);
+  }
   clovis_writer->delete_object(
       std::bind(&S3PostCompleteAction::remove_new_oid_probable_record, this),
       std::bind(&S3PostCompleteAction::next, this), layout_id);

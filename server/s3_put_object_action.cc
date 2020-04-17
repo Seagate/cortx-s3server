@@ -52,6 +52,7 @@ S3PutObjectAction::S3PutObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
+  action_uses_cleanup = true;
   s3_put_action_state = S3PutObjectActionState::empty;
   old_object_oid = {0ULL, 0ULL};
   old_layout_id = -1;
@@ -723,6 +724,7 @@ void S3PutObjectAction::startcleanup() {
   // cleanups.
   // Clear task list and setup cleanup task list
   clear_tasks();
+  cleanup_started = true;
 
   // Success conditions
   if (s3_put_action_state == S3PutObjectActionState::completed) {
@@ -808,7 +810,7 @@ void S3PutObjectAction::mark_old_oid_for_deletion() {
         request, s3_clovis_api);
   }
   clovis_kv_writer->put_keyval(global_probable_dead_object_list_index_oid,
-                               old_oid_str, old_probable_del_rec->to_json(),
+                               old_oid_rec_key, old_probable_del_rec->to_json(),
                                std::bind(&S3PutObjectAction::next, this),
                                std::bind(&S3PutObjectAction::next, this));
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -889,4 +891,3 @@ void S3PutObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
-

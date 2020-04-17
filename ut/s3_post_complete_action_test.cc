@@ -591,8 +591,6 @@ TEST_F(S3PostCompleteActionTest, DeleteNewObject) {
   action_under_test_ptr->layout_id = layout_id;
   action_under_test_ptr->set_abort_multipart(true);
 
-  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer), set_oid(_))
-      .Times(AtLeast(1));
   EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
               delete_object(_, _, layout_id)).Times(1);
 

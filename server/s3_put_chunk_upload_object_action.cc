@@ -58,6 +58,7 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
+  action_uses_cleanup = true;
   if (clovis_api) {
     s3_clovis_api = clovis_api;
   } else {
@@ -787,6 +788,7 @@ void S3PutChunkUploadObjectAction::startcleanup() {
   // cleanups.
   // Clear task list and setup cleanup task list
   clear_tasks();
+  cleanup_started = true;
 
   // Success conditions
   if (s3_put_chunk_action_state ==
@@ -882,7 +884,7 @@ void S3PutChunkUploadObjectAction::mark_old_oid_for_deletion() {
         request, s3_clovis_api);
   }
   clovis_kv_writer->put_keyval(
-      global_probable_dead_object_list_index_oid, old_oid_str,
+      global_probable_dead_object_list_index_oid, old_oid_rec_key,
       old_probable_del_rec->to_json(),
       std::bind(&S3PutChunkUploadObjectAction::next, this),
       std::bind(&S3PutChunkUploadObjectAction::next, this));
@@ -969,4 +971,3 @@ void S3PutChunkUploadObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
-

@@ -33,7 +33,7 @@ rabbitmq:                                    # Section for RabbitMQ configs
     exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
     mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
     durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 900                             # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds)
+    schedule_interval_secs: 7200                             # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
 
 indexid:
 

@@ -40,6 +40,7 @@ S3DeleteObjectAction::S3DeleteObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
+  action_uses_cleanup = true;
   s3_del_obj_action_state = S3DeleteObjectActionState::empty;
 
   if (clovis_api) {
@@ -202,6 +203,7 @@ void S3DeleteObjectAction::startcleanup() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Clear task list and setup cleanup task list
   clear_tasks();
+  cleanup_started = true;
 
   if (s3_del_obj_action_state == S3DeleteObjectActionState::validationFailed ||
       s3_del_obj_action_state ==

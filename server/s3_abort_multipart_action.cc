@@ -49,6 +49,7 @@ S3AbortMultipartAction::S3AbortMultipartAction(
          Object[%s] with UploadId[%s]\n",
          bucket_name.c_str(), object_name.c_str(), upload_id.c_str());
 
+  action_uses_cleanup = true;
   multipart_oid = {0ULL, 0ULL};
   part_index_oid = {0ULL, 0ULL};
 
@@ -337,6 +338,7 @@ void S3AbortMultipartAction::startcleanup() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   // Clear task list and setup cleanup task list
   clear_tasks();
+  cleanup_started = true;
 
   if (s3_abort_mp_action_state == S3AbortMultipartActionState::empty ||
       s3_abort_mp_action_state ==

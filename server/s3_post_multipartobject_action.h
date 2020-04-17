@@ -102,7 +102,7 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
   void set_authorization_meta();
 
   // rollback functions
-  void startcleanup();
+  void startcleanup() override;
   void rollback_create();
   void rollback_create_failed();
   void rollback_create_part_meta_index();
@@ -147,4 +147,3 @@ class S3PostMultipartObjectAction : public S3ObjectAction {
 };
 
 #endif
-

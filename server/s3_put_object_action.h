@@ -126,7 +126,7 @@ class S3PutObjectAction : public S3ObjectAction {
   void send_response_to_s3_client();
 
   // Rollback tasks
-  void startcleanup();
+  void startcleanup() override;
   void mark_new_oid_for_deletion();
   void mark_old_oid_for_deletion();
   void remove_old_oid_probable_record();
@@ -203,4 +203,3 @@ class S3PutObjectAction : public S3ObjectAction {
 };
 
 #endif
-

@@ -122,7 +122,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
-  void startcleanup();
+  void startcleanup() override;
   void mark_old_oid_for_deletion();
   void delete_old_object();
   void remove_old_object_version_metadata();
@@ -176,4 +176,3 @@ class S3PostCompleteAction : public S3ObjectAction {
 };
 
 #endif
-

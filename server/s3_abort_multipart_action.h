@@ -93,7 +93,7 @@ class S3AbortMultipartAction : public S3BucketAction {
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
-  void startcleanup();
+  void startcleanup() override;
   void mark_oid_for_deletion();
   void delete_object();
   void remove_probable_record();

@@ -52,6 +52,8 @@ S3PostMultipartObjectAction::S3PostMultipartObjectAction(
          request->get_bucket_name().c_str(),
          request->get_object_name().c_str());
 
+  action_uses_cleanup =
+      false;  // since startcleanup is noop and we use rollback
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
@@ -617,4 +619,3 @@ void S3PostMultipartObjectAction::set_authorization_meta() {
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
-

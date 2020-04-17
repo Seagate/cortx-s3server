@@ -135,7 +135,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void add_object_oid_to_probable_dead_oid_list_failed();
 
   // Rollback tasks
-  void startcleanup();
+  void startcleanup() override;
   void mark_new_oid_for_deletion();
   void mark_old_oid_for_deletion();
   void remove_old_oid_probable_record();
@@ -256,4 +256,3 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
 };
 
 #endif
-

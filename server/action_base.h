@@ -148,6 +148,11 @@ class Action {
 
   std::shared_ptr<S3MemoryProfile> mem_profile;
   std::shared_ptr<S3AuthClientFactory> auth_client_factory;
+  // Currently any actions uses either one of 2 methods on errors,
+  // startcleanup and rollback. false indicates rollback, true startcleanup
+  // Every action using cleanup will set this to true in constructor
+  bool action_uses_cleanup;
+  bool cleanup_started;  // action has started cleanup process.
 
  public:
   Action(std::shared_ptr<RequestObject> req, bool check_shutdown = true,
@@ -281,6 +286,8 @@ class Action {
   virtual void send_response_to_s3_client() = 0;
   virtual void send_retry_error_to_s3_client(int retry_after_in_secs = 1);
 
+  virtual void startcleanup() { assert("Derived actions should override."); }
+
   FRIEND_TEST(ActionTest, Constructor);
   FRIEND_TEST(ActionTest, ClientReadTimeoutCallBackRollback);
   FRIEND_TEST(ActionTest, ClientReadTimeoutCallBack);
@@ -296,4 +303,3 @@ class Action {
 };
 
 #endif
-

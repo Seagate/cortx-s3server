@@ -47,7 +47,9 @@ Action::Action(std::shared_ptr<RequestObject> req, bool check_shutdown,
       is_response_scheduled(false),
       is_fi_hit(false),
       invalid_request(false),
-      skip_auth(skip_auth) {
+      skip_auth(skip_auth),
+      action_uses_cleanup(false),
+      cleanup_started(false) {
 
   s3_task_name_to_addb_task_id_map_init();
 
@@ -87,7 +89,11 @@ void Action::set_s3_error_message(std::string message) {
 
 void Action::client_read_error() {
   set_s3_error(base_request->get_s3_client_read_error());
-  rollback_start();
+  if (action_uses_cleanup) {
+    startcleanup();
+  } else {
+    rollback_start();
+  }
 }
 
 const std::string& Action::get_s3_error_code() const { return s3_error_code; }
@@ -154,14 +160,19 @@ void Action::next() {
     return;
   }
   if (task_iteration_index < task_list.size()) {
-    if (base_request->client_connected()) {
-
+    if (cleanup_started || base_request->client_connected()) {
+      // cleanup is primarily background async activity and should work
+      // independent of S3 client connection.
       ADDB(get_addb_action_type_id(), addb_request_id,
            task_addb_id_list[task_iteration_index]);
 
       task_list[task_iteration_index++]();
     } else {
-      rollback_start();
+      if (action_uses_cleanup) {
+        startcleanup();
+      } else {
+        rollback_start();
+      }
     }
   } else {
     done();
@@ -311,4 +322,3 @@ void Action::send_retry_error_to_s3_client(int retry_after_in_secs) {
   base_request->respond_retry_after(1);
   done();
 }
-
