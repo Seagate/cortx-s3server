@@ -234,6 +234,7 @@ public class AccountImpl implements AccountDAO {
             LOGGER.error("Failed to fetch accounts.");
             throw new DataAccessException("Failed to fetch accounts.\n" + ex);
         }
+        int ldapResultCount = 0;
         while (ldapResults.hasMore()) {
             LDAPEntry ldapEntry;
             account = new Account();
@@ -243,8 +244,16 @@ public class AccountImpl implements AccountDAO {
                       "LDAP_GET_ATTR_FAIL")) {
                     throw new LDAPException();
                 }
-
-                ldapEntry = ldapResults.next();
+                // Prevent client failure for fetching more than 500 entries
+                // for more details please refer EOS-7271
+                if (ldapResultCount < 500) {
+                  ldapEntry = ldapResults.next();
+                } else {
+                  LOGGER.info(
+                      "Considering only 500 accounds and ignoring remaining " +
+                      "records");
+                  break;
+                }
             } catch (LDAPException ldapException) {
                 LOGGER.error("Failed to read ldapEntry.");
                 throw new DataAccessException("Failed to read ldapEntry.\n" +
@@ -261,6 +270,7 @@ public class AccountImpl implements AccountDAO {
                 ldapEntry.getAttribute(LDAPUtils.CANONICAL_ID)
                     .getStringValue());
             accounts.add(account);
+            ldapResultCount++;
         }
         Account[] accountList = new Account[accounts.size()];
 

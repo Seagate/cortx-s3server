@@ -262,12 +262,20 @@ public class UserImpl implements UserDAO {
             throw new DataAccessException("Failed to find all user details.\n" +
                                           ex);
         }
-
+        int ldapResultCount = 0;
         while (ldapResults.hasMore()) {
             user = new User();
             LDAPEntry entry;
             try {
+              // Prevent client failure for fetching more than 500 entries
+              // for more details please refer EOS-7271
+              if (ldapResultCount < 500) {
                 entry = ldapResults.next();
+              } else {
+                LOGGER.info("Considering only 500 user records and ignoring " +
+                            "remaining records");
+                break;
+              }
             } catch (LDAPException ex) {
                 throw new DataAccessException("Ldap failure.\n" + ex);
             }
@@ -284,6 +292,7 @@ public class UserImpl implements UserDAO {
             user.setCreateDate(createTime);
             user.setArn(entry.getAttribute(LDAPUtils.ARN).getStringValue());
             users.add(user);
+            ldapResultCount++;
         }
 
         User[] userList = new User[users.size()];
