@@ -21,6 +21,7 @@
 #include "s3_option.h"
 
 int s3log_level = S3_LOG_INFO;
+s3_fatal_log_handler s3_fatal_handler;
 
 int init_log(char *process_name) {
   S3Option *option_instance = S3Option::get_instance();
@@ -87,3 +88,4 @@ void fini_log() {
 }
 
 void flushall_log() { google::FlushLogFiles(google::GLOG_INFO); }
+

@@ -38,7 +38,10 @@ class S3Daemonize {
   void wait_for_termination();
   int delete_pidfile();
   void register_signals();
-  int get_s3daemon_chdir();
+
+  void set_fatal_handler_exit();
+  void set_fatal_handler_graceful();
+
   int get_s3daemon_redirection();
 };
 

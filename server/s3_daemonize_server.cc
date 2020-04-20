@@ -37,21 +37,12 @@
 extern evbase_t *global_evbase_handle;
 extern int global_shutdown_in_progress;
 
-static void s3_handle_glog_fatal_failure() { exit(1); }
-
-void s3_terminate_sig_handler(int signum) {
-  // When a daemon has been told to shutdown, there is a possibility of OS
-  // sending SIGTERM when s3server runs as service hence ignore subsequent
-  // SIGTERM signal.
-  struct sigaction sigterm_action = {0};
-  sigterm_action.sa_handler = SIG_IGN;
-  sigterm_action.sa_flags = 0;
-  sigaction(SIGTERM, &sigterm_action, NULL);
+static void s3_kickoff_graceful_shutdown(int ignore) {
+  if (!global_shutdown_in_progress) {
   global_shutdown_in_progress = 1;
   // glog does dynamic allocation, its not safe to call many functions within
   // signal handler
   // https://stackoverflow.com/questions/40049751/malloc-inside-linux-signal-handler-cause-deadlock
-
   S3Option *option_instance = S3Option::get_instance();
   int grace_period_sec = option_instance->get_s3_grace_period_sec();
   struct timeval loopexit_timeout = {.tv_sec = 0, .tv_usec = 0};
@@ -66,6 +57,20 @@ void s3_terminate_sig_handler(int signum) {
   // till loopexit_timeout (2 sec). After the timeout, all active events will be
   // served and then the event loop breaks.
   event_base_loopexit(global_evbase_handle, &loopexit_timeout);
+  }
+  return;
+}
+
+void s3_terminate_sig_handler(int signum) {
+  // When a daemon has been told to shutdown, there is a possibility of OS
+  // sending SIGTERM when s3server runs as service hence ignore subsequent
+  // SIGTERM signal.
+  struct sigaction sigterm_action = {0};
+  sigterm_action.sa_handler = SIG_IGN;
+  sigterm_action.sa_flags = 0;
+  sigaction(SIGTERM, &sigterm_action, NULL);
+
+  s3_kickoff_graceful_shutdown(1);
   return;
 }
 
@@ -123,6 +128,12 @@ S3Daemonize::S3Daemonize() : noclose(0) {
   pidfilename = option_instance->get_s3_pidfile();
 }
 
+void S3Daemonize::set_fatal_handler_exit() { s3_fatal_handler = exit; }
+
+void S3Daemonize::set_fatal_handler_graceful() {
+  s3_fatal_handler = s3_kickoff_graceful_shutdown;
+}
+
 void S3Daemonize::daemonize() {
   int rc;
   std::string daemon_wd;
@@ -144,7 +155,7 @@ void S3Daemonize::daemonize() {
   // Remove the surrounding angle brackets <>
   process_fid.erase(0, 1);
   process_fid.erase(process_fid.size() - 1);
-  google::InstallFailureFunction(&s3_handle_glog_fatal_failure);
+
   daemon_wd = option_instance->get_daemon_dir() + "/s3server-" + process_fid;
   if (access(daemon_wd.c_str(), F_OK) != 0) {
     s3_log(S3_LOG_FATAL, "", "The directory %s doesn't exist, errno = %d\n",

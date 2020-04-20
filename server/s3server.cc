@@ -647,12 +647,13 @@ int main(int argc, char **argv) {
         new S3PerfLogger(g_option_instance->get_perf_log_filename()));
 
     if (!S3PerfLogger::is_enabled()) {
-      s3_log(S3_LOG_FATAL, "",
-             "An initialization of a performance logger failed!\n");
+      s3_log(S3_LOG_ERROR, "", "Initialization of performance logger failed\n");
+      exit(1);
     }
   }
 
   S3Daemonize s3daemon;
+  s3daemon.set_fatal_handler_exit();
   s3daemon.daemonize();
   s3daemon.register_signals();
 
@@ -996,6 +997,9 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Could not init perf metrics: %s\n",
            strerror(-rc));
   }
+
+  /* Set the fatal handler */
+  s3daemon.set_fatal_handler_graceful();
 
   // new flag in Libevent 2.1
   // EVLOOP_NO_EXIT_ON_EMPTY tells event_base_loop()

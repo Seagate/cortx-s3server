@@ -169,7 +169,6 @@ class S3Option {
   unsigned short statsd_max_send_retry;
   std::string stats_whitelist_filename;
   uint32_t perf_stats_inout_bytes_interval_msec;
-
   evbase_t* eventbase;
 
   static S3Option* option_instance;

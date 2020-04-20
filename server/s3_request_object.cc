@@ -175,7 +175,6 @@ void S3RequestObject::populate_and_log_audit_info() {
   if (audit_log_obj.get_publish_flag()) {
   if (S3AuditInfoLogger::save_msg(request_id, audit_log_obj.to_string()) < 0) {
     s3_log(S3_LOG_FATAL, request_id, "Audit Logger Error. STOP Server");
-    exit(1);
   }
   }
   s3_log(S3_LOG_DEBUG, request_id, "Exiting");

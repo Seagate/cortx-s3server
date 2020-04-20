@@ -39,6 +39,9 @@
 
 const char S3_DEFAULT_REQID[] = "-";
 
+typedef void (*s3_fatal_log_handler)(int);
+extern s3_fatal_log_handler s3_fatal_handler;
+
 extern int s3log_level;
 
 inline const char* s3_log_get_req_id(const char* requestid) {
@@ -53,14 +56,14 @@ inline const char* s3_log_get_req_id(const std::string& requestid) {
 #define s3_log_msg_S3_LOG_INFO(p) (LOG(INFO) << (p))
 #define s3_log_msg_S3_LOG_WARN(p) (LOG(WARNING) << (p))
 #define s3_log_msg_S3_LOG_ERROR(p) (LOG(ERROR) << (p))
-#define s3_log_msg_S3_LOG_FATAL(p) (LOG(FATAL) << (p))
+#define s3_log_msg_S3_LOG_FATAL(p) (LOG(ERROR) << (p))
 
 // Note:
 // 1. Google glog doesn't have a separate severity level for DEBUG logs.
 //    So we map our DEBUG logs to INFO level. This level promotion happens
 //    only if S3 log level is set to DEBUG.
 // 2. Logging a FATAL message terminates the program (after the message is
-//    logged).
+//    logged).so demote it to ERROR
 #define s3_log(loglevel, requestid, fmt, ...)                             \
   do {                                                                    \
     if (loglevel >= s3log_level) {                                        \
@@ -74,6 +77,9 @@ inline const char* s3_log_get_req_id(const std::string& requestid) {
         s3_log_msg_##loglevel(s3_log_msg__);                              \
         free(s3_log_msg__);                                               \
       }                                                                   \
+    }                                                                     \
+    if (loglevel >= S3_LOG_FATAL) {                                       \
+      s3_fatal_handler(1);                                                \
     }                                                                     \
   } while (0)
 
