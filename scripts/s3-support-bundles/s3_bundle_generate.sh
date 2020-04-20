@@ -188,22 +188,25 @@ fi
 
 ## Collect LDAP data
 mkdir -p $ldap_dir
-
-# Fetch ldap root DN password and ldap password
+# Fetch ldap root DN password from provisioning else use default
+set +e
+rootdnpasswd=""
 if rpm -q "salt"  > /dev/null;
 then
-    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret)
-    rootdnpasswd=$(echo $rootdnpasswd | tr -d ' ')
-    rootdnpasswd=${rootdnpasswd/*:/}
-else
+    rootdnpasswd=$(salt-call pillar.get openldap:admin:secret --output=newline_values_only)
+    rootdnpasswd=$(salt-call lyveutil.decrypt ${rootdnpasswd} openldap --output=newline_values_only)
+fi
+
+if [[ -z "$rootdnpasswd" ]]
+then
     rootdnpasswd="seagate"
 fi
 
 # Run ldap commands
-ldapsearch -b "cn=config" -x -w $rootdnpasswd -D "cn=admin,cn=config" > $ldap_config  2>&1
-ldapsearch -s base -b "cn=subschema" objectclasses -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" > $ldap_subschema  2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -LLL ldapentrycount > $ldap_accounts 2>&1
-ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -LLL ldapentrycount > $ldap_users  2>&1
+ldapsearch -b "cn=config" -x -w $rootdnpasswd -D "cn=admin,cn=config" -H ldapi:/// > $ldap_config  2>&1
+ldapsearch -s base -b "cn=subschema" objectclasses -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" -H ldapi:/// > $ldap_subschema  2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=Account" -H ldapi:/// -LLL ldapentrycount > $ldap_accounts 2>&1
+ldapsearch -b "ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $rootdnpasswd -D "cn=admin,dc=seagate,dc=com" "objectClass=iamUser" -H ldapi:/// -LLL ldapentrycount > $ldap_users  2>&1
 
 if [ -f "$ldap_config" ];
 then
