@@ -41,9 +41,7 @@ class S3ObjectListResponse {
   std::vector<std::shared_ptr<S3ObjectMetadata>> object_list;
   std::map<int, std::shared_ptr<S3PartMetadata>> part_list;
 
-  // We use unordered for performance as the keys are already
-  // in sorted order as stored in clovis-kv (cassandra).
-  std::unordered_set<std::string> common_prefixes;
+  std::set<std::string> common_prefixes;
 
   // Generated xml response.
   std::string request_prefix;
