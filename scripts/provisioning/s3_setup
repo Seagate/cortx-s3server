@@ -55,6 +55,7 @@ setup_jenkins_yum_repo=false
 setup_s3backgrounddelete=false
 is_rabbitmq_clustered=false
 cleanup_accounts=false
+cleanup_dependencies=false
 
 if [ $# -lt 1 ]
 then
@@ -97,6 +98,7 @@ do
         ;;
     --cleanup )
         cleanup_accounts=true
+        cleanup_dependencies=true
         ;;
     --help | -h )
         echo "$USAGE"
@@ -377,3 +379,11 @@ then
     echo "Deleting the s3background delete account"
     delete_background_delete_account
 fi
+
+# Clean up s3 dependencies
+if [[ $cleanup_dependencies == true ]]
+then
+    echo "removing s3 dependencies"
+    yum -y remove log4cxx_eos || echo ""
+fi
+
