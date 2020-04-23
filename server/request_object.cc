@@ -41,6 +41,18 @@ uint64_t RequestObject::addb_request_id_gc = S3_ADDB_FIRST_GENERIC_REQUESTS_ID;
 extern "C" int consume_header(evhtp_kv_t* kvobj, void* arg) {
   RequestObject* request = (RequestObject*)arg;
   request->in_headers_copy[kvobj->key] = kvobj->val ? kvobj->val : "";
+  if (kvobj->key != NULL) {
+    request->header_size += strlen(kvobj->key);
+    if (strncasecmp(kvobj->key, "x-amz-meta-", strlen("x-amz-meta-")) == 0) {
+      request->user_metadata_size += strlen(kvobj->key);
+    }
+  }
+  if (kvobj->val != NULL) {
+    request->header_size += strlen(kvobj->val);
+    if (strncasecmp(kvobj->key, "x-amz-meta-", strlen("x-amz-meta-")) == 0) {
+      request->user_metadata_size += strlen(kvobj->val);
+    }
+  }
   return 0;
 }
 
@@ -93,6 +105,8 @@ RequestObject::RequestObject(
       notify_read_watermark(0),
       total_bytes_received(0),
       bytes_sent(0),
+      header_size(0),
+      user_metadata_size(0),
       is_client_connected(true),
       ignore_incoming_data(false),
       is_chunked_upload(false),

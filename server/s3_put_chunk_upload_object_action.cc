@@ -109,6 +109,8 @@ void S3PutChunkUploadObjectAction::setup_steps() {
     ACTION_TASK_ADD(
         S3PutChunkUploadObjectAction::validate_x_amz_tagging_if_present, this);
   }
+  ACTION_TASK_ADD(S3PutChunkUploadObjectAction::validate_put_chunk_request,
+                  this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::create_object, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::initiate_data_streaming, this);
   ACTION_TASK_ADD(S3PutChunkUploadObjectAction::save_metadata, this);
@@ -291,6 +293,26 @@ void S3PutChunkUploadObjectAction::fetch_object_info_success() {
     send_response_to_s3_client();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PutChunkUploadObjectAction::validate_put_chunk_request() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
+    s3_put_chunk_action_state =
+        S3PutChunkUploadObjectActionState::validationFailed;
+    set_s3_error("KeyTooLongError");
+    send_response_to_s3_client();
+  } else if (request->get_header_size() > MAX_HEADER_SIZE ||
+             request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
+    s3_put_chunk_action_state =
+        S3PutChunkUploadObjectActionState::validationFailed;
+    set_s3_error("BadRequest");
+    send_response_to_s3_client();
+  } else {
+    next();
+  }
+  s3_log(S3_LOG_DEBUG, nullptr, "Exiting\n");
 }
 
 void S3PutChunkUploadObjectAction::create_object() {

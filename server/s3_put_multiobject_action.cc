@@ -81,7 +81,7 @@ S3PutMultiObjectAction::S3PutMultiObjectAction(
 void S3PutMultiObjectAction::setup_steps() {
   s3_log(S3_LOG_DEBUG, request_id, "Setting up the action\n");
 
-  ACTION_TASK_ADD(S3PutMultiObjectAction::check_part_number, this);
+  ACTION_TASK_ADD(S3PutMultiObjectAction::check_part_details, this);
   ACTION_TASK_ADD(S3PutMultiObjectAction::fetch_multipart_metadata, this);
   if (part_number == 1) {
     // Save first part size to multipart metadata in case of non
@@ -107,15 +107,21 @@ void S3PutMultiObjectAction::setup_steps() {
   // ...
 }
 
-void S3PutMultiObjectAction::check_part_number() {
+void S3PutMultiObjectAction::check_part_details() {
   // "Part numbers can be any number from 1 to 10,000, inclusive."
   // https://docs.aws.amazon.com/en_us/AmazonS3/latest/API/API_UploadPart.html
-  if (part_number >= MINIMUM_PART_NUMBER &&
-      part_number <= MAXIMUM_PART_NUMBER) {
-    next();
-  } else {
+  if (part_number < MINIMUM_PART_NUMBER || part_number > MAXIMUM_PART_NUMBER) {
     set_s3_error("InvalidPart");
     send_response_to_s3_client();
+  } else if (request->get_header_size() > MAX_HEADER_SIZE ||
+             request->get_user_metadata_size() > MAX_USER_METADATA_SIZE) {
+    set_s3_error("BadRequest");
+    send_response_to_s3_client();
+  } else if ((request->get_object_name()).length() > MAX_OBJECT_KEY_LENGTH) {
+    set_s3_error("KeyTooLongError");
+    send_response_to_s3_client();
+  } else {
+    next();
   }
 }
 

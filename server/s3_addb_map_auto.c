@@ -24,7 +24,7 @@
 
 #include "s3_addb_map.h"
 
-const uint64_t g_s3_to_addb_idx_func_name_map_size = 189;
+const uint64_t g_s3_to_addb_idx_func_name_map_size = 190;
 
 const char* g_s3_to_addb_idx_func_name_map[] = {
     "Action::check_authentication",
@@ -181,11 +181,12 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutChunkUploadObjectAction::remove_old_oid_probable_record",
     "S3PutChunkUploadObjectAction::save_metadata",
     "S3PutChunkUploadObjectAction::send_response_to_s3_client",
+    "S3PutChunkUploadObjectAction::validate_put_chunk_request",
     "S3PutChunkUploadObjectAction::validate_x_amz_tagging_if_present",
     "S3PutChunkUploadObjectActionTestBase::func_callback_one",
     "S3PutFiAction::send_response_to_s3_client",
     "S3PutFiAction::set_fault_injection",
-    "S3PutMultiObjectAction::check_part_number",
+    "S3PutMultiObjectAction::check_part_details",
     "S3PutMultiObjectAction::compute_part_offset",
     "S3PutMultiObjectAction::fetch_firstpart_info",
     "S3PutMultiObjectAction::fetch_multipart_metadata",
@@ -208,7 +209,7 @@ const char* g_s3_to_addb_idx_func_name_map[] = {
     "S3PutObjectAction::remove_old_oid_probable_record",
     "S3PutObjectAction::save_metadata",
     "S3PutObjectAction::send_response_to_s3_client",
-    "S3PutObjectAction::validate_object_key_len",
+    "S3PutObjectAction::validate_put_request",
     "S3PutObjectAction::validate_x_amz_tagging_if_present",
     "S3PutObjectActionTest::func_callback_one",
     "S3PutObjectTaggingAction::save_tags_to_object_metadata",

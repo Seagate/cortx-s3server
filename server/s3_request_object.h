@@ -67,6 +67,8 @@ class S3RequestObject : public RequestObject {
   virtual ~S3RequestObject();
   void set_api_type(S3ApiType apitype);
   virtual S3ApiType get_api_type();
+  virtual size_t get_header_size() { return header_size; }
+  virtual size_t get_user_metadata_size() { return user_metadata_size; }
   void set_operation_code(S3OperationCode operation_code);
   virtual S3OperationCode get_operation_code();
   virtual void populate_and_log_audit_info();

@@ -33,6 +33,10 @@
 #include "s3_log.h"
 #include "s3_object_metadata.h"
 
+#define MAX_OBJECT_KEY_LENGTH 1024
+#define MAX_HEADER_SIZE 8192
+#define MAX_USER_METADATA_SIZE 2048
+
 // Derived Action Objects will have steps (member functions)
 // required to complete the action.
 // All member functions should perform an async operation as

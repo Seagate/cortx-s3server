@@ -184,7 +184,7 @@ TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase) {
   EXPECT_CALL(*ptr_mock_request, get_object_name())
       .WillOnce(ReturnRef(object_name));
 
-  action_under_test->validate_object_key_len();
+  action_under_test->validate_put_request();
 
   EXPECT_STRNE("KeyTooLongError",
                action_under_test->get_s3_error_code().c_str());
@@ -194,10 +194,27 @@ TEST_F(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase) {
   EXPECT_CALL(*ptr_mock_request, get_object_name())
       .WillOnce(ReturnRef(OBJECT_KEY_LENGTH_MORE_THAN_1_KB));
 
-  action_under_test->validate_object_key_len();
+  action_under_test->validate_put_request();
 
   EXPECT_STREQ("KeyTooLongError",
                action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase) {
+  EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
+      ReturnRef(object_name));
+  EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(9000));
+  action_under_test->validate_put_request();
+  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase) {
+  EXPECT_CALL(*ptr_mock_request, get_object_name()).Times(AtLeast(1)).WillOnce(
+      ReturnRef(object_name));
+  EXPECT_CALL(*ptr_mock_request, get_user_metadata_size())
+      .WillOnce(Return(3000));
+  action_under_test->validate_put_request();
+  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutObjectActionTest, ValidateRequestTags) {

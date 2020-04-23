@@ -90,6 +90,8 @@ class RequestObject {
   size_t pending_in_flight;      // Total data yet to consume by observer.
   size_t total_bytes_received;
   size_t bytes_sent;
+  size_t header_size;
+  size_t user_metadata_size;
   std::string http_version;
   std::shared_ptr<S3AsyncBufferOptContainer> buffered_input;
 

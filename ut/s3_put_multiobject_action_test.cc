@@ -35,6 +35,23 @@ using ::testing::AtLeast;
 using ::testing::DefaultValue;
 using ::testing::HasSubstr;
 
+#define OBJECT_KEY_LENGTH_MORE_THAN_1_KB                                       \
+  "vaxsfhwmbuegarlllxjyppqbzewahzdgnykqcbmjnezicblmveddlnvuejvxtjkogpqmnexvpi" \
+  "aqufqsxozqzsxxtmmlnukpfnpvtepdxvxqmnwnsceaujybilbqwwhhofxhlbvqeqbcbbagijtg" \
+  "emhhfudggqdwpowidypjvxwwjayhghicnwupyritzpoobtwsbhihvzxnqlycpdwomlswvsvvvv" \
+  "puhlfvhckzyazsvqvrubobhlrajnytsvhnboykzzdjtvzxsacdjawgztgqgesyxgyugmfwwoxi" \
+  "aksrdtbiudlppssyoylbtazbsfvaxcysnetayhkpbtegvdxyowxfofnrkigayqtateseujcngr" \
+  "rpfkqypqehvezuoxaqxonlxagmvbbaujjgvnhzvcgasuetslydhvxgttepjmxszczjcvsgrgjk" \
+  "hedysupjtrcvtwhhgudpjgtmtrsmusucjtmzqejpfvmzsvjshkzzhtmdowgowvzwiqdhthsdbs" \
+  "nxyhapevigrtvhbzpylibfxpfoxiwoyqfyzxskefjththojqgglhmhbzhluyoycxjuwbnkdhms" \
+  "stycomxqzvvpvvkzoxhwvmpbwldqcrpsbpwrozymppbnnewmmmrxdxjqthetmfvjpeldndmomd" \
+  "udinwjiixsidcxpbacrtlwmgaljzaglsjcbfnsfqyiawieycdvdhatwzcbypcyfsnpeuxmiugs" \
+  "desnxhwywgtopqfbkxbpewohuecyneojfeksgukhsxalqxwzitszilqchkdokgaakogpswctds" \
+  "uybydalwzznotdvmynxlkomxfeplorgzkvveuslhmmnyeufsjqkzoomzdfvaaaxzykmgcmqdqx" \
+  "itjtmpkriwtihthlewlebaiekhzjctlnlwqrgwwhjulqkjfdsxhkxjyrahmmnqvyslxcbcuzob" \
+  "mbwxopritmxzjtvnqbszdhfftmfedpxrkiktorpvibtcoatvkvpqvevyhsscoxshpbwjhzfwmv" \
+  "ccvbjrnjfkchbrvgctwxhfaqoqhm"
+
 //++
 // Many of the test cases here taken directly from
 // s3_put_chunk_upload_object_action_test.cc
@@ -275,7 +292,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3PutMultipartObjectActionTest::func_callback_one,
                          this);
-  action_under_test->check_part_number();
+  action_under_test->check_part_details();
   EXPECT_STREQ("InvalidPart", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);
 
@@ -284,7 +301,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3PutMultipartObjectActionTest::func_callback_one,
                          this);
-  action_under_test->check_part_number();
+  action_under_test->check_part_details();
   EXPECT_STREQ("InvalidPart", action_under_test->get_s3_error_code().c_str());
   EXPECT_EQ(0, call_count_one);
 
@@ -293,7 +310,7 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3PutMultipartObjectActionTest::func_callback_one,
                          this);
-  action_under_test->check_part_number();
+  action_under_test->check_part_details();
   EXPECT_EQ(1, call_count_one);
 
   action_under_test->part_number = MAXIMUM_PART_NUMBER;
@@ -301,8 +318,35 @@ TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
   ACTION_TASK_ADD_OBJPTR(action_under_test,
                          S3PutMultipartObjectActionTest::func_callback_one,
                          this);
-  action_under_test->check_part_number();
+  action_under_test->check_part_details();
   EXPECT_EQ(2, call_count_one);
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+       ValidateObjectKeyLengthNegativeCase) {
+  action_under_test->part_number = MINIMUM_PART_NUMBER;
+  EXPECT_CALL(*ptr_mock_request, get_object_name())
+      .WillOnce(ReturnRef(OBJECT_KEY_LENGTH_MORE_THAN_1_KB));
+
+  action_under_test->check_part_details();
+
+  EXPECT_STREQ("KeyTooLongError",
+               action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+       ValidateMetadataLengthNegativeCase) {
+  EXPECT_CALL(*ptr_mock_request, get_header_size()).WillOnce(Return(9000));
+  action_under_test->check_part_details();
+  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
+}
+
+TEST_F(S3PutMultipartObjectActionTestNoMockAuth,
+       ValidateUserMetadataLengthNegativeCase) {
+  EXPECT_CALL(*ptr_mock_request, get_user_metadata_size())
+      .WillOnce(Return(3000));
+  action_under_test->check_part_details();
+  EXPECT_STREQ("BadRequest", action_under_test->get_s3_error_code().c_str());
 }
 
 TEST_F(S3PutMultipartObjectActionTestNoMockAuth,

@@ -122,6 +122,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void initiate_data_streaming();
   void consume_incoming_content();
   void validate_x_amz_tagging_if_present();
+  void validate_put_chunk_request();
   void write_object(std::shared_ptr<S3AsyncBufferOptContainer> buffer);
 
   void write_object_successful();
