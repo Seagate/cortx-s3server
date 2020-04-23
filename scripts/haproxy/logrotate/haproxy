@@ -1,5 +1,7 @@
 /var/log/haproxy.log
 /var/log/haproxy-status.log
+# Audit log rotation needs provisioner fixes. Currently done using haproxy conf.
+/var/log/seagate/s3/audit/audit.log
 {
     daily
     rotate 10
