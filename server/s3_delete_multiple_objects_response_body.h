@@ -93,12 +93,20 @@ class S3DeleteMultipleObjectsResponseBody {
 
   size_t get_failure_count() { return error.size(); }
 
-  std::string& to_xml() {
+  std::string& to_xml(bool quiet_mode = false) {
+    response_xml = "";
+    if (quiet_mode && get_failure_count() == 0) {
+      return response_xml;
+    }
+
     response_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     response_xml +=
         "<DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
-    for (auto sitem : success) {
-      response_xml += sitem.to_xml();
+
+    if (!quiet_mode) {
+      for (auto sitem : success) {
+        response_xml += sitem.to_xml();
+      }
     }
     for (auto eitem : error) {
       response_xml += eitem.to_xml();
@@ -106,6 +114,8 @@ class S3DeleteMultipleObjectsResponseBody {
     response_xml += "</DeleteResult>";
     return response_xml;
   }
+
+  FRIEND_TEST(S3DeleteMultipleObjectsResponseBodyTest, ConstructorTest);
 };
 
 #endif

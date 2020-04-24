@@ -22,6 +22,7 @@
 #include "mock_s3_clovis_wrapper.h"
 #include "mock_s3_factory.h"
 #include "s3_delete_multiple_objects_action.h"
+#include "s3_delete_multiple_objects_response_body.h"
 #include "s3_error_codes.h"
 #include "s3_test_utils.h"
 #include "s3_ut_common.h"
@@ -145,6 +146,14 @@ class S3DeleteMultipleObjectsActionTest : public testing::Test {
 
  public:
   void func_callback_one() { call_count_one += 1; }
+};
+
+class S3DeleteMultipleObjectsResponseBodyTest : public testing::Test {
+ protected:
+  S3DeleteMultipleObjectsResponseBodyTest() {
+    action_under_test.reset(new S3DeleteMultipleObjectsResponseBody());
+  }
+  std::shared_ptr<S3DeleteMultipleObjectsResponseBody> action_under_test;
 };
 
 TEST_F(S3DeleteMultipleObjectsActionTest, ConstructorTest) {
@@ -738,3 +747,63 @@ TEST_F(S3DeleteMultipleObjectsActionTest, CleanupOnMetadataSavedTest2) {
   action_under_test->cleanup();
 }
 
+TEST_F(S3DeleteMultipleObjectsResponseBodyTest, ConstructorTest) {
+  EXPECT_EQ(0, action_under_test->success.size());
+  EXPECT_EQ(0, action_under_test->error.size());
+}
+
+TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AtleastOneFailedQuietModeOn) {
+  action_under_test->add_success("S_Key1");
+  action_under_test->add_success("S_Key2");
+  action_under_test->add_failure("F_Key3", "InternalError");
+  ErrorDeleteKey fail_key("F_Key3", "InternalError", "");
+
+  std::string expect_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  expect_xml +=
+      "<DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+  expect_xml += fail_key.to_xml();
+  expect_xml += "</DeleteResult>";
+  std::string &response_xml = action_under_test->to_xml(true);
+  // Verify 'response_xml' matches 'expect_xml'
+  EXPECT_STREQ(expect_xml.c_str(), response_xml.c_str());
+}
+
+TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AllSucessQuietModeOn) {
+  action_under_test->add_success("S_Key1");
+  action_under_test->add_success("S_Key2");
+  std::string &response_xml = action_under_test->to_xml(true);
+  // Verify 'response_xml' is empty
+  EXPECT_STREQ("", response_xml.c_str());
+}
+
+TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AtleastOneFailedQuietModeOff) {
+  action_under_test->add_success("S_Key1");
+  action_under_test->add_failure("F_Key1", "InternalError");
+  SuccessDeleteKey success_key("S_Key1");
+  ErrorDeleteKey fail_key("F_Key1", "InternalError", "");
+
+  std::string expect_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  expect_xml +=
+      "<DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+  expect_xml += success_key.to_xml();
+  expect_xml += fail_key.to_xml();
+  expect_xml += "</DeleteResult>";
+  std::string &response_xml = action_under_test->to_xml(false);
+  // Verify 'response_xml' matches 'expect_xml'
+  EXPECT_STREQ(expect_xml.c_str(), response_xml.c_str());
+}
+
+TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AllSucessQuietModeOff) {
+  action_under_test->add_success("S_Key1");
+  SuccessDeleteKey success_key("S_Key1");
+
+  std::string expect_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  expect_xml +=
+      "<DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">";
+  expect_xml += success_key.to_xml();
+  expect_xml += "</DeleteResult>";
+
+  std::string &response_xml = action_under_test->to_xml(false);
+  // Verify 'response_xml' matches 'expect_xml'
+  EXPECT_STREQ(expect_xml.c_str(), response_xml.c_str());
+}

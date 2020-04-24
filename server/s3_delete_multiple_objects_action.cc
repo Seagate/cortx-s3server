@@ -406,7 +406,8 @@ void S3DeleteMultipleObjectsAction::send_response_to_s3_client() {
 
     request->send_response(error.get_http_status_code(), response_xml);
   } else {
-    std::string& response_xml = delete_objects_response.to_xml();
+    std::string& response_xml =
+        delete_objects_response.to_xml(delete_request.is_quiet());
 
     request->set_out_header_value("Content-Length",
                                   std::to_string(response_xml.length()));
