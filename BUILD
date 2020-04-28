@@ -5,7 +5,6 @@ cc_binary(
     #                         --define MERO_INC=<mero headers path>
     #                         --define MERO_LIB=<mero lib path>
     #                         --define MERO_HELPERS_LIB=<mero helpers lib path>
-    #                         --define MERO_EXTRA_LIB=<mero extra lib path>
     # To build s3server with debug symbols (to be able to analyze core files,
     # or to run under GDB) add the following option to the command line
     # arguments listed above:
@@ -26,6 +25,7 @@ cc_binary(
       # Do NOT change the order of strings in below line
       "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
       "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2",
+      MERO_DYNAMIC_INCLUDES,
       "-fno-common", "-Wall", "-Wno-attributes", "-fno-strict-aliasing",
       "-fno-omit-frame-pointer", "-Werror", "-ggdb3", "-O3", "-DNDEBUG",
     ],
@@ -45,11 +45,10 @@ cc_binary(
       "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_HELPERS_LIB)",
-      "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers MERO_LINK_LIB -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgflags -lhiredis",
       "-pthread -lglog",
       "-Wl,-rpath,/opt/seagate/s3/libevent",
@@ -62,7 +61,6 @@ cc_test(
     #                     --define MERO_INC=<mero headers path>
     #                     --define MERO_LIB=<mero lib path>
     #                     --define MERO_HELPERS_LIB=<mero helpers lib path>
-    #                     --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "s3ut",
 
@@ -78,7 +76,7 @@ cc_test(
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-I/usr/include/libxml2",
+      "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
     ],
 
     includes = [
@@ -94,11 +92,10 @@ cc_test(
       "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_HELPERS_LIB)",
-      "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt -lmero -lmero-helpers -laio",
+      "-lpthread -ldl -lm -lrt MERO_LINK_LIB -lmero-helpers -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -115,7 +112,6 @@ cc_test(
     #                               --define MERO_INC=<mero headers path>
     #                               --define MERO_LIB=<mero lib path>
     #                               --define MERO_HELPERS_LIB=<mero helpers lib path>
-    #                               --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "s3utdeathtests",
 
@@ -131,7 +127,7 @@ cc_test(
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-I/usr/include/libxml2",
+      "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
     ],
 
     includes = [
@@ -148,11 +144,10 @@ cc_test(
       "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_HELPERS_LIB)",
-      "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers MERO_LINK_LIB -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -190,7 +185,6 @@ cc_binary(
     #                             --define MERO_INC=<mero headers path>
     #                             --define MERO_LIB=<mero lib path>
     #                             --define MERO_HELPERS_LIB=<mero helpers lib path>
-    #                             --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "cloviskvscli",
 
@@ -215,8 +209,7 @@ cc_binary(
       "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_HELPERS_LIB)",
-      "-L$(MERO_EXTRA_LIB)",
-      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers MERO_LINK_LIB -laio",
       "-lgflags",
       "-pthread -lglog",
     ],
@@ -248,7 +241,6 @@ cc_test(
     #                     --define MERO_INC=<mero headers path>
     #                     --define MERO_LIB=<mero lib path>
     #                     --define MERO_HELPERS_LIB=<mero helpers lib path>
-    #                     --define MERO_EXTRA_LIB=<mero extra lib path>
 
     name = "s3mempoolmgrut",
 
@@ -264,7 +256,7 @@ cc_test(
       "-DM0_EXTERN=extern", "-pie", "-Wno-attributes", "-O3", "-Werror",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-I/usr/include/libxml2",
+      "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
     ],
 
     includes = [
@@ -280,11 +272,10 @@ cc_test(
       "-rdynamic",
       "-L$(MERO_LIB)",
       "-L$(MERO_HELPERS_LIB)",
-      "-L$(MERO_EXTRA_LIB)",
       "-Lthird_party/libevent/s3_dist/lib/",
       "-Lthird_party/libevhtp/s3_dist/lib",
       "-levhtp -levent -levent_pthreads -levent_openssl -lssl -lcrypto -llog4cxx",
-      "-lpthread -ldl -lm -lrt -lmero-helpers -lmero -laio",
+      "-lpthread -ldl -lm -lrt -lmero-helpers MERO_LINK_LIB -laio",
       "-lyaml -lyaml-cpp -luuid -pthread -lxml2 -lgtest -lgmock -lgflags",
       "-pthread -lglog -lhiredis",
       "-Wl,-rpath,third_party/libevent/s3_dist/lib",
@@ -296,7 +287,6 @@ cc_library(
     # bazel build //:s3addbplugin --define MERO_INC=<mero headers path>
     #                             --define MERO_LIB=<mero lib path>
     #                             --define MERO_HELPERS_LIB=<mero helpers lib path>
-    #                             --define MERO_EXTRA_LIB=<mero extra lib path>
     # To build with debug symbols (to be able to analyze core files,
     # or to run under GDB) add the following option to the command line
     # arguments listed above:
@@ -315,7 +305,7 @@ cc_library(
       "-D_GNU_SOURCE", "-DM0_INTERNAL=", "-DM0_EXTERN=extern",
       # Do NOT change the order of strings in below line
       "-iquote", "$(MERO_INC)", "-isystem", "$(MERO_INC)",
-      "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2",
+      "-iquote", ".", "-include", "config.h", "-I/usr/include/libxml2", MERO_DYNAMIC_INCLUDES,
       "-iquote", "server/", "-fno-common", "-Wall", "-Wno-attributes",
       "-fno-strict-aliasing", "-fno-omit-frame-pointer", "-Werror", "-ggdb3",
       "-O3", "-DNDEBUG",
@@ -325,4 +315,3 @@ cc_library(
       "$(MERO_INC)",
     ],
 )
-

@@ -33,6 +33,81 @@ usage() {
   echo '          --help (-h)                : Display help'
 }
 
+declare -a dev_includes_array
+declare -a dev_lib_search_paths_array
+declare -a rpm_includes_array
+declare -a rpm_lib_search_paths_array
+
+declare -a link_libs_array
+
+# Example cmd run and output
+# CMD: PKG_CONFIG_PATH=./third_party/mero pkg-config --cflags-only-I mero
+# OUTPUT: -I/root/s3server/third_party/mero -I/root/s3server/third_party/mero/extra-libs/gf-complete/include -I/usr/src/lustre-client-2.12.3/libcfs/include \
+# -I/usr/src/lustre-client-2.12.3/lnet/include -I/usr/src/lustre-client-2.12.3/lnet/include/uapi/linux -I/usr/src/lustre-client-2.12.3/lustre/include \
+# -I/usr/src/lustre-client-2.12.3/lustre/include/uapi/linux
+#
+# CMD: PKG_CONFIG_PATH=./third_party/mero pkg-config --libs mero
+# OUTPUT: -L/root/s3server/third_party/mero/mero/.libs -lmero
+#
+get_mero_pkg_config_dev() {
+  s3_src_dir=$1
+  includes=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --cflags-only-I mero)
+  for include in $includes
+  do
+    if [[ "$include" == *"third_party"* ]] # exclude other paths
+    then
+      inc_path=$(echo $include | sed 's/^.*third_party/\/third_party/')
+      dev_includes_array+=( $inc_path )
+    fi
+  done
+  #printf '%s\t\n' "${dev_includes_array[@]}"
+  libs=$(PKG_CONFIG_PATH=$s3_src_dir/third_party/mero pkg-config --libs mero)
+  for lib in $libs
+  do
+    if [[ "$lib" == *"third_party"* ]] # this is 'L' part
+    then
+      lib_path=$(echo $lib | sed 's/^.*third_party/\/third_party/')
+      dev_lib_search_paths_array+=( $lib_path )
+    elif [[ ${lib:0:2} == '-l' ]]
+    then
+      link_libs_array+=( $lib )
+    fi
+  done
+}
+
+# Example cmd run and output
+# CMD: pkg-config --cflags-only-I mero
+# OUTPUT: -I/usr/include/mero -I/usr/src/lustre-client-2.12.3/libcfs/include -I/usr/src/lustre-client-2.12.3/lnet/include \
+# -I/usr/src/lustre-client-2.12.3/lnet/include/uapi/linux -I/usr/src/lustre-client-2.12.3/lustre/include \
+# -I/usr/src/lustre-client-2.12.3/lustre/include/uapi/linux \
+#
+# CMD: pkg-config --libs mero
+# OUTPUT: -lmero
+get_mero_pkg_config_rpm() {
+  includes=$(pkg-config --cflags-only-I mero)
+  for include in $includes
+  do
+    if [[ "$include" != *"lustre-client"* ]] # exclude include paths from 'lustre-client*'
+    then
+      inc_path=${include#"-I"}
+      rpm_includes_array+=( $inc_path )
+    fi
+  done
+  #printf '%s\t\n' "${rpm_includes_array[@]}"
+
+  libs=$(pkg-config --libs mero)
+  for lib in $libs
+  do
+    if [[ ${lib:0:2} == '-L' ]] # this is 'L' part
+    then
+      rpm_lib_search_paths_array+=( $lib )
+    elif [[ ${lib:0:2} == '-l' ]]
+    then
+      link_libs_array+=( $lib )
+    fi
+  done
+}
+
 # read the options
 OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
@@ -95,21 +170,9 @@ fi
 S3_SRC_DIR=`pwd`
 BUILD_CACHE_DIR=$HOME/.seagate_src_cache
 
-# Define the paths
-if [ $no_mero_rpm -eq 1 ]
-then
-  # use mero libs from source code (built location or cache)
-  MERO_INC_="MERO_INC=./third_party/mero/"
-  MERO_LIB_="MERO_LIB=./third_party/mero/mero/.libs/"
-  MERO_HELPERS_LIB_="MERO_HELPERS_LIB=./third_party/mero/helpers/.libs/"
-  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=./third_party/mero/extra-libs/gf-complete/src/.libs/"
-else
-  # use mero libs from pre-installed mero rpm location
-  MERO_INC_="MERO_INC=/usr/include/mero/"
-  MERO_LIB_="MERO_LIB=/usr/lib64/"
-  MERO_HELPERS_LIB_="MERO_HELPERS_LIB=/usr/lib64/"
-  MERO_EXTRA_LIB_="MERO_EXTRA_LIB=/usr/lib64/"
-fi
+# Used to store mero include paths which are read from 'pkg-config --cflags'
+mero_include_path="\"-I"
+declare MERO_LINK_LIB_
 
 # Build steps for third_party and mero
 if [ $no_mero_rpm -eq 0 ]
@@ -169,17 +232,85 @@ then
   fi
 fi
 
+# Define the paths
+if [ $no_mero_rpm -eq 1 ] # use mero libs from source code (built location or cache)
+then
+  MERO_INC_="MERO_INC=./third_party/mero/"
+
+  # set mero_include_path for 'copts' in BUILD file
+  get_mero_pkg_config_dev $S3_SRC_DIR
+  for path in "${dev_includes_array[@]}"
+  do
+    mero_include_path=$mero_include_path"."$path"\", \"-I"
+  done
+  # remove last ', "-I' # mero_include_path='"-I./third_party/mero", "-I./third_party/mero/extra-libs/gf-complete/include", \"-I'
+  mero_include_path=${mero_include_path%", \"-I"}
+
+  MERO_LIB_="MERO_LIB=."
+  for lib_path in "${dev_lib_search_paths_array[@]}"
+  do
+    MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
+  done
+  # remove last '\", -L.'
+  MERO_LIB_=${MERO_LIB_%"\", -L."}
+
+  for lib in "${link_libs_array[@]}"
+  do
+    MERO_LINK_LIB_=$lib" "
+  done
+  # remove last white space
+  MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
+
+  MERO_HELPERS_LIB_="MERO_HELPERS_LIB=./third_party/mero/helpers/.libs/"
+else
+  # use mero libs from pre-installed mero rpm location
+  get_mero_pkg_config_rpm
+  for path in "${rpm_includes_array[@]}"
+  do
+    mero_include_path=$mero_include_path$path"\", \"-I"
+  done
+  # remove last ', "-I'
+  mero_include_path=${mero_include_path%", \"-I"}
+
+  MERO_INC_="MERO_INC=/usr/include/mero/"
+  if [ ${#rpm_lib_search_paths_array[@]} -eq 0 ]
+  then
+    MERO_LIB_="MERO_LIB=/usr/lib64/"
+  else
+    MERO_LIB_="MERO_LIB=."
+    for lib_path in "${rpm_lib_search_paths_array[@]}"
+    do
+      MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
+    done
+    # remove last '\", -L.'
+    MERO_LIB_=${MERO_LIB_%"\", -L."}
+  fi
+
+  MERO_HELPERS_LIB_="MERO_HELPERS_LIB=/usr/lib64/"
+
+  for lib in "${link_libs_array[@]}"
+  do
+    MERO_LINK_LIB_=$lib" "
+  done
+  # remove last white space
+  MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
+fi
+
+# set mero library search path in 'BUILD' file
+sed -i 's|MERO_DYNAMIC_INCLUDES|'"$mero_include_path"'|g' BUILD
+
+# set mero link library in 'BUILD' file
+sed -i 's/MERO_LINK_LIB/'"$MERO_LINK_LIB_"'/g' BUILD
+
 if [ $no_s3ut_build -eq 0 ]
 then
   bazel build //:s3ut --cxxopt="-std=c++11" --define $MERO_INC_ \
                       --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
-                      --define $MERO_EXTRA_LIB_ \
                       --spawn_strategy=standalone \
                       --strip=never
 
   bazel build //:s3utdeathtests --cxxopt="-std=c++11" --define $MERO_INC_ \
                                 --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
-                                --define $MERO_EXTRA_LIB_ \
                                 --spawn_strategy=standalone \
                                 --strip=never
 fi
@@ -194,7 +325,6 @@ if [ $no_s3mempoolmgrut_build -eq 0 ]
 then
   bazel build //:s3mempoolmgrut --cxxopt="-std=c++11" --define $MERO_INC_ \
                       --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
-                      --define $MERO_EXTRA_LIB_ \
                       --spawn_strategy=standalone \
                       --strip=never
 fi
@@ -217,7 +347,6 @@ then
   assert_addb_plugin_autogenerated_sources_are_correct
   bazel build //:s3server --cxxopt="-std=c++11" --define $MERO_INC_ \
                           --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
-                          --define $MERO_EXTRA_LIB_ \
                           --spawn_strategy=standalone \
                           --strip=never
 fi
@@ -227,7 +356,6 @@ then
   assert_addb_plugin_autogenerated_sources_are_correct
   bazel build //:s3addbplugin --define $MERO_INC_ \
                               --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
-                              --define $MERO_EXTRA_LIB_ \
                               --spawn_strategy=standalone \
                               --strip=never
 fi
@@ -236,10 +364,13 @@ if [ $no_cloviskvscli_build -eq 0 ]
 then
   bazel build //:cloviskvscli --cxxopt="-std=c++11" --define $MERO_INC_ \
                               --define $MERO_LIB_ --define $MERO_HELPERS_LIB_ \
-                              --define $MERO_EXTRA_LIB_ \
                               --spawn_strategy=standalone \
                               --strip=never
 fi
+
+# restore BUILD file
+sed -i 's|'"$mero_include_path"'|MERO_DYNAMIC_INCLUDES|g' BUILD
+sed -i 's/'"$MERO_LINK_LIB_ "'/MERO_LINK_LIB /g' BUILD
 
 # Just to free up resources
 bazel shutdown
