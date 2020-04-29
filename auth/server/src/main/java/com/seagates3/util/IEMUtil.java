@@ -28,7 +28,8 @@ public class IEMUtil {
    enum Level {
      INFO,
      ERROR,
-     WARN
+     WARN,
+     FATAL
    } private static Logger logger =
        LoggerFactory.getLogger(BinaryUtil.class.getName());
 
@@ -66,6 +67,8 @@ public class IEMUtil {
             break;
           case INFO:
             logger.info(iem);
+          case FATAL:
+            logger.error(iem);
         }
     }
 
@@ -82,6 +85,8 @@ public class IEMUtil {
           break;
         case INFO:
           severity = "I";
+        case FATAL:
+          severity = "A";
         }
         String iem =
             String.format("IEC:%sS%s:%s", severity, eventCode, eventCodeString);
