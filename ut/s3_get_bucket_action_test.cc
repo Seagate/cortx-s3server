@@ -323,9 +323,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
   result_keys_values.insert(
       std::make_pair("key2", std::make_pair(10, "keyval")));
 
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
-      .WillOnce(Return("testkey0"))
-      .WillOnce(Return("testkey1"));
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
@@ -374,8 +371,6 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
   result_keys_values.insert(
       std::make_pair("test/some2/kval", std::make_pair(10, "keyval")));
 
-  EXPECT_CALL(*(object_meta_factory->mock_object_metadata), get_object_name())
-      .WillOnce(Return("test/some/key"));
   OBJ_METADATA_EXPECTATIONS;
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
