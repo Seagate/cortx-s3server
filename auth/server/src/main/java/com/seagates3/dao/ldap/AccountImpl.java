@@ -132,7 +132,7 @@ public class AccountImpl implements AccountDAO {
      */
     @Override
     public Account find(String name) throws DataAccessException {
-        Account account = new Account();
+      Account account = new Account();
         account.setName(name);
 
         String[] attrs = {
@@ -143,18 +143,31 @@ public class AccountImpl implements AccountDAO {
                 LDAPUtils.ORGANIZATIONAL_NAME, name, LDAPUtils.OBJECT_CLASS,
                 LDAPUtils.ACCOUNT_OBJECT_CLASS);
 
-        LDAPSearchResults ldapResults;
+        LDAPSearchResults ldapResults = null;
+        LDAPConnection lc = null;
+
         LOGGER.debug("Searching account: " + name + " filter: " + filter);
         try {
-          ldapResults = LDAPUtils.search(
-              LDAPUtils.BASE_DN, LDAPConnection.SCOPE_SUB, filter, attrs);
+          lc = LdapConnectionManager.getConnection();
+
+          if (lc != null && lc.isConnected()) {
+
+            if (FaultPoints.fiEnabled() &&
+                FaultPoints.getInstance().isFaultPointActive(
+                    "LDAP_SEARCH_FAIL")) {
+              throw new LDAPException();
+            }
+
+            ldapResults = lc.search(LDAPUtils.BASE_DN, LDAPConnection.SCOPE_SUB,
+                                    filter, attrs, false);
+          }
         } catch (LDAPException ex) {
             LOGGER.error("Failed to search account: " + name);
             throw new DataAccessException("failed to search account.\n" + ex);
         }
+        try {
+          if (ldapResults != null && ldapResults.hasMore()) {
 
-        if (ldapResults != null && ldapResults.hasMore()) {
-            try {
               if (FaultPoints.fiEnabled() &&
                   FaultPoints.getInstance().isFaultPointActive(
                       "LDAP_GET_ATTR_FAIL")) {
@@ -193,12 +206,16 @@ public class AccountImpl implements AccountDAO {
                 catch (Exception e) {
                   LOGGER.debug("profileCreateDate value not found in ldap");
                 }
-            } catch (LDAPException ex) {
+          }
+          lc.abandon(ldapResults);
+        }
+        catch (LDAPException ex) {
                 LOGGER.error("Failed to find details of account: " + name);
                 throw new DataAccessException(
                     "Failed to find account details.\n" + ex);
-            }
         }
+        finally { LdapConnectionManager.releaseConnection(lc); }
+
         return account;
     }
 
@@ -523,5 +540,4 @@ public class AccountImpl implements AccountDAO {
         return account;
     }
 }
-
 

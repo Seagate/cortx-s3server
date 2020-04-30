@@ -18,16 +18,6 @@
  */
 package com.seagates3.dao.ldap;
 
-import com.novell.ldap.LDAPAttribute;
-import com.novell.ldap.LDAPAttributeSet;
-import com.novell.ldap.LDAPEntry;
-import com.novell.ldap.LDAPException;
-import com.novell.ldap.LDAPModification;
-import com.novell.ldap.LDAPSearchResults;
-import com.seagates3.authserver.AuthServerConfig;
-import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.AccessKey;
-import com.seagates3.model.User;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,11 +32,25 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({LDAPUtils.class, AccessKeyImpl.class, AuthServerConfig.class})
-@PowerMockIgnore( {"javax.management.*"})
+import com.novell.ldap.LDAPAttribute;
+import com.novell.ldap.LDAPAttributeSet;
+import com.novell.ldap.LDAPConnection;
+import com.novell.ldap.LDAPEntry;
+import com.novell.ldap.LDAPException;
+import com.novell.ldap.LDAPModification;
+import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.authserver.AuthServerConfig;
+import com.seagates3.exception.DataAccessException;
+import com.seagates3.fi.FaultPoints;
+import com.seagates3.model.AccessKey;
+import com.seagates3.model.User;
 
-public class AccessKeyImplTest {
+@RunWith(PowerMockRunner.class)
+    @PrepareForTest({LDAPUtils.class,             AccessKeyImpl.class,
+                     AuthServerConfig.class,      LDAPConnection.class,
+                     LdapConnectionManager.class, FaultPoints.class,
+                     AuthServerConfig.class})
+    @PowerMockIgnore({"javax.management.*"}) public class AccessKeyImplTest {
 
     private final String ACCESSKEY_BASE_DN = "ou=accesskeys,dc=s3,dc=seagate,"
             + "dc=com";
@@ -72,6 +76,14 @@ public class AccessKeyImplTest {
     private final LDAPAttribute objectClassAttr;
     private final LDAPAttribute expiryAttr;
     private final LDAPAttribute tokenAttr;
+    private
+     LDAPConnection ldapConnection;
+    private
+     final String LDAP_HOST = "127.0.0.1";
+    private
+     final int LDAP_PORT = 389;
+    private
+     final int socket_timeout = 1000;
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -96,6 +108,7 @@ public class AccessKeyImplTest {
 
     private void setupAccessKeyAttr() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
+        PowerMockito.mockStatic(LDAPConnection.class);
         Mockito.when(ldapResults.next()).thenReturn(entry);
 
         Mockito.when(entry.getAttribute("accountid")).thenReturn(accountIdAttr);
@@ -126,15 +139,28 @@ public class AccessKeyImplTest {
     public void setUp() throws Exception {
         PowerMockito.mockStatic(LDAPUtils.class);
         PowerMockito.mockStatic(AuthServerConfig.class);
+        ldapConnection = Mockito.mock(LDAPConnection.class);
+        PowerMockito.doReturn(LDAP_HOST)
+            .when(AuthServerConfig.class, "getLdapHost");
+        PowerMockito.doReturn(LDAP_PORT)
+            .when(AuthServerConfig.class, "getLdapPort");
+
+        PowerMockito.when(ldapConnection.isConnected())
+            .thenReturn(Boolean.TRUE);
+        PowerMockito.mockStatic(LdapConnectionManager.class);
+        PowerMockito.doReturn(ldapConnection)
+            .when(LdapConnectionManager.class, "getConnection");
+        PowerMockito.whenNew(LDAPConnection.class)
+            .withArguments(socket_timeout)
+            .thenReturn(ldapConnection);
     }
 
     @Test
     public void Find_AccessKeySearchFailed_ThrowException() throws Exception {
         String filter = "ak=AKIATEST";
 
-        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
-                ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS
-        );
+        PowerMockito.doThrow(new LDAPException()).when(ldapConnection).search(
+            ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS, false);
 
         exception.expect(DataAccessException.class);
 
@@ -144,9 +170,8 @@ public class AccessKeyImplTest {
     @Test(expected = DataAccessException.class)
     public void Find_AccessKey_ThrowException() throws Exception {
         String filter = "ak=AKIATEST";
-        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
-                ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS
-        );
+        PowerMockito.doReturn(ldapResults).when(ldapConnection).search(
+            ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS, false);
         Mockito.when(ldapResults.hasMore())
                 .thenReturn(Boolean.TRUE);
         Mockito.when(ldapResults.next()).thenThrow(LDAPException.class);
@@ -160,9 +185,8 @@ public class AccessKeyImplTest {
         expectedAccessKey.setId("AKIATEST");
         String filter = "ak=AKIATEST";
 
-        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
-                ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS
-        );
+        PowerMockito.doReturn(ldapResults).when(ldapConnection).search(
+            ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS, false);
         Mockito.doReturn(Boolean.FALSE).when(ldapResults).hasMore();
 
         AccessKey accessKey = accesskeyImpl.find("AKIATEST");
@@ -185,6 +209,8 @@ public class AccessKeyImplTest {
         PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
                 ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS
         );
+        PowerMockito.doReturn(ldapResults).when(ldapConnection).search(
+            ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS, false);
         Mockito.when(ldapResults.hasMore())
                 .thenReturn(Boolean.TRUE)
                 .thenReturn(Boolean.FALSE);
@@ -214,9 +240,8 @@ public class AccessKeyImplTest {
         Mockito.when(entry.getAttribute("token"))
                 .thenReturn(tokenAttr);
         Mockito.when(tokenAttr.getStringValue()).thenReturn("XYZ");
-        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
-                ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS
-        );
+        PowerMockito.doReturn(ldapResults).when(ldapConnection).search(
+            ACCESSKEY_BASE_DN, 2, filter, FIND_ATTRS, false);
         Mockito.when(ldapResults.hasMore())
                 .thenReturn(Boolean.TRUE)
                 .thenReturn(Boolean.FALSE);
@@ -727,3 +752,4 @@ public class AccessKeyImplTest {
         Assert.assertThat(expectedAccessKey, new ReflectionEquals(accessKey));
     }
 }
+

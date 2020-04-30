@@ -27,6 +27,7 @@ import com.seagates3.dao.DAODispatcher;
 import com.seagates3.dao.DAOResource;
 import com.seagates3.dao.RequestorDAO;
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.fi.FaultPoints;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.Account;
 import com.seagates3.model.Requestor;
@@ -50,7 +51,19 @@ public class RequestorImpl implements RequestorDAO {
         if (accessKey.getUserId() != null) {
             String filter;
             String[] attrs = {LDAPUtils.COMMON_NAME};
-            LDAPSearchResults ldapResults;
+            LDAPSearchResults ldapResults = null;
+            LDAPConnection lc = null;
+            try {
+
+              lc = LdapConnectionManager.getConnection();
+
+              if (lc != null && lc.isConnected()) {
+
+                if (FaultPoints.fiEnabled() &&
+                    FaultPoints.getInstance().isFaultPointActive(
+                        "LDAP_SEARCH_FAIL")) {
+                  throw new LDAPException();
+                }
 
             filter = String.format("%s=%s", LDAPUtils.USER_ID,
                     accessKey.getUserId());
@@ -61,30 +74,27 @@ public class RequestorImpl implements RequestorDAO {
 
             LOGGER.debug("Finding access key details of userID: "
                                             + accessKey.getUserId());
-            try {
-                ldapResults = LDAPUtils.search(baseDN, LDAPConnection.SCOPE_SUB,
-                        filter, attrs);
-            } catch (LDAPException ex) {
-                LOGGER.error("Failed to find access key details of userId: "
-                                           + accessKey.getUserId());
+            ldapResults = lc.search(baseDN, LDAPConnection.SCOPE_SUB, filter,
+                                    attrs, false);
+              }
+            }
+            catch (LDAPException ex) {
+              LOGGER.error("Failed to find access key details of userId: " +
+                           accessKey.getUserId());
                 throw new DataAccessException(
                         "Failed to find requestor details.\n" + ex);
             }
-
+            try {
             if (ldapResults.hasMore()) {
                 LDAPEntry entry;
-                try {
                     entry = ldapResults.next();
-                } catch (LDAPException ex) {
-                    throw new DataAccessException("LDAP error\n" + ex);
-                }
-
                 requestor.setId(accessKey.getUserId());
                 requestor.setName(entry.getAttribute(
                         LDAPUtils.COMMON_NAME).getStringValue());
 
                 String accountName = getAccountName(entry.getDN());
                 requestor.setAccount(getAccount(accountName));
+                lc.abandon(ldapResults);
             } else {
                 LOGGER.error("Failed to find access key details of userId: "
                         + accessKey.getUserId());
@@ -92,8 +102,12 @@ public class RequestorImpl implements RequestorDAO {
                         "Failed to find the requestor who owns the "
                         + "given access key.\n");
             }
+            }
+            catch (LDAPException ex) {
+              throw new DataAccessException("LDAP error\n" + ex);
+            }
+            finally { LdapConnectionManager.releaseConnection(lc); }
         }
-
         return requestor;
     }
 
@@ -128,3 +142,4 @@ public class RequestorImpl implements RequestorDAO {
         return accountDao.find(accountName);
     }
 }
+
