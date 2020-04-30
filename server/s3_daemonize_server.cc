@@ -109,11 +109,11 @@ void s3_terminate_fatal_handler(int signum) {
     int rc = backtrace(trace, S3_ARRAY_SIZE(trace));
     backtrace_symbols_fd(trace, rc, STDERR_FILENO);
   }
-  s3_syslog(LOG_ALERT,
-            "IEC:AS" S3_IEM_FATAL_HANDLER ":" S3_IEM_FATAL_HANDLER_STR);
-
-  S3Daemonize s3daemon;
-  s3daemon.delete_pidfile();
+  S3Option *option_instance = S3Option::get_instance();
+  std::string pid_file = option_instance->get_s3_pidfile();
+  if (!pid_file.empty()) {
+    ::unlink(pid_file.c_str());
+  }
   raise(signum);
 }
 
