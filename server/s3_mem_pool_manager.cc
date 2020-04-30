@@ -155,7 +155,7 @@ size_t S3MempoolManager::get_free_space_for(size_t unit_size) {
     // We have required memory pool.
     MemoryPoolHandle handle = item->second;
     size_t free_bytes = 0;
-    mempool_free_space(handle, &free_bytes);
+    mempool_reserved_space(handle, &free_bytes);
     return free_bytes + S3MempoolManager::free_space;
   }
   return 0;
@@ -168,7 +168,7 @@ bool S3MempoolManager::free_any_unused() {
   // Find free space in all mem pools
   for (auto &mem_pool : pool_of_mem_pool) {
     size_t free_bytes = 0;
-    mempool_free_space(mem_pool.second, &free_bytes);
+    mempool_reserved_space(mem_pool.second, &free_bytes);
     if (free_bytes > 0) {
       free_space_map[free_bytes] = mem_pool.second;
     }

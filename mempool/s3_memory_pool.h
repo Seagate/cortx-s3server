@@ -27,10 +27,7 @@ extern "C" {
 #endif
 
 #include <assert.h>
-#include <pthread.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define CREATE_ALIGNED_MEMORY 0x0001
 #define ENABLE_LOCKING 0x0002
@@ -42,7 +39,8 @@ extern "C" {
 #define S3_MEMPOOL_INVALID_ARG -2
 #define S3_MEMPOOL_THRESHOLD_EXCEEDED -3
 
-typedef void *MemoryPoolHandle;
+struct mempool;
+typedef struct mempool *MemoryPoolHandle;
 
 // This call back is supposed to return the total space used.
 // Useful when outside memory should be considered for max threshold cap.
@@ -51,40 +49,6 @@ typedef size_t (*func_mem_available_callback_type)(void);
 
 typedef void (*func_mark_mem_used_callback_type)(size_t);
 typedef void (*func_mark_mem_free_callback_type)(size_t);
-
-struct memory_pool_element {
-  struct memory_pool_element *next;
-};
-
-struct mempool {
-  int flags; /* CREATE_ALIGNED_MEMORY, ENABLE_LOCKING, ZEROED_ALLOCATION */
-  int free_bufs_in_pool;     /* Number of items on free list */
-  int number_of_bufs_shared; /* Number of bufs shared from pool to pool user */
-  int total_bufs_allocated_by_pool; /* Total buffers currently allocated by
-                                         pool via native method */
-  func_mem_available_callback_type
-      mem_get_free_space_func; /* If this pool shares the max_memory_threshold
-                                  with say other pool, this callback should
-                                  return the available space which can be
-                                  allocated */
-  func_mark_mem_used_callback_type
-      mem_mark_used_space_func; /* This is used to indicate to user of pool that
-                                   new memory is allocated
-                                   (posix_memalign/malloc) within pool, so user
-                                   of pool can track it w.r.t max threshold. */
-  func_mark_mem_free_callback_type
-      mem_mark_free_space_func; /* Whenever pool frees any memory, use this to
-                                   indicate to user of pool that memory was
-                                   free'd with actual free() sys call. */
-  int alignment;            /* Memory aligment */
-  size_t max_memory_threshold; /* Maximum memory that the system can have from
-                                  pool */
-  size_t mempool_item_size;    /* Size of items managed by this pool */
-  size_t expandable_size;      /* pool expansion rate when free list is empty */
-  pthread_mutex_t lock;        /* lock, in case of synchronous operation */
-  struct memory_pool_element
-      *free_list; /* list of free items available for reuse */
-};
 
 struct pool_info {
   int flags;
@@ -197,14 +161,26 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf);
 int mempool_getinfo(MemoryPoolHandle handle, struct pool_info *poolinfo);
 
 /**
- * Returns total free space available in memory pool
+ * Returns the space already allocated but not used in memory pool
  * args:
  * handle (in) Pool handle as returned by mempool_create
- * free_bytes (out) Total free bytes available in pool
+ * free_bytes (out) Free bytes currently available in pool
  * returns:
  * 0 on success, otherwise an error
  */
-int mempool_free_space(MemoryPoolHandle handle, size_t *free_bytes);
+int mempool_reserved_space(MemoryPoolHandle handle, size_t *free_bytes);
+
+/**
+ * Returns space totally available in memory pool including available expansion
+ * upto maximum threshold.
+ * args:
+ * handle (in) Pool handle as returned by mempool_create
+ * p_avail_bytes (out) Total bytes available for allocation in pool upto maximum
+ * threshold.
+ * returns:
+ * 0 on success, otherwise an error
+ */
+int mempool_available_space(MemoryPoolHandle handle, size_t *p_avail_bytes);
 
 /**
  * Returns memory pool's buffer size

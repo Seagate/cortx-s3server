@@ -17,14 +17,51 @@
  * Original creation date: 5-Dec-2016
  */
 
+#include <pthread.h>
+#include <string.h>
+
 #include "s3_memory_pool.h"
+
+struct memory_pool_element {
+  struct memory_pool_element *next;
+};
+
+struct mempool {
+  int flags; /* CREATE_ALIGNED_MEMORY, ENABLE_LOCKING, ZEROED_ALLOCATION */
+  int free_bufs_in_pool;     /* Number of items on free list */
+  int number_of_bufs_shared; /* Number of bufs shared from pool to pool user */
+  int total_bufs_allocated_by_pool; /* Total buffers currently allocated by
+                                         pool via native method */
+  func_mem_available_callback_type
+      mem_get_free_space_func; /* If this pool shares the max_memory_threshold
+                                  with say other pool, this callback should
+                                  return the available space which can be
+                                  allocated */
+  func_mark_mem_used_callback_type
+      mem_mark_used_space_func; /* This is used to indicate to user of pool that
+                                   new memory is allocated
+                                   (posix_memalign/malloc) within pool, so user
+                                   of pool can track it w.r.t max threshold. */
+  func_mark_mem_free_callback_type mem_mark_free_space_func;
+  /* Whenever pool frees any memory, use this to
+     indicate to user of pool that memory was
+     free'd with actual free() sys call. */
+  int alignment;               /* Memory aligment */
+  size_t max_memory_threshold; /* Maximum memory that the system can have from
+                                  pool */
+  size_t mempool_item_size; /* Size of items managed by this pool */
+  size_t expandable_size;   /* pool expansion rate when free list is empty */
+  pthread_mutex_t lock;     /* lock, in case of synchronous operation */
+  struct memory_pool_element *free_list; /* list of free items available for
+                                            reuse */
+};
 
 /**
  * Return the number of buffers we can allocate w.r.t max threshold and
  * available memory space.
  */
 static int pool_can_expand_by(struct mempool *pool) {
-  int available_space = 0;
+  size_t available_space = 0;
 
   if (pool == NULL) {
     return 0;
@@ -33,10 +70,11 @@ static int pool_can_expand_by(struct mempool *pool) {
   if (pool->mem_get_free_space_func) {
     available_space = pool->mem_get_free_space_func();
   } else {
-    if (pool->max_memory_threshold > 0) {
-      available_space =
-          pool->max_memory_threshold -
-          (pool->total_bufs_allocated_by_pool * pool->mempool_item_size);
+    const size_t allocated_space =
+        pool->total_bufs_allocated_by_pool * pool->mempool_item_size;
+
+    if (pool->max_memory_threshold > allocated_space) {
+      available_space = pool->max_memory_threshold - allocated_space;
     }
   }
 
@@ -312,7 +350,7 @@ int mempool_getinfo(MemoryPoolHandle handle, struct pool_info *poolinfo) {
   return 0;
 }
 
-int mempool_free_space(MemoryPoolHandle handle, size_t *free_bytes) {
+int mempool_reserved_space(MemoryPoolHandle handle, size_t *free_bytes) {
   struct mempool *pool = (struct mempool *)handle;
 
   if ((pool == NULL) || (free_bytes == NULL)) {
@@ -329,6 +367,26 @@ int mempool_free_space(MemoryPoolHandle handle, size_t *free_bytes) {
     pthread_mutex_unlock(&pool->lock);
   }
 
+  return 0;
+}
+
+int mempool_available_space(MemoryPoolHandle p_pool, size_t *p_avail_bytes) {
+  if (!p_pool || !p_avail_bytes) {
+    return S3_MEMPOOL_INVALID_ARG;
+  }
+  if (p_pool->flags & ENABLE_LOCKING) {
+    pthread_mutex_lock(&p_pool->lock);
+  }
+  const size_t used_space =
+      p_pool->number_of_bufs_shared * p_pool->mempool_item_size;
+  const size_t max_memory_threshold = p_pool->max_memory_threshold;
+
+  *p_avail_bytes =
+      max_memory_threshold > used_space ? max_memory_threshold - used_space : 0;
+
+  if (p_pool->flags & ENABLE_LOCKING) {
+    pthread_mutex_unlock(&p_pool->lock);
+  }
   return 0;
 }
 

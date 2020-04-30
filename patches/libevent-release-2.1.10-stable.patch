@@ -486,7 +486,7 @@ index a778f96..c4be66e 100644
 +}
 +
 +int event_mempool_free_space(size_t *free_space) {
-+        return mempool_free_space(g_pool_handle, free_space);
++        return mempool_available_space(g_pool_handle, free_space);
 +}
 +
 +int event_mempool_getinfo(struct pool_info* poolinfo) {

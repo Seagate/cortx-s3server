@@ -134,33 +134,60 @@ TEST_F(MempoolSelfCreateTestSuite, MemAllocateNativeTest) {
 TEST_F(MempoolSelfCreateTestSuite, MaxThresholdTest) {
   EXPECT_EQ(0,
             mempool_create(FOUR_KB, 0, FOUR_KB, TWELVE_KB, 0, &first_handle));
+  size_t avail_space;
+  mempool_available_space(first_handle, &avail_space);
+  EXPECT_EQ(avail_space, TWELVE_KB);
+
   void *first_buf = mempool_getbuffer(first_handle, 0);
   EXPECT_TRUE(first_buf != NULL);
+
+  mempool_available_space(first_handle, &avail_space);
+  EXPECT_EQ(avail_space, EIGHT_KB);
 
   void *second_buf = mempool_getbuffer(first_handle, 0);
   EXPECT_TRUE(second_buf != NULL);
 
+  mempool_available_space(first_handle, &avail_space);
+  EXPECT_EQ(avail_space, FOUR_KB);
+
   void *third_buf = mempool_getbuffer(first_handle, 0);
   EXPECT_TRUE(third_buf != NULL);
+
+  mempool_available_space(first_handle, &avail_space);
+  EXPECT_EQ(avail_space, 0);
 
   // This time allocation will cross the threshold value
   void *fourth_buf = mempool_getbuffer(first_handle, 0);
   EXPECT_TRUE(fourth_buf == NULL);
 
   mempool_releasebuffer(first_handle, first_buf);
+  mempool_available_space(first_handle, &avail_space);
+  EXPECT_EQ(avail_space, FOUR_KB);
+
   mempool_releasebuffer(first_handle, second_buf);
+  mempool_available_space(first_handle, &avail_space);
+  EXPECT_EQ(avail_space, EIGHT_KB);
+
   mempool_releasebuffer(first_handle, third_buf);
+  mempool_available_space(first_handle, &avail_space);
+  EXPECT_EQ(avail_space, TWELVE_KB);
+
   mempool_destroy(&first_handle);
 }
 
 // Test to check mempool free space
 TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpace) {
   size_t free_bytes = 0;
+  size_t avail_space = 0;
   EXPECT_EQ(0, mempool_create(FOUR_KB, EIGHT_KB, FOUR_KB, TWELVE_KB, 0,
                               &first_handle));
 
-  EXPECT_EQ(0, mempool_free_space(first_handle, &free_bytes));
+  EXPECT_EQ(0, mempool_reserved_space(first_handle, &free_bytes));
   EXPECT_EQ(EIGHT_KB, free_bytes);
+
+  EXPECT_EQ(0, mempool_available_space(first_handle, &avail_space));
+  EXPECT_EQ(TWELVE_KB, avail_space);
+
   mempool_destroy(&first_handle);
 }
 
@@ -168,7 +195,12 @@ TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpace) {
 TEST_F(MempoolSelfCreateTestSuite, MempoolFreeSpaceInvalid) {
   EXPECT_EQ(0, mempool_create(FOUR_KB, FOUR_KB, FOUR_KB, TWELVE_KB, 0,
                               &first_handle));
-  EXPECT_EQ(S3_MEMPOOL_INVALID_ARG, mempool_free_space(first_handle, NULL));
+  EXPECT_EQ(S3_MEMPOOL_INVALID_ARG, mempool_reserved_space(first_handle, NULL));
+  EXPECT_EQ(S3_MEMPOOL_INVALID_ARG,
+            mempool_available_space(first_handle, NULL));
+  size_t avail_space;
+  EXPECT_EQ(S3_MEMPOOL_INVALID_ARG,
+            mempool_available_space(NULL, &avail_space));
   mempool_destroy(&first_handle);
 }
 
