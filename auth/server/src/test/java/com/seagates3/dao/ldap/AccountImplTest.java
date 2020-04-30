@@ -18,13 +18,6 @@
  */
 package com.seagates3.dao.ldap;
 
-import com.novell.ldap.LDAPAttribute;
-import com.novell.ldap.LDAPAttributeSet;
-import com.novell.ldap.LDAPEntry;
-import com.novell.ldap.LDAPException;
-import com.novell.ldap.LDAPSearchResults;
-import com.seagates3.exception.DataAccessException;
-import com.seagates3.model.Account;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,11 +32,18 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(LDAPUtils.class)
-@PowerMockIgnore( {"javax.management.*"})
+import com.novell.ldap.LDAPAttribute;
+import com.novell.ldap.LDAPAttributeSet;
+import com.novell.ldap.LDAPConnection;
+import com.novell.ldap.LDAPEntry;
+import com.novell.ldap.LDAPException;
+import com.novell.ldap.LDAPSearchResults;
+import com.seagates3.exception.DataAccessException;
+import com.seagates3.model.Account;
 
-public class AccountImplTest {
+@RunWith(PowerMockRunner.class)
+    @PrepareForTest({LDAPUtils.class, LdapConnectionManager.class})
+    @PowerMockIgnore({"javax.management.*"}) public class AccountImplTest {
 
     private final String BASE_DN = "dc=s3,dc=seagate,dc=com";
     private final String FIND_FILTER = "(&(o=s3test)(objectclass=account))";
@@ -69,6 +69,8 @@ public class AccountImplTest {
     private final LDAPEntry userEntry;
     private final LDAPEntry roleEntry;
     private final LDAPSearchResults ldapResults;
+    private
+     LDAPConnection ldapConnection;
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -117,6 +119,7 @@ public class AccountImplTest {
         Mockito.when(accountIdAttr.getStringValue()).thenReturn("98765test");
         Mockito.when(canonicalIdAttr.getStringValue()).thenReturn("C12345");
         Mockito.when(emailAttr.getStringValue()).thenReturn("test@seagate.com");
+        ldapConnection = Mockito.mock(LDAPConnection.class);
     }
 
     /**
@@ -132,9 +135,12 @@ public class AccountImplTest {
         expectedAccount.setCanonicalId("C12345");
         expectedAccount.setEmail("test@seagate.com");
 
-        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
-                BASE_DN, 2, FIND_FILTER, FIND_ATTRS
-        );
+        PowerMockito.mockStatic(LdapConnectionManager.class);
+        PowerMockito.doReturn(ldapConnection)
+            .when(LdapConnectionManager.class, "getConnection");
+        Mockito.when(ldapConnection.isConnected()).thenReturn(true);
+        PowerMockito.doReturn(ldapResults).when(ldapConnection).search(
+            BASE_DN, 2, FIND_FILTER, FIND_ATTRS, false);
 
         Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
 
@@ -145,17 +151,24 @@ public class AccountImplTest {
     @Test(expected = DataAccessException.class)
     public void FindAccount_SearchShouldThrowLDAPException() throws Exception {
 
-        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
-                BASE_DN, 2, FIND_FILTER, FIND_ATTRS);
+      PowerMockito.mockStatic(LdapConnectionManager.class);
+      PowerMockito.doReturn(ldapConnection)
+          .when(LdapConnectionManager.class, "getConnection");
+      Mockito.when(ldapConnection.isConnected()).thenReturn(true);
+      PowerMockito.doThrow(new LDAPException()).when(ldapConnection).search(
+          BASE_DN, 2, FIND_FILTER, FIND_ATTRS, false);
 
         accountImpl.find("s3test");
     }
 
     @Test(expected = DataAccessException.class)
     public void FindAccount_GetEntryShouldThrowLDAPException() throws Exception {
-        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
-                BASE_DN, 2, FIND_FILTER, FIND_ATTRS
-        );
+      PowerMockito.mockStatic(LdapConnectionManager.class);
+      PowerMockito.doReturn(ldapConnection)
+          .when(LdapConnectionManager.class, "getConnection");
+      Mockito.when(ldapConnection.isConnected()).thenReturn(true);
+      PowerMockito.doReturn(ldapResults).when(ldapConnection).search(
+          BASE_DN, 2, FIND_FILTER, FIND_ATTRS, false);
         Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.TRUE);
         Mockito.when(ldapResults.next()).thenThrow(new LDAPException());
 
@@ -168,9 +181,12 @@ public class AccountImplTest {
         Account expectedAccount = new Account();
         expectedAccount.setName("s3test");
 
-        PowerMockito.doReturn(ldapResults).when(LDAPUtils.class, "search",
-                BASE_DN, 2, FIND_FILTER, FIND_ATTRS
-        );
+        PowerMockito.mockStatic(LdapConnectionManager.class);
+        PowerMockito.doReturn(ldapConnection)
+            .when(LdapConnectionManager.class, "getConnection");
+        Mockito.when(ldapConnection.isConnected()).thenReturn(true);
+        PowerMockito.doReturn(ldapResults).when(ldapConnection).search(
+            BASE_DN, 2, FIND_FILTER, FIND_ATTRS, false);
         Mockito.when(ldapResults.hasMore()).thenReturn(Boolean.FALSE);
 
         Account account = accountImpl.find("s3test");
@@ -179,11 +195,13 @@ public class AccountImplTest {
 
     @Test
     public void FindAccount_LdapSearchFailed_ThrowException() throws Exception {
-        PowerMockito.doThrow(new LDAPException()).when(LDAPUtils.class, "search",
-                BASE_DN, 2, FIND_FILTER, FIND_ATTRS
-        );
         exception.expect(DataAccessException.class);
-
+        PowerMockito.mockStatic(LdapConnectionManager.class);
+        PowerMockito.doReturn(ldapConnection)
+            .when(LdapConnectionManager.class, "getConnection");
+        Mockito.when(ldapConnection.isConnected()).thenReturn(true);
+        PowerMockito.doThrow(new LDAPException()).when(ldapConnection).search(
+            BASE_DN, 2, FIND_FILTER, FIND_ATTRS, false);
         accountImpl.find("s3test");
     }
 
@@ -488,3 +506,4 @@ public class AccountImplTest {
         accountImpl.deleteOu(account, LDAPUtils.USER_OU);
     }
 }
+

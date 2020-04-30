@@ -28,10 +28,13 @@ import com.novell.ldap.LDAPSearchResults;
 import com.seagates3.controller.UserController;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.exception.DataAccessException;
+import com.seagates3.fi.FaultPoints;
 import com.seagates3.model.AccessKey;
 import com.seagates3.model.AccessKey.AccessKeyStatus;
 import com.seagates3.model.User;
 import com.seagates3.util.DateUtil;
+import com.seagates3.util.IEMUtil;
+
 import java.util.ArrayList;
 
 import org.slf4j.Logger;
@@ -64,54 +67,67 @@ public class AccessKeyImpl implements AccessKeyDAO {
         String filter = String.format("%s=%s", LDAPUtils.ACCESS_KEY_ID,
                 accessKeyId);
 
-        LDAPSearchResults ldapResults;
-
+        LDAPSearchResults ldapResults = null;
+        LDAPConnection lc = null;
         try {
-            ldapResults = LDAPUtils.search(accessKeyBaseDN,
-                    LDAPConnection.SCOPE_SUB, filter, attrs);
-        } catch (LDAPException ex) {
-            LOGGER.error("Failed to find Access Key.");
-            throw new DataAccessException("Access key find failed.\n" + ex);
-        }
 
-        if (ldapResults.hasMore()) {
-            LDAPEntry entry;
-            try {
-                entry = ldapResults.next();
-            } catch (LDAPException ex) {
-                LOGGER.error("Failed to update Access Key.");
-                throw new DataAccessException("Failed to update AccessKey.\n"
-                        + ex);
+          lc = LdapConnectionManager.getConnection();
+
+          if (lc != null && lc.isConnected()) {
+
+            if (FaultPoints.fiEnabled() &&
+                FaultPoints.getInstance().isFaultPointActive(
+                    "LDAP_SEARCH_FAIL")) {
+              throw new LDAPException();
             }
 
-            accessKey.setUserId(entry.getAttribute(LDAPUtils.USER_ID)
-                    .getStringValue());
-            accessKey.setSecretKey(entry.getAttribute(LDAPUtils.SECRET_KEY)
-                    .getStringValue());
-            AccessKeyStatus status = AccessKeyStatus.valueOf(
-                    entry.getAttribute(LDAPUtils.STATUS).getStringValue()
-                    .toUpperCase());
+            ldapResults = lc.search(accessKeyBaseDN, LDAPConnection.SCOPE_SUB,
+                                    filter, attrs, false);
+          }
+          if (ldapResults.hasMore()) {
+            LDAPEntry entry;
+            try {
+              entry = ldapResults.next();
+            }
+            catch (LDAPException ex) {
+              LOGGER.error("Failed to update Access Key.");
+              throw new DataAccessException("Failed to update AccessKey.\n" +
+                                            ex);
+            }
+
+            accessKey.setUserId(
+                entry.getAttribute(LDAPUtils.USER_ID).getStringValue());
+            accessKey.setSecretKey(
+                entry.getAttribute(LDAPUtils.SECRET_KEY).getStringValue());
+            AccessKeyStatus status =
+                AccessKeyStatus.valueOf(entry.getAttribute(LDAPUtils.STATUS)
+                                            .getStringValue()
+                                            .toUpperCase());
             accessKey.setStatus(status);
 
             String createTime = DateUtil.toServerResponseFormat(
-                    entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
-                    .getStringValue()
-            );
+                entry.getAttribute(LDAPUtils.CREATE_TIMESTAMP)
+                    .getStringValue());
             accessKey.setCreateDate(createTime);
 
-            String objectClass = entry.getAttribute(LDAPUtils.OBJECT_CLASS)
-                    .getStringValue();
+            String objectClass =
+                entry.getAttribute(LDAPUtils.OBJECT_CLASS).getStringValue();
             if (objectClass.equalsIgnoreCase("fedaccesskey")) {
-                String expiry = DateUtil.toServerResponseFormat(
-                        entry.getAttribute(LDAPUtils.EXPIRY)
-                        .getStringValue());
+              String expiry = DateUtil.toServerResponseFormat(
+                  entry.getAttribute(LDAPUtils.EXPIRY).getStringValue());
 
                 accessKey.setExpiry(expiry);
-                accessKey.setToken(entry.getAttribute(LDAPUtils.TOKEN)
-                        .getStringValue()
-                );
+                accessKey.setToken(
+                    entry.getAttribute(LDAPUtils.TOKEN).getStringValue());
             }
+          }
+          lc.abandon(ldapResults);
         }
+        catch (LDAPException ex) {
+          LOGGER.error("Failed to find Access Key.");
+          throw new DataAccessException("Access key find failed.\n" + ex);
+        }
+        finally { LdapConnectionManager.releaseConnection(lc); }
 
         return accessKey;
     }
@@ -434,3 +450,4 @@ public class AccessKeyImpl implements AccessKeyDAO {
         }
     }
 }
+
