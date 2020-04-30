@@ -109,15 +109,12 @@ void s3_terminate_fatal_handler(int signum) {
     int rc = backtrace(trace, S3_ARRAY_SIZE(trace));
     backtrace_symbols_fd(trace, rc, STDERR_FILENO);
   }
-  s3_syslog(LOG_ALERT,
-            "IEC:AS" S3_IEM_FATAL_HANDLER ":" S3_IEM_FATAL_HANDLER_STR);
-
-  S3Daemonize s3daemon;
-  s3daemon.delete_pidfile();
-  if (!global_shutdown_in_progress) {
-    // dafault handler for core dumping
-    raise(signum);
+  S3Option *option_instance = S3Option::get_instance();
+  std::string pid_file = option_instance->get_s3_pidfile();
+  if (!pid_file.empty()) {
+    ::unlink(pid_file.c_str());
   }
+  raise(signum);
 }
 
 S3Daemonize::S3Daemonize() : noclose(0) {
@@ -261,9 +258,6 @@ void S3Daemonize::register_signals() {
   sigaction(SIGABRT, &fatal_action, NULL);
   sigaction(SIGILL, &fatal_action, NULL);
   sigaction(SIGFPE, &fatal_action, NULL);
-  sigaction(SIGSYS, &fatal_action, NULL);
-  sigaction(SIGXFSZ, &fatal_action, NULL);
-  sigaction(SIGXCPU, &fatal_action, NULL);
 }
 
 int S3Daemonize::get_s3daemon_redirection() { return noclose; }
