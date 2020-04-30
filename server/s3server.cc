@@ -50,6 +50,7 @@
 #include "s3_clovis_wrapper.h"
 #include "s3_m0_uint128_helper.h"
 #include "s3_perf_metrics.h"
+#include "s3_iem.h"
 
 #define FOUR_KB 4096
 // 32MB
@@ -529,7 +530,8 @@ FAIL:
   if (sync_op != NULL) {
     teardown_clovis_op(sync_op);
   }
-
+  s3_iem(LOG_ALERT, S3_IEM_CLOVIS_CONN_FAIL, S3_IEM_CLOVIS_CONN_FAIL_STR,
+         S3_IEM_CLOVIS_CONN_FAIL_JSON);
   return rc;
 }
 
