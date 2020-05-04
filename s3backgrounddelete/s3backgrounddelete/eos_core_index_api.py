@@ -23,6 +23,8 @@ class EOSCoreIndexApi(EOSCoreClient):
         else:
             self._logger = logger
         self.config = config
+        self.core_util = EOSCoreUtil(self.config)
+
         #for testing scenarios, pass the mocked http connection object in init method..
         if (connection is None):
             super(EOSCoreIndexApi, self).__init__(self.config, logger = self._logger)
@@ -66,7 +68,7 @@ class EOSCoreIndexApi(EOSCoreClient):
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ""
-        headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
+        headers = self.core_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -107,7 +109,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, body)
+        headers = self.core_util.prepare_signed_header('PUT', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -149,7 +151,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
         query_params = ""
         body = ""
-        headers = EOSCoreUtil.prepare_signed_header('DELETE', request_uri, query_params, body)
+        headers = self.core_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if(headers['Authorization'] is None):
             self._logger.error("Failed to generate v4 signature")
@@ -193,7 +195,7 @@ class EOSCoreIndexApi(EOSCoreClient):
 
             query_params = ""
             body = ""
-            headers = EOSCoreUtil.prepare_signed_header('HEAD', request_uri, query_params, body)
+            headers = self.core_util.prepare_signed_header('HEAD', request_uri, query_params, body)
 
             if headers['Authorization'] is None:
                 self._logger.error("Failed to generate v4 signature")

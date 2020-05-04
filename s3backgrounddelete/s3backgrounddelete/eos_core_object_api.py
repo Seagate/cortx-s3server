@@ -21,6 +21,8 @@ class EOSCoreObjectApi(EOSCoreClient):
         else:
             self._logger = logger
         self.config = config
+        self.core_util = EOSCoreUtil(self.config)
+
         if (connection is None):
             super(EOSCoreObjectApi, self).__init__(self.config, logger = self._logger)
         else:
@@ -43,7 +45,7 @@ class EOSCoreObjectApi(EOSCoreClient):
 
         request_uri = '/objects/' + urllib.parse.quote(oid, safe='')
 
-        headers = EOSCoreUtil.prepare_signed_header('PUT', request_uri, query_params, request_body)
+        headers = self.core_util.prepare_signed_header('PUT', request_uri, query_params, request_body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
@@ -86,7 +88,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         # For example if oid is 'JwZSAwAAAAA=-AgAAAAAA4Ag=' urllib.parse.quote(oid, safe='') yields 'JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
         # And request_uri is '/objects/JwZSAwAAAAA%3D-AgAAAAAA4Ag%3D'
 
-        headers = EOSCoreUtil.prepare_signed_header('GET', request_uri, query_params, body)
+        headers = self.core_util.prepare_signed_header('GET', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
@@ -135,7 +137,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ''
-        headers = EOSCoreUtil.prepare_signed_header('DELETE', request_uri, query_params, body)
+        headers = self.core_util.prepare_signed_header('DELETE', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
@@ -186,7 +188,7 @@ class EOSCoreObjectApi(EOSCoreClient):
         absolute_request_uri = request_uri + '?' + query_params
 
         body = ''
-        headers = EOSCoreUtil.prepare_signed_header('HEAD', request_uri, query_params, body)
+        headers = self.core_util.prepare_signed_header('HEAD', request_uri, query_params, body)
 
         if headers['Authorization'] is None:
             self._logger.error("Failed to generate v4 signature")
