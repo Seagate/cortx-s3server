@@ -35,6 +35,7 @@ class S3IamCli:
             [--password-reset-required | --no-password-reset-required]
         ResetAccountAccessKey -n <Account Name>
         ListAccounts
+            [--showall]
         CreateAccessKey
             -n <User Name>
         CreateUser -n <User Name>
@@ -217,6 +218,7 @@ class S3IamCli:
         parser.add_argument("--new_user", help="New user name.")
         parser.add_argument("--no-ssl", help="Use HTTP protocol.", action ='store_true')
         parser.add_argument("--hidden_help",dest = 'hidden_help', action ='store_true', help=argparse.SUPPRESS)
+        parser.add_argument("--showall", help="Lists all the accounts internal and external" , action ='store_true')
         cli_args = parser.parse_args()
 
         if cli_args.hidden_help is True and cli_args.action == 'show':

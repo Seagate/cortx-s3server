@@ -27,6 +27,7 @@ import com.seagates3.response.formatter.xml.XMLResponseFormatter;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class AccountResponseGenerator extends AbstractResponseGenerator {
 
@@ -46,13 +47,18 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
             AuthServerConfig.getReqId());
     }
 
-    public ServerResponse generateListResponse(Object[] responseObjects) {
+   public
+    ServerResponse generateListResponse(Object[] responseObjects,
+                                        String showAll) {
         Account[] accounts = (Account[]) responseObjects;
-
         ArrayList<LinkedHashMap<String, String>> accountMembers = new ArrayList<>();
         LinkedHashMap responseElements;
-
+        List<String> configuredInternalAccounts = new ArrayList<>();
+        if (!("True".equalsIgnoreCase(showAll))) {
+          configuredInternalAccounts = AuthServerConfig.getS3InternalAccounts();
+        }
         for (Account account : accounts) {
+          if (!configuredInternalAccounts.contains(account.getName())) {
             responseElements = new LinkedHashMap();
             responseElements.put("AccountName", account.getName());
             responseElements.put("AccountId", account.getId());
@@ -60,7 +66,7 @@ public class AccountResponseGenerator extends AbstractResponseGenerator {
             responseElements.put("Email", account.getEmail());
             accountMembers.add(responseElements);
         }
-
+        }
         return new XMLResponseFormatter().formatListResponse(
             "ListAccounts", "Accounts", accountMembers, false,
             AuthServerConfig.getReqId());
