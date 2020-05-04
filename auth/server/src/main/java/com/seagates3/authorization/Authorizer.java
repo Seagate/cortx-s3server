@@ -178,7 +178,7 @@ class Authorizer {
                   // create default acl
           acl = aclCreator.createDefaultAcl(requestor);
         }
-        LOGGER.info("Updated xml is - " + acl);
+        LOGGER.debug("Updated xml is - " + acl);
         return responseGenerator.generateAuthorizationResponse(requestor, acl);
       }
       catch (ParserConfigurationException | SAXException | IOException e) {

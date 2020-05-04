@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Properties;
@@ -36,7 +37,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-
+import java.util.List;
 import com.seagates3.authencryptutil.JKSUtil;
 import com.seagates3.authencryptutil.RSAEncryptDecryptUtil;
 
@@ -328,5 +329,15 @@ public class AuthServerConfig {
         reqId = "0000";
       }
       return reqId;
+    }
+   public
+    static List<String> getS3InternalAccounts() {
+      List<String> internalAccountsList = new ArrayList<>();
+      String internalAccounts =
+          authServerConfig.getProperty("s3InternalAccounts");
+      if (internalAccounts != null) {
+        internalAccountsList = Arrays.asList(internalAccounts.split(","));
+      }
+      return internalAccountsList;
     }
 }

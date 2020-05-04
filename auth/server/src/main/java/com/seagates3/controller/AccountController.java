@@ -87,7 +87,8 @@ public class AccountController extends AbstractController {
             return accountResponseGenerator.internalServerError();
         }
 
-        return accountResponseGenerator.generateListResponse(accounts);
+        return accountResponseGenerator.generateListResponse(
+            accounts, requestBody.get("ShowAll"));
     }
 
     @Override

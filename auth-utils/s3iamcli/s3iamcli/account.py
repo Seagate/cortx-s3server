@@ -65,7 +65,11 @@ class Account:
 
         epoch_t = datetime.datetime.utcnow();
 
-        body = urllib.parse.urlencode({'Action' : 'ListAccounts'})
+        showAll = False;
+        if(self.cli_args.showall):
+            showAll = True;
+
+        body = urllib.parse.urlencode({'Action' : 'ListAccounts', 'ShowAll' : showAll})
         headers = {'content-type': 'application/x-www-form-urlencoded',
                 'Accept': 'text/plain'}
         headers['Authorization'] = sign_request_v4('POST', '/', body, epoch_t,

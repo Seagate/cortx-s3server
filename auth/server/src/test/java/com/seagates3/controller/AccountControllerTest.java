@@ -22,6 +22,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,6 +36,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.seagates3.authserver.AuthServerConfig;
 import com.seagates3.dao.AccessKeyDAO;
 import com.seagates3.dao.AccountDAO;
 import com.seagates3.dao.DAODispatcher;
@@ -55,8 +57,8 @@ import com.seagates3.util.KeyGenUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 @RunWith(PowerMockRunner.class)
-    @PrepareForTest({DAODispatcher.class, KeyGenUtil.class,
-                     AccountController.class})
+    @PrepareForTest({DAODispatcher.class,    KeyGenUtil.class,
+                     AuthServerConfig.class, AccountController.class})
     @PowerMockIgnore(
         {"javax.management.*"}) public class AccountControllerTest {
 
@@ -104,12 +106,16 @@ import io.netty.handler.codec.http.HttpResponseStatus;
     public void setUp() throws Exception {
         PowerMockito.mockStatic(DAODispatcher.class);
         PowerMockito.mockStatic(KeyGenUtil.class);
+        PowerMockito.mockStatic(AuthServerConfig.class);
 
         PowerMockito.doReturn("987654352188")
             .when(KeyGenUtil.class, "createAccountId");
         PowerMockito.doReturn("C1234").when(KeyGenUtil.class, "createId");
         PowerMockito.doReturn("can1234")
             .when(KeyGenUtil.class, "createCanonicalId");
+        PowerMockito.doReturn("0000").when(AuthServerConfig.class, "getReqId");
+        PowerMockito.doReturn(new ArrayList<String>())
+            .when(AuthServerConfig.class, "getS3InternalAccounts");
     }
 
     @Test
@@ -766,5 +772,4 @@ import io.netty.handler.codec.http.HttpResponseStatus;
         Mockito.verify(roleDAO).delete(roles[0]);
     }
 }
-
 
