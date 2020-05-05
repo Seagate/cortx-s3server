@@ -54,6 +54,7 @@ S3PostCompleteAction::S3PostCompleteAction(
          bucket_name.c_str(), object_name.c_str(), upload_id.c_str());
 
   action_uses_cleanup = true;
+  s3_post_complete_action_state = S3PostCompleteActionState::empty;
   if (clovis_api) {
     s3_clovis_api = std::move(clovis_api);
   } else {
@@ -120,6 +121,7 @@ void S3PostCompleteAction::fetch_bucket_info_success() {
 
 void S3PostCompleteAction::fetch_bucket_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_post_complete_action_state = S3PostCompleteActionState::validationFailed;
   if (bucket_metadata->get_state() == S3BucketMetadataState::missing) {
     set_s3_error("NoSuchBucket");
   } else if (bucket_metadata->get_state() ==
@@ -150,6 +152,8 @@ void S3PostCompleteAction::load_and_validate_request() {
         if (get_s3_error_code().empty()) {
           set_s3_error("MalformedXML");
         }
+        s3_post_complete_action_state =
+            S3PostCompleteActionState::validationFailed;
         send_response_to_s3_client();
         return;
       }
@@ -162,6 +166,7 @@ void S3PostCompleteAction::load_and_validate_request() {
   } else {
     invalid_request = true;
     set_s3_error("MalformedXML");
+    s3_post_complete_action_state = S3PostCompleteActionState::validationFailed;
     send_response_to_s3_client();
     return;
   }
@@ -171,6 +176,7 @@ void S3PostCompleteAction::load_and_validate_request() {
 void S3PostCompleteAction::consume_incoming_content() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (request->is_s3_client_read_error()) {
+    s3_post_complete_action_state = S3PostCompleteActionState::validationFailed;
     client_read_error();
   } else if (request->has_all_body_content()) {
     if (validate_request_body(request->get_full_body_content_as_string())) {
@@ -178,6 +184,8 @@ void S3PostCompleteAction::consume_incoming_content() {
     } else {
       invalid_request = true;
       set_s3_error("MalformedXML");
+      s3_post_complete_action_state =
+          S3PostCompleteActionState::validationFailed;
       send_response_to_s3_client();
       return;
     }
@@ -222,6 +230,7 @@ void S3PostCompleteAction::fetch_multipart_info_success() {
 
 void S3PostCompleteAction::fetch_multipart_info_failed() {
   s3_log(S3_LOG_ERROR, request_id, "Multipart info missing\n");
+  s3_post_complete_action_state = S3PostCompleteActionState::validationFailed;
   if (multipart_metadata->get_state() == S3ObjectMetadataState::missing) {
     set_s3_error("InvalidObjectState");
   } else if (multipart_metadata->get_state() ==
@@ -260,6 +269,8 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
 
   if (is_abort_multipart()) {
     s3_log(S3_LOG_DEBUG, request_id, "aborting multipart");
+    s3_post_complete_action_state =
+        S3PostCompleteActionState::abortedSinceValidationFailed;
     next();
   } else {
     if (clovis_kv_reader->get_key_values().size() < count_we_requested) {
@@ -274,6 +285,8 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
           part_metadata->set_state(S3PartMetadataState::missing_partially);
         }
         set_s3_error("InvalidPart");
+        s3_post_complete_action_state =
+            S3PostCompleteActionState::validationFailed;
         send_response_to_s3_client();
         return;
       }
@@ -303,6 +316,8 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
         part_metadata->set_state(S3PartMetadataState::missing_partially);
       }
       set_s3_error("InvalidPart");
+      s3_post_complete_action_state =
+          S3PostCompleteActionState::validationFailed;
       send_response_to_s3_client();
       return;
     }
@@ -318,12 +333,15 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
     } else {
       set_s3_error("InternalError");
     }
+    s3_post_complete_action_state = S3PostCompleteActionState::validationFailed;
     send_response_to_s3_client();
   }
 }
 
 void S3PostCompleteAction::set_abort_multipart(bool abortit) {
   delete_multipart_object = abortit;
+  s3_post_complete_action_state =
+      S3PostCompleteActionState::abortedSinceValidationFailed;
 }
 
 bool S3PostCompleteAction::is_abort_multipart() {
@@ -366,6 +384,8 @@ bool S3PostCompleteAction::validate_parts() {
         // part metadata is corrupted, send response and return from here
         part_metadata->set_state(S3PartMetadataState::missing_partially);
         set_s3_error("InvalidPart");
+        s3_post_complete_action_state =
+            S3PostCompleteActionState::validationFailed;
         send_response_to_s3_client();
         return false;
       }
@@ -464,7 +484,7 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
   }
 
   if (is_abort_multipart()) {
-    // Mark new object for probable deletion, we delete obj only after multipart
+    // Mark new object for probable deletion, we delete obj only after object
     // metadata is deleted.
     assert(!new_oid_str.empty());
 
@@ -480,7 +500,9 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
     clovis_kv_writer->put_keyval(
         global_probable_dead_object_list_index_oid, new_oid_str,
         new_probable_del_rec->to_json(),
-        std::bind(&S3PostCompleteAction::next, this),
+        std::bind(&S3PostCompleteAction::
+                       add_object_oid_to_probable_dead_oid_list_success,
+                  this),
         std::bind(&S3PostCompleteAction::
                        add_object_oid_to_probable_dead_oid_list_failed,
                   this));
@@ -508,7 +530,9 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
       clovis_kv_writer->put_keyval(
           global_probable_dead_object_list_index_oid, old_oid_rec_key,
           old_probable_del_rec->to_json(),
-          std::bind(&S3PostCompleteAction::next, this),
+          std::bind(&S3PostCompleteAction::
+                         add_object_oid_to_probable_dead_oid_list_success,
+                    this),
           std::bind(&S3PostCompleteAction::
                          add_object_oid_to_probable_dead_oid_list_failed,
                     this));
@@ -520,8 +544,18 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list() {
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
+void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_post_complete_action_state =
+      S3PostCompleteActionState::probableEntryRecordSaved;
+  next();
+  s3_log(S3_LOG_INFO, "", "Exiting\n");
+}
+
 void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_post_complete_action_state =
+      S3PostCompleteActionState::probableEntryRecordFailed;
   if (clovis_kv_writer->get_state() ==
       S3ClovisKVSWriterOpState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
@@ -534,7 +568,6 @@ void S3PostCompleteAction::add_object_oid_to_probable_dead_oid_list_failed() {
 
 void S3PostCompleteAction::save_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-
   if (is_abort_multipart()) {
     next();
   } else {
@@ -560,12 +593,14 @@ void S3PostCompleteAction::save_metadata() {
 void S3PostCompleteAction::save_object_metadata_succesful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   obj_metadata_updated = true;
+  s3_post_complete_action_state = S3PostCompleteActionState::metadataSaved;
   next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3PostCompleteAction::save_object_metadata_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  s3_post_complete_action_state = S3PostCompleteActionState::metadataSaveFailed;
   if (new_object_metadata->get_state() ==
       S3ObjectMetadataState::failed_to_launch) {
     set_s3_error("ServiceUnavailable");
@@ -585,6 +620,7 @@ void S3PostCompleteAction::delete_multipart_metadata() {
 // TODO - mark this for cleanup by backgrounddelete on failure??
 void S3PostCompleteAction::delete_multipart_metadata_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  // S3 backgrounddelete should delete KV from multi part index
   s3_log(S3_LOG_ERROR, request_id,
          "Deletion of %s key failed from multipart index\n",
          object_name.c_str());
@@ -605,17 +641,12 @@ void S3PostCompleteAction::delete_part_list_index_failed() {
   m0_uint128 part_index_oid;
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   part_index_oid = part_metadata->get_part_index_oid();
+  // S3 backgrounddelete should cleanup/remove part index
   s3_log(S3_LOG_ERROR, request_id,
          "Deletion of part index failed, this oid will be stale in Mero"
          "%" SCNx64 " : %" SCNx64 "\n",
          part_index_oid.u_hi, part_index_oid.u_lo);
-
-  if (part_metadata->get_state() == S3PartMetadataState::failed_to_launch) {
-    set_s3_error("ServiceUnavailable");
-    send_response_to_s3_client();
-  } else {
-    next();
-  }
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -734,6 +765,8 @@ void S3PostCompleteAction::send_response_to_s3_client() {
     response += "<Key>" + object_name + "</Key>\n";
     response += "<ETag>\"" + etag + "\"</ETag>";
     response += "</CompleteMultipartUploadResult>";
+
+    s3_post_complete_action_state = S3PostCompleteActionState::completed;
     request->send_response(S3HttpSuccess200, response);
   } else {
     S3Error error("InternalError", request->get_request_id(),
@@ -755,23 +788,29 @@ void S3PostCompleteAction::startcleanup() {
   clear_tasks();
   cleanup_started = true;
 
-  if (multipart_metadata) {
-    if (obj_metadata_updated) {
-      // New object has taken life, old object should be deleted if any.
-      if (old_object_oid.u_hi || old_object_oid.u_lo) {
-        // mark old OID for deletion in overwrite case, this optimizes
-        // backgrounddelete decisions.
-        ACTION_TASK_ADD(S3PostCompleteAction::mark_old_oid_for_deletion, this);
-        ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
-      }
-    } else if (is_abort_multipart() && multipart_metadata->get_state() ==
-                                           S3ObjectMetadataState::deleted) {
-      // Abort is due to validation failures in part sizes 1..n
-      ACTION_TASK_ADD(S3PostCompleteAction::mark_new_oid_for_deletion, this);
-      ACTION_TASK_ADD(S3PostCompleteAction::delete_new_object, this);
-    } else {
-      // Any failure we dont clean up objects as next S3 client action will
-      // decide
+  if (s3_post_complete_action_state ==
+      S3PostCompleteActionState::validationFailed) {
+    // Nothing to undo.
+    done();
+  } else if (s3_post_complete_action_state ==
+             S3PostCompleteActionState::completed) {
+    // New object has taken life, old object should be deleted if any.
+    if (old_object_oid.u_hi || old_object_oid.u_lo) {
+      // mark old OID for deletion in overwrite case, this optimizes
+      // backgrounddelete decisions.
+      ACTION_TASK_ADD(S3PostCompleteAction::mark_old_oid_for_deletion, this);
+      ACTION_TASK_ADD(S3PostCompleteAction::delete_old_object, this);
+    }
+  } else if (s3_post_complete_action_state ==
+             S3PostCompleteActionState::abortedSinceValidationFailed) {
+    // Abort is due to validation failures in part sizes 1..n
+    ACTION_TASK_ADD(S3PostCompleteAction::mark_new_oid_for_deletion, this);
+    ACTION_TASK_ADD(S3PostCompleteAction::delete_new_object, this);
+  } else {
+    // Any failure we dont clean up objects as next S3 client action will
+    // decide
+    if ((s3_post_complete_action_state >=
+         S3PostCompleteActionState::probableEntryRecordSaved)) {
       ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record,
                       this);
     }

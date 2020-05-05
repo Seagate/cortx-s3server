@@ -319,13 +319,6 @@ TEST_F(S3PostCompleteActionTest, FetchMultipartInfoFailedInvalidObject) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ObjectMetadataState::missing));
 
-  // Set expectations for remove_new_oid_probable_record
-  action_under_test_ptr->new_oid_str = S3M0Uint128Helper::to_string(oid);
-  action_under_test_ptr->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
-
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));
@@ -340,13 +333,6 @@ TEST_F(S3PostCompleteActionTest, FetchMultipartInfoFailedInternalError) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata), get_state())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S3ObjectMetadataState::failed));
-
-  // Set expectations for remove_new_oid_probable_record
-  action_under_test_ptr->new_oid_str = S3M0Uint128Helper::to_string(oid);
-  action_under_test_ptr->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
 
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
@@ -507,15 +493,8 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
   EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
               get_part_one_size()).WillRepeatedly(Return(/*4k*/ 4096));
 
-  // Set expectations for remove_new_oid_probable_record
-  action_under_test_ptr->new_oid_str = S3M0Uint128Helper::to_string(oid);
-  action_under_test_ptr->clovis_kv_writer =
-      clovis_kvs_writer_factory->mock_clovis_kvs_writer;
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              delete_keyval(_, _, _, _)).Times(1);
-
   action_under_test_ptr->parts["0"] = "keyval1";
-
+  action_under_test_ptr->new_oid_str = "oid_new";
   action_under_test_ptr->total_parts = action_under_test_ptr->parts.size();
   EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
       .WillRepeatedly(Return(-1));
@@ -552,6 +531,8 @@ TEST_F(S3PostCompleteActionTest, DeleteMultipartMetadata) {
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientInternalError) {
   action_under_test_ptr->obj_metadata_updated = false;
+  action_under_test_ptr->s3_post_complete_action_state =
+      S3PostCompleteActionState::validationFailed;
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(500, _)).Times(AtLeast(1));
@@ -560,6 +541,8 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientInternalError) {
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientErrorSet) {
   action_under_test_ptr->set_s3_error("MalformedXML");
+  action_under_test_ptr->s3_post_complete_action_state =
+      S3PostCompleteActionState::validationFailed;
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(400, _)).Times(AtLeast(1));
@@ -569,15 +552,33 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientErrorSet) {
 }
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
+  action_under_test_ptr->new_oid_str = "oid_new";
   action_under_test_ptr->set_abort_multipart(true);
+  std::string object_name = "abcd";
+  std::string version_key_in_index = "abcd/v1";
+  int layout_id = 9;
+  struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
+  struct m0_uint128 objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
+  struct m0_uint128 oid = {0x1ffff, 0x1ffff};
+  std::string oid_str = S3M0Uint128Helper::to_string(oid);
+
+  action_under_test_ptr->new_probable_del_rec =
+      std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
+          objects_version_list_index_oid, version_key_in_index,
+          false /* force_delete */));
+
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              put_keyval(_, _, _, _, _)).Times(1);
   action_under_test_ptr->send_response_to_s3_client();
 }
 
 TEST_F(S3PostCompleteActionTest, SendResponseToClientSuccess) {
   action_under_test_ptr->obj_metadata_updated = true;
+  action_under_test_ptr->old_object_oid = {0x0, 0x0};
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(200, _)).Times(AtLeast(1));
   action_under_test_ptr->send_response_to_s3_client();

@@ -32,7 +32,20 @@
 #include "s3_aws_etag.h"
 #include "s3_uuid.h"
 
+enum class S3PostCompleteActionState {
+  empty,                         // Initial state
+  validationFailed,              // Any validations failed for request
+  abortedSinceValidationFailed,  // multipart aborted due to different part
+                                 // sizes
+  probableEntryRecordFailed,     // Failed to add entry to probable delete index
+  probableEntryRecordSaved,      // Added entry to probable delete index
+  metadataSaved,                 // metadata saved for new object
+  metadataSaveFailed,            // metadata save failed for new object
+  completed,                     // All stages done completely
+};
+
 class S3PostCompleteAction : public S3ObjectAction {
+  S3PostCompleteActionState s3_post_complete_action_state;
   std::shared_ptr<S3ClovisKVSReaderFactory> s3_clovis_kvs_reader_factory;
   std::shared_ptr<S3ObjectMultipartMetadataFactory> object_mp_metadata_factory;
   std::shared_ptr<S3PartMetadataFactory> part_metadata_factory;
@@ -120,6 +133,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   void set_authorization_meta();
 
   void add_object_oid_to_probable_dead_oid_list();
+  void add_object_oid_to_probable_dead_oid_list_success();
   void add_object_oid_to_probable_dead_oid_list_failed();
 
   void startcleanup() override;
