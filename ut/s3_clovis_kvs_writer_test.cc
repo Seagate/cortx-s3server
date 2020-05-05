@@ -322,25 +322,6 @@ TEST_F(S3ClovisKvsWritterTest, PutKeyVal) {
   EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
 }
 
-TEST_F(S3ClovisKvsWritterTest, PutKeyValEmpty) {
-  S3CallBack s3cloviskvscallbackobj;
-
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_idx_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-
-  action_under_test->put_keyval(
-      oid, "", "", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
-
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
-}
-
 TEST_F(S3ClovisKvsWritterTest, PutKeyValSuccessful) {
   S3CallBack s3cloviskvscallbackobj;
 
@@ -400,25 +381,6 @@ TEST_F(S3ClovisKvsWritterTest, DelKeyVal) {
   action_under_test->delete_keyval(
       oid, "3kfile",
       std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
-      std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
-
-  EXPECT_TRUE(s3cloviskvscallbackobj.success_called);
-  EXPECT_FALSE(s3cloviskvscallbackobj.fail_called);
-}
-
-TEST_F(S3ClovisKvsWritterTest, DelKeyValEmpty) {
-  S3CallBack s3cloviskvscallbackobj;
-
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_init(_, _, _));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_op(_, _, _, _, _, _, _))
-      .WillOnce(Invoke(s3_test_clovis_idx_op));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_idx_fini(_)).Times(1);
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_setup(_, _, _)).Times(AtLeast(1));
-  EXPECT_CALL(*ptr_mock_s3clovis, clovis_op_launch(_, _, _, _))
-      .WillRepeatedly(Invoke(s3_test_clovis_op_launch));
-
-  action_under_test->delete_keyval(
-      oid, "", std::bind(&S3CallBack::on_success, &s3cloviskvscallbackobj),
       std::bind(&S3CallBack::on_failed, &s3cloviskvscallbackobj));
 
   EXPECT_TRUE(s3cloviskvscallbackobj.success_called);

@@ -454,6 +454,11 @@ void S3ClovisKVSWriter::put_keyval(
     for (auto &kv : kv_list) {
       s3_log(S3_LOG_DEBUG, request_id, "key = %s, value = %s\n",
              kv.first.c_str(), kv.second.c_str());
+      assert(!kv.first.empty());
+      // Add error when any key is empty
+      if (kv.first.empty()) {
+        s3_log(S3_LOG_ERROR, request_id, "Empty key in PUT KV\n");
+      }
     }
   }
 
@@ -604,7 +609,11 @@ void S3ClovisKVSWriter::put_keyval(struct m0_uint128 oid, std::string key,
   s3_log(S3_LOG_INFO, request_id, "Entering with oid = %" SCNx64 " : %" SCNx64
                                   " key = %s and value = %s\n",
          oid.u_hi, oid.u_lo, key.c_str(), val.c_str());
-
+  assert(!key.empty());
+  // Add error when any key is empty
+  if (key.empty()) {
+    s3_log(S3_LOG_ERROR, request_id, "Empty key in PUT KV\n");
+  }
   int rc = 0;
   oid_list.clear();
   oid_list.push_back(oid);
@@ -795,6 +804,11 @@ void S3ClovisKVSWriter::delete_keyval(struct m0_uint128 oid,
   int rc;
   for (auto key : keys) {
     s3_log(S3_LOG_DEBUG, request_id, "key = %s\n", key.c_str());
+    assert(!key.empty());
+    // Add error when any key is empty
+    if (key.empty()) {
+      s3_log(S3_LOG_ERROR, request_id, "Empty key in DEL KV\n");
+    }
   }
 
   state = S3ClovisKVSWriterOpState::deleting;

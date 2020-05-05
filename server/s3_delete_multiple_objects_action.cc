@@ -283,6 +283,12 @@ void S3DeleteMultipleObjectsAction::add_object_oid_to_probable_dead_oid_list() {
   for (const auto& obj : objects_metadata) {
     if (obj->get_state() != S3ObjectMetadataState::invalid) {
       std::string oid_str = S3M0Uint128Helper::to_string(obj->get_oid());
+      assert(!oid_str.empty());
+      // Add error when any key is empty
+      if (oid_str.empty()) {
+        s3_log(S3_LOG_ERROR, request_id,
+               "Invalid object metadata with empty object OID\n");
+      }
       probable_oid_list[oid_str] =
           std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
               oid_str, {0ULL, 0ULL}, obj->get_object_name(), obj->get_oid(),
