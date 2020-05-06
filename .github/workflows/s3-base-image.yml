@@ -1,0 +1,20 @@
+name: Base Docker Image for s3server
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'scripts/docker/s3server-devel/Dockerfile'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master    
+    - name: Build and Publish the Docker image
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        dockerfile: scripts/docker/s3server-devel/Dockerfile
+        registry: docker.pkg.github.com
+        repository: seagate/s3server/s3server-base-image
+        tags: latest
