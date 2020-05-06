@@ -1,0 +1,37 @@
+name: s3server pipeline
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+     - 'scripts/docker/s3server-devel/Dockerfile'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout s3server
+      uses: actions/checkout@v2
+      with: 
+        token: ${{ secrets.DOCKER_PASSWORD }} 
+        submodules: 'recursive'
+    - name: GitHub registry login
+      run: docker login docker.pkg.github.com -u ${{secrets.DOCKER_USERNAME}} -p $GITHUB_TOKEN
+      env:
+        GITHUB_TOKEN: ${{secrets.DOCKER_PASSWORD}}
+    
+    - name: Pull s3server base image
+      run: docker pull docker.pkg.github.com/seagate/s3server/s3server-base-image:latest
+    - name: Start container
+      run: docker run -it -d --name s3server-builder -v $GITHUB_WORKSPACE:/workspace -w /workspace docker.pkg.github.com/seagate/s3server/s3server-base-image:latest 
+    
+    - name: Download deps rpm
+      run: |
+       docker exec s3server-builder bash -c 'wget -q --auth-no-challenge --header="Accept:application/octet-stream" https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892:@api.github.com/repos/seagate/mero/releases/assets/20478136 -O eos-core-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm'  
+       docker exec s3server-builder bash -c 'wget -q --auth-no-challenge --header="Accept:application/octet-stream" https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892:@api.github.com/repos/seagate/mero/releases/assets/20478139 -O eos-core-devel-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm' 
+    - name: Install deps rpm
+      run: |   
+       docker exec s3server-builder bash -c 'yum clean all; rm -rf /var/cache/yum; yum install eos-core-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm eos-core-devel-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm -y'
+    - name: Build s3server rpm
+      run: |   
+       docker exec s3server-builder bash -c './rpms/s3/buildrpm.sh -P $PWD'
