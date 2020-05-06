@@ -1,5 +1,6 @@
 FROM docker.pkg.github.com/seagate/mero/custom-mero-base-image:latest
 
+#copy spec file
 COPY scripts/docker/s3server-devel/s3rpm.spec .
 
 RUN yum install -y yum-priorities
