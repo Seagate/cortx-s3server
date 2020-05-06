@@ -4,10 +4,10 @@ COPY scripts/docker/s3server-devel/s3rpm.spec .
 
 RUN yum install -y yum-priorities
 
-RUN wget -q --auth-no-challenge --header='Accept:application/octet-stream' https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892: \
+RUN wget -q --auth-no-challenge --header='Accept:application/octet-stream' https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892:\
 @api.github.com/repos/seagate/mero/releases/assets/20478136 -O eos-core-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm
 
-RUN wget -q --auth-no-challenge --header='Accept:application/octet-stream' https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892: \
+RUN wget -q --auth-no-challenge --header='Accept:application/octet-stream' https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892:\
 @api.github.com/repos/seagate/mero/releases/assets/20478139 -O eos-core-devel-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm
 
 RUN wget -q --auth-no-challenge --header="Accept:application/octet-stream" https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892:@api.github.com/repos/seagate/s3server/releases/assets/19870493 -O bazel-0.11.1-1.el7.centos.x86_64.rpm \
