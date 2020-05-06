@@ -5,10 +5,10 @@ COPY scripts/docker/s3server-devel/s3rpm.spec .
 RUN yum install -y yum-priorities
 
 RUN wget -q --auth-no-challenge --header='Accept:application/octet-stream' https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892: \
-@api.github.com/repos/seagate/mero/releases/assets/20396081 -O eos-core-1.0.0-1_git57b7f4d_3.10.0_1062.el7.x86_64.rpm
+@api.github.com/repos/seagate/mero/releases/assets/20476936 -O eos-core-1.0.0-1_git4da149d_3.10.0_1062.el7.x86_64.rpm
 
 RUN wget -q --auth-no-challenge --header='Accept:application/octet-stream' https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892: \
-@api.github.com/repos/seagate/mero/releases/assets/20396083 -O eos-core-devel-1.0.0-1_git57b7f4d_3.10.0_1062.el7.x86_64.rpm 
+@api.github.com/repos/seagate/mero/releases/assets/20476939 -O eos-core-devel-1.0.0-1_git4da149d_3.10.0_1062.el7.x86_64.rpm
 
 RUN wget -q --auth-no-challenge --header="Accept:application/octet-stream" https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892:@api.github.com/repos/seagate/s3server/releases/assets/19870493 -O bazel-0.11.1-1.el7.centos.x86_64.rpm \
   && wget -q --auth-no-challenge --header="Accept:application/octet-stream" https://8f3ee7ec7da1ce1d6791032dd0edb77b015c9892:@api.github.com/repos/seagate/s3server/releases/assets/20431622 -O git-clang-format-6.0-1.el7.centos.src.rpm \
@@ -50,8 +50,8 @@ RUN rpm --install git-clang-format-6.0-1.el7.centos.src.rpm gmock-1.7.0-1.el7.ce
        ossperf-3.0-1.src.rpm python-boto3-1.4.6-1.el7.centos.src.rpm python-botocore-1.6.0-1.el7.centos.src.rpm \
        python-jmespath-0.9.0-1.el7.centos.src.rpm python-s3transfer-0.1.10-1.el7.centos.src.rpm python-wheel-0.24.0-2.el7.centos.src.rpm \
        python-xmltodict-0.9.0-1.el7.centos.src.rpm
-RUN yum install -y eos-core-1.0.0-1_git57b7f4d_3.10.0_1062.el7.x86_64.rpm \
-               eos-core-devel-1.0.0-1_git57b7f4d_3.10.0_1062.el7.x86_64.rpm \
+RUN yum install -y eos-core-1.0.0-1_git4da149d_3.10.0_1062.el7.x86_64.rpm \
+               eos-core-devel-1.0.0-1_git4da149d_3.10.0_1062.el7.x86_64.rpm \
     && yum install -y bazel-0.11.1-1.el7.centos.x86_64.rpm git-clang-format-6.0-1.el7.centos.x86_64.rpm \
            log4cxx_eos-0.10.0-1.x86_64.rpm log4cxx_eos-debuginfo-0.10.0-1.x86_64.rpm log4cxx_eos-devel-0.10.0-1.x86_64.rpm \
            gmock-1.7.0-1.el7.centos.x86_64.rpm gmock-debuginfo-1.7.0-1.el7.centos.x86_64.rpm gmock-devel-1.7.0-1.el7.centos.x86_64.rpm \
@@ -61,8 +61,8 @@ RUN yum install -y eos-core-1.0.0-1_git57b7f4d_3.10.0_1062.el7.x86_64.rpm \
            python36-xmltodict-0.9.0-1.el7.centos.noarch.rpm s3cmd-1.6.1-1.el7.centos.noarch.rpm \
     && yum-builddep -y --define 'python3_other_pkgversion 36' s3rpm.spec
 
-RUN rm -f eos-core-1.0.0-1_git57b7f4d_3.10.0_1062.el7.x86_64.rpm \
-           eos-core-devel-1.0.0-1_git57b7f4d_3.10.0_1062.el7.x86_64.rpm \
+RUN rm -f eos-core-1.0.0-1_git4da149d_3.10.0_1062.el7.x86_64.rpm \
+           eos-core-devel-1.0.0-1_git4da149d_3.10.0_1062.el7.x86_64.rpm \
            bazel-0.11.1-1.el7.centos.x86_64.rpm git-clang-format-6.0-1.el7.centos.x86_64.rpm \
            log4cxx_eos-0.10.0-1.x86_64.rpm log4cxx_eos-debuginfo-0.10.0-1.x86_64.rpm log4cxx_eos-devel-0.10.0-1.x86_64.rpm \
            gmock-1.7.0-1.el7.centos.x86_64.rpm gmock-debuginfo-1.7.0-1.el7.centos.x86_64.rpm gmock-devel-1.7.0-1.el7.centos.x86_64.rpm \
