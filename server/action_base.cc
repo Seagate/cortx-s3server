@@ -152,7 +152,9 @@ void Action::next() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
-  if (base_request->is_s3_client_read_error()) {
+  if (base_request->is_s3_client_read_error() && !cleanup_started) {
+    // When clean up starts, we don't care for s3 client connection
+    // as clean up is happening after sending response.
     client_read_error();
     return;
   }
@@ -224,8 +226,7 @@ void Action::rollback_start() {
 
 void Action::rollback_next() {
   s3_log(S3_LOG_DEBUG, request_id, "Entering\n");
-  if (base_request->client_connected() &&
-      rollback_index < rollback_list.size()) {
+  if (rollback_index < rollback_list.size()) {
     // Call step and move index to next
     rollback_list[rollback_index++]();
   } else {
