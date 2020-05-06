@@ -3,7 +3,6 @@
 #######################################################
 # Install and configure release S3Server installation #
 #######################################################
-
 USAGE="USAGE: bash $(basename "$0") [--setupjenkinsyumrepo]
                                     [--installdependency]
                                     [--postdependency]
@@ -347,13 +346,15 @@ add_s3backgrounddelete_rabbitmq_user()
 # Create s3 account for s3 backgrounddelete
 create_background_delete_account()
 {
-    # Create s3background delete account
-    sh /opt/seagate/s3/install/ldap/create_background_delete_account.sh
-    # Restart producer and consumer
-    systemctl restart s3backgroundproducer
-    systemctl restart s3backgroundconsumer
-
-    echo "Created s3backgrounddelete account successfully..."
+    output=$(ldapsearch -b "o=s3-background-delete-svc,ou=accounts,dc=s3,dc=seagate,dc=com" -x -w $ldappasswd -D "cn=sgiamadmin,dc=seagate,dc=com" -H ldap://) || echo ""
+    if [[ $output == *"No such object"* ]]
+    then
+      # Create s3background delete account
+      sh /opt/seagate/s3/install/ldap/create_background_delete_account.sh
+      echo "Created s3backgrounddelete account successfully..."
+    else
+      echo "s3backgrounddelete account already exists"
+    fi
 }
 
 # Delete s3 account which was used by s3background delete
