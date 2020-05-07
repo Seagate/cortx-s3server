@@ -54,23 +54,23 @@ Requires:       python%{python3_pkgversion}-botocore
 S3transfer is a Python library for managing Amazon S3 transfers.
 %endif # python3
 
-%if 0%{?s3_with_python36:1}
-%package -n     python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%package -n     python36-%{pypi_name}
 Summary:        An Amazon S3 Transfer Manager
-BuildRequires:  python%{python3_other_pkgversion}-devel
-BuildRequires:  python%{python3_other_pkgversion}-setuptools
+BuildRequires:  python3-devel
+BuildRequires:  python36-setuptools
 %if %{with tests}
-BuildRequires:  python%{python3_other_pkgversion}-nose
-BuildRequires:  python%{python3_other_pkgversion}-mock
-BuildRequires:  python%{python3_other_pkgversion}-wheel
-BuildRequires:  python%{python3_other_pkgversion}-botocore
-BuildRequires:  python%{python3_other_pkgversion}-coverage
-BuildRequires:  python%{python3_other_pkgversion}-unittest2
+BuildRequires:  python36-nose
+BuildRequires:  python36-mock
+BuildRequires:  python36-wheel
+BuildRequires:  python36-botocore
+BuildRequires:  python36-coverage
+BuildRequires:  python36-unittest2
 %endif # tests
-Requires:       python%{python3_other_pkgversion}-botocore
-%{?python_provide:%python_provide python%{python3_other_pkgversion}-%{pypi_name}}
+Requires:       python36-botocore
+%{?python_provide:%python_provide python36-%{pypi_name}}
 
-%description -n python%{python3_other_pkgversion}-%{pypi_name}
+%description -n python36-%{pypi_name}
 S3transfer is a Python library for managing Amazon S3 transfers.
 %endif # with_python36
 
@@ -84,8 +84,8 @@ rm -rf tests/integration
 %if 0%{?s3_with_python34:1}
 %py3_build
 %endif # python3
-%if 0%{?s3_with_python36:1}
-%py3_other_build
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_build
 %endif # with_python36
 
 %install
@@ -93,8 +93,8 @@ rm -rf tests/integration
 %if 0%{?s3_with_python34:1}
 %py3_install
 %endif # python3
-%if 0%{?s3_with_python36:1}
-%py3_other_install
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_install
 %endif # with_python36
 
 %if %{with tests}
@@ -103,8 +103,8 @@ nosetests-%{python2_version} --with-coverage --cover-erase --cover-package s3tra
 %if 0%{?s3_with_python34:1}
 nosetests-%{python%{python3_pkgversion}_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
 %endif # python3
-%if 0%{?s3_with_python36:1}
-nosetests-%{python%{python3_other_pkgversion}_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+nosetests-%{python36_version} --with-coverage --cover-erase --cover-package s3transfer --with-xunit --cover-xml -v tests/unit/ tests/functional/
 %endif # with_python36
 %endif # tests
 
@@ -123,12 +123,12 @@ nosetests-%{python%{python3_other_pkgversion}_version} --with-coverage --cover-e
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # python3
 
-%if 0%{?s3_with_python36:1}
-%files -n python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%files -n python36-%{pypi_name}
 %doc README.rst
 %license LICENSE.txt
-%{python3_other_sitelib}/%{pypi_name}
-%{python3_other_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
+%{python3_sitelib}/%{pypi_name}
+%{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
 
 %changelog

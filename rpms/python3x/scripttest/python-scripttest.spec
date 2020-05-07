@@ -28,11 +28,11 @@ command-line applications.
 With it you can easily run the command (in a subprocess) and see
 the output (stdout, stderr) and any file modifications.
 
-%package -n     python%{python3_pkgversion}-scripttest
+%package -n     python36-scripttest
 Summary:        Helper to test command-line scripts
-%{?python_provide:%python_provide python%{python3_pkgversion}-scripttest}
+%{?python_provide:%python_provide python36-scripttest}
 
-%description -n python%{python3_pkgversion}-scripttest
+%description -n python36-scripttest
 ScriptTest is a library to help you test your interactive
 command-line applications.
 
@@ -56,7 +56,7 @@ sphinx-build -b html docs/ docs/html
 %check
 %{__python3} setup.py test
 
-%files -n python%{python3_pkgversion}-scripttest
+%files -n python36-scripttest
 %if %{with docs}
 %doc docs/html
 %endif

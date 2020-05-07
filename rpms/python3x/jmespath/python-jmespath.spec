@@ -17,9 +17,9 @@ BuildRequires:  python-setuptools
 BuildRequires:  python%{python3_pkgversion}-devel
 BuildRequires:  python%{python3_pkgversion}-setuptools
 %endif # with_python34
-%if 0%{?s3_with_python36:1}
-BuildRequires:  python%{python3_other_pkgversion}-devel
-BuildRequires:  python%{python3_other_pkgversion}-setuptools
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+BuildRequires:  python3-devel
+BuildRequires:  python36-setuptools
 %endif # with_python36
 
 %description
@@ -44,12 +44,12 @@ JMESPath allows you to declaratively specify how to extract elements from
 a JSON document.
 %endif # with_python3
 
-%if 0%{?s3_with_python36:1}
-%package -n     python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%package -n     python36-%{pypi_name}
 Summary:        JSON Matching Expressions
-%{?python_provide:%python_provide python%{python3_other_pkgversion}-%{pypi_name}}
+%{?python_provide:%python_provide python36-%{pypi_name}}
 
-%description -n python%{python3_other_pkgversion}-%{pypi_name}
+%description -n python36-%{pypi_name}
 JMESPath allows you to declaratively specify how to extract elements from
 a JSON document.
 %endif # with_python36
@@ -63,8 +63,8 @@ rm -rf %{pypi_name}.egg-info
 %if 0%{?s3_with_python34:1}
 %py3_build
 %endif # with_python3
-%if 0%{?s3_with_python36:1}
-%py3_other_build
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_build
 %endif # with_python36
 
 %install
@@ -72,9 +72,9 @@ rm -rf %{pypi_name}.egg-info
 %py3_install
 cp %{buildroot}/%{_bindir}/jp.py %{buildroot}/%{_bindir}/jp.py-%{python3_version}
 %endif # with_python34
-%if 0%{?s3_with_python36:1}
-%py3_other_install
-cp %{buildroot}/%{_bindir}/jp.py %{buildroot}/%{_bindir}/jp.py-%{python3_other_version}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_install
+cp %{buildroot}/%{_bindir}/jp.py %{buildroot}/%{_bindir}/jp.py-%{python3_version}
 %endif # with_python36
 
 %py2_install
@@ -101,13 +101,13 @@ ln -sf %{_bindir}/jp.py-2 %{buildroot}/%{_bindir}/jp.py-%{python2_version}
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python34
 
-%if 0%{?s3_with_python36:1}
-%files -n python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%files -n python36-%{pypi_name}
 %doc README.rst
 %license LICENSE.txt
-%{_bindir}/jp.py-%{python3_other_version}
-%{python3_other_sitelib}/%{pypi_name}
-%{python3_other_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
+%{_bindir}/jp.py-%{python3_version}
+%{python3_sitelib}/%{pypi_name}
+%{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
 
 %changelog

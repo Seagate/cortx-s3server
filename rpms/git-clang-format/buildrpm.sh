@@ -20,5 +20,5 @@ tar -zcvf git-clang-format-${VERSION}.tar.gz git-clang-format-${VERSION}
 rm -rf git-clang-format-${VERSION}
 
 cd -
-
+yum-builddep -y ${BASEDIR}/git-clang-format.spec
 rpmbuild -ba ${BASEDIR}/git-clang-format.spec

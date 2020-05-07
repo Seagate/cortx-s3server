@@ -13,6 +13,8 @@ Prefix: %_prefix
 BuildRoot: %{_tmppath}/apache-log4cxx-%{version}-build
 #BuildRequires: gcc-c++  gcc-fortran
 Requires: unixODBC
+BuildRequires: apr
+BuildRequires: apr-util
 
 %description
 Apache log4cxx is a logging framework for C++ patterned after Apache log4j.

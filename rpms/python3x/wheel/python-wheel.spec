@@ -29,9 +29,9 @@ BuildRequires:  python%{python3_pkgversion}-devel
 BuildRequires:  python%{python3_pkgversion}-setuptools
 %endif # if with_python34
 
-%if 0%{?s3_with_python36:1}
-BuildRequires:  python%{python3_other_pkgversion}-devel
-BuildRequires:  python%{python3_other_pkgversion}-setuptools
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+BuildRequires:  python3-devel
+BuildRequires:  python36-setuptools
 %endif # if with_python36
 
 
@@ -57,11 +57,11 @@ This is package contains Python 3 version of the package.
 
 %endif # with_python3
 
-%if 0%{?s3_with_python36:1}
-%package -n     python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%package -n     python36-%{pypi_name}
 Summary:        A built-package format for Python
 
-%description -n python%{python3_other_pkgversion}-%{pypi_name}
+%description -n python36-%{pypi_name}
 A built-package format for Python.
 
 A wheel is a ZIP-format archive with a specially formatted filename and the
@@ -90,9 +90,9 @@ rm -rf %{py3dir}
 cp -a . %{py3dir}
 %endif # with_python3
 
-%if 0%{?s3_with_python36:1}
-rm -rf %{py3dir}-for%{python3_other_pkgversion}
-cp -a . %{py3dir}-for%{python3_other_pkgversion}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+rm -rf %{py3dir}-for36
+cp -a . %{py3dir}-for36
 %endif # with_python36
 
 
@@ -105,9 +105,9 @@ pushd %{py3dir}
 popd
 %endif # with_python3
 
-%if 0%{?s3_with_python36:1}
-pushd %{py3dir}-for%{python3_other_pkgversion}
-%{__python3_other} setup.py build
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+pushd %{py3dir}-for36
+python3 setup.py build
 popd
 %endif # with_python36
 
@@ -125,16 +125,16 @@ for f in $(ls); do mv $f python%{python3_pkgversion}-$f; done
 popd
 %endif # with_python3
 
-%if 0%{?s3_with_python36:1}
-pushd %{py3dir}-for%{python3_other_pkgversion}
-%{__python3_other} setup.py install --skip-build --root %{buildroot}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+pushd %{py3dir}-for36
+python3 setup.py install --skip-build --root %{buildroot}
 popd
 pushd %{buildroot}%{_bindir}
-for f in $(ls -1 | grep -v '^python'); do mv $f python%{python3_other_pkgversion}-$f; done
+for f in $(ls -1 | grep -v '^python'); do mv $f python36-$f; done
 popd
 %endif # with_python36
 
-%{__python} setup.py install --skip-build --root %{buildroot}
+#%{__python} setup.py install --skip-build --root %{buildroot}
 
 
 %check
@@ -151,19 +151,13 @@ popd
 
 # not tested for python_other, just as for python3 above
 %if 0
-pushd %{py3dir}-for%{python3_other_pkgversion}
+pushd %{py3dir}-for36
 rm setup.cfg
-PYTHONPATH=$(pwd) py.test-%{python%{python3_other_pkgversion}_version} --ignore build
+PYTHONPATH=$(pwd) python36 -m pytest --ignore build
 popd
 %endif # have python3_other
 
-
 %files
-%doc LICENSE.txt CHANGES.txt README.txt
-%{_bindir}/wheel
-%{python_sitelib}/%{pypi_name}*
-%exclude %{python_sitelib}/%{pypi_name}/test
-
 %if 0%{?s3_with_python34:1}
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc LICENSE.txt CHANGES.txt README.txt
@@ -172,12 +166,12 @@ popd
 %exclude %{python3_sitelib}/%{pypi_name}/test
 %endif # with_python3
 
-%if 0%{?s3_with_python36:1}
-%files -n python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%files -n python36-%{pypi_name}
 %doc LICENSE.txt CHANGES.txt README.txt
-%{_bindir}/python%{python3_other_pkgversion}-wheel
-%{python3_other_sitelib}/%{pypi_name}*
-%exclude %{python3_other_sitelib}/%{pypi_name}/test
+%{_bindir}/python36-wheel
+%{python3_sitelib}/%{pypi_name}*
+%exclude %{python3_sitelib}/%{pypi_name}/test
 %endif # with_python36
 
 

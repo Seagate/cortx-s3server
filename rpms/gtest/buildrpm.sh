@@ -16,4 +16,5 @@ rm -rf gtest-${VERSION} gooletest
 
 cd -
 
+yum-builddep -y ${BASEDIR}/gtest.spec
 rpmbuild -ba ${BASEDIR}/gtest.spec

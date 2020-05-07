@@ -94,36 +94,36 @@ A low-level interface to a growing number of Amazon Web Services. The
 botocore package is the foundation for the AWS CLI as well as boto3.
 %endif # with_python34
 
-%if 0%{?s3_with_python36:1}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
 cd test
-%package -n     python%{python3_other_pkgversion}-%{pypi_name}
+%package -n     python36-%{pypi_name}
 Summary:        Low-level, data-driven core of boto 3
-BuildRequires:  python%{python3_other_pkgversion}-devel
-BuildRequires:  python%{python3_other_pkgversion}-setuptools
+BuildRequires:  python3-devel
+BuildRequires:  python36-setuptools
 %if %{with docs}
-BuildRequires:  python%{python3_other_pkgversion}-sphinx
-BuildRequires:  python%{python3_other_pkgversion}-guzzle_sphinx_theme
+BuildRequires:  python36-sphinx
+BuildRequires:  python36-guzzle_sphinx_theme
 %endif # with docs
 %if %{with tests}
 %{?fc24:BuildRequires: python3-behave}
-BuildRequires:  python%{python3_other_pkgversion}-mock
-BuildRequires:  python%{python3_other_pkgversion}-nose
-BuildRequires:  python%{python3_other_pkgversion}-six
-BuildRequires:  python%{python3_other_pkgversion}-wheel
-BuildRequires:  python%{python3_other_pkgversion}-docutils
-BuildRequires:  python%{python3_other_pkgversion}-dateutil
-BuildRequires:  python%{python3_other_pkgversion}-jmespath
+BuildRequires:  python36-mock
+BuildRequires:  python36-nose
+BuildRequires:  python36-six
+BuildRequires:  python36-wheel
+BuildRequires:  python36-docutils
+BuildRequires:  python36-dateutil
+BuildRequires:  python36-jmespath
 %endif # with tests
-Requires:       python%{python3_other_pkgversion}-jmespath >= 0.7.1
+Requires:       python36-jmespath >= 0.7.1
 %if %{with fix_dateutil}
-Requires:       python%{python3_other_pkgversion}-dateutil >= 1.4
+Requires:       python36-dateutil >= 1.4
 %else
-Requires:       python%{python3_other_pkgversion}-dateutil >= 2.1
+Requires:       python36-dateutil >= 2.1
 %endif # with fix_dateutil
-Requires:       python%{python3_other_pkgversion}-docutils >= 0.10
-%{?python_provide:%python_provide python%{python3_other_pkgversion}-%{pypi_name}}
+Requires:       python36-docutils >= 0.10
+%{?python_provide:%python_provide python36-%{pypi_name}}
 
-%description -n python%{python3_other_pkgversion}-%{pypi_name}
+%description -n python36-%{pypi_name}
 A low-level interface to a growing number of Amazon Web Services. The
 botocore package is the foundation for the AWS CLI as well as boto3.
 %endif # with_python36
@@ -151,16 +151,16 @@ rm -rf tests/integration
 %if 0%{?s3_with_python34:1}
 %py3_build
 %endif # with python3
-%if 0%{?s3_with_python36:1}
-%py3_other_build
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_build
 %endif # with_python36
 
 %install
 %if 0%{?s3_with_python34:1}
 %py3_install
 %endif # with python3
-%if 0%{?s3_with_python36:1}
-%py3_other_install
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_install
 %endif # with_python36
 %py2_install
 %if %{with docs}
@@ -178,7 +178,7 @@ rm -rf html/.{doctrees,buildinfo}
 %check
 # %{__python2} setup.py test
 nosetests-2.7 --with-coverage --cover-erase --cover-package botocore --with-xunit --cover-xml -v tests/unit/ tests/functional/
-%if 0%{?s3_with_python34:1}
+%if 0%{?s3_with_python34:1}  || 0%{?s3_with_python36_rhel7:1}
 # %{__python3} setup.py test
 nosetests-3.5 --with-coverage --cover-erase --cover-package botocore --with-xunit --cover-xml -v tests/unit/ tests/functional/
 # will not add python3_other code -- it's not needed and will be a mess, see nosetests-3.5 above, it does not assume multiple py3 versions, it won't even work now because we don't have 3.5 installed!
@@ -201,12 +201,12 @@ nosetests-3.5 --with-coverage --cover-erase --cover-package botocore --with-xuni
 %{python3_sitelib}/%{pypi_name}-*.egg-info/
 %endif # with python3
 
-%if 0%{?s3_with_python36:1}
-%files -n python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%files -n python36-%{pypi_name}
 %doc README.rst
 %license LICENSE.txt
-%{python3_other_sitelib}/%{pypi_name}/
-%{python3_other_sitelib}/%{pypi_name}-*.egg-info/
+%{python3_sitelib}/%{pypi_name}/
+%{python3_sitelib}/%{pypi_name}-*.egg-info/
 %endif # with_python36
 
 %if %{with docs}

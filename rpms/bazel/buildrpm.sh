@@ -13,5 +13,5 @@ rm -rf bazel*
 wget -O bazel-0.13.0.zip https://github.com/bazelbuild/bazel/releases/download/0.13.0/bazel-0.13.0-dist.zip
 
 cd -
-
+yum-builddep -y ${BASEDIR}/bazel.spec
 rpmbuild -ba ${BASEDIR}/bazel.spec

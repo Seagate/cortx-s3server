@@ -41,24 +41,24 @@ write software that makes use of services like Amazon S3
 and Amazon EC2.
 %endif # with python34
 
-%if 0%{?s3_with_python36:1}
-%package -n     python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%package -n     python36-%{pypi_name}
 Summary:        The AWS SDK for Python
 
-BuildRequires:  python%{python3_other_pkgversion}-devel
-BuildRequires:  python%{python3_other_pkgversion}-setuptools
-BuildRequires:  python%{python3_other_pkgversion}-nose
-BuildRequires:  python%{python3_other_pkgversion}-mock
-BuildRequires:  python%{python3_other_pkgversion}-wheel
-BuildRequires:  python%{python3_other_pkgversion}-botocore
-BuildRequires:  python%{python3_other_pkgversion}-jmespath
-BuildRequires:  python%{python3_other_pkgversion}-s3transfer
-Requires:       python%{python3_other_pkgversion}-botocore >= 1.5.0
-Requires:       python%{python3_other_pkgversion}-jmespath >= 0.7.1
-Requires:       python%{python3_other_pkgversion}-s3transfer >= 0.1.10
-%{?python_provide:%python_provide python%{python3_other_pkgversion}-%{pypi_name}}
+BuildRequires:  python3-devel
+BuildRequires:  python36-setuptools
+BuildRequires:  python36-nose
+BuildRequires:  python36-mock
+BuildRequires:  python36-wheel
+BuildRequires:  python36-botocore
+BuildRequires:  python36-jmespath
+BuildRequires:  python36-s3transfer
+Requires:       python36-botocore >= 1.5.0
+Requires:       python36-jmespath >= 0.7.1
+Requires:       python36-s3transfer >= 0.1.10
+%{?python_provide:%python_provide python36-%{pypi_name}}
 
-%description -n python%{python3_other_pkgversion}-%{pypi_name}
+%description -n python36-%{pypi_name}
 Boto3 is the Amazon Web Services (AWS) Software Development
 Kit (SDK) for Python, which allows Python developers to
 write software that makes use of services like Amazon S3
@@ -75,16 +75,16 @@ rm -rf tests/integration
 %if 0%{?s3_with_python34:1}
 %py3_build
 %endif # with python34
-%if 0%{?s3_with_python36:1}
-%py3_other_build
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_build
 %endif # with_python36
 
 %install
 %if 0%{?s3_with_python34:1}
 %py3_install
 %endif # with python34
-%if 0%{?s3_with_python36:1}
-%py3_other_install
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%py3_install
 %endif # with_python36
 
 
@@ -92,8 +92,8 @@ rm -rf tests/integration
 %if 0%{?s3_with_python34:1}
 %{__python3} setup.py test
 %endif # with python34
-%if 0%{?s3_with_python36:1}
-%{__python3_other} setup.py test
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+python3 setup.py test
 %endif # with_python36
 
 %if 0%{?s3_with_python34:1}
@@ -104,12 +104,12 @@ rm -rf tests/integration
 %{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with python34
 
-%if 0%{?s3_with_python36:1}
-%files -n python%{python3_other_pkgversion}-%{pypi_name}
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+%files -n python36-%{pypi_name}
 %doc README.rst
 %license LICENSE
-%{python3_other_sitelib}/%{pypi_name}
-%{python3_other_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
+%{python3_sitelib}/%{pypi_name}
+%{python3_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
 %endif # with_python36
 
 %changelog

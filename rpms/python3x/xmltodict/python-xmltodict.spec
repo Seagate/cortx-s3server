@@ -1,4 +1,4 @@
-%if 0%{?s3_with_python34:1}%{?s3_with_python36_ver8:1} != 0
+%if 0%{?s3_with_python34:1}%{?s3_with_python36_ver8:1}%{?s3_with_python36_rhel7:1} != 0
 %{!?py3ver: %global py3ver %(%{__python3} -c "import sys ; print(sys.version[:3])")}
 %else
 %{!?__python2: %global __python2 /usr/bin/python2}
@@ -12,8 +12,8 @@
 
 %global srcname xmltodict
 
-%if 0%{?s3_with_python36_ver8:1}
-Name:               python3-xmltodict
+%if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
+Name:               python36-xmltodict
 %else
 Name:               python-xmltodict
 %endif
@@ -41,9 +41,9 @@ BuildRequires:      python%{python3_pkgversion}-devel
 BuildRequires:      python%{python3_pkgversion}-nose
 %endif
 
-%if 0%{?s3_with_python36:1}
-BuildRequires:  python%{python3_other_pkgversion}-devel
-BuildRequires:  python%{python3_other_pkgversion}-nose
+%if 0%{?s3_with_python36:1} || 0%{?s3_with_python36_rhel7:1}
+BuildRequires:  python3-devel
+BuildRequires:  python36-nose
 %endif # with_python36
 
 %description
@@ -110,13 +110,13 @@ Wikipedia.
 %endif
 
 %if 0%{?s3_with_python36:1}
-%package -n python%{python3_other_pkgversion}-xmltodict
+%package -n python36-xmltodict
 Summary:            Makes working with XML feel like you are working with JSON
 Group:              Development/Libraries
 
-Requires:           python%{python3_other_pkgversion}
+Requires:           python36
 
-%description -n python%{python3_other_pkgversion}-xmltodict
+%description -n python36-xmltodict
 xmltodict is a Python module that makes working with XML feel like you are
 working with JSON.  It's very fast (Expat-based) and has a streaming mode
 with a small memory footprint, suitable for big XML dumps like Discogs or
@@ -144,12 +144,13 @@ Wikipedia.
     u'element as well'
 %endif # with_python36
 
-%if 0%{?s3_with_python36_ver8:1}
+%if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
 #%package -n python3-xmltodict
 
 Requires:           python36
 
-%endif # with_python36_ver8
+%endif # with_python36_ver8 || with_python36_rhel7
+
 
 %prep
 %setup -q -n %{srcname}-%{version}
@@ -162,19 +163,20 @@ find %{py3dir} -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python3}|'
 %endif
 
 %if 0%{?s3_with_python36:1}
-rm -rf %{py3dir}-for%{python3_other_pkgversion}
-cp -a . %{py3dir}-for%{python3_other_pkgversion}
-find %{py3dir}-for%{python3_other_pkgversion} -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python3_other}|'
+rm -rf %{py3dir}-for36
+cp -a . %{py3dir}-for36
+find %{py3dir}-for36 -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python3_other}|'
 %endif # with_python36
 
-%if 0%{?s3_with_python36_ver8:1}
+%if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
 rm -rf %{py3dir}
 cp -a . %{py3dir}
 find %{py3dir} -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python3}|'
 %endif
 
+
 %build
-%if 0%{?s3_with_python36_ver8:1}
+%if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
 %{__python3} setup.py build
 %else
 %{__python2} setup.py build
@@ -185,20 +187,20 @@ pushd %{py3dir}
 popd
 %endif
 %if 0%{?s3_with_python36:1}
-pushd %{py3dir}-for%{python3_other_pkgversion}
-%{__python3_other} setup.py build
+pushd %{py3dir}-for36
+%{__python3} setup.py build
 popd
 %endif # with_python36
-%if 0%{?s3_with_python36_ver8:1}
+%if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
 pushd %{py3dir}
 %{__python3} setup.py build
 popd
-%endif
+%endif #with_python36_ver8 || with_python36_rhel7
 
 %install
 %if 0%{?s3_with_python36:1}
-pushd %{py3dir}-for%{python3_other_pkgversion}
-%{__python3_other} setup.py install -O1 --skip-build --root=%{buildroot}
+pushd %{py3dir}-for36
+python3 setup.py install -O1 --skip-build --root=%{buildroot}
 popd
 %endif # with_python36
 %if 0%{?s3_with_python34:1}
@@ -206,9 +208,9 @@ pushd %{py3dir}
 %{__python3} setup.py install -O1 --skip-build --root=%{buildroot}
 popd
 %endif
-%if 0%{?s3_with_python36_ver8:1}
+%if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
 pushd %{py3dir}
-%{__python3} setup.py install -O1 --skip-build --root=%{buildroot}
+python3 setup.py install -O1 --skip-build --root=%{buildroot}
 popd
 %endif
 
@@ -224,15 +226,21 @@ nosetests-%{py3ver}
 popd
 %endif
 %if 0%{?s3_with_python36:1}
-pushd %{py3dir}-for%{python3_other_pkgversion}
-nosetests-%{py3ver_other}
+pushd %{py3dir}-for36
+nosetests-3.6
 popd
 %endif # with_python36
 %if 0%{?s3_with_python36_ver8:1}
 pushd %{py3dir}
 nosetests-3
 popd
-%endif
+%endif # with_python36_ver8
+%if 0%{?s3_with_python36_rhel7:1}
+pushd %{py3dir}
+nosetests-%{py3ver}
+popd
+%endif # with_python36_rhel7
+
 
 %if 0%{?s3_with_python34:1}
 %files -n python%{python3_pkgversion}-xmltodict
@@ -243,15 +251,15 @@ popd
 %endif
 
 %if 0%{?s3_with_python36:1}
-%files -n python%{python3_other_pkgversion}-xmltodict
+%files -n python36-xmltodict
 %doc README.md LICENSE PKG-INFO
-%{python3_other_sitelib}/%{srcname}.py
-%{python3_other_sitelib}/%{srcname}-%{version}-*
-%{python3_other_sitelib}/__pycache__/%{srcname}*
+%{python3_sitelib}/%{srcname}.py
+%{python3_sitelib}/%{srcname}-%{version}-*
+%{python3_sitelib}/__pycache__/%{srcname}*
 %endif # with_python36
 
-%if 0%{?s3_with_python36_ver8:1}
-%files -n python3-xmltodict
+%if 0%{?s3_with_python36_ver8:1} || 0%{?s3_with_python36_rhel7:1}
+%files -n python36-xmltodict
 %doc README.md LICENSE PKG-INFO
 %{python3_sitelib}/%{srcname}.py
 %{python3_sitelib}/%{srcname}-%{version}-*

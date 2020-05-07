@@ -7,7 +7,8 @@ Group:          System Environment/Libraries
 URL:            https://github.com/google/googlemock
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
-BuildRequires:  gtest-devel >= 1.7.0
+# gtest is clonned in gmock build so this check is not required here
+#BuildRequires:  gtest-devel >= 1.7.0
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool

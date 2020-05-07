@@ -10,6 +10,10 @@ if [ $VERSION = "\"7\"" ] || [ $VERSION = "\"7.6\"" ]
 then
   pkg_list="[ wheel, jmespath, xmltodict, botocore, s3transfer, boto3 ]"
   relevant_pkgs=("wheel" "jmespath" "xmltodict" "botocore" "s3transfer" "boto3")
+elif [[ ($OS = "\"rhel\"") && ($VERSION = "\"7.7\"")]];
+then
+  pkg_list="[ wheel, jmespath, xmltodict, scripttest, botocore, s3transfer, boto3 ]"
+  relevant_pkgs=("wheel" "jmespath" "xmltodict" "scripttest" "botocore" "s3transfer" "boto3")
 else
   pkg_list="[ xmltodict, scripttest ]"
   relevant_pkgs=("xmltodict" "scripttest")
@@ -20,9 +24,9 @@ USAGE="USAGE: bash $(basename "$0") [--all | --python34 | --python36 ]
     Builds python modules:
     $pkg_list.
 where:
---all         default. Build for both Python 3.4 & 3.6
+--all         Build for both Python 3.4 & 3.6
 --python34    Build for python 3.4
---python36    Build for python 3.6
+--python36    default. Build for python 3.6
 --pkg         Package to build. When not specified build all packages."
 
 build_for_all_py_vers=0
@@ -44,7 +48,7 @@ fi
 
 if [ $# -eq 0 ]
 then
-  build_for_all_py_vers=1
+  build_for_py_36=1
 else
   while [ "$1" != "" ]; do
     case "$1" in
@@ -130,6 +134,16 @@ install_python36_deps_rhel8() {
     yum install -y https://mirror.umd.edu/fedora/epel/8/Everything/x86_64/Packages/p/python3-pbr-5.1.2-3.el8.noarch.rpm
 }
 
+install_python36_deps_rhel7() {
+  for package in python3 python3-devel python36-six python36-docutils python36-dateutil python36-nose python36-mock
+  do
+    yum info $package > /dev/null || yum install -y $package
+  done
+
+  yum info python36-pbr > /dev/null ||
+    yum install -y https://mirror.umd.edu/fedora/epel/7/x86_64/Packages/p/python36-pbr-4.2.0-3.el7.noarch.rpm
+}
+
 install_python34_deps() {
   yum install -y python34 python34-devel
 }
@@ -144,6 +158,11 @@ if [[ build_for_all_py_vers -eq 1 ]]; then
     install_python36_deps_rhel8
     rpmbuild_opts=("${rpmbuild_opts[@]}" --define 's3_with_python36_ver8 1')
     yumdep_opts=("${yumdep_opts[@]}" --define 's3_with_python36_ver8 1')
+  elif [[ ($OS = "\"rhel\"") && ($VERSION = "\"7.7\"")]]; then
+    echo "Building packages for python 3/3.6 in rhel7"
+    install_python36_deps_rhel7
+    rpmbuild_opts=("${rpmbuild_opts[@]}" --define 's3_with_python36_rhel7 1')
+    yumdep_opts=("${yumdep_opts[@]}" --define 's3_with_python36_rhel7 1')
   else
     echo "Building packages for python 3.4 & python 3.6 ..."
     install_python34_deps
@@ -162,11 +181,17 @@ if [[ build_for_py_36 -eq 1 ]]; then
   echo "Building packages for python 3.6 ..."
   if [[ ($OS = "rhel" || $OS = "centos") && ($VERSION = "\"8.0\"")]]; then
     install_python36_deps_rhel8
+    rpmbuild_opts=("${rpmbuild_opts[@]}" --define 's3_with_python36 1')
+    yumdep_opts=("${yumdep_opts[@]}" --define 's3_with_python36 1')
+  elif [[ ($OS = "\"rhel\"") && ($VERSION = "\"7.7\"") ]]; then
+    install_python36_deps_rhel7
+    rpmbuild_opts=("${rpmbuild_opts[@]}" --define 's3_with_python36_rhel7 1')
+    yumdep_opts=("${yumdep_opts[@]}" --define 's3_with_python36_rhel7 1')
   else
     install_python36_deps
+    rpmbuild_opts=("${rpmbuild_opts[@]}" --define 's3_with_python36 1')
+    yumdep_opts=("${yumdep_opts[@]}" --define 's3_with_python36 1')
   fi
-  rpmbuild_opts=("${rpmbuild_opts[@]}" --define 's3_with_python36 1')
-  yumdep_opts=("${yumdep_opts[@]}" --define 's3_with_python36 1')
 fi
 if [[ $pkg = "" ]]; then
   echo "Building all packages $pkg_list..."
@@ -267,5 +292,11 @@ need_pkg s3transfer && (yum-builddep -y ${BASEDIR}/s3transfer/python-s3transfer.
 # s3transfer dep required for boto3
 yum localinstall ~/rpmbuild/RPMS/noarch/python3* -y
 
-need_pkg boto3      && (yum-builddep -y ${BASEDIR}/boto3/python-boto3.spec "${yumdep_opts[@]}" ;
-                       rpmbuild -ba ${BASEDIR}/boto3/python-boto3.spec "${rpmbuild_opts[@]}")
+
+if need_pkg boto3; then
+  (yum-builddep -y ${BASEDIR}/boto3/python-boto3.spec "${yumdep_opts[@]}" ; \
+   rpmbuild -ba ${BASEDIR}/boto3/python-boto3.spec "${rpmbuild_opts[@]}")
+else
+   /bin/true
+fi #if package installation is not required then script should return status code as 0 not the return code of "need_pkg" function
+

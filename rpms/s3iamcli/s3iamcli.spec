@@ -35,7 +35,7 @@ Vendor:     Seagate
 
 BuildRequires:  python3-rpm-macros
 BuildRequires:  python36
-BuildRequires:  python%{py_short_ver}-devel
+BuildRequires:  python3-devel
 BuildRequires:  python%{py_short_ver}-setuptools
 BuildRequires:  python%{py_short_ver}-wheel
 
@@ -56,7 +56,7 @@ Group:          Development/Tools
 
 BuildRequires:  python3-rpm-macros
 BuildRequires:  python36
-BuildRequires:  python%{py_short_ver}-devel
+BuildRequires:  python3-devel
 BuildRequires:  python%{py_short_ver}-setuptools
 
 Requires:  python36
