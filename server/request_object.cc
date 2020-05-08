@@ -840,10 +840,9 @@ void RequestObject::respond_unsupported_api() {
   // For S3 request, if method is PUT and no bucket specified
   // then return NotImplemented, with http code 405
   S3RequestObject* s3_request = dynamic_cast<S3RequestObject*>(this);
-  if ((s3_request != nullptr) && (S3HttpVerb::PUT == this->http_verb())) {
-    if ("" == s3_request->get_bucket_name()) {
-      respond_error("MethodNotAllowed");
-    }
+  if (s3_request && S3HttpVerb::PUT == http_verb() &&
+      s3_request->get_bucket_name().empty()) {
+    respond_error("MethodNotAllowed");
   } else {
     respond_error("NotImplemented");
   }
