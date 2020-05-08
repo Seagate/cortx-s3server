@@ -772,8 +772,11 @@ TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AllSucessQuietModeOn) {
   action_under_test->add_success("S_Key1");
   action_under_test->add_success("S_Key2");
   std::string &response_xml = action_under_test->to_xml(true);
-  // Verify 'response_xml' is empty
-  EXPECT_STREQ("", response_xml.c_str());
+  std::string expect_xml =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<DeleteResult "
+      "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"></DeleteResult>";
+  // Verify 'response_xml' matches 'expect_xml'
+  EXPECT_STREQ(expect_xml.c_str(), response_xml.c_str());
 }
 
 TEST_F(S3DeleteMultipleObjectsResponseBodyTest, AtleastOneFailedQuietModeOff) {
