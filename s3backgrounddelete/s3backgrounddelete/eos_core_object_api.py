@@ -6,6 +6,7 @@ from s3backgrounddelete.eos_core_error_respose import EOSCoreErrorResponse
 from s3backgrounddelete.eos_core_success_response import EOSCoreSuccessResponse
 from s3backgrounddelete.eos_core_client import EOSCoreClient
 from s3backgrounddelete.eos_core_util import EOSCoreUtil
+from s3backgrounddelete.IEMutil import IEMutil
 
 # EOSCoreObjectApi supports object REST-API's Put, Get & Delete
 
@@ -59,6 +60,7 @@ class EOSCoreObjectApi(EOSCoreClient):
                 request_body,
                 headers=headers)
         except ConnectionRefusedError as ex:
+            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -101,6 +103,7 @@ class EOSCoreObjectApi(EOSCoreClient):
                 request_uri,
                 headers=headers)
         except ConnectionRefusedError as ex:
+            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -151,6 +154,7 @@ class EOSCoreObjectApi(EOSCoreClient):
                 body,
                 headers=headers)
         except ConnectionRefusedError as ex:
+            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:
@@ -202,6 +206,7 @@ class EOSCoreObjectApi(EOSCoreClient):
                 body,
                 headers=headers)
         except ConnectionRefusedError as ex:
+            IEMutil("ERROR", IEMutil.S3_CONN_FAILURE, IEMutil.S3_CONN_FAILURE_STR)
             self._logger.error(repr(ex))
             return False, EOSCoreErrorResponse(502,"","ConnectionRefused")
         except Exception as ex:

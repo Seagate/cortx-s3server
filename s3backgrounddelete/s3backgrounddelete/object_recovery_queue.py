@@ -8,6 +8,7 @@ from s3backgrounddelete.eos_core_kv_api import EOSCoreKVApi
 from s3backgrounddelete.eos_core_object_api import EOSCoreObjectApi
 from s3backgrounddelete.eos_core_index_api import EOSCoreIndexApi
 from s3backgrounddelete.object_recovery_validator import ObjectRecoveryValidator
+from s3backgrounddelete.IEMutil import IEMutil
 
 
 class ObjectRecoveryRabbitMq(object):
@@ -134,6 +135,7 @@ class ObjectRecoveryRabbitMq(object):
 
         except Exception as exception:
             err_msg = "error:%s, %s" % (exception, traceback.format_exc())
+            IEMutil("ERROR", IEMutil.RABBIT_MQ_CONN_FAILURE, IEMutil.RABBIT_MQ_CONN_FAILURE_STR)
             self.logger.error("msg_queue receive data failed." + str(err_msg))
             self.connect()
             self.receive_data()
