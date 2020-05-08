@@ -40,7 +40,7 @@ S3MempoolManager::S3MempoolManager(size_t max_mem)
 
 int S3MempoolManager::initialize(std::vector<int> unit_sizes,
                                  int initial_buffer_count_per_pool,
-                                 size_t expandable_count) {
+                                 size_t expandable_count, int flags) {
   s3_log(S3_LOG_DEBUG, "",
          "initial_buffer_count_per_pool = %d, expandable_count = %zu",
          initial_buffer_count_per_pool, expandable_count);
@@ -52,11 +52,11 @@ int S3MempoolManager::initialize(std::vector<int> unit_sizes,
     MemoryPoolHandle handle;
     s3_log(S3_LOG_INFO, "", "Creating memory pool for unit_size = %d.\n",
            unit_size);
+
     int rc = mempool_create_with_shared_mem(
         unit_size, initial_buffer_count_per_pool * unit_size,
         expandable_count * unit_size, mem_get_free_space_func,
-        mem_mark_used_space_func, mem_mark_free_space_func,
-        CREATE_ALIGNED_MEMORY, &handle);
+        mem_mark_used_space_func, mem_mark_free_space_func, flags, &handle);
 
     if (rc != 0) {
       s3_log(S3_LOG_ERROR, "", "FATAL: Memory pool creation failed!\n");
@@ -103,7 +103,7 @@ void S3MempoolManager::free_pools() {
 }
 
 //  Return the buffer of give unit_size
-void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size, int flags) {
+void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size) {
   s3_log(S3_LOG_DEBUG, "", "Entering with unit_size[%zu]\n", unit_size);
   auto item = pool_of_mem_pool.find(unit_size);
   if (item != pool_of_mem_pool.end()) {
@@ -111,7 +111,7 @@ void *S3MempoolManager::get_buffer_for_unit_size(size_t unit_size, int flags) {
     MemoryPoolHandle handle = item->second;
     int max_retries = 3;
     while (max_retries > 0) {
-      void *buffer = (void *)mempool_getbuffer(handle, flags);
+      void *buffer = (void *)mempool_getbuffer(handle);
       // If buffer is NULL, check if other pool can release some memory
       if (buffer == NULL) {
         s3_log(S3_LOG_DEBUG, "", "Allocation error for unit_size[%zu]\n",

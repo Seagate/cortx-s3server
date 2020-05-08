@@ -79,7 +79,7 @@ index 8510955..2ebe8be 100644
 +	memset(chain, 0, EVBUFFER_CHAIN_SIZE);
 +	if ((pool_item_size >= to_alloc) && (pool_item_size % to_alloc == 0)) {
 +		if ((chain->buffer = (unsigned char *)mempool_getbuffer(
-+			g_pool_handle, ZEROED_ALLOCATION)) == NULL) {
++			g_pool_handle)) == NULL) {
 +			mm_free(chain);
 +			return NULL;
 +		}

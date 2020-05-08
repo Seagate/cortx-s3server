@@ -681,18 +681,25 @@ int main(int argc, char **argv) {
     s3_log(S3_LOG_FATAL, "", "Stats Init failed!!\n");
   }
 
+  int libevent_mempool_flags = CREATE_ALIGNED_MEMORY;
+  if (g_option_instance->get_libevent_mempool_zeroed_buffer()) {
+    libevent_mempool_flags = libevent_mempool_flags | ZEROED_BUFFER;
+  }
+
   // Call this function at starting as we need to make use of our own
   // memory allocation/deallocation functions
   rc = event_use_mempool(g_option_instance->get_libevent_pool_buffer_size(),
                          g_option_instance->get_libevent_pool_initial_size(),
                          g_option_instance->get_libevent_pool_expandable_size(),
                          g_option_instance->get_libevent_pool_max_threshold(),
-                         CREATE_ALIGNED_MEMORY);
+                         libevent_mempool_flags);
+
   if (rc != 0) {
     s3daemon.delete_pidfile();
     finalize_cli_options();
     s3_log(S3_LOG_FATAL, "", "Memory pool creation for libevent failed!\n");
   }
+
   event_set_max_read(g_option_instance->get_libevent_max_read_size());
   evhtp_set_low_watermark(g_option_instance->get_libevent_max_read_size());
 
@@ -800,12 +807,18 @@ int main(int argc, char **argv) {
     }
   }
 
+  int clovis_read_mempool_flags = CREATE_ALIGNED_MEMORY;
+  if (g_option_instance->get_clovis_read_mempool_zeroed_buffer()) {
+    clovis_read_mempool_flags = clovis_read_mempool_flags | ZEROED_BUFFER;
+  }
+
   // Create memory pool for clovis read operations.
   rc = S3MempoolManager::create_pool(
       g_option_instance->get_clovis_read_pool_max_threshold(),
       g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
       g_option_instance->get_clovis_read_pool_initial_buffer_count(),
-      g_option_instance->get_clovis_read_pool_expandable_count());
+      g_option_instance->get_clovis_read_pool_expandable_count(),
+      clovis_read_mempool_flags);
 
   if (rc != 0) {
     s3daemon.delete_pidfile();

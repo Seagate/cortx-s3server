@@ -145,6 +145,10 @@ class S3Option {
   std::string clovis_cass_cluster_ep;
   std::string clovis_cass_keyspace;
   int clovis_cass_max_column_family_num;
+
+  bool clovis_read_mempool_zeroed_buffer;
+  bool libevent_mempool_zeroed_buffer;
+
   size_t clovis_read_pool_initial_buffer_count;
   size_t clovis_read_pool_expandable_count;
   size_t clovis_read_pool_max_threshold;
@@ -225,6 +229,9 @@ class S3Option {
     clovis_cass_cluster_ep = "127.0.0.1";
     clovis_cass_keyspace = "clovis_index_keyspace";
     clovis_cass_max_column_family_num = 1;
+
+    clovis_read_mempool_zeroed_buffer = 0;
+    libevent_mempool_zeroed_buffer = 0;
 
     // libevent_pool_buffer_size is used for each item in this
     clovis_read_pool_initial_buffer_count = 10;   // 10 buffer
@@ -412,6 +419,9 @@ class S3Option {
 
   std::string get_redis_srv_addr();
   unsigned short get_redis_srv_port();
+
+  bool get_clovis_read_mempool_zeroed_buffer();
+  bool get_libevent_mempool_zeroed_buffer();
 
   bool is_stats_enabled();
   void set_stats_enable(bool enable);

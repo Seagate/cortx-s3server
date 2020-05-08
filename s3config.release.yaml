@@ -75,6 +75,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT: 10        # 10 blocks, the initial pool size = multiple of S3_CLOVIS_UNIT_SIZE
    S3_CLOVIS_READ_POOL_EXPANDABLE_COUNT: 50            # 50 blocks, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_CLOVIS_READ_POOL_MAX_THRESHOLD: 1048576000        # 1GB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_CLOVIS_READ_MEMPOOL_ZERO_BUFFER: false           # Enable Clovis Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_CLOVIS_OPERATION_WAIT_PERIOD: 90                  # 90 s, Maximum wait duration for sync clovis operations.
 S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_BUFFER_SIZE: 16384                  # Pool buffer size, in case of S3_CLOVIS_UNIT_SIZE of size 1MB, it is recommended to have S3_LIBEVENT_POOL_BUFFER_SIZE of size 16384
@@ -83,4 +84,5 @@ S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 134217728          # 128mb, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_LIBEVENT_POOL_MAX_THRESHOLD: 3221225472           # 3GB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
    S3_LIBEVENT_POOL_RESERVE_SIZE: 134217728             # 128MB, deny PUT request if mempool free space is less than the mentioned size in bytes
+   S3_LIBEVENT_MEMPOOL_ZERO_BUFFER: false               # Enable Libevent Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_LIBEVENT_POOL_RESERVE_PERCENT: 5                  # 5%, deny PUT request if mempool free space in percent is less than the mentioned percent

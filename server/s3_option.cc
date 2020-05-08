@@ -236,6 +236,12 @@ bool S3Option::load_section(std::string section_name,
                                "S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM");
       clovis_cass_max_column_family_num =
           s3_option_node["S3_CLOVIS_CASS_MAX_COL_FAMILY_NUM"].as<int>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_MEMPOOL_ZERO_BUFFER");
+      clovis_read_mempool_zeroed_buffer =
+          s3_option_node["S3_CLOVIS_READ_MEMPOOL_ZERO_BUFFER"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_CLOVIS_OPERATION_WAIT_PERIOD");
       clovis_op_wait_period =
@@ -302,6 +308,12 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_LIBEVENT_POOL_RESERVE_SIZE");
       libevent_pool_reserve_size =
           s3_option_node["S3_LIBEVENT_POOL_RESERVE_SIZE"].as<size_t>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_LIBEVENT_MEMPOOL_ZERO_BUFFER");
+      libevent_mempool_zeroed_buffer =
+          s3_option_node["S3_LIBEVENT_MEMPOOL_ZERO_BUFFER"].as<bool>();
+
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_LIBEVENT_POOL_RESERVE_PERCENT");
       libevent_pool_reserve_percent =
@@ -860,6 +872,11 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_REDIS_SERVER_ADDRESS = %s\n",
          redis_srv_addr.c_str());
 
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_MEMPOOL_ZERO_BUFFER=%s\n",
+         clovis_read_mempool_zeroed_buffer ? "true" : "false");
+  s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_MEMPOOL_ZERO_BUFFER=%s\n",
+         libevent_mempool_zeroed_buffer ? "true" : "false");
+
   return;
 }
 
@@ -1191,3 +1208,11 @@ bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
 std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 
 unsigned short S3Option::get_redis_srv_port() { return redis_srv_port; }
+
+bool S3Option::get_clovis_read_mempool_zeroed_buffer() {
+  return clovis_read_mempool_zeroed_buffer;
+}
+
+bool S3Option::get_libevent_mempool_zeroed_buffer() {
+  return libevent_mempool_zeroed_buffer;
+}

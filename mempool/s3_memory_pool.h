@@ -29,10 +29,10 @@ extern "C" {
 #include <assert.h>
 #include <stdlib.h>
 
+/* Pool Creation flags */
 #define CREATE_ALIGNED_MEMORY 0x0001
 #define ENABLE_LOCKING 0x0002
-#define ZEROED_ALLOCATION 0x0004
-#define PREALLOCATE_MEM_ON_CREATE 0x0008
+#define ZEROED_BUFFER 0x0004
 
 #define MEMORY_ALIGNMENT 4096
 #define S3_MEMPOOL_ERROR -1
@@ -132,12 +132,11 @@ int mempool_create_with_shared_mem(
 /**
  * Allocate some buffer memory via memory pool
  * args:
- * flags (in) if ZEROED_ALLOCATION set then zero memory
  * handle (in) handle to memory pool obtained from mempool_create
  * returns:
  * 0 on success, otherwise an error
  */
-void *mempool_getbuffer(MemoryPoolHandle handle, int flags);
+void *mempool_getbuffer(MemoryPoolHandle handle);
 
 /**
  * Hook/Free the item that was allocated earlier from the memory pool

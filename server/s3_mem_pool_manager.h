@@ -48,7 +48,7 @@ class S3MempoolManager {
   S3MempoolManager(size_t max_mem);
 
   int initialize(std::vector<int> unit_sizes, int initial_buffer_count_per_pool,
-                 size_t expandable_count);
+                 size_t expandable_count, int flags);
 
   // Free up all the memory pools help by this pool
   void free_pools();
@@ -60,8 +60,7 @@ class S3MempoolManager {
 
   //  Return the buffer of give unit_size
   // For flags see mempool_getbuffer() in s3_memory_pool.h header
-  // flags = ZEROED_ALLOCATION memset buffers to zero
-  void* get_buffer_for_unit_size(size_t unit_size, int flags = 0);
+  void* get_buffer_for_unit_size(size_t unit_size);
 
   // Releases the give buffer back to pool, callers responsibility to use
   // proper unit_size else it will have **UNEXPECTED BEHAVIOR**
@@ -76,12 +75,12 @@ class S3MempoolManager {
   // Creates a pool to support various given unit_sizes and maximum threshold
   static int create_pool(size_t max_mem, std::vector<int> unit_sizes,
                          int initial_buffer_count_per_pool,
-                         size_t expandable_count) {
+                         size_t expandable_count, int flags = 0) {
     if (!instance) {
       instance = new S3MempoolManager(max_mem);
       S3MempoolManager::free_space = max_mem;
       int rc = instance->initialize(unit_sizes, initial_buffer_count_per_pool,
-                                    expandable_count);
+                                    expandable_count, flags);
       if (rc != 0) {
         S3MempoolManager::destroy_instance();
       }

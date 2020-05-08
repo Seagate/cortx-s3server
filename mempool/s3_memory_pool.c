@@ -27,7 +27,7 @@ struct memory_pool_element {
 };
 
 struct mempool {
-  int flags; /* CREATE_ALIGNED_MEMORY, ENABLE_LOCKING, ZEROED_ALLOCATION */
+  int flags;                 /* Buffer Bitflags */
   int free_bufs_in_pool;     /* Number of items on free list */
   int number_of_bufs_shared; /* Number of bufs shared from pool to pool user */
   int total_bufs_allocated_by_pool; /* Total buffers currently allocated by
@@ -110,6 +110,11 @@ int freelist_allocate(struct mempool *pool, int items_count_to_allocate) {
     if (buf == NULL || rc != 0) {
       return S3_MEMPOOL_ERROR;
     }
+
+    if ((pool->flags & ZEROED_BUFFER) != 0) {
+      memset(buf, 0, pool->mempool_item_size);
+    }
+
     pool->total_bufs_allocated_by_pool++;
     /* Put the allocated memory into the list */
     pool_item = (struct memory_pool_element *)buf;
@@ -150,12 +155,6 @@ int mempool_create(size_t pool_item_size, size_t pool_initial_size,
   pool = (struct mempool *)calloc(1, sizeof(struct mempool));
   if (pool == NULL) {
     return S3_MEMPOOL_ERROR;
-  }
-
-  /* flag that can be used to figure out whether we are doing preallocation of
-   * items when creating pool */
-  if (pool_initial_size != 0) {
-    pool->flags |= PREALLOCATE_MEM_ON_CREATE;
   }
 
   pool->flags |= flags;
@@ -232,7 +231,7 @@ int mempool_create_with_shared_mem(
   return 0;
 }
 
-void *mempool_getbuffer(MemoryPoolHandle handle, int flags) {
+void *mempool_getbuffer(MemoryPoolHandle handle) {
   int rc;
   int bufs_to_allocate;
   int bufs_that_can_be_allocated = 0;
@@ -281,11 +280,8 @@ void *mempool_getbuffer(MemoryPoolHandle handle, int flags) {
   if (pool->free_list != NULL) {
     pool_item = pool->free_list;
     pool->free_list = pool_item->next;
+    pool_item->next = (struct memory_pool_element *)NULL;
     pool->free_bufs_in_pool--;
-
-    if ((flags & ZEROED_ALLOCATION) != 0) {
-      memset(pool_item, 0, pool->mempool_item_size);
-    }
   }
 
   if (pool_item) {
@@ -309,6 +305,12 @@ int mempool_releasebuffer(MemoryPoolHandle handle, void *buf) {
 
   if ((pool->flags & ENABLE_LOCKING) != 0) {
     pthread_mutex_lock(&pool->lock);
+  }
+
+  /* Clean up the buffer so that we get it 'clean' when we allocate it next
+   * time*/
+  if ((pool->flags & ZEROED_BUFFER) != 0) {
+    memset(pool_item, 0, pool->mempool_item_size);
   }
 
   // Add the buffer back to pool

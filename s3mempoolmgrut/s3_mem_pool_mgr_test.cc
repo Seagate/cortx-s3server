@@ -82,7 +82,8 @@ TEST_F(S3MempoolManagerTestSuite, CreateAndDestroyPoolTest) {
   int rc = S3MempoolManager::create_pool(SIXTEEN_KB,  // max threshold
                                          unit_sizes,  // supported unit_sizes
                                          1,   // initial_buffer_count_per_pool
-                                         1);  // expandable_count
+                                         1,   // expandable_count
+                                         0);  // Flags
   EXPECT_EQ(0, rc);
   EXPECT_EQ(FOUR_KB, S3MempoolManager::free_space);
   EXPECT_EQ(EIGHT_KB,
@@ -107,7 +108,8 @@ TEST_F(S3MempoolManagerTestSuite, CreateFailedTest) {
   int rc = S3MempoolManager::create_pool(FOUR_KB,     // max threshold
                                          unit_sizes,  // supported unit_sizes
                                          1,   // initial_buffer_count_per_pool
-                                         1);  // expandable_count
+                                         1,   // expandable_count
+                                         0);  // Flags
 
   EXPECT_NE(0, rc);
   EXPECT_EQ(0, S3MempoolManager::free_space);
@@ -123,11 +125,14 @@ TEST_F(S3MempoolManagerTestSuite, CreateEXISTSTest) {
   int rc = S3MempoolManager::create_pool(SIXTEEN_KB,  // max threshold
                                          unit_sizes,  // supported unit_sizes
                                          1,   // initial_buffer_count_per_pool
-                                         1);  // expandable_count
+                                         1,   // expandable_count
+                                         0);  // Flags
+
   rc = S3MempoolManager::create_pool(SIXTEEN_KB,  // max threshold
                                      unit_sizes,  // supported unit_sizes
                                      1,   // initial_buffer_count_per_pool
-                                     1);  // expandable_count
+                                     1,   // expandable_count
+                                     0);  // Flags
 
   EXPECT_EQ(EEXIST, rc);
   EXPECT_EQ(FOUR_KB, S3MempoolManager::free_space);
@@ -153,7 +158,8 @@ TEST_F(S3MempoolManagerTestSuite, PoolShouldGrowAndErrorOnMax) {
   int rc = S3MempoolManager::create_pool(SIXTEEN_KB,  // max threshold
                                          unit_sizes,  // supported unit_sizes
                                          1,   // initial_buffer_count_per_pool
-                                         1);  // expandable_count
+                                         1,   // expandable_count
+                                         0);  // Flags
   EXPECT_EQ(0, rc);
   EXPECT_EQ(FOUR_KB, S3MempoolManager::free_space);
 
@@ -197,7 +203,8 @@ TEST_F(S3MempoolManagerTestSuite, PoolShouldGrowByDownsizingUnusedPool) {
   int rc = S3MempoolManager::create_pool(SIXTEEN_KB,  // max threshold
                                          unit_sizes,  // supported unit_sizes
                                          1,   // initial_buffer_count_per_pool
-                                         1);  // expandable_count
+                                         1,   // expandable_count
+                                         0);  // Flags
   EXPECT_EQ(0, rc);
   EXPECT_EQ(FOUR_KB, S3MempoolManager::free_space);
 

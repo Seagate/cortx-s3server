@@ -96,11 +96,11 @@ fi
 
 if [ $no_ut_run -eq 0 ]
 then
-  UT_BIN=`pwd`/bazel-bin/s3ut
-  UT_DEATHTESTS_BIN=`pwd`/bazel-bin/s3utdeathtests
-  UT_MEMPOOL_BIN=`pwd`/bazel-bin/s3mempoolut
-  UT_MEMPOOLMGR_BIN=`pwd`/bazel-bin/s3mempoolmgrut
-  UT_S3BACKGROUNDDELETE=`pwd`/s3backgrounddelete/scripts/run_all_ut.sh
+  UT_BIN=./bazel-bin/s3ut
+  UT_DEATHTESTS_BIN=./bazel-bin/s3utdeathtests
+  UT_MEMPOOL_BIN=./bazel-bin/s3mempoolut
+  UT_MEMPOOLMGR_BIN=./bazel-bin/s3mempoolmgrut
+  UT_S3BACKGROUNDDELETE=./s3backgrounddelete/scripts/run_all_ut.sh
 
   printf "\nCheck s3ut..."
   type  $UT_BIN >/dev/null

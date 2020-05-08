@@ -76,15 +76,27 @@ int main(int argc, char **argv) {
 
   size_t libevent_pool_buffer_size =
       g_option_instance->get_libevent_pool_buffer_size();
+
+  int clovis_read_mempool_flags = CREATE_ALIGNED_MEMORY;
+  if (g_option_instance->get_clovis_read_mempool_zeroed_buffer()) {
+    clovis_read_mempool_flags = clovis_read_mempool_flags | ZEROED_BUFFER;
+  }
+
+  int libevent_mempool_flags = CREATE_ALIGNED_MEMORY;
+  if (g_option_instance->get_libevent_mempool_zeroed_buffer()) {
+    libevent_mempool_flags = libevent_mempool_flags | ZEROED_BUFFER;
+  }
+
   event_use_mempool(libevent_pool_buffer_size, libevent_pool_buffer_size * 100,
                     libevent_pool_buffer_size * 100,
-                    libevent_pool_buffer_size * 500, CREATE_ALIGNED_MEMORY);
+                    libevent_pool_buffer_size * 500, libevent_mempool_flags);
 
   rc = S3MempoolManager::create_pool(
       g_option_instance->get_clovis_read_pool_max_threshold(),
       g_option_instance->get_clovis_unit_sizes_for_mem_pool(),
       g_option_instance->get_clovis_read_pool_initial_buffer_count(),
-      g_option_instance->get_clovis_read_pool_expandable_count());
+      g_option_instance->get_clovis_read_pool_expandable_count(),
+      clovis_read_mempool_flags);
 
   rc = RUN_ALL_TESTS();
 
