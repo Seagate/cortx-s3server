@@ -303,7 +303,7 @@ S3cmdTest('s3cmd abort on nonexistent bucket should fail').abort_multipart("seag
 
 #################################################
 
-# ************ Multiple Delete bucket TEST ************
+# ************ Multiple Delete bucket TEST (quiet_mode not set) ************
 file_name = "3kfile"
 for num in range(0, 4):
   new_file_name = '%s%d' % (file_name, num)
@@ -313,6 +313,17 @@ S3cmdTest('s3cmd can delete multiple objects').multi_delete_test("seagatebucket"
 
 S3cmdTest('s3cmd should not have objects after multiple delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('3kfile')
 
+# ************ Multiple Delete bucket TEST (quiet_mode set) ************
+file_name = "1kfile"
+for num in range(0, 3):
+  new_file_name = '%s%d' % (file_name, num)
+  S3cmdTest('s3cmd can upload 1k file').upload_test("seagatebucket", new_file_name, 1000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete multiple objects, with quiet mode set').multi_delete_test("seagatebucket", True).execute_test().command_is_successful().command_response_should_be_empty()
+
+S3cmdTest('s3cmd should not have objects after multiple delete').list_objects('seagatebucket').execute_test().command_is_successful().command_response_should_not_have('1kfile')
+
+##################################################
 # ************ Delete bucket TEST ************
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket").execute_test().command_is_successful()
 S3cmdTest('s3cmd can delete bucket').delete_bucket("seagatebucket2").execute_test().command_is_successful()

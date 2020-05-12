@@ -202,6 +202,139 @@ AwsTest('Aws can list object tags for multipart upload').list_object_tagging("se
 #************** Delete Object  ********
 AwsTest('Aws can delete object').delete_object("seagatebuckettag","10Mbfile").execute_test().command_is_successful()
 
+#################################################################################
+
+def create_object_list_file(file_name, obj_list=[], quiet_mode="false"):
+    cwd = os.getcwd()
+    file_to_create = os.path.join(cwd, file_name)
+    objects = "{ \"Objects\": [ { \"Key\": \"" + obj_list[0] + "\" }"
+    for obj in obj_list[1:]:
+        objects += ", { \"Key\": \"" + obj + "\" }"
+    objects += " ], \"Quiet\": " + quiet_mode + " }"
+    with open(file_to_create, 'w') as file:
+        file.write(objects)
+    return file_to_create
+
+def delete_object_list_file(file_name):
+    os.remove(file_name)
+
+# ************** Delete multiple objects, all objects exist, Quiet mode = True *****************
+# 1. Create 3 object keys in bucket
+# 2. Delete all 3 objects
+# 3. Check If all got deleted and we have empty XML response
+
+# *************** create 3 object keys in the bucket *******************************************
+AwsTest('Aws can upload 1kfileA').put_object("seagatebuckettag", "1kfileA", 1000).execute_test().command_is_successful()
+AwsTest('Aws can upload 1kfileB').put_object("seagatebuckettag", "1kfileB", 1000).execute_test().command_is_successful()
+AwsTest('Aws can upload 1kfileC').put_object("seagatebuckettag", "1kfileC", 1000).execute_test().command_is_successful()
+
+# **************** Create file with the above created objects **********************************
+object_list_file = create_object_list_file("obj_list_file_all_exist.json", ["1kfileA", "1kfileB", "1kfileC"], "true")
+
+# **************** Delete multiple objects *****************************************************
+AwsTest('Aws can delete multiple objects when all objects exist in bucket, quiet_mode: true')\
+    .delete_multiple_objects("seagatebuckettag", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+# ***************** validate list objects do not have above objects ****************************
+AwsTest('Aws do not list objects after multiple delete')\
+    .list_objects("seagatebuckettag")\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_not_have('1kfile')
+
+# **************** Delete the object list file *************************************************
+delete_object_list_file(object_list_file)
+
+###########################################################
+
+# ************** Delete multiple objects, some objects do not exist, Quiet mode = True *********
+# 1. Create 2 object keys in bucket
+# 2. Delete 3 objects, with 1 object being non-existent
+# 3. Check if we got empty XML response.
+
+# *************** create 2 object keys in the bucket *******************************************
+AwsTest('Aws can upload 1kfileA').put_object("seagatebuckettag", "1kfileD", 1000).execute_test().command_is_successful()
+AwsTest('Aws can upload 1kfileB').put_object("seagatebuckettag", "1kfileE", 1000).execute_test().command_is_successful()
+
+# **************** Create file with the above created objects and one fake object **************
+object_list_file = create_object_list_file("obj_list_file_not_all_exist.json", ["1kfileD", "1kfileE", "fakefileA"], "true")
+
+# **************** Delete multiple objects *****************************************************
+AwsTest('Aws can delete multiple objects when some objects do not exist in bucket, quiet_mode: true')\
+    .delete_multiple_objects("seagatebuckettag", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+# ***************** validate list objects do not have above objects ****************************
+AwsTest('Aws do not list objects after multiple delete')\
+    .list_objects("seagatebuckettag")\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_not_have('1kfile')
+
+
+# **************** Delete the object list file *************************************************
+delete_object_list_file(object_list_file)
+
+###########################################################################
+
+# ************** Delete multiple objects, all objects do not exist, Quiet mode = True **********
+# 1. Delete 3 non-existent objects
+# 2. Verify empty XML response
+
+# **************** Create file with the all fake objects **************
+object_list_file = create_object_list_file("obj_list_file_all_not_exist.json", ["fakefileB", "fakefileC", "fakefileD"], "true")
+
+# **************** Delete multiple objects *****************************************************
+AwsTest('Aws can delete multiple objects when no object exist in bucket, quiet_mode: true')\
+    .delete_multiple_objects("seagatebuckettag", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_be_empty()
+
+# **************** Delete the object list file *************************************************
+delete_object_list_file(object_list_file)
+
+##############################################################################
+
+# **************** Delete multiple objects, all objects exist, Quiet mode = False
+# 1. Create 3 object keys in bucket
+# 2. Delete all 3 objects with quiet_mode="false"
+# 3. Check If all got deleted and we do not have empty XML response
+
+# *************** create 3 object keys in the bucket *******************************************
+AwsTest('Aws can upload 1kfileF').put_object("seagatebuckettag", "1kfileF", 1000).execute_test().command_is_successful()
+AwsTest('Aws can upload 1kfileG').put_object("seagatebuckettag", "1kfileG", 1000).execute_test().command_is_successful()
+AwsTest('Aws can upload 1kfileH').put_object("seagatebuckettag", "1kfileH", 1000).execute_test().command_is_successful()
+
+# **************** Create file with the above created objects **********************************
+object_list_file = create_object_list_file("obj_list_file_all_exist_not_quiet_mode.json", ["1kfileF", "1kfileG", "1kfileH"], "false")
+
+# **************** Delete multiple objects *****************************************************
+AwsTest('Aws can delete multiple objects when all objects exist in bucket, quiet_mode: false')\
+    .delete_multiple_objects("seagatebuckettag", object_list_file)\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_have('1kfileF')\
+    .command_response_should_have('1kfileG')\
+    .command_response_should_have('1kfileH')
+
+# ***************** validate list objects do not have above objects ****************************
+AwsTest('Aws do not list objects after multiple delete')\
+    .list_objects("seagatebuckettag")\
+    .execute_test()\
+    .command_is_successful()\
+    .command_response_should_not_have('1kfile')
+
+# **************** Delete the object list file *************************************************
+delete_object_list_file(object_list_file)
+
+################################################################################
+
 #******* Multipart upload should fail if non-last part is less then 5 Mb ******
 
 result=AwsTest('Multipart upload with wrong-sized parts').create_multipart_upload("seagatebuckettag", "10Mbfile", 10485760, "domain=storage" ).execute_test().command_is_successful()

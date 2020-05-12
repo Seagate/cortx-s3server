@@ -142,6 +142,12 @@ class PyCliTest(object):
         print("Response has [%s]." % (msg))
         return self
 
+    def command_response_should_be_empty(self):
+        if not Config.dummy_run:
+            assert self.status.stdout == ""
+        print("Response is empty")
+        return self
+
     def command_response_should_not_have(self, msg):
         if not Config.dummy_run:
             assert msg not in self.status.stdout

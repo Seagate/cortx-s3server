@@ -274,8 +274,11 @@ quote(s3target))
             self.command = self.command + " --no-check-hostname"
         return self
 
-    def multi_delete_test(self, bucket_name):
+    def multi_delete_test(self, bucket_name, quiet_mode=False):
         self.bucket_name = bucket_name
-        self.with_cli("s3cmd --no-mime-magic -c " + self.s3cfg + self._send_retries + " del " + "s3://" + self.bucket_name + "/ --recursive --force")
+        cmd = "s3cmd --no-mime-magic -c " + self.s3cfg + self._send_retries + " del " + "s3://" + self.bucket_name + "/ --recursive --force"
+        if quiet_mode:
+            cmd += " --quiet"
+        self.with_cli(cmd)
         self.command = self.command + self.credentials
         return self

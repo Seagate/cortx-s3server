@@ -124,6 +124,12 @@ class AwsTest(S3PyCliTest):
         self.command = self.command + self.credentials
         return self
 
+    def delete_multiple_objects(self, bucket_name, object_list_file):
+        self.bucket_name = bucket_name
+        self.with_cli("aws s3api " + "delete-objects " + "--bucket " + bucket_name + " --delete file://" + object_list_file)
+        self.command = self.command + self.credentials
+        return self
+
     def create_multipart_upload(self, bucket_name, filename, filesize, tags=None, debug_flag=None):
         self.filename = filename
         self.filesize = filesize
