@@ -358,6 +358,7 @@ void S3ClovisKVSReader::next_keyval(struct m0_uint128 idx_oid, std::string key,
 
   s3_clovis_api->clovis_idx_init(&idx_ctx->idx[0], &clovis_container.co_realm,
                                  &idx_oid);
+  idx_ctx->n_initialized_contexts = 1;
 
   rc = s3_clovis_api->clovis_idx_op(&idx_ctx->idx[0], M0_CLOVIS_IC_NEXT,
                                     kvs_ctx->keys, kvs_ctx->values,

@@ -392,11 +392,8 @@ void S3ClovisKVSWriter::delete_indexes(std::vector<struct m0_uint128> oids,
 
     s3_clovis_api->clovis_idx_init(&idx_ctx->idx[i], &clovis_uber_realm,
                                    &oid_list[i]);
-    if (i == 0) {
-      idx_ctx->n_initialized_contexts = 1;
-    } else {
-      idx_ctx->n_initialized_contexts += 1;
-    }
+
+    idx_ctx->n_initialized_contexts += 1;
     int rc = s3_clovis_api->clovis_entity_open(&(idx_ctx->idx[i].in_entity),
                                                &(idx_op_ctx->ops[i]));
     if (rc != 0) {
