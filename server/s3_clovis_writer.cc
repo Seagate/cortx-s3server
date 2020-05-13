@@ -387,28 +387,25 @@ void S3ClovisWriter::write_content() {
 
   assert(is_object_opened);
 
-  size_t clovis_write_payload_size =
-      g_option_instance->get_clovis_write_payload_size(layout_ids[0]);
   size_t clovis_unit_size =
       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
           layout_ids[0]);
   size_t size_of_each_buf = g_option_instance->get_libevent_pool_buffer_size();
 
   size_t estimated_write_length = 0;
-  if (write_async_buffer->is_freezed() &&
-      write_async_buffer->get_content_length() < clovis_write_payload_size) {
-    estimated_write_length = write_async_buffer->get_content_length();
-  } else {
-    estimated_write_length =
-        (write_async_buffer->get_content_length() / clovis_write_payload_size) *
-        clovis_write_payload_size;
-  }
+  auto content_length = write_async_buffer->get_content_length();
 
-  if (estimated_write_length > clovis_write_payload_size) {
-    // TODO : we should just write whatever is buffered, but mero has error
-    // where if we have high block count, it fails, failure seen around 800k+
-    // data.
-    estimated_write_length = clovis_write_payload_size;
+  if (write_async_buffer->is_freezed() && content_length < clovis_unit_size) {
+    estimated_write_length = content_length;
+  } else {
+    const size_t clovis_max_write_op_size =
+        g_option_instance->get_clovis_max_write_op_size();
+
+    if (content_length > clovis_max_write_op_size) {
+      content_length = clovis_max_write_op_size;
+    }
+    estimated_write_length =
+        (content_length / clovis_unit_size) * clovis_unit_size;
   }
 
   auto ret = write_async_buffer->get_buffers(estimated_write_length);
@@ -505,7 +502,9 @@ void S3ClovisWriter::write_content_successful() {
 }
 
 void S3ClovisWriter::write_content_failed() {
-  s3_log(S3_LOG_ERROR, request_id, "Write to object failed after writing %zu\n",
+  s3_log(S3_LOG_ERROR, request_id,
+         "Write to object failed with error code %d after writing %zu\n",
+         writer_context ? writer_context->get_errno_for(0) : EINVAL,
          total_written);
   // We have failed coping data to clovis buffers.
   write_async_buffer->flush_used_buffers();

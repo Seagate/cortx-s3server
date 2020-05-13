@@ -22,17 +22,16 @@
 #ifndef __S3_SERVER_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_PUT_CHUNK_UPLOAD_OBJECT_ACTION_H__
 
-#include <gtest/gtest_prod.h>
+#include <cstddef>
+#include <string>
 #include <memory>
+#include <map>
+
+#include <gtest/gtest_prod.h>
 
 #include "s3_object_action_base.h"
-#include "s3_async_buffer.h"
-#include "s3_bucket_metadata.h"
-#include "s3_clovis_writer.h"
-#include "s3_factory.h"
-#include "s3_object_metadata.h"
-#include "s3_probable_delete_record.h"
 #include "s3_timer.h"
+#include "s3_m0_uint128_helper.h"
 
 enum class S3PutChunkUploadObjectActionState {
   empty,             // Initial state
@@ -48,6 +47,20 @@ enum class S3PutChunkUploadObjectActionState {
   completed,           // All stages done completely
 };
 
+class ClovisAPI;
+class S3AsyncBufferOptContainer;
+class S3AuthClientFactory;
+class S3BucketMetadataFactory;
+class S3ClovisKVSWriter;
+class S3ClovisKVSWriterFactory;
+class S3ClovisWriter;
+class S3ClovisWriterFactory;
+class S3ObjectMetadata;
+class S3ObjectMetadataFactory;
+class S3ProbableDeleteRecord;
+class S3PutTagsBodyFactory;
+class S3RequestObject;
+
 class S3PutChunkUploadObjectAction : public S3ObjectAction {
   S3PutChunkUploadObjectActionState s3_put_chunk_action_state;
   std::shared_ptr<S3ClovisWriter> clovis_writer;
@@ -60,8 +73,12 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   unsigned short tried_count;
   // string used for salting the uri
   std::string salt;
+
   S3Timer create_object_timer;
   S3Timer write_content_timer;
+
+  size_t unit_size;
+  size_t max_clovis_payload_size;
 
   bool auth_failed;
   bool write_failed;
@@ -105,6 +122,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 
+ private:
   void setup_steps();
 
   void chunk_auth_successful();
@@ -130,7 +148,7 @@ class S3PutChunkUploadObjectAction : public S3ObjectAction {
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();
-  void send_response_to_s3_client();
+  void send_response_to_s3_client() override;
 
   void add_object_oid_to_probable_dead_oid_list();
   void add_object_oid_to_probable_dead_oid_list_failed();

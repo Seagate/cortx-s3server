@@ -146,7 +146,7 @@ class Action {
   bool is_authorizationheader_present;
   std::shared_ptr<S3AuthClient> auth_client;
 
-  std::shared_ptr<S3MemoryProfile> mem_profile;
+  std::unique_ptr<S3MemoryProfile> mem_profile;
   std::shared_ptr<S3AuthClientFactory> auth_client_factory;
   // Currently any actions uses either one of 2 methods on errors,
   // startcleanup and rollback. false indicates rollback, true startcleanup

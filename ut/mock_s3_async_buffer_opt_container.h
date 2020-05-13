@@ -31,10 +31,11 @@ using ::testing::Return;
 
 class MockS3AsyncBufferOptContainer : public S3AsyncBufferOptContainer {
  public:
-  MockS3AsyncBufferOptContainer(size_t size_of_each_buf)
+  explicit MockS3AsyncBufferOptContainer(size_t size_of_each_buf)
       : S3AsyncBufferOptContainer(size_of_each_buf) {}
-  MOCK_METHOD0(is_freezed, bool());
-  MOCK_METHOD0(get_content_length, size_t());
+  MOCK_CONST_METHOD0(is_freezed, bool());
+  MOCK_CONST_METHOD0(get_content_length, size_t());
+  MOCK_CONST_METHOD0(get_processing_length, size_t());
 };
 
 #endif

@@ -17,19 +17,27 @@
  * Original creation date: 17-Mar-2016
  */
 
-#include "s3_put_chunk_upload_object_action.h"
+#include <algorithm>
+#include <utility>
+
+#include <evhttp.h>
+
+#include "s3_async_buffer.h"
+#include "s3_bucket_metadata.h"
 #include "s3_clovis_layout.h"
+#include "s3_clovis_writer.h"
 #include "s3_error_codes.h"
+#include "s3_factory.h"
 #include "s3_iem.h"
 #include "s3_log.h"
-#include "s3_m0_uint128_helper.h"
+#include "s3_object_metadata.h"
 #include "s3_option.h"
+#include "s3_probable_delete_record.h"
+#include "s3_put_chunk_upload_object_action.h"
 #include "s3_perf_logger.h"
 #include "s3_put_tag_body.h"
 #include "s3_stats.h"
 #include "s3_uri_to_mero_oid.h"
-#include "s3_m0_uint128_helper.h"
-#include <evhttp.h>
 
 extern struct m0_uint128 global_probable_dead_object_list_index_oid;
 
@@ -98,6 +106,10 @@ S3PutChunkUploadObjectAction::S3PutChunkUploadObjectAction(
   } else {
     put_object_tag_body_factory = std::make_shared<S3PutTagsBodyFactory>();
   }
+#ifdef S3_GOOGLE_TEST
+  unit_size = 1048576;
+  max_clovis_payload_size = 1048576;
+#endif  // S3_GOOGLE_TEST
 
   setup_steps();
 }
@@ -327,6 +339,10 @@ void S3PutChunkUploadObjectAction::create_object() {
 
   layout_id = S3ClovisLayoutMap::get_instance()->get_layout_for_object_size(
       request->get_data_length());
+  unit_size =
+      S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+  max_clovis_payload_size =
+      S3Option::get_instance()->get_clovis_write_payload_size(layout_id);
 
   clovis_writer->create_object(
       std::bind(&S3PutChunkUploadObjectAction::create_object_successful, this),
@@ -460,21 +476,22 @@ void S3PutChunkUploadObjectAction::initiate_data_streaming() {
   }
 
   if (request->get_data_length() == 0) {
-    next();  // Zero size object.
+    s3_log(S3_LOG_DEBUG, request_id, "Zero size object\n");
+    next();
+    return;
+  }
+  if (request->has_all_body_content()) {
+    s3_log(S3_LOG_DEBUG, request_id,
+           "We have all the data, so just write it.\n");
+    write_object(request->get_buffered_input());
   } else {
-    if (request->has_all_body_content()) {
-      s3_log(S3_LOG_DEBUG, request_id,
-             "We have all the data, so just write it.\n");
-      write_object(request->get_buffered_input());
-    } else {
-      s3_log(S3_LOG_DEBUG, request_id,
-             "We do not have all the data, start listening...\n");
-      // Start streaming, logically pausing action till we get data.
-      request->listen_for_incoming_data(
-          std::bind(&S3PutChunkUploadObjectAction::consume_incoming_content,
-                    this),
-          S3Option::get_instance()->get_clovis_write_payload_size(layout_id));
-    }
+    s3_log(S3_LOG_DEBUG, request_id,
+           "We do not have all the data, start listening...\n");
+    // Start streaming, logically pausing action till we get data.
+    request->listen_for_incoming_data(
+        std::bind(&S3PutChunkUploadObjectAction::consume_incoming_content,
+                  this),
+        unit_size);
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -490,25 +507,36 @@ void S3PutChunkUploadObjectAction::consume_incoming_content() {
     }
     return;
   }
+  auto buffered_input = request->get_buffered_input();
+  auto length_in_buffer = buffered_input->get_content_length();
+
+  const size_t max_read_ahead_size = mem_profile->max_read_ahead_size();
+  const size_t min_clovis_op_size = std::max<size_t>(
+      std::min<size_t>(max_clovis_payload_size, max_read_ahead_size),
+      unit_size);
+
+  ADDB_MSRM(ADDB_MSRM_DTPUT_CONSUME_DATA, addb_request_id, unit_size,
+            max_read_ahead_size, max_clovis_payload_size, min_clovis_op_size,
+            length_in_buffer, mem_profile->free_space_in_pool(),
+            buffered_input->get_processing_length());
 
   if (!clovis_write_in_progress) {
-    if (request->get_buffered_input()->is_freezed() ||
-        request->get_buffered_input()->get_content_length() >=
-            S3Option::get_instance()->get_clovis_write_payload_size(
-                layout_id)) {
-      write_object(request->get_buffered_input());
+    if (buffered_input->is_freezed() ||
+        length_in_buffer >= min_clovis_op_size) {
+
+      write_object(buffered_input);
+
       if (!clovis_write_in_progress && write_failed) {
         s3_log(S3_LOG_DEBUG, "", "Exiting\n");
         return;
       }
+      length_in_buffer = buffered_input->get_content_length();
     }
   }
-  if (!request->get_buffered_input()->is_freezed() &&
-      request->get_buffered_input()->get_content_length() >=
-          (S3Option::get_instance()->get_clovis_write_payload_size(layout_id) *
-           S3Option::get_instance()->get_read_ahead_multiple())) {
+  if (clovis_write_in_progress && !buffered_input->is_freezed() &&
+      length_in_buffer >= max_read_ahead_size) {
     s3_log(S3_LOG_DEBUG, request_id, "Pausing with Buffered length = %zu\n",
-           request->get_buffered_input()->get_content_length());
+           length_in_buffer);
     request->pause();
   }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -545,7 +573,7 @@ void S3PutChunkUploadObjectAction::write_object(
   clovis_writer->write_content(
       std::bind(&S3PutChunkUploadObjectAction::write_object_successful, this),
       std::bind(&S3PutChunkUploadObjectAction::write_object_failed, this),
-      buffer);
+      std::move(buffer));
   clovis_write_in_progress = true;
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -574,27 +602,40 @@ void S3PutChunkUploadObjectAction::write_object_successful() {
     s3_log(S3_LOG_DEBUG, "", "Exiting\n");
     return;
   }
+  const size_t max_read_ahead_size = mem_profile->max_read_ahead_size();
+  const size_t min_clovis_op_size = std::max<size_t>(
+      std::min<size_t>(max_clovis_payload_size, max_read_ahead_size),
+      unit_size);
+
+  auto buffered_input = request->get_buffered_input();
+  const auto length_in_buffer = buffered_input->get_content_length();
+
+  ADDB_MSRM(ADDB_MSRM_DTPUT_WRITE_SUCC_CB, addb_request_id, unit_size,
+            max_read_ahead_size, max_clovis_payload_size, min_clovis_op_size,
+            length_in_buffer, mem_profile->free_space_in_pool(),
+            buffered_input->get_processing_length());
 
   if (/* buffered data len is at least equal max we can write to clovis in one
          write */
-      request->get_buffered_input()->get_content_length() >=
-          S3Option::get_instance()->get_clovis_write_payload_size(
-              layout_id) || /* we have all the data buffered and ready to
-                               write */
-      (request->get_buffered_input()->is_freezed() &&
-       request->get_buffered_input()->get_content_length() > 0)) {
-    write_object(request->get_buffered_input());
-  } else if (request->get_buffered_input()->is_freezed() &&
-             request->get_buffered_input()->get_content_length() == 0) {
+      length_in_buffer >= min_clovis_op_size ||
+      /* we have all the data buffered and ready to write */
+      (buffered_input->is_freezed() && length_in_buffer)) {
+
+    write_object(buffered_input);
+
+  } else if (buffered_input->is_freezed() && !length_in_buffer) {
     clovis_write_completed = true;
+    s3_log(S3_LOG_DEBUG, request_id, "Clovis write completed\n");
+
     if (auth_completed) {
+      s3_log(S3_LOG_DEBUG, request_id, "Authentication completed\n");
       next();
     } else {
       // else wait for auth to complete
       send_chunk_details_if_any();
     }
   }
-  if (!request->get_buffered_input()->is_freezed()) {
+  if (!buffered_input->is_freezed()) {
     // else we wait for more incoming data
     request->resume();
   }

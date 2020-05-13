@@ -84,6 +84,12 @@ typedef enum {
   // records of this type will contain only timestamp and some int value
   ADDB_MSRM_TRACE_POINT,
 
+  // dynamic tune for PUT obj
+  // format: reqid, unit_size, max_read_ahead_size, max_clovis_payload_size,
+  // min_clovis_op_size, content_length
+  ADDB_MSRM_DTPUT_CONSUME_DATA,
+  ADDB_MSRM_DTPUT_WRITE_SUCC_CB,
+
   // ---
   ADDB_MEASUREMENT_LIST_OFFSET
 } MeasurementId;

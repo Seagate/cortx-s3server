@@ -23,31 +23,40 @@
 #ifndef __S3_SERVER_S3_PUT_MULTIOBJECT_ACTION_H__
 #define __S3_SERVER_S3_PUT_MULTIOBJECT_ACTION_H__
 
+#include <cstddef>
 #include <memory>
+#include <string>
 
 #include "s3_object_action_base.h"
-#include "s3_async_buffer.h"
-#include "s3_bucket_metadata.h"
-#include "s3_clovis_writer.h"
-#include "s3_object_metadata.h"
-#include "s3_part_metadata.h"
 #include "s3_timer.h"
 
-class S3PutMultiObjectAction : public S3ObjectAction {
-  std::shared_ptr<S3PartMetadata> part_metadata = NULL;
-  std::shared_ptr<S3ObjectMetadata> object_multipart_metadata = NULL;
-  std::shared_ptr<S3ClovisWriter> clovis_writer = NULL;
+class S3AsyncBufferOptContainer;
+class S3AuthClientFactory;
+class S3ClovisWriter;
+class S3ClovisWriterFactory;
+class S3ObjectMetadata;
+class S3ObjectMultipartMetadataFactory;
+class S3PartMetadata;
+class S3PartMetadataFactory;
+class S3RequestObject;
 
+class S3PutMultiObjectAction : public S3ObjectAction {
+
+  std::shared_ptr<S3PartMetadata> part_metadata;
+  std::shared_ptr<S3ObjectMetadata> object_multipart_metadata;
+  std::shared_ptr<S3ClovisWriter> clovis_writer;
+
+  size_t unit_size;
+  size_t max_clovis_payload_size;
   size_t total_data_to_stream;
+
   S3Timer create_object_timer;
   S3Timer write_content_timer;
+
   int part_number;
-  std::string upload_id;
   int layout_id;
 
-  int get_part_number() {
-    return atoi((request->get_query_string_value("partNumber")).c_str());
-  }
+  std::string upload_id;
 
   bool auth_failed;
   bool write_failed;
@@ -58,6 +67,8 @@ class S3PutMultiObjectAction : public S3ObjectAction {
   bool clovis_write_completed;  // full object write
   bool auth_in_progress;
   bool auth_completed;  // all chunk auth
+
+  int get_part_number() const;
 
   void chunk_auth_successful();
   void chunk_auth_failed();
@@ -82,6 +93,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
       std::shared_ptr<S3ClovisWriterFactory> clovis_s3_factory = nullptr,
       std::shared_ptr<S3AuthClientFactory> auth_factory = nullptr);
 
+ private:
   void setup_steps();
   // void start();
   void fetch_bucket_info_success();
@@ -104,7 +116,7 @@ class S3PutMultiObjectAction : public S3ObjectAction {
 
   void save_metadata();
   void save_metadata_failed();
-  void send_response_to_s3_client();
+  void send_response_to_s3_client() override;
   void set_authorization_meta();
 
   // Google tests

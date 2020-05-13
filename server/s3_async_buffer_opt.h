@@ -43,26 +43,26 @@ class S3AsyncBufferOptContainer {
   // buf given out for consumption
   std::deque<evbuf_t *> processing_q;
 
-  size_t size_of_each_evbuf;  // ideally 4k/8k/16k
+  const size_t size_of_each_evbuf;  // ideally 4k/8k/16k
 
   // Actual content within buffer
-  size_t content_length;
+  size_t content_length = 0;
 
-  bool is_expecting_more;
+  // Total bytes in processing_q queue
+  size_t processing_length = 0;
 
-  // Manages read state. stores count of bufs shared outside for consumption.
-  size_t count_bufs_shared_for_read;
+  bool is_expecting_more = true;
 
  public:
-  S3AsyncBufferOptContainer(size_t size_of_each_buf);
+  explicit S3AsyncBufferOptContainer(size_t size_of_each_buf);
   virtual ~S3AsyncBufferOptContainer();
 
   // Call this to indicate that no more data will be added to buffer.
   void freeze();
 
-  virtual bool is_freezed();
-
-  virtual size_t get_content_length();
+  virtual bool is_freezed() const;
+  virtual size_t get_content_length() const;
+  virtual size_t get_processing_length() const;
 
   bool add_content(evbuf_t *buf, bool is_first_buf, bool is_last_buf = false,
                    bool is_put_request = false);

@@ -22,18 +22,16 @@
 #ifndef __S3_SERVER_S3_PUT_OBJECT_ACTION_H__
 #define __S3_SERVER_S3_PUT_OBJECT_ACTION_H__
 
-#include <gtest/gtest_prod.h>
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <map>
+
+#include <gtest/gtest_prod.h>
+
 #include "s3_object_action_base.h"
-#include "s3_async_buffer.h"
-#include "s3_bucket_metadata.h"
-#include "s3_clovis_writer.h"
-#include "s3_factory.h"
-#include "s3_object_metadata.h"
-#include "s3_probable_delete_record.h"
 #include "s3_timer.h"
-#include "evhtp_wrapper.h"
+#include "s3_m0_uint128_helper.h"
 
 enum class S3PutObjectActionState {
   empty,             // Initial state
@@ -49,6 +47,19 @@ enum class S3PutObjectActionState {
   completed,                // All stages done completely
 };
 
+class ClovisAPI;
+class S3AsyncBufferOptContainer;
+class S3BucketMetadataFactory;
+class S3ClovisKVSWriter;
+class S3ClovisKVSWriterFactory;
+class S3ClovisWriter;
+class S3ClovisWriterFactory;
+class S3ObjectMetadata;
+class S3ObjectMetadataFactory;
+class S3ProbableDeleteRecord;
+class S3PutTagsBodyFactory;
+class S3RequestObject;
+
 class S3PutObjectAction : public S3ObjectAction {
   S3PutObjectActionState s3_put_action_state;
   struct m0_uint128 old_object_oid;
@@ -62,7 +73,10 @@ class S3PutObjectAction : public S3ObjectAction {
   std::shared_ptr<S3ClovisWriter> clovis_writer;
   std::shared_ptr<S3ClovisKVSWriter> clovis_kv_writer;
 
+  size_t unit_size;
+  size_t max_clovis_payload_size;
   size_t total_data_to_stream;
+
   S3Timer s3_timer;
   bool write_in_progress;
 
@@ -96,6 +110,7 @@ class S3PutObjectAction : public S3ObjectAction {
       std::shared_ptr<S3PutTagsBodyFactory> put_tags_body_factory = nullptr,
       std::shared_ptr<S3ClovisKVSWriterFactory> kv_writer_factory = nullptr);
 
+ private:
   void setup_steps();
   // void start();
 
@@ -123,7 +138,7 @@ class S3PutObjectAction : public S3ObjectAction {
   void save_metadata();
   void save_object_metadata_success();
   void save_object_metadata_failed();
-  void send_response_to_s3_client();
+  void send_response_to_s3_client() override;
 
   // Rollback tasks
   void startcleanup() override;
@@ -201,6 +216,11 @@ class S3PutObjectAction : public S3ObjectAction {
   FRIEND_TEST(S3PutObjectActionTest, SendSuccessResponse);
   FRIEND_TEST(S3PutObjectActionTest, SendFailedResponse);
   FRIEND_TEST(S3PutObjectActionTest, ConsumeIncomingContentRequestTimeout);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateMissingContentLength);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateObjectKeyLengthPositiveCase);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateObjectKeyLengthNegativeCase);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateMetadataLengthNegativeCase);
+  FRIEND_TEST(S3PutObjectActionTest, ValidateUserMetadataLengthNegativeCase);
 };
 
 #endif

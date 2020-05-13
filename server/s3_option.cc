@@ -271,6 +271,11 @@ bool S3Option::load_section(std::string section_name,
       sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
              &clovis_read_pool_max_threshold);
 
+      std::string clovis_max_write_op_size_str =
+          s3_option_node["S3_CLOVIS_MAX_WRITE_OP_SIZE"].as<std::string>();
+      sscanf(clovis_max_write_op_size_str.c_str(), "%zu",
+             &clovis_max_write_op_size);
+
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
       std::string libevent_pool_expandable_size_str;
@@ -317,7 +322,15 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node,
                                "S3_LIBEVENT_POOL_RESERVE_PERCENT");
       libevent_pool_reserve_percent =
-          s3_option_node["S3_LIBEVENT_POOL_RESERVE_PERCENT"].as<unsigned>();
+          s3_option_node["S3_LIBEVENT_POOL_RESERVE_PERCENT"]
+              .as<unsigned short>();
+      read_ahead_pool_usage_ratio =
+          s3_option_node["S3_READ_AHEAD_POOL_USAGE_RATIO"].as<unsigned short>();
+
+      std::string read_ahead_pool_reserve_str =
+          s3_option_node["S3_READ_AHEAD_POOL_RESERVE"].as<std::string>();
+      sscanf(read_ahead_pool_reserve_str.c_str(), "%zu",
+             &read_ahead_pool_reserve);
     }
   } else {
     if (section_name == "S3_SERVER_CONFIG") {
@@ -566,6 +579,11 @@ bool S3Option::load_section(std::string section_name,
              &clovis_read_pool_expandable_count);
       sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
              &clovis_read_pool_max_threshold);
+
+      std::string clovis_max_write_op_size_str =
+          s3_option_node["S3_CLOVIS_MAX_WRITE_OP_SIZE"].as<std::string>();
+      sscanf(clovis_max_write_op_size_str.c_str(), "%zu",
+             &clovis_max_write_op_size);
 
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
@@ -822,6 +840,8 @@ void S3Option::dump_options() {
          clovis_read_pool_expandable_count);
   s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_POOL_MAX_THRESHOLD = %zu\n",
          clovis_read_pool_max_threshold);
+  s3_log(S3_LOG_INFO, nullptr, "S3_CLOVIS_MAX_WRITE_OP_SIZE = %zu\n",
+         clovis_max_write_op_size);
 
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_INITIAL_SIZE = %zu\n",
          libevent_pool_initial_size);
@@ -832,7 +852,12 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_RESERVE_SIZE = %zu\n",
          libevent_pool_reserve_size);
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_RESERVE_PERCENT = %u\n",
-         libevent_pool_reserve_percent);
+         (unsigned)libevent_pool_reserve_percent);
+
+  s3_log(S3_LOG_INFO, nullptr, "S3_READ_AHEAD_POOL_USAGE_RATIO = %u\n",
+         (unsigned)read_ahead_pool_usage_ratio);
+  s3_log(S3_LOG_INFO, nullptr, "S3_READ_AHEAD_POOL_RESERVE = %zu\n",
+         read_ahead_pool_reserve);
 
   s3_log(S3_LOG_INFO, "", "FLAGS_fake_clovis_createobj = %d\n",
          FLAGS_fake_clovis_createobj);
@@ -944,6 +969,10 @@ size_t S3Option::get_clovis_read_pool_max_threshold() {
   return clovis_read_pool_max_threshold;
 }
 
+size_t S3Option::get_clovis_max_write_op_size() const {
+  return clovis_max_write_op_size;
+}
+
 size_t S3Option::get_libevent_pool_initial_size() {
   return libevent_pool_initial_size;
 }
@@ -966,8 +995,16 @@ size_t S3Option::get_libevent_pool_reserve_size() const {
   return libevent_pool_reserve_size;
 }
 
-unsigned S3Option::get_libevent_pool_reserve_percent() const {
+unsigned short S3Option::get_libevent_pool_reserve_percent() const {
   return libevent_pool_reserve_percent;
+}
+
+unsigned short S3Option::get_read_ahead_pool_usage_ratio() const {
+  return read_ahead_pool_usage_ratio;
+}
+
+size_t S3Option::get_read_ahead_pool_reserve() const {
+  return read_ahead_pool_reserve;
 }
 
 unsigned short S3Option::do_redirection() { return s3_daemon_redirect; }

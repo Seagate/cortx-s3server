@@ -62,6 +62,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_UNIT_SIZE: 1048576                         # Clovis unit size w.r.t layout id for an IO operation
    S3_CLOVIS_MAX_UNITS_PER_REQUEST: 32                  # Maximum units per read/write request to clovis
    S3_CLOVIS_MAX_IDX_FETCH_COUNT: 30                    # COSTOR-157. Clovis will read from index(If not specified) at a time maximim of this many key values
+   S3_CLOVIS_MAX_WRITE_OP_SIZE: 33554432                # 32Mb, Do not send more data to clovis than this parameter, in one clovis operation
    S3_CLOVIS_IS_OOSTORE: true                           # Clovis oostore mode is set when this flag is true, default is false (oostore mode is not set)
    S3_CLOVIS_IS_READ_VERIFY: false                      # Clovis Flag for verify-on-read. Parity is checked during READ's if this flag is true, default is false
    S3_CLOVIS_TM_RECV_QUEUE_MIN_LEN: 16                  # Minimum length of the 'tm' receive queue for clovis, default is 2
@@ -83,6 +84,8 @@ S3_THIRDPARTY_CONFIG:
    S3_LIBEVENT_POOL_INITIAL_SIZE: 3221225472            # 3GB, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_LIBEVENT_POOL_EXPANDABLE_SIZE: 134217728          # 128mb, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_LIBEVENT_POOL_MAX_THRESHOLD: 3221225472           # 3GB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
-   S3_LIBEVENT_POOL_RESERVE_SIZE: 134217728             # 128MB, deny PUT request if mempool free space is less than the mentioned size in bytes
+   S3_LIBEVENT_POOL_RESERVE_SIZE: 33554432             # 128MB, deny PUT request if mempool free space is less than the mentioned size in bytes
    S3_LIBEVENT_MEMPOOL_ZERO_BUFFER: false               # Enable Libevent Mempool 'zeroing' after use (like secure erase) - disabled by default
-   S3_LIBEVENT_POOL_RESERVE_PERCENT: 5                  # 5%, deny PUT request if mempool free space in percent is less than the mentioned percent
+   S3_LIBEVENT_POOL_RESERVE_PERCENT: 1                  # Deny PUT request if mempool free space in percent is less than the mentioned percent
+   S3_READ_AHEAD_POOL_USAGE_RATIO: 50                   # 50%, Size of read ahead buffer of a given PUT request must not exceed ratio * (free_space_in_pool - some_reserve)
+   S3_READ_AHEAD_POOL_RESERVE: 33554432                 # 32Mb, Value of this reserve should be approximately equal to <max_count_expected_connections_per_instance> * <max_possible_unit_size (1M)> * 1.5.

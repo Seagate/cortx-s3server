@@ -152,6 +152,7 @@ class S3Option {
   size_t clovis_read_pool_initial_buffer_count;
   size_t clovis_read_pool_expandable_count;
   size_t clovis_read_pool_max_threshold;
+  size_t clovis_max_write_op_size;
 
   size_t libevent_pool_initial_size;
   size_t libevent_pool_expandable_size;
@@ -159,7 +160,9 @@ class S3Option {
   size_t libevent_pool_buffer_size;
   size_t libevent_max_read_size;
   size_t libevent_pool_reserve_size;
-  unsigned libevent_pool_reserve_percent;
+  unsigned short libevent_pool_reserve_percent;
+  unsigned short read_ahead_pool_usage_ratio;
+  size_t read_ahead_pool_reserve;
 
   std::string redis_srv_addr;
   unsigned short redis_srv_port;
@@ -237,14 +240,17 @@ class S3Option {
     clovis_read_pool_initial_buffer_count = 10;   // 10 buffer
     clovis_read_pool_expandable_count = 1048576;  // 1mb
     clovis_read_pool_max_threshold = 104857600;   // 100mb
+    clovis_max_write_op_size = 33554432;
 
     libevent_pool_buffer_size = 4096;
     libevent_pool_initial_size = 10485760;
     libevent_pool_expandable_size = 1048576;
     libevent_pool_max_threshold = 104857600;
     libevent_max_read_size = 16384;  // libevent max
-    libevent_pool_reserve_size = 1048576;
-    libevent_pool_reserve_percent = 5;
+    libevent_pool_reserve_size = 33554432;
+    libevent_pool_reserve_percent = 1;
+    read_ahead_pool_usage_ratio = 50;
+    read_ahead_pool_reserve = 33554432;
 
     auth_ip_addr = FLAGS_authhost;
     auth_port = FLAGS_authport;
@@ -377,6 +383,7 @@ class S3Option {
   size_t get_clovis_read_pool_initial_buffer_count();
   size_t get_clovis_read_pool_expandable_count();
   size_t get_clovis_read_pool_max_threshold();
+  size_t get_clovis_max_write_op_size() const;
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
@@ -384,7 +391,9 @@ class S3Option {
   size_t get_libevent_pool_buffer_size();
   size_t get_libevent_max_read_size();
   size_t get_libevent_pool_reserve_size() const;
-  unsigned get_libevent_pool_reserve_percent() const;
+  unsigned short get_libevent_pool_reserve_percent() const;
+  unsigned short get_read_ahead_pool_usage_ratio() const;
+  size_t get_read_ahead_pool_reserve() const;
 
   bool get_clovis_is_oostore();
   bool get_clovis_is_read_verify();
