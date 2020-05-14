@@ -372,7 +372,7 @@ sed -i 's|'"$mero_include_path"'|MERO_DYNAMIC_INCLUDES|g' BUILD
 sed -i 's/'"$MERO_LINK_LIB_ "'/MERO_LINK_LIB /g' BUILD
 
 # Just to free up resources
-bazel shutdown
+# bazel shutdown
 
 if [ $no_auth_build -eq 0 ]
 then
