@@ -33,6 +33,7 @@ s3server_config="/opt/seagate/s3/conf/s3config.yaml"
 authserver_config="/opt/seagate/auth/resources/authserver.properties"
 backgrounddelete_config="/opt/seagate/s3/s3backgrounddelete/config.yaml"
 s3startsystem_script="/opt/seagate/s3/s3startsystem.sh"
+s3server_binary="/opt/seagate/s3/bin/s3server"
 s3_core_dir="/var/mero/s3server-*"
 
 # Create tmp folder with pid value to allow parallel execution
@@ -125,6 +126,12 @@ fi
 if [ -f "$s3startsystem_script" ];
 then
     args=$args" "$s3startsystem_script
+fi
+
+# Collect s3server binary file if available
+if [ -f "$s3server_binary" ];
+then
+    args=$args" "$s3server_binary
 fi
 
 # Collect haproxy config file if available
