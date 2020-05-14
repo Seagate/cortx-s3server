@@ -35,7 +35,7 @@ jobs:
     - name: Build s3server rpm
       run: |   
        docker exec s3server-builder bash -c './rpms/s3/buildrpm.sh -P $PWD; chmod 777 /root/rpmbuild/RPMS/x86_64/*.rpm'
-       docker exec mero-builder bash -c 'cp /root/rpmbuild/RPMS/x86_64/*.rpm /workspace'   
+       docker exec s3server-builder bash -c 'cp /root/rpmbuild/RPMS/x86_64/*.rpm /workspace'   
     - name: Create release
       uses: softprops/action-gh-release@v1
       with:
