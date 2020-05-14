@@ -242,6 +242,7 @@ rm -rf %{buildroot}
 /etc/rsyslog.d/rsyslog-tcp-audit.conf
 /etc/rsyslog.d/elasticsearch.conf
 /etc/keepalived/keepalived.conf.master
+/etc/logrotate.d/s3auditlog
 %{_bindir}/s3backgroundconsumer
 %{_bindir}/s3backgroundproducer
 %{py36_sitelib}/s3backgrounddelete/config/*.yaml
