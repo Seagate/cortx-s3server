@@ -227,11 +227,10 @@ then
       $no_s3mempoolmgrut_build -eq 0 || \
       $no_s3mempoolut_build -eq 0 ]]
   then
-    bazel shutdown
-    bazel clean --expunge
+    # bazel shutdown
+    # bazel clean --expunge
   fi
 fi
-
 # Define the paths
 if [ $no_mero_rpm -eq 1 ] # use mero libs from source code (built location or cache)
 then
