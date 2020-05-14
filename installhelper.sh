@@ -33,6 +33,7 @@ SERVICE_FILE_LOCATION=$INSTALL_PREFIX/lib/systemd/system
 LOG_DIR_LOCATION=$INSTALL_PREFIX/var/log/seagate
 NODEJS_DIR_LOCATION=$INSTALL_PREFIX/opt/seagate/s3/nodejs
 RSYSLOG_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/rsyslog.d
+LOGROTATE_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/logrotate.d/
 KEEPALIVED_CFG_DIR_LOCATION=$INSTALL_PREFIX/etc/keepalived
 S3_PROVISIONER_LOCATION=$INSTALL_PREFIX/opt/seagate/eos/s3server
 
@@ -63,6 +64,7 @@ mkdir -p $LOG_DIR_LOCATION/auth/server
 mkdir -p $LOG_DIR_LOCATION/auth/tools
 mkdir -p $NODEJS_DIR_LOCATION
 mkdir -p $RSYSLOG_CFG_DIR_LOCATION
+mkdir -p $LOGROTATE_CFG_DIR_LOCATION
 
 # Copy the haproxy dependencies
 cp -R scripts/haproxy/* $S3_INSTALL_LOCATION/install/haproxy
@@ -196,6 +198,9 @@ cp ./scripts/rsyslog-tcp-audit.conf $RSYSLOG_CFG_DIR_LOCATION
 
 # Copy elasticsearch config
 cp ./scripts/elasticsearch/elasticsearch.conf $RSYSLOG_CFG_DIR_LOCATION
+
+# Copy audit logrotate config
+cp ./scripts/s3-logrotate/s3auditlog $LOGROTATE_CFG_DIR_LOCATION
 
 # Copy the keepalived config
 cp ./scripts/keepalived/keepalived.conf.master $KEEPALIVED_CFG_DIR_LOCATION
