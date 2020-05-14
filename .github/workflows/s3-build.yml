@@ -34,4 +34,12 @@ jobs:
        docker exec s3server-builder bash -c 'yum clean all; rm -rf /var/cache/yum; yum install eos-core-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm eos-core-devel-1.0.0-1_git469ca0a_3.10.0_1062.el7.x86_64.rpm -y'
     - name: Build s3server rpm
       run: |   
-       docker exec s3server-builder bash -c './rpms/s3/buildrpm.sh -P $PWD'
+       docker exec s3server-builder bash -c './rpms/s3/buildrpm.sh -P $PWD; chmod 777 /root/rpmbuild/RPMS/x86_64/eos-core*.rpm'
+       docker exec mero-builder bash -c 'cp /root/rpmbuild/RPMS/x86_64/*.rpm /workspace'   
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      with:
+       tag_name: latest
+       files: '*.rpm'
+      env:
+       GITHUB_TOKEN: ${{ secrets.DOCKER_PASSWORD }}
