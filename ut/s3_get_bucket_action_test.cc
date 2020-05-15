@@ -313,7 +313,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
   CREATE_BUCKET_METADATA_OBJ;
   CREATE_KVS_READER_OBJ;
 
-  action_under_test_ptr->request_prefix.assign("test");
+  action_under_test_ptr->request_prefix.assign("key");
   action_under_test_ptr->request_delimiter.assign("");
 
   result_keys_values.insert(
@@ -327,7 +327,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefix) {
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(2, action_under_test_ptr->object_list.size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list.size());
 }
 
 TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulDelimiter) {
@@ -362,7 +362,7 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
   CREATE_KVS_READER_OBJ;
 
   action_under_test_ptr->request_prefix.assign("test");
-  action_under_test_ptr->request_delimiter.assign("key");
+  action_under_test_ptr->request_delimiter.assign("kval");
 
   result_keys_values.insert(
       std::make_pair("test/some/key", std::make_pair(10, "keyval")));
@@ -375,8 +375,8 @@ TEST_F(S3GetBucketActionTest, GetNextObjectsSuccessfulPrefixDelimiter) {
   SET_NEXT_OBJ_SUCCESSFUL_EXPECTATIONS;
 
   action_under_test_ptr->get_next_objects_successful();
-  EXPECT_EQ(1, action_under_test_ptr->object_list.size());
-  EXPECT_EQ(2, action_under_test_ptr->object_list.common_prefixes_size());
+  EXPECT_EQ(2, action_under_test_ptr->object_list.size());
+  EXPECT_EQ(1, action_under_test_ptr->object_list.common_prefixes_size());
 }
 
 TEST_F(S3GetBucketActionTest, SendResponseToClientServiceUnavailable) {

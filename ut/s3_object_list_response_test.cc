@@ -187,8 +187,7 @@ TEST_F(S3ObjectListResponseTest, ObjectListResponseWithValidObjectsTruncated) {
   EXPECT_CALL(*mock_obj, get_md5()).WillOnce(Return("abcd"));
   EXPECT_CALL(*mock_obj, get_content_length_str()).WillOnce(Return("1024"));
   EXPECT_CALL(*mock_obj, get_storage_class()).WillOnce(Return("STANDARD"));
-  EXPECT_CALL(*mock_obj, get_canonical_id()).Times(2).WillOnce(
-      Return("qWwZGnGYTga8gbpcuY79SA"));
+  EXPECT_CALL(*mock_obj, get_canonical_id()).Times(2);
   EXPECT_CALL(*mock_obj, get_account_name()).WillOnce(Return("s3user"));
 
   std::string response =
@@ -213,8 +212,7 @@ TEST_F(S3ObjectListResponseTest,
   EXPECT_CALL(*mock_obj, get_md5()).WillOnce(Return("abcd"));
   EXPECT_CALL(*mock_obj, get_content_length_str()).WillOnce(Return("1024"));
   EXPECT_CALL(*mock_obj, get_storage_class()).WillOnce(Return("STANDARD"));
-  EXPECT_CALL(*mock_obj, get_canonical_id()).Times(2).WillOnce(
-      Return("qWwZGnGYTga8gbpcuY79SA"));
+  EXPECT_CALL(*mock_obj, get_canonical_id()).Times(2);
   EXPECT_CALL(*mock_obj, get_account_name()).WillOnce(Return("s3user"));
 
   std::string response =
