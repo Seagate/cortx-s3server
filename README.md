@@ -1026,3 +1026,12 @@ systemctl restart slapd
 vim /var/log/slapd.log
 ```
 
+#Restriction on part size for multipart upload
+
+Currently for multipart upload to succeed the part size for all parts  (other than last one) need to be multiple of unit size ie 4/8/16/32/64/128/256/512/1024 K based on object size
+
+else upload will fail with error code InvalidPartSize
+
+#Restriction on multiple concurrent multipart upload of same object
+
+Currently concurrent multipart upload of same object is not supported.In such scenarios InvalidObjectState is expected.
