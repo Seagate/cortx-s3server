@@ -350,7 +350,7 @@ void S3PutMultiObjectAction::compute_part_offset() {
       s3_log(S3_LOG_DEBUG, request_id,
              "Rejecting request as part size is not aligned w.r.t unit_size\n");
       // part size is not multiple of unit size, block request
-      set_s3_error("InvalidPartPerS3Mero");
+      set_s3_error("InvalidPartSize");
       s3_log(S3_LOG_DEBUG, "", "Exiting\n");
       send_response_to_s3_client();
       return;

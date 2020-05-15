@@ -151,8 +151,8 @@
     "Description": "The fault injection command token is invalid.",
     "httpcode": 400
   },
-  "InvalidPartPerS3Mero": {
-    "Description": "Part size must be multiple of unit_size. Please check S3/Mero documentation.",
+  "InvalidPartSize": {
+    "Description": "Part size must be multiple of unit_size. Refer s3 readme.",
     "httpcode": 400
   },
   "MalformedACLError": {
