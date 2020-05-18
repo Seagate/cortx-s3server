@@ -23,7 +23,7 @@ jobs:
     - name: Pull s3server base image
       run: docker pull docker.pkg.github.com/seagate/s3server/s3server-base-image:latest
     - name: Start container
-      run: docker run -it -d --name s3server-builder -v $GITHUB_WORKSPACE:/workspace -w /workspace docker.pkg.github.com/seagate/s3server/s3server-base-image:latest 
+      run: docker run -it -d -e build_number=${GITHUB_RUN_NUMBER} -e github_action=True --name s3server-builder -v $GITHUB_WORKSPACE:/workspace -w /workspace docker.pkg.github.com/seagate/s3server/s3server-base-image:latest 
     
     - name: Download deps rpm
       run: |
@@ -39,7 +39,7 @@ jobs:
     - name: Create release
       uses: softprops/action-gh-release@v1
       with:
-       tag_name: latest
-       files: '*.rpm'
+       tag_name: ${{ github.run_number }}
+       files: 'eos-s3server*.rpm'
       env:
        GITHUB_TOKEN: ${{ secrets.DOCKER_PASSWORD }}
