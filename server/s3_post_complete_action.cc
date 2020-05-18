@@ -269,8 +269,6 @@ void S3PostCompleteAction::get_next_parts_info_successful() {
 
   if (is_abort_multipart()) {
     s3_log(S3_LOG_DEBUG, request_id, "aborting multipart");
-    s3_post_complete_action_state =
-        S3PostCompleteActionState::abortedSinceValidationFailed;
     next();
   } else {
     if (clovis_kv_reader->get_key_values().size() < count_we_requested) {
@@ -340,8 +338,6 @@ void S3PostCompleteAction::get_next_parts_info_failed() {
 
 void S3PostCompleteAction::set_abort_multipart(bool abortit) {
   delete_multipart_object = abortit;
-  s3_post_complete_action_state =
-      S3PostCompleteActionState::abortedSinceValidationFailed;
 }
 
 bool S3PostCompleteAction::is_abort_multipart() {
@@ -399,6 +395,8 @@ bool S3PostCompleteAction::validate_parts() {
                "part size allowed:5GB\n",
                store_kv->first.c_str(), current_parts_size);
         set_s3_error("EntityTooLarge");
+        s3_post_complete_action_state =
+            S3PostCompleteActionState::validationFailed;
         set_abort_multipart(true);
         break;
       }
@@ -410,6 +408,8 @@ bool S3PostCompleteAction::validate_parts() {
                store_kv->first.c_str(), current_parts_size,
                MINIMUM_ALLOWED_PART_SIZE);
         set_s3_error("EntityTooSmall");
+        s3_post_complete_action_state =
+            S3PostCompleteActionState::validationFailed;
         set_abort_multipart(true);
         break;
       }
@@ -427,6 +427,8 @@ bool S3PostCompleteAction::validate_parts() {
                  store_kv->first.c_str(), current_parts_size,
                  part_one_size_in_multipart_metadata);
           set_s3_error("InvalidObjectState");
+          s3_post_complete_action_state =
+              S3PostCompleteActionState::validationFailed;
           set_abort_multipart(true);
           break;
         }
@@ -449,6 +451,8 @@ bool S3PostCompleteAction::validate_parts() {
         // Will be deleting complete object along with the part index and
         // multipart kv
         set_s3_error("InvalidObjectState");
+        s3_post_complete_action_state =
+            S3PostCompleteActionState::validationFailed;
         set_abort_multipart(true);
         break;
       } else {
@@ -612,8 +616,18 @@ void S3PostCompleteAction::save_object_metadata_failed() {
 void S3PostCompleteAction::delete_multipart_metadata() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   multipart_metadata->remove(
-      std::bind(&S3PostCompleteAction::next, this),
+      std::bind(&S3PostCompleteAction::delete_multipart_metadata_success, this),
       std::bind(&S3PostCompleteAction::delete_multipart_metadata_failed, this));
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3PostCompleteAction::delete_multipart_metadata_success() {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+  if (is_abort_multipart()) {
+    s3_post_complete_action_state =
+        S3PostCompleteActionState::abortedSinceValidationFailed;
+  }
+  next();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -788,8 +802,11 @@ void S3PostCompleteAction::startcleanup() {
   clear_tasks();
   cleanup_started = true;
 
-  if (s3_post_complete_action_state ==
-      S3PostCompleteActionState::validationFailed) {
+  if (s3_post_complete_action_state == S3PostCompleteActionState::empty ||
+      s3_post_complete_action_state ==
+          S3PostCompleteActionState::validationFailed ||
+      s3_post_complete_action_state ==
+          S3PostCompleteActionState::probableEntryRecordFailed) {
     // Nothing to undo.
     done();
   } else if (s3_post_complete_action_state ==
@@ -807,12 +824,23 @@ void S3PostCompleteAction::startcleanup() {
     ACTION_TASK_ADD(S3PostCompleteAction::mark_new_oid_for_deletion, this);
     ACTION_TASK_ADD(S3PostCompleteAction::delete_new_object, this);
   } else {
-    // Any failure we dont clean up objects as next S3 client action will
-    // decide
-    if ((s3_post_complete_action_state >=
-         S3PostCompleteActionState::probableEntryRecordSaved)) {
+    // Any other failure/states we dont clean up objects as next S3 client
+    // action will decide
+    if (s3_post_complete_action_state ==
+            S3PostCompleteActionState::probableEntryRecordSaved ||
+        s3_post_complete_action_state ==
+            S3PostCompleteActionState::metadataSaved ||
+        s3_post_complete_action_state ==
+            S3PostCompleteActionState::metadataSaveFailed ||
+        s3_post_complete_action_state == S3PostCompleteActionState::completed) {
       ACTION_TASK_ADD(S3PostCompleteAction::remove_new_oid_probable_record,
                       this);
+    } else {
+      // Should never be here.
+      assert(false);
+      s3_log(S3_LOG_ERROR, request_id,
+             "Possible bug: s3_post_complete_action_state[%d]\n",
+             s3_post_complete_action_state);
     }
   }
   // Start running the cleanup task list
