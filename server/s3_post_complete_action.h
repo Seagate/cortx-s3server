@@ -34,11 +34,12 @@
 
 enum class S3PostCompleteActionState {
   empty,                         // Initial state
-  validationFailed,              // Any validations failed for request
-  abortedSinceValidationFailed,  // multipart aborted due to different part
-                                 // sizes
+  validationFailed,              // Any validations failed for request,
+                                 // incl failed to load metadata for validation
   probableEntryRecordFailed,     // Failed to add entry to probable delete index
   probableEntryRecordSaved,      // Added entry to probable delete index
+  abortedSinceValidationFailed,  // multipart(mp) aborted due to different part
+                                 // validation failures, mp entry is deleted.
   metadataSaved,                 // metadata saved for new object
   metadataSaveFailed,            // metadata save failed for new object
   completed,                     // All stages done completely
@@ -124,6 +125,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   void save_object_metadata_succesful();
   void save_object_metadata_failed();
   void delete_multipart_metadata();
+  void delete_multipart_metadata_success();
   void delete_multipart_metadata_failed();
   void delete_part_list_index();
   void delete_part_list_index_failed();
@@ -177,6 +179,7 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsSuccessfulNext);
   FRIEND_TEST(S3PostCompleteActionTest, GetNextPartsSuccessfulAbortSet);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall);
+  FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulJsonError);
   FRIEND_TEST(S3PostCompleteActionTest, GetPartsSuccessfulAbortMultiPart);
   FRIEND_TEST(S3PostCompleteActionTest, DeletePartIndex);
@@ -187,6 +190,11 @@ class S3PostCompleteAction : public S3ObjectAction {
   FRIEND_TEST(S3PostCompleteActionTest, SendResponseToClientSuccess);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteNewObject);
   FRIEND_TEST(S3PostCompleteActionTest, DeleteOldObject);
+  FRIEND_TEST(S3PostCompleteActionTest, DeleteMultipartMetadataSucessWithAbort);
+  FRIEND_TEST(S3PostCompleteActionTest, StartCleanupValidationFailed);
+  FRIEND_TEST(S3PostCompleteActionTest, StartCleanupProbableEntryRecordFailed);
+  FRIEND_TEST(S3PostCompleteActionTest,
+              StartCleanupAbortedSinceValidationFailed);
 };
 
 #endif

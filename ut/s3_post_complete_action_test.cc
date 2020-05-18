@@ -27,6 +27,7 @@
 #include "s3_post_complete_action.h"
 #include "s3_ut_common.h"
 #include "s3_m0_uint128_helper.h"
+#include "s3_common.h"
 
 extern int s3log_level;
 
@@ -78,6 +79,13 @@ using ::testing::_;
     action_under_test_ptr->clovis_writer =                                  \
         action_under_test_ptr->clovis_writer_factory->create_clovis_writer( \
             request_mock, oid);                                             \
+  } while (0)
+
+#define CREATE_KVS_WRITER_OBJ                           \
+  do {                                                  \
+    action_under_test_ptr->clovis_kv_writer =           \
+        action_under_test_ptr->clovis_kv_writer_factory \
+            ->create_clovis_kvs_writer(request_mock);   \
   } while (0)
 
 #define CREATE_ACTION_UNDER_TEST_OBJ                                          \
@@ -167,6 +175,16 @@ class S3PostCompleteActionTest : public testing::Test {
 
  public:
   void func_callback_one() { call_count_one += 1; }
+
+  void dummy_put_keyval(struct m0_uint128 oid, std::string key, std::string val,
+                        std::function<void(void)> on_success,
+                        std::function<void(void)> on_failed) {
+    action_under_test_ptr->next();
+  }
+  void dummy_delete_object(std::function<void(void)> on_success,
+                           std::function<void(void)> on_failed, int layoutid) {
+    action_under_test_ptr->next();
+  }
 };
 
 TEST_F(S3PostCompleteActionTest, Constructor) {
@@ -480,6 +498,43 @@ TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooSmall) {
   EXPECT_EQ(0, call_count_one);
   EXPECT_STREQ("EntityTooSmall",
                action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_EQ(S3PostCompleteActionState::validationFailed,
+            action_under_test_ptr->s3_post_complete_action_state);
+  EXPECT_EQ(true, action_under_test_ptr->is_abort_multipart());
+}
+
+TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulEntityTooLarge) {
+  CREATE_KVS_READER_OBJ;
+  CREATE_MP_METADATA_OBJ;
+  result_keys_values.insert(std::make_pair("0", std::make_pair(10, "keyval1")));
+  result_keys_values.insert(std::make_pair("1", std::make_pair(11, "keyval2")));
+  result_keys_values.insert(std::make_pair("2", std::make_pair(12, "keyval3")));
+
+  EXPECT_CALL(*(clovis_kvs_reader_factory->mock_clovis_kvs_reader),
+              get_key_values()).WillRepeatedly(ReturnRef(result_keys_values));
+  EXPECT_CALL(*(object_mp_meta_factory->mock_object_mp_metadata),
+              get_part_one_size()).WillRepeatedly(Return(/*4k*/ 4096));
+
+  action_under_test_ptr->parts["0"] = "keyval1";
+  action_under_test_ptr->parts["1"] = "keyval2";
+  action_under_test_ptr->parts["2"] = "keyval3";
+
+  action_under_test_ptr->total_parts = action_under_test_ptr->parts.size();
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), from_json(_))
+      .WillRepeatedly(Return(0));
+  EXPECT_CALL(*(part_meta_factory->mock_part_metadata), get_content_length())
+      .WillRepeatedly(Return(MAXIMUM_ALLOWED_PART_SIZE + 1));
+  action_under_test_ptr->clear_tasks();
+  ACTION_TASK_ADD_OBJPTR(action_under_test_ptr,
+                         S3PostCompleteActionTest::func_callback_one, this);
+
+  action_under_test_ptr->validate_parts();
+  EXPECT_EQ(0, call_count_one);
+  EXPECT_STREQ("EntityTooLarge",
+               action_under_test_ptr->get_s3_error_code().c_str());
+  EXPECT_EQ(S3PostCompleteActionState::validationFailed,
+            action_under_test_ptr->s3_post_complete_action_state);
+  EXPECT_EQ(true, action_under_test_ptr->is_abort_multipart());
 }
 
 TEST_F(S3PostCompleteActionTest, GetPartsSuccessfulJsonError) {
@@ -529,6 +584,15 @@ TEST_F(S3PostCompleteActionTest, DeleteMultipartMetadata) {
   action_under_test_ptr->delete_multipart_metadata();
 }
 
+TEST_F(S3PostCompleteActionTest, DeleteMultipartMetadataSucessWithAbort) {
+  CREATE_MP_METADATA_OBJ;
+  action_under_test_ptr->set_abort_multipart(true);
+  action_under_test_ptr->clear_tasks();
+  action_under_test_ptr->delete_multipart_metadata_success();
+  EXPECT_EQ(S3PostCompleteActionState::abortedSinceValidationFailed,
+            action_under_test_ptr->s3_post_complete_action_state);
+}
+
 TEST_F(S3PostCompleteActionTest, SendResponseToClientInternalError) {
   action_under_test_ptr->obj_metadata_updated = false;
   action_under_test_ptr->s3_post_complete_action_state =
@@ -571,8 +635,6 @@ TEST_F(S3PostCompleteActionTest, SendResponseToClientAbortMultipart) {
   EXPECT_CALL(*request_mock, resume(_)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, set_out_header_value(_, _)).Times(AtLeast(1));
   EXPECT_CALL(*request_mock, send_response(403, _)).Times(AtLeast(1));
-  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              put_keyval(_, _, _, _, _)).Times(1);
   action_under_test_ptr->send_response_to_s3_client();
 }
 
@@ -616,3 +678,62 @@ TEST_F(S3PostCompleteActionTest, DeleteOldObject) {
   action_under_test_ptr->delete_old_object();
 }
 
+TEST_F(S3PostCompleteActionTest, StartCleanupEmptyState) {
+  action_under_test_ptr->startcleanup();
+  EXPECT_EQ(false, action_under_test_ptr->is_error_state());
+  EXPECT_EQ(0, action_under_test_ptr->number_of_tasks());
+}
+
+TEST_F(S3PostCompleteActionTest, StartCleanupValidationFailed) {
+  action_under_test_ptr->s3_post_complete_action_state =
+      S3PostCompleteActionState::validationFailed;
+  action_under_test_ptr->startcleanup();
+  EXPECT_EQ(false, action_under_test_ptr->is_error_state());
+  EXPECT_EQ(0, action_under_test_ptr->number_of_tasks());
+}
+
+TEST_F(S3PostCompleteActionTest, StartCleanupProbableEntryRecordFailed) {
+  action_under_test_ptr->s3_post_complete_action_state =
+      S3PostCompleteActionState::probableEntryRecordFailed;
+  action_under_test_ptr->startcleanup();
+  EXPECT_EQ(false, action_under_test_ptr->is_error_state());
+  EXPECT_EQ(0, action_under_test_ptr->number_of_tasks());
+}
+
+TEST_F(S3PostCompleteActionTest, StartCleanupAbortedSinceValidationFailed) {
+  CREATE_WRITER_OBJ;
+  CREATE_KVS_WRITER_OBJ;
+  action_under_test_ptr->new_oid_str = "oid_new";
+  action_under_test_ptr->new_object_oid = {0x1ffff, 0x1ffff};
+  std::string object_name = "abcd";
+  std::string version_key_in_index = "abcd/v1";
+  int layout_id = 9;
+  struct m0_uint128 object_list_indx_oid = {0x11ffff, 0x1ffff};
+  struct m0_uint128 objects_version_list_index_oid = {0x1ff1ff, 0x1ffff};
+  struct m0_uint128 oid = {0x1ffff, 0x1ffff};
+  std::string oid_str = S3M0Uint128Helper::to_string(oid);
+  action_under_test_ptr->s3_post_complete_action_state =
+      S3PostCompleteActionState::abortedSinceValidationFailed;
+
+  action_under_test_ptr->new_probable_del_rec =
+      std::unique_ptr<S3ProbableDeleteRecord>(new S3ProbableDeleteRecord(
+          oid_str, {0ULL, 0ULL}, "abcd", oid, layout_id, object_list_indx_oid,
+          objects_version_list_index_oid, version_key_in_index,
+          false /* force_delete */));
+  action_under_test_ptr->set_abort_multipart(true);
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              put_keyval(_, _, _, _, _))
+      .Times(1)
+      .WillRepeatedly(
+           Invoke(this, &S3PostCompleteActionTest::dummy_put_keyval));
+
+  EXPECT_CALL(*(clovis_writer_factory->mock_clovis_writer),
+              delete_object(_, _, _))
+      .Times(1)
+      .WillRepeatedly(
+           Invoke(this, &S3PostCompleteActionTest::dummy_delete_object));
+
+  action_under_test_ptr->startcleanup();
+  EXPECT_EQ(false, action_under_test_ptr->is_error_state());
+  EXPECT_EQ(2, action_under_test_ptr->number_of_tasks());
+}
