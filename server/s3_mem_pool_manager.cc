@@ -22,6 +22,8 @@
 S3MempoolManager *S3MempoolManager::instance = NULL;
 
 size_t S3MempoolManager::free_space = 0;
+size_t S3MempoolManager::reserved_space = 0;
+float S3MempoolManager::request_memory_ratio = 0.0;
 
 extern "C" size_t mem_get_free_space_func() {
   return S3MempoolManager::free_space;
@@ -159,6 +161,12 @@ size_t S3MempoolManager::get_free_space_for(size_t unit_size) {
     return free_bytes + S3MempoolManager::free_space;
   }
   return 0;
+}
+
+size_t S3MempoolManager::get_read_free_space_for(size_t unit_size) {
+  size_t total_free = get_free_space_for(unit_size);
+  return static_cast<size_t>(S3MempoolManager::request_memory_ratio *
+                             (total_free - S3MempoolManager::reserved_space));
 }
 
 bool S3MempoolManager::free_any_unused() {

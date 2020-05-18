@@ -511,13 +511,15 @@ extern "C" void on_event_hook(evhtp_connection_t *conn, short events,
   }
 }
 
-extern "C" void on_write_hook(evhtp_connection_t *conn, void *arg) {
+extern "C" evhtp_res on_write_hook(evhtp_connection_t *conn, void *arg) {
   S3AuthClientOpContext *context = (S3AuthClientOpContext *)arg;
   const auto request_id = context->get_request()->get_request_id();
   s3_log(S3_LOG_DEBUG, request_id, "on socket write\n");
 
   ADDB(S3_ADDB_AUTH_ID, context->get_request()->addb_request_id,
        ACTS_AUTH_OP_ON_WRITE);
+
+  return EVHTP_RES_OK;
 }
 
 extern "C" evhtp_res on_request_headers(evhtp_request_t *r, void *arg) {

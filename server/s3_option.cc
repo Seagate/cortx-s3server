@@ -177,6 +177,21 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_PORT");
       redis_srv_port =
           s3_option_node["S3_REDIS_SERVER_PORT"].as<unsigned short>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_BLOCKS_INITIAL");
+      read_blocks_initial =
+          s3_option_node["S3_READ_BLOCKS_INITIAL"].as<size_t>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_BLOCKS_GROWTH_RATIO");
+      read_blocks_growth_ratio =
+          s3_option_node["S3_READ_BLOCKS_GROWTH_RATIO"].as<float>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_BLOCKS_OPTIMAL");
+      read_blocks_optimal =
+          s3_option_node["S3_READ_BLOCKS_OPTIMAL"].as<size_t>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REQUEST_MEMORY_RATIO");
+      request_memory_ratio =
+          s3_option_node["S3_REQUEST_MEMORY_RATIO"].as<float>() / 100;
+
     } else if (section_name == "S3_AUTH_CONFIG") {
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
       auth_port = s3_option_node["S3_AUTH_PORT"].as<unsigned short>();
@@ -270,6 +285,11 @@ bool S3Option::load_section(std::string section_name,
              &clovis_read_pool_expandable_count);
       sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
              &clovis_read_pool_max_threshold);
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_RESERVE_SIZE");
+      clovis_read_pool_reserve_size =
+          s3_option_node["S3_CLOVIS_READ_POOL_RESERVE_SIZE"].as<size_t>();
 
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
@@ -470,6 +490,21 @@ bool S3Option::load_section(std::string section_name,
       S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REDIS_SERVER_PORT");
       redis_srv_port =
           s3_option_node["S3_REDIS_SERVER_PORT"].as<unsigned short>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_BLOCKS_INITIAL");
+      read_blocks_initial =
+          s3_option_node["S3_READ_BLOCKS_INITIAL"].as<size_t>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_BLOCKS_GROWTH_RATIO");
+      read_blocks_growth_ratio =
+          s3_option_node["S3_READ_BLOCKS_GROWTH_RATIO"].as<float>();
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_READ_BLOCKS_OPTIMAL");
+      read_blocks_optimal =
+          s3_option_node["S3_READ_BLOCKS_OPTIMAL"].as<size_t>();
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_REQUEST_MEMORY_RATIO");
+      request_memory_ratio =
+          s3_option_node["S3_REQUEST_MEMORY_RATIO"].as<float>() / 100;
+
     } else if (section_name == "S3_AUTH_CONFIG") {
       if (!(cmd_opt_flag & S3_OPTION_AUTH_PORT)) {
         S3_OPTION_ASSERT_AND_RET(s3_option_node, "S3_AUTH_PORT");
@@ -566,6 +601,11 @@ bool S3Option::load_section(std::string section_name,
              &clovis_read_pool_expandable_count);
       sscanf(clovis_read_pool_max_threshold_str.c_str(), "%zu",
              &clovis_read_pool_max_threshold);
+
+      S3_OPTION_ASSERT_AND_RET(s3_option_node,
+                               "S3_CLOVIS_READ_POOL_RESERVE_SIZE");
+      clovis_read_pool_reserve_size =
+          s3_option_node["S3_CLOVIS_READ_POOL_RESERVE_SIZE"].as<size_t>();
 
     } else if (section_name == "S3_THIRDPARTY_CONFIG") {
       std::string libevent_pool_initial_size_str;
@@ -822,6 +862,11 @@ void S3Option::dump_options() {
          clovis_read_pool_expandable_count);
   s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_POOL_MAX_THRESHOLD = %zu\n",
          clovis_read_pool_max_threshold);
+  s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_POOL_RESERVE_SIZE = %zu\n",
+         clovis_read_pool_reserve_size);
+
+  s3_log(S3_LOG_INFO, "", "S3_REQUEST_MEMORY_RATIO = %f\n",
+         request_memory_ratio);
 
   s3_log(S3_LOG_INFO, "", "S3_LIBEVENT_POOL_INITIAL_SIZE = %zu\n",
          libevent_pool_initial_size);
@@ -871,6 +916,13 @@ void S3Option::dump_options() {
   s3_log(S3_LOG_INFO, "", "S3_REDIS_SERVER_PORT = %d\n", (int)redis_srv_port);
   s3_log(S3_LOG_INFO, "", "S3_REDIS_SERVER_ADDRESS = %s\n",
          redis_srv_addr.c_str());
+
+  s3_log(S3_LOG_INFO, "", "S3_READ_BLOCKS_INITIAL = %zu\n",
+         read_blocks_initial);
+  s3_log(S3_LOG_INFO, "", "S3_READ_BLOCKS_GROWTH_RATIO = %f\n",
+         read_blocks_growth_ratio);
+  s3_log(S3_LOG_INFO, "", "S3_READ_BLOCKS_OPTIMAL = %zu\n",
+         read_blocks_optimal);
 
   s3_log(S3_LOG_INFO, "", "S3_CLOVIS_READ_MEMPOOL_ZERO_BUFFER=%s\n",
          clovis_read_mempool_zeroed_buffer ? "true" : "false");
@@ -943,6 +995,12 @@ size_t S3Option::get_clovis_read_pool_expandable_count() {
 size_t S3Option::get_clovis_read_pool_max_threshold() {
   return clovis_read_pool_max_threshold;
 }
+
+size_t S3Option::get_clovis_read_pool_reserve_size() {
+  return clovis_read_pool_reserve_size;
+}
+
+float S3Option::get_request_memory_ratio() { return request_memory_ratio; }
 
 size_t S3Option::get_libevent_pool_initial_size() {
   return libevent_pool_initial_size;
@@ -1208,6 +1266,12 @@ bool S3Option::is_getoid_enabled() { return FLAGS_getoid; }
 std::string S3Option::get_redis_srv_addr() { return redis_srv_addr; }
 
 unsigned short S3Option::get_redis_srv_port() { return redis_srv_port; }
+
+size_t S3Option::get_read_blocks_initial() { return read_blocks_initial; }
+float S3Option::get_read_blocks_growth_ratio() {
+  return read_blocks_growth_ratio;
+}
+size_t S3Option::get_read_blocks_optimal() { return read_blocks_optimal; }
 
 bool S3Option::get_clovis_read_mempool_zeroed_buffer() {
   return clovis_read_mempool_zeroed_buffer;

@@ -882,6 +882,8 @@ TEST_F(S3GetObjectActionTest, ReadObjectOfSizeLessThanUnitSize) {
   EXPECT_CALL(*(clovis_reader_factory->mock_clovis_reader), get_state())
       .Times(AtLeast(1))
       .WillOnce(Return(S3ClovisReaderOpState::success));
+  EXPECT_CALL(*ptr_mock_request, get_conn_send_size())
+      .WillRepeatedly(Return(0));
   action_under_test->validate_object_info();
   action_under_test->read_object();
 }

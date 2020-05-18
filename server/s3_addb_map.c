@@ -47,7 +47,8 @@ const char* action_state_map[ADDB_TASK_LIST_OFFSET] = {
     "AUTH_CLNT_CHUNK_AUTH_INIT",      "AUTH_CLNT_CHUNK_ADD_CHKSUMM",
     "AUTH_CLNT_CHUNK_AUTH_SUCC",      "AUTH_CLNT_CHUNK_AUTH_FAILED", };
 
-const char* measurement_map[ADDB_MEASUREMENT_LIST_OFFSET] = {"TRACE_POINT", };
+const char* measurement_map[ADDB_MEASUREMENT_LIST_OFFSET] = {
+    "TRACE_POINT", "DTGET_READ_OBJECT"};
 
 const char* addb_measurement_to_name(uint64_t msrm_idx) {
   assert(msrm_idx < ADDB_MEASUREMENT_LIST_OFFSET);

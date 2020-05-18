@@ -34,6 +34,7 @@ S3GetObjectAction::S3GetObjectAction(
     std::shared_ptr<S3ClovisReaderFactory> clovis_s3_factory)
     : S3ObjectAction(std::move(req), std::move(bucket_meta_factory),
                      std::move(object_meta_factory)),
+      clovis_unit_size(0),
       total_blocks_in_object(0),
       blocks_already_read(0),
       data_sent_to_client(0),
@@ -41,6 +42,7 @@ S3GetObjectAction::S3GetObjectAction(
       first_byte_offset_to_read(0),
       last_byte_offset_to_read(0),
       total_blocks_to_read(0),
+      curr_iter_blocks(0),
       read_object_reply_started(false) {
   s3_log(S3_LOG_DEBUG, request_id, "Constructor\n");
 
@@ -140,7 +142,7 @@ void S3GetObjectAction::validate_object_info() {
     request->send_reply_start(S3HttpSuccess200);
     send_response_to_s3_client();
   } else {
-    size_t clovis_unit_size =
+    clovis_unit_size =
         S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
             object_metadata->get_layout_id());
     s3_log(S3_LOG_DEBUG, request_id,
@@ -163,10 +165,6 @@ void S3GetObjectAction::set_total_blocks_to_read_from_object() {
       (last_byte_offset_to_read == (content_length - 1))) {
     total_blocks_to_read = total_blocks_in_object;
   } else {
-    // object read for valid range
-    size_t clovis_unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-            object_metadata->get_layout_id());
     // get block of first_byte_offset_to_read
     size_t first_byte_offset_block =
         (first_byte_offset_to_read + clovis_unit_size) / clovis_unit_size;
@@ -318,14 +316,28 @@ void S3GetObjectAction::read_object() {
       request, object_metadata->get_oid(), object_metadata->get_layout_id());
   // get the block,in which first_byte_offset_to_read is present
   // and initilaize the last index with starting offset the block
-  size_t block_start_offset =
-      first_byte_offset_to_read -
-      (first_byte_offset_to_read %
-       S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-           object_metadata->get_layout_id()));
+  size_t block_start_offset = first_byte_offset_to_read -
+                              (first_byte_offset_to_read % clovis_unit_size);
   clovis_reader->set_last_index(block_start_offset);
-  read_object_data();
+  next_iteration_read();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3GetObjectAction::next_iteration_read() {
+  S3Option* g_opt_inst = S3Option::get_instance();
+
+  if (curr_iter_blocks == 0) {
+    curr_iter_blocks = g_opt_inst->get_read_blocks_initial();
+  } else {
+    curr_iter_blocks = static_cast<size_t>(
+        curr_iter_blocks * g_opt_inst->get_read_blocks_growth_ratio());
+    curr_iter_blocks = std::min<size_t>(curr_iter_blocks,
+                                        g_opt_inst->get_read_blocks_optimal());
+    curr_iter_blocks = std::min<size_t>(
+        curr_iter_blocks, (total_blocks_to_read - blocks_already_read));
+  }
+  s3_log(S3_LOG_DEBUG, request_id, "curr it blocks %zu\n", curr_iter_blocks);
+  read_object_data();
 }
 
 void S3GetObjectAction::read_object_data() {
@@ -335,48 +347,51 @@ void S3GetObjectAction::read_object_data() {
     return;
   }
 
-  size_t max_blocks_in_one_read_op =
-      S3Option::get_instance()->get_clovis_units_per_request();
-  size_t blocks_to_read = 0;
+  s3_log(S3_LOG_DEBUG, request_id, "blocks %zu/%zu, prev it blocks %zu\n",
+         blocks_already_read, total_blocks_to_read, curr_iter_blocks);
 
-  s3_log(S3_LOG_DEBUG, request_id, "max_blocks_in_one_read_op: (%zu)\n",
-         max_blocks_in_one_read_op);
-  s3_log(S3_LOG_DEBUG, request_id, "blocks_already_read: (%zu)\n",
-         blocks_already_read);
-  s3_log(S3_LOG_DEBUG, request_id, "total_blocks_to_read: (%zu)\n",
-         total_blocks_to_read);
-  if (blocks_already_read != total_blocks_to_read) {
-    if ((total_blocks_to_read - blocks_already_read) >
-        max_blocks_in_one_read_op) {
-      blocks_to_read = max_blocks_in_one_read_op;
-    } else {
-      blocks_to_read = total_blocks_to_read - blocks_already_read;
-    }
-    s3_log(S3_LOG_DEBUG, request_id, "blocks_to_read: (%zu)\n", blocks_to_read);
-
-    if (blocks_to_read > 0) {
-      bool op_launched = clovis_reader->read_object_data(
-          blocks_to_read,
-          std::bind(&S3GetObjectAction::send_data_to_client, this),
-          std::bind(&S3GetObjectAction::read_object_data_failed, this));
-      if (!op_launched) {
-        if (clovis_reader->get_state() ==
-            S3ClovisReaderOpState::failed_to_launch) {
-          set_s3_error("ServiceUnavailable");
-          s3_log(S3_LOG_ERROR, request_id,
-                 "read_object_data called due to clovis_entity_open failure\n");
-        } else {
-          set_s3_error("InternalError");
-        }
-        send_response_to_s3_client();
-      }
-    } else {
-      send_response_to_s3_client();
-    }
-  } else {
+  if (blocks_already_read == total_blocks_to_read) {
     // We are done Reading
     send_response_to_s3_client();
+    s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+    return;
   }
+
+  size_t free_read_blocks = clovis_reader->get_read_free_blocks();
+  size_t conn_send_sz = request->get_conn_send_size();
+  size_t read_blocks = std::min<size_t>(curr_iter_blocks, free_read_blocks);
+  read_blocks = std::max<size_t>(curr_iter_blocks, 1);
+
+  bool should_wait =
+      read_blocks * clovis_unit_size <
+      (conn_send_sz / S3Option::get_instance()->get_read_ahead_multiple());
+
+  ADDB_MSRM(ADDB_MSRM_DTGET_READ_OBJECT, addb_request_id, clovis_unit_size,
+            total_blocks_to_read, blocks_already_read, curr_iter_blocks,
+            free_read_blocks, read_blocks, conn_send_sz, should_wait);
+
+  if (should_wait) {
+    request->on_some_data_written_add(
+        std::bind(&S3GetObjectAction::read_object_data, this));
+
+    s3_log(S3_LOG_DEBUG, request_id, "Exiting with schedule");
+    return;
+  }
+
+  if (!clovis_reader->read_object_data(
+           read_blocks,
+           std::bind(&S3GetObjectAction::send_data_to_client, this),
+           std::bind(&S3GetObjectAction::read_object_data_failed, this))) {
+    if (clovis_reader->get_state() == S3ClovisReaderOpState::failed_to_launch) {
+      set_s3_error("ServiceUnavailable");
+      s3_log(S3_LOG_ERROR, request_id,
+             "read_object_data called due to clovis_entity_open failure\n");
+    } else {
+      set_s3_error("InternalError");
+    }
+    send_response_to_s3_client();
+  }
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -441,10 +456,7 @@ void S3GetObjectAction::send_data_to_client() {
       // this is to set get first offset byte from initial read block
       // eg: read_data_start_offset will be set to 1000 on initial read block
       // for a given range 1000-1500 to read from 2mb object
-      read_data_start_offset =
-          first_byte_offset_to_read %
-          S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(
-              object_metadata->get_layout_id());
+      read_data_start_offset = first_byte_offset_to_read % clovis_unit_size;
       length -= read_data_start_offset;
     }
     // to read number of bytes from final read block of read object
@@ -463,7 +475,7 @@ void S3GetObjectAction::send_data_to_client() {
   s3_timer.stop();
 
   if (data_sent_to_client != requested_content_length) {
-    read_object_data();
+    next_iteration_read();
   } else {
     const auto mss = s3_timer.elapsed_time_in_millisec();
     LOG_PERF("get_object_send_data_ms", request_id.c_str(), mss);

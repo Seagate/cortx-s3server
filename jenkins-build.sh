@@ -6,6 +6,7 @@ USAGE="USAGE: bash $(basename "$0") [--use_http_client | --s3server_enable_ssl ]
                                     [--fake_obj] [--fake_kvs | --redis_kvs] [--basic_test_only]
                                     [--local_redis_restart]
                                     [--callgraph /path/to/output/file]
+                                    [--srvonly]
                                     [--help | -h]
 
 where:
@@ -26,6 +27,7 @@ where:
 --local_redis_restart	   In case redis server installed on local machine this option restarts redis-server
 --callgraph /path/to/output/file	   Generate valgrind call graph; Especially usefull
 		   together with --basic_test_only option
+--srvonly	   incremental build and deploy of s3server only
 --help (-h)        Display help"
 
 use_http_client=0
@@ -41,6 +43,7 @@ redis_kvs=0
 basic_test_only=0
 callgraph_cmd=""
 local_redis_restart=0
+srvonly=0
 
 if [ $# -eq 0 ]
 then
@@ -115,6 +118,9 @@ else
       --local_redis_restart ) echo "redis-server will be restarted";
                               local_redis_restart=1;
                               ;;
+      --srvonly ) echo "s3server only build and run";
+                 srvonly=1;
+                 ;;
       --help | -h )
           echo "$USAGE"
           exit 1
@@ -184,9 +190,15 @@ then
   rm -rf $BUILD_CACHE_DIR
 fi
 
+ext_build_cmd=""
+if [ $srvonly -eq 1 ]
+then
+    ext_build_cmd="--no-check-code --no-clean-build --no-s3ut-build --no-s3mempoolut-build --no-s3mempoolmgrut-build --no-cloviskvscli-build --no-auth-build --no-jclient-build --no-jcloudclient-build"
+fi
+
 if [ $skip_build -eq 0 ]
 then
-    ./rebuildall.sh --no-mero-rpm --use-build-cache
+    ./rebuildall.sh --no-mero-rpm --use-build-cache $ext_build_cmd
 fi
 
 # Stop any old running S3 instances

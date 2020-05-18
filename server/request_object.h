@@ -35,6 +35,7 @@
 #include <gtest/gtest_prod.h>
 #include "evhtp_wrapper.h"
 #include "event_wrapper.h"
+#include <event2/bufferevent_struct.h>
 
 #include "s3_async_buffer_opt.h"
 #include "s3_chunk_payload_parser.h"
@@ -73,7 +74,7 @@ class RequestObject {
   std::string user_name;
   std::string email;         // Unique
   std::string canonical_id;  // Unique
-  std::string user_id;  // Unique
+  std::string user_id;       // Unique
   std::string account_name;
   std::string account_id;  // Unique
   int http_status;
@@ -339,6 +340,9 @@ class RequestObject {
  private:
   struct evbuffer* reply_buffer;
 
+  // List of handlers to be called once on some data written connection event
+  std::vector<std::function<void()> > conn_some_data_written_cbs;
+
  public:
   virtual void send_response(int code, std::string body = "");
   virtual void send_reply_start(int code);
@@ -352,6 +356,31 @@ class RequestObject {
 
   void respond_unsupported_api();
   virtual void respond_retry_after(int retry_after_in_secs = 1);
+
+  virtual size_t get_conn_send_size() const {
+    evhtp_connection_t* cn = evhtp_obj->evhtp_request_get_connection(ev_req);
+    if (cn == nullptr || cn->bev == nullptr || cn->bev->output == nullptr) {
+      return 0;
+    }
+    return evhtp_obj->evbuffer_get_length(cn->bev->output);
+  }
+
+  // Adds specific on_some_data_written_cb to the list of cbs
+  virtual void on_some_data_written_add(std::function<void()>&& cb) {
+    conn_some_data_written_cbs.push_back(std::move(cb));
+  }
+
+  // Runs each cb once and clears the list of cbs
+  virtual void conn_some_data_written_handler() {
+    std::vector<std::function<void()> > tmp;
+    tmp.swap(conn_some_data_written_cbs);
+
+    for (auto cb : tmp) {
+      if (cb) {
+        cb();
+      }
+    }
+  }
 
   FRIEND_TEST(S3MockAuthClientCheckTest, CheckAuth);
   FRIEND_TEST(RequestObjectTest, ReturnsValidUriPaths);

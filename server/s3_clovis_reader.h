@@ -33,6 +33,7 @@
 #include "s3_log.h"
 #include "s3_option.h"
 #include "s3_request_object.h"
+#include "s3_mem_pool_manager.h"
 
 extern S3Option* g_option_instance;
 
@@ -46,6 +47,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
   bool has_clovis_rw_op_context;
 
   int layout_id;
+  size_t unit_size;
   std::string request_id;
 
  public:
@@ -61,6 +63,8 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
     assert(layoutid > 0);
 
     layout_id = layoutid;
+    unit_size =
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
 
     // Create or write, we need op context
     clovis_op_context = create_basic_op_ctx(1);
@@ -87,8 +91,6 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
     if (last_index == nullptr) {
       return false;
     }
-    size_t unit_size =
-        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
     clovis_rw_op_context = create_basic_rw_op_ctx(clovis_buf_count, unit_size);
     if (clovis_rw_op_context == NULL) {
       // out of memory
@@ -110,9 +112,7 @@ class S3ClovisReaderContext : public S3AsyncOpContextBase {
     return true;
   }
 
-  struct s3_clovis_op_context* get_clovis_op_ctx() {
-    return clovis_op_context;
-  }
+  struct s3_clovis_op_context* get_clovis_op_ctx() { return clovis_op_context; }
 
   struct s3_clovis_rw_op_context* get_clovis_rw_op_ctx() {
     return clovis_rw_op_context;
@@ -208,6 +208,16 @@ class S3ClovisReader {
   virtual size_t get_last_index() { return last_index; }
 
   virtual void set_last_index(size_t index) { last_index = index; }
+
+  virtual size_t get_read_free_blocks() {
+    size_t unit_size =
+        S3ClovisLayoutMap::get_instance()->get_unit_size_for_layout(layout_id);
+    size_t free_mem =
+        S3MempoolManager::get_instance()->get_read_free_space_for(unit_size);
+    size_t free_mem_blocks = free_mem / unit_size;
+
+    return free_mem_blocks;
+  }
 
   // For Testing purpose
   FRIEND_TEST(S3ClovisReaderTest, Constructor);

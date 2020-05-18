@@ -152,6 +152,9 @@ class S3Option {
   size_t clovis_read_pool_initial_buffer_count;
   size_t clovis_read_pool_expandable_count;
   size_t clovis_read_pool_max_threshold;
+  size_t clovis_read_pool_reserve_size;
+
+  float request_memory_ratio;
 
   size_t libevent_pool_initial_size;
   size_t libevent_pool_expandable_size;
@@ -166,6 +169,10 @@ class S3Option {
 
   std::string s3_daemon_dir;
   unsigned short s3_daemon_redirect;
+
+  size_t read_blocks_initial;
+  float read_blocks_growth_ratio;
+  size_t read_blocks_optimal;
 
   bool stats_enable;
   std::string statsd_ip_addr;
@@ -237,6 +244,9 @@ class S3Option {
     clovis_read_pool_initial_buffer_count = 10;   // 10 buffer
     clovis_read_pool_expandable_count = 1048576;  // 1mb
     clovis_read_pool_max_threshold = 104857600;   // 100mb
+    clovis_read_pool_reserve_size = 10485760;
+
+    request_memory_ratio = 0.5;
 
     libevent_pool_buffer_size = 4096;
     libevent_pool_initial_size = 10485760;
@@ -275,6 +285,10 @@ class S3Option {
 
     redis_srv_addr = "127.0.0.1";
     redis_srv_port = 6397;
+
+    read_blocks_initial = 1;
+    read_blocks_growth_ratio = 10.0;
+    read_blocks_optimal = 112;
 
     eventbase = NULL;
 
@@ -377,6 +391,9 @@ class S3Option {
   size_t get_clovis_read_pool_initial_buffer_count();
   size_t get_clovis_read_pool_expandable_count();
   size_t get_clovis_read_pool_max_threshold();
+  size_t get_clovis_read_pool_reserve_size();
+
+  float get_request_memory_ratio();
 
   size_t get_libevent_pool_initial_size();
   size_t get_libevent_pool_expandable_size();
@@ -419,6 +436,10 @@ class S3Option {
 
   std::string get_redis_srv_addr();
   unsigned short get_redis_srv_port();
+
+  size_t get_read_blocks_initial();
+  float get_read_blocks_growth_ratio();
+  size_t get_read_blocks_optimal();
 
   bool get_clovis_read_mempool_zeroed_buffer();
   bool get_libevent_mempool_zeroed_buffer();

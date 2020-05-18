@@ -383,12 +383,26 @@ extern "C" evhtp_res process_mero_api_request_data(evhtp_request_t *req,
   return EVHTP_RES_OK;
 }
 
+extern "C" evhtp_res conn_some_data_written(evhtp_connection_t *cn, void *arg) {
+  s3_log(S3_LOG_DEBUG, "", "Enter cn %p arg %p\n", cn, arg);
+  if (cn && cn->request) {
+    RequestObject *req = static_cast<RequestObject *>(cn->request->cbarg);
+    if (req) {
+      req->conn_some_data_written_handler();
+    }
+  }
+  s3_log(S3_LOG_DEBUG, "", "Exit");
+  return EVHTP_RES_OK;
+}
+
 extern "C" evhtp_res set_s3_connection_handlers(evhtp_connection_t *conn,
                                                 void *arg) {
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_headers,
                  (evhtp_hook)dispatch_s3_api_request, arg);
   evhtp_set_hook(&conn->hooks, evhtp_hook_on_read,
                  (evhtp_hook)process_request_data, NULL);
+  evhtp_set_hook(&conn->hooks, evhtp_hook_on_write,
+                 (evhtp_hook)conn_some_data_written, NULL);
   return EVHTP_RES_OK;
 }
 

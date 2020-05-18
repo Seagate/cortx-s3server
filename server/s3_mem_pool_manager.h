@@ -29,6 +29,7 @@
 
 #include "s3_log.h"
 #include "s3_memory_pool.h"
+#include "s3_option.h"
 
 // Pool of memory pools specifically for use of different unit_size buffers
 class S3MempoolManager {
@@ -58,6 +59,10 @@ class S3MempoolManager {
   // static so C callback passed to mempool can access this
   static size_t free_space;
 
+  // tuning params to be used in Dynamic Clovis Op size alg
+  static size_t reserved_space;
+  static float request_memory_ratio;
+
   //  Return the buffer of give unit_size
   // For flags see mempool_getbuffer() in s3_memory_pool.h header
   void* get_buffer_for_unit_size(size_t unit_size);
@@ -67,6 +72,8 @@ class S3MempoolManager {
   int release_buffer_for_unit_size(void* buf, size_t unit_size);
 
   size_t get_free_space_for(size_t unit_size);
+
+  size_t get_read_free_space_for(size_t unit_size);
 
   // Free any mempool that has max free space, free it by half
   // Returns true if space was free'ed in any pool, false if it cannot be
@@ -79,6 +86,10 @@ class S3MempoolManager {
     if (!instance) {
       instance = new S3MempoolManager(max_mem);
       S3MempoolManager::free_space = max_mem;
+      S3MempoolManager::reserved_space =
+          S3Option::get_instance()->get_clovis_read_pool_reserve_size();
+      S3MempoolManager::request_memory_ratio =
+          S3Option::get_instance()->get_request_memory_ratio();
       int rc = instance->initialize(unit_sizes, initial_buffer_count_per_pool,
                                     expandable_count, flags);
       if (rc != 0) {

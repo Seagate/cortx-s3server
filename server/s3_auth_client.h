@@ -46,7 +46,7 @@ extern "C" evhtp_res on_auth_response(evhtp_request_t* req, evbuf_t* buf,
                                       void* arg);
 extern "C" void on_event_hook(evhtp_connection_t* conn, short events,
                               void* arg);
-extern "C" void on_write_hook(evhtp_connection_t* conn, void* arg);
+extern "C" evhtp_res on_write_hook(evhtp_connection_t* conn, void* arg);
 extern "C" evhtp_res on_request_headers(evhtp_request_t* r, void* arg);
 extern "C" evhtp_res on_conn_err_callback(evhtp_connection_t* connection,
                                           evhtp_error_flags errtype, void* arg);

@@ -84,6 +84,12 @@ typedef enum {
   // records of this type will contain only timestamp and some int value
   ADDB_MSRM_TRACE_POINT,
 
+  // Dynamic Tun GET
+  // reqid, unit_size, total_to_read_blocks, already_read_blocks,
+  // iteration_blocks, free_mem_blocks, goig_to_read_blocks,
+  // connectio_send_size, waiting_sign
+  ADDB_MSRM_DTGET_READ_OBJECT,
+
   // ---
   ADDB_MEASUREMENT_LIST_OFFSET
 } MeasurementId;

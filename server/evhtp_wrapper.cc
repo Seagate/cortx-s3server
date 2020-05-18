@@ -77,6 +77,11 @@ void EvhtpWrapper::http_send_reply_end(evhtp_request_t *request) {
   evhtp_send_reply_end(request);
 }
 
+evhtp_connection_t *EvhtpWrapper::evhtp_request_get_connection(
+    evhtp_request_t *request) {
+  return ::evhtp_request_get_connection(request);
+}
+
 // Libevent wrappers
 size_t EvhtpWrapper::evbuffer_get_length(const struct evbuffer *buf) {
   return ::evbuffer_get_length(buf);

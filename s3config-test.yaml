@@ -46,6 +46,10 @@ S3_SERVER_CONFIG:                                     # Section for S3 Server
    S3_SERVER_ENABLE_OBJECT_LEAK_TRACKING: false         # Enables the object leak feature changes
    S3_REDIS_SERVER_ADDRESS: "127.0.0.1"                 # In case if redis is used for kvs contains redis server address
    S3_REDIS_SERVER_PORT: 6379                           # In case if redis is used for kvs contains redis server port
+   S3_READ_BLOCKS_INITIAL: 1                            # Number of blocks to read during the first iteration
+   S3_READ_BLOCKS_GROWTH_RATIO: 10                      # Growth ration for the next read iteration
+   S3_READ_BLOCKS_OPTIMAL: 32                          # Optimal number of blocks to read for the HW configuration
+   S3_REQUEST_MEMORY_RATIO: 50                          # Memory percentage  single req should not exceed
 S3_AUTH_CONFIG:                                         # Section for S3 Auth Service
    S3_AUTH_IP_ADDR: ipv4:10.10.1.2                      # Auth server IP address. Should be in below format:
                                                         # ipv4 address format: ipv4:127.0.0.1
@@ -75,6 +79,7 @@ S3_CLOVIS_CONFIG:                                     # Section for S3 Clovis
    S3_CLOVIS_READ_POOL_INITIAL_BUFFER_COUNT: 10         # 10 blocks, the initial pool size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_CLOVIS_READ_POOL_EXPANDABLE_COUNT: 20             # 20 blocks, pool's expandable size, multiple of S3_CLOVIS_UNIT_SIZE
    S3_CLOVIS_READ_POOL_MAX_THRESHOLD: 104857600         # 100 MB, The maximum memory threshold for the pool, multiple of S3_CLOVIS_UNIT_SIZE
+   S3_CLOVIS_READ_POOL_RESERVE_SIZE: 1048576            # Read pool reserve size
    S3_CLOVIS_READ_MEMPOOL_ZERO_BUFFER: false            # Enable Clovis Mempool 'zeroing' after use (like secure erase) - disabled by default
    S3_CLOVIS_OPERATION_WAIT_PERIOD: 90                  # 90 s, Maximum wait duration for sync clovis operations.
 S3_THIRDPARTY_CONFIG:

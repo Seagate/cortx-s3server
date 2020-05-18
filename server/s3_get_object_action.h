@@ -34,6 +34,7 @@
 class S3GetObjectAction : public S3ObjectAction {
 
   std::shared_ptr<S3ClovisReader> clovis_reader;
+  size_t clovis_unit_size;
   // Read state
   size_t total_blocks_in_object;
   size_t blocks_already_read;
@@ -44,6 +45,8 @@ class S3GetObjectAction : public S3ObjectAction {
   size_t last_byte_offset_to_read;
   size_t total_blocks_to_read;
 
+  size_t curr_iter_blocks;
+
   bool read_object_reply_started;
   std::shared_ptr<S3ClovisReaderFactory> clovis_reader_factory;
   S3Timer s3_timer;
@@ -51,6 +54,8 @@ class S3GetObjectAction : public S3ObjectAction {
   size_t get_requested_content_length() const {
     return last_byte_offset_to_read - first_byte_offset_to_read + 1;
   }
+
+  void next_iteration_read();
 
  public:
   S3GetObjectAction(
