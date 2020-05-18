@@ -219,18 +219,20 @@ fi  # if [ $no_mero_rpm -eq 0 ]
 cp -f $S3_SRC_DIR/third_party/jsoncpp/dist/jsoncpp.cpp $S3_SRC_DIR/server/jsoncpp.cc
 
 # Do we want a clean S3 build?
-#if [ $no_clean_build -eq 0 ]
-#then
-#  if [[ $no_s3ut_build -eq 0   || \
-#      $no_s3server_build -eq 0 || \
-#      $no_cloviskvscli_build -eq 0 || \
-#      $no_s3mempoolmgrut_build -eq 0 || \
-#      $no_s3mempoolut_build -eq 0 ]]
-#  then
-#    bazel shutdown
-#    bazel clean --expunge
-#  fi
-#fi
+if [ -z "$github_action" ]; then
+  if [ $no_clean_build -eq 0 ]; then
+    if [[ $no_s3ut_build -eq 0   || \
+        $no_s3server_build -eq 0 || \
+        $no_cloviskvscli_build -eq 0 || \
+        $no_s3mempoolmgrut_build -eq 0 || \
+        $no_s3mempoolut_build -eq 0 ]]
+    then
+      bazel shutdown
+      bazel clean --expunge
+    fi
+  fi
+fi  
+
 # Define the paths
 if [ $no_mero_rpm -eq 1 ] # use mero libs from source code (built location or cache)
 then
@@ -372,7 +374,9 @@ sed -i 's|'"$mero_include_path"'|MERO_DYNAMIC_INCLUDES|g' BUILD
 sed -i 's/'"$MERO_LINK_LIB_ "'/MERO_LINK_LIB /g' BUILD
 
 # Just to free up resources
-# bazel shutdown
+if [ -z "$github_action" ]; then
+  bazel shutdown
+fi
 
 if [ $no_auth_build -eq 0 ]
 then
