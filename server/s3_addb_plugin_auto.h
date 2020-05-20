@@ -39,9 +39,12 @@ enum S3AddbActionTypeId {
 
   /* helper IDs e.g. for linking requests */
 
+  /* ID of general purpose ADDB entry. */
+  S3_ADDB_MEASUREMENT_ID = S3_ADDB_RANGE_START,
+
   /* ID of ADDB entry which keeps a mapping of addb_request_id to S3 API-level
    * UUID of the request. */
-  S3_ADDB_REQUEST_ID = S3_ADDB_RANGE_START,
+  S3_ADDB_REQUEST_ID,
 
   /* ID of ADDB entry which keeps a link between s3 request and clovis op
    * request. */

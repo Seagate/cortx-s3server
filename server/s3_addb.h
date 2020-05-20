@@ -77,4 +77,10 @@ int s3_addb_init();
     }                                                                         \
   } while (false)
 
+// Macro to create records of free format independent from request state
+// can handle up to 13 params
+// format of each record should be specified by msrm_id of type MeasurementId
+#define ADDB_MSRM(msrm_id, ...) \
+  ADDB(S3_ADDB_MEASUREMENT_ID, (msrm_id), __VA_ARGS__)
+
 #endif

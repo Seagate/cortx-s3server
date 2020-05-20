@@ -47,16 +47,24 @@ const char* action_state_map[ADDB_TASK_LIST_OFFSET] = {
     "AUTH_CLNT_CHUNK_AUTH_INIT",      "AUTH_CLNT_CHUNK_ADD_CHKSUMM",
     "AUTH_CLNT_CHUNK_AUTH_SUCC",      "AUTH_CLNT_CHUNK_AUTH_FAILED", };
 
+const char* measurement_map[ADDB_MEASUREMENT_LIST_OFFSET] = {"TRACE_POINT", };
+
+const char* addb_measurement_to_name(uint64_t msrm_idx) {
+  assert(msrm_idx < ADDB_MEASUREMENT_LIST_OFFSET);
+  assert(measurement_map[msrm_idx] != NULL);
+  return measurement_map[msrm_idx];
+}
+
 const char* addb_idx_to_s3_state(uint64_t addb_idx) {
   if (addb_idx < ADDB_TASK_LIST_OFFSET) {
-    assert(action_state_map[addb_idx]);
+    assert(action_state_map[addb_idx] != NULL);
     return action_state_map[addb_idx];
   }
 
   uint64_t map_idx = addb_idx - ADDB_TASK_LIST_OFFSET;
 
   assert(map_idx < g_s3_to_addb_idx_func_name_map_size);
-  assert(g_s3_to_addb_idx_func_name_map[map_idx]);
+  assert(g_s3_to_addb_idx_func_name_map[map_idx] != NULL);
 
   return g_s3_to_addb_idx_func_name_map[map_idx];
 }

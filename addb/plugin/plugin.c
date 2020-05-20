@@ -57,6 +57,11 @@ static void idx_to_state(struct m0_addb2__context *ctx, const uint64_t *v,
   sprintf(buf, "%s", state_name);
 }
 
+static void msrm(struct m0_addb2__context *ctx, const uint64_t *v, char *buf) {
+  const char *msrm_name = addb_measurement_to_name(*v);
+  sprintf(buf, "%s", msrm_name);
+}
+
 static struct m0_addb2__id_intrp gs_curr_ids[] = {
     {S3_ADDB_REQUEST_ID,
      "s3-request-uid",
@@ -71,6 +76,9 @@ static struct m0_addb2__id_intrp gs_curr_ids[] = {
      {&dec, &idx_to_state},
      {"s3_request_id", "state"},
      .ii_repeat = (S3_ADDB_LAST_REQUEST_ID - S3_ADDB_FIRST_REQUEST_ID)},
+    {S3_ADDB_MEASUREMENT_ID, "s3-measurement",
+     {&msrm, &dec, &dec, &dec, &dec, &dec, &dec, &dec,
+      &dec,  &dec, &dec, &dec, &dec, &dec, &dec}},
     {0}};
 
 int m0_addb2_load_interps(uint64_t flags,

@@ -79,9 +79,19 @@ typedef enum {
   ADDB_TASK_LIST_OFFSET
 } ActionState;
 
+// Record format description to be used together with ADDB_MSRM
+typedef enum {
+  // records of this type will contain only timestamp and some int value
+  ADDB_MSRM_TRACE_POINT,
+
+  // ---
+  ADDB_MEASUREMENT_LIST_OFFSET
+} MeasurementId;
+
 extern const char* g_s3_to_addb_idx_func_name_map[];
 extern const uint64_t g_s3_to_addb_idx_func_name_map_size;
 
+const char* addb_measurement_to_name(uint64_t msrm_idx);
 const char* addb_idx_to_s3_state(uint64_t addb_idx);
 
 #endif
