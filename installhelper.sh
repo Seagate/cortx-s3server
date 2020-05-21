@@ -54,6 +54,7 @@ mkdir -p $S3_INSTALL_LOCATION/docs
 mkdir -p $S3_INSTALL_LOCATION/s3backgrounddelete
 mkdir -p $S3_PROVISIONER_LOCATION/conf
 mkdir -p $S3_PROVISIONER_LOCATION/bin
+mkdir -p $S3_PROVISIONER_LOCATION/reset
 mkdir -p $S3_CONFIG_FILE_LOCATION
 mkdir -p $S3_LOG_ROTATE_FILE_LOCATION
 mkdir -p $KEEPALIVED_CFG_DIR_LOCATION
@@ -74,6 +75,9 @@ cp scripts/provisioning/setup.yaml $S3_PROVISIONER_LOCATION/conf
 
 # Copy the provisioning script
 cp scripts/provisioning/s3_setup $S3_PROVISIONER_LOCATION/bin
+
+# Copy the S3 reset scripts
+cp scripts/reset/* $S3_PROVISIONER_LOCATION/reset
 
 # Copy the s3 dependencies
 cp -R third_party/libevent/s3_dist/lib/* $S3_INSTALL_LOCATION/libevent/

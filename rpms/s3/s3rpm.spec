@@ -235,6 +235,8 @@ rm -rf %{buildroot}
 /opt/seagate/s3/resources/s3_error_messages.json
 /opt/seagate/s3/s3startsystem.sh
 /opt/seagate/s3/s3stopsystem.sh
+/opt/seagate/eos/s3server/reset/precheck.py
+/opt/seagate/eos/s3server/reset/reset_s3.sh
 /opt/seagate/eos/s3server/conf/setup.yaml
 %attr(755, root, root) /opt/seagate/eos/s3server/bin/s3_setup
 %attr(755, root, root) /opt/seagate/s3/s3backgrounddelete/s3backgroundconsumer
@@ -252,6 +254,8 @@ rm -rf %{buildroot}
 %exclude %{py36_sitelib}/s3backgrounddelete/*.py
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundconsumer
 %exclude %{py36_sitelib}/s3backgrounddelete/s3backgroundproducer
+%exclude /opt/seagate/eos/s3server/reset/precheck.pyc
+%exclude /opt/seagate/eos/s3server/reset/precheck.pyo
 
 %post
 systemctl daemon-reload
