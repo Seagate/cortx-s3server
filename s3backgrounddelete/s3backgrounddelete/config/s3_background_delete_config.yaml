@@ -1,11 +1,11 @@
 eos_core:                                   # Section for S3 background delete config
    endpoint: "http://127.0.0.1:7081"                       # Service specified for EOS mero client
-   service: "eoscore"                                           # Default region specified for EOS mero client
+   service: "eoscore"                                      # Default region specified for EOS mero client
    default_region: "us-west2"                              # EOS mero client will use the specified host
    access_key: "AKIAJPINPFRBTPAYXAHZ"                      # Access Key corresponding to account-name "s3-background-delete-svc"
    secret_key: "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"  # Secret Key corresponding to account-name "s3-background-delete-svc"
    daemon_mode: "True"                                     # S3background process run in daemon mode and ST's run in non-daemon mode.
-
+   s3_instance_count: 22                                   # Number of active s3 instances in release setup
 
 logconfig:                                  # Section for scheduler & processor loggers.
 
@@ -21,6 +21,7 @@ logconfig:                                  # Section for scheduler & processor 
    log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"                         # Sets the specifed log format https://docs.python.org/3/library/logging.html#logging.Formatter
    max_bytes: 5242880                                                                         # Max size of a log files is set to 5mb
    backup_count: 5                                                                            # Max number of log files that can exist
+
 rabbitmq:                                    # Section for RabbitMQ configs
 
    # RabbitMQ overview:  https://www.rabbitmq.com/getstarted.html
@@ -33,12 +34,14 @@ rabbitmq:                                    # Section for RabbitMQ configs
     exchange_type: "direct"                                 # Exchanges type includes direct, fanout, topic exchange, header exchange
     mode: 2                                                 # Valid values are Non-persistent (1) or persistent (2). persistent ensures that the task_queue queue won't be lost even if RabbitMQ restarts.
     durable: "True"                                         # Ensure that RabbitMQ will never lose our queue.
-    schedule_interval_secs: 7200                             # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
+    schedule_interval_secs: 7200                            # Schedule Interval is time period at which object recovery scheduler will be executed (in seconds). Increasing this value leads to reduced RabbitMQ memory consumption.
 
 indexid:
 
    probable_delete_index_id: "AAAAAAAAAHg=-AwAQAAAAAAA="      # Index id containing list of probable delete object oid. This is fixed index id shared with s3server.
    global_instance_index_id: "AAAAAAAAAHg=-BAAQAAAAAAA="      # Index id containing global instance id's. This is also fixed index id shared with s3server.
+   global_bucket_index_id:   "AAAAAAAAAHg=-AQAQAAAAAAA="      # Index id containing bucket/account info
+   bucket_metadata_index_id: "AAAAAAAAAHg=-AgAQAAAAAAA="      # Index id containing bucket metadata
    max_keys: 1000                                             # Maximum number of keys in global index to be queried from list of probable delete object oid.
 
 leakconfig:                                  # Section for object leak config

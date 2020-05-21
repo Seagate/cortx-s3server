@@ -313,3 +313,30 @@ class EOSCoreConfig(object):
             # default delay is 15mins
             return 15
 
+    def get_global_bucket_index_id(self):
+        """Return probable delete index-id from config file or KeyError."""
+        if 'indexid' in self._config and self._config['indexid']['global_bucket_index_id']:
+            return self._config['indexid']['global_bucket_index_id']
+        else:
+            raise KeyError(
+                "Could not parse global_bucket index-id from config file " +
+                self._conf_file)
+
+    def get_bucket_metadata_index_id(self):
+        """Return probable delete index-id from config file or KeyError."""
+        if 'indexid' in self._config and self._config['indexid']['bucket_metadata_index_id']:
+            return self._config['indexid']['bucket_metadata_index_id']
+        else:
+            raise KeyError(
+                "Could not parse bucket_metadata index_id from config file " +
+                self._conf_file)
+
+    def get_s3_instance_count(self):
+        """Return secret_key from config file or KeyError."""
+        if 'eos_core' in self._config and self._config['eos_core']['s3_instance_count']:
+            return self._config['eos_core']['s3_instance_count']
+        else:
+            raise KeyError(
+                "Could not find s3_instance_count from config file " +
+                self._conf_file)
+
