@@ -203,7 +203,7 @@ TEST_F(S3PutBucketTaggingActionTest, SetTags) {
       .WillOnce(Return(S3BucketMetadataState::present));
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), set_tags(_))
       .Times(AtLeast(1));
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), save(_, _))
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), update(_, _))
       .Times(AtLeast(1));
   action_under_test_ptr->save_tags_to_bucket_metadata();
 }

@@ -62,6 +62,10 @@ void S3BucketMetadataV1::set_bucket_metadata_list_index_oid(
   bucket_metadata_list_index_oid = oid;
 }
 
+void S3BucketMetadataV1::set_state(S3BucketMetadataState state) {
+  this->state = state;
+}
+
 // Load {B1, A1} in global_bucket_list_index_oid, followed by {A1/B1, md} in
 // bucket_metadata_list_index_oid
 void S3BucketMetadataV1::load(std::function<void(void)> on_success,
@@ -72,7 +76,6 @@ void S3BucketMetadataV1::load(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  current_op = S3BucketMetadataCurrentOp::fetching;
   fetch_global_bucket_account_id_info();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
@@ -98,15 +101,10 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info() {
 
 void S3BucketMetadataV1::fetch_global_bucket_account_id_info_success() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
 
-    if (current_op == S3BucketMetadataCurrentOp::saving) {
-      save_bucket_info();
-    } else if (current_op == S3BucketMetadataCurrentOp::fetching) {
-      load_bucket_info();
-    } else if (current_op == S3BucketMetadataCurrentOp::deleting) {
-      remove_bucket_info();
-    }
+  bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
+  // Now fetch real bucket metadata
+  load_bucket_info();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -117,26 +115,19 @@ void S3BucketMetadataV1::fetch_global_bucket_account_id_info_failed() {
   if (global_bucket_index_metadata->get_state() ==
       S3GlobalBucketIndexMetadataState::missing) {
     state = S3BucketMetadataState::missing;
-    if (current_op == S3BucketMetadataCurrentOp::saving) {
-      bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
-      save_global_bucket_account_id_info();
-    } else {
-      this->handler_on_failed();
-    }
   } else if (global_bucket_index_metadata->get_state() ==
              S3GlobalBucketIndexMetadataState::failed_to_launch) {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to fetch account and bucket information from global bucket "
            "list. Please retry after some time\n");
     state = S3BucketMetadataState::failed_to_launch;
-    this->handler_on_failed();
   } else {
     s3_log(S3_LOG_ERROR, request_id,
            "Failed to fetch accound and bucket informoation from global bucket "
            "list. Please retry after some time\n");
     state = S3BucketMetadataState::failed;
-    this->handler_on_failed();
   }
+  this->handler_on_failed();
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
@@ -146,7 +137,6 @@ void S3BucketMetadataV1::load_bucket_info() {
 
   clovis_kv_reader = clovis_kvs_reader_factory->create_clovis_kvs_reader(
       request, s3_clovis_api);
-
   // example key "AccountId_1/bucket_x'
   clovis_kv_reader->get_keyval(
       bucket_metadata_list_index_oid, get_bucket_metadata_index_key_name(),
@@ -210,20 +200,29 @@ void S3BucketMetadataV1::save(std::function<void(void)> on_success,
                               std::function<void(void)> on_failed) {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
+  assert(state == S3BucketMetadataState::missing);
+
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
-  current_op = S3BucketMetadataCurrentOp::saving;
 
-  if (bucket_owner_account_id.empty()) {
-    fetch_global_bucket_account_id_info();
-  } else if (object_list_index_oid.u_lo == 0ULL &&
-             object_list_index_oid.u_hi == 0ULL) {
-    // create object list index, multipart index and then save bucket info
-    collision_attempt_count = 0;
-    create_object_list_index();
-  } else {
-    save_bucket_info();
-  }
+  global_bucket_index_metadata.reset();
+  save_global_bucket_account_id_info();
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
+}
+
+void S3BucketMetadataV1::update(std::function<void(void)> on_success,
+                                std::function<void(void)> on_failed) {
+  s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
+  assert(state == S3BucketMetadataState::present);
+
+  this->handler_on_success = on_success;
+  this->handler_on_failed = on_failed;
+
+  save_bucket_info();
+
+  s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3BucketMetadataV1::save_global_bucket_account_id_info() {
@@ -233,6 +232,8 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info() {
         global_bucket_index_metadata_factory
             ->create_s3_global_bucket_index_metadata(request);
   }
+  assert(!(global_bucket_index_metadata->get_account_id().empty()));
+  assert(!(global_bucket_index_metadata->get_account_name().empty()));
 
   // set location_constraint attributes & save
   global_bucket_index_metadata->set_location_constraint(
@@ -251,22 +252,18 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info() {
 
 void S3BucketMetadataV1::save_global_bucket_account_id_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  if (current_op == S3BucketMetadataCurrentOp::fetching &&
-      state == S3BucketMetadataState::missing) {
-    // We just created bucket list container, so bucket metadata is missing
-    // hence call failure callback
-    this->handler_on_failed();
-  } else if (current_op == S3BucketMetadataCurrentOp::saving) {
-    collision_attempt_count = 0;
-    create_object_list_index();
-  } else {
-    this->handler_on_success();
-  }
+
+  // update bucket_owner_account_id
+  bucket_owner_account_id = global_bucket_index_metadata->get_account_id();
+  collision_attempt_count = 0;
+  create_object_list_index();
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
 void S3BucketMetadataV1::save_global_bucket_account_id_info_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
+
   s3_log(S3_LOG_ERROR, request_id,
          "Saving of Bucket list index oid metadata failed\n");
   if (global_bucket_index_metadata->get_state() ==
@@ -276,6 +273,7 @@ void S3BucketMetadataV1::save_global_bucket_account_id_info_failed() {
     state = S3BucketMetadataState::failed;
   }
   this->handler_on_failed();
+
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -306,7 +304,7 @@ void S3BucketMetadataV1::create_object_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
     // create_object_list_index is called when there is no bucket,
-    // Hence if clovis returned its present then its due to collision.
+    // Hence if clovis returned its present, then its due to collision.
     handle_collision(
         get_object_list_index_name(), salted_object_list_index_name,
         std::bind(&S3BucketMetadataV1::create_object_list_index, this));
@@ -351,7 +349,7 @@ void S3BucketMetadataV1::create_multipart_list_index_failed() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
   if (clovis_kv_writer->get_state() == S3ClovisKVSWriterOpState::exists) {
     // create_multipart_list_index is called when there is no bucket,
-    // Hence if clovis returned its present then its due to collision.
+    // Hence if clovis returned its present, then its due to collision.
     handle_collision(
         get_multipart_index_name(), salted_multipart_list_index_name,
         std::bind(&S3BucketMetadataV1::create_multipart_list_index, this));
@@ -423,6 +421,11 @@ void S3BucketMetadataV1::create_objects_version_list_index_failed() {
 void S3BucketMetadataV1::save_bucket_info() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
 
+  assert(!bucket_owner_account_id.empty());
+  assert(!user_name.empty());
+  assert(!user_id.empty());
+  assert(!account_name.empty());
+  assert(!account_id.empty());
   // Set up system attributes
   system_defined_attribute["Owner-User"] = user_name;
   system_defined_attribute["Owner-User-id"] = user_id;
@@ -471,13 +474,8 @@ void S3BucketMetadataV1::remove(std::function<void(void)> on_success,
   this->handler_on_success = on_success;
   this->handler_on_failed = on_failed;
 
-  // we already have info, so remove directly
-  if (state == S3BucketMetadataState::present) {
-    remove_bucket_info();
-  } else {
-    current_op = S3BucketMetadataCurrentOp::deleting;
-    fetch_global_bucket_account_id_info();
-  }
+  assert(state == S3BucketMetadataState::present);
+  remove_bucket_info();
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 
@@ -499,8 +497,14 @@ void S3BucketMetadataV1::remove_bucket_info() {
 
 void S3BucketMetadataV1::remove_bucket_info_successful() {
   s3_log(S3_LOG_INFO, request_id, "Entering\n");
-  // remove global bucket and it's account information
-  remove_global_bucket_account_id_info();
+  // If FI: 'kv_delete_failed_from_global_index' is set, then do not remove KV
+  // from global_bucket_list_index_oid. This is to simulate possible "partial"
+  // delete bucket action, where the KV got deleted from
+  // bucket_metadata_list_index_oid, but not from global_bucket_list_index_oid.
+  // If FI not set, then remove KV from global_bucket_list_index_oid as well.
+  if (!s3_fi_is_enabled("kv_delete_failed_from_global_index")) {
+    remove_global_bucket_account_id_info();
+  }
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }
 

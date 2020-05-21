@@ -115,7 +115,7 @@ void S3PutBucketPolicyAction::set_policy() {
     bucket_metadata->setpolicy(new_bucket_policy);
     // bypass shutdown signal check for next task
     check_shutdown_signal_for_next_task(false);
-    bucket_metadata->save(
+    bucket_metadata->update(
         std::bind(&S3PutBucketPolicyAction::next, this),
         std::bind(&S3PutBucketPolicyAction::set_policy_failed, this));
   }

@@ -141,8 +141,11 @@ TEST_F(S3PutBucketAclActionTest, FetchBucketInfoFailed) {
 TEST_F(S3PutBucketAclActionTest, SetAclShouldUpdateMetadata) {
   CREATE_BUCKET_METADATA;
 
+  bucket_meta_factory->mock_bucket_metadata->set_state(
+      S3BucketMetadataState::present);
+
   EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), setacl(_)).Times(1);
-  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), save(_, _))
+  EXPECT_CALL(*(bucket_meta_factory->mock_bucket_metadata), update(_, _))
       .Times(1);
 
   action_under_test->setacl();

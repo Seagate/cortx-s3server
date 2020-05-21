@@ -3,6 +3,7 @@
 from framework import Config
 from framework import S3PyCliTest
 from s3cmd import S3cmdTest
+from s3fi import S3fiTest
 from jclient import JClientTest
 from s3client_config import S3ClientConfig
 from s3kvstool import S3kvTest
@@ -163,7 +164,7 @@ S3cmdTest('s3cmd can list buckets of s3secondaccount account')\
     .command_is_successful().command_response_should_have('')
 
 # ************ try to delete empty account ************
-test_msg = "Cannot delete account s3secondaccount with buckets"
+test_msg = "Can delete account s3secondaccount with no buckets"
 account_args = {'AccountName': 's3secondaccount'}
 AuthTest(test_msg).delete_account(**account_args).execute_test()\
     .command_response_should_have("Account deleted successfully")
@@ -582,3 +583,87 @@ S3cmdTest('s3cmd can delete bucket after setting policy/acl').delete_bucket("sea
 
 # ********** s3cmd accesslog should return NotImplemented ***********
 S3cmdTest('s3cmd accesslog should return NotImplemented/501').accesslog_bucket("seagatebucket").execute_test(negative_case=True).command_should_fail().command_error_should_have("NotImplemented")
+
+# ********** s3cmd test bucket metadata inconsistency with kv_delete_failed_from_global_index FI **********
+#  1. Create Bucket with default account
+#  2. Upload object in the bucket
+#  3. Put policy on the Bucket
+#  4. Download the object
+#  5. Delete the object
+#  6. Enable FI - kv_delete_failed_from_global_index
+#  7. Delete the bucket (negative test: this test will delete the KV from bucket_metadata_list_index_oid, but not from global_bucket_list_index_oid)
+#  8. Disable the FI
+#  9. Create the bucket again, but with 's3secondaccount' account
+# 10. List bucket
+# 11. Put Object in new bucket
+# 12. Get the object
+# 13. Delete Object
+# 14. Delete Bucket
+# 15. Delete account 's3secondaccount'
+S3cmdTest('s3cmd can create bucket').create_bucket("seagatebucket").execute_test().command_is_successful()
+S3cmdTest('s3cmd can upload 3k file').upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+S3cmdTest('s3cmd can set policy on bucket').setpolicy_bucket("seagatebucket","policy.txt").execute_test().command_is_successful()
+S3cmdTest('s3cmd can list objects').list_objects('seagatebucket').execute_test().command_is_successful()\
+    .command_response_should_have('s3://seagatebucket/3kfile')
+
+S3cmdTest('s3cmd can delete 3k file').delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
+
+S3fiTest('s3cmd enable kv_delete_failed_from_global_index FI').enable_fi("enable", "always", "kv_delete_failed_from_global_index")\
+    .execute_test().command_is_successful().command_response_should_not_have('ServiceUnavailable')
+
+S3cmdTest('s3cmd delete bucket failed').delete_bucket("seagatebucket").execute_test(negative_case=True)\
+    .command_should_fail()
+
+S3fiTest('s3cmd can disable FI kv_delete_failed_from_global_index').disable_fi("kv_delete_failed_from_global_index")\
+    .execute_test().command_is_successful()
+
+account_args = {}
+account_args['AccountName'] = 's3secondaccount'
+account_args['Email'] = 's3secondaccount@seagate.com'
+account_args['ldapuser'] = 'sgiamadmin'
+account_args['ldappasswd'] = 'ldapadmin'
+
+result = AuthTest('Create account s3secondaccount').create_account(**account_args).execute_test()
+account_response_elements = get_response_elements(result.status.stdout)
+
+S3cmdTest('s3cmd can create bucket with s3secondaccount account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .create_bucket("seagatebucket").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can list buckets from s3secondaccount account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .list_buckets().execute_test().command_is_successful().command_response_should_have('s3://seagatebucket')
+
+S3cmdTest('s3cmd can upload 3k file')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .upload_test("seagatebucket", "3kfile", 3000).execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can list objects')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .list_objects('seagatebucket').execute_test().command_is_successful()\
+    .command_response_should_have('s3://seagatebucket/3kfile')
+
+S3cmdTest('s3cmd can delete 3k file')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .delete_test("seagatebucket", "3kfile").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd can delete bucket')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .delete_bucket("seagatebucket").execute_test().command_is_successful()
+
+S3cmdTest('s3cmd cannot list buckets of s3secondaccount account')\
+    .with_credentials(account_response_elements['AccessKeyId'], account_response_elements['SecretKey'])\
+    .list_buckets().execute_test().command_is_successful()\
+    .command_is_successful().command_response_should_have('')
+
+# Overwriting values of access key and secret key given by
+S3ClientConfig.access_key_id = account_response_elements['AccessKeyId']
+S3ClientConfig.secret_key = account_response_elements['SecretKey']
+account_args = {'AccountName': 's3secondaccount'}
+
+AuthTest('s3cmd can delete s3secondaccount').delete_account(**account_args).execute_test()\
+    .command_response_should_have("Account deleted successfully")
+
+# restore access key and secret key.
+S3ClientConfig.access_key_id = 'AKIAJPINPFRBTPAYOGNA'
+S3ClientConfig.secret_key = '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'

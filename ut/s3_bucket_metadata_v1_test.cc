@@ -233,8 +233,6 @@ TEST_F(S3BucketMetadataV1Test, Load) {
   action_under_test->load(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::fetching,
-            action_under_test->current_op);
 }
 
 TEST_F(S3BucketMetadataV1Test, LoadBucketInfo) {
@@ -293,49 +291,68 @@ TEST_F(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataFailedToLaunch) {
   EXPECT_EQ(S3BucketMetadataState::failed_to_launch, action_under_test->state);
 }
 
-TEST_F(S3BucketMetadataV1Test, SaveMeatdataMissingIndexOID) {
+TEST_F(S3BucketMetadataV1Test, SaveMetadataIndexOIDMissing) {
   struct m0_uint128 oid = {0ULL, 0ULL};
   action_under_test->set_bucket_metadata_list_index_oid(oid);
+
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+
+  action_under_test->state = S3BucketMetadataState::missing;
+
   EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
                     ->mock_global_bucket_index_metadata),
-              load(_, _)).Times(1);
+              save(_, _)).Times(1);
   action_under_test->save(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::saving,
-            action_under_test->current_op);
 }
 
-TEST_F(S3BucketMetadataV1Test, SaveMeatdataIndexOIDPresent) {
+TEST_F(S3BucketMetadataV1Test, SaveMetadataIndexOIDPresent) {
+  action_under_test->state = S3BucketMetadataState::present;
+
+  action_under_test->global_bucket_index_metadata =
+      s3_global_bucket_index_metadata_factory
+          ->mock_global_bucket_index_metadata;
+
+  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
+                    ->mock_global_bucket_index_metadata),
+              save(_, _)).Times(0);
+
+  ASSERT_DEATH(
+      action_under_test->save(
+          std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
+          std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj)),
+      ".*");
+}
+
+TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDPresent) {
   struct m0_uint128 oid = {0x111f, 0xffff};
   action_under_test->set_bucket_metadata_list_index_oid(oid);
   action_under_test->object_list_index_oid = {0x11ff, 0x1fff};
+  action_under_test->state = S3BucketMetadataState::present;
   action_under_test->bucket_owner_account_id = "12345";
+
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
-  action_under_test->save(
+
+  action_under_test->update(
       std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
       std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::saving,
-            action_under_test->current_op);
 }
 
-TEST_F(S3BucketMetadataV1Test, CreateObjectIndexOIDNotPresent) {
-  struct m0_uint128 oid = {0x111f, 0xffff};
-  ;
-  action_under_test->set_bucket_metadata_list_index_oid(oid);
-  action_under_test->object_list_index_oid = {0x0000, 0x0000};
-  action_under_test->bucket_owner_account_id = "12345";
-  EXPECT_CALL(*ptr_mock_s3_clovis_api, m0_h_ufid_next(_))
-      .WillRepeatedly(Invoke(dummy_helpers_ufid_next));
+TEST_F(S3BucketMetadataV1Test, UpdateMetadataIndexOIDMissing) {
+  action_under_test->state = S3BucketMetadataState::missing;
 
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
-              create_index_with_oid(_, _, _)).Times(1);
-  action_under_test->save(
-      std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
-      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
-  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::saving,
-            action_under_test->current_op);
+              put_keyval(_, _, _, _, _)).Times(0);
+
+  ASSERT_DEATH(
+      action_under_test->update(
+          std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
+          std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj)),
+      ".*");
 }
 
 TEST_F(S3BucketMetadataV1Test, CreateObjectListIndexCollisionCount0) {
@@ -483,6 +500,7 @@ TEST_F(S3BucketMetadataV1Test, SaveBucketInfo) {
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               put_keyval(_, _, _, _, _)).Times(1);
 
+  action_under_test->bucket_owner_account_id = "12345";
   action_under_test->save_bucket_info();
   EXPECT_STREQ(
       "s3user",
@@ -541,26 +559,23 @@ TEST_F(S3BucketMetadataV1Test, RemovePresentMetadata) {
   EXPECT_TRUE(action_under_test->handler_on_failed != NULL);
 }
 
-TEST_F(S3BucketMetadataV1Test, RemoveAfterFetchingBucketListIndexOID) {
+TEST_F(S3BucketMetadataV1Test, RemoveAbsentMetadata) {
   action_under_test->state = S3BucketMetadataState::missing;
-  action_under_test->global_bucket_index_metadata =
-      s3_global_bucket_index_metadata_factory
-          ->mock_global_bucket_index_metadata;
 
-  EXPECT_CALL(*(s3_global_bucket_index_metadata_factory
-                    ->mock_global_bucket_index_metadata),
-              load(_, _)).Times(1);
-  action_under_test->remove(
-      std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
-      std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj));
+  EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
+              delete_keyval(_, _, _, _)).Times(0);
 
-  EXPECT_EQ(action_under_test->S3BucketMetadataCurrentOp::deleting,
-            action_under_test->current_op);
+  ASSERT_DEATH(
+      action_under_test->remove(
+          std::bind(&S3CallBack::on_success, &s3bucketmetadata_callbackobj),
+          std::bind(&S3CallBack::on_failed, &s3bucketmetadata_callbackobj)),
+      ".*");
 }
 
 TEST_F(S3BucketMetadataV1Test, RemoveBucketInfo) {
   action_under_test->clovis_kv_writer =
       clovis_kvs_writer_factory->mock_clovis_kvs_writer;
+
   EXPECT_CALL(*(clovis_kvs_writer_factory->mock_clovis_kvs_writer),
               delete_keyval(_, _, _, _)).Times(1);
   action_under_test->remove_bucket_info();

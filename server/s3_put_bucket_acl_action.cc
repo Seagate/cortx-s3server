@@ -134,8 +134,9 @@ void S3PutBucketACLAction::setacl() {
     bucket_metadata->setacl(auth_generated_acl);
   }
 
-  bucket_metadata->save(std::bind(&S3PutBucketACLAction::next, this),
-                        std::bind(&S3PutBucketACLAction::setacl_failed, this));
+  bucket_metadata->update(
+      std::bind(&S3PutBucketACLAction::next, this),
+      std::bind(&S3PutBucketACLAction::setacl_failed, this));
 
   s3_log(S3_LOG_DEBUG, "", "Exiting\n");
 }

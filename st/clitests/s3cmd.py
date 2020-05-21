@@ -272,6 +272,7 @@ quote(s3target))
             self.with_cli("s3cmd --no-mime-magic -c " + self.s3cfg + self._send_retries + " del " + quote("s3://" + self.bucket_name + "/" + self.filename))
         if no_check_hostname:
             self.command = self.command + " --no-check-hostname"
+        self.command = self.command + self.credentials
         return self
 
     def multi_delete_test(self, bucket_name, quiet_mode=False):

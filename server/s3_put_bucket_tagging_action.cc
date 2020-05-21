@@ -128,7 +128,7 @@ void S3PutBucketTaggingAction::save_tags_to_bucket_metadata() {
     bucket_metadata->set_tags(bucket_tags_map);
     // bypass shutdown signal check for next task
     check_shutdown_signal_for_next_task(false);
-    bucket_metadata->save(
+    bucket_metadata->update(
         std::bind(&S3PutBucketTaggingAction::next, this),
         std::bind(
             &S3PutBucketTaggingAction::save_tags_to_bucket_metadata_failed,

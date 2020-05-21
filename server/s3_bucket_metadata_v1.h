@@ -92,6 +92,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   // for UTs only
   struct m0_uint128 get_bucket_metadata_list_index_oid();
   void set_bucket_metadata_list_index_oid(struct m0_uint128 id);
+  void set_state(S3BucketMetadataState state);
 
  public:
   S3BucketMetadataV1(
@@ -109,6 +110,9 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
 
   virtual void save(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed);
+
+  virtual void update(std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed);
 
   virtual void remove(std::function<void(void)> on_success,
                       std::function<void(void)> on_failed);
@@ -150,8 +154,10 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, LoadBucketInfoFailedMetadataFailed);
   FRIEND_TEST(S3BucketMetadataV1Test,
               LoadBucketInfoFailedMetadataFailedToLaunch);
-  FRIEND_TEST(S3BucketMetadataV1Test, SaveMeatdataMissingIndexOID);
-  FRIEND_TEST(S3BucketMetadataV1Test, SaveMeatdataIndexOIDPresent);
+  FRIEND_TEST(S3BucketMetadataV1Test, SaveMetadataIndexOIDMissing);
+  FRIEND_TEST(S3BucketMetadataV1Test, SaveMetadataIndexOIDPresent);
+  FRIEND_TEST(S3BucketMetadataV1Test, UpdateMetadataIndexOIDPresent);
+  FRIEND_TEST(S3BucketMetadataV1Test, UpdateMetadataIndexOIDMissing);
   FRIEND_TEST(S3BucketMetadataV1Test, CreateObjectIndexOIDNotPresent);
   FRIEND_TEST(S3BucketMetadataV1Test, CreateBucketListIndexCollisionCount0);
   FRIEND_TEST(S3BucketMetadataV1Test, CreateBucketListIndexCollisionCount1);
@@ -176,7 +182,7 @@ class S3BucketMetadataV1 : public S3BucketMetadata {
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailed);
   FRIEND_TEST(S3BucketMetadataV1Test, SaveBucketInfoFailedToLaunch);
   FRIEND_TEST(S3BucketMetadataV1Test, RemovePresentMetadata);
-  FRIEND_TEST(S3BucketMetadataV1Test, RemoveAfterFetchingBucketListIndexOID);
+  FRIEND_TEST(S3BucketMetadataV1Test, RemoveAbsentMetadata);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfo);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketInfoSuccessful);
   FRIEND_TEST(S3BucketMetadataV1Test, RemoveBucketAccountidInfoSuccessful);

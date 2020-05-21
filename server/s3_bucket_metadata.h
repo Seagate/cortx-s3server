@@ -160,8 +160,13 @@ class S3BucketMetadata {
   virtual void load(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed) = 0;
 
+  // PUT KV in both global bucket list index and bucket metadata list index.
   virtual void save(std::function<void(void)> on_success,
                     std::function<void(void)> on_failed) = 0;
+
+  // Update bucket metadata in bucket metadata list index.
+  virtual void update(std::function<void(void)> on_success,
+                      std::function<void(void)> on_failed) = 0;
 
   virtual void setpolicy(std::string& policy_str);
   virtual void set_tags(const std::map<std::string, std::string>& tags_as_map);
