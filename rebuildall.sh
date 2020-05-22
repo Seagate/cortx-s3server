@@ -6,7 +6,8 @@ usage() {
   echo 'Usage: ./rebuildall.sh [--no-mero-rpm][--use-build-cache][--no-check-code]'
   echo '                       [--no-clean-build][--no-s3ut-build][--no-s3mempoolut-build][--no-s3mempoolmgrut-build]'
   echo '                       [--no-s3server-build][--no-cloviskvscli-build][--no-auth-build]'
-  echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install][--help]'
+  echo '                       [--no-jclient-build][--no-jcloudclient-build][--no-install]'
+  echo '                       [--just-gen-build-file][--help]'
   echo 'Optional params as below:'
   echo '          --no-mero-rpm              : Use mero libs from source code (third_party/mero) location'
   echo '                                       Default is (false) i.e. use mero libs from pre-installed'
@@ -30,6 +31,7 @@ usage() {
   echo '          --no-jcloudclient-build    : Do not build jcloudclient, Default (false)'
   echo '          --no-s3iamcli-build        : Do not build s3iamcli, Default (false)'
   echo '          --no-install               : Do not install binaries after build, Default (false)'
+  echo '          --just-gen-build-file      : Do not do anything, only produce BUILD file'
   echo '          --help (-h)                : Display help'
 }
 
@@ -84,7 +86,9 @@ get_mero_pkg_config_dev() {
 # CMD: pkg-config --libs mero
 # OUTPUT: -lmero
 get_mero_pkg_config_rpm() {
-  includes=$(pkg-config --cflags-only-I mero)
+  s3_src_dir=$1
+  pkg_config_path="$PKG_CONFIG_PATH:$s3_src_dir"
+  includes=$(PKG_CONFIG_PATH=$pkg_config_path pkg-config --cflags-only-I mero)
   for include in $includes
   do
     if [[ "$include" != *"lustre-client"* ]] # exclude include paths from 'lustre-client*'
@@ -95,7 +99,7 @@ get_mero_pkg_config_rpm() {
   done
   #printf '%s\t\n' "${rpm_includes_array[@]}"
 
-  libs=$(pkg-config --libs mero)
+  libs=$(PKG_CONFIG_PATH=$pkg_config_path pkg-config --libs mero)
   for lib in $libs
   do
     if [[ ${lib:0:2} == '-L' ]] # this is 'L' part
@@ -112,7 +116,8 @@ get_mero_pkg_config_rpm() {
 OPTS=`getopt -o h --long no-mero-rpm,use-build-cache,no-check-code,no-clean-build,\
 no-s3ut-build,no-s3mempoolut-build,no-s3mempoolmgrut-build,no-s3server-build,\
 no-cloviskvscli-build,no-s3background-build,no-s3addbplugin-build,no-auth-build,\
-no-jclient-build,no-jcloudclient-build,no-s3iamcli-build,no-install,help -n 'rebuildall.sh' -- "$@"`
+no-jclient-build,no-jcloudclient-build,no-s3iamcli-build,no-install,\
+just-gen-build-file,help -n 'rebuildall.sh' -- "$@"`
 
 eval set -- "$OPTS"
 
@@ -132,6 +137,7 @@ no_jclient_build=0
 no_jcloudclient_build=0
 no_s3iamcli_build=0
 no_install=0
+just_gen_build_file=0
 
 # extract options and their arguments into variables.
 while true; do
@@ -152,6 +158,7 @@ while true; do
     --no-jcloudclient-build) no_jcloudclient_build=1; shift ;;
     --no-s3iamcli-build) no_s3iamcli_build=1; shift ;;
     --no-install) no_install=1; shift ;;
+    --just-gen-build-file) just_gen_build_file=1; shift ;;
     -h|--help) usage; exit 0;;
     --) shift; break ;;
     *) echo "Internal error!" ; exit 1 ;;
@@ -161,11 +168,6 @@ done
 set -x
 
 
-if [ $no_check_code -eq 0 ]
-then
-  ./checkcodeformat.sh
-fi
-
 # Used to store third_party build artifacts
 S3_SRC_DIR=`pwd`
 BUILD_CACHE_DIR=$HOME/.seagate_src_cache
@@ -173,6 +175,99 @@ BUILD_CACHE_DIR=$HOME/.seagate_src_cache
 # Used to store mero include paths which are read from 'pkg-config --cflags'
 mero_include_path="\"-I"
 declare MERO_LINK_LIB_
+
+prepare_BUILD_file() {
+  # Prepare BUILD file
+
+  # Defined as a function because it's needed in two places.  Place 1 at start
+  # of process (to handle cases when cmdline args requiest to just generate
+  # BUILD).  Second place -- after mero build.  Note: if mero was not build
+  # before, this function will generate error, this is why two places are
+  # needed.
+
+  # Define the paths
+  if [ $no_mero_rpm -eq 1 ] # use mero libs from source code (built location or cache)
+  then
+    MERO_INC_="MERO_INC=./third_party/mero/"
+
+    # set mero_include_path for 'copts' in BUILD file
+    get_mero_pkg_config_dev $S3_SRC_DIR
+    for path in "${dev_includes_array[@]}"
+    do
+      mero_include_path=$mero_include_path"."$path"\", \"-I"
+    done
+    # remove last ', "-I' # mero_include_path='"-I./third_party/mero", "-I./third_party/mero/extra-libs/gf-complete/include", \"-I'
+    mero_include_path=${mero_include_path%", \"-I"}
+
+    MERO_LIB_="MERO_LIB=."
+    for lib_path in "${dev_lib_search_paths_array[@]}"
+    do
+      MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
+    done
+    # remove last '\", -L.'
+    MERO_LIB_=${MERO_LIB_%"\", -L."}
+
+    for lib in "${link_libs_array[@]}"
+    do
+      MERO_LINK_LIB_=$lib" "
+    done
+    # remove last white space
+    MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
+
+    MERO_HELPERS_LIB_="MERO_HELPERS_LIB=./third_party/mero/helpers/.libs/"
+  else
+    # use mero libs from pre-installed mero rpm location
+    get_mero_pkg_config_rpm $S3_SRC_DIR
+    for path in "${rpm_includes_array[@]}"
+    do
+      mero_include_path=$mero_include_path$path"\", \"-I"
+    done
+    # remove last ', "-I'
+    mero_include_path=${mero_include_path%", \"-I"}
+
+    MERO_INC_="MERO_INC=/usr/include/mero/"
+    if [ ${#rpm_lib_search_paths_array[@]} -eq 0 ]
+    then
+      MERO_LIB_="MERO_LIB=/usr/lib64/"
+    else
+      MERO_LIB_="MERO_LIB=."
+      for lib_path in "${rpm_lib_search_paths_array[@]}"
+      do
+        MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
+      done
+      # remove last '\", -L.'
+      MERO_LIB_=${MERO_LIB_%"\", -L."}
+    fi
+
+    MERO_HELPERS_LIB_="MERO_HELPERS_LIB=/usr/lib64/"
+
+    for lib in "${link_libs_array[@]}"
+    do
+      MERO_LINK_LIB_=$lib" "
+    done
+    # remove last white space
+    MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
+  fi
+
+  cat BUILD.template > BUILD
+
+  # set mero library search path in 'BUILD' file
+  sed -i 's|MERO_DYNAMIC_INCLUDES|'"$mero_include_path"'|g' BUILD
+
+  # set mero link library in 'BUILD' file
+  sed -i 's/MERO_LINK_LIB/'"$MERO_LINK_LIB_"'/g' BUILD
+}
+
+if [ $just_gen_build_file -eq 1 ]; then
+  prepare_BUILD_file
+  exit
+fi
+
+
+if [ $no_check_code -eq 0 ]
+then
+  ./checkcodeformat.sh
+fi
 
 # Build steps for third_party and mero
 if [ $no_mero_rpm -eq 0 ]
@@ -232,75 +327,7 @@ then
   fi
 fi
 
-# Define the paths
-if [ $no_mero_rpm -eq 1 ] # use mero libs from source code (built location or cache)
-then
-  MERO_INC_="MERO_INC=./third_party/mero/"
-
-  # set mero_include_path for 'copts' in BUILD file
-  get_mero_pkg_config_dev $S3_SRC_DIR
-  for path in "${dev_includes_array[@]}"
-  do
-    mero_include_path=$mero_include_path"."$path"\", \"-I"
-  done
-  # remove last ', "-I' # mero_include_path='"-I./third_party/mero", "-I./third_party/mero/extra-libs/gf-complete/include", \"-I'
-  mero_include_path=${mero_include_path%", \"-I"}
-
-  MERO_LIB_="MERO_LIB=."
-  for lib_path in "${dev_lib_search_paths_array[@]}"
-  do
-    MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
-  done
-  # remove last '\", -L.'
-  MERO_LIB_=${MERO_LIB_%"\", -L."}
-
-  for lib in "${link_libs_array[@]}"
-  do
-    MERO_LINK_LIB_=$lib" "
-  done
-  # remove last white space
-  MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
-
-  MERO_HELPERS_LIB_="MERO_HELPERS_LIB=./third_party/mero/helpers/.libs/"
-else
-  # use mero libs from pre-installed mero rpm location
-  get_mero_pkg_config_rpm
-  for path in "${rpm_includes_array[@]}"
-  do
-    mero_include_path=$mero_include_path$path"\", \"-I"
-  done
-  # remove last ', "-I'
-  mero_include_path=${mero_include_path%", \"-I"}
-
-  MERO_INC_="MERO_INC=/usr/include/mero/"
-  if [ ${#rpm_lib_search_paths_array[@]} -eq 0 ]
-  then
-    MERO_LIB_="MERO_LIB=/usr/lib64/"
-  else
-    MERO_LIB_="MERO_LIB=."
-    for lib_path in "${rpm_lib_search_paths_array[@]}"
-    do
-      MERO_LIB_=$MERO_LIB_$lib_path"\", -L."  # '-L' is being appended at first index in 'BUILD' file itself
-    done
-    # remove last '\", -L.'
-    MERO_LIB_=${MERO_LIB_%"\", -L."}
-  fi
-
-  MERO_HELPERS_LIB_="MERO_HELPERS_LIB=/usr/lib64/"
-
-  for lib in "${link_libs_array[@]}"
-  do
-    MERO_LINK_LIB_=$lib" "
-  done
-  # remove last white space
-  MERO_LINK_LIB_=${MERO_LINK_LIB_%" "}
-fi
-
-# set mero library search path in 'BUILD' file
-sed -i 's|MERO_DYNAMIC_INCLUDES|'"$mero_include_path"'|g' BUILD
-
-# set mero link library in 'BUILD' file
-sed -i 's/MERO_LINK_LIB/'"$MERO_LINK_LIB_"'/g' BUILD
+prepare_BUILD_file
 
 if [ $no_s3ut_build -eq 0 ]
 then
@@ -367,10 +394,6 @@ then
                               --spawn_strategy=standalone \
                               --strip=never
 fi
-
-# restore BUILD file
-sed -i 's|'"$mero_include_path"'|MERO_DYNAMIC_INCLUDES|g' BUILD
-sed -i 's/'"$MERO_LINK_LIB_ "'/MERO_LINK_LIB /g' BUILD
 
 # Just to free up resources
 bazel shutdown

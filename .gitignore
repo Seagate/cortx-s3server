@@ -1,4 +1,5 @@
 # Python byte-compiled / optimized / DLL files
+BUILD
 __pycache__/
 auth-utils/jclient/dependency-reduced-pom.xml
 auth-utils/jclient/target/
