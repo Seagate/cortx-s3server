@@ -373,6 +373,7 @@ fi
 sed -i 's|'"$mero_include_path"'|MERO_DYNAMIC_INCLUDES|g' BUILD
 sed -i 's/'"$MERO_LINK_LIB_ "'/MERO_LINK_LIB /g' BUILD
 
+ps -aux | grep "bazel"
 # Just to free up resources
 #if [ -z "$github_action" ]; then
 bazel shutdown
